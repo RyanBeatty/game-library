@@ -42,11 +42,17 @@ static void DrawObstacles(Rectangle* obstacles) {
         DrawRectangleRec(obstacles[i], GRAY);
     }
 }
-static void DrawPlayer(Player player) {
-    DrawRectangle(player.position.x - HalfPlayerRectWidth, player.position.y - HalfPlayerRectHeight, PlayerRectWidth,
-                  PlayerRectHeight, RED);
+
+static Rectangle GetPlayerRec(Player player) {
+    Rectangle rec = {player.position.x - HalfPlayerRectWidth, player.position.y - HalfPlayerRectHeight, PlayerRectWidth,
+                     PlayerRectHeight};
+    return rec;
 }
-static void UpdatePlayer(Player* player, float delta_time) {
+static void DrawPlayer(Player player) {
+    Rectangle rec = GetPlayerRec(player);
+    DrawRectangleRec(rec, RED);
+}
+static void UpdatePlayer(Player* player, float delta_time, Rectangle* obstacles) {
     float dx = 0.0f;
     if (IsKeyDown(KEY_LEFT)) {
         dx = -PlayerSpeedX;
@@ -57,12 +63,21 @@ static void UpdatePlayer(Player* player, float delta_time) {
 
     if (IsKeyDown(KEY_SPACE) && player->can_jump) {
         player->can_jump = false;
-        player->dy = PlayerSpeedY;
+        player->dy = -PlayerSpeedY;
     }
 
-    if (player->can_jump) {
+    if (!player->can_jump) {
         player->position.y += player->dy * delta_time;
         player->dy += Gravity * delta_time;
+    }
+
+    Rectangle player_rec = GetPlayerRec(*player);
+    for (size_t i = 0; i < arrlen(obstacles); ++i) {
+        if (CheckCollisionRecs(player_rec, obstacles[i])) {
+            player->dy = 0;
+            player->position.y = obstacles->y - HalfPlayerRectHeight;
+            player->can_jump = true;
+        }
     }
 }
 
@@ -91,7 +106,7 @@ int main(void) {
         //----------------------------------------------------------------------------------
         float delta_time = GetFrameTime();
 
-        UpdatePlayer(&player, delta_time);
+        UpdatePlayer(&player, delta_time, obstacles);
 
         // Draw
         //----------------------------------------------------------------------------------
