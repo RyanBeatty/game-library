@@ -37,8 +37,10 @@ typedef struct Player {
     bool can_jump;
 } Player;
 
-static void DrawBackground(int screen_width, int screen_height) {
-    DrawRectangle(0, screen_height - BackgrounHeight, screen_width, BackgrounHeight, GRAY);
+static void DrawObstacles(Rectangle* obstacles) {
+    for (size_t i = 0; i < arrlen(obstacles); ++i) {
+        DrawRectangleRec(obstacles[i], GRAY);
+    }
 }
 static void DrawPlayer(Player player) {
     DrawRectangle(player.position.x - HalfPlayerRectWidth, player.position.y - HalfPlayerRectHeight, PlayerRectWidth,
@@ -70,13 +72,15 @@ static void UpdatePlayer(Player* player, float delta_time) {
 int main(void) {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 800 * 2;
-    const int screenHeight = 450 * 2;
 
     Player player = {{PlayerOriginX, PlayerOriginY}, 0, true};
+    Rectangle* obstacles = NULL;
+    // Background
+    Rectangle background = {0, ScreenHeight - BackgrounHeight, ScreenWidth, BackgrounHeight};
+    arrpush(obstacles, background);
 
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - mouse input");
+    InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //---------------------------------------------------------------------------------------
@@ -85,8 +89,6 @@ int main(void) {
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         //----------------------------------------------------------------------------------
-        int screen_width = GetScreenWidth();
-        int screen_height = GetScreenHeight();
         float delta_time = GetFrameTime();
 
         UpdatePlayer(&player, delta_time);
@@ -97,7 +99,7 @@ int main(void) {
 
         ClearBackground(RAYWHITE);
 
-        DrawBackground(screen_width, screen_height);
+        DrawObstacles(obstacles);
         DrawPlayer(player);
 
         EndDrawing();
