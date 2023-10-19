@@ -34,6 +34,7 @@ int main(void) {
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         //----------------------------------------------------------------------------------
+        float delta_time = GetFrameTime();
 
         // Draw
         //----------------------------------------------------------------------------------

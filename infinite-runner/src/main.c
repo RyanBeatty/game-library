@@ -27,6 +27,9 @@ const int PlayerRectHeight = 60;
 #define HalfPlayerRectHeight (PlayerRectHeight / 2)
 #define PlayerOriginX (ScreenWidth / 2)
 #define PlayerOriginY (ScreenHeight - BackgrounHeight - HalfPlayerRectHeight)
+const float PlayerSpeedX = 300.0f;
+const float PlayerSpeedY = 300.0f;
+const float Gravity = 400.0f;
 
 typedef struct Player {
     Vector2 position;
@@ -41,17 +44,23 @@ static void DrawPlayer(Player player) {
     DrawRectangle(player.position.x - HalfPlayerRectWidth, player.position.y - HalfPlayerRectHeight, PlayerRectWidth,
                   PlayerRectHeight, RED);
 }
-static void UpdatePlayer(Player* player) {
+static void UpdatePlayer(Player* player, float delta_time) {
     float dx = 0.0f;
     if (IsKeyDown(KEY_LEFT)) {
-        dx = -5;
+        dx = -PlayerSpeedX;
     } else if (IsKeyDown(KEY_RIGHT)) {
-        dx = 5;
+        dx = PlayerSpeedX;
     }
-    player->position.x += dx;
+    player->position.x += dx * delta_time;
 
     if (IsKeyDown(KEY_SPACE) && player->can_jump) {
         player->can_jump = false;
+        player->dy = PlayerSpeedY;
+    }
+
+    if (player->can_jump) {
+        player->position.y += player->dy * delta_time;
+        player->dy += Gravity * delta_time;
     }
 }
 
@@ -78,8 +87,9 @@ int main(void) {
         //----------------------------------------------------------------------------------
         int screen_width = GetScreenWidth();
         int screen_height = GetScreenHeight();
+        float delta_time = GetFrameTime();
 
-        UpdatePlayer(&player);
+        UpdatePlayer(&player, delta_time);
 
         // Draw
         //----------------------------------------------------------------------------------
