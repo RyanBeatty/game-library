@@ -43,13 +43,13 @@ static void DrawObstacles(Rectangle* obstacles) {
     }
 }
 
-static Rectangle GetPlayerRec(Player player) {
-    Rectangle rec = {player.position.x - HalfPlayerRectWidth, player.position.y - HalfPlayerRectHeight, PlayerRectWidth,
+static Rectangle GetPlayerRec(Vector2 position) {
+    Rectangle rec = {position.x - HalfPlayerRectWidth, position.y - HalfPlayerRectHeight, PlayerRectWidth,
                      PlayerRectHeight};
     return rec;
 }
 static void DrawPlayer(Player player) {
-    Rectangle rec = GetPlayerRec(player);
+    Rectangle rec = GetPlayerRec(player.position);
     DrawRectangleRec(rec, RED);
 }
 static void UpdatePlayer(Player* player, float delta_time, Rectangle* obstacles) {
@@ -59,26 +59,47 @@ static void UpdatePlayer(Player* player, float delta_time, Rectangle* obstacles)
     } else if (IsKeyDown(KEY_RIGHT)) {
         dx = PlayerSpeedX;
     }
-    player->position.x += dx * delta_time;
+    dx *= delta_time;
 
     if (IsKeyDown(KEY_SPACE) && player->can_jump) {
         player->can_jump = false;
         player->dy = -PlayerSpeedY;
     }
 
-    if (!player->can_jump) {
-        player->position.y += player->dy * delta_time;
-        player->dy += Gravity * delta_time;
-    }
+    float dy = player->dy * delta_time;
 
-    Rectangle player_rec = GetPlayerRec(*player);
+    Vector2 new_pos = {player->position.x + dx, player->position.y + dy};
+    Rectangle new_player_rec = GetPlayerRec(new_pos);
     for (size_t i = 0; i < arrlen(obstacles); ++i) {
-        if (CheckCollisionRecs(player_rec, obstacles[i])) {
-            player->dy = 0;
-            player->position.y = obstacles->y - HalfPlayerRectHeight;
-            player->can_jump = true;
+        Rectangle obstacle = obstacles[i];
+        if (CheckCollisionRecs(new_player_rec, obstacle)) {
+            if (player->position.x - HalfPlayerRectWidth >= obstacle.x &&
+                player->position.x - HalfPlayerRectWidth + dx <= obstacle.x) {
+                player->position.x = obstacle.x + HalfPlayerRectWidth;
+                dx = 0.0f;
+            } else if (player->position.x + HalfPlayerRectWidth <= obstacle.x &&
+                       player->position.x + HalfPlayerRectWidth + dx >= obstacle.x) {
+                // TODO: Might need to factor in obstacle rect width.
+                player->position.x = obstacle.x - HalfPlayerRectWidth;
+                dx = 0.0f;
+            }
+
+            if (player->position.y - HalfPlayerRectHeight >= obstacle.y + obstacle.height &&
+                player->position.y - HalfPlayerRectHeight + dy <= obstacle.y + obstacle.height) {
+                player->position.y = obstacle.y + obstacle.height + HalfPlayerRectHeight;
+                dy = 0.0f;
+            } else if (player->position.y + HalfPlayerRectHeight <= obstacle.y &&
+                       player->position.y + HalfPlayerRectHeight + dy >= obstacle.y) {
+                player->position.y = obstacle.y - HalfPlayerRectHeight;
+                player->can_jump = true;
+                dy = 0.0f;
+            }
         }
     }
+
+    player->position.x += dx;
+    player->position.y += dy;
+    player->dy += Gravity * delta_time;
 }
 
 //------------------------------------------------------------------------------------
@@ -90,9 +111,16 @@ int main(void) {
 
     Player player = {{PlayerOriginX, PlayerOriginY}, 0, true};
     Rectangle* obstacles = NULL;
-    // Background
+
+    // Environment.
     Rectangle background = {0, ScreenHeight - BackgrounHeight, ScreenWidth, BackgrounHeight};
+    Rectangle left_wall = {0, 0, 1, ScreenHeight};
+    Rectangle right_wall = {ScreenWidth, 0, 1, ScreenHeight};
+    Rectangle test_block = {ScreenWidth / 2, ScreenHeight * 0.75, ScreenWidth, 50};
     arrpush(obstacles, background);
+    arrpush(obstacles, left_wall);
+    arrpush(obstacles, right_wall);
+    arrpush(obstacles, test_block);
 
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
