@@ -36,7 +36,7 @@ static int BallRadius = 10;
 
 typedef struct Ball {
     Vector2 pos;
-    float speed;
+    Vector2 velocity;
 } Ball;
 
 static void DrawPlayerPaddle(Vector2 paddle_pos) {
@@ -61,9 +61,23 @@ static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_t
         player->paddle_pos.y + HalfPaddleHeight > ScreenHeight ? ScreenHeight - HalfPaddleHeight : player->paddle_pos.y;
 }
 
-static void Update(Player* player1, Player* player2, Ball* ball, float delta_time) {
+static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time) {
+    // Debug. just to be able to speed up or slow down ball on the fly.
+    if (IsKeyDown(KEY_ONE)) {
+        ball->velocity = Vector2Scale(ball->velocity, 1.1);
+    }
+    if (IsKeyDown(KEY_TWO)) {
+        ball->velocity = Vector2Scale(ball->velocity, 0.9);
+    }
+
+    ball->pos.x += ball->velocity.x * delta_time;
+    ball->pos.y += ball->velocity.y * delta_time;
+}
+
+static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time) {
     UpdatePlayer(player1, KEY_W, KEY_S, delta_time);
     UpdatePlayer(player2, KEY_UP, KEY_DOWN, delta_time);
+    UpdateBall(ball, *player1, *player2, delta_time);
 }
 
 //------------------------------------------------------------------------------------
@@ -75,7 +89,7 @@ int main(void) {
     Player player1 = {{(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth, ScreenHeight / 2.0f}};
     Player player2 = {{(ScreenWidth / 2.0f) + HalfDistanceBetweenPlayers, ScreenHeight / 2.0f}};
 
-    Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f}, 0.0f};
+    Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f}, {GetRandomValue(2, 10), GetRandomValue(2, 10)}};
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
