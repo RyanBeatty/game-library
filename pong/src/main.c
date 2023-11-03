@@ -89,11 +89,63 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
         ball->velocity = Vector2Scale(ball->velocity, 0.9);
     }
 
+    Vector2 new_velocity = ball->velocity;
+
     Vector2 new_pos = ball->pos;
     new_pos.x += ball->velocity.x * delta_time;
     new_pos.y += ball->velocity.y * delta_time;
 
+    Wall* collided_wall = NULL;
+    for (size_t i = 0; i < arrlen(walls); ++i) {
+        Rectangle wall_rect = WallGetRect(walls[i]);
+        if (CheckCollisionCircleRec(new_pos, BallRadius, wall_rect)) {
+            collided_wall = &walls[i];
+            break;
+        }
+    }
+
+    if (collided_wall) {
+        // Vector2* side_hit = NULL;
+        // for (size_t i = 0; i < 4; ++i) {
+        //     Vector2 collision_point;
+        //     if (CheckCollisionLines(ball->pos, new_pos, collided_wall->points[i], collided_wall->points[(i + 1) % 4],
+        //                             &collision_point)) {
+        //         TraceLog(LOG_INFO, "hitttttt");
+        //         break;
+        //     }
+        // }
+
+        float thickness = BallRadius + WALL_THICKNESS;
+        new_pos.x = Clamp(new_pos.x, thickness, ScreenWidth - thickness);
+        new_pos.y = Clamp(new_pos.y, thickness, ScreenHeight - thickness);
+
+        bool collision_top = new_pos.y + BallRadius <= collided_wall->points[0].y;
+        bool collision_right = new_pos.x + BallRadius >= collided_wall->points[2].x;
+        bool collision_bottom = new_pos.y + BallRadius >= collided_wall->points[2].y;
+        bool collision_left = new_pos.x + BallRadius <= collided_wall->points[0].x;
+
+        Vector2 points[2];
+        if (collision_top) {
+            points[0] = collided_wall->points[0];
+            points[1] = collided_wall->points[1];
+        } else if (collision_right) {
+            points[0] = collided_wall->points[1];
+            points[1] = collided_wall->points[2];
+        } else if (collision_bottom) {
+            points[0] = collided_wall->points[2];
+            points[1] = collided_wall->points[3];
+        } else if (collision_left) {
+            points[0] = collided_wall->points[3];
+            points[1] = collided_wall->points[0];
+        }
+        Vector2 normal = Vector2Subtract(points[1], points[0]);
+        normal = (Vector2){-normal.y, normal.x};
+        normal = Vector2Normalize(normal);
+        new_velocity = Vector2Reflect(new_velocity, normal);
+    }
+
     ball->pos = new_pos;
+    ball->velocity = new_velocity;
 }
 
 static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time, Wall* walls) {
