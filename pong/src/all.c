@@ -8,6 +8,16 @@
 #include "stb_ds.h"
 // Comment to prevent autolinting
 
+#define Assert(expr)        \
+    {                       \
+        if (!(expr)) {      \
+            breakpoint();   \
+            assert((expr)); \
+        }                   \
+    }
+
+void __attribute__((noinline)) breakpoint() {}
+
 ///////////////////////////////////////////////
 // Project files below
 #include "main.c"

@@ -29,6 +29,11 @@ static const int PaddleHeight = 50;
 #define HalfPaddleHeight (PaddleHeight / 2.0f)
 #define PlayerDy (ScreenHeight * 0.20f)
 
+typedef struct Wall {
+    // top left, top right, bottom right, bottom left.
+    Vector2 points[4];
+} Wall;
+
 typedef struct Player {
     Vector2 paddle_pos;
 
@@ -41,6 +46,11 @@ typedef struct Ball {
     Vector2 velocity;
 } Ball;
 
+static Rectangle WallGetRect(Wall wall) {
+    return (Rectangle){wall.points[0].x, wall.points[0].y, wall.points[1].x - wall.points[0].x,
+                       wall.points[3].y - wall.points[0].y};
+}
+
 static void DrawPlayerPaddle(Vector2 paddle_pos) {
     // TODO: Double check the displacement math here.
     DrawRectangle(paddle_pos.x, paddle_pos.y - HalfPaddleHeight, PaddleWidth, PaddleHeight, BLACK);
@@ -48,9 +58,10 @@ static void DrawPlayerPaddle(Vector2 paddle_pos) {
 
 static void DrawBall(Vector2 pos) { DrawCircleV(pos, BallRadius, BLACK); }
 
-static void DrawWalls(Rectangle* walls) {
+static void DrawWalls(Wall* walls) {
     for (size_t i = 0; i < arrlen(walls); ++i) {
-        DrawRectangleRec(walls[i], GRAY);
+        Rectangle rect = WallGetRect(walls[i]);
+        DrawRectangleRec(rect, GRAY);
     }
 }
 
@@ -69,8 +80,7 @@ static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_t
         player->paddle_pos.y + HalfPaddleHeight > ScreenHeight ? ScreenHeight - HalfPaddleHeight : player->paddle_pos.y;
 }
 
-static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time,
-                       Rectangle* walls) {
+static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time, Wall* walls) {
     // Debug. just to be able to speed up or slow down ball on the fly.
     if (IsKeyDown(KEY_ONE)) {
         ball->velocity = Vector2Scale(ball->velocity, 1.1);
@@ -86,7 +96,7 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
     ball->pos = new_pos;
 }
 
-static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time, Rectangle* walls) {
+static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time, Wall* walls) {
     UpdatePlayer(player1, KEY_W, KEY_S, delta_time);
     UpdatePlayer(player2, KEY_UP, KEY_DOWN, delta_time);
     UpdateBall(ball, *player1, *player2, delta_time, walls);
@@ -105,11 +115,19 @@ int main(void) {
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
-    Rectangle* walls = NULL;
-    arrpush(walls, ((Rectangle){0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}));
-    arrpush(walls, ((Rectangle){0.0f, 0.0f, WALL_THICKNESS, ScreenHeight}));
-    arrpush(walls, ((Rectangle){0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS}));
-    arrpush(walls, ((Rectangle){ScreenWidth - WALL_THICKNESS, 0.0f, WALL_THICKNESS, ScreenHeight}));
+    Wall* walls = NULL;
+    arrpush(walls,
+            ((Wall){{{0.0f, 0.0f}, {ScreenWidth, 0.0f}, {ScreenWidth, WALL_THICKNESS}, {0.0f, WALL_THICKNESS}}}));
+    arrpush(walls,
+            ((Wall){{{0.0f, 0.0f}, {WALL_THICKNESS, 0.0f}, {WALL_THICKNESS, ScreenHeight}, {0.0f, ScreenHeight}}}));
+    arrpush(walls, ((Wall){{{0.0f, ScreenHeight - WALL_THICKNESS},
+                            {ScreenWidth, ScreenHeight - WALL_THICKNESS},
+                            {ScreenWidth, ScreenHeight},
+                            {0.0f, ScreenHeight}}}));
+    arrpush(walls, ((Wall){{{ScreenWidth - WALL_THICKNESS, 0.0f},
+                            {ScreenWidth, 0.0f},
+                            {ScreenWidth, ScreenHeight},
+                            {ScreenWidth - WALL_THICKNESS, ScreenHeight}}}));
 
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //---------------------------------------------------------------------------------------
