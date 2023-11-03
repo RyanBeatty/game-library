@@ -22,6 +22,8 @@ static const int ScreenHeight = 450;
 #define DistanceBetweenPlayers (ScreenWidth * 0.70f)
 #define HalfDistanceBetweenPlayers (DistanceBetweenPlayers / 2.0f)
 
+#define WALL_THICKNESS (10.0f)
+
 static const int PaddleWidth = 20;
 static const int PaddleHeight = 50;
 #define HalfPaddleHeight (PaddleHeight / 2.0f)
@@ -46,6 +48,12 @@ static void DrawPlayerPaddle(Vector2 paddle_pos) {
 
 static void DrawBall(Vector2 pos) { DrawCircleV(pos, BallRadius, BLACK); }
 
+static void DrawWalls(Rectangle* walls) {
+    for (size_t i = 0; i < arrlen(walls); ++i) {
+        DrawRectangleRec(walls[i], GRAY);
+    }
+}
+
 static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_time) {
     float dy = 0.0f;
     if (IsKeyDown(key_up)) {
@@ -61,7 +69,8 @@ static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_t
         player->paddle_pos.y + HalfPaddleHeight > ScreenHeight ? ScreenHeight - HalfPaddleHeight : player->paddle_pos.y;
 }
 
-static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time) {
+static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time,
+                       Rectangle* walls) {
     // Debug. just to be able to speed up or slow down ball on the fly.
     if (IsKeyDown(KEY_ONE)) {
         ball->velocity = Vector2Scale(ball->velocity, 1.1);
@@ -70,14 +79,17 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
         ball->velocity = Vector2Scale(ball->velocity, 0.9);
     }
 
-    ball->pos.x += ball->velocity.x * delta_time;
-    ball->pos.y += ball->velocity.y * delta_time;
+    Vector2 new_pos = ball->pos;
+    new_pos.x += ball->velocity.x * delta_time;
+    new_pos.y += ball->velocity.y * delta_time;
+
+    ball->pos = new_pos;
 }
 
-static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time) {
+static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time, Rectangle* walls) {
     UpdatePlayer(player1, KEY_W, KEY_S, delta_time);
     UpdatePlayer(player2, KEY_UP, KEY_DOWN, delta_time);
-    UpdateBall(ball, *player1, *player2, delta_time);
+    UpdateBall(ball, *player1, *player2, delta_time, walls);
 }
 
 //------------------------------------------------------------------------------------
@@ -93,6 +105,12 @@ int main(void) {
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
+    Rectangle* walls = NULL;
+    arrpush(walls, ((Rectangle){0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}));
+    arrpush(walls, ((Rectangle){0.0f, 0.0f, WALL_THICKNESS, ScreenHeight}));
+    arrpush(walls, ((Rectangle){0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS}));
+    arrpush(walls, ((Rectangle){ScreenWidth - WALL_THICKNESS, 0.0f, WALL_THICKNESS, ScreenHeight}));
+
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //---------------------------------------------------------------------------------------
 
@@ -102,7 +120,7 @@ int main(void) {
         //----------------------------------------------------------------------------------
         float delta_time = GetFrameTime();
 
-        Update(&player1, &player2, &ball, delta_time);
+        Update(&player1, &player2, &ball, delta_time, walls);
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -114,6 +132,7 @@ int main(void) {
         DrawPlayerPaddle(player1.paddle_pos);
         DrawPlayerPaddle(player2.paddle_pos);
         DrawBall(ball.pos);
+        DrawWalls(walls);
 
         EndDrawing();
         //----------------------------------------------------------------------------------
