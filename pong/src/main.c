@@ -105,16 +105,6 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
     }
 
     if (collided_wall) {
-        // Vector2* side_hit = NULL;
-        // for (size_t i = 0; i < 4; ++i) {
-        //     Vector2 collision_point;
-        //     if (CheckCollisionLines(ball->pos, new_pos, collided_wall->points[i], collided_wall->points[(i + 1) % 4],
-        //                             &collision_point)) {
-        //         TraceLog(LOG_INFO, "hitttttt");
-        //         break;
-        //     }
-        // }
-
         float thickness = BallRadius + WALL_THICKNESS;
         new_pos.x = Clamp(new_pos.x, thickness, ScreenWidth - thickness);
         new_pos.y = Clamp(new_pos.y, thickness, ScreenHeight - thickness);
