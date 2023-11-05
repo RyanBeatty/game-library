@@ -30,9 +30,15 @@ static const int PaddleHeight = 50;
 #define PlayerDy (ScreenHeight * 0.20f)
 
 typedef struct Wall {
-    // top left, top right, bottom right, bottom left.
-    Vector2 points[4];
+    Rectangle rect;
 } Wall;
+
+static Vector2 WallTopLeft(Wall wall) { return (Vector2){wall.rect.x, wall.rect.y}; }
+static Vector2 WallTopRight(Wall wall) { return (Vector2){wall.rect.x + wall.rect.width, wall.rect.y}; }
+static Vector2 WallBottomRight(Wall wall) {
+    return (Vector2){wall.rect.x + wall.rect.width, wall.rect.y + wall.rect.height};
+}
+static Vector2 WallBottomLeft(Wall wall) { return (Vector2){wall.rect.x, wall.rect.y + wall.rect.height}; }
 
 typedef struct Player {
     Vector2 paddle_pos;
@@ -46,11 +52,6 @@ typedef struct Ball {
     Vector2 velocity;
 } Ball;
 
-static Rectangle WallGetRect(Wall wall) {
-    return (Rectangle){wall.points[0].x, wall.points[0].y, wall.points[1].x - wall.points[0].x,
-                       wall.points[3].y - wall.points[0].y};
-}
-
 static void DrawPlayerPaddle(Vector2 paddle_pos) {
     // TODO: Double check the displacement math here.
     DrawRectangle(paddle_pos.x, paddle_pos.y - HalfPaddleHeight, PaddleWidth, PaddleHeight, BLACK);
@@ -60,8 +61,7 @@ static void DrawBall(Vector2 pos) { DrawCircleV(pos, BallRadius, BLACK); }
 
 static void DrawWalls(Wall* walls) {
     for (size_t i = 0; i < arrlen(walls); ++i) {
-        Rectangle rect = WallGetRect(walls[i]);
-        DrawRectangleRec(rect, GRAY);
+        DrawRectangleRec(walls[i].rect, GRAY);
     }
 }
 
@@ -97,30 +97,31 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
 
     for (size_t i = 0; i < arrlen(walls); ++i) {
         Wall wall = walls[i];
-        Rectangle wall_rect = WallGetRect(wall);
-        if (CheckCollisionCircleRec(new_pos, BallRadius, wall_rect)) {
+        if (CheckCollisionCircleRec(new_pos, BallRadius, wall.rect)) {
             float thickness = BallRadius + WALL_THICKNESS;
             new_pos.x = Clamp(new_pos.x, thickness, ScreenWidth - thickness);
             new_pos.y = Clamp(new_pos.y, thickness, ScreenHeight - thickness);
 
-            bool collision_top = new_pos.y + BallRadius <= wall.points[0].y;
-            bool collision_right = new_pos.x + BallRadius >= wall.points[2].x;
-            bool collision_bottom = new_pos.y + BallRadius >= wall.points[2].y;
-            bool collision_left = new_pos.x + BallRadius <= wall.points[0].x;
+            Vector2 wall_top_left = WallTopLeft(wall);
+            Vector2 wall_bottom_right = WallBottomRight(wall);
+            bool collision_top = new_pos.y + BallRadius <= wall_top_left.y;
+            bool collision_right = new_pos.x + BallRadius >= wall_bottom_right.x;
+            bool collision_bottom = new_pos.y + BallRadius >= wall_bottom_right.y;
+            bool collision_left = new_pos.x + BallRadius <= wall_top_left.x;
 
             Vector2 points[2];
             if (collision_top) {
-                points[0] = wall.points[0];
-                points[1] = wall.points[1];
+                points[0] = wall_top_left;
+                points[1] = WallTopRight(wall);
             } else if (collision_right) {
-                points[0] = wall.points[1];
-                points[1] = wall.points[2];
+                points[0] = WallTopRight(wall);
+                points[1] = wall_bottom_right;
             } else if (collision_bottom) {
-                points[0] = wall.points[2];
-                points[1] = wall.points[3];
+                points[0] = wall_bottom_right;
+                points[1] = WallBottomLeft(wall);
             } else if (collision_left) {
-                points[0] = wall.points[3];
-                points[1] = wall.points[0];
+                points[0] = WallBottomLeft(wall);
+                points[1] = wall_top_left;
             }
             Vector2 normal = Vector2Subtract(points[1], points[0]);
             normal = (Vector2){-normal.y, normal.x};
@@ -154,18 +155,10 @@ int main(void) {
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
     Wall* walls = NULL;
-    arrpush(walls,
-            ((Wall){{{0.0f, 0.0f}, {ScreenWidth, 0.0f}, {ScreenWidth, WALL_THICKNESS}, {0.0f, WALL_THICKNESS}}}));
-    arrpush(walls,
-            ((Wall){{{0.0f, 0.0f}, {WALL_THICKNESS, 0.0f}, {WALL_THICKNESS, ScreenHeight}, {0.0f, ScreenHeight}}}));
-    arrpush(walls, ((Wall){{{0.0f, ScreenHeight - WALL_THICKNESS},
-                            {ScreenWidth, ScreenHeight - WALL_THICKNESS},
-                            {ScreenWidth, ScreenHeight},
-                            {0.0f, ScreenHeight}}}));
-    arrpush(walls, ((Wall){{{ScreenWidth - WALL_THICKNESS, 0.0f},
-                            {ScreenWidth, 0.0f},
-                            {ScreenWidth, ScreenHeight},
-                            {ScreenWidth - WALL_THICKNESS, ScreenHeight}}}));
+    arrpush(walls, ((Wall){{0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}}));
+    arrpush(walls, ((Wall){{0.0f, 0.0f, WALL_THICKNESS, ScreenHeight}}));
+    arrpush(walls, ((Wall){{0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS}}));
+    arrpush(walls, ((Wall){{ScreenWidth - WALL_THICKNESS, 0.0f, WALL_THICKNESS, ScreenHeight}}));
 
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //---------------------------------------------------------------------------------------
