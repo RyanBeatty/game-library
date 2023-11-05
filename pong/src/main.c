@@ -11,7 +11,7 @@
  *
  ********************************************************************************************/
 
-#include <stdlib.h>
+#include <stdint.h>
 
 #include "raylib.h"
 #include "raymath.h"
@@ -29,8 +29,18 @@ static const int PaddleHeight = 50;
 #define HalfPaddleHeight (PaddleHeight / 2.0f)
 #define PlayerDy (ScreenHeight * 0.20f)
 
+typedef enum WallHittableSides {
+    WHS_NONE = 0,
+    WHS_TOP = 1,
+    WHS_RIGHT = 1 << 1,
+    WHS_BOTTOM = 1 << 2,
+    WHS_LEFT = 1 << 3,
+    WHS_ALL = (WHS_TOP | WHS_RIGHT | WHS_BOTTOM | WHS_LEFT),
+} WallHittableSides;
+
 typedef struct Wall {
     Rectangle rect;
+    uint32_t hittable_sides_flag;
 } Wall;
 
 static Vector2 WallTopLeft(Wall wall) { return (Vector2){wall.rect.x, wall.rect.y}; }
@@ -104,10 +114,12 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
 
             Vector2 wall_top_left = WallTopLeft(wall);
             Vector2 wall_bottom_right = WallBottomRight(wall);
-            bool collision_top = new_pos.y + BallRadius <= wall_top_left.y;
-            bool collision_right = new_pos.x + BallRadius >= wall_bottom_right.x;
-            bool collision_bottom = new_pos.y + BallRadius >= wall_bottom_right.y;
-            bool collision_left = new_pos.x + BallRadius <= wall_top_left.x;
+            bool collision_top = (wall.hittable_sides_flag && WHS_TOP) && (new_pos.y + BallRadius <= wall_top_left.y);
+            bool collision_right =
+                (wall.hittable_sides_flag && WHS_RIGHT) && (new_pos.x + BallRadius >= wall_bottom_right.x);
+            bool collision_bottom =
+                (wall.hittable_sides_flag && WHS_BOTTOM) && (new_pos.y + BallRadius >= wall_bottom_right.y);
+            bool collision_left = (wall.hittable_sides_flag && WHS_LEFT) && (new_pos.x + BallRadius <= wall_top_left.x);
 
             Vector2 points[2];
             if (collision_top) {
@@ -155,10 +167,10 @@ int main(void) {
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
     Wall* walls = NULL;
-    arrpush(walls, ((Wall){{0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}}));
-    arrpush(walls, ((Wall){{0.0f, 0.0f, WALL_THICKNESS, ScreenHeight}}));
-    arrpush(walls, ((Wall){{0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS}}));
-    arrpush(walls, ((Wall){{ScreenWidth - WALL_THICKNESS, 0.0f, WALL_THICKNESS, ScreenHeight}}));
+    arrpush(walls, ((Wall){{0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}, WHS_ALL}));
+    arrpush(walls, ((Wall){{0.0f, 0.0f, WALL_THICKNESS, ScreenHeight}, WHS_ALL}));
+    arrpush(walls, ((Wall){{0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS}, WHS_ALL}));
+    arrpush(walls, ((Wall){{ScreenWidth - WALL_THICKNESS, 0.0f, WALL_THICKNESS, ScreenHeight}, WHS_ALL}));
 
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //---------------------------------------------------------------------------------------
