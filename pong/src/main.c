@@ -16,15 +16,15 @@
 #include "raylib.h"
 #include "raymath.h"
 
-static const int ScreenWidth = 800;
-static const int ScreenHeight = 450;
+static const int ScreenWidth = 600;
+static const int ScreenHeight = 400;
 
 #define DistanceBetweenPlayers (ScreenWidth * 0.70f)
 #define HalfDistanceBetweenPlayers (DistanceBetweenPlayers / 2.0f)
 
 #define WALL_THICKNESS (10.0f)
 
-static const int PaddleWidth = 20;
+static const int PaddleWidth = 10;
 static const int PaddleHeight = 50;
 #define HalfPaddleHeight (PaddleHeight / 2.0f)
 #define PlayerDy (ScreenHeight * 0.20f)
@@ -40,6 +40,7 @@ typedef enum WallHittableSides {
 
 typedef struct Wall {
     Rectangle rect;
+    Vector2 prev_pos;
     uint32_t hittable_sides_flag;
 } Wall;
 
@@ -54,7 +55,7 @@ typedef struct Player {
     Wall paddle;
 } Player;
 
-static int BallRadius = 10;
+static int BallRadius = 5;
 
 typedef struct Ball {
     Vector2 pos;
@@ -78,10 +79,17 @@ static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_t
         dy += PlayerDy;
     }
 
-    player->paddle.rect.y += dy * delta_time;
-    player->paddle.rect.y = player->paddle.rect.y - HalfPaddleHeight < 0 ? HalfPaddleHeight : player->paddle.rect.y;
-    player->paddle.rect.y = player->paddle.rect.y + HalfPaddleHeight > ScreenHeight ? ScreenHeight - HalfPaddleHeight
-                                                                                    : player->paddle.rect.y;
+    Vector2 new_pos;
+    new_pos.y = player->paddle.rect.y + (dy * delta_time);
+    new_pos.y = new_pos.y < WALL_THICKNESS ? WALL_THICKNESS : new_pos.y;
+    new_pos.y = new_pos.y + PaddleHeight > ScreenHeight - WALL_THICKNESS ? ScreenHeight - PaddleHeight - WALL_THICKNESS
+                                                                         : new_pos.y;
+    new_pos.x = player->paddle.rect.x;
+
+    player->paddle.prev_pos.x = player->paddle.rect.x;
+    player->paddle.prev_pos.y = player->paddle.rect.y;
+    player->paddle.rect.x = new_pos.x;
+    player->paddle.rect.y = new_pos.y;
 }
 
 static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time, Wall* walls) {
@@ -156,23 +164,27 @@ int main(void) {
     // Initialization
     //--------------------------------------------------------------------------------------
 
-    Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f}, {GetRandomValue(2, 10), GetRandomValue(2, 10)}};
+    Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f},
+                 {10.0f, 0.0f}};  //{GetRandomValue(2, 10), GetRandomValue(2, 10)}};
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
     Wall* walls = NULL;
-    Wall p1_paddle = {{(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth,
-                       (ScreenHeight / 2.0f) - HalfPaddleHeight, PaddleWidth, PaddleHeight},
-                      WHS_RIGHT};
+    Wall p1_paddle = {
+        {(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth, (ScreenHeight / 2.0f) - HalfPaddleHeight,
+         PaddleWidth, PaddleHeight},
+        {(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth, (ScreenHeight / 2.0f) - HalfPaddleHeight},
+        WHS_RIGHT};
     arrpush(walls, p1_paddle);
     Wall p2_paddle = {{(ScreenWidth / 2.0f) + HalfDistanceBetweenPlayers, (ScreenHeight / 2.0f) - HalfPaddleHeight,
                        PaddleWidth, PaddleHeight},
+                      {(ScreenWidth / 2.0f) + HalfDistanceBetweenPlayers, (ScreenHeight / 2.0f) - HalfPaddleHeight},
                       WHS_LEFT};
     arrpush(walls, p2_paddle);
-    arrpush(walls, ((Wall){{0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}, WHS_ALL}));
-    arrpush(walls, ((Wall){{0.0f, 0.0f, WALL_THICKNESS, ScreenHeight}, WHS_ALL}));
-    arrpush(walls, ((Wall){{0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS}, WHS_ALL}));
-    arrpush(walls, ((Wall){{ScreenWidth - WALL_THICKNESS, 0.0f, WALL_THICKNESS, ScreenHeight}, WHS_ALL}));
+    arrpush(walls, ((Wall){{0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}, {0.0f, 0.0f}, WHS_ALL}));
+    arrpush(walls, ((Wall){{0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS},
+                           {0.0f, ScreenHeight - WALL_THICKNESS},
+                           WHS_ALL}));
 
     Player player1 = {p1_paddle};
     Player player2 = {p2_paddle};
