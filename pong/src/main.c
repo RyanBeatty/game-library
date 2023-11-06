@@ -51,8 +51,7 @@ static Vector2 WallBottomRight(Wall wall) {
 static Vector2 WallBottomLeft(Wall wall) { return (Vector2){wall.rect.x, wall.rect.y + wall.rect.height}; }
 
 typedef struct Player {
-    Vector2 paddle_pos;
-
+    Wall paddle;
 } Player;
 
 static int BallRadius = 10;
@@ -61,11 +60,6 @@ typedef struct Ball {
     Vector2 pos;
     Vector2 velocity;
 } Ball;
-
-static void DrawPlayerPaddle(Vector2 paddle_pos) {
-    // TODO: Double check the displacement math here.
-    DrawRectangle(paddle_pos.x, paddle_pos.y - HalfPaddleHeight, PaddleWidth, PaddleHeight, BLACK);
-}
 
 static void DrawBall(Vector2 pos) { DrawCircleV(pos, BallRadius, BLACK); }
 
@@ -84,10 +78,10 @@ static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_t
         dy += PlayerDy;
     }
 
-    player->paddle_pos.y += dy * delta_time;
-    player->paddle_pos.y = player->paddle_pos.y - HalfPaddleHeight < 0 ? HalfPaddleHeight : player->paddle_pos.y;
-    player->paddle_pos.y =
-        player->paddle_pos.y + HalfPaddleHeight > ScreenHeight ? ScreenHeight - HalfPaddleHeight : player->paddle_pos.y;
+    player->paddle.rect.y += dy * delta_time;
+    player->paddle.rect.y = player->paddle.rect.y - HalfPaddleHeight < 0 ? HalfPaddleHeight : player->paddle.rect.y;
+    player->paddle.rect.y = player->paddle.rect.y + HalfPaddleHeight > ScreenHeight ? ScreenHeight - HalfPaddleHeight
+                                                                                    : player->paddle.rect.y;
 }
 
 static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time, Wall* walls) {
@@ -150,6 +144,8 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
 static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time, Wall* walls) {
     UpdatePlayer(player1, KEY_W, KEY_S, delta_time);
     UpdatePlayer(player2, KEY_UP, KEY_DOWN, delta_time);
+    walls[0] = player1->paddle;
+    walls[1] = player2->paddle;
     UpdateBall(ball, *player1, *player2, delta_time, walls);
 }
 
@@ -159,18 +155,27 @@ static void Update(Player* player1, Player* player2, Ball* ball, const float del
 int main(void) {
     // Initialization
     //--------------------------------------------------------------------------------------
-    Player player1 = {{(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth, ScreenHeight / 2.0f}};
-    Player player2 = {{(ScreenWidth / 2.0f) + HalfDistanceBetweenPlayers, ScreenHeight / 2.0f}};
 
     Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f}, {GetRandomValue(2, 10), GetRandomValue(2, 10)}};
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
     Wall* walls = NULL;
+    Wall p1_paddle = {{(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth,
+                       (ScreenHeight / 2.0f) - HalfPaddleHeight, PaddleWidth, PaddleHeight},
+                      WHS_RIGHT};
+    arrpush(walls, p1_paddle);
+    Wall p2_paddle = {{(ScreenWidth / 2.0f) + HalfDistanceBetweenPlayers, (ScreenHeight / 2.0f) - HalfPaddleHeight,
+                       PaddleWidth, PaddleHeight},
+                      WHS_LEFT};
+    arrpush(walls, p2_paddle);
     arrpush(walls, ((Wall){{0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}, WHS_ALL}));
     arrpush(walls, ((Wall){{0.0f, 0.0f, WALL_THICKNESS, ScreenHeight}, WHS_ALL}));
     arrpush(walls, ((Wall){{0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS}, WHS_ALL}));
     arrpush(walls, ((Wall){{ScreenWidth - WALL_THICKNESS, 0.0f, WALL_THICKNESS, ScreenHeight}, WHS_ALL}));
+
+    Player player1 = {p1_paddle};
+    Player player2 = {p2_paddle};
 
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //---------------------------------------------------------------------------------------
@@ -189,9 +194,6 @@ int main(void) {
 
         ClearBackground(RAYWHITE);
 
-        // DrawText("move ball with mouse and click mouse button to change color", 10, 10, 20, DARKGRAY);
-        DrawPlayerPaddle(player1.paddle_pos);
-        DrawPlayerPaddle(player2.paddle_pos);
         DrawBall(ball.pos);
         DrawWalls(walls);
 
