@@ -29,6 +29,9 @@ static const int PaddleHeight = 50;
 #define HalfPaddleHeight (PaddleHeight / 2.0f)
 #define PlayerDy (ScreenHeight * 0.20f)
 
+#define Vec2To3(vec) ((Vector3){vec.x, vec.y, 0.0f})
+#define Vec3To2(vec) ((Vector2){vec.x, vec.y})
+
 typedef enum WallHittableSides {
     WHS_NONE = 0,
     WHS_TOP = 1,
@@ -40,7 +43,7 @@ typedef enum WallHittableSides {
 
 typedef struct Wall {
     Rectangle rect;
-    Vector2 prev_pos;
+    Vector2 velocity;
     uint32_t hittable_sides_flag;
 } Wall;
 
@@ -71,25 +74,21 @@ static void DrawWalls(Wall* walls) {
 }
 
 static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_time) {
-    float dy = 0.0f;
+    Vector2 velocity = {0.0f, 0.0f};
     if (IsKeyDown(key_up)) {
-        dy += -PlayerDy;
+        velocity.y += -PlayerDy * delta_time;
     }
     if (IsKeyDown(key_down)) {
-        dy += PlayerDy;
+        velocity.y += PlayerDy * delta_time;
     }
 
-    Vector2 new_pos;
-    new_pos.y = player->paddle.rect.y + (dy * delta_time);
-    new_pos.y = new_pos.y < WALL_THICKNESS ? WALL_THICKNESS : new_pos.y;
-    new_pos.y = new_pos.y + PaddleHeight > ScreenHeight - WALL_THICKNESS ? ScreenHeight - PaddleHeight - WALL_THICKNESS
-                                                                         : new_pos.y;
-    new_pos.x = player->paddle.rect.x;
-
-    player->paddle.prev_pos.x = player->paddle.rect.x;
-    player->paddle.prev_pos.y = player->paddle.rect.y;
-    player->paddle.rect.x = new_pos.x;
-    player->paddle.rect.y = new_pos.y;
+    player->paddle.velocity = velocity;
+    player->paddle.rect.y += velocity.y;
+    // Bounds checking for playable space.
+    player->paddle.rect.y = player->paddle.rect.y < WALL_THICKNESS ? WALL_THICKNESS : player->paddle.rect.y;
+    player->paddle.rect.y = player->paddle.rect.y + PaddleHeight > ScreenHeight - WALL_THICKNESS
+                                ? ScreenHeight - PaddleHeight - WALL_THICKNESS
+                                : player->paddle.rect.y;
 }
 
 static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time, Wall* walls) {
@@ -101,50 +100,65 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
         ball->velocity = Vector2Scale(ball->velocity, 0.9);
     }
 
+    Vector2 ball_radius = {BallRadius, 0.0f};
     Vector2 new_velocity = ball->velocity;
-
-    Vector2 new_pos = ball->pos;
-    new_pos.x += ball->velocity.x * delta_time;
-    new_pos.y += ball->velocity.y * delta_time;
+    float angle = Vector2Angle(ball_radius, new_velocity);
+    // Extend ball movement when calculating collisions by the radius of the ball in the direction we moved (angle of
+    // velocity).
+    ball_radius = Vector2Rotate(ball_radius, -(RAD2DEG * angle));
+    Vector2 old_pos = ball->pos;
+    Vector2 new_pos = Vector2Add(old_pos, Vector2Scale(new_velocity, delta_time));
+    Vector2 new_pos_with_radius = Vector2Add(new_pos, ball_radius);
+    breakpoint();
 
     for (size_t i = 0; i < arrlen(walls); ++i) {
         Wall wall = walls[i];
-        if (CheckCollisionCircleRec(new_pos, BallRadius, wall.rect)) {
-            float thickness = BallRadius + WALL_THICKNESS;
-            new_pos.x = Clamp(new_pos.x, thickness, ScreenWidth - thickness);
-            new_pos.y = Clamp(new_pos.y, thickness, ScreenHeight - thickness);
 
-            Vector2 wall_top_left = WallTopLeft(wall);
-            Vector2 wall_bottom_right = WallBottomRight(wall);
-            bool collision_top = (wall.hittable_sides_flag && WHS_TOP) && (new_pos.y + BallRadius <= wall_top_left.y);
-            bool collision_right =
-                (wall.hittable_sides_flag && WHS_RIGHT) && (new_pos.x + BallRadius >= wall_bottom_right.x);
-            bool collision_bottom =
-                (wall.hittable_sides_flag && WHS_BOTTOM) && (new_pos.y + BallRadius >= wall_bottom_right.y);
-            bool collision_left = (wall.hittable_sides_flag && WHS_LEFT) && (new_pos.x + BallRadius <= wall_top_left.x);
-
-            Vector2 points[2];
-            if (collision_top) {
-                points[0] = wall_top_left;
-                points[1] = WallTopRight(wall);
-            } else if (collision_right) {
-                points[0] = WallTopRight(wall);
-                points[1] = wall_bottom_right;
-            } else if (collision_bottom) {
-                points[0] = wall_bottom_right;
-                points[1] = WallBottomLeft(wall);
-            } else if (collision_left) {
-                points[0] = WallBottomLeft(wall);
-                points[1] = wall_top_left;
+        // For each wall, check if we've hit any of the sides.
+        for (size_t j = 0; j < 4; ++j) {
+            uint32_t side_mask = WHS_NONE;
+            Vector2 side_start;
+            Vector2 side_end;
+            if (j == 0) {
+                side_mask = WHS_TOP;
+                side_end = WallTopRight(wall);
+                side_start = WallTopLeft(wall);
+            } else if (j == 1) {
+                side_mask = WHS_RIGHT;
+                side_start = WallTopRight(wall);
+                side_end = WallBottomRight(wall);
+            } else if (j == 2) {
+                side_mask = WHS_BOTTOM;
+                side_start = WallBottomRight(wall);
+                side_end = WallBottomLeft(wall);
+            } else if (j == 3) {
+                side_mask = WHS_LEFT;
+                side_start = WallTopLeft(wall);
+                side_end = WallBottomLeft(wall);
             }
-            Vector2 normal = Vector2Subtract(points[1], points[0]);
-            normal = (Vector2){-normal.y, normal.x};
-            normal = Vector2Normalize(normal);
-            new_velocity = Vector2Reflect(new_velocity, normal);
-            break;
+
+            if (!(wall.hittable_sides_flag && side_mask)) {
+                continue;
+            }
+
+            // if (i == 3 && j == 0 && new_pos.y > 380) {
+            //     breakpoint();
+            // }
+
+            Vector2 collision;
+            if (CheckCollisionLines(old_pos, new_pos_with_radius, side_start, side_end, &collision)) {
+                new_pos = Vector2Add(collision, Vector2Negate(ball_radius));
+                breakpoint();
+                Vector2 normal = Vector2Subtract(side_end, side_start);
+                normal = (Vector2){-normal.y, normal.x};
+                normal = Vector2Normalize(normal);
+                new_velocity = Vector2Reflect(new_velocity, normal);
+                goto ret;
+            }
         }
     }
 
+ret:
     ball->pos = new_pos;
     ball->velocity = new_velocity;
 }
@@ -164,8 +178,9 @@ int main(void) {
     // Initialization
     //--------------------------------------------------------------------------------------
 
-    Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f},
-                 {10.0f, 0.0f}};  //{GetRandomValue(2, 10), GetRandomValue(2, 10)}};
+    // Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f},
+    //              {10.0f, 50.0f}};  //{GetRandomValue(2, 10), GetRandomValue(2, 10)}};
+    Ball ball = {{ScreenWidth / 2.0f, ScreenHeight - WALL_THICKNESS - 10}, {0, 10}};
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
