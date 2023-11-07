@@ -12,6 +12,7 @@
  ********************************************************************************************/
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "raylib.h"
 #include "raymath.h"
@@ -31,6 +32,11 @@ static const int PaddleHeight = 50;
 
 #define Vec2To3(vec) ((Vector3){vec.x, vec.y, 0.0f})
 #define Vec3To2(vec) ((Vector2){vec.x, vec.y})
+
+typedef struct Score {
+    // First point entry means nothing.
+    uint32_t points[3];
+} Score;
 
 typedef enum WallHittableSides {
     WHS_NONE = 0,
@@ -73,6 +79,27 @@ static void DrawWalls(Wall* walls) {
     }
 }
 
+static void DrawScore(Score score) {
+    char p1_txt[100];
+    sprintf(p1_txt, "%d", score.points[1]);
+    DrawText(p1_txt, (ScreenWidth / 2.0) - 100, ScreenHeight * 0.15, 50, GRAY);
+
+    char p2_txt[100];
+    sprintf(p2_txt, "%d", score.points[2]);
+    DrawText(p2_txt, (ScreenWidth / 2.0) + 50, ScreenHeight * 0.15, 50, GRAY);
+}
+
+static void Draw(Ball ball, Wall* walls, Score score) {
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+
+    DrawBall(ball.pos);
+    DrawWalls(walls);
+    DrawScore(score);
+
+    EndDrawing();
+}
+
 static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_time) {
     Vector2 velocity = {0.0f, 0.0f};
     if (IsKeyDown(key_up)) {
@@ -91,7 +118,9 @@ static void UpdatePlayer(Player* player, int key_up, int key_down, float delta_t
                                 : player->paddle.rect.y;
 }
 
-static void UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time, Wall* walls) {
+static uint32_t UpdateBall(Ball* ball, const Player player1, const Player player2, const float delta_time,
+                           Wall* walls) {
+    uint32_t scored = 0;
     // Debug. just to be able to speed up or slow down ball on the fly.
     if (IsKeyDown(KEY_ONE)) {
         ball->velocity = Vector2Scale(ball->velocity, 1.1);
@@ -141,14 +170,9 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
                 continue;
             }
 
-            // if (i == 3 && j == 0 && new_pos.y > 380) {
-            //     breakpoint();
-            // }
-
             Vector2 collision;
             if (CheckCollisionLines(old_pos, new_pos_with_radius, side_start, side_end, &collision)) {
                 new_pos = Vector2Add(collision, Vector2Negate(ball_radius));
-                breakpoint();
                 Vector2 normal = Vector2Subtract(side_end, side_start);
                 normal = (Vector2){-normal.y, normal.x};
                 normal = Vector2Normalize(normal);
@@ -158,17 +182,29 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
         }
     }
 
+    if (new_pos.x + BallRadius <= 0.0f) {
+        scored = 1;
+    } else if (new_pos.x - BallRadius >= ScreenWidth) {
+        scored = 2;
+    }
+
 ret:
     ball->pos = new_pos;
     ball->velocity = new_velocity;
+    return scored;
 }
 
-static void Update(Player* player1, Player* player2, Ball* ball, const float delta_time, Wall* walls) {
+static void UpdateScore(Score* score, uint32_t scored) { ++score->points[scored]; }
+
+static uint32_t Update(Player* player1, Player* player2, Ball* ball, const float delta_time, Wall* walls,
+                       Score* score) {
     UpdatePlayer(player1, KEY_W, KEY_S, delta_time);
     UpdatePlayer(player2, KEY_UP, KEY_DOWN, delta_time);
     walls[0] = player1->paddle;
     walls[1] = player2->paddle;
-    UpdateBall(ball, *player1, *player2, delta_time, walls);
+    uint32_t scored = UpdateBall(ball, *player1, *player2, delta_time, walls);
+    UpdateScore(score, scored);
+    return scored;
 }
 
 //------------------------------------------------------------------------------------
@@ -178,9 +214,11 @@ int main(void) {
     // Initialization
     //--------------------------------------------------------------------------------------
 
+    Score score = {{0, 0, 0}};
+
     // Ball ball = {{ScreenWidth / 2.0f, ScreenHeight / 2.0f},
     //              {10.0f, 50.0f}};  //{GetRandomValue(2, 10), GetRandomValue(2, 10)}};
-    Ball ball = {{ScreenWidth / 2.0f, ScreenHeight - WALL_THICKNESS - 10}, {0, 10}};
+    Ball ball = {{ScreenWidth / 2.0f, WALL_THICKNESS + 20}, {0, -10}};
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
@@ -207,25 +245,15 @@ int main(void) {
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //---------------------------------------------------------------------------------------
 
+    uint32_t scored = 0;
+
     // Main game loop
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         //----------------------------------------------------------------------------------
         float delta_time = GetFrameTime();
-
-        Update(&player1, &player2, &ball, delta_time, walls);
-
-        // Draw
-        //----------------------------------------------------------------------------------
-        BeginDrawing();
-
-        ClearBackground(RAYWHITE);
-
-        DrawBall(ball.pos);
-        DrawWalls(walls);
-
-        EndDrawing();
-        //----------------------------------------------------------------------------------
+        scored = Update(&player1, &player2, &ball, delta_time, walls, &score);
+        Draw(ball, walls, score);
     }
 
     // De-Initialization
