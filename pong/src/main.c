@@ -181,6 +181,7 @@ static void UpdateBall(Ball* ball, const Player player1, const Player player2, c
 
             Vector2 collision;
             if (CheckCollisionLines(old_pos, new_pos_with_radius, side_start, side_end, &collision)) {
+                breakpoint();
                 new_pos = Vector2Add(collision, Vector2Negate(ball_radius));
                 Vector2 normal = Vector2Subtract(side_end, side_start);
                 normal = (Vector2){-normal.y, normal.x};
@@ -214,18 +215,12 @@ static void Update(Player* player1, Player* player2, Ball* ball, const float del
     UpdateScore(score, ball->scored);
 }
 
-//------------------------------------------------------------------------------------
-// Program main entry point
-//------------------------------------------------------------------------------------
 int main(void) {
-    // Initialization
-    //--------------------------------------------------------------------------------------
-
     Score score = {{0, 0, 0}};
 
     Ball ball;
     BallInit(&ball);
-    ball.velocity = (Vector2){10, 10};
+    // ball.velocity = (Vector2){10, 0};
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
@@ -234,12 +229,12 @@ int main(void) {
         {(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth, (ScreenHeight / 2.0f) - HalfPaddleHeight,
          PaddleWidth, PaddleHeight},
         {(ScreenWidth / 2.0f) - HalfDistanceBetweenPlayers - PaddleWidth, (ScreenHeight / 2.0f) - HalfPaddleHeight},
-        WHS_RIGHT};
+        WHS_ALL};
     arrpush(walls, p1_paddle);
     Wall p2_paddle = {{(ScreenWidth / 2.0f) + HalfDistanceBetweenPlayers, (ScreenHeight / 2.0f) - HalfPaddleHeight,
                        PaddleWidth, PaddleHeight},
                       {(ScreenWidth / 2.0f) + HalfDistanceBetweenPlayers, (ScreenHeight / 2.0f) - HalfPaddleHeight},
-                      WHS_LEFT};
+                      WHS_ALL};
     arrpush(walls, p2_paddle);
     arrpush(walls, ((Wall){{0.0f, 0.0f, ScreenWidth, WALL_THICKNESS}, {0.0f, 0.0f}, WHS_ALL}));
     arrpush(walls, ((Wall){{0.0f, ScreenHeight - WALL_THICKNESS, ScreenWidth, WALL_THICKNESS},
@@ -250,18 +245,14 @@ int main(void) {
     Player player2 = {p2_paddle};
 
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
-    //---------------------------------------------------------------------------------------
 
-    // Main game loop
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
-        //----------------------------------------------------------------------------------
         float delta_time = GetFrameTime();
         Update(&player1, &player2, &ball, delta_time, walls, &score);
         Draw(ball, walls, score);
     }
 
-    // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();  // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
