@@ -37,14 +37,36 @@ static void DrawPaddle(Paddle paddle) {
     DrawRectangleRec(rect, GRAY);
 };
 
-static void Draw(Paddle paddle) {
+static const float BallRadius = 5.0f;
+
+typedef struct Ball {
+    Vector2 pos;
+    Vector2 speed;
+    bool is_served;
+} Ball;
+
+static void DrawBall(Ball ball) { DrawCircleV(ball.pos, BallRadius, BLACK); }
+
+static void Draw(Paddle paddle, Ball ball) {
     BeginDrawing();
 
     ClearBackground(RAYWHITE);
 
     DrawPaddle(paddle);
+    DrawBall(ball);
 
     EndDrawing();
+}
+
+static void UpdateBall(Ball* ball, Vector2 paddle_pos) {
+    Vector2 new_pos = ball->pos;
+    if (!ball->is_served) {
+        new_pos = paddle_pos;
+        new_pos.x += (PaddleWidth / 2.0f);
+        new_pos.y -= BallRadius;
+    }
+
+    ball->pos = new_pos;
 }
 
 static void UpdatePaddle(Paddle* paddle) {
@@ -64,11 +86,15 @@ static void UpdatePaddle(Paddle* paddle) {
     paddle->pos = new_pos;
 }
 
-static void Update(float delta_time, Paddle* paddle) { UpdatePaddle(paddle); }
+static void Update(float delta_time, Paddle* paddle, Ball* ball) {
+    UpdatePaddle(paddle);
+    UpdateBall(ball, paddle->pos);
+}
 
 int main(void) {
     Paddle paddle = {.pos = {.x = (ScreenWidth / 2) - (PaddleWidth / 2), .y = ScreenHeight * 0.8},
                      .speed = {0.0f, 0.0f}};
+    Ball ball = {.pos = {100, 10}, {0, 0}, false};
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
@@ -77,8 +103,8 @@ int main(void) {
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         float delta_time = GetFrameTime();
-        Update(delta_time, &paddle);
-        Draw(paddle);
+        Update(delta_time, &paddle, &ball);
+        Draw(paddle, ball);
     }
 
     // De-Initialization
