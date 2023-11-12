@@ -58,15 +58,23 @@ static void Draw(Paddle paddle, Ball ball) {
     EndDrawing();
 }
 
-static void UpdateBall(Ball* ball, Vector2 paddle_pos) {
-    Vector2 new_pos = ball->pos;
+static void UpdateBall(Ball* ball, Vector2 paddle_pos, float delta_time) {
+    Ball new_ball = *ball;
     if (!ball->is_served) {
-        new_pos = paddle_pos;
-        new_pos.x += (PaddleWidth / 2.0f);
-        new_pos.y -= BallRadius;
+        new_ball.pos = paddle_pos;
+        new_ball.pos.x += (PaddleWidth / 2.0f);
+        new_ball.pos.y -= BallRadius;
+        new_ball.speed = (Vector2){.x = 0.0f, .y = 0.0f};
+
+        if (IsKeyDown(KEY_SPACE)) {
+            new_ball.is_served = true;
+            new_ball.speed = (Vector2){.x = 0.0f, .y = -300.0f};
+        }
     }
 
-    ball->pos = new_pos;
+    new_ball.pos = Vector2Add(new_ball.pos, Vector2Scale(new_ball.speed, delta_time));
+
+    *ball = new_ball;
 }
 
 static void UpdatePaddle(Paddle* paddle) {
@@ -88,7 +96,7 @@ static void UpdatePaddle(Paddle* paddle) {
 
 static void Update(float delta_time, Paddle* paddle, Ball* ball) {
     UpdatePaddle(paddle);
-    UpdateBall(ball, paddle->pos);
+    UpdateBall(ball, paddle->pos, delta_time);
 }
 
 int main(void) {
