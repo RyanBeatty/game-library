@@ -20,8 +20,21 @@ static const int ScreenWidth = 800;
 static const int ScreenHeight = 450;
 static const int PaddleWidth = 70;
 static const int PaddleHeight = 10;
+#define PaddleHalfWidth (PaddleWidth / 2.0f)
 
 static float PaddleDx = 5.0f;
+
+static const int BrickWidth = 50;
+static const int BrickHeight = 15;
+
+typedef struct Brick {
+    Vector2 pos;
+    bool is_hit;
+} Brick;
+
+static Rectangle BrickGetRect(Brick brick) {
+    return (Rectangle){.x = brick.pos.x, .y = brick.pos.y, .width = BrickWidth, .height = BrickHeight};
+}
 
 typedef struct Paddle {
     Vector2 pos;
@@ -38,6 +51,7 @@ static void DrawPaddle(Paddle paddle) {
 };
 
 static const float BallRadius = 5.0f;
+static const float BallSpeed = 350.0f;
 
 typedef struct Ball {
     Vector2 pos;
@@ -47,21 +61,30 @@ typedef struct Ball {
 
 static void DrawBall(Ball ball) { DrawCircleV(ball.pos, BallRadius, BLACK); }
 
-static void Draw(Paddle paddle, Ball ball) {
+static void DrawBrick(Brick brick) {
+    if (!brick.is_hit) {
+        DrawRectangleRec(BrickGetRect(brick), BLUE);
+    }
+}
+
+static void Draw(Paddle paddle, Ball ball, Brick* bricks) {
     BeginDrawing();
 
     ClearBackground(RAYWHITE);
 
     DrawPaddle(paddle);
     DrawBall(ball);
+    for (size_t i = 0; i < arrlen(bricks); ++i) {
+        DrawBrick(bricks[i]);
+    }
 
     EndDrawing();
 }
 
-static void UpdateBall(Ball* ball, Vector2 paddle_pos, float delta_time) {
+static void UpdateBall(Ball* ball, Paddle* paddle, float delta_time, Brick* bricks) {
     Ball new_ball = *ball;
     if (!ball->is_served) {
-        new_ball.pos = paddle_pos;
+        new_ball.pos = paddle->pos;
         new_ball.pos.x += (PaddleWidth / 2.0f);
         new_ball.pos.y -= BallRadius;
         new_ball.speed = (Vector2){.x = 0.0f, .y = 0.0f};
@@ -70,10 +93,54 @@ static void UpdateBall(Ball* ball, Vector2 paddle_pos, float delta_time) {
             new_ball.is_served = true;
             new_ball.speed = (Vector2){.x = 0.0f, .y = -300.0f};
         }
+
+        goto ret;
     }
 
     new_ball.pos = Vector2Add(new_ball.pos, Vector2Scale(new_ball.speed, delta_time));
+    {
+        // Check collision with walls.
+        {
+            if (new_ball.pos.x - BallRadius <= 0.0f || new_ball.pos.x + BallRadius >= ScreenWidth) {
+                new_ball.pos.x = Clamp(new_ball.pos.x, BallRadius, ScreenWidth - BallRadius);
+                new_ball.speed.x *= -1;
+            } else if (new_ball.pos.y - BallRadius <= 0.0f || new_ball.pos.y + BallRadius >= ScreenHeight) {
+                new_ball.pos.y = Clamp(new_ball.pos.y, BallRadius, ScreenHeight - BallRadius);
+                new_ball.speed.y *= -1;
+            }
+        }
 
+        // Check collision with Paddle.
+        {
+            if (CheckCollisionCircleRec(new_ball.pos, BallRadius, PaddleGetRect(*paddle))) {
+                new_ball.speed.y *= -1;
+
+                if (new_ball.pos.x < paddle->pos.x + PaddleHalfWidth) {
+                    new_ball.speed.x = -BallSpeed;
+                } else if (new_ball.pos.x > paddle->pos.x + PaddleHalfWidth) {
+                    new_ball.speed.x = BallSpeed;
+                }
+            }
+        }
+
+        // Check collision with Bricks.
+        {
+            for (size_t i = 0; i < arrlen(bricks); ++i) {
+                Brick* brick = &bricks[i];
+                if (!brick->is_hit && CheckCollisionCircleRec(new_ball.pos, BallRadius, BrickGetRect(*brick))) {
+                    brick->is_hit = true;
+
+                    if (new_ball.pos.y - BallRadius <= brick->pos.y + BrickHeight) {
+                        new_ball.speed.x *= -1;
+                    }
+
+                    goto ret;
+                }
+            }
+        }
+    }
+
+ret:
     *ball = new_ball;
 }
 
@@ -94,15 +161,18 @@ static void UpdatePaddle(Paddle* paddle) {
     paddle->pos = new_pos;
 }
 
-static void Update(float delta_time, Paddle* paddle, Ball* ball) {
+static void Update(float delta_time, Paddle* paddle, Ball* ball, Brick* bricks) {
     UpdatePaddle(paddle);
-    UpdateBall(ball, paddle->pos, delta_time);
+    UpdateBall(ball, paddle, delta_time, bricks);
 }
 
 int main(void) {
     Paddle paddle = {.pos = {.x = (ScreenWidth / 2) - (PaddleWidth / 2), .y = ScreenHeight * 0.8},
                      .speed = {0.0f, 0.0f}};
     Ball ball = {.pos = {100, 10}, {0, 0}, false};
+
+    Brick* bricks = NULL;
+    arrpush(bricks, ((Brick){{ScreenWidth / 2, ScreenHeight / 2}, false}));
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
@@ -111,8 +181,8 @@ int main(void) {
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
         float delta_time = GetFrameTime();
-        Update(delta_time, &paddle, &ball);
-        Draw(paddle, ball);
+        Update(delta_time, &paddle, &ball, bricks);
+        Draw(paddle, ball, bricks);
     }
 
     // De-Initialization
