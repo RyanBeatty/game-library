@@ -120,6 +120,8 @@ static void UpdateBall(Ball* ball, Paddle* paddle, float delta_time, Brick* bric
                 } else if (new_ball.pos.x > paddle->pos.x + PaddleHalfWidth) {
                     new_ball.speed.x = BallSpeed;
                 }
+
+                goto ret;
             }
         }
 
@@ -130,8 +132,32 @@ static void UpdateBall(Ball* ball, Paddle* paddle, float delta_time, Brick* bric
                 if (!brick->is_hit && CheckCollisionCircleRec(new_ball.pos, BallRadius, BrickGetRect(*brick))) {
                     brick->is_hit = true;
 
-                    if (new_ball.pos.y - BallRadius <= brick->pos.y + BrickHeight) {
+                    if ((new_ball.pos.y - BallRadius <= brick->pos.y + BrickHeight) &&
+                        (new_ball.pos.y - BallRadius > brick->pos.y + BrickHeight + new_ball.speed.y) &&
+                        (new_ball.speed.y < 0)) {
+                        // Hit Bottom.
+                        new_ball.speed.y *= -1;
+                        TraceLog(LOG_INFO, "BOTTOM");
+                    } else if ((new_ball.pos.y + BallRadius >= brick->pos.y) &&
+                               (new_ball.pos.y + BallRadius < brick->pos.y + new_ball.speed.y) &&
+                               (new_ball.speed.y > 0)) {
+                        // Hit Top.
+                        new_ball.speed.y *= -1;
+                        TraceLog(LOG_INFO, "TOP");
+                    } else if ((new_ball.pos.x + BallRadius >= brick->pos.x) &&
+                               (new_ball.pos.x + BallRadius < brick->pos.x + new_ball.speed.x) &&
+                               (new_ball.speed.x > 0)) {
+                        // Hit Left.
                         new_ball.speed.x *= -1;
+                        TraceLog(LOG_INFO, "LEFT");
+                    } else if ((new_ball.pos.x - BallRadius <= brick->pos.x + BrickWidth) &&
+                               (new_ball.pos.x - BallRadius > brick->pos.x + BrickWidth + new_ball.speed.x) &&
+                               (new_ball.speed.x < 0)) {
+                        // Hit Right.
+                        new_ball.speed.x *= -1;
+                        TraceLog(LOG_INFO, "RIGHT");
+                    } else {
+                        TraceLog(LOG_INFO, "UNKNOWN");
                     }
 
                     goto ret;
@@ -172,7 +198,11 @@ int main(void) {
     Ball ball = {.pos = {100, 10}, {0, 0}, false};
 
     Brick* bricks = NULL;
-    arrpush(bricks, ((Brick){{ScreenWidth / 2, ScreenHeight / 2}, false}));
+    for (size_t i = 0; i < 5; ++i) {
+        for (size_t j = 0; j < 5; ++j) {
+            arrpush(bricks, ((Brick){{i * 150, j * 50}, false}));
+        }
+    }
 
     InitWindow(ScreenWidth, ScreenHeight, "raylib [core] example - mouse input");
 
