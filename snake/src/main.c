@@ -104,6 +104,7 @@ static void Draw(Grid grid) {
     ClearBackground(RAYWHITE);
     DrawGameGrid(grid);
 
+    DrawFPS(10, 10);
     EndDrawing();
 }
 
