@@ -42,13 +42,35 @@ typedef struct Grid {
     Cell cells[GridNumRows * GridNumCols];
 } Grid;
 
-static void GridInit(Grid* grid, const Snake snake) {
+typedef struct Food {
+    size_t location;
+} Food;
+
+static void FoodInit(Food* food, const Snake snake) {
+    size_t location;
+    bool done = true;
+    do {
+        location = GetRandomValue(0, GridNumCells - 1);
+        for (size_t i = 0; i < snake.size; ++i) {
+            if (snake.body[i] == location) {
+                done = false;
+                break;
+            }
+        }
+    } while (!done);
+
+    food->location = location;
+}
+
+static void GridInit(Grid* grid, const Snake snake, const Food food) {
     memset(grid->cells, CELL_EMPTY, GridNumCells * sizeof(Cell));
 
     for (size_t i = 0; i < snake.size; ++i) {
         size_t body = snake.body[i];
         grid->cells[body] = CELL_SNAKE;
     }
+
+    grid->cells[food.location] = CELL_FOOD;
 }
 
 static void DrawGameGrid(Grid grid) {
@@ -61,6 +83,8 @@ static void DrawGameGrid(Grid grid) {
                 color = WHITE;
             } else if (cell == CELL_SNAKE) {
                 color = RED;
+            } else if (cell == CELL_FOOD) {
+                color = GREEN;
             }
             // color = c % 2 == 0 ? BLACK : RED;
             DrawRectangle(j * CellSizePixels, i * CellSizePixels, CellSizePixels, CellSizePixels, color);
@@ -98,11 +122,11 @@ static void UpdateSnake(Snake* snake, Grid* grid) {
     snake->body[0] += snake->direction;
 }
 
-static void UpdateGrid(Grid* grid, const Snake* snake) { GridInit(grid, *snake); }
+static void UpdateGrid(Grid* grid, const Snake* snake, const Food* food) { GridInit(grid, *snake, *food); }
 
-static void Update(float delta_time, Snake* snake, Grid* grid) {
+static void Update(float delta_time, Snake* snake, Grid* grid, Food* food) {
     UpdateSnake(snake, grid);
-    UpdateGrid(grid, snake);
+    UpdateGrid(grid, snake, food);
 }
 
 int main(void) {
@@ -111,14 +135,17 @@ int main(void) {
     Snake snake;
     SnakeInit(&snake);
 
+    Food food;
+    FoodInit(&food, snake);
+
     Grid grid;
-    GridInit(&grid, snake);
+    GridInit(&grid, snake, food);
 
     SetTargetFPS(10);
 
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
-        Update(delta_time, &snake, &grid);
+        Update(delta_time, &snake, &grid, &food);
         Draw(grid);
     }
 
