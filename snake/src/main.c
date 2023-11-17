@@ -10,6 +10,11 @@
 #define ScreenWidth (GridNumCols * CellSizePixels)
 #define ScreenHeight (GridNumRows * CellSizePixels)
 
+#define MoveUp (-GridNumCols)
+#define MoveDown (GridNumCols)
+#define MoveLeft (-1)
+#define MoveRight (1)
+
 typedef enum Cell {
     CELL_EMPTY = 0,
     CELL_SNAKE = 1,
@@ -21,14 +26,16 @@ typedef enum Cell {
 typedef struct Snake {
     size_t body[GridNumRows * GridNumCols];
     size_t size;
+    size_t direction;
 } Snake;
 
 static void SnakeInit(Snake* snake) {
-    memset(snake->body, 0, GridNumRows * GridNumCols);
+    memset(snake->body, 0, GridNumCells * sizeof(size_t));
     size_t start = (GridNumCells / 2) + (GridNumCols / 2);
     snake->body[0] = start;
     snake->body[1] = start + 1;
     snake->size = 2;
+    snake->direction = MoveUp;
 }
 
 typedef struct Grid {
@@ -36,7 +43,7 @@ typedef struct Grid {
 } Grid;
 
 static void GridInit(Grid* grid, const Snake snake) {
-    memset(grid->cells, CELL_EMPTY, GridNumRows * GridNumCols);
+    memset(grid->cells, CELL_EMPTY, GridNumCells * sizeof(Cell));
 
     for (size_t i = 0; i < snake.size; ++i) {
         size_t body = snake.body[i];
@@ -74,7 +81,29 @@ static void Draw(Grid grid) {
     EndDrawing();
 }
 
-static void Update(float delta_time) {}
+static void UpdateSnake(Snake* snake, Grid* grid) {
+    if (IsKeyDown(KEY_UP) && (snake->direction != MoveDown)) {
+        snake->direction = MoveUp;
+    } else if (IsKeyDown(KEY_DOWN) && (snake->direction != MoveUp)) {
+        snake->direction = MoveDown;
+    } else if (IsKeyDown(KEY_LEFT) && (snake->direction != MoveRight)) {
+        snake->direction = MoveLeft;
+    } else if (IsKeyDown(KEY_RIGHT) && (snake->direction != MoveLeft)) {
+        snake->direction = MoveRight;
+    }
+
+    for (size_t i = snake->size - 1; i > 0; --i) {
+        snake->body[i] = snake->body[i - 1];
+    }
+    snake->body[0] += snake->direction;
+}
+
+static void UpdateGrid(Grid* grid, const Snake* snake) { GridInit(grid, *snake); }
+
+static void Update(float delta_time, Snake* snake, Grid* grid) {
+    UpdateSnake(snake, grid);
+    UpdateGrid(grid, snake);
+}
 
 int main(void) {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
@@ -85,11 +114,11 @@ int main(void) {
     Grid grid;
     GridInit(&grid, snake);
 
-    SetTargetFPS(60);
+    SetTargetFPS(10);
 
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
-        Update(delta_time);
+        Update(delta_time, &snake, &grid);
         Draw(grid);
     }
 
