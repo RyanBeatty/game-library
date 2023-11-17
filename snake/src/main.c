@@ -44,6 +44,7 @@ typedef struct Grid {
 
 typedef struct Food {
     size_t location;
+    size_t is_spawned;
 } Food;
 
 static void FoodInit(Food* food, const Snake snake) {
@@ -60,6 +61,7 @@ static void FoodInit(Food* food, const Snake snake) {
     } while (!done);
 
     food->location = location;
+    food->is_spawned = true;
 }
 
 static void GridInit(Grid* grid, const Snake snake, const Food food) {
@@ -105,7 +107,7 @@ static void Draw(Grid grid) {
     EndDrawing();
 }
 
-static void UpdateSnake(Snake* snake, Grid* grid) {
+static void UpdateSnake(Snake* snake, Grid* grid, Food* food) {
     if (IsKeyDown(KEY_UP) && (snake->direction != MoveDown)) {
         snake->direction = MoveUp;
     } else if (IsKeyDown(KEY_DOWN) && (snake->direction != MoveUp)) {
@@ -120,12 +122,23 @@ static void UpdateSnake(Snake* snake, Grid* grid) {
         snake->body[i] = snake->body[i - 1];
     }
     snake->body[0] += snake->direction;
+
+    if (snake->body[0] == food->location) {
+        food->is_spawned = false;
+    }
+}
+
+static void UpdateFood(Food* food, Snake* snake) {
+    if (!food->is_spawned) {
+        FoodInit(food, *snake);
+    }
 }
 
 static void UpdateGrid(Grid* grid, const Snake* snake, const Food* food) { GridInit(grid, *snake, *food); }
 
 static void Update(float delta_time, Snake* snake, Grid* grid, Food* food) {
-    UpdateSnake(snake, grid);
+    UpdateSnake(snake, grid, food);
+    UpdateFood(food, snake);
     UpdateGrid(grid, snake, food);
 }
 
