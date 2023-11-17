@@ -118,6 +118,8 @@ static void UpdateSnake(Snake* snake, Grid* grid, Food* food) {
         snake->direction = MoveRight;
     }
 
+    size_t old_tail = snake->body[snake->size - 1];
+
     for (size_t i = snake->size - 1; i > 0; --i) {
         snake->body[i] = snake->body[i - 1];
     }
@@ -125,6 +127,8 @@ static void UpdateSnake(Snake* snake, Grid* grid, Food* food) {
 
     if (snake->body[0] == food->location) {
         food->is_spawned = false;
+        snake->body[snake->size] = old_tail;
+        ++snake->size;
     }
 }
 
