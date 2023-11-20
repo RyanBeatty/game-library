@@ -3,6 +3,10 @@
 #include "raylib.h"
 #include "raymath.h"
 
+Sound eat_apple_sound;
+Sound game_start_sound;
+Sound hit_sound;
+
 #define GridNumRows (50)
 #define GridNumCols (50)
 #define GridNumCells (GridNumRows * GridNumCols)
@@ -108,7 +112,7 @@ static void Draw(Grid grid, bool game_over) {
     } else {
         DrawGameGrid(grid);
     }
-    DrawFPS(10, 10);
+    // DrawFPS(10, 10);
     EndDrawing();
 }
 
@@ -163,6 +167,7 @@ static void UpdateSnake(Snake* snake, Grid* grid, Food* food, bool* game_over) {
         food->is_spawned = false;
         snake->body[snake->size] = old_tail;
         ++snake->size;
+        PlaySound(eat_apple_sound);
     }
 }
 
@@ -181,16 +186,28 @@ static void Update(float delta_time, Snake* snake, Grid* grid, Food* food, bool*
             SnakeInit(snake);
             FoodInit(food, *snake);
             GridInit(grid, *snake, *food);
+            PlaySound(game_start_sound);
         }
     } else {
         UpdateSnake(snake, grid, food, game_over);
         UpdateFood(food, snake);
         UpdateGrid(grid, snake, food);
+        if (*game_over == true) {
+            PlaySound(hit_sound);
+        }
     }
 }
 
 int main(void) {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
+    InitAudioDevice();
+
+    eat_apple_sound = LoadSound("eat_apply.wav");
+    assert(eat_apple_sound.stream.buffer != 0);
+    game_start_sound = LoadSound("game_start.wav");
+    assert(game_start_sound.stream.buffer != 0);
+    hit_sound = LoadSound("hit.wav");
+    assert(hit_sound.stream.buffer != 0);
 
     bool game_over = true;
 
@@ -212,6 +229,10 @@ int main(void) {
     }
 
     CloseWindow();
+    UnloadSound(eat_apple_sound);
+    UnloadSound(game_start_sound);
+    UnloadSound(hit_sound);
+    CloseAudioDevice();
 
     return 0;
 }
