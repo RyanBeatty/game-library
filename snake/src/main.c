@@ -35,7 +35,7 @@ static void SnakeInit(Snake* snake) {
     snake->body[0] = start;
     snake->body[1] = start + 1;
     snake->size = 2;
-    snake->direction = MoveUp;
+    snake->direction = MoveLeft;
 }
 
 typedef struct Grid {
@@ -98,17 +98,21 @@ static void DrawGameGrid(Grid grid) {
     }
 }
 
-static void Draw(Grid grid) {
+static void Draw(Grid grid, bool game_over) {
     BeginDrawing();
 
     ClearBackground(RAYWHITE);
-    DrawGameGrid(grid);
-
+    if (game_over) {
+        ClearBackground(BLACK);
+        DrawText("Press Space to Start", (ScreenWidth / 2) - 150, ScreenHeight / 2, 25, WHITE);
+    } else {
+        DrawGameGrid(grid);
+    }
     DrawFPS(10, 10);
     EndDrawing();
 }
 
-static void UpdateSnake(Snake* snake, Grid* grid, Food* food) {
+static void UpdateSnake(Snake* snake, Grid* grid, Food* food, bool* game_over) {
     if (IsKeyDown(KEY_UP) && (snake->direction != MoveDown)) {
         snake->direction = MoveUp;
     } else if (IsKeyDown(KEY_DOWN) && (snake->direction != MoveUp)) {
@@ -126,10 +130,22 @@ static void UpdateSnake(Snake* snake, Grid* grid, Food* food) {
     }
     snake->body[0] += snake->direction;
 
-    if (snake->body[0] == food->location) {
-        food->is_spawned = false;
-        snake->body[snake->size] = old_tail;
-        ++snake->size;
+    bool hit_self = false;
+    for (size_t i = 1; i < snake->size; ++i) {
+        if (snake->body[i] == snake->body[0]) {
+            hit_self = true;
+            break;
+        }
+    }
+
+    if (hit_self) {
+        *game_over = true;
+    } else {
+        if (snake->body[0] == food->location) {
+            food->is_spawned = false;
+            snake->body[snake->size] = old_tail;
+            ++snake->size;
+        }
     }
 }
 
@@ -141,14 +157,25 @@ static void UpdateFood(Food* food, Snake* snake) {
 
 static void UpdateGrid(Grid* grid, const Snake* snake, const Food* food) { GridInit(grid, *snake, *food); }
 
-static void Update(float delta_time, Snake* snake, Grid* grid, Food* food) {
-    UpdateSnake(snake, grid, food);
-    UpdateFood(food, snake);
-    UpdateGrid(grid, snake, food);
+static void Update(float delta_time, Snake* snake, Grid* grid, Food* food, bool* game_over) {
+    if (*game_over) {
+        if (IsKeyDown(KEY_SPACE)) {
+            *game_over = false;
+            SnakeInit(snake);
+            FoodInit(food, *snake);
+            GridInit(grid, *snake, *food);
+        }
+    } else {
+        UpdateSnake(snake, grid, food, game_over);
+        UpdateFood(food, snake);
+        UpdateGrid(grid, snake, food);
+    }
 }
 
 int main(void) {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
+
+    bool game_over = true;
 
     Snake snake;
     SnakeInit(&snake);
@@ -163,8 +190,8 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
-        Update(delta_time, &snake, &grid, &food);
-        Draw(grid);
+        Update(delta_time, &snake, &grid, &food, &game_over);
+        Draw(grid, game_over);
     }
 
     CloseWindow();
