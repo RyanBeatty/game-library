@@ -220,7 +220,7 @@ int main(void) {
     Grid grid;
     GridInit(&grid, snake, food);
 
-    SetTargetFPS(10);
+    SetTargetFPS(13);
 
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
