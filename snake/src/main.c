@@ -82,11 +82,11 @@ static void DrawGameGrid(Grid grid) {
             Color color = WHITE;
             Cell cell = grid.cells[(i * GridNumRows) + j];
             if (cell == CELL_EMPTY) {
-                color = WHITE;
+                color = BLACK;
             } else if (cell == CELL_SNAKE) {
-                color = RED;
-            } else if (cell == CELL_FOOD) {
                 color = GREEN;
+            } else if (cell == CELL_FOOD) {
+                color = RED;
             }
             // color = c % 2 == 0 ? BLACK : RED;
             DrawRectangle(j * CellSizePixels, i * CellSizePixels, CellSizePixels, CellSizePixels, color);
