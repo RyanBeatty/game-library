@@ -102,7 +102,7 @@ static void DrawGameGrid(Grid grid) {
     }
 }
 
-static void Draw(Grid grid, bool game_over) {
+static void Draw(const Grid grid, const Snake snake, const bool game_over) {
     BeginDrawing();
 
     ClearBackground(RAYWHITE);
@@ -111,6 +111,9 @@ static void Draw(Grid grid, bool game_over) {
         DrawText("Press Space to Start", (ScreenWidth / 2) - 150, ScreenHeight / 2, 25, WHITE);
     } else {
         DrawGameGrid(grid);
+        char text[10];
+        sprintf(text, "%ld", snake.size - 2);
+        DrawText(text, 10, 10, 20, WHITE);
     }
     // DrawFPS(10, 10);
     EndDrawing();
@@ -225,7 +228,7 @@ int main(void) {
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
         Update(delta_time, &snake, &grid, &food, &game_over);
-        Draw(grid, game_over);
+        Draw(grid, snake, game_over);
     }
 
     CloseWindow();
