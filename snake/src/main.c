@@ -123,6 +123,7 @@ static void UpdateSnake(Snake* snake, Grid* grid, Food* food, bool* game_over) {
         snake->direction = MoveRight;
     }
 
+    size_t old_head = snake->body[0];
     size_t old_tail = snake->body[snake->size - 1];
 
     for (size_t i = snake->size - 1; i > 0; --i) {
@@ -130,22 +131,38 @@ static void UpdateSnake(Snake* snake, Grid* grid, Food* food, bool* game_over) {
     }
     snake->body[0] += snake->direction;
 
-    bool hit_self = false;
-    for (size_t i = 1; i < snake->size; ++i) {
-        if (snake->body[i] == snake->body[0]) {
-            hit_self = true;
-            break;
+    size_t cur_head = snake->body[0];
+
+    if (cur_head < 0 || cur_head >= GridNumCells) {
+        *game_over = true;
+        return;
+    }
+
+    for (size_t i = 0; i < GridNumCells; i += GridNumCols) {
+        if (old_head == i && i + MoveLeft == cur_head) {
+            *game_over = true;
+            return;
         }
     }
 
-    if (hit_self) {
-        *game_over = true;
-    } else {
-        if (snake->body[0] == food->location) {
-            food->is_spawned = false;
-            snake->body[snake->size] = old_tail;
-            ++snake->size;
+    for (size_t i = GridNumCols - 1; i < GridNumCells; i += GridNumCols) {
+        if (i == old_head && i + MoveRight == cur_head) {
+            *game_over = true;
+            return;
         }
+    }
+
+    for (size_t i = 1; i < snake->size; ++i) {
+        if (snake->body[i] == cur_head) {
+            *game_over = true;
+            return;
+        }
+    }
+
+    if (snake->body[0] == food->location) {
+        food->is_spawned = false;
+        snake->body[snake->size] = old_tail;
+        ++snake->size;
     }
 }
 
