@@ -56,7 +56,9 @@ static void MovePiece(Vector2 direction) {
         grid[(size_t)pos.x][(size_t)pos.y] = CELL_EMPTY;
     }
 
+    // TODO: Need to make the wall collisions more robust.
     incomming_piece.origin = Vector2Add(incomming_piece.origin, direction);
+    incomming_piece.origin.y = Clamp(incomming_piece.origin.y, 0.0f, GRID_NUM_COLS - 3);
 
     for (size_t i = 0; i < 4; ++i) {
         Vector2 pos = Vector2Add(incomming_piece.origin, incomming_piece.offsets[i]);
@@ -77,11 +79,22 @@ static void GameInit() {
 static void Update(float delta_time) {
     fall_timer -= delta_time;
     bool should_fall = fall_timer <= 0.0f;
-    fall_timer = should_fall ? 1.0f : fall_timer;
 
     if (should_fall) {
+        fall_timer = 1.0f;
         MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
     }
+
+    // TODO: Need to make movement a bit slower. Like need to buildup the lateral speed.
+    Vector2 lateral_movement = (Vector2){.x = 0, .y = 0};
+    if (IsKeyDown(KEY_RIGHT)) {
+        lateral_movement = Vector2Add(lateral_movement, (Vector2){.x = 0.0f, .y = 1.0f});
+    }
+    if (IsKeyDown(KEY_LEFT)) {
+        lateral_movement = Vector2Add(lateral_movement, (Vector2){.x = 0.0f, .y = -1.0f});
+    }
+
+    MovePiece(lateral_movement);
 }
 
 static void GridDraw() {
