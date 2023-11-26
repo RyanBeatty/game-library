@@ -252,13 +252,6 @@ static void Update(float delta_time) {
     incomming_piece_blocked = CheckPieceIsBlocked();
 
     ResolveVerticalMovement(delta_time);
-    // fall_timer -= delta_time;
-    // bool should_fall = fall_timer <= 0.0f;
-
-    // if (should_fall) {
-    //     fall_timer = 1.0f;
-    //     ResolveVerticalMovement();
-    // }
 }
 
 static void GridDraw() {
