@@ -150,9 +150,28 @@ static void MovePiece(Vector2 direction) {
     PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
     GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
 
-    // TODO: Need to make the wall collisions more robust.
     incomming_piece.origin = Vector2Add(incomming_piece.origin, direction);
-    incomming_piece.origin.y = Clamp(incomming_piece.origin.y, 0.0f, GRID_NUM_COLS - 3);
+
+    // Verify we did not collide with something before marking the grid.
+    bool valid = true;
+    for (size_t i = 0; i < 4; ++i) {
+        for (size_t j = 0; j < 4; ++j) {
+            if (!(*mask)[i][j]) {
+                continue;
+            }
+
+            size_t x = incomming_piece.origin.x + i;
+            size_t y = incomming_piece.origin.y + j;
+            if (x < 0 || y < 0 || x >= GRID_NUM_ROWS || y >= GRID_NUM_COLS || grid[x][y]) {
+                valid = false;
+                break;
+            }
+        }
+    }
+
+    if (!valid) {
+        incomming_piece.origin = Vector2Subtract(incomming_piece.origin, direction);
+    }
 
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
 }
