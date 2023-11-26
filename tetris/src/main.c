@@ -9,6 +9,8 @@
 #define CELL_WIDTH (25)
 #define ScreenWidth (GRID_NUM_COLS * CELL_WIDTH)
 #define ScreenHeight (GRID_NUM_ROWS * CELL_WIDTH)
+#define LATERAL_MOVEMEMENT_COOLDOWN_MS_INIT (0.07f)
+#define VERTICAL_MOVEMENT_COOLDOWN_MS_INIT (0.07f)
 
 typedef bool PieceState[4][4];
 
@@ -40,6 +42,8 @@ static Piece incomming_piece;
 static float fall_timer;
 static bool incomming_piece_blocked;
 static bool incomming_piece_active;
+static float lateral_movement_cooldown_ms;
+static float vertical_movement_cooldown_ms;
 
 static PieceState rotation_states[CELL_COUNT][4] = {
     // CELL_EMPTY.
@@ -187,14 +191,27 @@ static bool CheckPieceIsBlocked() {
     return false;
 }
 
-static void ResolveVerticalMovement() {
+static void ResolveVerticalMovement(float delta_time) {
     if (incomming_piece_blocked) {
         incomming_piece_active = false;
     } else {
-        MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
-        // TODO: I don't believe I need this since we always check is blocked after horizontal movement and before
-        // vertical movement.
-        // incomming_piece_blocked = CheckPieceIsBlocked();
+        vertical_movement_cooldown_ms -= delta_time;
+        vertical_movement_cooldown_ms = vertical_movement_cooldown_ms <= 0.0f ? 0.0f : vertical_movement_cooldown_ms;
+
+        bool user_triggered_fall = vertical_movement_cooldown_ms <= 0.0f && IsKeyDown(KEY_SPACE);
+
+        fall_timer -= delta_time;
+        bool should_fall = fall_timer <= 0.0f || user_triggered_fall;
+
+        if (should_fall) {
+            fall_timer = 1.0f;
+            MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
+            vertical_movement_cooldown_ms =
+                user_triggered_fall ? VERTICAL_MOVEMENT_COOLDOWN_MS_INIT : vertical_movement_cooldown_ms;
+            // TODO: I don't believe I need this since we always check is blocked after horizontal movement and before
+            // vertical movement.
+            // incomming_piece_blocked = CheckPieceIsBlocked();
+        }
     }
 }
 
@@ -205,6 +222,8 @@ static void GameInit() {
     fall_timer = 1.0f;
     incomming_piece_blocked = false;
     incomming_piece_active = false;
+    lateral_movement_cooldown_ms = 0.0f;
+    vertical_movement_cooldown_ms = 0.0f;
 
     GridInit();
     SpawnPiece();
@@ -215,25 +234,31 @@ static void Update(float delta_time) {
         SpawnPiece();
     }
 
-    // TODO: Need to make movement a bit slower. Like need to buildup the lateral speed.
-    Vector2 lateral_movement = (Vector2){.x = 0, .y = 0};
-    if (IsKeyDown(KEY_RIGHT)) {
-        lateral_movement = Vector2Add(lateral_movement, (Vector2){.x = 0.0f, .y = 1.0f});
-    }
-    if (IsKeyDown(KEY_LEFT)) {
-        lateral_movement = Vector2Add(lateral_movement, (Vector2){.x = 0.0f, .y = -1.0f});
-    }
+    lateral_movement_cooldown_ms -= delta_time;
+    lateral_movement_cooldown_ms = lateral_movement_cooldown_ms <= 0.0f ? 0.0f : lateral_movement_cooldown_ms;
+    if (lateral_movement_cooldown_ms <= 0.0f) {
+        lateral_movement_cooldown_ms = LATERAL_MOVEMEMENT_COOLDOWN_MS_INIT;
+        // TODO: Need to make movement a bit slower. Like need to buildup the lateral speed.
+        Vector2 lateral_movement = (Vector2){.x = 0, .y = 0};
+        if (IsKeyDown(KEY_RIGHT)) {
+            lateral_movement = Vector2Add(lateral_movement, (Vector2){.x = 0.0f, .y = 1.0f});
+        }
+        if (IsKeyDown(KEY_LEFT)) {
+            lateral_movement = Vector2Add(lateral_movement, (Vector2){.x = 0.0f, .y = -1.0f});
+        }
 
-    MovePiece(lateral_movement);
+        MovePiece(lateral_movement);
+    }
     incomming_piece_blocked = CheckPieceIsBlocked();
 
-    fall_timer -= delta_time;
-    bool should_fall = fall_timer <= 0.0f;
+    ResolveVerticalMovement(delta_time);
+    // fall_timer -= delta_time;
+    // bool should_fall = fall_timer <= 0.0f;
 
-    if (should_fall) {
-        fall_timer = 1.0f;
-        ResolveVerticalMovement();
-    }
+    // if (should_fall) {
+    //     fall_timer = 1.0f;
+    //     ResolveVerticalMovement();
+    // }
 }
 
 static void GridDraw() {
