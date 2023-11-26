@@ -198,7 +198,7 @@ static void ResolveVerticalMovement(float delta_time) {
         vertical_movement_cooldown_ms -= delta_time;
         vertical_movement_cooldown_ms = vertical_movement_cooldown_ms <= 0.0f ? 0.0f : vertical_movement_cooldown_ms;
 
-        bool user_triggered_fall = vertical_movement_cooldown_ms <= 0.0f && IsKeyDown(KEY_SPACE);
+        bool user_triggered_fall = vertical_movement_cooldown_ms <= 0.0f && IsKeyDown(KEY_DOWN);
 
         fall_timer -= delta_time;
         bool should_fall = fall_timer <= 0.0f || user_triggered_fall;
