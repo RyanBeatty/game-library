@@ -39,6 +39,8 @@ typedef struct Piece {
 static Grid grid;
 static Piece incomming_piece;
 static float fall_timer;
+static bool incomming_piece_blocked;
+static bool incomming_piece_active;
 
 static PieceState rotation_states[CELL_COUNT][4] = {
     {},
@@ -98,6 +100,7 @@ static void GridMarkMask(PieceState mask, Vector2 origin, Cell type) {
 }
 
 static void SpawnPiece() {
+    incomming_piece_active = true;
     incomming_piece =
         (Piece){.type = CELL_O, .origin = {0, 5}, .offsets = {{0, 0}, {0, 1}, {1, 1}, {1, 0}}, .rotation_state = 0};
 
@@ -116,23 +119,66 @@ static void MovePiece(Vector2 direction) {
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
 }
 
+static bool CheckPieceIsBlocked() {
+    bool mask[5][4];
+    memset(mask, false, 5 * 4 * sizeof(bool));
+    for (size_t j = 0; j < 4; ++j) {
+        // Mark the top of the collumn as being needed to check. Really this covers if the
+        // incomming piece is an I.
+        mask[4][j] = true;
+        // NOTE: int vs size_t important because size_t is unsigned and will wrap around.
+        for (int i = 3; i >= 0; --i) {
+            if (rotation_states[incomming_piece.type][incomming_piece.rotation_state][i][j]) {
+                break;
+            }
+            mask[i][j] = true;
+            mask[i + 1][j] = false;
+        }
+        // In case there were no part of piece in this column, just wipe the mask for the column.
+        mask[0][j] = false;
+    }
+
+    for (size_t i = 0; i < 5; ++i) {
+        for (size_t j = 0; j < 4; ++j) {
+            size_t x = incomming_piece.origin.x + i;
+            size_t y = incomming_piece.origin.y + j;
+            if (!mask[i][j] || y >= GRID_NUM_COLS) {
+                continue;
+            } else if (x >= GRID_NUM_ROWS || grid[x][y] != CELL_EMPTY) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static void ResolveVerticalMovement() {
+    if (incomming_piece_blocked) {
+        incomming_piece_active = false;
+    } else {
+        MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
+        // TODO: I don't believe I need this since we always check is blocked after horizontal movement and before
+        // vertical movement.
+        // incomming_piece_blocked = CheckPieceIsBlocked();
+    }
+}
+
 static void GameInit() {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
     SetTargetFPS(60);
 
+    fall_timer = 1.0f;
+    incomming_piece_blocked = false;
+    incomming_piece_active = false;
+
     GridInit();
     SpawnPiece();
-
-    fall_timer = 1.0f;
 }
 
 static void Update(float delta_time) {
-    fall_timer -= delta_time;
-    bool should_fall = fall_timer <= 0.0f;
-
-    if (should_fall) {
-        fall_timer = 1.0f;
-        MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
+    if (!incomming_piece_active) {
+        SpawnPiece();
     }
 
     // TODO: Need to make movement a bit slower. Like need to buildup the lateral speed.
@@ -145,6 +191,15 @@ static void Update(float delta_time) {
     }
 
     MovePiece(lateral_movement);
+    incomming_piece_blocked = CheckPieceIsBlocked();
+
+    fall_timer -= delta_time;
+    bool should_fall = fall_timer <= 0.0f;
+
+    if (should_fall) {
+        fall_timer = 1.0f;
+        ResolveVerticalMovement();
+    }
 }
 
 static void GridDraw() {
