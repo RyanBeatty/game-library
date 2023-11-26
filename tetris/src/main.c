@@ -157,7 +157,7 @@ static void MovePiece(Vector2 direction) {
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
 }
 
-static bool CheckPieceIsBlocked() {
+static bool CheckPieceIsBlockedVertical() {
     bool mask[5][4];
     memset(mask, false, 5 * 4 * sizeof(bool));
     for (size_t j = 0; j < 4; ++j) {
@@ -210,7 +210,7 @@ static void ResolveVerticalMovement(float delta_time) {
                 user_triggered_fall ? VERTICAL_MOVEMENT_COOLDOWN_MS_INIT : vertical_movement_cooldown_ms;
             // TODO: I don't believe I need this since we always check is blocked after horizontal movement and before
             // vertical movement.
-            // incomming_piece_blocked = CheckPieceIsBlocked();
+            // incomming_piece_blocked = CheckPieceIsBlockedVertical();
         }
     }
 }
@@ -249,7 +249,7 @@ static void Update(float delta_time) {
 
         MovePiece(lateral_movement);
     }
-    incomming_piece_blocked = CheckPieceIsBlocked();
+    incomming_piece_blocked = CheckPieceIsBlockedVertical();
 
     ResolveVerticalMovement(delta_time);
 }
