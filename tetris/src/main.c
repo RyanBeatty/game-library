@@ -30,7 +30,6 @@ typedef Cell Grid[GRID_NUM_ROWS][GRID_NUM_ROWS];
 typedef struct Piece {
     Cell type;
     Vector2 origin;
-    Vector2 offsets[4];
     size_t rotation_state;
 } Piece;
 
@@ -43,8 +42,18 @@ static bool incomming_piece_blocked;
 static bool incomming_piece_active;
 
 static PieceState rotation_states[CELL_COUNT][4] = {
+    // CELL_EMPTY.
     {},
-    {},
+    // CELL_I.
+    {{
+         {false, false, false, false},
+         {true, true, true, true},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {},
+     {},
+     {}},
     // CELL_O.
     {{
          {true, true, false, false},
@@ -55,32 +64,57 @@ static PieceState rotation_states[CELL_COUNT][4] = {
      {},
      {},
      {}},
-    {},
-    {},
-    {},
-    {},
-    {},
+    // CELL_T.
+    {{
+         {false, true, false, false},
+         {true, true, true, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {},
+     {},
+     {}},
+    // CELL_S.
+    {{
+         {false, true, true, false},
+         {true, true, false, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {},
+     {},
+     {}},
+    // CELL_Z.
+    {{
+         {true, true, false, false},
+         {false, true, true, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {},
+     {},
+     {}},
+    // CELL_J.
+    {{
+         {true, false, false, false},
+         {true, true, true, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {},
+     {},
+     {}},
+    // CELL_L.
+    {{
+         {false, false, true, false},
+         {true, true, true, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {},
+     {},
+     {}},
 };
-
-// static PieceState vertical_blocking_states[CELL_COUNT][4] = {
-//     {},
-//     {},
-//     // CELL_O.
-//     {{
-//          {false, false, false, false},
-//          {false, false, false, false},
-//          {true, true, false, false},
-//          {true, true, false, false},
-//      },
-//      {},
-//      {},
-//      {}},
-//     {},
-//     {},
-//     {},
-//     {},
-//     {},
-// };
 
 //////////////////////////////////////////////////////////
 
@@ -101,8 +135,8 @@ static void GridMarkMask(PieceState mask, Vector2 origin, Cell type) {
 
 static void SpawnPiece() {
     incomming_piece_active = true;
-    incomming_piece =
-        (Piece){.type = CELL_O, .origin = {0, 5}, .offsets = {{0, 0}, {0, 1}, {1, 1}, {1, 0}}, .rotation_state = 0};
+    Cell type = (Cell)GetRandomValue(CELL_EMPTY + 1, CELL_COUNT - 1);
+    incomming_piece = (Piece){.type = type, .origin = {0, 5}, .rotation_state = 0};
 
     PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
