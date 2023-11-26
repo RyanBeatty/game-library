@@ -10,6 +10,8 @@
 #define ScreenWidth (GRID_NUM_COLS * CELL_WIDTH)
 #define ScreenHeight (GRID_NUM_ROWS * CELL_WIDTH)
 
+typedef bool PieceState[4][4];
+
 typedef enum Cell {
     CELL_EMPTY = 0,
     CELL_I,
@@ -29,41 +31,89 @@ typedef struct Piece {
     Cell type;
     Vector2 origin;
     Vector2 offsets[4];
+    size_t rotation_state;
 } Piece;
 
 //////////////////////////////////////////////////////////
 // Global state.
 static Grid grid;
 static Piece incomming_piece;
-float fall_timer;
+static float fall_timer;
+
+static PieceState rotation_states[CELL_COUNT][4] = {
+    {},
+    {},
+    // CELL_O.
+    {{
+         {true, true, false, false},
+         {true, true, false, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {},
+     {},
+     {}},
+    {},
+    {},
+    {},
+    {},
+    {},
+};
+
+// static PieceState vertical_blocking_states[CELL_COUNT][4] = {
+//     {},
+//     {},
+//     // CELL_O.
+//     {{
+//          {false, false, false, false},
+//          {false, false, false, false},
+//          {true, true, false, false},
+//          {true, true, false, false},
+//      },
+//      {},
+//      {},
+//      {}},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+// };
 
 //////////////////////////////////////////////////////////
 
 static void GridInit() { memset(grid, CELL_EMPTY, GRID_NUM_CELLS * sizeof(Cell)); }
 
-static void SpawnPiece() {
-    incomming_piece = (Piece){.type = CELL_O, .origin = {0, 5}, .offsets = {{0, 0}, {0, 1}, {1, 1}, {1, 0}}};
-
+static void GridMarkMask(PieceState mask, Vector2 origin, Cell type) {
     for (size_t i = 0; i < 4; ++i) {
-        Vector2 pos = Vector2Add(incomming_piece.origin, incomming_piece.offsets[i]);
-        grid[(size_t)pos.x][(size_t)pos.y] = incomming_piece.type;
+        for (size_t j = 0; j < 4; ++j) {
+            if (!mask[i][j]) {
+                continue;
+            }
+            size_t x = origin.x + i;
+            size_t y = origin.y + j;
+            grid[x][y] = type;
+        }
     }
 }
 
+static void SpawnPiece() {
+    incomming_piece =
+        (Piece){.type = CELL_O, .origin = {0, 5}, .offsets = {{0, 0}, {0, 1}, {1, 1}, {1, 0}}, .rotation_state = 0};
+
+    PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+    GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
+}
+
 static void MovePiece(Vector2 direction) {
-    for (size_t i = 0; i < 4; ++i) {
-        Vector2 pos = Vector2Add(incomming_piece.origin, incomming_piece.offsets[i]);
-        grid[(size_t)pos.x][(size_t)pos.y] = CELL_EMPTY;
-    }
+    PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+    GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
 
     // TODO: Need to make the wall collisions more robust.
     incomming_piece.origin = Vector2Add(incomming_piece.origin, direction);
     incomming_piece.origin.y = Clamp(incomming_piece.origin.y, 0.0f, GRID_NUM_COLS - 3);
 
-    for (size_t i = 0; i < 4; ++i) {
-        Vector2 pos = Vector2Add(incomming_piece.origin, incomming_piece.offsets[i]);
-        grid[(size_t)pos.x][(size_t)pos.y] = incomming_piece.type;
-    }
+    GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
 }
 
 static void GameInit() {
