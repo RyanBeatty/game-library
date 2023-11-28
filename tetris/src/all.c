@@ -8,6 +8,8 @@
 #include "stb_ds.h"
 // Comment to prevent autolinting
 
+#include <string.h>
+
 #define Assert(expr)        \
     {                       \
         if (!(expr)) {      \

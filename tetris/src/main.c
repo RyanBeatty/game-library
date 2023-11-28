@@ -248,6 +248,33 @@ static void GameInit() {
     SpawnPiece();
 }
 
+static void GridClearLines() {
+    if (incomming_piece_active) {
+        return;
+    }
+
+    for (int i = GRID_NUM_ROWS - 1; i >= 0; --i) {
+        bool line_clear = true;
+        for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
+            if (grid[i][j] == CELL_EMPTY) {
+                line_clear = false;
+                break;
+            }
+        }
+
+        if (line_clear) {
+            for (int r = i; r > 0; --r) {
+                for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
+                    grid[r][j] = grid[r - 1][j];
+                }
+            }
+            for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
+                grid[0][j] = CELL_EMPTY;
+            }
+        }
+    }
+}
+
 static void Update(float delta_time) {
     if (!incomming_piece_active) {
         SpawnPiece();
@@ -271,6 +298,7 @@ static void Update(float delta_time) {
     incomming_piece_blocked = CheckPieceIsBlockedVertical();
 
     ResolveVerticalMovement(delta_time);
+    GridClearLines();
 }
 
 static void GridDraw() {
