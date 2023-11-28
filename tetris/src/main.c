@@ -180,37 +180,12 @@ static void MovePiece(Vector2 direction) {
 }
 
 static bool CheckPieceIsBlockedVertical() {
-    bool mask[5][4];
-    memset(mask, false, 5 * 4 * sizeof(bool));
-    for (size_t j = 0; j < 4; ++j) {
-        // Mark the top of the collumn as being needed to check. Really this covers if the
-        // incomming piece is an I.
-        mask[4][j] = true;
-        // NOTE: int vs size_t important because size_t is unsigned and will wrap around.
-        for (int i = 3; i >= 0; --i) {
-            if (rotation_states[incomming_piece.type][incomming_piece.rotation_state][i][j]) {
-                break;
-            }
-            mask[i][j] = true;
-            mask[i + 1][j] = false;
-        }
-        // In case there were no part of piece in this column, just wipe the mask for the column.
-        mask[0][j] = false;
-    }
-
-    for (size_t i = 0; i < 5; ++i) {
-        for (size_t j = 0; j < 4; ++j) {
-            size_t x = incomming_piece.origin.x + i;
-            size_t y = incomming_piece.origin.y + j;
-            if (!mask[i][j] || y >= GRID_NUM_COLS) {
-                continue;
-            } else if (x >= GRID_NUM_ROWS || grid[x][y] != CELL_EMPTY) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+    GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
+    Vector2 new_origin = Vector2Add(incomming_piece.origin, (Vector2){.x = 1.0f, .y = 0.0f});
+    bool can_move = GridCheckMaskBlocked(*mask, new_origin);
+    GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
+    return !can_move;
 }
 
 static void ResolveVerticalMovement(float delta_time) {
