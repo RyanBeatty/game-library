@@ -192,16 +192,19 @@ static void ResolveVerticalMovement(float delta_time) {
     vertical_movement_cooldown_ms -= delta_time;
     vertical_movement_cooldown_ms = vertical_movement_cooldown_ms <= 0.0f ? 0.0f : vertical_movement_cooldown_ms;
 
-    bool user_triggered_fall = vertical_movement_cooldown_ms <= 0.0f && IsKeyDown(KEY_DOWN);
+    bool land_block = IsKeyPressed(KEY_SPACE);
+    bool user_triggered_fall = land_block || (vertical_movement_cooldown_ms <= 0.0f && IsKeyDown(KEY_DOWN));
 
     fall_timer -= delta_time;
     bool should_fall = fall_timer <= 0.0f || user_triggered_fall;
 
     if (should_fall) {
         fall_timer = 1.0f;
-        incomming_piece_active = !incomming_piece_blocked;
-        // NOTE: This move could fail if the piece is blocked, thats okay.
-        MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
+        incomming_piece_active = !(incomming_piece_blocked || land_block);
+        for (size_t i = land_block ? GRID_NUM_ROWS : 1; i > 0; --i) {
+            // NOTE: This move could fail if the piece is blocked, thats okay.
+            MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
+        }
         vertical_movement_cooldown_ms =
             user_triggered_fall ? VERTICAL_MOVEMENT_COOLDOWN_MS_INIT : vertical_movement_cooldown_ms;
     }
