@@ -146,31 +146,34 @@ static void SpawnPiece() {
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
 }
 
-static void MovePiece(Vector2 direction) {
-    PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
-    GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
-
-    incomming_piece.origin = Vector2Add(incomming_piece.origin, direction);
-
-    // Verify we did not collide with something before marking the grid.
+static bool GridCheckMaskBlocked(PieceState mask, Vector2 origin) {
     bool valid = true;
     for (size_t i = 0; i < 4; ++i) {
         for (size_t j = 0; j < 4; ++j) {
-            if (!(*mask)[i][j]) {
+            if (!mask[i][j]) {
                 continue;
             }
 
-            size_t x = incomming_piece.origin.x + i;
-            size_t y = incomming_piece.origin.y + j;
+            size_t x = origin.x + i;
+            size_t y = origin.y + j;
             if (x < 0 || y < 0 || x >= GRID_NUM_ROWS || y >= GRID_NUM_COLS || grid[x][y]) {
                 valid = false;
                 break;
             }
         }
     }
+    return valid;
+}
 
-    if (!valid) {
-        incomming_piece.origin = Vector2Subtract(incomming_piece.origin, direction);
+static void MovePiece(Vector2 direction) {
+    PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+    GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
+
+    // Verify we did not collide with something before marking the grid.
+    Vector2 new_origin = Vector2Add(incomming_piece.origin, direction);
+    bool can_move = GridCheckMaskBlocked(*mask, new_origin);
+    if (can_move) {
+        incomming_piece.origin = new_origin;
     }
 
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
