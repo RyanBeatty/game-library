@@ -189,26 +189,23 @@ static bool CheckPieceIsBlockedVertical() {
 }
 
 static void ResolveVerticalMovement(float delta_time) {
-    if (incomming_piece_blocked) {
-        incomming_piece_active = false;
-    } else {
-        vertical_movement_cooldown_ms -= delta_time;
-        vertical_movement_cooldown_ms = vertical_movement_cooldown_ms <= 0.0f ? 0.0f : vertical_movement_cooldown_ms;
+    vertical_movement_cooldown_ms -= delta_time;
+    vertical_movement_cooldown_ms = vertical_movement_cooldown_ms <= 0.0f ? 0.0f : vertical_movement_cooldown_ms;
 
-        bool user_triggered_fall = vertical_movement_cooldown_ms <= 0.0f && IsKeyDown(KEY_DOWN);
+    bool user_triggered_fall = vertical_movement_cooldown_ms <= 0.0f && IsKeyDown(KEY_DOWN);
 
-        fall_timer -= delta_time;
-        bool should_fall = fall_timer <= 0.0f || user_triggered_fall;
+    fall_timer -= delta_time;
+    bool should_fall = fall_timer <= 0.0f || user_triggered_fall;
 
-        if (should_fall) {
-            fall_timer = 1.0f;
+    if (should_fall) {
+        fall_timer = 1.0f;
+        if (incomming_piece_blocked) {
+            incomming_piece_active = false;
+        } else {
             MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
-            vertical_movement_cooldown_ms =
-                user_triggered_fall ? VERTICAL_MOVEMENT_COOLDOWN_MS_INIT : vertical_movement_cooldown_ms;
-            // TODO: I don't believe I need this since we always check is blocked after horizontal movement and before
-            // vertical movement.
-            // incomming_piece_blocked = CheckPieceIsBlockedVertical();
         }
+        vertical_movement_cooldown_ms =
+            user_triggered_fall ? VERTICAL_MOVEMENT_COOLDOWN_MS_INIT : vertical_movement_cooldown_ms;
     }
 }
 
