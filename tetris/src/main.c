@@ -199,11 +199,9 @@ static void ResolveVerticalMovement(float delta_time) {
 
     if (should_fall) {
         fall_timer = 1.0f;
-        if (incomming_piece_blocked) {
-            incomming_piece_active = false;
-        } else {
-            MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
-        }
+        incomming_piece_active = !incomming_piece_blocked;
+        // NOTE: This move could fail if the piece is blocked, thats okay.
+        MovePiece((Vector2){.x = 1.0f, .y = 0.0f});
         vertical_movement_cooldown_ms =
             user_triggered_fall ? VERTICAL_MOVEMENT_COOLDOWN_MS_INIT : vertical_movement_cooldown_ms;
     }
