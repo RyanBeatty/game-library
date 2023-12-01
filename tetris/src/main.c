@@ -75,9 +75,24 @@ static PieceState rotation_states[CELL_COUNT][4] = {
          {false, false, false, false},
          {false, false, false, false},
      },
-     {},
-     {},
-     {}},
+     {
+         {false, true, false, false},
+         {false, true, true, false},
+         {false, true, false, false},
+         {false, false, false, false},
+     },
+     {
+         {false, false, false, false},
+         {true, true, true, false},
+         {false, true, false, false},
+         {false, false, false, false},
+     },
+     {
+         {false, true, false, false},
+         {true, true, false, false},
+         {false, true, false, false},
+         {false, false, false, false},
+     }},
     // CELL_S.
     {{
          {false, true, true, false},
@@ -139,7 +154,8 @@ static void GridMarkMask(PieceState mask, Vector2 origin, Cell type) {
 
 static void SpawnPiece() {
     incomming_piece_active = true;
-    Cell type = (Cell)GetRandomValue(CELL_EMPTY + 1, CELL_COUNT - 1);
+    // Cell type = (Cell)GetRandomValue(CELL_EMPTY + 1, CELL_COUNT - 1);
+    Cell type = CELL_T;
     incomming_piece = (Piece){.type = type, .origin = {0, 5}, .rotation_state = 0};
 
     PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
@@ -176,6 +192,16 @@ static void MovePiece(Vector2 direction) {
         incomming_piece.origin = new_origin;
     }
 
+    GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
+}
+
+static void RotatePiece() {
+    PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+    GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
+
+    // TODO: Check if can perform rotation/wallkicks.
+    incomming_piece.rotation_state = (incomming_piece.rotation_state + 1) % 4;
+    mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
 }
 
@@ -271,6 +297,11 @@ static void Update(float delta_time) {
 
         MovePiece(lateral_movement);
     }
+
+    if (IsKeyPressed(KEY_UP)) {
+        RotatePiece();
+    }
+
     incomming_piece_blocked = CheckPieceIsBlockedVertical();
 
     ResolveVerticalMovement(delta_time);
