@@ -243,12 +243,11 @@ static void GridMarkMask(PieceState mask, Vector2 origin, Cell type) {
 }
 
 static void SpawnPiece() {
-    static Cell type = CELL_I;
+    // static Cell type = CELL_I;
     incomming_piece_active = true;
-    // Cell type = (Cell)GetRandomValue(CELL_EMPTY + 1, CELL_COUNT - 1);
-    // Cell type = CELL_T;
-    ++type;
+    Cell type = (Cell)GetRandomValue(CELL_EMPTY + 1, CELL_COUNT - 1);
     incomming_piece = (Piece){.type = type, .origin = {0, 5}, .rotation_state = 0};
+    // ++type;
 
     PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
@@ -347,7 +346,7 @@ static void GridClearLines() {
         return;
     }
 
-    for (int i = GRID_NUM_ROWS - 1; i >= 0; --i) {
+    for (int i = GRID_NUM_ROWS - 1; i >= 0;) {
         bool line_clear = true;
         for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
             if (grid[i][j] == CELL_EMPTY) {
@@ -356,15 +355,18 @@ static void GridClearLines() {
             }
         }
 
-        if (line_clear) {
-            for (int r = i; r > 0; --r) {
-                for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
-                    grid[r][j] = grid[r - 1][j];
-                }
-            }
+        if (!line_clear) {
+            --i;
+            continue;
+        }
+
+        for (int r = i; r > 0; --r) {
             for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
-                grid[0][j] = CELL_EMPTY;
+                grid[r][j] = grid[r - 1][j];
             }
+        }
+        for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
+            grid[0][j] = CELL_EMPTY;
         }
     }
 }
