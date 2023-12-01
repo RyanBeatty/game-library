@@ -55,9 +55,24 @@ static PieceState rotation_states[CELL_COUNT][4] = {
          {false, false, false, false},
          {false, false, false, false},
      },
-     {},
-     {},
-     {}},
+     {
+         {false, false, true, false},
+         {false, false, true, false},
+         {false, false, true, false},
+         {false, false, true, false},
+     },
+     {
+         {false, false, false, false},
+         {false, false, false, false},
+         {true, true, true, true},
+         {false, false, false, false},
+     },
+     {
+         {false, true, false, false},
+         {false, true, false, false},
+         {false, true, false, false},
+         {false, true, false, false},
+     }},
     // CELL_O.
     {{
          {true, true, false, false},
@@ -65,9 +80,24 @@ static PieceState rotation_states[CELL_COUNT][4] = {
          {false, false, false, false},
          {false, false, false, false},
      },
-     {},
-     {},
-     {}},
+     {
+         {true, true, false, false},
+         {true, true, false, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {
+         {true, true, false, false},
+         {true, true, false, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     },
+     {
+         {true, true, false, false},
+         {true, true, false, false},
+         {false, false, false, false},
+         {false, false, false, false},
+     }},
     // CELL_T.
     {{
          {false, true, false, false},
@@ -100,9 +130,24 @@ static PieceState rotation_states[CELL_COUNT][4] = {
          {false, false, false, false},
          {false, false, false, false},
      },
-     {},
-     {},
-     {}},
+     {
+         {false, true, false, false},
+         {false, true, true, false},
+         {false, false, true, false},
+         {false, false, false, false},
+     },
+     {
+         {false, false, false, false},
+         {false, true, true, false},
+         {true, true, false, false},
+         {false, false, false, false},
+     },
+     {
+         {true, false, false, false},
+         {true, true, false, false},
+         {false, true, false, false},
+         {false, false, false, false},
+     }},
     // CELL_Z.
     {{
          {true, true, false, false},
@@ -110,9 +155,24 @@ static PieceState rotation_states[CELL_COUNT][4] = {
          {false, false, false, false},
          {false, false, false, false},
      },
-     {},
-     {},
-     {}},
+     {
+         {false, false, true, false},
+         {false, true, true, false},
+         {false, true, false, false},
+         {false, false, false, false},
+     },
+     {
+         {false, false, false, false},
+         {true, true, false, false},
+         {false, true, true, false},
+         {false, false, false, false},
+     },
+     {
+         {false, true, false, false},
+         {true, true, false, false},
+         {true, false, false, false},
+         {false, false, false, false},
+     }},
     // CELL_J.
     {{
          {true, false, false, false},
@@ -120,9 +180,24 @@ static PieceState rotation_states[CELL_COUNT][4] = {
          {false, false, false, false},
          {false, false, false, false},
      },
-     {},
-     {},
-     {}},
+     {
+         {false, true, true, false},
+         {false, true, false, false},
+         {false, true, false, false},
+         {false, false, false, false},
+     },
+     {
+         {false, false, false, false},
+         {true, true, true, false},
+         {false, false, true, false},
+         {false, false, false, false},
+     },
+     {
+         {false, true, false, false},
+         {false, true, false, false},
+         {true, true, false, false},
+         {false, false, false, false},
+     }},
     // CELL_L.
     {{
          {false, false, true, false},
@@ -130,9 +205,24 @@ static PieceState rotation_states[CELL_COUNT][4] = {
          {false, false, false, false},
          {false, false, false, false},
      },
-     {},
-     {},
-     {}},
+     {
+         {false, true, false, false},
+         {false, true, false, false},
+         {false, true, true, false},
+         {false, false, false, false},
+     },
+     {
+         {false, false, false, false},
+         {true, true, true, false},
+         {true, false, false, false},
+         {false, false, false, false},
+     },
+     {
+         {true, true, false, false},
+         {false, true, false, false},
+         {false, true, false, false},
+         {false, false, false, false},
+     }},
 };
 
 //////////////////////////////////////////////////////////
@@ -153,9 +243,11 @@ static void GridMarkMask(PieceState mask, Vector2 origin, Cell type) {
 }
 
 static void SpawnPiece() {
+    static Cell type = CELL_I;
     incomming_piece_active = true;
     // Cell type = (Cell)GetRandomValue(CELL_EMPTY + 1, CELL_COUNT - 1);
-    Cell type = CELL_T;
+    // Cell type = CELL_T;
+    ++type;
     incomming_piece = (Piece){.type = type, .origin = {0, 5}, .rotation_state = 0};
 
     PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
