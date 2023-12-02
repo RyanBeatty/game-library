@@ -264,6 +264,7 @@ static bool GridCheckMaskBlocked(PieceState mask, Vector2 origin) {
             size_t x = origin.x + i;
             size_t y = origin.y + j;
             if (x < 0 || y < 0 || x >= GRID_NUM_ROWS || y >= GRID_NUM_COLS || grid[x][y]) {
+                // TODO: Switch to early return.
                 valid = false;
                 break;
             }
@@ -291,7 +292,13 @@ static void RotatePiece() {
     GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
 
     // TODO: Check if can perform rotation/wallkicks.
-    incomming_piece.rotation_state = (incomming_piece.rotation_state + 1) % 4;
+    size_t new_rotation_state = (incomming_piece.rotation_state + 1) % 4;
+    mask = &rotation_states[incomming_piece.type][new_rotation_state];
+    bool can_move = GridCheckMaskBlocked(*mask, incomming_piece.origin);
+    if (can_move) {
+        incomming_piece.rotation_state = new_rotation_state;
+    }
+
     mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
     GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
 }
