@@ -254,7 +254,6 @@ static void SpawnPiece() {
 }
 
 static bool GridCheckMaskBlocked(PieceState mask, Vector2 origin) {
-    bool valid = true;
     for (size_t i = 0; i < 4; ++i) {
         for (size_t j = 0; j < 4; ++j) {
             if (!mask[i][j]) {
@@ -264,13 +263,11 @@ static bool GridCheckMaskBlocked(PieceState mask, Vector2 origin) {
             size_t x = origin.x + i;
             size_t y = origin.y + j;
             if (x < 0 || y < 0 || x >= GRID_NUM_ROWS || y >= GRID_NUM_COLS || grid[x][y]) {
-                // TODO: Switch to early return.
-                valid = false;
-                break;
+                return false;
             }
         }
     }
-    return valid;
+    return true;
 }
 
 static void MovePiece(Vector2 direction) {
