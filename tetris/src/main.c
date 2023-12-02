@@ -225,6 +225,62 @@ static PieceState rotation_states[CELL_COUNT][4] = {
      }},
 };
 
+// Wall kick displacements are defined in the forward direction. i.e. the wall kick data for position 0
+// is for going from 0 -> 1
+static Vector2 kick_offset_table[CELL_COUNT][4][5] = {
+    // CELL_EMPTY.
+    {{}, {}, {}, {}},
+    // CELL_I.
+    {
+        {{0, 0}, {0, -2}, {0, 1}, {1, -2}, {-2, 1}},
+        {{0, 0}, {0, -1}, {0, -2}, {-2, -1}, {1, 2}},
+        {{0, 0}, {0, 2}, {0, -1}, {-1, 2}, {2, -1}},
+        {{0, 0}, {0, 1}, {0, -2}, {2, 1}, {-1, -2}},
+    },
+    // CELL_O.
+    {
+        {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+        {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+        {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+        {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+    },
+    // CELL_T.
+    {
+        {{0, 0}, {0, -1}, {-1, -1}, {2, 0}, {2, -1}},
+        {{0, 0}, {0, 1}, {-1, -1}, {-2, 0}, {-2, 1}},
+        {{0, 0}, {0, -1}, {-1, 1}, {2, 0}, {2, 1}},
+        {{0, 0}, {0, -1}, {1, -1}, {-2, 0}, {-2, -1}},
+    },
+    // CELL_S.
+    {
+        {{0, 0}, {0, -1}, {-1, -1}, {2, 0}, {2, -1}},
+        {{0, 0}, {0, 1}, {-1, -1}, {-2, 0}, {-2, 1}},
+        {{0, 0}, {0, -1}, {-1, 1}, {2, 0}, {2, 1}},
+        {{0, 0}, {0, -1}, {1, -1}, {-2, 0}, {-2, -1}},
+    },
+    // CELL_Z.
+    {
+        {{0, 0}, {0, -1}, {-1, -1}, {2, 0}, {2, -1}},
+        {{0, 0}, {0, 1}, {-1, -1}, {-2, 0}, {-2, 1}},
+        {{0, 0}, {0, -1}, {-1, 1}, {2, 0}, {2, 1}},
+        {{0, 0}, {0, -1}, {1, -1}, {-2, 0}, {-2, -1}},
+    },
+    // CELL_J.
+    {
+        {{0, 0}, {0, -1}, {-1, -1}, {2, 0}, {2, -1}},
+        {{0, 0}, {0, 1}, {-1, -1}, {-2, 0}, {-2, 1}},
+        {{0, 0}, {0, -1}, {-1, 1}, {2, 0}, {2, 1}},
+        {{0, 0}, {0, -1}, {1, -1}, {-2, 0}, {-2, -1}},
+    },
+    // CELL_L.
+    {
+        {{0, 0}, {0, -1}, {-1, -1}, {2, 0}, {2, -1}},
+        {{0, 0}, {0, 1}, {-1, -1}, {-2, 0}, {-2, 1}},
+        {{0, 0}, {0, -1}, {-1, 1}, {2, 0}, {2, 1}},
+        {{0, 0}, {0, -1}, {1, -1}, {-2, 0}, {-2, -1}},
+    },
+};
+
 //////////////////////////////////////////////////////////
 
 static void GridInit() { memset(grid, CELL_EMPTY, GRID_NUM_CELLS * sizeof(Cell)); }
@@ -288,12 +344,18 @@ static void RotatePiece() {
     PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
     GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
 
-    // TODO: Check if can perform rotation/wallkicks.
     size_t new_rotation_state = (incomming_piece.rotation_state + 1) % 4;
+    Vector2 new_origin = incomming_piece.origin;
     mask = &rotation_states[incomming_piece.type][new_rotation_state];
-    bool can_move = GridCheckMaskBlocked(*mask, incomming_piece.origin);
-    if (can_move) {
-        incomming_piece.rotation_state = new_rotation_state;
+    Vector2 *kicks = kick_offset_table[incomming_piece.type][incomming_piece.rotation_state];
+    for (size_t i = 0; i < 5; ++i) {
+        Vector2 kick = kicks[i];
+        new_origin = Vector2Add(incomming_piece.origin, kick);
+        if (GridCheckMaskBlocked(*mask, new_origin)) {
+            incomming_piece.rotation_state = new_rotation_state;
+            incomming_piece.origin = new_origin;
+            break;
+        }
     }
 
     mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
