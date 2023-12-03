@@ -46,6 +46,9 @@ static bool incomming_piece_active;
 static float lateral_movement_cooldown_ms;
 static float vertical_movement_cooldown_ms;
 
+static Piece held_piece;
+static bool can_hold;
+
 static PieceState rotation_states[CELL_COUNT][4] = {
     // CELL_EMPTY.
     {},
@@ -301,6 +304,7 @@ static void GridMarkMask(PieceState mask, Vector2 origin, Cell type) {
 
 static void SpawnPiece() {
     // static Cell type = CELL_I;
+    can_hold = true;
     incomming_piece_active = true;
     Cell type = (Cell)GetRandomValue(CELL_EMPTY + 1, CELL_COUNT - 1);
     incomming_piece = (Piece){.type = type, .origin = {0, 5}, .rotation_state = 0};
@@ -423,6 +427,10 @@ static void GameInit() {
     lateral_movement_cooldown_ms = 0.0f;
     vertical_movement_cooldown_ms = 0.0f;
 
+    // We init with CELL_EMPTY to denote that nothing is being held at the moment.
+    held_piece = (Piece){.origin = (Vector2){0, 0}, .rotation_state = 0, .type = CELL_EMPTY};
+    can_hold = true;
+
     GridInit();
     SpawnPiece();
 }
@@ -460,6 +468,25 @@ static void GridClearLines() {
 static void Update(float delta_time) {
     if (!incomming_piece_active) {
         SpawnPiece();
+    }
+
+    if (can_hold && (IsKeyPressed(KEY_LEFT_SHIFT) || IsKeyPressed(KEY_C))) {
+        // TODO: All this grid mask marking stuff is kind of tedious. Consider cleaning up at some point.
+        Piece tmp = incomming_piece;
+        PieceState *mask = &rotation_states[tmp.type][tmp.rotation_state];
+        GridMarkMask(*mask, tmp.origin, CELL_EMPTY);
+
+        SpawnPiece();
+        mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+        GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
+
+        incomming_piece.type = held_piece.type == CELL_EMPTY ? incomming_piece.type : held_piece.type;
+        held_piece = tmp;
+        vertical_movement_cooldown_ms = VERTICAL_MOVEMENT_COOLDOWN_MS_INIT;
+        can_hold = false;
+
+        mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+        GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
     }
 
     lateral_movement_cooldown_ms -= delta_time;
