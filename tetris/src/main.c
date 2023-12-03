@@ -39,6 +39,7 @@ typedef struct Piece {
 // Global state.
 static Grid grid;
 static Piece incomming_piece;
+static Piece ghost_piece;
 static float fall_timer;
 static bool incomming_piece_blocked;
 static bool incomming_piece_active;
@@ -393,6 +394,25 @@ static void ResolveVerticalMovement(float delta_time) {
     }
 }
 
+static void CalculateGhostPiece() {
+    if (!incomming_piece_active) {
+        return;
+    }
+
+    ghost_piece = incomming_piece;
+
+    PieceState *mask = &rotation_states[incomming_piece.type][incomming_piece.rotation_state];
+    GridMarkMask(*mask, incomming_piece.origin, CELL_EMPTY);
+
+    Vector2 new_origin = ghost_piece.origin;
+    do {
+        ghost_piece.origin = new_origin;
+        new_origin = Vector2Add(ghost_piece.origin, (Vector2){.x = 1, .y = 0});
+    } while (GridCheckMaskBlocked(*mask, new_origin));
+
+    GridMarkMask(*mask, incomming_piece.origin, incomming_piece.type);
+}
+
 static void GameInit() {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
     SetTargetFPS(60);
@@ -465,34 +485,57 @@ static void Update(float delta_time) {
     incomming_piece_blocked = CheckPieceIsBlockedVertical();
 
     ResolveVerticalMovement(delta_time);
+    CalculateGhostPiece();
     GridClearLines();
+}
+
+static Color MapColor(Cell cell) {
+    Color color;
+    if (cell == CELL_EMPTY) {
+        color = BLACK;
+    } else if (cell == CELL_I) {
+        color = (Color){.r = 0, .g = 255, .b = 255, .a = 255};
+    } else if (cell == CELL_O) {
+        color = YELLOW;
+    } else if (cell == CELL_T) {
+        color = PURPLE;
+    } else if (cell == CELL_S) {
+        color = GREEN;
+    } else if (cell == CELL_Z) {
+        color = RED;
+    } else if (cell == CELL_J) {
+        color = BLUE;
+    } else if (cell == CELL_L) {
+        color = ORANGE;
+    }
+    return color;
 }
 
 static void GridDraw() {
     size_t color_count = 0;
     for (size_t i = 0; i < GRID_NUM_ROWS; ++i, ++color_count) {
         for (size_t j = 0; j < GRID_NUM_COLS; ++j, ++color_count) {
-            Color color;
             Cell cell = grid[i][j];
-            if (cell == CELL_EMPTY) {
-                color = BLACK;
-            } else if (cell == CELL_I) {
-                color = (Color){.r = 0, .g = 255, .b = 255, .a = 255};
-            } else if (cell == CELL_O) {
-                color = YELLOW;
-            } else if (cell == CELL_T) {
-                color = PURPLE;
-            } else if (cell == CELL_S) {
-                color = GREEN;
-            } else if (cell == CELL_Z) {
-                color = RED;
-            } else if (cell == CELL_J) {
-                color = BLUE;
-            } else if (cell == CELL_L) {
-                color = ORANGE;
-            }
+            Color color = MapColor(cell);
             // Color color = color_count % 2 == 0 ? BLACK : RED;
             DrawRectangle(j * CELL_WIDTH, i * CELL_WIDTH, CELL_WIDTH, CELL_WIDTH, color);
+        }
+    }
+}
+
+static void DrawGhostPiece() {
+    Color color = MapColor(ghost_piece.type);
+    PieceState *mask = &rotation_states[ghost_piece.type][ghost_piece.rotation_state];
+
+    for (size_t i = 0; i < 4; ++i) {
+        for (size_t j = 0; j < 4; ++j) {
+            if (!(*mask)[i][j]) {
+                continue;
+            }
+
+            size_t x = ghost_piece.origin.x + i;
+            size_t y = ghost_piece.origin.y + j;
+            DrawRectangleLines(y * CELL_WIDTH, x * CELL_WIDTH, CELL_WIDTH, CELL_WIDTH, color);
         }
     }
 }
@@ -502,6 +545,7 @@ static void Draw() {
 
     ClearBackground(RAYWHITE);
     GridDraw(&grid);
+    DrawGhostPiece();
 
     EndDrawing();
 }
