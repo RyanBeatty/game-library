@@ -49,6 +49,7 @@ static float vertical_movement_cooldown_ms;
 static Sound rotate_sound;
 static Sound drop_sound;
 static Music game_music;
+static Sound line_clear_sound;
 
 static Piece held_piece;
 static bool can_hold;
@@ -436,6 +437,8 @@ static void GameInit() {
     assert(IsSoundReady(rotate_sound));
     drop_sound = LoadSound("assets/drop_sound.wav");
     assert(IsSoundReady(drop_sound));
+    line_clear_sound = LoadSound("assets/line_clear_sound.wav");
+    assert(IsSoundReady(line_clear_sound));
     game_music = LoadMusicStream("assets/game_music.wav");
     assert(IsMusicReady(game_music));
 
@@ -460,6 +463,7 @@ static void GridClearLines() {
         return;
     }
 
+    bool cleared = false;
     for (int i = GRID_NUM_ROWS - 1; i >= 0;) {
         bool line_clear = true;
         for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
@@ -474,6 +478,8 @@ static void GridClearLines() {
             continue;
         }
 
+        cleared = true;
+
         for (int r = i; r > 0; --r) {
             for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
                 grid[r][j] = grid[r - 1][j];
@@ -482,6 +488,10 @@ static void GridClearLines() {
         for (size_t j = 0; j < GRID_NUM_COLS; ++j) {
             grid[0][j] = CELL_EMPTY;
         }
+    }
+
+    if (cleared) {
+        PlaySound(line_clear_sound);
     }
 }
 
@@ -600,6 +610,7 @@ static void Draw() {
 }
 
 static void GameClose() {
+    UnloadSound(line_clear_sound);
     StopMusicStream(game_music);
     UnloadMusicStream(game_music);
     UnloadSound(rotate_sound);
