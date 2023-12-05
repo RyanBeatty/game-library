@@ -46,6 +46,10 @@ static bool incomming_piece_active;
 static float lateral_movement_cooldown_ms;
 static float vertical_movement_cooldown_ms;
 
+static Sound rotate_sound;
+static Sound drop_sound;
+static Music game_music;
+
 static Piece held_piece;
 static bool can_hold;
 
@@ -359,6 +363,7 @@ static void RotatePiece() {
         if (GridCheckMaskBlocked(*mask, new_origin)) {
             incomming_piece.rotation_state = new_rotation_state;
             incomming_piece.origin = new_origin;
+            PlaySound(rotate_sound);
             break;
         }
     }
@@ -395,6 +400,10 @@ static void ResolveVerticalMovement(float delta_time) {
         }
         vertical_movement_cooldown_ms =
             user_triggered_fall ? VERTICAL_MOVEMENT_COOLDOWN_MS_INIT : vertical_movement_cooldown_ms;
+
+        if (land_block) {
+            PlaySound(drop_sound);
+        }
     }
 }
 
@@ -421,6 +430,15 @@ static void GameInit() {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
     SetTargetFPS(60);
 
+    InitAudioDevice();
+
+    rotate_sound = LoadSound("assets/rotate2_sound.wav");
+    assert(IsSoundReady(rotate_sound));
+    drop_sound = LoadSound("assets/drop_sound.wav");
+    assert(IsSoundReady(drop_sound));
+    game_music = LoadMusicStream("assets/game_music.wav");
+    assert(IsMusicReady(game_music));
+
     fall_timer = 1.0f;
     incomming_piece_blocked = false;
     incomming_piece_active = false;
@@ -433,6 +451,8 @@ static void GameInit() {
 
     GridInit();
     SpawnPiece();
+
+    PlayMusicStream(game_music);
 }
 
 static void GridClearLines() {
@@ -466,6 +486,8 @@ static void GridClearLines() {
 }
 
 static void Update(float delta_time) {
+    UpdateMusicStream(game_music);
+
     if (!incomming_piece_active) {
         SpawnPiece();
     }
@@ -577,7 +599,14 @@ static void Draw() {
     EndDrawing();
 }
 
-static void GameClose() { CloseWindow(); }
+static void GameClose() {
+    StopMusicStream(game_music);
+    UnloadMusicStream(game_music);
+    UnloadSound(rotate_sound);
+    UnloadSound(drop_sound);
+    CloseAudioDevice();
+    CloseWindow();
+}
 
 int main(void) {
     GameInit();
