@@ -108,21 +108,6 @@ static void PlayerUpdate(Entity* entity, GameState* game_state) {
     if (IsKeyPressed(KEY_SPACE)) {
         player->speed.y = -JumpSpeed;
     }
-    // if (speed.y >= 100) {
-    //     speed.y = 100;
-    // }
-    // if (IsKeyDown(KEY_UP)) {
-    //     speed = Vector3Add(speed, (Vector3){.x = 0, .y = -10, .z = 0});
-    // }
-    // if (IsKeyDown(KEY_DOWN)) {
-    //     speed = Vector3Add(speed, (Vector3){.x = 0, .y = 10, .z = 0});
-    // }
-    // if (IsKeyDown(KEY_LEFT)) {
-    //     speed = Vector3Add(speed, (Vector3){.x = -10, .y = 0, .z = 0});
-    // }
-    // if (IsKeyDown(KEY_RIGHT)) {
-    //     speed = Vector3Add(speed, (Vector3){.x = 10, .y = 0, .z = 0});
-    // }
 
     player->enity.position.y += player->speed.y * game_state->delta_time;
     player->speed.y += GRAVITY * game_state->delta_time;
@@ -130,8 +115,11 @@ static void PlayerUpdate(Entity* entity, GameState* game_state) {
 
 static void PlayerDraw(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
+    Vector3 position = player->enity.position;
 
-    DrawRectangle(player->enity.position.x, player->enity.position.y, 50, 50, BLUE);
+    DrawTexturePro(game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 17, .height = 12},
+                   (Rectangle){.x = position.x, .y = position.y, .width = 17 * 3, .height = 12 * 3}, (Vector2){0, 0}, 0,
+                   WHITE);
 }
 
 static void PlayerInit(Player* player) {
