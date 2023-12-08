@@ -9,6 +9,9 @@
 #define SCREEN_WIDTH_INIT (144 * 3)
 #define SCREEN_HEIGHT_INIT (254 * 3)
 
+static const float GRAVITY = 98;
+static const float JumpSpeed = 100;
+
 struct GameState;
 
 typedef struct Entity {
@@ -96,39 +99,46 @@ static void BackgroundInit(Background* background) {
 
 typedef struct Player {
     Entity enity;
+    Vector3 speed;
 } Player;
 
 static void PlayerUpdate(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
 
-    Vector3 speed = (Vector3){.x = 0, .y = 0, .z = 0};
-    if (IsKeyDown(KEY_UP)) {
-        speed = Vector3Add(speed, (Vector3){.x = 0, .y = -10, .z = 0});
+    if (IsKeyPressed(KEY_SPACE)) {
+        player->speed.y = -JumpSpeed;
     }
-    if (IsKeyDown(KEY_DOWN)) {
-        speed = Vector3Add(speed, (Vector3){.x = 0, .y = 10, .z = 0});
-    }
-    if (IsKeyDown(KEY_LEFT)) {
-        speed = Vector3Add(speed, (Vector3){.x = -10, .y = 0, .z = 0});
-    }
-    if (IsKeyDown(KEY_RIGHT)) {
-        speed = Vector3Add(speed, (Vector3){.x = 10, .y = 0, .z = 0});
-    }
+    // if (speed.y >= 100) {
+    //     speed.y = 100;
+    // }
+    // if (IsKeyDown(KEY_UP)) {
+    //     speed = Vector3Add(speed, (Vector3){.x = 0, .y = -10, .z = 0});
+    // }
+    // if (IsKeyDown(KEY_DOWN)) {
+    //     speed = Vector3Add(speed, (Vector3){.x = 0, .y = 10, .z = 0});
+    // }
+    // if (IsKeyDown(KEY_LEFT)) {
+    //     speed = Vector3Add(speed, (Vector3){.x = -10, .y = 0, .z = 0});
+    // }
+    // if (IsKeyDown(KEY_RIGHT)) {
+    //     speed = Vector3Add(speed, (Vector3){.x = 10, .y = 0, .z = 0});
+    // }
 
-    speed = Vector3Scale(speed, game_state->delta_time);
-    player->enity.position = Vector3Add(player->enity.position, speed);
+    player->enity.position.y += player->speed.y * game_state->delta_time;
+    player->speed.y += GRAVITY * game_state->delta_time;
 }
 
 static void PlayerDraw(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
 
-    DrawRectangle(player->enity.position.x, player->enity.position.y, 50, 50, GREEN);
+    DrawRectangle(player->enity.position.x, player->enity.position.y, 50, 50, BLUE);
 }
 
 static void PlayerInit(Player* player) {
     player->enity.position = (Vector3){.x = 50, .y = 50, .z = 0};
     player->enity.update_func = &PlayerUpdate;
     player->enity.draw_func = &PlayerDraw;
+    player->speed = (Vector3){0, 0, 0};
 }
 
 static void GameStateInit(GameState* game_state) {
