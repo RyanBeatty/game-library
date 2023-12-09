@@ -6,8 +6,9 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Engine.
 
-#define SCREEN_WIDTH_INIT (144 * 3)
-#define SCREEN_HEIGHT_INIT (254 * 3)
+#define SCALING_FACTOR (3)
+#define SCREEN_WIDTH_INIT (144 * SCALING_FACTOR)
+#define SCREEN_HEIGHT_INIT (254 * SCALING_FACTOR)
 
 static const float GRAVITY = 98;
 static const float JumpSpeed = 100;
@@ -67,10 +68,8 @@ static void GameStateClose(GameState* game_state) {
     CloseWindow();
 }
 
-static void NoUpdate(Entity* entity, GameState* game_state) {}
-static void NoDraw(Entity* entity, GameState* game_state) {}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+// Background.
 
 typedef struct Background {
     Entity entity;
@@ -80,8 +79,6 @@ typedef struct Background {
 static void BackgroundDraw(Entity* entity, GameState* game_state) {
     Background* background = (Background*)entity;
     Vector3 position = background->entity.position;
-    // DrawRectangle(position.x, position.y, game_state->screen_width, game_state->screen_height,
-    //               background->background_color);
     DrawTexturePro(
         game_state->atlas, (Rectangle){.x = 0, .y = 0, .width = 144, .height = 254},
         (Rectangle){
@@ -92,11 +89,13 @@ static void BackgroundDraw(Entity* entity, GameState* game_state) {
 static void BackgroundInit(Background* background) {
     background->entity.position = (Vector3){.x = 0, .y = 0, .z = 0};
     background->entity.rotation_angle = 0;
-    background->entity.update_func = &NoUpdate;
+    background->entity.update_func = NULL;
     background->entity.draw_func = &BackgroundDraw;
     background->background_color = BROWN;
 }
 
+//////////////////////////////////////////////////////////////////////
+// Player.
 typedef struct Player {
     Entity enity;
     Vector3 speed;
@@ -117,9 +116,10 @@ static void PlayerDraw(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
     Vector3 position = player->enity.position;
 
-    DrawTexturePro(game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 17, .height = 12},
-                   (Rectangle){.x = position.x, .y = position.y, .width = 17 * 3, .height = 12 * 3}, (Vector2){0, 0}, 0,
-                   WHITE);
+    DrawTexturePro(
+        game_state->atlas, (Rectangle){.x = 314, .y = 0, .width = 17, .height = 12},
+        (Rectangle){.x = position.x, .y = position.y, .width = 17 * SCALING_FACTOR, .height = 12 * SCALING_FACTOR},
+        (Vector2){0, 0}, 0, WHITE);
 }
 
 static void PlayerInit(Player* player) {
@@ -128,6 +128,30 @@ static void PlayerInit(Player* player) {
     player->enity.draw_func = &PlayerDraw;
     player->speed = (Vector3){0, 0, 0};
 }
+
+//////////////////////////////////////////////////////////////////////
+// Obstacle.
+
+typedef struct Obstacle {
+    Entity entity;
+
+} Obstacle;
+
+static void ObstacleUpdate(Entity* entity, GameState* game_state) {}
+
+static void ObstacleDraw(Entity* entity, GameState* game_state) {
+    Vector3 position = entity->position;
+    DrawTexturePro(game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 26, .height = 160},
+                   (Rectangle){.x = 0, .y = 0, .width = 26 * SCALING_FACTOR, .height = 160 * SCALING_FACTOR},
+                   (Vector2){0, 0}, 0, WHITE);
+}
+
+static void ObstacleInit(Obstacle* obstacle) {
+    obstacle->entity.draw_func = &ObstacleDraw;
+    obstacle->entity.update_func = &ObstacleUpdate;
+}
+
+//////////////////////////////////////////////////////////////////////
 
 static void GameStateInit(GameState* game_state) {
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -142,6 +166,10 @@ static void GameStateInit(GameState* game_state) {
     Background* background = (Background*)calloc(1, sizeof(Background));
     BackgroundInit(background);
     arrpush(game_state->entities, (Entity*)background);
+
+    Obstacle* obstacle = (Obstacle*)calloc(1, sizeof(Obstacle));
+    ObstacleInit(obstacle);
+    arrpush(game_state->entities, (Entity*)obstacle);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
     PlayerInit(player);
