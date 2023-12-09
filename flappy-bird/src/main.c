@@ -10,7 +10,8 @@
 #define SCREEN_WIDTH_INIT (144 * SCALING_FACTOR)
 #define SCREEN_HEIGHT_INIT (254 * SCALING_FACTOR)
 
-static const float GRAVITY = 98;
+static const float HorizontalScrollSpeed = 80;
+static const float Gravity = 150;
 static const float JumpSpeed = 100;
 
 struct GameState;
@@ -109,7 +110,7 @@ static void PlayerUpdate(Entity* entity, GameState* game_state) {
     }
 
     player->enity.position.y += player->speed.y * game_state->delta_time;
-    player->speed.y += GRAVITY * game_state->delta_time;
+    player->speed.y += Gravity * game_state->delta_time;
 }
 
 static void PlayerDraw(Entity* entity, GameState* game_state) {
@@ -137,7 +138,9 @@ typedef struct Obstacle {
     int offset;
 } Obstacle;
 
-static void ObstacleUpdate(Entity* entity, GameState* game_state) {}
+static void ObstacleUpdate(Entity* entity, GameState* game_state) {
+    entity->position.x -= HorizontalScrollSpeed * game_state->delta_time;
+}
 
 static void ObstacleDraw(Entity* entity, GameState* game_state) {
     Obstacle* obstacle = (Obstacle*)entity;
@@ -159,7 +162,8 @@ static void ObstacleDraw(Entity* entity, GameState* game_state) {
         (Vector2){26 * SCALING_FACTOR, 0}, -180, WHITE);
 }
 
-static void ObstacleInit(Obstacle* obstacle) {
+static void ObstacleInit(Obstacle* obstacle, Vector3 position) {
+    obstacle->entity.position = position;
     obstacle->entity.draw_func = &ObstacleDraw;
     obstacle->entity.update_func = &ObstacleUpdate;
     obstacle->offset = GetRandomValue(0, 100 * SCALING_FACTOR);
@@ -182,7 +186,7 @@ static void GameStateInit(GameState* game_state) {
     arrpush(game_state->entities, (Entity*)background);
 
     Obstacle* obstacle = (Obstacle*)calloc(1, sizeof(Obstacle));
-    ObstacleInit(obstacle);
+    ObstacleInit(obstacle, (Vector3){.x = game_state->screen_width, .y = 0, .z = 0});
     arrpush(game_state->entities, (Entity*)obstacle);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
