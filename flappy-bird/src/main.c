@@ -11,7 +11,7 @@
 #define SCREEN_HEIGHT_INIT (254 * SCALING_FACTOR)
 
 static const float HorizontalScrollSpeed = 80;
-static const float Gravity = 150;
+static const float Gravity = 200;
 static const float JumpSpeed = 100;
 
 struct GameState;
@@ -123,8 +123,8 @@ static void PlayerDraw(Entity* entity, GameState* game_state) {
         (Vector2){0, 0}, 0, WHITE);
 }
 
-static void PlayerInit(Player* player) {
-    player->enity.position = (Vector3){.x = 50, .y = 50, .z = 0};
+static void PlayerInit(Player* player, Vector3 position) {
+    player->enity.position = position;
     player->enity.update_func = &PlayerUpdate;
     player->enity.draw_func = &PlayerDraw;
     player->speed = (Vector3){0, 0, 0};
@@ -196,7 +196,8 @@ static void GameStateInit(GameState* game_state) {
     arrpush(game_state->entities, (Entity*)obstacle);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
-    PlayerInit(player);
+    PlayerInit(player,
+               (Vector3){(game_state->screen_width / 2) - (17 * SCALING_FACTOR), (game_state->screen_height / 2), 0});
     arrpush(game_state->entities, (Entity*)player);
 
     game_state->atlas = LoadTexture("assets/atlas.png");
