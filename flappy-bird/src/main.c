@@ -134,21 +134,35 @@ static void PlayerInit(Player* player) {
 
 typedef struct Obstacle {
     Entity entity;
-
+    int offset;
 } Obstacle;
 
 static void ObstacleUpdate(Entity* entity, GameState* game_state) {}
 
 static void ObstacleDraw(Entity* entity, GameState* game_state) {
+    Obstacle* obstacle = (Obstacle*)entity;
     Vector3 position = entity->position;
+
     DrawTexturePro(game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 26, .height = 160},
-                   (Rectangle){.x = 0, .y = 0, .width = 26 * SCALING_FACTOR, .height = 160 * SCALING_FACTOR},
+                   (Rectangle){.x = position.x,
+                               .y = position.y - obstacle->offset,
+                               .width = 26 * SCALING_FACTOR,
+                               .height = 160 * SCALING_FACTOR},
                    (Vector2){0, 0}, 0, WHITE);
+
+    DrawTexturePro(
+        game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 26, .height = 160},
+        (Rectangle){.x = position.x,
+                    .y = (position.y - obstacle->offset) + (160 * SCALING_FACTOR) + 120 + (160 * SCALING_FACTOR),
+                    .width = 26 * SCALING_FACTOR,
+                    .height = 160 * SCALING_FACTOR},
+        (Vector2){26 * SCALING_FACTOR, 0}, -180, WHITE);
 }
 
 static void ObstacleInit(Obstacle* obstacle) {
     obstacle->entity.draw_func = &ObstacleDraw;
     obstacle->entity.update_func = &ObstacleUpdate;
+    obstacle->offset = GetRandomValue(0, 100 * SCALING_FACTOR);
 }
 
 //////////////////////////////////////////////////////////////////////
