@@ -138,7 +138,13 @@ typedef struct Obstacle {
     int offset;
 } Obstacle;
 
+static void ObstacleInit(Obstacle* obstacle, Vector3 position);
+
 static void ObstacleUpdate(Entity* entity, GameState* game_state) {
+    Obstacle* obstacle = (Obstacle*)entity;
+    if (entity->position.x <= -(26 * SCALING_FACTOR)) {
+        ObstacleInit(obstacle, (Vector3){.x = game_state->screen_width, .y = 0, .z = 0});
+    }
     entity->position.x -= HorizontalScrollSpeed * game_state->delta_time;
 }
 
