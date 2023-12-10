@@ -98,7 +98,7 @@ static void BackgroundInit(Background* background) {
 //////////////////////////////////////////////////////////////////////
 // Player.
 typedef struct Player {
-    Entity enity;
+    Entity entity;
     Vector3 speed;
 } Player;
 
@@ -109,24 +109,27 @@ static void PlayerUpdate(Entity* entity, GameState* game_state) {
         player->speed.y = -JumpSpeed;
     }
 
-    player->enity.position.y += player->speed.y * game_state->delta_time;
+    player->entity.position.y += player->speed.y * game_state->delta_time;
     player->speed.y += Gravity * game_state->delta_time;
 }
 
 static void PlayerDraw(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
-    Vector3 position = player->enity.position;
+    Vector3 position = player->entity.position;
 
     DrawTexturePro(
         game_state->atlas, (Rectangle){.x = 314, .y = 0, .width = 17, .height = 12},
         (Rectangle){.x = position.x, .y = position.y, .width = 17 * SCALING_FACTOR, .height = 12 * SCALING_FACTOR},
         (Vector2){0, 0}, 0, WHITE);
+    // Vector3 min = Vector3Add(entity->collision_rect.min, entity->position);
+    // Vector3 max = Vector3Add(entity->collision_rect.max, min);
+    // DrawRectangleLines(min.x, min.y, max.x - min.x, max.y - min.y, RED);
 }
 
 static void PlayerInit(Player* player, Vector3 position) {
-    player->enity.position = position;
-    player->enity.update_func = &PlayerUpdate;
-    player->enity.draw_func = &PlayerDraw;
+    player->entity.position = position;
+    player->entity.update_func = &PlayerUpdate;
+    player->entity.draw_func = &PlayerDraw;
     player->speed = (Vector3){0, 0, 0};
 }
 
