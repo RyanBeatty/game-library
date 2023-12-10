@@ -171,32 +171,34 @@ static void ObstacleInit(Obstacle* obstacle, Vector3 position) {
     obstacle->entity.position = position;
     obstacle->entity.draw_func = &ObstacleDraw;
     obstacle->entity.update_func = &ObstacleUpdate;
-    obstacle->entity.position.y -= GetRandomValue(0, 100 * SCALING_FACTOR);
 }
 
 //////////////////////////////////////////////////////////////////////
 // ObstacleSpawner.
 
-// typedef struct Spawner {
-//     Entity entity;
-//     Obstacle* pipe_up;
-//     Obstacle* pipe_down;
-// } Spawner;
+typedef struct Spawner {
+    Entity entity;
+    Obstacle* pipe_up;
+    // Obstacle* pipe_down;
+} Spawner;
 
-// static void SpawnerUpdate(Entity* entity, GameState* game_state) {
-//     Spawner* spawner = (Spawner*)entity;
-//     if (spawner->pipe_up->entity.position.x <= -(26 * SCALING_FACTOR)) {
-//         SpawnerInit(spawner, spawner->pipe_up, spawner->pipe_down);
-//     }
-// }
+static void SpawnerInit(Spawner*, Obstacle*, int);
 
-// static void SpawnerInit(Spawner* spawner, Obstacle* pipe_up, Obstacle* pipe_down) {
-//     spawner->pipe_up = pipe_up;
-//     spawner->pipe_down = pipe_down;
-//     spawner->entity.update_func = &SpawnerUpdate;
+static void SpawnerUpdate(Entity* entity, GameState* game_state) {
+    Spawner* spawner = (Spawner*)entity;
+    if (spawner->pipe_up->entity.position.x <= -(26 * SCALING_FACTOR)) {
+        SpawnerInit(spawner, spawner->pipe_up, game_state->screen_width);
+    }
+}
 
-//     spawner->pipe_up->entity.position.x =
-// }
+static void SpawnerInit(Spawner* spawner, Obstacle* pipe_up, int start_x) {
+    spawner->pipe_up = pipe_up;
+    // spawner->pipe_down = pipe_down;
+    spawner->entity.update_func = &SpawnerUpdate;
+
+    Vector3 position = (Vector3){start_x, -GetRandomValue(0, 100 * SCALING_FACTOR), 0};
+    ObstacleInit(pipe_up, position);
+}
 
 //////////////////////////////////////////////////////////////////////
 
@@ -215,8 +217,11 @@ static void GameStateInit(GameState* game_state) {
     arrpush(game_state->entities, (Entity*)background);
 
     Obstacle* obstacle = (Obstacle*)calloc(1, sizeof(Obstacle));
-    ObstacleInit(obstacle, (Vector3){.x = game_state->screen_width, .y = 0, .z = 0});
     arrpush(game_state->entities, (Entity*)obstacle);
+
+    Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
+    SpawnerInit(spawner, obstacle, game_state->screen_width);
+    arrpush(game_state->entities, (Entity*)spawner);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
     PlayerInit(player,
