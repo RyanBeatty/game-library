@@ -23,29 +23,59 @@ typedef struct Entity {
     void (*update_func)(struct Entity*, struct GameState*);
     void (*draw_func)(struct Entity*, struct GameState*);
     BoundingBox (*get_collision_rect_func)(struct Entity*);
+    void (*resolve_collision_func)(struct Entity*, struct GameState*);
 } Entity;
 
 typedef struct GameState {
     float delta_time;
     int screen_width;
     int screen_height;
+    bool active;
 
     Entity** entities;  // stb_array.
     Texture atlas;
 } GameState;
+
+static void GameStateCheckCollisions(GameState* game_state) {
+    for (size_t i = 0; i < arrlen(game_state->entities); ++i) {
+        for (size_t j = 1; j < arrlen(game_state->entities); ++j) {
+            Entity* entity1 = game_state->entities[i];
+            Entity* entity2 = game_state->entities[j];
+            if (entity1 == entity2 || entity1->get_collision_rect_func == NULL ||
+                entity2->get_collision_rect_func == NULL) {
+                continue;
+            }
+
+            BoundingBox bb1 = entity1->get_collision_rect_func(entity1);
+            BoundingBox bb2 = entity2->get_collision_rect_func(entity2);
+            if (CheckCollisionBoxes(bb1, bb2)) {
+                if (entity1->resolve_collision_func != NULL) {
+                    entity1->resolve_collision_func(entity1, game_state);
+                }
+                if (entity2->resolve_collision_func != NULL) {
+                    entity2->resolve_collision_func(entity2, game_state);
+                }
+            }
+        }
+    }
+}
 
 static void GameStateUpdate(GameState* game_state) {
     game_state->delta_time = GetFrameTime();
     game_state->screen_width = GetScreenWidth();
     game_state->screen_height = GetScreenHeight();
 
-    Entity* entity;
-    for (size_t i = 0; i < arrlen(game_state->entities); ++i) {
-        entity = game_state->entities[i];
-        if (entity->update_func == NULL) {
-            continue;
+    if (game_state->active) {
+        Entity* entity;
+        for (size_t i = 0; i < arrlen(game_state->entities); ++i) {
+            entity = game_state->entities[i];
+            if (entity->update_func == NULL) {
+                continue;
+            }
+            entity->update_func(entity, game_state);
         }
-        entity->update_func(entity, game_state);
+
+        GameStateCheckCollisions(game_state);
     }
 }
 
@@ -120,6 +150,8 @@ static BoundingBox PlayerGetCollisionRect(Entity* entity) {
     return bb;
 }
 
+static void PlayerResolveCollision(Entity* entity, GameState* game_state) { game_state->active = false; }
+
 static void PlayerUpdate(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
 
@@ -146,6 +178,7 @@ static void PlayerInit(Player* player, Vector3 position) {
     player->entity.update_func = &PlayerUpdate;
     player->entity.draw_func = &PlayerDraw;
     player->entity.get_collision_rect_func = &PlayerGetCollisionRect;
+    player->entity.resolve_collision_func = &PlayerResolveCollision;
     player->speed = (Vector3){0, 0, 0};
 }
 
@@ -231,6 +264,7 @@ static void GameStateInit(GameState* game_state) {
     game_state->screen_width = GetScreenWidth();
     game_state->screen_height = GetScreenHeight();
     game_state->entities = NULL;
+    game_state->active = true;
 
     Background* background = (Background*)calloc(1, sizeof(Background));
     BackgroundInit(background);
