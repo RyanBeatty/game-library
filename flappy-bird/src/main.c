@@ -138,7 +138,6 @@ static void PlayerInit(Player* player, Vector3 position) {
 
 typedef struct Obstacle {
     Entity entity;
-    int offset;
 } Obstacle;
 
 static void ObstacleInit(Obstacle* obstacle, Vector3 position);
@@ -155,28 +154,49 @@ static void ObstacleDraw(Entity* entity, GameState* game_state) {
     Obstacle* obstacle = (Obstacle*)entity;
     Vector3 position = entity->position;
 
-    DrawTexturePro(game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 26, .height = 160},
-                   (Rectangle){.x = position.x,
-                               .y = position.y - obstacle->offset,
-                               .width = 26 * SCALING_FACTOR,
-                               .height = 160 * SCALING_FACTOR},
-                   (Vector2){0, 0}, 0, WHITE);
-
     DrawTexturePro(
         game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 26, .height = 160},
-        (Rectangle){.x = position.x,
-                    .y = (position.y - obstacle->offset) + (160 * SCALING_FACTOR) + 120 + (160 * SCALING_FACTOR),
-                    .width = 26 * SCALING_FACTOR,
-                    .height = 160 * SCALING_FACTOR},
-        (Vector2){26 * SCALING_FACTOR, 0}, -180, WHITE);
+        (Rectangle){.x = position.x, .y = position.y, .width = 26 * SCALING_FACTOR, .height = 160 * SCALING_FACTOR},
+        (Vector2){0, 0}, 0, WHITE);
+
+    DrawTexturePro(game_state->atlas, (Rectangle){.x = 288, .y = 0, .width = 26, .height = 160},
+                   (Rectangle){.x = position.x,
+                               .y = position.y + (160 * SCALING_FACTOR) + 120 + (160 * SCALING_FACTOR),
+                               .width = 26 * SCALING_FACTOR,
+                               .height = 160 * SCALING_FACTOR},
+                   (Vector2){26 * SCALING_FACTOR, 0}, -180, WHITE);
 }
 
 static void ObstacleInit(Obstacle* obstacle, Vector3 position) {
     obstacle->entity.position = position;
     obstacle->entity.draw_func = &ObstacleDraw;
     obstacle->entity.update_func = &ObstacleUpdate;
-    obstacle->offset = GetRandomValue(0, 100 * SCALING_FACTOR);
+    obstacle->entity.position.y -= GetRandomValue(0, 100 * SCALING_FACTOR);
 }
+
+//////////////////////////////////////////////////////////////////////
+// ObstacleSpawner.
+
+// typedef struct Spawner {
+//     Entity entity;
+//     Obstacle* pipe_up;
+//     Obstacle* pipe_down;
+// } Spawner;
+
+// static void SpawnerUpdate(Entity* entity, GameState* game_state) {
+//     Spawner* spawner = (Spawner*)entity;
+//     if (spawner->pipe_up->entity.position.x <= -(26 * SCALING_FACTOR)) {
+//         SpawnerInit(spawner, spawner->pipe_up, spawner->pipe_down);
+//     }
+// }
+
+// static void SpawnerInit(Spawner* spawner, Obstacle* pipe_up, Obstacle* pipe_down) {
+//     spawner->pipe_up = pipe_up;
+//     spawner->pipe_down = pipe_down;
+//     spawner->entity.update_func = &SpawnerUpdate;
+
+//     spawner->pipe_up->entity.position.x =
+// }
 
 //////////////////////////////////////////////////////////////////////
 
