@@ -22,6 +22,7 @@ typedef struct Entity {
 
     void (*update_func)(struct Entity*, struct GameState*);
     void (*draw_func)(struct Entity*, struct GameState*);
+    BoundingBox (*get_collision_rect_func)(struct Entity*);
 } Entity;
 
 typedef struct GameState {
@@ -59,6 +60,17 @@ static void GameStateDraw(GameState* game_state) {
             continue;
         }
         entity->draw_func(entity, game_state);
+    }
+
+    if (true) {
+        for (size_t i = 0; i < arrlen(game_state->entities); ++i) {
+            Entity* entity = game_state->entities[i];
+            if (entity->get_collision_rect_func == NULL) {
+                continue;
+            }
+            BoundingBox bb = entity->get_collision_rect_func(entity);
+            DrawRectangleLines(bb.min.x, bb.min.y, bb.max.x - bb.min.x, bb.max.y - bb.min.y, RED);
+        }
     }
 
     EndDrawing();
@@ -102,6 +114,12 @@ typedef struct Player {
     Vector3 speed;
 } Player;
 
+static BoundingBox PlayerGetCollisionRect(Entity* entity) {
+    BoundingBox bb = {.min = entity->position,
+                      .max = Vector3Add(entity->position, (Vector3){17 * SCALING_FACTOR, 12 * SCALING_FACTOR, 0})};
+    return bb;
+}
+
 static void PlayerUpdate(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
 
@@ -121,15 +139,13 @@ static void PlayerDraw(Entity* entity, GameState* game_state) {
         game_state->atlas, (Rectangle){.x = 314, .y = 0, .width = 17, .height = 12},
         (Rectangle){.x = position.x, .y = position.y, .width = 17 * SCALING_FACTOR, .height = 12 * SCALING_FACTOR},
         (Vector2){0, 0}, 0, WHITE);
-    // Vector3 min = Vector3Add(entity->collision_rect.min, entity->position);
-    // Vector3 max = Vector3Add(entity->collision_rect.max, min);
-    // DrawRectangleLines(min.x, min.y, max.x - min.x, max.y - min.y, RED);
 }
 
 static void PlayerInit(Player* player, Vector3 position) {
     player->entity.position = position;
     player->entity.update_func = &PlayerUpdate;
     player->entity.draw_func = &PlayerDraw;
+    player->entity.get_collision_rect_func = &PlayerGetCollisionRect;
     player->speed = (Vector3){0, 0, 0};
 }
 
@@ -151,7 +167,6 @@ static void ObstacleUpdate(Entity* entity, GameState* game_state) {
 }
 
 static void ObstacleDraw(Entity* entity, GameState* game_state) {
-    Obstacle* obstacle = (Obstacle*)entity;
     Vector3 position = entity->position;
 
     DrawTexturePro(
@@ -160,10 +175,17 @@ static void ObstacleDraw(Entity* entity, GameState* game_state) {
         (Vector2){0, 0}, entity->rotation_angle, WHITE);
 }
 
+static BoundingBox ObstacleGetCollisionRect(Entity* entity) {
+    BoundingBox bb = {.min = entity->position,
+                      .max = Vector3Add(entity->position, (Vector3){26 * SCALING_FACTOR, 160 * SCALING_FACTOR, 0})};
+    return bb;
+}
+
 static void ObstacleInit(Obstacle* obstacle, Vector3 position) {
     obstacle->entity.position = position;
     obstacle->entity.draw_func = &ObstacleDraw;
     obstacle->entity.update_func = &ObstacleUpdate;
+    obstacle->entity.get_collision_rect_func = &ObstacleGetCollisionRect;
 }
 
 //////////////////////////////////////////////////////////////////////
