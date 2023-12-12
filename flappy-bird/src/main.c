@@ -168,7 +168,7 @@ static void PlayerDraw(Entity* entity, GameState* game_state) {
     Vector3 position = player->entity.position;
 
     DrawTexturePro(
-        game_state->atlas, (Rectangle){.x = 314, .y = 0, .width = 17, .height = 12},
+        game_state->atlas, (Rectangle){.x = 482, .y = 0, .width = 17, .height = 12},
         (Rectangle){.x = position.x, .y = position.y, .width = 17 * SCALING_FACTOR, .height = 12 * SCALING_FACTOR},
         (Vector2){0, 0}, 0, WHITE);
 }
@@ -183,23 +183,23 @@ static void PlayerInit(Player* player, Vector3 position) {
 }
 
 //////////////////////////////////////////////////////////////////////
-// Obstacle.
+// Pipe.
 
-typedef struct Obstacle {
+typedef struct Pipe {
     Entity entity;
-} Obstacle;
+} Pipe;
 
-static void ObstacleInit(Obstacle* obstacle, Vector3 position);
+static void PipeInit(Pipe* pipe, Vector3 position);
 
-static void ObstacleUpdate(Entity* entity, GameState* game_state) {
-    Obstacle* obstacle = (Obstacle*)entity;
+static void PipeUpdate(Entity* entity, GameState* game_state) {
+    Pipe* pipe = (Pipe*)entity;
     if (entity->position.x <= -(26 * SCALING_FACTOR)) {
-        ObstacleInit(obstacle, (Vector3){.x = game_state->screen_width, .y = 0, .z = 0});
+        PipeInit(pipe, (Vector3){.x = game_state->screen_width, .y = 0, .z = 0});
     }
     entity->position.x -= HorizontalScrollSpeed * game_state->delta_time;
 }
 
-static void ObstacleDraw(Entity* entity, GameState* game_state) {
+static void PipeDraw(Entity* entity, GameState* game_state) {
     Vector3 position = entity->position;
 
     DrawTexturePro(
@@ -208,7 +208,7 @@ static void ObstacleDraw(Entity* entity, GameState* game_state) {
         (Vector2){0, 0}, entity->rotation_angle, WHITE);
 }
 
-static BoundingBox ObstacleGetCollisionRect(Entity* entity) {
+static BoundingBox PipeGetCollisionRect(Entity* entity) {
     Vector2 position = (Vector2){entity->position.x, entity->position.y};
 
     Vector2 tl = Vector2Rotate((Vector2){0, 0}, DEG2RAD * entity->rotation_angle);
@@ -230,11 +230,11 @@ static BoundingBox ObstacleGetCollisionRect(Entity* entity) {
     return bb;
 }
 
-static void ObstacleInit(Obstacle* obstacle, Vector3 position) {
-    obstacle->entity.position = position;
-    obstacle->entity.draw_func = &ObstacleDraw;
-    obstacle->entity.update_func = &ObstacleUpdate;
-    obstacle->entity.get_collision_rect_func = &ObstacleGetCollisionRect;
+static void PipeInit(Pipe* pipe, Vector3 position) {
+    pipe->entity.position = position;
+    pipe->entity.draw_func = &PipeDraw;
+    pipe->entity.update_func = &PipeUpdate;
+    pipe->entity.get_collision_rect_func = &PipeGetCollisionRect;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -242,11 +242,11 @@ static void ObstacleInit(Obstacle* obstacle, Vector3 position) {
 
 typedef struct Spawner {
     Entity entity;
-    Obstacle* pipe_up;
-    Obstacle* pipe_down;
+    Pipe* pipe_up;
+    Pipe* pipe_down;
 } Spawner;
 
-static void SpawnerInit(Spawner*, Obstacle*, Obstacle*, int);
+static void SpawnerInit(Spawner*, Pipe*, Pipe*, int);
 
 static void SpawnerUpdate(Entity* entity, GameState* game_state) {
     Spawner* spawner = (Spawner*)entity;
@@ -255,18 +255,18 @@ static void SpawnerUpdate(Entity* entity, GameState* game_state) {
     }
 }
 
-static void SpawnerInit(Spawner* spawner, Obstacle* pipe_up, Obstacle* pipe_down, int start_x) {
+static void SpawnerInit(Spawner* spawner, Pipe* pipe_up, Pipe* pipe_down, int start_x) {
     spawner->pipe_up = pipe_up;
     spawner->pipe_down = pipe_down;
     spawner->entity.update_func = &SpawnerUpdate;
 
     Vector3 position = (Vector3){start_x, -GetRandomValue(0, 100 * SCALING_FACTOR), 0};
-    ObstacleInit(pipe_up, position);
+    PipeInit(pipe_up, position);
 
     position.x += 26 * SCALING_FACTOR;
     position.y += (160 * SCALING_FACTOR) + 120 + (160 * SCALING_FACTOR);
     pipe_down->entity.rotation_angle = -180;
-    ObstacleInit(pipe_down, position);
+    PipeInit(pipe_down, position);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -286,13 +286,13 @@ static void GameStateInit(GameState* game_state) {
     BackgroundInit(background);
     arrpush(game_state->entities, (Entity*)background);
 
-    Obstacle* obstacle = (Obstacle*)calloc(1, sizeof(Obstacle));
-    arrpush(game_state->entities, (Entity*)obstacle);
-    Obstacle* obstacle2 = (Obstacle*)calloc(1, sizeof(Obstacle));
-    arrpush(game_state->entities, (Entity*)obstacle2);
+    Pipe* pipe = (Pipe*)calloc(1, sizeof(Pipe));
+    arrpush(game_state->entities, (Entity*)pipe);
+    Pipe* pipe2 = (Pipe*)calloc(1, sizeof(Pipe));
+    arrpush(game_state->entities, (Entity*)pipe2);
 
     Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
-    SpawnerInit(spawner, obstacle, obstacle2, game_state->screen_width);
+    SpawnerInit(spawner, pipe, pipe2, game_state->screen_width);
     arrpush(game_state->entities, (Entity*)spawner);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
