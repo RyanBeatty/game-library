@@ -209,8 +209,24 @@ static void ObstacleDraw(Entity* entity, GameState* game_state) {
 }
 
 static BoundingBox ObstacleGetCollisionRect(Entity* entity) {
-    BoundingBox bb = {.min = entity->position,
-                      .max = Vector3Add(entity->position, (Vector3){26 * SCALING_FACTOR, 160 * SCALING_FACTOR, 0})};
+    Vector2 position = (Vector2){entity->position.x, entity->position.y};
+
+    Vector2 tl = Vector2Rotate((Vector2){0, 0}, DEG2RAD * entity->rotation_angle);
+    Vector2 tr = Vector2Rotate((Vector2){26 * SCALING_FACTOR, 0}, DEG2RAD * entity->rotation_angle);
+    Vector2 bl = Vector2Rotate((Vector2){0, 160 * SCALING_FACTOR}, DEG2RAD * entity->rotation_angle);
+    Vector2 br = Vector2Rotate((Vector2){26 * SCALING_FACTOR, 160 * SCALING_FACTOR}, DEG2RAD * entity->rotation_angle);
+    tr = Vector2Add(position, tr);
+    tl = Vector2Add(position, tl);
+    bl = Vector2Add(position, bl);
+    br = Vector2Add(position, br);
+
+    float minX = fmin(tl.x, fmin(tr.x, fmin(bl.x, br.x)));
+    float maxX = fmax(tl.x, fmax(tr.x, fmax(bl.x, br.x)));
+    float minY = fmin(tl.y, fmin(tr.y, fmin(bl.y, br.y)));
+    float maxY = fmax(tl.y, fmax(tr.y, fmax(bl.y, br.y)));
+    Vector3 min = (Vector3){minX, minY, 0};
+    Vector3 max = (Vector3){maxX, maxY, 0};
+    BoundingBox bb = (BoundingBox){.min = min, .max = max};
     return bb;
 }
 
