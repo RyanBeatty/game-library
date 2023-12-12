@@ -238,7 +238,7 @@ static void PipeInit(Pipe* pipe, Vector3 position) {
 }
 
 //////////////////////////////////////////////////////////////////////
-// ObstacleSpawner.
+// PipeSpawner.
 
 typedef struct Spawner {
     Entity entity;
@@ -270,6 +270,37 @@ static void SpawnerInit(Spawner* spawner, Pipe* pipe_up, Pipe* pipe_down, int st
 }
 
 //////////////////////////////////////////////////////////////////////
+// Ground.
+
+typedef struct Ground {
+    Entity entity;
+} Ground;
+
+static void GroundInit(Ground*, Vector3);
+
+static void GroundUpdate(Entity* entity, GameState* game_state) {
+    entity->position.x += -HorizontalScrollSpeed * game_state->delta_time;
+    if (entity->position.x <= -168 * SCALING_FACTOR) {
+        GroundInit((Ground*)entity, (Vector3){game_state->screen_width, game_state->screen_height, 0});
+    }
+}
+
+static void GroundDraw(Entity* entity, GameState* game_state) {
+    Vector3 position = entity->position;
+    DrawTexturePro(
+        game_state->atlas, (Rectangle){.x = 314, .y = 0, .width = 168, .height = 56},
+        (Rectangle){.x = position.x, .y = position.y, .width = 168 * SCALING_FACTOR, .height = 56 * SCALING_FACTOR},
+        (Vector2){0, 0}, entity->rotation_angle, WHITE);
+}
+
+static void GroundInit(Ground* ground, Vector3 position) {
+    position.y -= 56 * SCALING_FACTOR;
+    ground->entity.position = position;
+    ground->entity.update_func = &GroundUpdate;
+    ground->entity.draw_func = &GroundDraw;
+}
+
+//////////////////////////////////////////////////////////////////////
 
 static void GameStateInit(GameState* game_state) {
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -294,6 +325,14 @@ static void GameStateInit(GameState* game_state) {
     Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
     SpawnerInit(spawner, pipe, pipe2, game_state->screen_width);
     arrpush(game_state->entities, (Entity*)spawner);
+
+    // Fake ground infinite scroll with two textures placed next to eachother
+    Ground* ground = (Ground*)calloc(1, sizeof(Ground));
+    GroundInit(ground, (Vector3){0, game_state->screen_height, 0});
+    arrpush(game_state->entities, (Entity*)ground);
+    Ground* ground2 = (Ground*)calloc(1, sizeof(Ground));
+    GroundInit(ground2, (Vector3){game_state->screen_width, game_state->screen_height, 0});
+    arrpush(game_state->entities, (Entity*)ground2);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
     PlayerInit(player,
