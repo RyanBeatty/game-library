@@ -16,6 +16,13 @@ static const float JumpSpeed = 200;
 
 struct GameState;
 
+typedef enum GameMode {
+    GM_PLAY = 0,
+    GM_GAME_OVER,
+
+    GM_COUNT
+} GameMode;
+
 typedef struct Entity {
     Vector3 position;
     float rotation_angle;  // radians.
@@ -30,11 +37,13 @@ typedef struct GameState {
     float delta_time;
     int screen_width;
     int screen_height;
-    bool active;
+    GameMode game_mode;
 
     Entity** entities;  // stb_array.
     Texture atlas;
 } GameState;
+
+static void PlayGameStateInit(GameState*);
 
 static void GameStateCheckCollisions(GameState* game_state) {
     for (size_t i = 0; i < arrlen(game_state->entities); ++i) {
@@ -65,7 +74,7 @@ static void GameStateUpdate(GameState* game_state) {
     game_state->screen_width = GetScreenWidth();
     game_state->screen_height = GetScreenHeight();
 
-    if (game_state->active) {
+    if (game_state->game_mode == GM_PLAY) {
         Entity* entity;
         for (size_t i = 0; i < arrlen(game_state->entities); ++i) {
             entity = game_state->entities[i];
@@ -76,6 +85,10 @@ static void GameStateUpdate(GameState* game_state) {
         }
 
         GameStateCheckCollisions(game_state);
+    } else if (game_state->game_mode == GM_GAME_OVER) {
+        if (IsKeyPressed(KEY_SPACE)) {
+            PlayGameStateInit(game_state);
+        }
     }
 }
 
@@ -101,6 +114,14 @@ static void GameStateDraw(GameState* game_state) {
             BoundingBox bb = entity->get_collision_rect_func(entity);
             DrawRectangleLines(bb.min.x, bb.min.y, bb.max.x - bb.min.x, bb.max.y - bb.min.y, RED);
         }
+    }
+
+    if (game_state->game_mode == GM_GAME_OVER) {
+        DrawRectangle(0, 0, game_state->screen_width, game_state->screen_height, GRAY);
+        const int font_size = 20;
+        const char* text = "Game Over. Hit Space to Play Again";
+        DrawText(text, (game_state->screen_width / 2) - (5 * strlen(text)), game_state->screen_height / 2, font_size,
+                 WHITE);
     }
 
     EndDrawing();
@@ -156,7 +177,7 @@ static BoundingBox PlayerGetCollisionRect(Entity* entity) {
     return bb;
 }
 
-static void PlayerResolveCollision(Entity* entity, GameState* game_state) { game_state->active = false; }
+static void PlayerResolveCollision(Entity* entity, GameState* game_state) { game_state->game_mode = GM_GAME_OVER; }
 
 static void PlayerUpdate(Entity* entity, GameState* game_state) {
     Player* player = (Player*)entity;
@@ -338,43 +359,44 @@ static void GameStatesInit() {
 
     SetTargetFPS(60);
 
-    // Play state.
-    {
-        GameState* game_state = &GameStates[GSI_PLAY];
-        game_state->screen_width = GetScreenWidth();
-        game_state->screen_height = GetScreenHeight();
-        game_state->entities = NULL;
-        game_state->active = true;
+    GameState* game_state = &GameStates[GSI_PLAY];
+    PlayGameStateInit(game_state);
+}
 
-        Background* background = (Background*)calloc(1, sizeof(Background));
-        BackgroundInit(background);
-        arrpush(game_state->entities, (Entity*)background);
+static void PlayGameStateInit(GameState* game_state) {
+    game_state->screen_width = GetScreenWidth();
+    game_state->screen_height = GetScreenHeight();
+    game_state->entities = NULL;
+    game_state->game_mode = GM_PLAY;
 
-        Pipe* pipe = (Pipe*)calloc(1, sizeof(Pipe));
-        arrpush(game_state->entities, (Entity*)pipe);
-        Pipe* pipe2 = (Pipe*)calloc(1, sizeof(Pipe));
-        arrpush(game_state->entities, (Entity*)pipe2);
+    Background* background = (Background*)calloc(1, sizeof(Background));
+    BackgroundInit(background);
+    arrpush(game_state->entities, (Entity*)background);
 
-        Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
-        SpawnerInit(spawner, pipe, pipe2, game_state->screen_width);
-        arrpush(game_state->entities, (Entity*)spawner);
+    Pipe* pipe = (Pipe*)calloc(1, sizeof(Pipe));
+    arrpush(game_state->entities, (Entity*)pipe);
+    Pipe* pipe2 = (Pipe*)calloc(1, sizeof(Pipe));
+    arrpush(game_state->entities, (Entity*)pipe2);
 
-        // Fake ground infinite scroll with two textures placed next to eachother
-        Ground* ground = (Ground*)calloc(1, sizeof(Ground));
-        GroundInit(ground, (Vector3){0, game_state->screen_height, 0});
-        arrpush(game_state->entities, (Entity*)ground);
-        Ground* ground2 = (Ground*)calloc(1, sizeof(Ground));
-        GroundInit(ground2, (Vector3){game_state->screen_width, game_state->screen_height, 0});
-        arrpush(game_state->entities, (Entity*)ground2);
+    Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
+    SpawnerInit(spawner, pipe, pipe2, game_state->screen_width);
+    arrpush(game_state->entities, (Entity*)spawner);
 
-        Player* player = (Player*)calloc(1, sizeof(Player));
-        PlayerInit(player, (Vector3){(game_state->screen_width / 2) - (17 * SCALING_FACTOR),
-                                     (game_state->screen_height / 2), 0});
-        arrpush(game_state->entities, (Entity*)player);
+    // Fake ground infinite scroll with two textures placed next to eachother
+    Ground* ground = (Ground*)calloc(1, sizeof(Ground));
+    GroundInit(ground, (Vector3){0, game_state->screen_height, 0});
+    arrpush(game_state->entities, (Entity*)ground);
+    Ground* ground2 = (Ground*)calloc(1, sizeof(Ground));
+    GroundInit(ground2, (Vector3){game_state->screen_width, game_state->screen_height, 0});
+    arrpush(game_state->entities, (Entity*)ground2);
 
-        game_state->atlas = LoadTexture("assets/atlas.png");
-        SetTextureFilter(game_state->atlas, TEXTURE_FILTER_BILINEAR);
-    }
+    Player* player = (Player*)calloc(1, sizeof(Player));
+    PlayerInit(player,
+               (Vector3){(game_state->screen_width / 2) - (17 * SCALING_FACTOR), (game_state->screen_height / 2), 0});
+    arrpush(game_state->entities, (Entity*)player);
+
+    game_state->atlas = LoadTexture("assets/atlas.png");
+    SetTextureFilter(game_state->atlas, TEXTURE_FILTER_BILINEAR);
 }
 
 int main(void) {
