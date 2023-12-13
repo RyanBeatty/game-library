@@ -19,6 +19,7 @@ struct GameState;
 typedef enum GameMode {
     GM_PLAY = 0,
     GM_GAME_OVER,
+    GM_START,
 
     GM_COUNT
 } GameMode;
@@ -88,6 +89,11 @@ static void GameStateUpdate(GameState* game_state) {
     } else if (game_state->game_mode == GM_GAME_OVER) {
         if (IsKeyPressed(KEY_SPACE)) {
             PlayGameStateInit(game_state);
+            game_state->game_mode = GM_PLAY;
+        }
+    } else if (game_state->game_mode == GM_START) {
+        if (IsKeyPressed(KEY_SPACE)) {
+            game_state->game_mode = GM_PLAY;
         }
     }
 }
@@ -120,6 +126,12 @@ static void GameStateDraw(GameState* game_state) {
         DrawRectangle(0, 0, game_state->screen_width, game_state->screen_height, GRAY);
         const int font_size = 20;
         const char* text = "Game Over. Hit Space to Play Again";
+        DrawText(text, (game_state->screen_width / 2) - (5 * strlen(text)), game_state->screen_height / 2, font_size,
+                 WHITE);
+    } else if (game_state->game_mode == GM_START) {
+        DrawRectangle(0, 0, game_state->screen_width, game_state->screen_height, BLACK);
+        const int font_size = 20;
+        const char* text = "Flappy Bird. Hit Space to Play";
         DrawText(text, (game_state->screen_width / 2) - (5 * strlen(text)), game_state->screen_height / 2, font_size,
                  WHITE);
     }
@@ -361,13 +373,14 @@ static void GameStatesInit() {
 
     GameState* game_state = &GameStates[GSI_PLAY];
     PlayGameStateInit(game_state);
+
+    game_state->game_mode = GM_START;
 }
 
 static void PlayGameStateInit(GameState* game_state) {
     game_state->screen_width = GetScreenWidth();
     game_state->screen_height = GetScreenHeight();
     game_state->entities = NULL;
-    game_state->game_mode = GM_PLAY;
 
     Background* background = (Background*)calloc(1, sizeof(Background));
     BackgroundInit(background);
