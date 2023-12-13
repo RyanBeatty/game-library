@@ -131,8 +131,8 @@ static void GameStateDraw(GameState* game_state) {
     } else if (game_state->game_mode == GM_START) {
         DrawRectangle(0, 0, game_state->screen_width, game_state->screen_height, BLACK);
         const int font_size = 20;
-        const char* text = "Flappy Bird. Hit Space to Play";
-        DrawText(text, (game_state->screen_width / 2) - (5 * strlen(text)), game_state->screen_height / 2, font_size,
+        const char* text = "Flappy Bird. Hit Space to Start/Jump";
+        DrawText(text, (game_state->screen_width / 2) - (5.5 * strlen(text)), game_state->screen_height / 2, font_size,
                  WHITE);
     }
 
