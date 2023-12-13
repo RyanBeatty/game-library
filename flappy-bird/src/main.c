@@ -363,7 +363,7 @@ static void GameStateInit(GameState* game_state) {
     arrpush(game_state->entities, (Entity*)player);
 
     game_state->atlas = LoadTexture("assets/atlas.png");
-    SetTextureFilter(game_state->atlas, TEXTURE_FILTER_TRILINEAR);
+    SetTextureFilter(game_state->atlas, TEXTURE_FILTER_BILINEAR);
 }
 
 int main(void) {
