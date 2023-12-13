@@ -106,10 +106,16 @@ static void GameStateDraw(GameState* game_state) {
     EndDrawing();
 }
 
-static void GameStateClose(GameState* game_state) {
-    UnloadTexture(game_state->atlas);
-    CloseWindow();
-}
+static void GameStateClose() { CloseWindow(); }
+
+typedef enum GameStateIdx {
+    GSI_PLAY = 0,
+
+    GSI_COUNT,
+} GameStateIndex;
+
+static GameState GameStates[2];
+static size_t cur_game_state_idx;
 
 //////////////////////////////////////////////////////////////////////
 // Background.
@@ -325,56 +331,61 @@ static void GroundInit(Ground* ground, Vector3 position) {
 
 //////////////////////////////////////////////////////////////////////
 
-static void GameStateInit(GameState* game_state) {
+static void GameStatesInit() {
     // SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(SCREEN_WIDTH_INIT, SCREEN_HEIGHT_INIT, "Game");
+    cur_game_state_idx = GSI_PLAY;
 
     SetTargetFPS(60);
 
-    game_state->screen_width = GetScreenWidth();
-    game_state->screen_height = GetScreenHeight();
-    game_state->entities = NULL;
-    game_state->active = true;
+    // Play state.
+    {
+        GameState* game_state = &GameStates[GSI_PLAY];
+        game_state->screen_width = GetScreenWidth();
+        game_state->screen_height = GetScreenHeight();
+        game_state->entities = NULL;
+        game_state->active = true;
 
-    Background* background = (Background*)calloc(1, sizeof(Background));
-    BackgroundInit(background);
-    arrpush(game_state->entities, (Entity*)background);
+        Background* background = (Background*)calloc(1, sizeof(Background));
+        BackgroundInit(background);
+        arrpush(game_state->entities, (Entity*)background);
 
-    Pipe* pipe = (Pipe*)calloc(1, sizeof(Pipe));
-    arrpush(game_state->entities, (Entity*)pipe);
-    Pipe* pipe2 = (Pipe*)calloc(1, sizeof(Pipe));
-    arrpush(game_state->entities, (Entity*)pipe2);
+        Pipe* pipe = (Pipe*)calloc(1, sizeof(Pipe));
+        arrpush(game_state->entities, (Entity*)pipe);
+        Pipe* pipe2 = (Pipe*)calloc(1, sizeof(Pipe));
+        arrpush(game_state->entities, (Entity*)pipe2);
 
-    Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
-    SpawnerInit(spawner, pipe, pipe2, game_state->screen_width);
-    arrpush(game_state->entities, (Entity*)spawner);
+        Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
+        SpawnerInit(spawner, pipe, pipe2, game_state->screen_width);
+        arrpush(game_state->entities, (Entity*)spawner);
 
-    // Fake ground infinite scroll with two textures placed next to eachother
-    Ground* ground = (Ground*)calloc(1, sizeof(Ground));
-    GroundInit(ground, (Vector3){0, game_state->screen_height, 0});
-    arrpush(game_state->entities, (Entity*)ground);
-    Ground* ground2 = (Ground*)calloc(1, sizeof(Ground));
-    GroundInit(ground2, (Vector3){game_state->screen_width, game_state->screen_height, 0});
-    arrpush(game_state->entities, (Entity*)ground2);
+        // Fake ground infinite scroll with two textures placed next to eachother
+        Ground* ground = (Ground*)calloc(1, sizeof(Ground));
+        GroundInit(ground, (Vector3){0, game_state->screen_height, 0});
+        arrpush(game_state->entities, (Entity*)ground);
+        Ground* ground2 = (Ground*)calloc(1, sizeof(Ground));
+        GroundInit(ground2, (Vector3){game_state->screen_width, game_state->screen_height, 0});
+        arrpush(game_state->entities, (Entity*)ground2);
 
-    Player* player = (Player*)calloc(1, sizeof(Player));
-    PlayerInit(player,
-               (Vector3){(game_state->screen_width / 2) - (17 * SCALING_FACTOR), (game_state->screen_height / 2), 0});
-    arrpush(game_state->entities, (Entity*)player);
+        Player* player = (Player*)calloc(1, sizeof(Player));
+        PlayerInit(player, (Vector3){(game_state->screen_width / 2) - (17 * SCALING_FACTOR),
+                                     (game_state->screen_height / 2), 0});
+        arrpush(game_state->entities, (Entity*)player);
 
-    game_state->atlas = LoadTexture("assets/atlas.png");
-    SetTextureFilter(game_state->atlas, TEXTURE_FILTER_BILINEAR);
+        game_state->atlas = LoadTexture("assets/atlas.png");
+        SetTextureFilter(game_state->atlas, TEXTURE_FILTER_BILINEAR);
+    }
 }
 
 int main(void) {
-    GameState game_state;
-    GameStateInit(&game_state);
+    GameStatesInit();
 
     while (!WindowShouldClose()) {
-        GameStateUpdate(&game_state);
-        GameStateDraw(&game_state);
+        GameState* game_state = &GameStates[cur_game_state_idx];
+        GameStateUpdate(game_state);
+        GameStateDraw(game_state);
     }
 
-    GameStateClose(&game_state);
+    GameStateClose();
     return 0;
 }
