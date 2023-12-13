@@ -10,9 +10,9 @@
 #define SCREEN_WIDTH_INIT (144 * SCALING_FACTOR)
 #define SCREEN_HEIGHT_INIT (254 * SCALING_FACTOR)
 
-static const float HorizontalScrollSpeed = 80;
-static const float Gravity = 200;
-static const float JumpSpeed = 100;
+static const float HorizontalScrollSpeed = 160;
+static const float Gravity = 400;
+static const float JumpSpeed = 200;
 
 struct GameState;
 
