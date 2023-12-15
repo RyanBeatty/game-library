@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "raylib.h"
@@ -40,12 +41,18 @@ typedef struct GameState {
     int screen_height;
     GameMode game_mode;
     int score;
+    bool player_scorebox_collision;  // HACK.
 
     Entity** entities;  // stb_array.
     Texture atlas;
 } GameState;
 
 static void PlayGameStateInit(GameState*);
+
+struct Player;
+struct Score;
+static void PlayerUpdate(Entity*, GameState*);
+static void ScoreBoxUpdate(Entity*, GameState*);
 
 static void GameStateCheckCollisions(GameState* game_state) {
     for (size_t i = 0; i < arrlen(game_state->entities); ++i) {
@@ -60,6 +67,9 @@ static void GameStateCheckCollisions(GameState* game_state) {
             BoundingBox bb1 = entity1->get_collision_rect_func(entity1);
             BoundingBox bb2 = entity2->get_collision_rect_func(entity2);
             if (CheckCollisionBoxes(bb1, bb2)) {
+                game_state->player_scorebox_collision =
+                    (entity1->update_func == &PlayerUpdate || entity1->update_func == &ScoreBoxUpdate) &&
+                    (entity2->update_func == &PlayerUpdate || entity2->update_func == &ScoreBoxUpdate);
                 if (entity1->resolve_collision_func != NULL) {
                     entity1->resolve_collision_func(entity1, game_state);
                 }
@@ -321,7 +331,7 @@ static BoundingBox ScoreBoxGetCollisionRect(Entity* entity) {
 static void ScoreBoxResolveCollision(Entity* entity, GameState* game_state) {
     ScoreBox* score_box = (ScoreBox*)entity;
     game_state->game_mode = GM_PLAY;  // HACK to ensure we don't gameover.
-    if (!score_box->scored) {
+    if (!score_box->scored && game_state->player_scorebox_collision) {
         ++game_state->score;
         score_box->scored = true;
     }
@@ -334,6 +344,21 @@ static void ScoreBoxInit(ScoreBox* score_box, Vector3 position) {
     score_box->entity.resolve_collision_func = &ScoreBoxResolveCollision;
     score_box->scored = false;
 }
+
+//////////////////////////////////////////////////////////////////////
+// Score.
+
+typedef struct Score {
+    Entity entiy;
+} Score;
+
+static void ScoreDraw(Entity* entity, GameState* game_state) {
+    char score_text[100];
+    sprintf(score_text, "%d", game_state->score);
+    DrawText(score_text, 10, 10, 20, WHITE);
+}
+
+static void ScoreInit(Score* score) { score->entiy.draw_func = &ScoreDraw; }
 
 //////////////////////////////////////////////////////////////////////
 // PipeSpawner.
@@ -446,6 +471,7 @@ static void PlayGameStateInit(GameState* game_state) {
     game_state->screen_height = GetScreenHeight();
     game_state->entities = NULL;
     game_state->score = 0;
+    game_state->player_scorebox_collision = false;
 
     Background* background = (Background*)calloc(1, sizeof(Background));
     BackgroundInit(background);
@@ -470,6 +496,10 @@ static void PlayGameStateInit(GameState* game_state) {
     Ground* ground2 = (Ground*)calloc(1, sizeof(Ground));
     GroundInit(ground2, (Vector3){game_state->screen_width, game_state->screen_height, 0});
     arrpush(game_state->entities, (Entity*)ground2);
+
+    Score* score = (Score*)calloc(1, sizeof(Score));
+    ScoreInit(score);
+    arrpush(game_state->entities, (Entity*)score);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
     PlayerInit(player,
