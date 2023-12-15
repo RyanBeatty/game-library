@@ -41,7 +41,7 @@ typedef struct GameState {
     int screen_height;
     GameMode game_mode;
     int score;
-    bool player_scorebox_collision;  // HACK.
+    bool pipe_scorebox_collision;  // HACK.
 
     Entity** entities;  // stb_array.
     Texture atlas;
@@ -51,7 +51,7 @@ static void PlayGameStateInit(GameState*);
 
 struct Player;
 struct Score;
-static void PlayerUpdate(Entity*, GameState*);
+static void PipeUpdate(Entity*, GameState*);
 static void ScoreBoxUpdate(Entity*, GameState*);
 
 static void GameStateCheckCollisions(GameState* game_state) {
@@ -67,9 +67,9 @@ static void GameStateCheckCollisions(GameState* game_state) {
             BoundingBox bb1 = entity1->get_collision_rect_func(entity1);
             BoundingBox bb2 = entity2->get_collision_rect_func(entity2);
             if (CheckCollisionBoxes(bb1, bb2)) {
-                game_state->player_scorebox_collision =
-                    (entity1->update_func == &PlayerUpdate || entity1->update_func == &ScoreBoxUpdate) &&
-                    (entity2->update_func == &PlayerUpdate || entity2->update_func == &ScoreBoxUpdate);
+                game_state->pipe_scorebox_collision =
+                    (entity1->update_func == &PipeUpdate || entity1->update_func == &ScoreBoxUpdate) &&
+                    (entity2->update_func == &PipeUpdate || entity2->update_func == &ScoreBoxUpdate);
                 if (entity1->resolve_collision_func != NULL) {
                     entity1->resolve_collision_func(entity1, game_state);
                 }
@@ -294,26 +294,24 @@ static void PipeInit(Pipe* pipe, Vector3 position) {
 
 typedef struct ScoreBox {
     Entity entity;
-    bool scored;
+    float score_cooldown;
 } ScoreBox;
 
 static void ScoreBoxInit(ScoreBox*, Vector3);
 
 static void ScoreBoxUpdate(Entity* entity, GameState* game_state) {
     ScoreBox* score_box = (ScoreBox*)entity;
-    if (entity->position.x <= -(26 * SCALING_FACTOR)) {
-        ScoreBoxInit(score_box, (Vector3){.x = game_state->screen_width, .y = 0, .z = 0});
-    }
-    entity->position.x -= HorizontalScrollSpeed * game_state->delta_time;
+    score_box->score_cooldown -= game_state->delta_time;
+    score_box->score_cooldown = score_box->score_cooldown <= 0 ? 0 : score_box->score_cooldown;
 }
 
 static BoundingBox ScoreBoxGetCollisionRect(Entity* entity) {
     Vector2 position = (Vector2){entity->position.x, entity->position.y};
 
     Vector2 tl = Vector2Rotate((Vector2){0, 0}, DEG2RAD * entity->rotation_angle);
-    Vector2 tr = Vector2Rotate((Vector2){26 * SCALING_FACTOR, 0}, DEG2RAD * entity->rotation_angle);
-    Vector2 bl = Vector2Rotate((Vector2){0, 120}, DEG2RAD * entity->rotation_angle);
-    Vector2 br = Vector2Rotate((Vector2){26 * SCALING_FACTOR, 120}, DEG2RAD * entity->rotation_angle);
+    Vector2 tr = Vector2Rotate((Vector2){15 * SCALING_FACTOR, 0}, DEG2RAD * entity->rotation_angle);
+    Vector2 bl = Vector2Rotate((Vector2){0, 500}, DEG2RAD * entity->rotation_angle);
+    Vector2 br = Vector2Rotate((Vector2){15 * SCALING_FACTOR, 500}, DEG2RAD * entity->rotation_angle);
     tr = Vector2Add(position, tr);
     tl = Vector2Add(position, tl);
     bl = Vector2Add(position, bl);
@@ -332,10 +330,9 @@ static BoundingBox ScoreBoxGetCollisionRect(Entity* entity) {
 
 static void ScoreBoxResolveCollision(Entity* entity, GameState* game_state) {
     ScoreBox* score_box = (ScoreBox*)entity;
-    game_state->game_mode = GM_PLAY;  // HACK to ensure we don't gameover.
-    if (!score_box->scored && game_state->player_scorebox_collision) {
+    if (score_box->score_cooldown <= 0 && game_state->pipe_scorebox_collision) {
         ++game_state->score;
-        score_box->scored = true;
+        score_box->score_cooldown = 2.5;
     }
 }
 
@@ -344,7 +341,7 @@ static void ScoreBoxInit(ScoreBox* score_box, Vector3 position) {
     score_box->entity.update_func = &ScoreBoxUpdate;
     score_box->entity.get_collision_rect_func = &ScoreBoxGetCollisionRect;
     score_box->entity.resolve_collision_func = &ScoreBoxResolveCollision;
-    score_box->scored = false;
+    score_box->score_cooldown = 0;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -369,29 +366,26 @@ typedef struct Spawner {
     Entity entity;
     Pipe* pipe_up;
     Pipe* pipe_down;
-    ScoreBox* score_box;
 } Spawner;
 
-static void SpawnerInit(Spawner*, Pipe*, Pipe*, ScoreBox*, int);
+static void SpawnerInit(Spawner*, Pipe*, Pipe*, int);
 
 static void SpawnerUpdate(Entity* entity, GameState* game_state) {
     Spawner* spawner = (Spawner*)entity;
     if (spawner->pipe_up->entity.position.x <= -(26 * SCALING_FACTOR)) {
-        SpawnerInit(spawner, spawner->pipe_up, spawner->pipe_down, spawner->score_box, game_state->screen_width);
+        SpawnerInit(spawner, spawner->pipe_up, spawner->pipe_down, game_state->screen_width);
     }
 }
 
-static void SpawnerInit(Spawner* spawner, Pipe* pipe_up, Pipe* pipe_down, ScoreBox* score_box, int start_x) {
+static void SpawnerInit(Spawner* spawner, Pipe* pipe_up, Pipe* pipe_down, int start_x) {
     spawner->pipe_up = pipe_up;
     spawner->pipe_down = pipe_down;
-    spawner->score_box = score_box;
     spawner->entity.update_func = &SpawnerUpdate;
 
     Vector3 position = (Vector3){start_x, -GetRandomValue(0, 100 * SCALING_FACTOR), 0};
     PipeInit(pipe_up, position);
 
     position.y += (160 * SCALING_FACTOR);
-    ScoreBoxInit(score_box, position);
 
     position.x += 26 * SCALING_FACTOR;
     position.y += 120 + (160 * SCALING_FACTOR);
@@ -473,7 +467,7 @@ static void PlayGameStateInit(GameState* game_state) {
     game_state->screen_height = GetScreenHeight();
     game_state->entities = NULL;
     game_state->score = 0;
-    game_state->player_scorebox_collision = false;
+    game_state->pipe_scorebox_collision = false;
 
     Background* background = (Background*)calloc(1, sizeof(Background));
     BackgroundInit(background);
@@ -484,11 +478,8 @@ static void PlayGameStateInit(GameState* game_state) {
     Pipe* pipe2 = (Pipe*)calloc(1, sizeof(Pipe));
     arrpush(game_state->entities, (Entity*)pipe2);
 
-    ScoreBox* score_box = (ScoreBox*)calloc(1, sizeof(ScoreBox));
-    arrpush(game_state->entities, (Entity*)score_box);
-
     Spawner* spawner = (Spawner*)calloc(1, sizeof(Spawner));
-    SpawnerInit(spawner, pipe, pipe2, score_box, game_state->screen_width);
+    SpawnerInit(spawner, pipe, pipe2, game_state->screen_width);
     arrpush(game_state->entities, (Entity*)spawner);
 
     // Fake ground infinite scroll with two textures placed next to eachother
@@ -504,9 +495,16 @@ static void PlayGameStateInit(GameState* game_state) {
     arrpush(game_state->entities, (Entity*)score);
 
     Player* player = (Player*)calloc(1, sizeof(Player));
-    PlayerInit(player,
-               (Vector3){(game_state->screen_width / 2) - (17 * SCALING_FACTOR), (game_state->screen_height / 2), 0});
+    Vector3 player_position =
+        (Vector3){(game_state->screen_width / 2) - (17 * SCALING_FACTOR), (game_state->screen_height / 2), 0};
+    PlayerInit(player, player_position);
     arrpush(game_state->entities, (Entity*)player);
+
+    player_position.x -= 50;
+    player_position.y -= 300;
+    ScoreBox* score_box = (ScoreBox*)calloc(1, sizeof(ScoreBox));
+    ScoreBoxInit(score_box, player_position);
+    arrpush(game_state->entities, (Entity*)score_box);
 
     game_state->atlas = LoadTexture("assets/atlas.png");
     SetTextureFilter(game_state->atlas, TEXTURE_FILTER_BILINEAR);
