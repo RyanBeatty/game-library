@@ -355,7 +355,7 @@ typedef struct Score {
 static void ScoreDraw(Entity* entity, GameState* game_state) {
     char score_text[100];
     sprintf(score_text, "%d", game_state->score);
-    DrawText(score_text, 10, 10, 20, WHITE);
+    DrawText(score_text, 15, 15, 40, WHITE);
 }
 
 static void ScoreInit(Score* score) { score->entiy.draw_func = &ScoreDraw; }
