@@ -147,6 +147,8 @@ static void GameStateDraw(GameState* game_state) {
                  WHITE);
     }
 
+    // DrawFPS(game_state->screen_width - 100, 15);
+
     EndDrawing();
 }
 
