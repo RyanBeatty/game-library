@@ -7,6 +7,8 @@ static const int ppu = 16;
 
 static const int OriginalWidth = 256;
 static const int OriginalHeight = 240;
+static const int ScalingFactor = 2;
+#define SCALE(x) ((x)*ScalingFactor)
 #define ScalingFactor (2)
 #define RenderWidth (OriginalWidth * ScalingFactor)
 #define RenderHeight (OriginalHeight * ScalingFactor)
@@ -30,8 +32,8 @@ static void GameDraw() {
     for (size_t i = 0; i < OriginalHeightTiles; ++i, ++idx) {
         for (size_t j = 0; j < OriginalWidthTiles; ++j, ++idx) {
             Color color = idx % 2 == 0 ? BLACK : RED;
-            DrawRectangleV((Vector2){j * ppu * ScalingFactor, i * ppu * ScalingFactor},
-                           (Vector2){((j * ppu) + ppu) * ScalingFactor, ((i * ppu) + ppu) * ScalingFactor}, color);
+            DrawRectangleV((Vector2){SCALE(j * ppu), SCALE(i * ppu)},
+                           (Vector2){SCALE((j * ppu) + ppu), SCALE((i * ppu) + ppu)}, color);
         }
     }
 
