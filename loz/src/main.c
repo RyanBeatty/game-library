@@ -16,7 +16,8 @@ static const int ScalingFactor = 2;
 #define OriginalWidthTiles (OriginalWidth / ppu)
 #define OriginalHeightTiles (OriginalHeight / ppu)
 
-static Texture desert_atlas;
+static Texture DesertAtlas;
+static Texture LinkWalkingAtlas;
 
 typedef struct Entity {
     Vector2 position;
@@ -86,7 +87,7 @@ static void TileMapDraw() {
             int x = (tile_idx % 8) * ppu;
             int y = (tile_idx / 8) * ppu;
             DrawTexturePro(
-                desert_atlas, (Rectangle){.x = x, .y = y, .width = ppu, .height = ppu},
+                DesertAtlas, (Rectangle){.x = x, .y = y, .width = ppu, .height = ppu},
                 (Rectangle){
                     .x = SCALE(j * ppu), .y = SCALE((i * ppu) + offset), .width = SCALE(ppu), .height = SCALE(ppu)},
                 (Vector2){0, 0}, 0, WHITE);
@@ -95,7 +96,12 @@ static void TileMapDraw() {
 }
 
 static void PlayerDraw(Entity* entity) {
-    DrawRectangle(SCALE(entity->position.x), SCALE(entity->position.y), SCALE(ppu), SCALE(ppu), GREEN);
+    DrawTexturePro(
+        LinkWalkingAtlas, (Rectangle){.x = 0, .y = 0, .width = ppu, .height = ppu},
+        (Rectangle){
+            .x = SCALE(entity->position.x), .y = SCALE(entity->position.y), .width = SCALE(ppu), .height = SCALE(ppu)},
+        (Vector2){0, 0}, 0, WHITE);
+    // DrawRectangle(SCALE(entity->position.x), SCALE(entity->position.y), SCALE(ppu), SCALE(ppu), GREEN);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -104,9 +110,11 @@ static void GameInit() {
     InitWindow(RenderWidth, RenderHeight, "Game");
     SetTargetFPS(60);
 
-    desert_atlas = LoadTexture("assets/textures/desert_atlas.png");
-    assert(IsTextureReady(desert_atlas));
-    // SetTextureFilter(desert_atlas, TE)
+    DesertAtlas = LoadTexture("assets/textures/desert_atlas.png");
+    assert(IsTextureReady(DesertAtlas));
+    LinkWalkingAtlas = LoadTexture("assets/textures/link_walking_atlas.png");
+    assert(IsTextureReady(LinkWalkingAtlas));
+    // SetTextureFilter(DesertAtlas, TE)
 
     Player.position.x = OriginalWidth / 2;
     Player.position.y = OriginalHeight / 2;
