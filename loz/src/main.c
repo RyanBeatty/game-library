@@ -32,6 +32,17 @@ static const uint8_t start_screen[11][16] = {
     {54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54},
 };
 
+static void TileMapDrawDebug() {
+    int idx = 0;
+    for (size_t i = 0; i < OriginalHeightTiles; ++i, ++idx) {
+        for (size_t j = 0; j < OriginalWidthTiles; ++j, ++idx) {
+            Color color = idx % 2 == 0 ? BLACK : RED;
+            DrawRectangleV((Vector2){SCALE(j * ppu), SCALE(i * ppu)},
+                           (Vector2){SCALE((j * ppu) + ppu), SCALE((i * ppu) + ppu)}, color);
+        }
+    }
+}
+
 static void TileMapDraw() {
     int offset = ppu * 4;
     for (size_t i = 0; i < OriginalHeightTiles; ++i) {
@@ -65,14 +76,7 @@ static void GameDraw() {
     ClearBackground(BLACK);
 
     if (false) {
-        int idx = 0;
-        for (size_t i = 0; i < OriginalHeightTiles; ++i, ++idx) {
-            for (size_t j = 0; j < OriginalWidthTiles; ++j, ++idx) {
-                Color color = idx % 2 == 0 ? BLACK : RED;
-                DrawRectangleV((Vector2){SCALE(j * ppu), SCALE(i * ppu)},
-                               (Vector2){SCALE((j * ppu) + ppu), SCALE((i * ppu) + ppu)}, color);
-            }
-        }
+        TileMapDrawDebug();
     }
 
     TileMapDraw();
