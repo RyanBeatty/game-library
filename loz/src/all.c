@@ -18,6 +18,9 @@
 
 void __attribute__((noinline)) breakpoint() {}
 
+#include <stdint.h>
+#include <stdio.h>
+
 ///////////////////////////////////////////////
 // Project files below
 #include "main.c"
