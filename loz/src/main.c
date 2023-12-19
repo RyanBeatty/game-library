@@ -18,6 +18,16 @@ static const int ScalingFactor = 2;
 
 static Texture desert_atlas;
 
+typedef struct Entity {
+    Vector2 position;
+    float rotation;
+
+    Vector2 speed;
+    int speed_key;
+} Entity;
+
+static Entity Player;
+
 static const uint8_t start_screen[11][16] = {
     {54, 54, 54, 54, 54, 54, 54, 23, 23, 54, 54, 54, 54, 54, 54, 54},
     {54, 54, 54, 54, 12, 54, 55, 23, 23, 54, 54, 54, 54, 54, 54, 54},
@@ -31,6 +41,31 @@ static const uint8_t start_screen[11][16] = {
     {54, 54, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 54, 54},
     {54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54},
 };
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Update.
+
+static void PlayerUpdate(Entity* entity, float delta_time) {
+    Vector2 new_speed = {0, 0};
+    if (IsKeyDown(KEY_UP)) {
+        new_speed = (Vector2){0, -1};
+    }
+    if (IsKeyDown(KEY_DOWN)) {
+        new_speed = (Vector2){0, 1};
+    }
+    if (IsKeyDown(KEY_LEFT)) {
+        new_speed = (Vector2){-1, 0};
+    }
+    if (IsKeyDown(KEY_RIGHT)) {
+        new_speed = (Vector2){1, 0};
+    }
+
+    new_speed = Vector2Scale(new_speed, 70 * delta_time);
+    entity->position = Vector2Add(entity->position, new_speed);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+// Draw.
 
 static void TileMapDrawDebug() {
     int idx = 0;
@@ -59,6 +94,12 @@ static void TileMapDraw() {
     }
 }
 
+static void PlayerDraw(Entity* entity) {
+    DrawRectangle(SCALE(entity->position.x), SCALE(entity->position.y), SCALE(ppu), SCALE(ppu), GREEN);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+
 static void GameInit() {
     InitWindow(RenderWidth, RenderHeight, "Game");
     SetTargetFPS(60);
@@ -66,9 +107,12 @@ static void GameInit() {
     desert_atlas = LoadTexture("assets/textures/desert_atlas.png");
     assert(IsTextureReady(desert_atlas));
     // SetTextureFilter(desert_atlas, TE)
+
+    Player.position.x = OriginalWidth / 2;
+    Player.position.y = OriginalHeight / 2;
 }
 
-static void GameUpdate() {}
+static void GameUpdate(float delta_time) { PlayerUpdate(&Player, delta_time); }
 
 static void GameDraw() {
     BeginDrawing();
@@ -80,13 +124,14 @@ static void GameDraw() {
     }
 
     TileMapDraw();
+    PlayerDraw(&Player);
 
     EndDrawing();
 }
 
 static void GameLoop() {
     float delta_time = GetFrameTime();
-    GameUpdate();
+    GameUpdate(delta_time);
     GameDraw();
 }
 
