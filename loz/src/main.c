@@ -12,6 +12,7 @@ static const int ScalingFactor = 2;
 #define ScalingFactor (2)
 #define RenderWidth (OriginalWidth * ScalingFactor)
 #define RenderHeight (OriginalHeight * ScalingFactor)
+#define HudOffset (ppu * 4)
 
 #define OriginalWidthTiles (OriginalWidth / ppu)
 #define OriginalHeightTiles (OriginalHeight / ppu)
@@ -33,7 +34,7 @@ typedef struct Entity {
 
 static Entity Player;
 
-static const uint8_t start_screen[11][16] = {
+static const uint8_t StartScreenTileMap[11][16] = {
     {54, 54, 54, 54, 54, 54, 54, 23, 23, 54, 54, 54, 54, 54, 54, 54},
     {54, 54, 54, 54, 12, 54, 55, 23, 23, 54, 54, 54, 54, 54, 54, 54},
     {54, 54, 54, 55, 23, 23, 23, 23, 23, 54, 54, 54, 54, 54, 54, 54},
@@ -47,11 +48,25 @@ static const uint8_t start_screen[11][16] = {
     {54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54, 54},
 };
 
+static const uint8_t StartScreenHitMap[11][16] = {
+    {1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1},  // prevent lint.
+    {1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},  //
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},  //
+};
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // Init.
 
 static void PlayerInit(Entity* entity) {
-    entity->position.x = OriginalWidth / 2;
+    entity->position.x = (OriginalWidth / 2) - ppu;
     entity->position.y = OriginalHeight / 2;
     entity->sprite_idx = 0;
 }
@@ -93,7 +108,25 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         distance = 8.5;
         entity->sprite_idx = (entity->sprite_idx + 1) % 2;
     }
-    entity->position = Vector2Add(entity->position, new_speed);
+    Vector2 new_position = Vector2Add(entity->position, new_speed);
+
+    for (size_t i = 0; i < OriginalHeightTiles; ++i) {
+        for (size_t j = 0; j < OriginalWidthTiles; ++j) {
+            if (StartScreenHitMap[i][j]) {
+                Vector3 player_min = {new_position.x, new_position.y, 0};
+                BoundingBox player_box = {.min = player_min, .max = Vector3Add(player_min, (Vector3){ppu, ppu, 0})};
+                Vector3 tile_min = {j * ppu, i * ppu, 0};
+                BoundingBox tile_box = {.min = tile_min, .max = Vector3Add(tile_min, (Vector3){ppu, ppu, 0})};
+                if (CheckCollisionBoxes(player_box, tile_box)) {
+                    new_position = entity->position;
+                    goto ret;
+                }
+            }
+        }
+    }
+
+ret:
+    entity->position = new_position;
     entity->sprite_idx_offset = sprite_idx_offset;
     entity->flip_sprite = flip_sprite;
 }
@@ -116,7 +149,7 @@ static void TileMapDraw() {
     int offset = ppu * 4;
     for (size_t i = 0; i < OriginalHeightTiles; ++i) {
         for (size_t j = 0; j < OriginalWidthTiles; ++j) {
-            uint8_t tile_idx = start_screen[i][j];
+            uint8_t tile_idx = StartScreenTileMap[i][j];
             int x = (tile_idx % 8) * ppu;
             int y = (tile_idx / 8) * ppu;
             DrawTexturePro(
@@ -126,20 +159,30 @@ static void TileMapDraw() {
                 (Vector2){0, 0}, 0, WHITE);
         }
     }
+
+    if (true) {
+        for (size_t i = 0; i < OriginalHeightTiles; ++i) {
+            for (size_t j = 0; j < OriginalWidthTiles; ++j) {
+                if (StartScreenHitMap[i][j]) {
+                    DrawRectangleLines(SCALE(j * ppu), SCALE((i * ppu) + offset), SCALE(ppu), SCALE(ppu), RED);
+                }
+            }
+        }
+    }
 }
 
 static void PlayerDraw(Entity* entity) {
     int flip = entity->flip_sprite ? -1 : 1;
-    DrawTexturePro(
-        LinkWalkingAtlas,
-        (Rectangle){.x = (entity->sprite_idx_offset * ppu * 2) + (entity->sprite_idx * ppu),
-                    .y = 0,
-                    .width = flip * ppu,
-                    .height = ppu},
-        (Rectangle){
-            .x = SCALE(entity->position.x), .y = SCALE(entity->position.y), .width = SCALE(ppu), .height = SCALE(ppu)},
-        (Vector2){0, 0}, 0, WHITE);
-    // DrawRectangle(SCALE(entity->position.x), SCALE(entity->position.y), SCALE(ppu), SCALE(ppu), GREEN);
+    DrawTexturePro(LinkWalkingAtlas,
+                   (Rectangle){.x = (entity->sprite_idx_offset * ppu * 2) + (entity->sprite_idx * ppu),
+                               .y = 0,
+                               .width = flip * ppu,
+                               .height = ppu},
+                   (Rectangle){.x = SCALE(entity->position.x),
+                               .y = SCALE(entity->position.y + HudOffset),
+                               .width = SCALE(ppu),
+                               .height = SCALE(ppu)},
+                   (Vector2){0, 0}, 0, WHITE);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
