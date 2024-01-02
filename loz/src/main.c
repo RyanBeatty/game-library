@@ -125,6 +125,9 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         }
     }
 
+    new_position.x = Clamp(new_position.x, 0, OriginalWidth);
+    new_position.y = Clamp(new_position.y, 0, OriginalHeight);
+
 ret:
     entity->position = new_position;
     entity->sprite_idx_offset = sprite_idx_offset;
