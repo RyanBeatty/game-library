@@ -115,6 +115,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             if (StartScreenHitMap[i][j]) {
                 Vector3 player_min = {new_position.x, new_position.y, 0};
                 BoundingBox player_box = {.min = player_min, .max = Vector3Add(player_min, (Vector3){ppu, ppu, 0})};
+                // Prevent top of player (link head) from colliding with scene so player can exit left/right.
+                player_box.min.y += ppu / 2;
                 Vector3 tile_min = {j * ppu, i * ppu, 0};
                 BoundingBox tile_box = {.min = tile_min, .max = Vector3Add(tile_min, (Vector3){ppu, ppu, 0})};
                 if (CheckCollisionBoxes(player_box, tile_box)) {
