@@ -74,38 +74,63 @@ static void PlayerInit(Entity* entity) {
 ///////////////////////////////////////////////////////////////////////////////////////
 // Update.
 
+#define PLAYER_ATTACK_DURATION_SEC_INIT (0.4f)
+#define PLAYER_ATTACK_COOLDOWN_SEC_INIT (0.2f)
+
 static void PlayerUpdate(Entity* entity, float delta_time) {
-    static float distance = 8.5;
+    static float walk_cycle_distance = 8.5;
+
+    static float attack_cooldown_sec = 0.0f;
+    static float attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
+    static bool attacking = false;
 
     size_t sprite_idx_offset = entity->sprite_idx_offset;
     bool flip_sprite = entity->flip_sprite;
 
+    attack_cooldown_sec -= delta_time;
+    attack_cooldown_sec = attack_cooldown_sec <= 0.0f ? 0.0f : attack_cooldown_sec;
+
     Vector2 new_speed = {0, 0};
-    if (IsKeyDown(KEY_UP)) {
-        new_speed = (Vector2){0, -1};
-        sprite_idx_offset = 2;
-        flip_sprite = false;
-    }
-    if (IsKeyDown(KEY_DOWN)) {
-        new_speed = (Vector2){0, 1};
-        sprite_idx_offset = 0;
-        flip_sprite = false;
-    }
-    if (IsKeyDown(KEY_LEFT)) {
-        new_speed = (Vector2){-1, 0};
-        sprite_idx_offset = 1;
-        flip_sprite = true;
-    }
-    if (IsKeyDown(KEY_RIGHT)) {
-        new_speed = (Vector2){1, 0};
-        sprite_idx_offset = 1;
-        flip_sprite = false;
+    if (!attacking) {
+        if (IsKeyDown(KEY_UP)) {
+            new_speed = (Vector2){0, -1};
+            sprite_idx_offset = 2;
+            flip_sprite = false;
+        }
+        if (IsKeyDown(KEY_DOWN)) {
+            new_speed = (Vector2){0, 1};
+            sprite_idx_offset = 0;
+            flip_sprite = false;
+        }
+        if (IsKeyDown(KEY_LEFT)) {
+            new_speed = (Vector2){-1, 0};
+            sprite_idx_offset = 1;
+            flip_sprite = true;
+        }
+        if (IsKeyDown(KEY_RIGHT)) {
+            new_speed = (Vector2){1, 0};
+            sprite_idx_offset = 1;
+            flip_sprite = false;
+        }
+        if (IsKeyDown(KEY_SPACE) && attack_cooldown_sec == 0.0f) {
+            // Can't move while attacking.
+            new_speed.x = 0;
+            new_speed.y = 0;
+            attacking = true;
+        }
+    } else {
+        attack_duration_sec -= delta_time;
+        if (attack_duration_sec <= 0.0f) {
+            attacking = false;
+            attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
+            attack_cooldown_sec = PLAYER_ATTACK_COOLDOWN_SEC_INIT;
+        }
     }
 
     new_speed = Vector2Scale(new_speed, 70 * delta_time);
-    distance -= Vector2LengthSqr(new_speed);
-    if (distance <= 0.0) {
-        distance = 8.5;
+    walk_cycle_distance -= Vector2LengthSqr(new_speed);
+    if (walk_cycle_distance <= 0.0) {
+        walk_cycle_distance = 8.5;
         entity->sprite_idx = (entity->sprite_idx + 1) % 2;
     }
     Vector2 new_position = Vector2Add(entity->position, new_speed);
