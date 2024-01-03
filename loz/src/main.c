@@ -82,7 +82,6 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
 
     static float attack_cooldown_sec = 0.0f;
     static float attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
-    static bool attacking = false;
 
     size_t sprite_idx_offset = entity->sprite_idx_offset;
     bool flip_sprite = entity->flip_sprite;
@@ -91,7 +90,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     attack_cooldown_sec = attack_cooldown_sec <= 0.0f ? 0.0f : attack_cooldown_sec;
 
     Vector2 new_speed = {0, 0};
-    if (!attacking) {
+    if (attack_duration_sec == 0.0f) {
         if (IsKeyDown(KEY_UP)) {
             new_speed = (Vector2){0, -1};
             sprite_idx_offset = 2;
@@ -116,13 +115,12 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             // Can't move while attacking.
             new_speed.x = 0;
             new_speed.y = 0;
-            attacking = true;
+            attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
         }
     } else {
         attack_duration_sec -= delta_time;
         if (attack_duration_sec <= 0.0f) {
-            attacking = false;
-            attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
+            attack_duration_sec = 0.0f;
             attack_cooldown_sec = PLAYER_ATTACK_COOLDOWN_SEC_INIT;
         }
     }
