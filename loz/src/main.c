@@ -127,8 +127,9 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         }
     }
 
-    new_position.x = Clamp(new_position.x, 0, OriginalWidth);
-    new_position.y = Clamp(new_position.y, 0, OriginalHeight);
+    // Offsets are so that player sprite stops while still onscreen.
+    new_position.x = Clamp(new_position.x, 0, OriginalWidth - ppu);
+    new_position.y = Clamp(new_position.y, 0, OriginalHeight - ppu);
 
 ret:
     entity->position = new_position;
