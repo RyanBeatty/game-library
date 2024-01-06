@@ -97,7 +97,16 @@ static void PlayerInit(Entity* entity) {
 #define PLAYER_ATTACK_DURATION_SEC_INIT (0.4f)
 #define PLAYER_ATTACK_COOLDOWN_SEC_INIT (0.2f)
 
+typedef enum PlayerState {
+    PS_IDLE = 0,
+    PS_WALK,
+    PS_ATTACK,
+
+    PS_COUNT
+} PlayerState;
+
 static void PlayerUpdate(Entity* entity, float delta_time) {
+    static PlayerState player_state = PS_IDLE;
     static Direction player_direction = DIR_DOWN;
     static float walk_cycle_distance = 8.5;
 
@@ -108,120 +117,125 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     attack_cooldown_sec = attack_cooldown_sec <= 0.0f ? 0.0f : attack_cooldown_sec;
 
     Vector2 new_speed = {0, 0};
-    if (attack_duration_sec == 0.0f) {
-        if (IsKeyDown(KEY_UP)) {
-            new_speed = (Vector2){0, -1};
-            player_direction = DIR_UP;
-            // Set animation info.
-            entity->animation_rect_min = (Vector2){ppu * 4, 0};
-            entity->animation_rect_width = ppu;
-            entity->animation_rect_height = ppu;
-            entity->animation_dest_offset = (Vector2){0, 0};
+    // TODO: Maybe rethink this state stuff.
+    switch (player_state) {
+        case PS_IDLE:
+        case PS_WALK: {
+            if (IsKeyDown(KEY_UP)) {
+                new_speed = (Vector2){0, -1};
+                player_direction = DIR_UP;
+                // Set animation info.
+                entity->animation_rect_min = (Vector2){ppu * 4, 0};
+                entity->animation_rect_width = ppu;
+                entity->animation_rect_height = ppu;
+                entity->animation_dest_offset = (Vector2){0, 0};
+                entity->animation_num_frames = 2;
+            }
+            if (IsKeyDown(KEY_DOWN)) {
+                new_speed = (Vector2){0, 1};
+                player_direction = DIR_DOWN;
+                // Set animation info.
+                entity->animation_rect_min = (Vector2){0, 0};
+                entity->animation_rect_width = ppu;
+                entity->animation_rect_height = ppu;
+                entity->animation_dest_offset = (Vector2){0, 0};
+                entity->animation_num_frames = 2;
+            }
+            if (IsKeyDown(KEY_LEFT)) {
+                new_speed = (Vector2){-1, 0};
+                player_direction = DIR_LEFT;
+                // Set animation info.
+                entity->animation_rect_min = (Vector2){ppu * 2, 0};
+                entity->animation_rect_width = -ppu;
+                entity->animation_rect_height = ppu;
+                entity->animation_dest_offset = (Vector2){0, 0};
+                entity->animation_num_frames = 2;
+            }
+            if (IsKeyDown(KEY_RIGHT)) {
+                new_speed = (Vector2){1, 0};
+                player_direction = DIR_RIGHT;
+                // Set animation info.
+                entity->animation_rect_min = (Vector2){ppu * 2, 0};
+                entity->animation_rect_width = ppu;
+                entity->animation_rect_height = ppu;
+                entity->animation_dest_offset = (Vector2){0, 0};
+                entity->animation_num_frames = 2;
+            }
+            if (IsKeyDown(KEY_SPACE) && attack_cooldown_sec == 0.0f) {
+                // Can't move while attacking.
+                new_speed.x = 0;
+                new_speed.y = 0;
+                player_state = PS_ATTACK;
+                attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
 
-            entity->animation_num_frames = 2;
-        }
-        if (IsKeyDown(KEY_DOWN)) {
-            new_speed = (Vector2){0, 1};
-            player_direction = DIR_DOWN;
-            // Set animation info.
-            entity->animation_rect_min = (Vector2){0, 0};
-            entity->animation_rect_width = ppu;
-            entity->animation_rect_height = ppu;
-            entity->animation_dest_offset = (Vector2){0, 0};
-
-            entity->animation_num_frames = 2;
-        }
-        if (IsKeyDown(KEY_LEFT)) {
-            new_speed = (Vector2){-1, 0};
-            player_direction = DIR_LEFT;
-            // Set animation info.
-            entity->animation_rect_min = (Vector2){ppu * 2, 0};
-            entity->animation_rect_width = -ppu;
-            entity->animation_rect_height = ppu;
-            entity->animation_dest_offset = (Vector2){0, 0};
-
-            entity->animation_num_frames = 2;
-        }
-        if (IsKeyDown(KEY_RIGHT)) {
-            new_speed = (Vector2){1, 0};
-            player_direction = DIR_RIGHT;
-            // Set animation info.
-            entity->animation_rect_min = (Vector2){ppu * 2, 0};
-            entity->animation_rect_width = ppu;
-            entity->animation_rect_height = ppu;
-            entity->animation_dest_offset = (Vector2){0, 0};
-
-            entity->animation_num_frames = 2;
-        }
-        if (IsKeyDown(KEY_SPACE) && attack_cooldown_sec == 0.0f) {
-            // Can't move while attacking.
-            new_speed.x = 0;
-            new_speed.y = 0;
-            attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
-
-            switch (player_direction) {
-                case DIR_UP: {
-                    entity->animation_rect_min = (Vector2){0, ppu * 4};
-                    entity->animation_rect_width = ppu;
-                    entity->animation_rect_height = ppu * 2;
-                    entity->animation_frame_offset = 0;
-                    entity->animation_dest_offset = (Vector2){0, -ppu};
-
-                    entity->animation_num_frames = 4;
-                    break;
-                }
-                case DIR_RIGHT: {
-                    entity->animation_rect_min = (Vector2){0, ppu * 3};
-                    entity->animation_rect_width = ppu * 2;
-                    entity->animation_rect_height = ppu;
-                    entity->animation_frame_offset = 0;
-                    entity->animation_dest_offset = (Vector2){0, 0};
-
-                    entity->animation_num_frames = 4;
-                    break;
-                }
-                case DIR_DOWN: {
-                    entity->animation_rect_min = (Vector2){0, ppu * 1};
-                    entity->animation_rect_width = ppu;
-                    entity->animation_rect_height = ppu * 2;
-                    entity->animation_frame_offset = 0;
-                    entity->animation_dest_offset = (Vector2){0, 0};
-
-                    entity->animation_num_frames = 4;
-                    break;
-                }
-                case DIR_LEFT: {
-                    entity->animation_rect_min = (Vector2){0, ppu * 3};
-                    entity->animation_rect_width = -(ppu * 2);
-                    entity->animation_rect_height = ppu;
-                    entity->animation_frame_offset = 0;
-                    entity->animation_dest_offset = (Vector2){-ppu, 0};
-                    entity->animation_num_frames = 4;
-                    break;
-                }
-                default: {
-                    assert(false);
+                switch (player_direction) {
+                    case DIR_UP: {
+                        entity->animation_rect_min = (Vector2){0, ppu * 4};
+                        entity->animation_rect_width = ppu;
+                        entity->animation_rect_height = ppu * 2;
+                        entity->animation_frame_offset = 0;
+                        entity->animation_dest_offset = (Vector2){0, -ppu};
+                        entity->animation_num_frames = 4;
+                        break;
+                    }
+                    case DIR_RIGHT: {
+                        entity->animation_rect_min = (Vector2){0, ppu * 3};
+                        entity->animation_rect_width = ppu * 2;
+                        entity->animation_rect_height = ppu;
+                        entity->animation_frame_offset = 0;
+                        entity->animation_dest_offset = (Vector2){0, 0};
+                        entity->animation_num_frames = 4;
+                        break;
+                    }
+                    case DIR_DOWN: {
+                        entity->animation_rect_min = (Vector2){0, ppu * 1};
+                        entity->animation_rect_width = ppu;
+                        entity->animation_rect_height = ppu * 2;
+                        entity->animation_frame_offset = 0;
+                        entity->animation_dest_offset = (Vector2){0, 0};
+                        entity->animation_num_frames = 4;
+                        break;
+                    }
+                    case DIR_LEFT: {
+                        entity->animation_rect_min = (Vector2){0, ppu * 3};
+                        entity->animation_rect_width = -(ppu * 2);
+                        entity->animation_rect_height = ppu;
+                        entity->animation_frame_offset = 0;
+                        entity->animation_dest_offset = (Vector2){-ppu, 0};
+                        entity->animation_num_frames = 4;
+                        break;
+                    }
+                    default: {
+                        assert(false);
+                    }
                 }
             }
-        }
 
-        // If we are actually moving, ensure we update the animation frame offset if we have walked far enough.
-        new_speed = Vector2Scale(new_speed, 70 * delta_time);
-        walk_cycle_distance -= Vector2LengthSqr(new_speed);
-        if (walk_cycle_distance <= 0.0) {
-            walk_cycle_distance = 8.5;
-            entity->animation_frame_offset = (entity->animation_frame_offset + 1) % entity->animation_num_frames;
+            // If we are actually moving, ensure we update the animation frame offset if we have walked far enough.
+            new_speed = Vector2Scale(new_speed, 70 * delta_time);
+            walk_cycle_distance -= Vector2LengthSqr(new_speed);
+            if (walk_cycle_distance <= 0.0) {
+                walk_cycle_distance = 8.5;
+                entity->animation_frame_offset = (entity->animation_frame_offset + 1) % entity->animation_num_frames;
+            }
+            break;
         }
-    } else {
-        // TODO: ugly ugly. just get animations working for now.
-        float attack_animation_frame_time_sec = PLAYER_ATTACK_DURATION_SEC_INIT / entity->animation_num_frames;
-        float attack_duration_count_up_from_zero_sec = fabs(attack_duration_sec - PLAYER_ATTACK_DURATION_SEC_INIT);
-        entity->animation_frame_offset = attack_duration_count_up_from_zero_sec / attack_animation_frame_time_sec;
+        case PS_ATTACK: {
+            // TODO: ugly ugly. just get animations working for now.
+            float attack_animation_frame_time_sec = PLAYER_ATTACK_DURATION_SEC_INIT / entity->animation_num_frames;
+            float attack_duration_count_up_from_zero_sec = fabs(attack_duration_sec - PLAYER_ATTACK_DURATION_SEC_INIT);
+            entity->animation_frame_offset = attack_duration_count_up_from_zero_sec / attack_animation_frame_time_sec;
 
-        attack_duration_sec -= delta_time;
-        if (attack_duration_sec <= 0.0f) {
-            attack_duration_sec = 0.0f;
-            attack_cooldown_sec = PLAYER_ATTACK_COOLDOWN_SEC_INIT;
+            attack_duration_sec -= delta_time;
+            if (attack_duration_sec <= 0.0f) {
+                attack_duration_sec = 0.0f;
+                attack_cooldown_sec = PLAYER_ATTACK_COOLDOWN_SEC_INIT;
+                player_state = PS_IDLE;
+            }
+            break;
+        }
+        default: {
+            assert(false);
         }
     }
 
