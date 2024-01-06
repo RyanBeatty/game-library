@@ -27,9 +27,13 @@ typedef struct Entity {
     Vector2 speed;
     int speed_key;
 
-    size_t sprite_idx;
-    size_t sprite_idx_offset;
-    bool flip_sprite;
+    // Animation info. Create a bounding box/rect for the animation and cycle through each frame.
+    // Assumes each frame has same sized box/rect.
+    Vector2 animation_rect_min;
+    int animation_rect_width;
+    int animation_rect_height;
+    int animation_frame_offset;
+    int animation_num_frames;
 } Entity;
 
 static Entity Player;
@@ -68,7 +72,11 @@ static const uint8_t StartScreenHitMap[11][16] = {
 static void PlayerInit(Entity* entity) {
     entity->position.x = (OriginalWidth / 2) - ppu;
     entity->position.y = OriginalHeight / 2;
-    entity->sprite_idx = 0;
+    entity->animation_rect_min = (Vector2){0, 0};
+    entity->animation_rect_width = ppu;
+    entity->animation_rect_height = ppu;
+    entity->animation_frame_offset = 0;
+    entity->animation_num_frames = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -83,9 +91,6 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     static float attack_cooldown_sec = 0.0f;
     static float attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
 
-    size_t sprite_idx_offset = entity->sprite_idx_offset;
-    bool flip_sprite = entity->flip_sprite;
-
     attack_cooldown_sec -= delta_time;
     attack_cooldown_sec = attack_cooldown_sec <= 0.0f ? 0.0f : attack_cooldown_sec;
 
@@ -93,29 +98,49 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     if (attack_duration_sec == 0.0f) {
         if (IsKeyDown(KEY_UP)) {
             new_speed = (Vector2){0, -1};
-            sprite_idx_offset = 2;
-            flip_sprite = false;
+            // Set animation info.
+            entity->animation_rect_min = (Vector2){ppu * 4, 0};
+            entity->animation_rect_width = ppu;
+            entity->animation_rect_height = ppu;
+            entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_DOWN)) {
             new_speed = (Vector2){0, 1};
-            sprite_idx_offset = 0;
-            flip_sprite = false;
+            // Set animation info.
+            entity->animation_rect_min = (Vector2){0, 0};
+            entity->animation_rect_width = ppu;
+            entity->animation_rect_height = ppu;
+            entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_LEFT)) {
             new_speed = (Vector2){-1, 0};
-            sprite_idx_offset = 1;
-            flip_sprite = true;
+            // Set animation info.
+            entity->animation_rect_min = (Vector2){ppu * 2, 0};
+            entity->animation_rect_width = -ppu;
+            entity->animation_rect_height = ppu;
+            entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_RIGHT)) {
             new_speed = (Vector2){1, 0};
-            sprite_idx_offset = 1;
-            flip_sprite = false;
+            // Set animation info.
+            entity->animation_rect_min = (Vector2){ppu * 2, 0};
+            entity->animation_rect_width = ppu;
+            entity->animation_rect_height = ppu;
+            entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_SPACE) && attack_cooldown_sec == 0.0f) {
             // Can't move while attacking.
             new_speed.x = 0;
             new_speed.y = 0;
             attack_duration_sec = PLAYER_ATTACK_DURATION_SEC_INIT;
+        }
+
+        // If we are actually moving, ensure we update the animation frame offset if we have walked far enough.
+        new_speed = Vector2Scale(new_speed, 70 * delta_time);
+        walk_cycle_distance -= Vector2LengthSqr(new_speed);
+        if (walk_cycle_distance <= 0.0) {
+            walk_cycle_distance = 8.5;
+            entity->animation_frame_offset = (entity->animation_frame_offset + 1) % entity->animation_num_frames;
         }
     } else {
         attack_duration_sec -= delta_time;
@@ -125,39 +150,34 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         }
     }
 
-    new_speed = Vector2Scale(new_speed, 70 * delta_time);
-    walk_cycle_distance -= Vector2LengthSqr(new_speed);
-    if (walk_cycle_distance <= 0.0) {
-        walk_cycle_distance = 8.5;
-        entity->sprite_idx = (entity->sprite_idx + 1) % 2;
-    }
-    Vector2 new_position = Vector2Add(entity->position, new_speed);
+    // Move player.
+    {
+        Vector2 new_position = Vector2Add(entity->position, new_speed);
 
-    for (size_t i = 0; i < OriginalHeightTiles; ++i) {
-        for (size_t j = 0; j < OriginalWidthTiles; ++j) {
-            if (StartScreenHitMap[i][j]) {
-                Vector3 player_min = {new_position.x, new_position.y, 0};
-                BoundingBox player_box = {.min = player_min, .max = Vector3Add(player_min, (Vector3){ppu, ppu, 0})};
-                // Prevent top of player (link head) from colliding with scene so player can exit left/right.
-                player_box.min.y += ppu / 2;
-                Vector3 tile_min = {j * ppu, i * ppu, 0};
-                BoundingBox tile_box = {.min = tile_min, .max = Vector3Add(tile_min, (Vector3){ppu, ppu, 0})};
-                if (CheckCollisionBoxes(player_box, tile_box)) {
-                    new_position = entity->position;
-                    goto ret;
+        for (size_t i = 0; i < OriginalHeightTiles; ++i) {
+            for (size_t j = 0; j < OriginalWidthTiles; ++j) {
+                if (StartScreenHitMap[i][j]) {
+                    Vector3 player_min = {new_position.x, new_position.y, 0};
+                    BoundingBox player_box = {.min = player_min, .max = Vector3Add(player_min, (Vector3){ppu, ppu, 0})};
+                    // Prevent top of player (link head) from colliding with scene so player can exit left/right.
+                    player_box.min.y += ppu / 2;
+                    Vector3 tile_min = {j * ppu, i * ppu, 0};
+                    BoundingBox tile_box = {.min = tile_min, .max = Vector3Add(tile_min, (Vector3){ppu, ppu, 0})};
+                    if (CheckCollisionBoxes(player_box, tile_box)) {
+                        new_position = entity->position;
+                        goto ret;
+                    }
                 }
             }
         }
+
+        // Offsets are so that player sprite stops while still onscreen.
+        new_position.x = Clamp(new_position.x, 0, OriginalWidth - ppu);
+        new_position.y = Clamp(new_position.y, 0, OriginalHeight - ppu);
+
+    ret:
+        entity->position = new_position;
     }
-
-    // Offsets are so that player sprite stops while still onscreen.
-    new_position.x = Clamp(new_position.x, 0, OriginalWidth - ppu);
-    new_position.y = Clamp(new_position.y, 0, OriginalHeight - ppu);
-
-ret:
-    entity->position = new_position;
-    entity->sprite_idx_offset = sprite_idx_offset;
-    entity->flip_sprite = flip_sprite;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -201,16 +221,18 @@ static void TileMapDraw() {
 }
 
 static void PlayerDraw(Entity* entity) {
-    int flip = entity->flip_sprite ? -1 : 1;
+    // Shift by abs(width) because width can be negative in the case where we are flipping the sprite.
+    int abs_width = abs(entity->animation_rect_width);
+    int x = entity->animation_rect_min.x + (entity->animation_frame_offset * abs_width);
     DrawTexturePro(LinkWalkingAtlas,
-                   (Rectangle){.x = (entity->sprite_idx_offset * ppu * 2) + (entity->sprite_idx * ppu),
-                               .y = 0,
-                               .width = flip * ppu,
-                               .height = ppu},
+                   (Rectangle){.x = x,
+                               .y = entity->animation_rect_min.y,
+                               .width = entity->animation_rect_width,
+                               .height = entity->animation_rect_height},
                    (Rectangle){.x = SCALE(entity->position.x),
                                .y = SCALE(entity->position.y + HudOffset),
-                               .width = SCALE(ppu),
-                               .height = SCALE(ppu)},
+                               .width = SCALE(abs_width),
+                               .height = SCALE(entity->animation_rect_height)},
                    (Vector2){0, 0}, 0, WHITE);
 }
 
