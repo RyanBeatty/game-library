@@ -87,7 +87,7 @@ static void PlayerInit(Entity* entity) {
     entity->animation_rect_width = ppu;
     entity->animation_rect_height = ppu;
     entity->animation_frame_offset = 0;
-    entity->animation_num_frames = 0;
+    entity->animation_num_frames = 1;
     entity->animation_dest_offset = (Vector2){0, 0};
 }
 
@@ -216,7 +216,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             walk_cycle_distance -= Vector2LengthSqr(new_speed);
             if (walk_cycle_distance <= 0.0) {
                 walk_cycle_distance = 8.5;
-                entity->animation_frame_offset = (entity->animation_frame_offset + 1) % entity->animation_num_frames;
+                ++entity->animation_frame_offset;
             }
             break;
         }
@@ -238,6 +238,10 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             assert(false);
         }
     }
+
+    // Ensure that we are always within the current animation bounds. For example, when an attack animation is done,
+    // this will ensure we are at the starting animation of a walk animation if we then walk.
+    entity->animation_frame_offset %= entity->animation_num_frames;
 
     // Move player.
     {
