@@ -18,7 +18,7 @@ static const int ScalingFactor = 2;
 #define OriginalHeightTiles (OriginalHeight / ppu)
 
 static Texture DesertAtlas;
-static Texture LinkWalkingAtlas;
+static Texture LinkAtlas;
 
 typedef struct Entity {
     Vector2 position;
@@ -224,7 +224,7 @@ static void PlayerDraw(Entity* entity) {
     // Shift by abs(width) because width can be negative in the case where we are flipping the sprite.
     int abs_width = abs(entity->animation_rect_width);
     int x = entity->animation_rect_min.x + (entity->animation_frame_offset * abs_width);
-    DrawTexturePro(LinkWalkingAtlas,
+    DrawTexturePro(LinkAtlas,
                    (Rectangle){.x = x,
                                .y = entity->animation_rect_min.y,
                                .width = entity->animation_rect_width,
@@ -244,8 +244,8 @@ static void GameInit() {
 
     DesertAtlas = LoadTexture("assets/textures/desert_atlas.png");
     assert(IsTextureReady(DesertAtlas));
-    LinkWalkingAtlas = LoadTexture("assets/textures/link_walking_atlas.png");
-    assert(IsTextureReady(LinkWalkingAtlas));
+    LinkAtlas = LoadTexture("assets/textures/LinkAtlas.png");
+    assert(IsTextureReady(LinkAtlas));
     // SetTextureFilter(DesertAtlas, TE)
 
     PlayerInit(&Player);
