@@ -43,6 +43,7 @@ typedef struct Entity {
     int animation_rect_height;
     int animation_frame_offset;
     int animation_num_frames;
+    int animation_dest_x_offset;
 } Entity;
 
 static Entity Player;
@@ -87,6 +88,7 @@ static void PlayerInit(Entity* entity) {
     entity->animation_rect_height = ppu;
     entity->animation_frame_offset = 0;
     entity->animation_num_frames = 0;
+    entity->animation_dest_x_offset = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -114,6 +116,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){ppu * 4, 0};
             entity->animation_rect_width = ppu;
             entity->animation_rect_height = ppu;
+            entity->animation_dest_x_offset = 0;
+
             entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_DOWN)) {
@@ -123,6 +127,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){0, 0};
             entity->animation_rect_width = ppu;
             entity->animation_rect_height = ppu;
+            entity->animation_dest_x_offset = 0;
+
             entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_LEFT)) {
@@ -132,6 +138,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){ppu * 2, 0};
             entity->animation_rect_width = -ppu;
             entity->animation_rect_height = ppu;
+            entity->animation_dest_x_offset = 0;
+
             entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_RIGHT)) {
@@ -141,6 +149,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){ppu * 2, 0};
             entity->animation_rect_width = ppu;
             entity->animation_rect_height = ppu;
+            entity->animation_dest_x_offset = 0;
+
             entity->animation_num_frames = 2;
         }
         if (IsKeyDown(KEY_SPACE) && attack_cooldown_sec == 0.0f) {
@@ -155,6 +165,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     entity->animation_rect_width = ppu;
                     entity->animation_rect_height = ppu * 2;
                     entity->animation_frame_offset = 0;
+                    entity->animation_dest_x_offset = 0;
+
                     entity->animation_num_frames = 4;
                     break;
                 }
@@ -163,6 +175,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     entity->animation_rect_width = ppu * 2;
                     entity->animation_rect_height = ppu;
                     entity->animation_frame_offset = 0;
+                    entity->animation_dest_x_offset = 0;
+
                     entity->animation_num_frames = 4;
                     break;
                 }
@@ -171,6 +185,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     entity->animation_rect_width = ppu;
                     entity->animation_rect_height = ppu * 2;
                     entity->animation_frame_offset = 0;
+                    entity->animation_dest_x_offset = 0;
+
                     entity->animation_num_frames = 4;
                     break;
                 }
@@ -179,6 +195,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     entity->animation_rect_width = -(ppu * 2);
                     entity->animation_rect_height = ppu;
                     entity->animation_frame_offset = 0;
+                    entity->animation_dest_x_offset = -ppu;
                     entity->animation_num_frames = 4;
                     break;
                 }
@@ -287,7 +304,7 @@ static void PlayerDraw(Entity* entity) {
                                .y = entity->animation_rect_min.y,
                                .width = entity->animation_rect_width,
                                .height = entity->animation_rect_height},
-                   (Rectangle){.x = SCALE(entity->position.x),
+                   (Rectangle){.x = SCALE(entity->position.x + entity->animation_dest_x_offset),
                                .y = SCALE(entity->position.y + HudOffset),
                                .width = SCALE(abs_width),
                                .height = SCALE(entity->animation_rect_height)},
