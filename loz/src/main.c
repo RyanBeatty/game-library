@@ -43,7 +43,7 @@ typedef struct Entity {
     int animation_rect_height;
     int animation_frame_offset;
     int animation_num_frames;
-    int animation_dest_x_offset;
+    Vector2 animation_dest_offset;
 } Entity;
 
 static Entity Player;
@@ -88,7 +88,7 @@ static void PlayerInit(Entity* entity) {
     entity->animation_rect_height = ppu;
     entity->animation_frame_offset = 0;
     entity->animation_num_frames = 0;
-    entity->animation_dest_x_offset = 0;
+    entity->animation_dest_offset = (Vector2){0, 0};
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -116,7 +116,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){ppu * 4, 0};
             entity->animation_rect_width = ppu;
             entity->animation_rect_height = ppu;
-            entity->animation_dest_x_offset = 0;
+            entity->animation_dest_offset = (Vector2){0, 0};
 
             entity->animation_num_frames = 2;
         }
@@ -127,7 +127,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){0, 0};
             entity->animation_rect_width = ppu;
             entity->animation_rect_height = ppu;
-            entity->animation_dest_x_offset = 0;
+            entity->animation_dest_offset = (Vector2){0, 0};
 
             entity->animation_num_frames = 2;
         }
@@ -138,7 +138,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){ppu * 2, 0};
             entity->animation_rect_width = -ppu;
             entity->animation_rect_height = ppu;
-            entity->animation_dest_x_offset = 0;
+            entity->animation_dest_offset = (Vector2){0, 0};
 
             entity->animation_num_frames = 2;
         }
@@ -149,7 +149,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             entity->animation_rect_min = (Vector2){ppu * 2, 0};
             entity->animation_rect_width = ppu;
             entity->animation_rect_height = ppu;
-            entity->animation_dest_x_offset = 0;
+            entity->animation_dest_offset = (Vector2){0, 0};
 
             entity->animation_num_frames = 2;
         }
@@ -161,11 +161,11 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
 
             switch (player_direction) {
                 case DIR_UP: {
-                    entity->animation_rect_min = (Vector2){0, ppu * 5};
+                    entity->animation_rect_min = (Vector2){0, ppu * 4};
                     entity->animation_rect_width = ppu;
                     entity->animation_rect_height = ppu * 2;
                     entity->animation_frame_offset = 0;
-                    entity->animation_dest_x_offset = 0;
+                    entity->animation_dest_offset = (Vector2){0, -ppu};
 
                     entity->animation_num_frames = 4;
                     break;
@@ -175,7 +175,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     entity->animation_rect_width = ppu * 2;
                     entity->animation_rect_height = ppu;
                     entity->animation_frame_offset = 0;
-                    entity->animation_dest_x_offset = 0;
+                    entity->animation_dest_offset = (Vector2){0, 0};
 
                     entity->animation_num_frames = 4;
                     break;
@@ -185,7 +185,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     entity->animation_rect_width = ppu;
                     entity->animation_rect_height = ppu * 2;
                     entity->animation_frame_offset = 0;
-                    entity->animation_dest_x_offset = 0;
+                    entity->animation_dest_offset = (Vector2){0, 0};
 
                     entity->animation_num_frames = 4;
                     break;
@@ -195,7 +195,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     entity->animation_rect_width = -(ppu * 2);
                     entity->animation_rect_height = ppu;
                     entity->animation_frame_offset = 0;
-                    entity->animation_dest_x_offset = -ppu;
+                    entity->animation_dest_offset = (Vector2){-ppu, 0};
                     entity->animation_num_frames = 4;
                     break;
                 }
@@ -304,8 +304,8 @@ static void PlayerDraw(Entity* entity) {
                                .y = entity->animation_rect_min.y,
                                .width = entity->animation_rect_width,
                                .height = entity->animation_rect_height},
-                   (Rectangle){.x = SCALE(entity->position.x + entity->animation_dest_x_offset),
-                               .y = SCALE(entity->position.y + HudOffset),
+                   (Rectangle){.x = SCALE(entity->position.x + entity->animation_dest_offset.x),
+                               .y = SCALE(entity->position.y + entity->animation_dest_offset.y + HudOffset),
                                .width = SCALE(abs_width),
                                .height = SCALE(entity->animation_rect_height)},
                    (Vector2){0, 0}, 0, WHITE);
