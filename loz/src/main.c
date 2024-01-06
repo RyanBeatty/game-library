@@ -119,7 +119,50 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     Vector2 new_speed = {0, 0};
     // TODO: Maybe rethink this state stuff.
     switch (player_state) {
-        case PS_IDLE:
+        case PS_IDLE: {
+            switch (player_direction) {
+                case DIR_UP: {
+                    // Set animation info.
+                    entity->animation_rect_min = (Vector2){ppu * 4, 0};
+                    entity->animation_rect_width = ppu;
+                    entity->animation_rect_height = ppu;
+                    entity->animation_dest_offset = (Vector2){0, 0};
+                    entity->animation_num_frames = 2;
+                    break;
+                }
+                case DIR_RIGHT: {
+                    // Set animation info.
+                    entity->animation_rect_min = (Vector2){ppu * 2, 0};
+                    entity->animation_rect_width = ppu;
+                    entity->animation_rect_height = ppu;
+                    entity->animation_dest_offset = (Vector2){0, 0};
+                    entity->animation_num_frames = 2;
+                    break;
+                }
+                case DIR_DOWN: {
+                    // Set animation info.
+                    entity->animation_rect_min = (Vector2){0, 0};
+                    entity->animation_rect_width = ppu;
+                    entity->animation_rect_height = ppu;
+                    entity->animation_dest_offset = (Vector2){0, 0};
+                    entity->animation_num_frames = 2;
+                    break;
+                }
+                case DIR_LEFT: {
+                    // Set animation info.
+                    entity->animation_rect_min = (Vector2){ppu * 2, 0};
+                    entity->animation_rect_width = -ppu;
+                    entity->animation_rect_height = ppu;
+                    entity->animation_dest_offset = (Vector2){0, 0};
+                    entity->animation_num_frames = 2;
+                    break;
+                }
+                default: {
+                    assert(false);
+                }
+            }
+            // Note: purposefully fallthrough.
+        }
         case PS_WALK: {
             if (IsKeyDown(KEY_UP)) {
                 new_speed = (Vector2){0, -1};
