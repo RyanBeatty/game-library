@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "raylib.h"
@@ -330,11 +331,12 @@ static void TileMapDrawDebug() {
     }
 }
 
-static void TileMapDraw() {
+static void TileMapDraw(Texture atlas, const uint8_t (*tile_map)[OriginalWidthTiles],
+                        const uint8_t (*hit_map)[OriginalWidthTiles]) {
     int offset = ppu * 4;
     for (size_t i = 0; i < OriginalHeightTiles; ++i) {
         for (size_t j = 0; j < OriginalWidthTiles; ++j) {
-            uint8_t tile_idx = StartScreenTileMap[i][j];
+            uint8_t tile_idx = tile_map[i][j];
             int x = (tile_idx % 8) * ppu;
             int y = (tile_idx / 8) * ppu;
             DrawTexturePro(
@@ -348,7 +350,7 @@ static void TileMapDraw() {
     if (true) {
         for (size_t i = 0; i < OriginalHeightTiles; ++i) {
             for (size_t j = 0; j < OriginalWidthTiles; ++j) {
-                if (StartScreenHitMap[i][j]) {
+                if (hit_map[i][j]) {
                     DrawRectangleLines(SCALE(j * ppu), SCALE((i * ppu) + offset), SCALE(ppu), SCALE(ppu), RED);
                 }
             }
@@ -398,7 +400,7 @@ static void GameDraw() {
         TileMapDrawDebug();
     }
 
-    TileMapDraw();
+    TileMapDraw(DesertAtlas, StartScreenTileMap, StartScreenHitMap);
     PlayerDraw(&Player);
 
     EndDrawing();
