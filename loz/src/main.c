@@ -77,6 +77,49 @@ static const uint8_t StartScreenHitMap[11][16] = {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},  //
 };
 
+static const uint8_t Room2TileMap[11][16] = {
+    {54, 54, 54, 54, 54, 54, 54, 23, 23, 54, 54, 54, 54, 54, 54, 54},
+    {54, 54, 54, 54, 12, 54, 55, 23, 23, 54, 54, 54, 54, 54, 54, 54},
+    {54, 54, 54, 55, 23, 23, 23, 23, 23, 54, 54, 54, 54, 54, 54, 54},
+    {54, 54, 55, 23, 23, 23, 23, 23, 23, 54, 54, 54, 54, 54, 54, 54},
+    {54, 55, 23, 23, 23, 23, 23, 23, 23, 53, 54, 54, 54, 54, 54, 54},
+    {23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23},
+    {52, 52, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 52, 52},
+    {54, 54, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 54, 54},
+    {54, 54, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 54, 54},
+    {54, 54, 52, 52, 52, 52, 52, 23, 23, 52, 52, 52, 52, 52, 54, 54},
+    {54, 54, 54, 54, 54, 54, 54, 23, 23, 54, 54, 54, 54, 54, 54, 54},
+};
+
+static const uint8_t Room2HitMap[11][16] = {
+    {1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1},  // prevent lint.
+    {1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},  //
+    {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1},  //
+    {1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+    {1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1},  //
+};
+
+typedef struct ScreenData {
+    Texture* bg_atlas;
+    const uint8_t (*tile_map)[];
+    const uint8_t (*hit_map)[];
+    // Index.
+    size_t neighbors[4];
+} ScreenData;
+
+static ScreenData Screens[3] = {
+    {},
+    {.bg_atlas = &DesertAtlas, .tile_map = StartScreenTileMap, .hit_map = StartScreenHitMap, .neighbors = {2, 0, 0, 0}},
+    {.bg_atlas = &DesertAtlas, .tile_map = Room2TileMap, .hit_map = Room2HitMap, .neighbors = {}}};
+
+static size_t CurScreen = 1;
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // Init.
 
@@ -291,9 +334,11 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     {
         Vector2 new_position = Vector2Add(entity->position, new_speed);
 
+        const uint8_t(*hit_map)[OriginalWidthTiles] = Screens[CurScreen].hit_map;
+
         for (size_t i = 0; i < OriginalHeightTiles; ++i) {
             for (size_t j = 0; j < OriginalWidthTiles; ++j) {
-                if (StartScreenHitMap[i][j]) {
+                if (hit_map[i][j]) {
                     Vector3 player_min = {new_position.x, new_position.y, 0};
                     BoundingBox player_box = {.min = player_min, .max = Vector3Add(player_min, (Vector3){ppu, ppu, 0})};
                     // Prevent top of player (link head) from colliding with scene so player can exit left/right.
@@ -306,6 +351,10 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     }
                 }
             }
+        }
+
+        if (new_position.y < 0) {
+            CurScreen = Screens[CurScreen].neighbors[0];
         }
 
         // Offsets are so that player sprite stops while still onscreen.
@@ -396,11 +445,13 @@ static void GameDraw() {
 
     ClearBackground(BLACK);
 
+    // TODO: Remove.
     if (false) {
         TileMapDrawDebug();
     }
 
-    TileMapDraw(DesertAtlas, StartScreenTileMap, StartScreenHitMap);
+    ScreenData* cur_screen = &Screens[CurScreen];
+    TileMapDraw(*cur_screen->bg_atlas, cur_screen->tile_map, cur_screen->hit_map);
     PlayerDraw(&Player);
 
     EndDrawing();
