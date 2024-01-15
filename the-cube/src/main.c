@@ -130,7 +130,35 @@ void GameCameraInit(Camera3D* camera, Entity* player) {
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-static void GameGridDraw() { DrawGrid(20, CubeSideLength); }
+static Entity GameGrid;
+
+static void GameGridInit(Entity* game_grid) {
+    game_grid->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+}
+
+static void GameGridDraw(Entity* game_grid) {
+    int spaces = 5;
+    float length = CubeSideLength;
+    float half_length = length / 2.0f;
+    float end = spaces * length;
+    for (int x = -end; x < end; x += length) {
+        for (int z = -end; z < end; z += length) {
+            game_grid->model.transform = MatrixTranslate(x + half_length, -length, z + half_length);
+            DrawModel(game_grid->model, (Vector3){0, 0, 0}, 1.0f, BLUE);
+            DrawModelWires(game_grid->model, (Vector3){0, 0, 0}, 1.0f, WHITE);
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+static bool DebugMode = false;
+
+void DrawDebug() {
+    // Not in Mode3D. All coords are screen space.
+    if (DebugMode) {
+        DrawFPS(10, 10);
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -141,6 +169,16 @@ static void GameInit() {
 
     PlayerInit(&Player);
     GameCameraInit(&GameCamera, &Player);
+    GameGridInit(&GameGrid);
+}
+
+static void GameUpdate(float delta_time) {
+    PlayerUpdate(&Player, delta_time);
+    GameCameraUpdate(&GameCamera, &Player);
+
+    if (IsKeyPressed(KEY_D)) {
+        DebugMode = !DebugMode;
+    }
 }
 
 static void GameDraw() {
@@ -150,15 +188,12 @@ static void GameDraw() {
     ClearBackground(RAYWHITE);
 
     PlayerDraw(&Player);
-    GameGridDraw();
+    GameGridDraw(&GameGrid);
 
     EndMode3D();
-    EndDrawing();
-}
+    DrawDebug();
 
-static void GameUpdate(float delta_time) {
-    PlayerUpdate(&Player, delta_time);
-    GameCameraUpdate(&GameCamera, &Player);
+    EndDrawing();
 }
 
 int main(void) {
