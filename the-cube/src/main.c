@@ -114,15 +114,19 @@ static void PlayerDraw(Entity* entity) {
 /////////////////////////////////////////////////////////////////////////////////////
 static Camera3D GameCamera;
 
-void GameCameraInit(Camera3D* camera) {
-    camera->position = (Vector3){0.0f, 10.0f, 10.0f};  // Camera position
-    camera->target = (Vector3){0.0f, 0.0f, 0.0f};      // Camera looking at point
-    camera->up = (Vector3){0.0f, 1.0f, 0.0f};          // Camera up vector (rotation towards target)
-    camera->fovy = 45.0f;                              // Camera field-of-view Y
-    camera->projection = CAMERA_PERSPECTIVE;           // Camera mode type
+static void GameCameraUpdate(Camera3D* camera, Entity* entity) {
+    camera->position = (Vector3){entity->position.x, 10.0f, entity->position.z + 10.0f};
+    camera->target = entity->position;
 }
 
-static void GameCameraUpdate(Camera3D* camera, Entity* entity, float delta_time) {}
+void GameCameraInit(Camera3D* camera, Entity* player) {
+    camera->position = (Vector3){0.0f, 10.0f, 10.0f};  // Camera position
+    camera->target = (Vector3){0.0f, 0.0f, 0.0f};      // Camera looking at point
+    GameCameraUpdate(camera, player);
+    camera->up = (Vector3){0.0f, 1.0f, 0.0f};  // Camera up vector (rotation towards target)
+    camera->fovy = 45.0f;                      // Camera field-of-view Y
+    camera->projection = CAMERA_PERSPECTIVE;   // Camera mode type
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -135,8 +139,8 @@ static void GameInit() {
 
     SetTargetFPS(60);
 
-    GameCameraInit(&GameCamera);
     PlayerInit(&Player);
+    GameCameraInit(&GameCamera, &Player);
 }
 
 static void GameDraw() {
@@ -154,7 +158,7 @@ static void GameDraw() {
 
 static void GameUpdate(float delta_time) {
     PlayerUpdate(&Player, delta_time);
-    GameCameraUpdate(&GameCamera, &Player, delta_time);
+    GameCameraUpdate(&GameCamera, &Player);
 }
 
 int main(void) {
