@@ -99,11 +99,6 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         }
     }
 
-    printf("orientation:");
-    PrintMatrix(QuaternionToMatrix(orientation));
-    printf("rotation:");
-    PrintMatrix(QuaternionToMatrix(rotation));
-
     rotation = QuaternionMultiply(rotation, orientation);
     position = Vector3Subtract(entity->position, position);
     if (Vector3Equals(position, entity->position)) {
