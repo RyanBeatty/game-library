@@ -45,21 +45,43 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     static Quaternion start_orientation;
     static Vector3 start_position;
 
-    if (IsKeyPressed(KEY_UP)) {
-        walking = true;
-        t_acc = 0;
-        start_orientation = entity->orientation;
-        start_position = entity->position;
-        Matrix target = (Matrix){
-            0,  1.0, 0, 0,  //
-            -1, 0,   0, 0,  //
-            0,  0,   1, 0,  //
-            0,  0,   0, 1,
-        };
-        entity->orientation = QuaternionMultiply(QuaternionFromMatrix(target), entity->orientation);
-        entity->position = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
-        // Matrix rotation = MatrixRotateZ(angle * RAD2DEG);
-        // entity->model.transform = MatrixMultiply(entity->model.transform, rotation);
+    if (!walking) {
+        if (IsKeyPressed(KEY_UP)) {
+            walking = true;
+            t_acc = 0;
+            start_orientation = entity->orientation;
+            start_position = entity->position;
+            entity->orientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
+            entity->position = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
+        }
+        if (IsKeyPressed(KEY_RIGHT)) {
+            walking = true;
+            t_acc = 0;
+            start_orientation = entity->orientation;
+            start_position = entity->position;
+            entity->orientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
+            entity->position = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
+        }
+        if (IsKeyPressed(KEY_DOWN)) {
+            walking = true;
+            t_acc = 0;
+            start_orientation = entity->orientation;
+            start_position = entity->position;
+            entity->orientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
+            entity->position = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
+        }
+        if (IsKeyPressed(KEY_LEFT)) {
+            walking = true;
+            t_acc = 0;
+            start_orientation = entity->orientation;
+            start_position = entity->position;
+            entity->orientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
+            entity->position = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+        }
     }
 
     Quaternion orientation = entity->orientation;
@@ -91,25 +113,6 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     entity->model.transform = QuaternionToMatrix(rotation);
     entity->model.transform =
         MatrixMultiply(entity->model.transform, MatrixTranslate(-position.x, -position.y, -position.z));
-
-    // Vector3 speed = {};
-    // if (IsKeyPressed(KEY_UP)) {
-    //     speed.z -= 1.0f;
-    // }
-    // if (IsKeyPressed(KEY_RIGHT)) {
-    //     speed.x += 1.0f;
-    // }
-    // if (IsKeyPressed(KEY_DOWN)) {
-    //     speed.z += 1.0f;
-    // }
-    // if (IsKeyPressed(KEY_LEFT)) {
-    //     speed.x -= 1.0f;
-    // }
-
-    // speed = Vector3Normalize(speed);
-    // speed = Vector3Scale(speed, CubeSideLength);
-
-    // entity->position = Vector3Add(entity->position, speed);
 }
 
 static void PlayerDraw(Entity* entity) {
