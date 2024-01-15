@@ -43,6 +43,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     static Quaternion StartOrientation;
     static Quaternion EndOrientation;
     static Vector3 StartPosition;
+    static Vector3 EndPosition;
 
     if (!walking) {
         if (IsKeyPressed(KEY_UP)) {
@@ -52,7 +53,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             StartPosition = entity->position;
             EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
-            entity->position = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
+            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
         }
         if (IsKeyPressed(KEY_RIGHT)) {
             walking = true;
@@ -61,7 +62,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             StartPosition = entity->position;
             EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
-            entity->position = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
+            EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
         }
         if (IsKeyPressed(KEY_DOWN)) {
             walking = true;
@@ -70,7 +71,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             StartPosition = entity->position;
             EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
-            entity->position = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
+            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
         }
         if (IsKeyPressed(KEY_LEFT)) {
             walking = true;
@@ -79,22 +80,20 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             StartPosition = entity->position;
             EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
-            entity->position = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+            EndPosition = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
         }
     }
 
-    Quaternion orientation = entity->orientation;
-    // Quaternion rotation = QuaternionFromMatrix(MatrixIdentity());
-    Vector3 position = entity->position;
     if (walking) {
         T += delta_time;
         float t = T / 0.2;
         if (t >= 1.0f) {
             walking = false;
             entity->orientation = EndOrientation;
+            entity->position = EndPosition;
         } else {
             entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
-            position = Vector3Lerp(StartPosition, entity->position, t);
+            entity->position = Vector3Lerp(StartPosition, EndPosition, t);
         }
     }
 
@@ -103,8 +102,8 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     }
 
     entity->model.transform = QuaternionToMatrix(entity->orientation);
-    entity->model.transform =
-        MatrixMultiply(entity->model.transform, MatrixTranslate(position.x, position.y, position.z));
+    entity->model.transform = MatrixMultiply(
+        entity->model.transform, MatrixTranslate(entity->position.x, entity->position.y, entity->position.z));
 }
 
 static void PlayerDraw(Entity* entity) {
