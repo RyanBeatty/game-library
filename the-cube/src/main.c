@@ -93,7 +93,6 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         if (t >= 1.0f) {
             walking = false;
         } else {
-            printf("t: %f\n", t);
             rotation = QuaternionSlerp(start_orientation, orientation, t);
             position = Vector3Lerp(start_position, entity->position, t);
         }
