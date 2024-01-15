@@ -41,6 +41,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     static bool walking = false;
     static float T = 0;
     static Quaternion StartOrientation;
+    static Quaternion EndOrientation;
     static Vector3 StartPosition;
 
     if (!walking) {
@@ -49,7 +50,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             T = 0;
             StartOrientation = entity->orientation;
             StartPosition = entity->position;
-            entity->orientation =
+            EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
             entity->position = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
         }
@@ -58,7 +59,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             T = 0;
             StartOrientation = entity->orientation;
             StartPosition = entity->position;
-            entity->orientation =
+            EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
             entity->position = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
         }
@@ -67,7 +68,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             T = 0;
             StartOrientation = entity->orientation;
             StartPosition = entity->position;
-            entity->orientation =
+            EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
             entity->position = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
         }
@@ -76,32 +77,32 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             T = 0;
             StartOrientation = entity->orientation;
             StartPosition = entity->position;
-            entity->orientation =
+            EndOrientation =
                 QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
             entity->position = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
         }
     }
 
     Quaternion orientation = entity->orientation;
-    Quaternion rotation = QuaternionFromMatrix(MatrixIdentity());
+    // Quaternion rotation = QuaternionFromMatrix(MatrixIdentity());
     Vector3 position = entity->position;
     if (walking) {
         T += delta_time;
         float t = T / 0.2;
         if (t >= 1.0f) {
             walking = false;
+            entity->orientation = EndOrientation;
         } else {
-            rotation = QuaternionSlerp(StartOrientation, orientation, t);
+            entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
             position = Vector3Lerp(StartPosition, entity->position, t);
         }
     }
 
     if (false) {
-        PrintMatrix(QuaternionToMatrix(rotation));
+        PrintMatrix(QuaternionToMatrix(entity->orientation));
     }
 
-    rotation = QuaternionMultiply(rotation, orientation);
-    entity->model.transform = QuaternionToMatrix(rotation);
+    entity->model.transform = QuaternionToMatrix(entity->orientation);
     entity->model.transform =
         MatrixMultiply(entity->model.transform, MatrixTranslate(position.x, position.y, position.z));
 }
