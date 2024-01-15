@@ -43,11 +43,13 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     static bool walking = false;
     static float t_acc = 0;
     static Quaternion start_orientation;
+    static Vector3 start_position;
 
     if (IsKeyPressed(KEY_UP)) {
         walking = true;
         t_acc = 0;
         start_orientation = entity->orientation;
+        start_position = entity->position;
         Matrix target = (Matrix){
             0,  1.0, 0, 0,  //
             -1, 0,   0, 0,  //
@@ -55,12 +57,14 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             0,  0,   0, 1,
         };
         entity->orientation = QuaternionMultiply(QuaternionFromMatrix(target), entity->orientation);
+        entity->position = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
         // Matrix rotation = MatrixRotateZ(angle * RAD2DEG);
         // entity->model.transform = MatrixMultiply(entity->model.transform, rotation);
     }
 
     Quaternion orientation = entity->orientation;
     Quaternion rotation = QuaternionFromMatrix(MatrixIdentity());
+    Vector3 position = {0, 0, 0};
     if (walking) {
         t_acc += delta_time;
         float t = t_acc / 0.2;
@@ -69,6 +73,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         } else {
             printf("t: %f\n", t);
             rotation = QuaternionSlerp(start_orientation, orientation, t);
+            position = Vector3Lerp(start_position, entity->position, t);
         }
     }
 
@@ -77,8 +82,15 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     printf("rotation:");
     PrintMatrix(QuaternionToMatrix(rotation));
 
-    orientation = QuaternionMultiply(rotation, orientation);
-    entity->model.transform = QuaternionToMatrix(orientation);
+    rotation = QuaternionMultiply(rotation, orientation);
+    position = Vector3Subtract(entity->position, position);
+    if (Vector3Equals(position, entity->position)) {
+        position = (Vector3){0, 0, 0};
+    }
+    breakpoint();
+    entity->model.transform = QuaternionToMatrix(rotation);
+    entity->model.transform =
+        MatrixMultiply(entity->model.transform, MatrixTranslate(-position.x, -position.y, -position.z));
 
     // Vector3 speed = {};
     // if (IsKeyPressed(KEY_UP)) {
