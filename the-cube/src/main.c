@@ -24,9 +24,6 @@ static Entity Player;
 static void PlayerInit(Entity* player) {
     player->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
     player->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
-    Mesh mesh;
-    Model model;
-    breakpoint();
 }
 
 // static Matrix PlayerRotateTransform(Matrix rotation, float delta_time) {
@@ -45,8 +42,20 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     }
 
     if (walking) {
-        angle += 2.0f * delta_time;
-        entity->model.transform = MatrixRotateZ(angle);
+        printf("%f\n", angle);
+        if (angle >= 90) {
+            angle = 0;
+            // entity->position = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+            walking = false;
+        } else {
+            float amount = delta_time / 0.2f;
+            if (amount > 1.0f) amount = 1.0f;
+            angle += Lerp(0, 90, amount);
+            // Vector3 end = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+            // entity->position = Vector3Lerp(entity->position, end, amount);
+            entity->model.transform = MatrixRotateZ(angle * DEG2RAD);
+            // entity->model.transform = MatrixMultiply(entity->model.transform, rotation);
+        }
         // Matrix target = (Matrix){1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0};
         // if (angle >= 90.0) {
         //     // walking = false;
