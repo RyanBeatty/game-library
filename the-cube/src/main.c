@@ -10,8 +10,20 @@ const int ScreenHeight = 450;
 
 static const float CubeSideLength = 2.0f;
 
+static void PrintMatrix(Matrix m) {
+    float16 mv = MatrixToFloatV(m);
+    for (int i = 0; i < 16; ++i) {
+        if (i % 4 == 0) {
+            printf("\n");
+        }
+        printf("%f ", mv.v[i]);
+    }
+    printf("\n");
+}
+
 typedef struct Entity {
     Vector3 position;
+    Quaternion orientation;
 
     Model model;
 } Entity;
@@ -23,6 +35,7 @@ static Entity Player;
 
 static void PlayerInit(Entity* player) {
     player->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
+    player->orientation = QuaternionIdentity();
     player->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
 }
 
@@ -37,49 +50,45 @@ static void PlayerInit(Entity* player) {
 static void PlayerUpdate(Entity* entity, float delta_time) {
     static bool walking = false;
     static float angle = 0;
+    static float t_acc = 0;
+    static Quaternion start_orientation;
+
     if (IsKeyPressed(KEY_UP)) {
         walking = true;
+        t_acc = 0;
+        start_orientation = entity->orientation;
+        Matrix target = (Matrix){
+            0,  1.0, 0, 0,  //
+            -1, 0,   0, 0,  //
+            0,  0,   1, 0,  //
+            0,  0,   0, 1,
+        };
+        entity->orientation = QuaternionMultiply(QuaternionFromMatrix(target), entity->orientation);
+        // Matrix rotation = MatrixRotateZ(angle * RAD2DEG);
+        // entity->model.transform = MatrixMultiply(entity->model.transform, rotation);
     }
 
+    Quaternion orientation = entity->orientation;
+    Quaternion rotation = QuaternionFromMatrix(MatrixIdentity());
     if (walking) {
-        printf("%f\n", angle);
-        if (angle >= 90) {
-            angle = 0;
-            // entity->position = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+        t_acc += delta_time;
+        float t = t_acc / 0.2;
+        if (t >= 1.0f) {
             walking = false;
         } else {
-            float amount = delta_time / 0.2f;
-            if (amount > 1.0f) amount = 1.0f;
-            angle += Lerp(0, 90, amount);
-            // Vector3 end = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
-            // entity->position = Vector3Lerp(entity->position, end, amount);
-            entity->model.transform = MatrixRotateZ(angle * DEG2RAD);
-            // entity->model.transform = MatrixMultiply(entity->model.transform, rotation);
+            printf("t: %f\n", t);
+            rotation = QuaternionSlerp(start_orientation, orientation, t);
         }
-        // Matrix target = (Matrix){1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0};
-        // if (angle >= 90.0) {
-        //     // walking = false;
-        //     // angle = 0.0f;
-        // } else {
-        //     angle += 20 * delta_time;
-        //     entity->rotation = MatrixRotateXYZ((Vector3){angle, 0, 0});
-        // }
-        // Matrix target = {0, -1, 0, 0,  //
-        //                  1, 0,  0, 0,  //
-        //                  0, 0,  1, 0};
-        // entity->rotation.m0 += 0.2f * (target.m0 - entity->rotation.m0);
-        // entity->rotation.m1 += 0.2f * (target.m1 - entity->rotation.m1);
-        // entity->rotation.m2 += 0.2f * (target.m2 - entity->rotation.m2);
-        // entity->rotation.m4 += 0.2f * (target.m4 - entity->rotation.m4);
-        // entity->rotation.m5 += 0.2f * (target.m5 - entity->rotation.m5);
-        // entity->rotation.m6 += 0.2f * (target.m6 - entity->rotation.m6);
-        // entity->rotation.m8 += 0.2f * (target.m8 - entity->rotation.m8);
-        // entity->rotation.m9 += 0.2f * (target.m9 - entity->rotation.m9);
-        // entity->rotation.m10 += 0.2f * (target.m10 - entity->rotation.m10);
-        // entity->rotation.m12 += 0.2f * (target.m12 - entity->rotation.m12);
-        // entity->rotation.m13 += 0.2f * (target.m13 - entity->rotation.m13);
-        // entity->rotation.m14 += 0.2f * (target.m14 - entity->rotation.m14);
     }
+
+    printf("orientation:");
+    PrintMatrix(QuaternionToMatrix(orientation));
+    printf("rotation:");
+    PrintMatrix(QuaternionToMatrix(rotation));
+
+    orientation = QuaternionMultiply(rotation, orientation);
+    entity->model.transform = QuaternionToMatrix(orientation);
+
     //         printf("foo\n");
     //         // Matrix target = {1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0};
     //         Matrix target = {0, -1, 0, 0,  //
