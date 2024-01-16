@@ -137,15 +137,15 @@ static void GameGridInit(Entity* game_grid) {
 }
 
 static void GameGridDraw(Entity* game_grid) {
-    int spaces = 5;
+    int spaces = 20;
     float length = CubeSideLength;
     float half_length = length / 2.0f;
     float end = spaces * length;
     for (int x = -end; x < end; x += length) {
         for (int z = -end; z < end; z += length) {
             game_grid->model.transform = MatrixTranslate(x + half_length, -length, z + half_length);
-            DrawModel(game_grid->model, (Vector3){0, 0, 0}, 1.0f, BLUE);
-            DrawModelWires(game_grid->model, (Vector3){0, 0, 0}, 1.0f, WHITE);
+            DrawModel(game_grid->model, (Vector3){0, 0, 0}, 1.0f, BLACK);
+            DrawModelWires(game_grid->model, (Vector3){0, 0, 0}, 1.0f, GRAY);
         }
     }
 }
