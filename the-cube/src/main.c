@@ -132,25 +132,18 @@ void GameCameraInit(Camera3D* camera, Entity* player) {
 
 static Entity GameGrid;
 static Material GameGridMaterial;
-static int GameGridNumSpaces = 1;
-static Matrix GameGridTransforms[1];
+static int GameGridNumSpaces = 2;
+static Matrix GameGridTransforms[2];
 
 static void GameGridInit(Entity* game_grid) {
     GameGridMaterial = LoadMaterialDefault();
     Shader shader =
         LoadShader("resources/shaders/game_grid_instancing.vs", "resources/shaders/game_grid_instancing.fs");
+    assert(IsShaderReady(shader));
     // Set raylib default locations.
     shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
     shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
     shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
-    // Shader shader = LoadShader(0, 0);
-    breakpoint();
-    // assert(IsShaderReady(shader));
-    // SetShaderValueMatrix(shader, GetShaderLocation(shader, "modelViewProjection"),
-    //                      MatrixIdentity());  // Set a matrix value if needed
-    //                      SetShaderValueVe(shader, GetShaderLocation(shader, "vertex"),
-    //                      MatrixIdentity());  // Set a matrix value if needed
-
     GameGridMaterial.shader = shader;
     GameGridMaterial.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
 
@@ -164,29 +157,13 @@ static void GameGridInit(Entity* game_grid) {
     //     }
     // }
     GameGridTransforms[0] = MatrixTranslate(3, 0, -5);
+    GameGridTransforms[1] = MatrixTranslate(-3, 0, -5);
     game_grid->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
 }
 
 static void GameGridDraw(Entity* game_grid) {
     assert(game_grid->model.meshCount == 1);
-    Matrix transforms[1] = {MatrixIdentity()};
-    Mesh mesh = GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength);
-    Material material = LoadMaterialDefault();
-    material.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
-    DrawMesh(mesh, material, MatrixIdentity());
-    // DrawMeshInstanced(game_grid->model.meshes[0], GameGridMaterial, GameGridTransforms, GameGridNumSpaces);
-    // DrawMeshInstanced(game_grid->model.meshes[0], GameGridMaterial, NULL, 0);
-    // int spaces = 20;
-    // float length = CubeSideLength;
-    // float half_length = length / 2.0f;
-    // float end = spaces * length;
-    // for (int x = -end; x < end; x += length) {
-    //     for (int z = -end; z < end; z += length) {
-    //         game_grid->model.transform = MatrixTranslate(x + half_length, -length, z + half_length);
-    //         DrawModel(game_grid->model, (Vector3){0, 0, 0}, 1.0f, BLACK);
-    //         DrawModelWires(game_grid->model, (Vector3){0, 0, 0}, 1.0f, GRAY);
-    //     }
-    // }
+    DrawMeshInstanced(game_grid->model.meshes[0], GameGridMaterial, GameGridTransforms, GameGridNumSpaces);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
