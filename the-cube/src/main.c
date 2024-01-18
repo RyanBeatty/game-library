@@ -135,7 +135,7 @@ static Material GameGridMaterial;
 #define GameGridNumRows (100)
 #define GameGridNumCols (100)
 #define GameGridNumSpaces ((GameGridNumRows) * (GameGridNumCols))
-static Matrix GameGridTransforms[GameGridNumRows * GameGridNumCols];
+static Matrix GameGridTransforms[GameGridNumSpaces];
 
 static void GameGridInit(Entity* game_grid) {
     GameGridMaterial = LoadMaterialDefault();
@@ -147,7 +147,7 @@ static void GameGridInit(Entity* game_grid) {
     shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
     shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
     GameGridMaterial.shader = shader;
-    GameGridMaterial.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
+    GameGridMaterial.maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
 
     float length = CubeSideLength;
     float half_length = length / 2.0f;
