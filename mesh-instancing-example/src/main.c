@@ -86,7 +86,7 @@ int main(void) {
     // to be used on mesh drawing with DrawMeshInstanced()
     Material matInstances = LoadMaterialDefault();
     matInstances.shader = shader;
-    matInstances.maps[MATERIAL_MAP_DIFFUSE].color = RED;
+    matInstances.maps[MATERIAL_MAP_DIFFUSE].color = GREEN;
 
     // Load default material (using raylib intenral default shader) for non-instanced mesh drawing
     // WARNING: Default shader enables vertex color attribute BUT GenMeshCube() does not generate vertex colors, so,
