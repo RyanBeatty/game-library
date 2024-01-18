@@ -31,7 +31,8 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 # These files will have .d instead of .o as the output.
 CPPFLAGS := $(INC_FLAGS) -MMD -MP -g3 -Wall
 
-BTFLAGS := -D BT_INTERNAL=1 -DBT_SLOW=1
+# Need to ensure we build for correct platform for raylib hence the PLATFORM_DESKTOP.
+BTFLAGS := -D BT_INTERNAL=1 -DBT_SLOW=1 -DPLATFORM_DESKTOP=1
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
