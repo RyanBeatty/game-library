@@ -132,8 +132,10 @@ void GameCameraInit(Camera3D* camera, Entity* player) {
 
 static Entity GameGrid;
 static Material GameGridMaterial;
-#define GameGridNumSpaces (2)
-static Matrix GameGridTransforms[GameGridNumSpaces];
+#define GameGridNumRows (100)
+#define GameGridNumCols (100)
+#define GameGridNumSpaces ((GameGridNumRows) * (GameGridNumCols))
+static Matrix GameGridTransforms[GameGridNumRows * GameGridNumCols];
 
 static void GameGridInit(Entity* game_grid) {
     GameGridMaterial = LoadMaterialDefault();
@@ -147,13 +149,11 @@ static void GameGridInit(Entity* game_grid) {
     GameGridMaterial.shader = shader;
     GameGridMaterial.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
 
-    int spaces_per_row = GameGridNumSpaces / 2;
     float length = CubeSideLength;
     float half_length = length / 2.0f;
-    float end = spaces_per_row * length;
-    for (int i = 0, x = 0; x < end; x += length) {
-        for (int z = 0; z < end; z += length, ++i) {
-            GameGridTransforms[i] = MatrixTranslate(x + half_length, -length, z + half_length);
+    for (int i = 0, r = 0; r < GameGridNumRows; ++r) {
+        for (int c = 0; c < GameGridNumCols; ++c, ++i) {
+            GameGridTransforms[i] = MatrixTranslate((r * length) + half_length, -length, (c * length) + half_length);
         }
     }
     game_grid->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
