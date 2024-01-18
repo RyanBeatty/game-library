@@ -68,32 +68,32 @@ int main(void) {
     }
 
     // Load lighting shader
-    // Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting_instancing.vs", GLSL_VERSION),
-    //                            TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
-    // // Get shader locations
-    // shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
-    // shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-    // shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
+    Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting_instancing.vs", GLSL_VERSION),
+                               TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+    // Get shader locations
+    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
+    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
 
-    // // Set shader value: ambient light level
-    // int ambientLoc = GetShaderLocation(shader, "ambient");
-    // SetShaderValue(shader, ambientLoc, (float[4]){0.2f, 0.2f, 0.2f, 1.0f}, SHADER_UNIFORM_VEC4);
+    // Set shader value: ambient light level
+    int ambientLoc = GetShaderLocation(shader, "ambient");
+    SetShaderValue(shader, ambientLoc, (float[4]){0.2f, 0.2f, 0.2f, 1.0f}, SHADER_UNIFORM_VEC4);
 
-    // // Create one light
-    // CreateLight(LIGHT_DIRECTIONAL, (Vector3){50.0f, 50.0f, 0.0f}, Vector3Zero(), WHITE, shader);
+    // Create one light
+    CreateLight(LIGHT_DIRECTIONAL, (Vector3){50.0f, 50.0f, 0.0f}, Vector3Zero(), WHITE, shader);
 
-    // // NOTE: We are assigning the intancing shader to material.shader
-    // // to be used on mesh drawing with DrawMeshInstanced()
-    // Material matInstances = LoadMaterialDefault();
-    // matInstances.shader = shader;
-    // matInstances.maps[MATERIAL_MAP_DIFFUSE].color = RED;
+    // NOTE: We are assigning the intancing shader to material.shader
+    // to be used on mesh drawing with DrawMeshInstanced()
+    Material matInstances = LoadMaterialDefault();
+    matInstances.shader = shader;
+    matInstances.maps[MATERIAL_MAP_DIFFUSE].color = RED;
 
     // Load default material (using raylib intenral default shader) for non-instanced mesh drawing
     // WARNING: Default shader enables vertex color attribute BUT GenMeshCube() does not generate vertex colors, so,
     // when drawing the color attribute is disabled and a default color value is provided as input for thevertex
     // attribute
     Material matDefault = LoadMaterialDefault();
-    matDefault.maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
+    matDefault.maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
 
     SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ int main(void) {
 
         // Update the light shader with the camera view position
         float cameraPos[3] = {camera.position.x, camera.position.y, camera.position.z};
-        // SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+        SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -124,7 +124,7 @@ int main(void) {
         // Draw meshes instanced using material containing instancing shader (RED + lighting),
         // transforms[] for the instances should be provided, they are dynamically
         // updated in GPU every frame, so we can animate the different mesh instances
-        // DrawMeshInstanced(cube, matInstances, transforms, MAX_INSTANCES);
+        DrawMeshInstanced(cube, matInstances, transforms, MAX_INSTANCES);
 
         // Draw cube mesh with default material (BLUE)
         DrawMesh(cube, matDefault, MatrixTranslate(10.0f, 0.0f, 0.0f));
