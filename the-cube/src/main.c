@@ -167,7 +167,22 @@ static void GameGridDraw(Entity* game_grid) {
 /////////////////////////////////////////////////////////////////////////////////////
 static bool DebugMode = false;
 
-void DrawDebug() {
+static void DebugModeUpdate(float delta_time) {
+    static const float RotationSpeed = 90 * DEG2RAD;
+
+    Matrix rotation = MatrixIdentity();
+    if (IsKeyDown(KEY_LEFT)) {
+        rotation = MatrixRotateY(-RotationSpeed * delta_time);
+    } else if (IsKeyDown(KEY_RIGHT)) {
+        rotation = MatrixRotateY(RotationSpeed * delta_time);
+    }
+
+    // TODO: For some reason this seems to not be a perfect circular rotation about the target.
+    // When we rotate behind the object, the perspective seems to shift. Maybe related to field of view??
+    GameCamera.position = Vector3Transform(GameCamera.position, rotation);
+}
+
+static void DrawDebugMode() {
     // Not in Mode3D. All coords are screen space.
     if (DebugMode) {
         DrawFPS(10, 10);
@@ -187,11 +202,15 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
-    PlayerUpdate(&Player, delta_time);
-    GameCameraUpdate(&GameCamera, &Player);
-
     if (IsKeyPressed(KEY_D)) {
         DebugMode = !DebugMode;
+    }
+
+    if (!DebugMode) {
+        PlayerUpdate(&Player, delta_time);
+        GameCameraUpdate(&GameCamera, &Player);
+    } else {
+        DebugModeUpdate(delta_time);
     }
 }
 
@@ -205,7 +224,7 @@ static void GameDraw() {
     GameGridDraw(&GameGrid);
 
     EndMode3D();
-    DrawDebug();
+    DrawDebugMode();
 
     EndDrawing();
 }
