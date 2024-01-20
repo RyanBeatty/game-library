@@ -167,6 +167,10 @@ static void GameGridDraw(Entity* game_grid) {
 /////////////////////////////////////////////////////////////////////////////////////
 static bool DebugMode = false;
 
+static void DebugModeEnable() { UpdateCamera(&GameCamera, CAMERA_FREE); }
+
+static void DebugModeDisable() { UpdateCamera(&GameCamera, CAMERA_PERSPECTIVE); }
+
 static void DebugModeUpdate(float delta_time) {
     static const float RotationSpeed = 90 * DEG2RAD;
 
@@ -204,6 +208,11 @@ static void GameInit() {
 static void GameUpdate(float delta_time) {
     if (IsKeyPressed(KEY_D)) {
         DebugMode = !DebugMode;
+        if (DebugMode) {
+            DebugModeEnable();
+        } else {
+            DebugModeDisable();
+        }
     }
 
     if (!DebugMode) {
