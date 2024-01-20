@@ -153,7 +153,8 @@ static void GameGridInit(Entity* game_grid) {
     float half_length = length / 2.0f;
     for (int i = 0, r = 0; r < GameGridNumRows; ++r) {
         for (int c = 0; c < GameGridNumCols; ++c, ++i) {
-            GameGridTransforms[i] = MatrixTranslate((r * length) + half_length, -length, (c * length) + half_length);
+            GameGridTransforms[i] =
+                MatrixTranslate((r * length) + half_length, -half_length, (c * length) + half_length);
         }
     }
     game_grid->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
