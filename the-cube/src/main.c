@@ -33,10 +33,9 @@ typedef struct Entity {
 Entity* GameEntities = NULL;
 
 static Entity* CreateEntity() {
-    Entity entity = {0};
-    entity.idx = arrlen(GameEntities);
-    arrpush(GameEntities, entity);
-    return &GameEntities[entity.idx];
+    Entity* entity = arraddnptr(GameEntities, 1);
+    entity->idx = arrlen(GameEntities) - 1;
+    return entity;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
