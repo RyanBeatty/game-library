@@ -216,10 +216,10 @@ static void GameUpdate(float delta_time) {
 }
 
 static void GameDraw() {
+    ClearBackground(RAYWHITE);
+
     BeginDrawing();
     BeginMode3D(GameCamera);
-
-    ClearBackground(RAYWHITE);
 
     for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
         DrawModel(GameEntities[i].model, (Vector3){0}, 1, WHITE);
