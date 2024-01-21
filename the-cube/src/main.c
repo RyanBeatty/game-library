@@ -38,6 +38,13 @@ static Entity* CreateEntity() {
     return entity;
 }
 
+static void EntityUpdateTransform(Entity* entity) {
+    // Remember matrices are applied left to right order, so the rotation is first.
+    entity->model.transform =
+        MatrixMultiply(QuaternionToMatrix(entity->orientation),
+                       MatrixTranslate(entity->position.x, entity->position.y, entity->position.z));
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 static void PlayerInit(Entity* player) {
     player->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
@@ -109,10 +116,6 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
     if (false) {
         PrintMatrix(QuaternionToMatrix(entity->orientation));
     }
-
-    entity->model.transform = QuaternionToMatrix(entity->orientation);
-    entity->model.transform = MatrixMultiply(
-        entity->model.transform, MatrixTranslate(entity->position.x, entity->position.y, entity->position.z));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -145,8 +148,7 @@ static void RegisterBackgroundEntities() {
         for (int c = 0; c < GameGridNumCols; ++c, ++i) {
             Entity* entity = CreateEntity();
             entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
-            entity->model.transform =
-                MatrixTranslate((r * length) + half_length, -half_length, (c * length) + half_length);
+            entity->position = (Vector3){(r * length) + half_length, -half_length, (c * length) + half_length};
             entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
         }
     }
@@ -190,9 +192,6 @@ static void EditorUpdate(Editor* editor) {
             if (IsKeyPressed(KEY_UP)) {
                 editor->focus->position.z -= CubeSideLength;
             } else if (IsKeyPressed(KEY_RIGHT)) {
-                TraceLog(LOG_INFO, "editinggggg");
-
-                breakpoint();
                 editor->focus->position.x += CubeSideLength;
             } else if (IsKeyPressed(KEY_DOWN)) {
                 editor->focus->position.z += CubeSideLength;
@@ -272,6 +271,11 @@ static void GameUpdate(float delta_time) {
     } else {
         DebugModeUpdate(delta_time);
         EditorUpdate(&GameEditor);
+    }
+
+    // Ensure we do this after all above updates so that the transforms reflect updated entity info.
+    for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
+        EntityUpdateTransform(&GameEntities[i]);
     }
 }
 
