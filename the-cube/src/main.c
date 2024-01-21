@@ -121,18 +121,12 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
 /////////////////////////////////////////////////////////////////////////////////////
 static Camera3D GameCamera;
 
-static void GameCameraFollowEntity(Camera3D* camera, Entity* player) {
-    camera->position = (Vector3){player->position.x, 10.0f, player->position.z + 10.0f};
-    camera->target = player->position;
-}
-
-void GameCameraInit(Camera3D* camera, Entity* player) {
-    camera->position = (Vector3){0.0f, 10.0f, 10.0f};  // Camera position
-    camera->target = (Vector3){0.0f, 0.0f, 0.0f};      // Camera looking at point
-    GameCameraFollowEntity(camera, player);
-    camera->up = (Vector3){0.0f, 1.0f, 0.0f};  // Camera up vector (rotation towards target)
-    camera->fovy = 45.0f;                      // Camera field-of-view Y
-    camera->projection = CAMERA_PERSPECTIVE;   // Camera mode type
+void GameCameraInit(Camera3D* camera) {
+    camera->position = (Vector3){0.0f, 10.0f, 20.0f};
+    camera->target = (Vector3){0.0f, 0.0f, 0.0f};
+    camera->up = (Vector3){0.0f, 1.0f, 0.0f};
+    camera->fovy = 45.0f;
+    camera->projection = CAMERA_PERSPECTIVE;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -149,6 +143,8 @@ static void RegisterBackgroundEntities() {
             Entity* entity = CreateEntity();
             entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
             entity->position = (Vector3){(r * length) + half_length, -half_length, (c * length) + half_length};
+            // Hack shift position so that camera get capture full scene.
+            entity->position = Vector3Add(entity->position, (Vector3){-10.0f, 0, -10.0f});
             entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
         }
     }
@@ -252,7 +248,7 @@ static void GameInit() {
 
     RegisterBackgroundEntities();
 
-    GameCameraInit(&GameCamera, player);
+    GameCameraInit(&GameCamera);
 }
 
 static void GameUpdate(float delta_time) {
@@ -268,10 +264,11 @@ static void GameUpdate(float delta_time) {
     if (!DebugMode) {
         Entity* player = &GameEntities[0];
         PlayerUpdate(player, delta_time);
-        GameCameraFollowEntity(&GameCamera, player);
     } else {
         DebugModeUpdate(delta_time);
         EditorUpdate(&GameEditor);
+        if (IsKeyPressed(KEY_SPACE))
+            TraceLog(LOG_INFO, "%f %f %f", GameCamera.position.x, GameCamera.position.y, GameCamera.position.z);
     }
 
     // Ensure we do this after all above updates so that the transforms reflect updated entity info.
@@ -286,8 +283,9 @@ static void GameDraw() {
     BeginDrawing();
     BeginMode3D(GameCamera);
 
+    Vector3 position = {0};
     for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
-        DrawModel(GameEntities[i].model, (Vector3){0}, 1, WHITE);
+        DrawModel(GameEntities[i].model, position, 1, WHITE);
     }
 
     EndMode3D();
