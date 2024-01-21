@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -22,19 +23,28 @@ static void PrintMatrix(Matrix m) {
 }
 
 typedef struct Entity {
+    uint32_t idx;
     Vector3 position;
     Quaternion orientation;
 
     Model model;
 } Entity;
 
-/////////////////////////////////////////////////////////////////////////////////////
-static Entity Player;
+Entity* GameEntities = NULL;
 
+static Entity* CreateEntity() {
+    Entity entity = {0};
+    entity.idx = arrlen(GameEntities);
+    arrpush(GameEntities, entity);
+    return &GameEntities[entity.idx];
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
 static void PlayerInit(Entity* player) {
     player->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
     player->orientation = QuaternionIdentity();
     player->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+    player->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = RED;
 }
 
 static void PlayerUpdate(Entity* entity, float delta_time) {
@@ -106,23 +116,18 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         entity->model.transform, MatrixTranslate(entity->position.x, entity->position.y, entity->position.z));
 }
 
-static void PlayerDraw(Entity* entity) {
-    DrawModel(entity->model, (Vector3){0, 0, 0}, 1.0f, RED);
-    DrawModelWires(entity->model, (Vector3){0, 0, 0}, 1.0f, GREEN);
-}
-
 /////////////////////////////////////////////////////////////////////////////////////
 static Camera3D GameCamera;
 
-static void GameCameraUpdate(Camera3D* camera, Entity* entity) {
-    camera->position = (Vector3){entity->position.x, 10.0f, entity->position.z + 10.0f};
-    camera->target = entity->position;
+static void GameCameraFollowEntity(Camera3D* camera, Entity* player) {
+    camera->position = (Vector3){player->position.x, 10.0f, player->position.z + 10.0f};
+    camera->target = player->position;
 }
 
 void GameCameraInit(Camera3D* camera, Entity* player) {
     camera->position = (Vector3){0.0f, 10.0f, 10.0f};  // Camera position
     camera->target = (Vector3){0.0f, 0.0f, 0.0f};      // Camera looking at point
-    GameCameraUpdate(camera, player);
+    GameCameraFollowEntity(camera, player);
     camera->up = (Vector3){0.0f, 1.0f, 0.0f};  // Camera up vector (rotation towards target)
     camera->fovy = 45.0f;                      // Camera field-of-view Y
     camera->projection = CAMERA_PERSPECTIVE;   // Camera mode type
@@ -130,39 +135,22 @@ void GameCameraInit(Camera3D* camera, Entity* player) {
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-static Entity GameGrid;
-static Material GameGridMaterial;
-#define GameGridNumRows (100)
-#define GameGridNumCols (100)
+#define GameGridNumRows (10)
+#define GameGridNumCols (10)
 #define GameGridNumSpaces ((GameGridNumRows) * (GameGridNumCols))
-static Matrix GameGridTransforms[GameGridNumSpaces];
 
-static void GameGridInit(Entity* game_grid) {
-    GameGridMaterial = LoadMaterialDefault();
-    Shader shader =
-        LoadShader("resources/shaders/game_grid_instancing.vs", "resources/shaders/game_grid_instancing.fs");
-    assert(IsShaderReady(shader));
-    // Set raylib default locations.
-    shader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(shader, "mvp");
-    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
-    shader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocationAttrib(shader, "instanceTransform");
-    GameGridMaterial.shader = shader;
-    GameGridMaterial.maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
-
+static void RegisterBackgroundEntities() {
     float length = CubeSideLength;
     float half_length = length / 2.0f;
     for (int i = 0, r = 0; r < GameGridNumRows; ++r) {
         for (int c = 0; c < GameGridNumCols; ++c, ++i) {
-            GameGridTransforms[i] =
+            Entity* entity = CreateEntity();
+            entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+            entity->model.transform =
                 MatrixTranslate((r * length) + half_length, -half_length, (c * length) + half_length);
+            entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
         }
     }
-    game_grid->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
-}
-
-static void GameGridDraw(Entity* game_grid) {
-    assert(game_grid->model.meshCount == 1);
-    DrawMeshInstanced(game_grid->model.meshes[0], GameGridMaterial, GameGridTransforms, GameGridNumSpaces);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -201,9 +189,12 @@ static void GameInit() {
 
     SetTargetFPS(60);
 
-    PlayerInit(&Player);
-    GameCameraInit(&GameCamera, &Player);
-    GameGridInit(&GameGrid);
+    Entity* player = CreateEntity();
+    PlayerInit(player);
+
+    RegisterBackgroundEntities();
+
+    GameCameraInit(&GameCamera, player);
 }
 
 static void GameUpdate(float delta_time) {
@@ -217,8 +208,9 @@ static void GameUpdate(float delta_time) {
     }
 
     if (!DebugMode) {
-        PlayerUpdate(&Player, delta_time);
-        GameCameraUpdate(&GameCamera, &Player);
+        Entity* player = &GameEntities[0];
+        PlayerUpdate(player, delta_time);
+        GameCameraFollowEntity(&GameCamera, player);
     } else {
         DebugModeUpdate(delta_time);
     }
@@ -230,8 +222,9 @@ static void GameDraw() {
 
     ClearBackground(RAYWHITE);
 
-    PlayerDraw(&Player);
-    GameGridDraw(&GameGrid);
+    for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
+        DrawModel(GameEntities[i].model, (Vector3){0}, 1, WHITE);
+    }
 
     EndMode3D();
     DrawDebugMode();
