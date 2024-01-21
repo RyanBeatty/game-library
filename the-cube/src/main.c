@@ -180,15 +180,16 @@ static void EditorUpdate(Editor* editor) {
         }
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
-                editor->focus = CreateEntity();
-                editor->focus->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
-                editor->focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
+                Entity* focus = CreateEntity();
+                focus->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+                focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
+                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
+                editor->focus = focus;
                 editor->editor_state = ES_EDITING;
             }
             break;
         }
         case ES_EDITING: {
-            // TODO: Need to setup transform matrices.
             if (IsKeyPressed(KEY_UP)) {
                 editor->focus->position.z -= CubeSideLength;
             } else if (IsKeyPressed(KEY_RIGHT)) {
