@@ -151,6 +151,65 @@ static void RegisterBackgroundEntities() {
         }
     }
 }
+/////////////////////////////////////////////////////////////////////////////////////
+typedef enum EditorState {
+    ES_DISABLED = 0,
+    ES_IDLE,
+    ES_EDITING,
+
+    ES_COUNT
+} EditorState;
+
+typedef struct Editor {
+    EditorState editor_state;
+    Entity* focus;
+} Editor;
+
+static Editor GameEditor = {0};
+
+static void EditorUpdate(Editor* editor) {
+    if (IsKeyPressed(KEY_E)) {
+        editor->editor_state = editor->editor_state == ES_DISABLED ? ES_IDLE : ES_DISABLED;
+    }
+
+    switch (editor->editor_state) {
+        case ES_DISABLED: {
+            break;
+        }
+        case ES_IDLE: {
+            if (IsKeyPressed(KEY_A)) {
+                editor->focus = CreateEntity();
+                editor->focus->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+                editor->focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
+                editor->editor_state = ES_EDITING;
+            }
+            break;
+        }
+        case ES_EDITING: {
+            // TODO: Need to setup transform matrices.
+            if (IsKeyPressed(KEY_UP)) {
+                editor->focus->position.z -= CubeSideLength;
+            } else if (IsKeyPressed(KEY_RIGHT)) {
+                TraceLog(LOG_INFO, "editinggggg");
+
+                breakpoint();
+                editor->focus->position.x += CubeSideLength;
+            } else if (IsKeyPressed(KEY_DOWN)) {
+                editor->focus->position.z += CubeSideLength;
+            } else if (IsKeyPressed(KEY_LEFT)) {
+                editor->focus->position.x -= CubeSideLength;
+            } else if (IsKeyPressed(KEY_PAGE_UP)) {
+                editor->focus->position.y += CubeSideLength;
+            } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
+                editor->focus->position.y -= CubeSideLength;
+            }
+            break;
+        }
+        default: {
+            exit(EXIT_FAILURE);
+        }
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 static bool DebugMode = false;
@@ -212,6 +271,7 @@ static void GameUpdate(float delta_time) {
         GameCameraFollowEntity(&GameCamera, player);
     } else {
         DebugModeUpdate(delta_time);
+        EditorUpdate(&GameEditor);
     }
 }
 
