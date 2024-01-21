@@ -198,6 +198,9 @@ static void EditorUpdate(Editor* editor) {
                 editor->focus->position.y += CubeSideLength;
             } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
                 editor->focus->position.y -= CubeSideLength;
+            } else if (IsKeyPressed(KEY_ENTER)) {
+                editor->focus = NULL;
+                editor->editor_state = ES_IDLE;
             }
             break;
         }
@@ -215,18 +218,19 @@ static void DebugModeEnable() { UpdateCamera(&GameCamera, CAMERA_FREE); }
 static void DebugModeDisable() { UpdateCamera(&GameCamera, CAMERA_PERSPECTIVE); }
 
 static void DebugModeUpdate(float delta_time) {
-    static const float RotationSpeed = 90 * DEG2RAD;
+    // TODO: Figure out what to do with this. Should this be part of the editor? Probably.
+    // static const float RotationSpeed = 90 * DEG2RAD;
 
-    Matrix rotation = MatrixIdentity();
-    if (IsKeyDown(KEY_LEFT)) {
-        rotation = MatrixRotateY(-RotationSpeed * delta_time);
-    } else if (IsKeyDown(KEY_RIGHT)) {
-        rotation = MatrixRotateY(RotationSpeed * delta_time);
-    }
+    // Matrix rotation = MatrixIdentity();
+    // if (IsKeyDown(KEY_LEFT)) {
+    //     rotation = MatrixRotateY(-RotationSpeed * delta_time);
+    // } else if (IsKeyDown(KEY_RIGHT)) {
+    //     rotation = MatrixRotateY(RotationSpeed * delta_time);
+    // }
 
-    // TODO: For some reason this seems to not be a perfect circular rotation about the target.
-    // When we rotate behind the object, the perspective seems to shift. Maybe related to field of view??
-    GameCamera.position = Vector3Transform(GameCamera.position, rotation);
+    // // TODO: For some reason this seems to not be a perfect circular rotation about the target.
+    // // When we rotate behind the object, the perspective seems to shift. Maybe related to field of view??
+    // GameCamera.position = Vector3Transform(GameCamera.position, rotation);
 }
 
 static void DrawDebugMode() {
@@ -267,8 +271,6 @@ static void GameUpdate(float delta_time) {
     } else {
         DebugModeUpdate(delta_time);
         EditorUpdate(&GameEditor);
-        if (IsKeyPressed(KEY_SPACE))
-            TraceLog(LOG_INFO, "%f %f %f", GameCamera.position.x, GameCamera.position.y, GameCamera.position.z);
     }
 
     // Ensure we do this after all above updates so that the transforms reflect updated entity info.
