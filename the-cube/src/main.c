@@ -151,8 +151,7 @@ static void RegisterBackgroundEntities() {
 }
 /////////////////////////////////////////////////////////////////////////////////////
 typedef enum EditorState {
-    ES_DISABLED = 0,
-    ES_IDLE,
+    ES_IDLE = 0,
     ES_EDITING,
 
     ES_COUNT
@@ -164,16 +163,23 @@ typedef struct Editor {
 } Editor;
 
 static Editor GameEditor = {0};
+// Yuck -- figure out something better later.
+static bool EditorEnabled = false;
+
+static void EditorEnable() {
+    EditorEnabled = true;
+    GameEditor = (Editor){0};
+}
+
+static void EditorDisable() {
+    EditorEnabled = false;
+    GameEditor = (Editor){0};
+}
 
 static void EditorUpdate(Editor* editor) {
-    if (IsKeyPressed(KEY_E)) {
-        editor->editor_state = editor->editor_state == ES_DISABLED ? ES_IDLE : ES_DISABLED;
-    }
+    assert(EditorEnabled);
 
     switch (editor->editor_state) {
-        case ES_DISABLED: {
-            break;
-        }
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
                 Entity* focus = CreateEntity();
@@ -210,33 +216,11 @@ static void EditorUpdate(Editor* editor) {
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-static bool DebugMode = false;
-
-static void DebugModeEnable() {}
-
-static void DebugModeDisable() {}
-
-static void DebugModeUpdate(float delta_time) {
-    // TODO: Figure out what to do with this. Should this be part of the editor? Probably.
-    // static const float RotationSpeed = 90 * DEG2RAD;
-
-    // Matrix rotation = MatrixIdentity();
-    // if (IsKeyDown(KEY_LEFT)) {
-    //     rotation = MatrixRotateY(-RotationSpeed * delta_time);
-    // } else if (IsKeyDown(KEY_RIGHT)) {
-    //     rotation = MatrixRotateY(RotationSpeed * delta_time);
-    // }
-
-    // // TODO: For some reason this seems to not be a perfect circular rotation about the target.
-    // // When we rotate behind the object, the perspective seems to shift. Maybe related to field of view??
-    // GameCamera.position = Vector3Transform(GameCamera.position, rotation);
-}
-
-static void DrawDebugMode() {
-    // Not in Mode3D. All coords are screen space.
-    if (DebugMode) {
+static void EditorDraw(Editor* editor) {
+    if (EditorEnabled) {
+        // Not in Mode3D. All coords are screen space.
         DrawFPS(10, 10);
+        DrawText("Editor Enabled", 100, 10, 20, BLACK);
     }
 }
 
@@ -256,20 +240,18 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
-    if (IsKeyPressed(KEY_D)) {
-        DebugMode = !DebugMode;
-        if (DebugMode) {
-            DebugModeEnable();
+    if (IsKeyPressed(KEY_E)) {
+        if (!EditorEnabled) {
+            EditorEnable();
         } else {
-            DebugModeDisable();
+            EditorDisable();
         }
     }
 
-    if (!DebugMode) {
+    if (!EditorEnabled) {
         Entity* player = &GameEntities[0];
         PlayerUpdate(player, delta_time);
     } else {
-        DebugModeUpdate(delta_time);
         EditorUpdate(&GameEditor);
     }
 
@@ -291,7 +273,7 @@ static void GameDraw() {
     }
 
     EndMode3D();
-    DrawDebugMode();
+    EditorDraw(&GameEditor);
 
     EndDrawing();
 }
