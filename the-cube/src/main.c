@@ -213,9 +213,9 @@ static void EditorUpdate(Editor* editor) {
 /////////////////////////////////////////////////////////////////////////////////////
 static bool DebugMode = false;
 
-static void DebugModeEnable() { UpdateCamera(&GameCamera, CAMERA_FREE); }
+static void DebugModeEnable() {}
 
-static void DebugModeDisable() { UpdateCamera(&GameCamera, CAMERA_PERSPECTIVE); }
+static void DebugModeDisable() {}
 
 static void DebugModeUpdate(float delta_time) {
     // TODO: Figure out what to do with this. Should this be part of the editor? Probably.
