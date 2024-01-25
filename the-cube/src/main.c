@@ -179,6 +179,22 @@ static char* PackFloat(char* buffer, float f) {
     return &buffer[i];
 }
 
+static char* PackU8(char* buffer, uint8_t b) {
+    int i = sprintf(buffer, "%hhu", b);
+    return &buffer[i];
+}
+
+static char* PackColor(char* buffer, Color c) {
+    buffer = PackU8(buffer, c.r);
+    buffer = PackDelim(buffer);
+    buffer = PackU8(buffer, c.g);
+    buffer = PackDelim(buffer);
+    buffer = PackU8(buffer, c.b);
+    buffer = PackDelim(buffer);
+    buffer = PackU8(buffer, c.a);
+    return buffer;
+}
+
 static char* PackVector3(char* buffer, Vector3 v) {
     buffer = PackFloat(buffer, v.x);
     buffer = PackDelim(buffer);
@@ -186,9 +202,6 @@ static char* PackVector3(char* buffer, Vector3 v) {
     buffer = PackDelim(buffer);
     buffer = PackFloat(buffer, v.z);
     return buffer;
-    // int i = sprintf(buffer, "%f,%f,%f", v.x, v.y, v.z);
-    // assert(i != -1);
-    // return &buffer[i];
 }
 
 static char* PackVector4(char* buffer, Vector4 v) {
@@ -200,9 +213,6 @@ static char* PackVector4(char* buffer, Vector4 v) {
     buffer = PackDelim(buffer);
     buffer = PackFloat(buffer, v.w);
     return buffer;
-    // int i = sprintf(buffer, "%f,%f,%f,%f", v.x, v.y, v.z, v.w);
-    // assert(i != -1);
-    // return &buffer[i];
 }
 
 static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buffer, q); }
@@ -215,12 +225,14 @@ static void SaveLevel() {
         char* pos = buffer;
         Entity* entity = &GameEntities[i];
         int ii = sprintf(pos, "%u", entity->idx);
-        breakpoint();
         pos = &buffer[ii];
         pos = PackDelim(pos);
         pos = PackVector3(pos, entity->position);
         pos = PackDelim(pos);
         pos = PackQuaternion(pos, entity->orientation);
+        pos = PackDelim(pos);
+        // TODO: Probably temp until we figure out mesh storage.
+        pos = PackColor(pos, entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
 
         uint32_t len = strlen(buffer);
         for (uint32_t j = 0; j < len; ++j) {
@@ -278,10 +290,11 @@ static void LoadLevel() {
         char* buffer = line;
 
         Entity* entity = CreateEntity();
+        entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+
         buffer = UnpackU32(buffer, &entity->idx);
         buffer = UnpackVector3(buffer, &entity->position);
         buffer = UnpackQuaternion(buffer, &entity->orientation);
-        entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
         entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
         line = strtok(NULL, "\n");
     }
