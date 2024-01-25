@@ -220,7 +220,8 @@ static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buf
 static void SaveLevel() {
     char* data = NULL;
 
-    for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
+    // Note skip the first Entity, its always the Player!
+    for (uint32_t i = 1; i < arrlen(GameEntities); ++i) {
         char buffer[1024] = {0};
         char* pos = buffer;
         Entity* entity = &GameEntities[i];
@@ -315,9 +316,6 @@ static void LoadLevel() {
     }
 
     setlocale(LC_NUMERIC, prevLocale);
-
-    // Hacky, but we don't save mesh data at the moment, so need to turn this red.
-    PlayerInit(&GameEntities[0]);
 }
 
 static void EditorEnable() {
@@ -393,9 +391,10 @@ static void GameInit() {
 
     SetTargetFPS(60);
 
+    Entity* player = CreateEntity();
+    PlayerInit(player);
+
     LoadLevel();
-    // Entity* player = CreateEntity();
-    // PlayerInit(player);
 
     // RegisterBackgroundEntities();
 
