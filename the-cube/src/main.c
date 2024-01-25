@@ -233,51 +233,35 @@ static void SaveLevel() {
     SaveFileText("resources/levels/level_0.csv", data);
 }
 
+static char* GetNextToken(char** buffer) { return strtok_r(NULL, ",", buffer); }
+
 static char* UnpackU32(char* buffer, uint32_t* idx) {
-    int i = sscanf(buffer, "%u", idx);
+    char* tok = GetNextToken(&buffer);
+    int i = sscanf(tok, "%u", idx);
     assert(i != -1);
-    return &buffer[i];
+    return buffer;
 }
 
 static char* UnpackFloat(char* buffer, float* f) {
-    int i = sscanf(buffer, "%f", f);
+    char* tok = GetNextToken(&buffer);
+    int i = sscanf(tok, "%f", f);
     assert(i != -1);
-    // So dumb, scanf will stop parsing string if decimal is all zeros.
-    while (buffer[i] == '0' || buffer[i] == '.') {
-        ++i;
-    }
-    return &buffer[i];
-}
-
-static char* UnpackDelim(char* buffer) {
-    char delim;
-    int i = sscanf(buffer, "%c", &delim);
-    assert(i != -1);
-    return &buffer[i];
+    return buffer;
 }
 
 static char* UnpackVector3(char* buffer, Vector3* v) {
-    // int i = sscanf(buffer, "%f,%f,%f", &v->x, &v->y, &v->z);
     buffer = UnpackFloat(buffer, &v->x);
-    buffer = UnpackDelim(buffer);
     buffer = UnpackFloat(buffer, &v->y);
-    buffer = UnpackDelim(buffer);
     buffer = UnpackFloat(buffer, &v->z);
     return buffer;
 }
 
 static char* UnpackVector4(char* buffer, Vector4* v) {
     buffer = UnpackFloat(buffer, &v->x);
-    buffer = UnpackDelim(buffer);
     buffer = UnpackFloat(buffer, &v->y);
-    buffer = UnpackDelim(buffer);
     buffer = UnpackFloat(buffer, &v->z);
-    buffer = UnpackDelim(buffer);
     buffer = UnpackFloat(buffer, &v->w);
     return buffer;
-    // int i = sscanf(buffer, "%f,%f,%f,%f", &v->x, &v->y, &v->z, &v->w);
-    // assert(i != -1);
-    // return &buffer[i];
 }
 
 static char* UnpackQuaternion(char* buffer, Quaternion* q) { return UnpackVector4(buffer, q); }
@@ -288,22 +272,17 @@ static void LoadLevel() {
     char* prevLocale = setlocale(LC_NUMERIC, NULL);
     setlocale(LC_NUMERIC, "C");
 
-    int count = 0;
     char* line = strtok(data, "\n");
     while (line != NULL) {
-        if (count >= 1) {
-            breakpoint();
-        }
+        // Start buffer at the beginning of line, this is just so we have line around in case debuggin is needed.
+        char* buffer = line;
+
         Entity* entity = CreateEntity();
-        line = UnpackU32(line, &entity->idx);
-        line = UnpackDelim(line);
-        line = UnpackVector3(line, &entity->position);
-        line = UnpackDelim(line);
-        line = UnpackQuaternion(line, &entity->orientation);
-        // Hacky, but we don't save mesh data at the moment.
+        buffer = UnpackU32(buffer, &entity->idx);
+        buffer = UnpackVector3(buffer, &entity->position);
+        buffer = UnpackQuaternion(buffer, &entity->orientation);
         entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
         entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
-        count++;
         line = strtok(NULL, "\n");
     }
 
