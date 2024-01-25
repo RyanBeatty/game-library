@@ -131,24 +131,25 @@ void GameCameraInit(Camera3D* camera) {
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-#define GameGridNumRows (10)
-#define GameGridNumCols (10)
-#define GameGridNumSpaces ((GameGridNumRows) * (GameGridNumCols))
+// TODO: Maybe remove this. Was used to bootstrap level data for saving and loading.
+// #define GameGridNumRows (10)
+// #define GameGridNumCols (10)
+// #define GameGridNumSpaces ((GameGridNumRows) * (GameGridNumCols))
 
-static void RegisterBackgroundEntities() {
-    float length = CubeSideLength;
-    float half_length = length / 2.0f;
-    for (int i = 0, r = 0; r < GameGridNumRows; ++r) {
-        for (int c = 0; c < GameGridNumCols; ++c, ++i) {
-            Entity* entity = CreateEntity();
-            entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
-            entity->position = (Vector3){(r * length) + half_length, -half_length, (c * length) + half_length};
-            // Hack shift position so that camera get capture full scene.
-            entity->position = Vector3Add(entity->position, (Vector3){-10.0f, 0, -10.0f});
-            entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
-        }
-    }
-}
+// static void RegisterBackgroundEntities() {
+//     float length = CubeSideLength;
+//     float half_length = length / 2.0f;
+//     for (int i = 0, r = 0; r < GameGridNumRows; ++r) {
+//         for (int c = 0; c < GameGridNumCols; ++c, ++i) {
+//             Entity* entity = CreateEntity();
+//             entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+//             entity->position = (Vector3){(r * length) + half_length, -half_length, (c * length) + half_length};
+//             // Hack shift position so that camera get capture full scene.
+//             entity->position = Vector3Add(entity->position, (Vector3){-10.0f, 0, -10.0f});
+//             entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+//         }
+//     }
+// }
 /////////////////////////////////////////////////////////////////////////////////////
 typedef enum EditorState {
     ES_IDLE = 0,
@@ -389,8 +390,6 @@ static void GameInit() {
     PlayerInit(player);
 
     LoadLevel();
-
-    // RegisterBackgroundEntities();
 
     GameCameraInit(&GameCamera);
 }
