@@ -1,3 +1,4 @@
+#include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -160,11 +161,157 @@ typedef enum EditorState {
 typedef struct Editor {
     EditorState editor_state;
     Entity* focus;
+    bool game_just_saved;
 } Editor;
 
 static Editor GameEditor = {0};
 // Yuck -- figure out something better later.
 static bool EditorEnabled = false;
+
+static char* PackDelim(char* buffer) {
+    int i = sprintf(buffer, ",");
+    assert(i != -1);
+    return &buffer[i];
+}
+
+static char* PackFloat(char* buffer, float f) {
+    int i = sprintf(buffer, "%f", f);
+    return &buffer[i];
+}
+
+static char* PackVector3(char* buffer, Vector3 v) {
+    buffer = PackFloat(buffer, v.x);
+    buffer = PackDelim(buffer);
+    buffer = PackFloat(buffer, v.y);
+    buffer = PackDelim(buffer);
+    buffer = PackFloat(buffer, v.z);
+    return buffer;
+    // int i = sprintf(buffer, "%f,%f,%f", v.x, v.y, v.z);
+    // assert(i != -1);
+    // return &buffer[i];
+}
+
+static char* PackVector4(char* buffer, Vector4 v) {
+    buffer = PackFloat(buffer, v.x);
+    buffer = PackDelim(buffer);
+    buffer = PackFloat(buffer, v.y);
+    buffer = PackDelim(buffer);
+    buffer = PackFloat(buffer, v.z);
+    buffer = PackDelim(buffer);
+    buffer = PackFloat(buffer, v.w);
+    return buffer;
+    // int i = sprintf(buffer, "%f,%f,%f,%f", v.x, v.y, v.z, v.w);
+    // assert(i != -1);
+    // return &buffer[i];
+}
+
+static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buffer, q); }
+
+static void SaveLevel() {
+    char* data = NULL;
+
+    for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
+        char buffer[1024] = {0};
+        char* pos = buffer;
+        Entity* entity = &GameEntities[i];
+        int ii = sprintf(pos, "%u", entity->idx);
+        breakpoint();
+        pos = &buffer[ii];
+        pos = PackDelim(pos);
+        pos = PackVector3(pos, entity->position);
+        pos = PackDelim(pos);
+        pos = PackQuaternion(pos, entity->orientation);
+
+        uint32_t len = strlen(buffer);
+        for (uint32_t j = 0; j < len; ++j) {
+            arrpush(data, buffer[j]);
+        }
+        arrpush(data, '\n');
+    }
+
+    arrpush(data, '\0');
+    SaveFileText("resources/levels/level_0.csv", data);
+}
+
+static char* UnpackU32(char* buffer, uint32_t* idx) {
+    int i = sscanf(buffer, "%u", idx);
+    assert(i != -1);
+    return &buffer[i];
+}
+
+static char* UnpackFloat(char* buffer, float* f) {
+    int i = sscanf(buffer, "%f", f);
+    assert(i != -1);
+    // So dumb, scanf will stop parsing string if decimal is all zeros.
+    while (buffer[i] == '0' || buffer[i] == '.') {
+        ++i;
+    }
+    return &buffer[i];
+}
+
+static char* UnpackDelim(char* buffer) {
+    char delim;
+    int i = sscanf(buffer, "%c", &delim);
+    assert(i != -1);
+    return &buffer[i];
+}
+
+static char* UnpackVector3(char* buffer, Vector3* v) {
+    // int i = sscanf(buffer, "%f,%f,%f", &v->x, &v->y, &v->z);
+    buffer = UnpackFloat(buffer, &v->x);
+    buffer = UnpackDelim(buffer);
+    buffer = UnpackFloat(buffer, &v->y);
+    buffer = UnpackDelim(buffer);
+    buffer = UnpackFloat(buffer, &v->z);
+    return buffer;
+}
+
+static char* UnpackVector4(char* buffer, Vector4* v) {
+    buffer = UnpackFloat(buffer, &v->x);
+    buffer = UnpackDelim(buffer);
+    buffer = UnpackFloat(buffer, &v->y);
+    buffer = UnpackDelim(buffer);
+    buffer = UnpackFloat(buffer, &v->z);
+    buffer = UnpackDelim(buffer);
+    buffer = UnpackFloat(buffer, &v->w);
+    return buffer;
+    // int i = sscanf(buffer, "%f,%f,%f,%f", &v->x, &v->y, &v->z, &v->w);
+    // assert(i != -1);
+    // return &buffer[i];
+}
+
+static char* UnpackQuaternion(char* buffer, Quaternion* q) { return UnpackVector4(buffer, q); }
+
+static void LoadLevel() {
+    char* data = LoadFileText("resources/levels/level_0.csv");
+
+    char* prevLocale = setlocale(LC_NUMERIC, NULL);
+    setlocale(LC_NUMERIC, "C");
+
+    int count = 0;
+    char* line = strtok(data, "\n");
+    while (line != NULL) {
+        if (count >= 1) {
+            breakpoint();
+        }
+        Entity* entity = CreateEntity();
+        line = UnpackU32(line, &entity->idx);
+        line = UnpackDelim(line);
+        line = UnpackVector3(line, &entity->position);
+        line = UnpackDelim(line);
+        line = UnpackQuaternion(line, &entity->orientation);
+        // Hacky, but we don't save mesh data at the moment.
+        entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+        entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+        count++;
+        line = strtok(NULL, "\n");
+    }
+
+    setlocale(LC_NUMERIC, prevLocale);
+
+    // Hacky, but we don't save mesh data at the moment, so need to turn this red.
+    PlayerInit(&GameEntities[0]);
+}
 
 static void EditorEnable() {
     EditorEnabled = true;
@@ -179,6 +326,10 @@ static void EditorDisable() {
 static void EditorUpdate(Editor* editor) {
     assert(EditorEnabled);
 
+    if (!(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S))) {
+        editor->game_just_saved = false;
+    }
+
     switch (editor->editor_state) {
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
@@ -188,6 +339,10 @@ static void EditorUpdate(Editor* editor) {
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
                 editor->focus = focus;
                 editor->editor_state = ES_EDITING;
+            }
+            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && !editor->game_just_saved) {
+                editor->game_just_saved = true;
+                SaveLevel();
             }
             break;
         }
@@ -231,10 +386,11 @@ static void GameInit() {
 
     SetTargetFPS(60);
 
-    Entity* player = CreateEntity();
-    PlayerInit(player);
+    LoadLevel();
+    // Entity* player = CreateEntity();
+    // PlayerInit(player);
 
-    RegisterBackgroundEntities();
+    // RegisterBackgroundEntities();
 
     GameCameraInit(&GameCamera);
 }
