@@ -261,6 +261,13 @@ static char* UnpackFloat(char* buffer, float* f) {
     return buffer;
 }
 
+static char* UnpackU8(char* buffer, uint8_t* b) {
+    char* tok = GetNextToken(&buffer);
+    int i = sscanf(tok, "%hhu", b);
+    assert(i != -1);
+    return buffer;
+}
+
 static char* UnpackVector3(char* buffer, Vector3* v) {
     buffer = UnpackFloat(buffer, &v->x);
     buffer = UnpackFloat(buffer, &v->y);
@@ -277,6 +284,14 @@ static char* UnpackVector4(char* buffer, Vector4* v) {
 }
 
 static char* UnpackQuaternion(char* buffer, Quaternion* q) { return UnpackVector4(buffer, q); }
+
+static char* UnpackColor(char* buffer, Color* c) {
+    buffer = UnpackU8(buffer, &c->r);
+    buffer = UnpackU8(buffer, &c->g);
+    buffer = UnpackU8(buffer, &c->b);
+    buffer = UnpackU8(buffer, &c->a);
+    return buffer;
+}
 
 static void LoadLevel() {
     char* data = LoadFileText("resources/levels/level_0.csv");
@@ -295,7 +310,7 @@ static void LoadLevel() {
         buffer = UnpackU32(buffer, &entity->idx);
         buffer = UnpackVector3(buffer, &entity->position);
         buffer = UnpackQuaternion(buffer, &entity->orientation);
-        entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+        buffer = UnpackColor(buffer, &entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color);
         line = strtok(NULL, "\n");
     }
 
