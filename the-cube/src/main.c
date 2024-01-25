@@ -1,4 +1,3 @@
-#include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -297,9 +296,6 @@ static char* UnpackColor(char* buffer, Color* c) {
 static void LoadLevel() {
     char* data = LoadFileText("resources/levels/level_0.csv");
 
-    char* prevLocale = setlocale(LC_NUMERIC, NULL);
-    setlocale(LC_NUMERIC, "C");
-
     char* line = strtok(data, "\n");
     while (line != NULL) {
         // Start buffer at the beginning of line, this is just so we have line around in case debuggin is needed.
@@ -314,8 +310,6 @@ static void LoadLevel() {
         buffer = UnpackColor(buffer, &entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color);
         line = strtok(NULL, "\n");
     }
-
-    setlocale(LC_NUMERIC, prevLocale);
 }
 
 static void EditorEnable() {
