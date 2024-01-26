@@ -156,7 +156,7 @@ void GameCameraInit(Camera3D* camera) {
 static char* GameLevelsPath = "resources/levels";
 
 typedef struct LevelData {
-    char* name;
+    char name[256];
     // stb_arr - pointers to entities managed by this level.
     Entity** entities;
 } LevelData;
@@ -297,10 +297,8 @@ static void LoadLevel(const char* name) {
     sprintf(filepath, "%s/%s", GameLevelsPath, name);
     char* data = LoadFileText(filepath);
 
-    // TODO: memory allocation!
     LevelData level_data = {0};
-    level_data.name = (char*)calloc(strlen(name) + 1, sizeof(char));
-    level_data.name = strcpy(level_data.name, name);
+    strcpy(level_data.name, name);
 
     char* line = strtok(data, "\n");
     while (line != NULL) {
