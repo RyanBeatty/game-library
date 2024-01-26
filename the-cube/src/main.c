@@ -151,22 +151,17 @@ void GameCameraInit(Camera3D* camera) {
 //     }
 // }
 /////////////////////////////////////////////////////////////////////////////////////
-typedef enum EditorState {
-    ES_IDLE = 0,
-    ES_EDITING,
+// Level code
 
-    ES_COUNT
-} EditorState;
+static char* GameLevelsPath = "resources/levels";
 
-typedef struct Editor {
-    EditorState editor_state;
-    Entity* focus;
-    bool game_just_saved;
-} Editor;
+typedef struct LevelData {
+    char* name;
+    // stb_arr - pointers to entities managed by this level.
+    Entity** entities;
+} LevelData;
 
-static Editor GameEditor = {0};
-// Yuck -- figure out something better later.
-static bool EditorEnabled = false;
+static LevelData CurLevel = {0};
 
 static char* PackDelim(char* buffer) {
     int i = sprintf(buffer, ",");
@@ -217,14 +212,14 @@ static char* PackVector4(char* buffer, Vector4 v) {
 
 static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buffer, q); }
 
-static void SaveLevel() {
+static void SaveLevel(LevelData level_data) {
     char* data = NULL;
 
     // Note skip the first Entity, its always the Player!
-    for (uint32_t i = 1; i < arrlen(GameEntities); ++i) {
+    for (uint32_t i = 1; i < arrlen(level_data.entities); ++i) {
         char buffer[1024] = {0};
         char* pos = buffer;
-        Entity* entity = &GameEntities[i];
+        Entity* entity = level_data.entities[i];
         int ii = sprintf(pos, "%u", entity->idx);
         pos = &buffer[ii];
         pos = PackDelim(pos);
@@ -243,7 +238,10 @@ static void SaveLevel() {
     }
 
     arrpush(data, '\0');
-    SaveFileText("resources/levels/level_0.csv", data);
+
+    char filepath[1024];
+    sprintf(filepath, "%s/%s", GameLevelsPath, level_data.name);
+    SaveFileText(filepath, data);
 }
 
 static char* GetNextToken(char** buffer) { return strtok_r(NULL, ",", buffer); }
@@ -294,8 +292,15 @@ static char* UnpackColor(char* buffer, Color* c) {
     return buffer;
 }
 
-static void LoadLevel() {
-    char* data = LoadFileText("resources/levels/level_0.csv");
+static void LoadLevel(const char* name) {
+    char filepath[1024];
+    sprintf(filepath, "%s/%s", GameLevelsPath, name);
+    char* data = LoadFileText(filepath);
+
+    // TODO: memory allocation!
+    LevelData level_data = {0};
+    level_data.name = (char*)calloc(strlen(name) + 1, sizeof(char));
+    level_data.name = strcpy(level_data.name, name);
 
     char* line = strtok(data, "\n");
     while (line != NULL) {
@@ -309,9 +314,31 @@ static void LoadLevel() {
         buffer = UnpackVector3(buffer, &entity->position);
         buffer = UnpackQuaternion(buffer, &entity->orientation);
         buffer = UnpackColor(buffer, &entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color);
+
+        arrpush(level_data.entities, entity);
         line = strtok(NULL, "\n");
     }
+
+    CurLevel = level_data;
 }
+
+/////////////////////////////////////////////////////////////////////////////////////
+typedef enum EditorState {
+    ES_IDLE = 0,
+    ES_EDITING,
+
+    ES_COUNT
+} EditorState;
+
+typedef struct Editor {
+    EditorState editor_state;
+    Entity* focus;
+    bool game_just_saved;
+} Editor;
+
+static Editor GameEditor = {0};
+// Yuck -- figure out something better later.
+static bool EditorEnabled = false;
 
 static void EditorEnable() {
     EditorEnabled = true;
@@ -342,7 +369,7 @@ static void EditorUpdate(Editor* editor) {
             }
             if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && !editor->game_just_saved) {
                 editor->game_just_saved = true;
-                SaveLevel();
+                SaveLevel(CurLevel);
             }
             break;
         }
@@ -389,7 +416,7 @@ static void GameInit() {
     Entity* player = CreateEntity();
     PlayerInit(player);
 
-    LoadLevel();
+    LoadLevel("level_0.csv");
 
     GameCameraInit(&GameCamera);
 }
