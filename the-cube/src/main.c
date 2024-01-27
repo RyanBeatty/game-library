@@ -33,13 +33,9 @@ typedef struct Entity {
 Entity* GameEntities = NULL;
 
 static Entity* CreateEntity() {
-    Entity entity = {0};
-    entity.idx = arrlen(GameEntities);
-    arrpush(GameEntities, entity);
-    return &arrlast(GameEntities);
-    // // Entity* entity = arraddnptr(GameEntities, 1);
-    // entity->idx = arrlen(GameEntities) - 1;
-    // return entity;
+    Entity* entity = arraddnptr(GameEntities, 1);
+    entity->idx = arrlen(GameEntities) - 1;
+    return entity;
 }
 
 static void EntityUpdateTransform(Entity* entity) {
@@ -162,7 +158,7 @@ static char* GameLevelsPath = "resources/levels";
 typedef struct LevelData {
     char name[256];
     // stb_arr - pointers to entities managed by this level.
-    Entity** entities;
+    uint32_t* entity_idxs;
 } LevelData;
 
 static LevelData CurLevel = {0};
@@ -220,10 +216,11 @@ static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
     // Note skip the first Entity, its always the Player!
-    for (uint32_t i = 1; i < arrlen(level_data->entities); ++i) {
+    for (uint32_t i = 1; i < arrlen(level_data->entity_idxs); ++i) {
         char buffer[1024] = {0};
         char* pos = buffer;
-        Entity* entity = level_data->entities[i];
+        uint32_t entity_idx = level_data->entity_idxs[i];
+        Entity* entity = &GameEntities[entity_idx];
         int ii = sprintf(pos, "%u", entity->idx);
         pos = &buffer[ii];
         pos = PackDelim(pos);
@@ -308,32 +305,21 @@ static void LoadLevel(const char* name) {
     int count = 0;
     char* line = strtok(data, "\n");
     while (line != NULL) {
-        if (count == 7) {
-            breakpoint();
-        }
         // Start buffer at the beginning of line, this is just so we have line around in case debuggin is needed.
         char* buffer = line;
 
         Entity* entity = CreateEntity();
-
-        Mesh mesh = GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength);
-        Model model = LoadModelFromMesh(mesh);
-        entity->model = model;
-        entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+        entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
 
         buffer = UnpackU32(buffer, &entity->idx);
         buffer = UnpackVector3(buffer, &entity->position);
         buffer = UnpackQuaternion(buffer, &entity->orientation);
+        buffer = UnpackColor(buffer, &entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
 
-        // buffer = UnpackColor(buffer, &entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
-
-        arrpush(level_data->entities, entity);
+        arrpush(level_data->entity_idxs, entity->idx);
         ++count;
         line = strtok(NULL, "\n");
-        break;
     }
-
-    breakpoint();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -383,7 +369,6 @@ static void EditorUpdate(Editor* editor) {
                 editor->state = ES_EDITING;
             }
             if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && !editor->game_just_saved) {
-                breakpoint();
                 editor->game_just_saved = true;
                 editor->state = ES_SAVING;
             }
@@ -452,7 +437,6 @@ static void GameInit() {
     PlayerInit(player);
 
     LoadLevel("level_0.csv");
-    breakpoint();
 
     GameCameraInit(&GameCamera);
 }
