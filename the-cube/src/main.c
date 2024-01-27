@@ -215,8 +215,7 @@ static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buf
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
-    // Note skip the first Entity, its always the Player!
-    for (uint32_t i = 1; i < arrlen(level_data->entity_idxs); ++i) {
+    for (uint32_t i = 0; i < arrlen(level_data->entity_idxs); ++i) {
         char buffer[1024] = {0};
         char* pos = buffer;
         uint32_t entity_idx = level_data->entity_idxs[i];
