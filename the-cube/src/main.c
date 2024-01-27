@@ -33,9 +33,13 @@ typedef struct Entity {
 Entity* GameEntities = NULL;
 
 static Entity* CreateEntity() {
-    Entity* entity = arraddnptr(GameEntities, 1);
-    entity->idx = arrlen(GameEntities) - 1;
-    return entity;
+    Entity entity = {0};
+    entity.idx = arrlen(GameEntities);
+    arrpush(GameEntities, entity);
+    return &arrlast(GameEntities);
+    // // Entity* entity = arraddnptr(GameEntities, 1);
+    // entity->idx = arrlen(GameEntities) - 1;
+    // return entity;
 }
 
 static void EntityUpdateTransform(Entity* entity) {
@@ -212,14 +216,14 @@ static char* PackVector4(char* buffer, Vector4 v) {
 
 static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buffer, q); }
 
-static void SaveLevel(LevelData level_data) {
+static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
     // Note skip the first Entity, its always the Player!
-    for (uint32_t i = 1; i < arrlen(level_data.entities); ++i) {
+    for (uint32_t i = 1; i < arrlen(level_data->entities); ++i) {
         char buffer[1024] = {0};
         char* pos = buffer;
-        Entity* entity = level_data.entities[i];
+        Entity* entity = level_data->entities[i];
         int ii = sprintf(pos, "%u", entity->idx);
         pos = &buffer[ii];
         pos = PackDelim(pos);
@@ -240,7 +244,7 @@ static void SaveLevel(LevelData level_data) {
     arrpush(data, '\0');
 
     char filepath[1024];
-    sprintf(filepath, "%s/%s", GameLevelsPath, level_data.name);
+    sprintf(filepath, "%s/%s", GameLevelsPath, level_data->name);
     SaveFileText(filepath, data);
 }
 
@@ -297,39 +301,52 @@ static void LoadLevel(const char* name) {
     sprintf(filepath, "%s/%s", GameLevelsPath, name);
     char* data = LoadFileText(filepath);
 
-    LevelData level_data = {0};
-    strcpy(level_data.name, name);
+    CurLevel = (LevelData){0};
+    LevelData* level_data = &CurLevel;  // Do this so we don't lose the stbarry entity info.
+    strcpy(level_data->name, name);
 
+    int count = 0;
     char* line = strtok(data, "\n");
     while (line != NULL) {
+        if (count == 7) {
+            breakpoint();
+        }
         // Start buffer at the beginning of line, this is just so we have line around in case debuggin is needed.
         char* buffer = line;
 
         Entity* entity = CreateEntity();
-        entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+
+        Mesh mesh = GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength);
+        Model model = LoadModelFromMesh(mesh);
+        entity->model = model;
+        entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
 
         buffer = UnpackU32(buffer, &entity->idx);
         buffer = UnpackVector3(buffer, &entity->position);
         buffer = UnpackQuaternion(buffer, &entity->orientation);
-        buffer = UnpackColor(buffer, &entity->model.materials->maps[MATERIAL_MAP_DIFFUSE].color);
 
-        arrpush(level_data.entities, entity);
+        // buffer = UnpackColor(buffer, &entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
+
+        arrpush(level_data->entities, entity);
+        ++count;
         line = strtok(NULL, "\n");
+        break;
     }
 
-    CurLevel = level_data;
+    breakpoint();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 typedef enum EditorState {
     ES_IDLE = 0,
     ES_EDITING,
+    ES_SAVING,
 
     ES_COUNT
 } EditorState;
 
 typedef struct Editor {
-    EditorState editor_state;
+    EditorState state;
     Entity* focus;
     bool game_just_saved;
 } Editor;
@@ -355,7 +372,7 @@ static void EditorUpdate(Editor* editor) {
         editor->game_just_saved = false;
     }
 
-    switch (editor->editor_state) {
+    switch (editor->state) {
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
                 Entity* focus = CreateEntity();
@@ -363,11 +380,12 @@ static void EditorUpdate(Editor* editor) {
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
                 editor->focus = focus;
-                editor->editor_state = ES_EDITING;
+                editor->state = ES_EDITING;
             }
             if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && !editor->game_just_saved) {
+                breakpoint();
                 editor->game_just_saved = true;
-                SaveLevel(CurLevel);
+                editor->state = ES_SAVING;
             }
             break;
         }
@@ -386,7 +404,14 @@ static void EditorUpdate(Editor* editor) {
                 editor->focus->position.y -= CubeSideLength;
             } else if (IsKeyPressed(KEY_ENTER)) {
                 editor->focus = NULL;
-                editor->editor_state = ES_IDLE;
+                editor->state = ES_IDLE;
+            }
+            break;
+        }
+        case ES_SAVING: {
+            if (IsKeyPressed(KEY_ENTER)) {
+                SaveLevel(&CurLevel);
+                editor->state = ES_IDLE;
             }
             break;
         }
@@ -401,6 +426,18 @@ static void EditorDraw(Editor* editor) {
         // Not in Mode3D. All coords are screen space.
         DrawFPS(10, 10);
         DrawText("Editor Enabled", 100, 10, 20, BLACK);
+
+        switch (editor->state) {
+            case ES_SAVING: {
+                char text[1024] = {0};
+                sprintf(text, "Save level as: %s", CurLevel.name);
+                DrawText(text, 200, 40, 20, BLACK);
+                break;
+            }
+            default: {
+                break;
+            }
+        }
     }
 }
 
@@ -415,6 +452,7 @@ static void GameInit() {
     PlayerInit(player);
 
     LoadLevel("level_0.csv");
+    breakpoint();
 
     GameCameraInit(&GameCamera);
 }
