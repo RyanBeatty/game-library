@@ -451,8 +451,17 @@ static void EditorUpdate(Editor* editor) {
     }
 }
 
-static void EditorDraw(Editor* editor) {
+static void EditorDraw(Editor* editor, float delta_time) {
+    static bool show_cursor = true;
+    static float show_cursor_cooldown = 0.0f;
+
     if (EditorEnabled) {
+        show_cursor_cooldown += delta_time;
+        if (show_cursor_cooldown >= 0.650f) {
+            show_cursor = !show_cursor;
+            show_cursor_cooldown = 0.0f;
+        }
+
         // Not in Mode3D. All coords are screen space.
         DrawFPS(10, 10);
         DrawText("Editor Enabled", 100, 10, 20, BLACK);
@@ -460,13 +469,13 @@ static void EditorDraw(Editor* editor) {
         switch (editor->state) {
             case ES_SAVING: {
                 char text[1024] = {0};
-                sprintf(text, "Save level as: %s", CurLevel.name);
+                sprintf(text, "Save level as: %s%c", CurLevel.name, show_cursor ? '|' : '\0');
                 DrawText(text, 200, 40, 20, BLACK);
                 break;
             }
             case ES_LOADING: {
                 char text[1024] = {0};
-                sprintf(text, "Load level: %s", editor->load_level_filename);
+                sprintf(text, "Load level: %s%c", editor->load_level_filename, show_cursor ? '|' : '\0');
                 DrawText(text, 200, 40, 20, BLACK);
             }
             default: {
@@ -483,7 +492,7 @@ static void GameInit() {
 
     SetTargetFPS(60);
 
-    LoadLevel("level_0.csv");
+    LoadLevel("level_0");
 
     GameCameraInit(&GameCamera);
 }
@@ -514,7 +523,7 @@ static void GameUpdate(float delta_time) {
     }
 }
 
-static void GameDraw() {
+static void GameDraw(float delta_time) {
     ClearBackground(RAYWHITE);
 
     BeginDrawing();
@@ -526,7 +535,7 @@ static void GameDraw() {
     }
 
     EndMode3D();
-    EditorDraw(&GameEditor);
+    EditorDraw(&GameEditor, delta_time);
 
     EndDrawing();
 }
@@ -537,7 +546,7 @@ int main(void) {
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
         GameUpdate(delta_time);
-        GameDraw();
+        GameDraw(delta_time);
     }
 
     CloseWindow();
