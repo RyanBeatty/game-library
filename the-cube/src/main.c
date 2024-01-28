@@ -401,6 +401,13 @@ static void EditorUpdate(Editor* editor) {
                 if (len > 0) {
                     CurLevel.name[len - 1] = '\0';
                 }
+            } else {
+                int key = GetCharPressed();
+                uint32_t name_len = strlen(CurLevel.name);
+                if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
+                    CurLevel.name[name_len] = (char)key;
+                    CurLevel.name[name_len + 1] = '\0';
+                }
             }
             break;
         }
