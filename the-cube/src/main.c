@@ -163,6 +163,12 @@ typedef struct LevelData {
 
 static LevelData CurLevel = {0};
 
+static Entity* CreateLevelDataEntity(LevelData* level_data) {
+    Entity* entity = CreateEntity();
+    arrpush(level_data->entity_idxs, entity->idx);
+    return entity;
+}
+
 static char* PackDelim(char* buffer) {
     int i = sprintf(buffer, ",");
     assert(i != -1);
@@ -293,6 +299,11 @@ static char* UnpackColor(char* buffer, Color* c) {
 }
 
 static void LoadLevel(const char* name) {
+    // Reset Player/entities.
+    GameEntities = NULL;  // TODO: We don't free existing memory here!!
+    Entity* player = CreateEntity();
+    PlayerInit(player);
+
     char filepath[1024];
     sprintf(filepath, "%s/%s", GameLevelsPath, name);
     char* data = LoadFileText(filepath);
@@ -301,13 +312,12 @@ static void LoadLevel(const char* name) {
     LevelData* level_data = &CurLevel;  // Do this so we don't lose the stbarry entity info.
     strcpy(level_data->name, name);
 
-    int count = 0;
     char* line = strtok(data, "\n");
     while (line != NULL) {
         // Start buffer at the beginning of line, this is just so we have line around in case debuggin is needed.
         char* buffer = line;
 
-        Entity* entity = CreateEntity();
+        Entity* entity = CreateLevelDataEntity(level_data);
         entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
 
         buffer = UnpackU32(buffer, &entity->idx);
@@ -315,8 +325,6 @@ static void LoadLevel(const char* name) {
         buffer = UnpackQuaternion(buffer, &entity->orientation);
         buffer = UnpackColor(buffer, &entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
 
-        arrpush(level_data->entity_idxs, entity->idx);
-        ++count;
         line = strtok(NULL, "\n");
     }
 }
@@ -326,6 +334,7 @@ typedef enum EditorState {
     ES_IDLE = 0,
     ES_EDITING,
     ES_SAVING,
+    ES_LOADING,
 
     ES_COUNT
 } EditorState;
@@ -333,7 +342,8 @@ typedef enum EditorState {
 typedef struct Editor {
     EditorState state;
     Entity* focus;
-    bool game_just_saved;
+    bool control_key_unpressed;
+    char load_level_filename[256];
 } Editor;
 
 static Editor GameEditor = {0};
@@ -353,23 +363,27 @@ static void EditorDisable() {
 static void EditorUpdate(Editor* editor) {
     assert(EditorEnabled);
 
-    if (!(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S))) {
-        editor->game_just_saved = false;
+    // TODO: Figure out something better here. I can't control-e to toggle editor and control-s to save without lifting
+    // off control key.
+    if (!IsKeyDown(KEY_LEFT_CONTROL)) {
+        editor->control_key_unpressed = true;
     }
 
     switch (editor->state) {
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
-                Entity* focus = CreateEntity();
+                Entity* focus = CreateLevelDataEntity(&CurLevel);
                 focus->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
                 editor->focus = focus;
                 editor->state = ES_EDITING;
-            }
-            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && !editor->game_just_saved) {
-                editor->game_just_saved = true;
+            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && editor->control_key_unpressed) {
+                editor->control_key_unpressed = false;
                 editor->state = ES_SAVING;
+            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_L) && editor->control_key_unpressed) {
+                editor->control_key_unpressed = false;
+                editor->state = ES_LOADING;
             }
             break;
         }
@@ -387,6 +401,7 @@ static void EditorUpdate(Editor* editor) {
             } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
                 editor->focus->position.y -= CubeSideLength;
             } else if (IsKeyPressed(KEY_ENTER)) {
+                editor->focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
                 editor->focus = NULL;
                 editor->state = ES_IDLE;
             }
@@ -411,6 +426,25 @@ static void EditorUpdate(Editor* editor) {
             }
             break;
         }
+        case ES_LOADING: {
+            if (IsKeyPressed(KEY_ENTER)) {
+                LoadLevel(editor->load_level_filename);
+                editor->state = ES_IDLE;
+            } else if (IsKeyPressed(KEY_BACKSPACE)) {
+                uint32_t len = strlen(editor->load_level_filename);
+                if (len > 0) {
+                    editor->load_level_filename[len - 1] = '\0';
+                }
+            } else {
+                int key = GetCharPressed();
+                uint32_t name_len = strlen(editor->load_level_filename);
+                if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
+                    editor->load_level_filename[name_len] = (char)key;
+                    editor->load_level_filename[name_len + 1] = '\0';
+                }
+            }
+            break;
+        }
         default: {
             exit(EXIT_FAILURE);
         }
@@ -430,6 +464,11 @@ static void EditorDraw(Editor* editor) {
                 DrawText(text, 200, 40, 20, BLACK);
                 break;
             }
+            case ES_LOADING: {
+                char text[1024] = {0};
+                sprintf(text, "Load level: %s", editor->load_level_filename);
+                DrawText(text, 200, 40, 20, BLACK);
+            }
             default: {
                 break;
             }
@@ -443,9 +482,6 @@ static void GameInit() {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
 
     SetTargetFPS(60);
-
-    Entity* player = CreateEntity();
-    PlayerInit(player);
 
     LoadLevel("level_0.csv");
 
