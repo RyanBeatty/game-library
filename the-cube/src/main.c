@@ -396,6 +396,11 @@ static void EditorUpdate(Editor* editor) {
             if (IsKeyPressed(KEY_ENTER)) {
                 SaveLevel(&CurLevel);
                 editor->state = ES_IDLE;
+            } else if (IsKeyPressed(KEY_BACKSPACE)) {
+                uint32_t len = strlen(CurLevel.name);
+                if (len > 0) {
+                    CurLevel.name[len - 1] = '\0';
+                }
             }
             break;
         }
