@@ -335,13 +335,15 @@ typedef enum EditorState {
     ES_EDITING,
     ES_SAVING,
     ES_LOADING,
+    ES_SELECT_FOCUS,
 
     ES_COUNT
 } EditorState;
 
 typedef struct Editor {
     EditorState state;
-    Entity* focus;
+    // Index to entity we are focused on.
+    uint32_t focus_idx;
     bool control_key_unpressed;
     char load_level_filename[256];
 } Editor;
@@ -360,6 +362,8 @@ static void EditorDisable() {
     GameEditor = (Editor){0};
 }
 
+static Entity* EditorGetFocus(Editor* editor) { return &GameEntities[CurLevel.entity_idxs[editor->focus_idx]]; }
+
 static void EditorUpdate(Editor* editor) {
     assert(EditorEnabled);
 
@@ -376,7 +380,7 @@ static void EditorUpdate(Editor* editor) {
                 focus->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
-                editor->focus = focus;
+                editor->focus_idx = arrlen(CurLevel.entity_idxs) - 1;
                 editor->state = ES_EDITING;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && editor->control_key_unpressed) {
                 editor->control_key_unpressed = false;
@@ -384,25 +388,30 @@ static void EditorUpdate(Editor* editor) {
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_L) && editor->control_key_unpressed) {
                 editor->control_key_unpressed = false;
                 editor->state = ES_LOADING;
+            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_F) && editor->control_key_unpressed) {
+                editor->control_key_unpressed = false;
+                editor->focus_idx = 0;
+                editor->state = ES_SELECT_FOCUS;
             }
             break;
         }
         case ES_EDITING: {
+            Entity* focus = EditorGetFocus(editor);
             if (IsKeyPressed(KEY_UP)) {
-                editor->focus->position.z -= CubeSideLength;
+                focus->position.z -= CubeSideLength;
             } else if (IsKeyPressed(KEY_RIGHT)) {
-                editor->focus->position.x += CubeSideLength;
+                focus->position.x += CubeSideLength;
             } else if (IsKeyPressed(KEY_DOWN)) {
-                editor->focus->position.z += CubeSideLength;
+                focus->position.z += CubeSideLength;
             } else if (IsKeyPressed(KEY_LEFT)) {
-                editor->focus->position.x -= CubeSideLength;
+                focus->position.x -= CubeSideLength;
             } else if (IsKeyPressed(KEY_PAGE_UP)) {
-                editor->focus->position.y += CubeSideLength;
+                focus->position.y += CubeSideLength;
             } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
-                editor->focus->position.y -= CubeSideLength;
+                focus->position.y -= CubeSideLength;
             } else if (IsKeyPressed(KEY_ENTER)) {
-                editor->focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
-                editor->focus = NULL;
+                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+                focus = NULL;
                 editor->state = ES_IDLE;
             }
             break;
@@ -442,6 +451,26 @@ static void EditorUpdate(Editor* editor) {
                     editor->load_level_filename[name_len] = (char)key;
                     editor->load_level_filename[name_len + 1] = '\0';
                 }
+            }
+            break;
+        }
+        case ES_SELECT_FOCUS: {
+            if (IsKeyPressed(KEY_ENTER)) {
+                editor->state = ES_EDITING;
+            } else {
+                Entity* entity = EditorGetFocus(editor);
+                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+
+                int32_t dir = 0;
+                if (IsKeyPressed(KEY_UP)) {
+                    dir = 1;
+                } else if (IsKeyPressed(KEY_DOWN)) {
+                    dir = -1;
+                }
+                editor->focus_idx = (editor->focus_idx + dir) % arrlen(CurLevel.entity_idxs);
+
+                entity = EditorGetFocus(editor);
+                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
             }
             break;
         }
