@@ -169,6 +169,14 @@ static Entity* CreateLevelDataEntity(LevelData* level_data) {
     return entity;
 }
 
+static Entity* LevelDataGetPlayer(LevelData* level_data) { return &GameEntities[0]; }
+
+static Entity* LevelDataGetEntity(LevelData* level_data, uint32_t i) { return &GameEntities[i]; }
+
+static uint32_t LevelDataNumEntities(LevelData* level_data) { return arrlenu(GameEntities); }
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Serde.
 static char* PackDelim(char* buffer) {
     int i = sprintf(buffer, ",");
     assert(i != -1);
@@ -225,7 +233,7 @@ static void SaveLevel(LevelData* level_data) {
         char buffer[1024] = {0};
         char* pos = buffer;
         uint32_t entity_idx = level_data->entity_idxs[i];
-        Entity* entity = &GameEntities[entity_idx];
+        Entity* entity = LevelDataGetEntity(level_data, entity_idx);
         int ii = sprintf(pos, "%u", entity->idx);
         pos = &buffer[ii];
         pos = PackDelim(pos);
@@ -540,15 +548,16 @@ static void GameUpdate(float delta_time) {
     }
 
     if (!EditorEnabled) {
-        Entity* player = &GameEntities[0];
+        Entity* player = LevelDataGetPlayer(&CurLevel);
         PlayerUpdate(player, delta_time);
     } else {
         EditorUpdate(&GameEditor);
     }
 
     // Ensure we do this after all above updates so that the transforms reflect updated entity info.
-    for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
-        EntityUpdateTransform(&GameEntities[i]);
+    for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+        Entity* entity = LevelDataGetEntity(&CurLevel, i);
+        EntityUpdateTransform(entity);
     }
 }
 
@@ -559,8 +568,9 @@ static void GameDraw(float delta_time) {
     BeginMode3D(GameCamera);
 
     Vector3 position = {0};
-    for (uint32_t i = 0; i < arrlen(GameEntities); ++i) {
-        DrawModel(GameEntities[i].model, position, 1, WHITE);
+    for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+        Entity* entity = LevelDataGetEntity(&CurLevel, i);
+        DrawModel(entity->model, position, 1, WHITE);
     }
 
     EndMode3D();
