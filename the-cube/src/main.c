@@ -30,14 +30,6 @@ typedef struct Entity {
     Model model;
 } Entity;
 
-Entity* GameEntities = NULL;
-
-static Entity* CreateEntity() {
-    Entity* entity = arraddnptr(GameEntities, 1);
-    entity->idx = arrlen(GameEntities) - 1;
-    return entity;
-}
-
 static void EntityUpdateTransform(Entity* entity) {
     // Remember matrices are applied left to right order, so the rotation is first.
     entity->model.transform =
@@ -159,21 +151,29 @@ typedef struct LevelData {
     char name[256];
     // stb_arr - pointers to entities managed by this level.
     uint32_t* entity_idxs;
+    // stbds array.
+    Entity* entities;
 } LevelData;
 
 static LevelData CurLevel = {0};
 
+static Entity* LevelDataCreateEntity(LevelData* level_data) {
+    Entity* entity = arraddnptr(level_data->entities, 1);
+    entity->idx = arrlen(level_data->entities) - 1;
+    return entity;
+}
+
 static Entity* CreateLevelDataEntity(LevelData* level_data) {
-    Entity* entity = CreateEntity();
+    Entity* entity = LevelDataCreateEntity(level_data);
     arrpush(level_data->entity_idxs, entity->idx);
     return entity;
 }
 
-static Entity* LevelDataGetPlayer(LevelData* level_data) { return &GameEntities[0]; }
+static Entity* LevelDataGetPlayer(LevelData* level_data) { return &level_data->entities[0]; }
 
-static Entity* LevelDataGetEntity(LevelData* level_data, uint32_t i) { return &GameEntities[i]; }
+static Entity* LevelDataGetEntity(LevelData* level_data, uint32_t i) { return &level_data->entities[i]; }
 
-static uint32_t LevelDataNumEntities(LevelData* level_data) { return arrlenu(GameEntities); }
+static uint32_t LevelDataNumEntities(LevelData* level_data) { return arrlenu(level_data->entities); }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Serde.
@@ -307,11 +307,6 @@ static char* UnpackColor(char* buffer, Color* c) {
 }
 
 static void LoadLevel(const char* name) {
-    // Reset Player/entities.
-    GameEntities = NULL;  // TODO: We don't free existing memory here!!
-    Entity* player = CreateEntity();
-    PlayerInit(player);
-
     char filepath[1024];
     sprintf(filepath, "%s/%s", GameLevelsPath, name);
     char* data = LoadFileText(filepath);
@@ -319,6 +314,10 @@ static void LoadLevel(const char* name) {
     CurLevel = (LevelData){0};
     LevelData* level_data = &CurLevel;  // Do this so we don't lose the stbarry entity info.
     strcpy(level_data->name, name);
+
+    // Reset Player/entities.
+    Entity* player = LevelDataCreateEntity(level_data);
+    PlayerInit(player);
 
     char* line = strtok(data, "\n");
     while (line != NULL) {
@@ -370,7 +369,7 @@ static void EditorDisable() {
     GameEditor = (Editor){0};
 }
 
-static Entity* EditorGetFocus(Editor* editor) { return &GameEntities[CurLevel.entity_idxs[editor->focus_idx]]; }
+static Entity* EditorGetFocus(Editor* editor) { return &CurLevel.entities[CurLevel.entity_idxs[editor->focus_idx]]; }
 
 static void EditorUpdate(Editor* editor) {
     assert(EditorEnabled);
