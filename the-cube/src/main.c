@@ -149,8 +149,6 @@ static char* GameLevelsPath = "resources/levels";
 
 typedef struct LevelData {
     char name[256];
-    // stb_arr - pointers to entities managed by this level.
-    uint32_t* entity_idxs;
     // stbds array.
     Entity* entities;
 } LevelData;
@@ -165,7 +163,6 @@ static Entity* LevelDataCreateEntity(LevelData* level_data) {
 
 static Entity* CreateLevelDataEntity(LevelData* level_data) {
     Entity* entity = LevelDataCreateEntity(level_data);
-    arrpush(level_data->entity_idxs, entity->idx);
     return entity;
 }
 
@@ -229,11 +226,14 @@ static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buf
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
-    for (uint32_t i = 0; i < arrlen(level_data->entity_idxs); ++i) {
+    for (uint32_t i = 0; i < LevelDataNumEntities(level_data); ++i) {
+        Entity* entity = LevelDataGetEntity(level_data, i);
+        if (entity == LevelDataGetPlayer(level_data)) {
+            continue;
+        }
+
         char buffer[1024] = {0};
         char* pos = buffer;
-        uint32_t entity_idx = level_data->entity_idxs[i];
-        Entity* entity = LevelDataGetEntity(level_data, entity_idx);
         int ii = sprintf(pos, "%u", entity->idx);
         pos = &buffer[ii];
         pos = PackDelim(pos);
@@ -369,7 +369,7 @@ static void EditorDisable() {
     GameEditor = (Editor){0};
 }
 
-static Entity* EditorGetFocus(Editor* editor) { return &CurLevel.entities[CurLevel.entity_idxs[editor->focus_idx]]; }
+static Entity* EditorGetFocus(Editor* editor) { return &CurLevel.entities[editor->focus_idx]; }
 
 static void EditorUpdate(Editor* editor) {
     assert(EditorEnabled);
@@ -387,7 +387,7 @@ static void EditorUpdate(Editor* editor) {
                 focus->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
-                editor->focus_idx = arrlen(CurLevel.entity_idxs) - 1;
+                editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && editor->control_key_unpressed) {
                 editor->control_key_unpressed = false;
@@ -474,7 +474,7 @@ static void EditorUpdate(Editor* editor) {
                 } else if (IsKeyPressed(KEY_DOWN)) {
                     dir = -1;
                 }
-                editor->focus_idx = (editor->focus_idx + dir) % arrlen(CurLevel.entity_idxs);
+                editor->focus_idx = (editor->focus_idx + dir) % LevelDataNumEntities(&CurLevel);
 
                 entity = EditorGetFocus(editor);
                 entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
