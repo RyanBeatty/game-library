@@ -78,6 +78,7 @@ static Model GenCubeModel(Color color) {
 static void PlayerInit(Entity* player, Vector3 position) {
     player->position = position;
     player->orientation = QuaternionIdentity();
+    breakpoint();
     player->model = GenCubeModel(RED);
 }
 
@@ -210,6 +211,11 @@ static Entity* LevelDataGetPlayer(LevelData* level_data) { return &level_data->e
 static Entity* LevelDataGetEntity(LevelData* level_data, uint32_t i) { return &level_data->entities[i]; }
 
 static uint32_t LevelDataNumEntities(LevelData* level_data) { return arrlenu(level_data->entities); }
+
+static void LevelSetStart(LevelData* level_data) {
+    Entity* player = LevelDataGetPlayer(level_data);
+    level_data->start = player->position;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Serde.
@@ -363,15 +369,14 @@ static void LoadLevel(const char* name) {
     LevelData* level_data = &CurLevel;  // Do this so we don't lose the stbarry entity info.
     strcpy(level_data->name, name);
 
-    level_data->start = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
-
     // Reset Player/entities.
     Entity* player = LevelDataCreateEntity(level_data);
-    PlayerInit(player, level_data->start);
 
     char* line = strtok(data, "\n");
     UnpackVector3(line, &level_data->start);
     line = strtok(NULL, "\n");
+
+    PlayerInit(player, level_data->start);
 
     // Unpack entities.
     while (line != NULL) {
@@ -444,6 +449,10 @@ static void EditorUpdate(Editor* editor) {
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
                 editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
+            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_S) &&
+                       editor->control_key_unpressed) {
+                editor->control_key_unpressed = false;
+                LevelSetStart(&CurLevel);
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && editor->control_key_unpressed) {
                 editor->control_key_unpressed = false;
                 editor->state = ES_SAVING;
