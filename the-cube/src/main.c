@@ -187,6 +187,7 @@ static char* GameLevelsPath = "resources/levels";
 typedef struct LevelData {
     char name[256];
     Vector3 start;
+    Vector3 goal;
     // stbds array.
     Entity* entities;
 } LevelData;
@@ -395,6 +396,12 @@ static void LoadLevel(const char* name) {
 
         line = strtok(NULL, "\n");
     }
+
+    level_data->goal = (Vector3){-CubeSideLength / 2, CubeSideLength / 2, -CubeSideLength / 2};
+    Entity* goal = CreateLevelDataEntity(level_data);
+    goal->idx = LevelDataNumEntities(&CurLevel) - 1;
+    goal->model = GenCubeModel(GREEN);
+    goal->position = level_data->goal;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -451,6 +458,7 @@ static void EditorUpdate(Editor* editor) {
                 editor->state = ES_EDITING;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_S) &&
                        editor->control_key_unpressed) {
+                // TOOD: Add text fade to screen.
                 editor->control_key_unpressed = false;
                 LevelSetStart(&CurLevel);
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && editor->control_key_unpressed) {
