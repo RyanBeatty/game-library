@@ -37,12 +37,17 @@ static void EntityUpdateTransform(Entity* entity) {
                        MatrixTranslate(entity->position.x, entity->position.y, entity->position.z));
 }
 
+static Model GenCubeModel(Color color) {
+    Model model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = color;
+    return model;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 static void PlayerInit(Entity* player) {
     player->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
     player->orientation = QuaternionIdentity();
-    player->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
-    player->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = RED;
+    player->model = GenCubeModel(RED);
 }
 
 static void PlayerUpdate(Entity* entity, float delta_time) {
@@ -325,12 +330,14 @@ static void LoadLevel(const char* name) {
         char* buffer = line;
 
         Entity* entity = CreateLevelDataEntity(level_data);
-        entity->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
 
         buffer = UnpackU32(buffer, &entity->idx);
         buffer = UnpackVector3(buffer, &entity->position);
         buffer = UnpackQuaternion(buffer, &entity->orientation);
-        buffer = UnpackColor(buffer, &entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
+
+        Color color;
+        buffer = UnpackColor(buffer, &color);
+        entity->model = GenCubeModel(color);
 
         line = strtok(NULL, "\n");
     }
@@ -384,9 +391,8 @@ static void EditorUpdate(Editor* editor) {
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
                 Entity* focus = CreateLevelDataEntity(&CurLevel);
-                focus->model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
+                focus->model = GenCubeModel(BLACK);
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
-                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
                 editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && editor->control_key_unpressed) {
