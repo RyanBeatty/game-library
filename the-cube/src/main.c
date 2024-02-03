@@ -37,9 +37,40 @@ static void EntityUpdateTransform(Entity* entity) {
                        MatrixTranslate(entity->position.x, entity->position.y, entity->position.z));
 }
 
+struct {
+    Color key;
+    Texture value;
+}* TextureCache = NULL;
+
+static Texture GenCubeTexture(Color color) {
+    Image image = GenImageColor(128, 128, color);
+    // Horizontal lines.
+    const int thickness = 5;
+    ImageDrawRectangle(&image, 0, 0, 128, thickness, BLACK);
+    ImageDrawRectangle(&image, 0, 128 - thickness, 128, thickness, BLACK);
+    // Vertical lines.
+    ImageDrawRectangle(&image, 0, 0, thickness, 128, BLACK);
+    ImageDrawRectangle(&image, 128 - thickness, 0, thickness, 128, BLACK);
+
+    Texture texture = LoadTextureFromImage(image);
+    UnloadImage(image);
+    return texture;
+}
+
+static Texture GetTextureForColor(Color color) {
+    ptrdiff_t idx = hmgeti(TextureCache, color);
+    if (idx == -1) {
+        Texture texture = GenCubeTexture(color);
+        hmput(TextureCache, color, texture);
+        return texture;
+    }
+    return TextureCache[idx].value;
+}
+
 static Model GenCubeModel(Color color) {
     Model model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = color;
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = GetTextureForColor(color);
     return model;
 }
 

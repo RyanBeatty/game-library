@@ -12,6 +12,7 @@
  ********************************************************************************************/
 
 #include "raylib.h"
+#include "stdint.h"
 
 #define NUM_MODELS 9  // Parametric 3d shapes to generate
 
@@ -34,6 +35,19 @@ int main(void) {
     UnloadImage(checked);
 
     Model models[NUM_MODELS] = {0};
+
+    struct {
+        char key;
+        int value;
+    } *hash = NULL;
+
+    hmput(hash, 'a', 10);
+
+    int res = hmget(hash, 'a');
+
+    ptrdiff_t b = hmgeti(hash, 'b');
+    ptrdiff_t i = hmgeti(hash, 'a');
+    breakpoint();
 
     models[0] = LoadModelFromMesh(GenMeshPlane(2, 2, 4, 3));
     models[1] = LoadModelFromMesh(GenMeshCube(2.0f, 1.0f, 2.0f));
