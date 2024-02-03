@@ -75,8 +75,8 @@ static Model GenCubeModel(Color color) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-static void PlayerInit(Entity* player) {
-    player->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
+static void PlayerInit(Entity* player, Vector3 position) {
+    player->position = position;
     player->orientation = QuaternionIdentity();
     player->model = GenCubeModel(RED);
 }
@@ -185,6 +185,7 @@ static char* GameLevelsPath = "resources/levels";
 
 typedef struct LevelData {
     char name[256];
+    Vector3 start;
     // stbds array.
     Entity* entities;
 } LevelData;
@@ -351,9 +352,11 @@ static void LoadLevel(const char* name) {
     LevelData* level_data = &CurLevel;  // Do this so we don't lose the stbarry entity info.
     strcpy(level_data->name, name);
 
+    level_data->start = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
+
     // Reset Player/entities.
     Entity* player = LevelDataCreateEntity(level_data);
-    PlayerInit(player);
+    PlayerInit(player, level_data->start);
 
     char* line = strtok(data, "\n");
     while (line != NULL) {
