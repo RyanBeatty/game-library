@@ -203,6 +203,8 @@ static Entity* CreateLevelDataEntity(LevelData* level_data) {
     return entity;
 }
 
+#define LevelDataGetStart (level_data)((level_data)->start)
+
 static Entity* LevelDataGetPlayer(LevelData* level_data) { return &level_data->entities[0]; }
 
 static Entity* LevelDataGetEntity(LevelData* level_data, uint32_t i) { return &level_data->entities[i]; }
@@ -260,9 +262,22 @@ static char* PackVector4(char* buffer, Vector4 v) {
 
 static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buffer, q); }
 
+static char* WriteBuffer(char* data, char* to_write, size_t len) {
+    for (uint32_t i = 0; i < len; ++i) {
+        arrpush(data, to_write[i]);
+    }
+    arrpush(data, '\n');
+    return data;
+}
+
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
+    char buffer[256] = {0};
+    PackVector3(buffer, level_data->start);
+    data = WriteBuffer(data, buffer, strlen(buffer));
+
+    // Pack entities.
     for (uint32_t i = 0; i < LevelDataNumEntities(level_data); ++i) {
         Entity* entity = LevelDataGetEntity(level_data, i);
         if (entity == LevelDataGetPlayer(level_data)) {
@@ -281,11 +296,7 @@ static void SaveLevel(LevelData* level_data) {
         // TODO: Probably temp until we figure out mesh storage.
         pos = PackColor(pos, entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
 
-        uint32_t len = strlen(buffer);
-        for (uint32_t j = 0; j < len; ++j) {
-            arrpush(data, buffer[j]);
-        }
-        arrpush(data, '\n');
+        data = WriteBuffer(data, buffer, strlen(buffer));
     }
 
     arrpush(data, '\0');
@@ -359,6 +370,10 @@ static void LoadLevel(const char* name) {
     PlayerInit(player, level_data->start);
 
     char* line = strtok(data, "\n");
+    UnpackVector3(line, &level_data->start);
+    line = strtok(NULL, "\n");
+
+    // Unpack entities.
     while (line != NULL) {
         // Start buffer at the beginning of line, this is just so we have line around in case debuggin is needed.
         char* buffer = line;
