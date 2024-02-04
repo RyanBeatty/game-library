@@ -287,8 +287,10 @@ static void SaveLevel(LevelData* level_data) {
         data = WriteBuffer(data, buffer, strlen(buffer));
     }
     {
+        // Write goal position instead of what is in level data in case we changed the position of goal entity.
+        Entity* goal = LevelDataGetGoal(level_data);
         char buffer[256] = {0};
-        PackVector3(buffer, level_data->goal);
+        PackVector3(buffer, goal->position);
         data = WriteBuffer(data, buffer, strlen(buffer));
     }
 
@@ -392,7 +394,6 @@ static void LoadLevel(const char* name) {
     UnpackVector3(line, &level_data->goal);
     line = strtok(NULL, "\n");
 
-    level_data->goal = (Vector3){-CubeSideLength / 2, CubeSideLength / 2, -CubeSideLength / 2};
     Entity* goal = CreateLevelDataEntity(level_data);
     goal->orientation = QuaternionIdentity();
     goal->model = GenCubeModel(GREEN);
