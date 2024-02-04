@@ -78,7 +78,6 @@ static Model GenCubeModel(Color color) {
 static void PlayerInit(Entity* player, Vector3 position) {
     player->position = position;
     player->orientation = QuaternionIdentity();
-    breakpoint();
     player->model = GenCubeModel(RED);
 }
 
@@ -218,6 +217,8 @@ static void LevelSetStart(LevelData* level_data) {
     level_data->start = player->position;
 }
 
+static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEntity(level_data, 1); }
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Serde.
 static char* PackDelim(char* buffer) {
@@ -280,14 +281,24 @@ static char* WriteBuffer(char* data, char* to_write, size_t len) {
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
-    char buffer[256] = {0};
-    PackVector3(buffer, level_data->start);
-    data = WriteBuffer(data, buffer, strlen(buffer));
+    {
+        char buffer[256] = {0};
+        PackVector3(buffer, level_data->start);
+        data = WriteBuffer(data, buffer, strlen(buffer));
+    }
+    {
+        char buffer[256] = {0};
+        PackVector3(buffer, level_data->goal);
+        data = WriteBuffer(data, buffer, strlen(buffer));
+    }
 
     // Pack entities.
     for (uint32_t i = 0; i < LevelDataNumEntities(level_data); ++i) {
         Entity* entity = LevelDataGetEntity(level_data, i);
         if (entity == LevelDataGetPlayer(level_data)) {
+            continue;
+        }
+        if (entity == LevelDataGetGoal(level_data)) {
             continue;
         }
 
@@ -376,8 +387,16 @@ static void LoadLevel(const char* name) {
     char* line = strtok(data, "\n");
     UnpackVector3(line, &level_data->start);
     line = strtok(NULL, "\n");
-
     PlayerInit(player, level_data->start);
+
+    UnpackVector3(line, &level_data->goal);
+    line = strtok(NULL, "\n");
+
+    level_data->goal = (Vector3){-CubeSideLength / 2, CubeSideLength / 2, -CubeSideLength / 2};
+    Entity* goal = CreateLevelDataEntity(level_data);
+    goal->orientation = QuaternionIdentity();
+    goal->model = GenCubeModel(GREEN);
+    goal->position = level_data->goal;
 
     // Unpack entities.
     while (line != NULL) {
@@ -396,12 +415,6 @@ static void LoadLevel(const char* name) {
 
         line = strtok(NULL, "\n");
     }
-
-    level_data->goal = (Vector3){-CubeSideLength / 2, CubeSideLength / 2, -CubeSideLength / 2};
-    Entity* goal = CreateLevelDataEntity(level_data);
-    goal->idx = LevelDataNumEntities(&CurLevel) - 1;
-    goal->model = GenCubeModel(GREEN);
-    goal->position = level_data->goal;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
