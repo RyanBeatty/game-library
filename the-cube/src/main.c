@@ -466,7 +466,8 @@ static void EditorUpdate(Editor* editor) {
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
                 Entity* focus = CreateLevelDataEntity(&CurLevel);
-                focus->model = GenCubeModel(BLACK);
+                focus->model = GenCubeModel(GRAY);
+                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
                 editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
