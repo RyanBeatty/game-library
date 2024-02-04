@@ -74,76 +74,13 @@ static Model GenCubeModel(Color color) {
     return model;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-static void PlayerInit(Entity* player, Vector3 position) {
-    player->position = position;
-    player->orientation = QuaternionIdentity();
-    player->model = GenCubeModel(RED);
-}
-
-static void PlayerUpdate(Entity* entity, float delta_time) {
-    static bool walking = false;
-    static float T = 0;
-    static Quaternion StartOrientation;
-    static Quaternion EndOrientation;
-    static Vector3 StartPosition;
-    static Vector3 EndPosition;
-
-    if (!walking) {
-        if (IsKeyPressed(KEY_UP)) {
-            walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
-        }
-        if (IsKeyPressed(KEY_RIGHT)) {
-            walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
-        }
-        if (IsKeyPressed(KEY_DOWN)) {
-            walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
-        }
-        if (IsKeyPressed(KEY_LEFT)) {
-            walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
-        }
-    }
-
-    if (walking) {
-        T += delta_time;
-        float t = T / 0.2;
-        if (t >= 1.0f) {
-            walking = false;
-            entity->orientation = EndOrientation;
-            entity->position = EndPosition;
-        } else {
-            entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
-            entity->position = Vector3Lerp(StartPosition, EndPosition, t);
-        }
-    }
-
-    if (false) {
-        PrintMatrix(QuaternionToMatrix(entity->orientation));
-    }
+static BoundingBox GetBoundingBox(Vector3 position) {
+    // NOTE: Make the bounding box smaller than the cube for now so that we don't accidentally collide two boxes if they
+    // move next to eachother.
+    float radius = CubeSideLength / 4.0f;
+    BoundingBox bb = {.min = Vector3Add(position, (Vector3){-radius, -radius, -radius}),
+                      .max = Vector3Add(position, (Vector3){radius, radius, radius})};
+    return bb;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -164,6 +101,7 @@ static char* GameLevelsPath = "resources/levels";
 
 typedef struct LevelData {
     char name[256];
+    bool finished;
     Vector3 start;
     Vector3 goal;
     // stbds array.
@@ -197,6 +135,91 @@ static void LevelSetStart(LevelData* level_data) {
 }
 
 static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEntity(level_data, 1); }
+
+/////////////////////////////////////////////////////////////////////////////////////
+static void PlayerInit(Entity* player, Vector3 position) {
+    player->position = position;
+    player->orientation = QuaternionIdentity();
+    player->model = GenCubeModel(RED);
+}
+
+static void PlayerUpdate(Entity* entity, float delta_time) {
+    static bool Walking = false;
+    static float T = 0;
+    static Quaternion StartOrientation;
+    static Quaternion EndOrientation;
+    static Vector3 StartPosition;
+    static Vector3 EndPosition;
+
+    if (!Walking) {
+        if (IsKeyPressed(KEY_UP)) {
+            Walking = true;
+            T = 0;
+            StartOrientation = entity->orientation;
+            StartPosition = entity->position;
+            EndOrientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
+            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
+        }
+        if (IsKeyPressed(KEY_RIGHT)) {
+            Walking = true;
+            T = 0;
+            StartOrientation = entity->orientation;
+            StartPosition = entity->position;
+            EndOrientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
+            EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
+        }
+        if (IsKeyPressed(KEY_DOWN)) {
+            Walking = true;
+            T = 0;
+            StartOrientation = entity->orientation;
+            StartPosition = entity->position;
+            EndOrientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
+            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
+        }
+        if (IsKeyPressed(KEY_LEFT)) {
+            Walking = true;
+            T = 0;
+            StartOrientation = entity->orientation;
+            StartPosition = entity->position;
+            EndOrientation =
+                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
+            EndPosition = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+        }
+
+        // Check for collision with goal.
+        // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for example,
+        // if we make the bounding box the same size as cube, then we will accidentally collide if we move to a square
+        // next to goal. Maybe instead we should convert entity positions to a "grid space" where each grid spot has a
+        // unique id and use that to check collisions.
+        Entity* goal = LevelDataGetGoal(&CurLevel);
+        BoundingBox player_bb = GetBoundingBox(EndPosition);
+        BoundingBox goal_bb = GetBoundingBox(goal->position);
+        if (Walking && CheckCollisionBoxes(player_bb, goal_bb)) {
+            CurLevel.finished = true;
+            Walking = false;
+        }
+    }
+
+    if (Walking) {
+        T += delta_time;
+        float t = T / 0.2;
+        if (t >= 1.0f) {
+            Walking = false;
+            entity->orientation = EndOrientation;
+            entity->position = EndPosition;
+        } else {
+            entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
+            entity->position = Vector3Lerp(StartPosition, EndPosition, t);
+        }
+    }
+
+    if (false) {
+        PrintMatrix(QuaternionToMatrix(entity->orientation));
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Serde.
@@ -353,7 +376,12 @@ static char* UnpackColor(char* buffer, Color* c) {
     return buffer;
 }
 
-static void LoadLevel(const char* name) {
+static void LoadLevel(const char* name_original) {
+    // We make this dumb copy here because we will run into issues where when we clear CurLevel down below,
+    // name_original might be wiped if we passed in the pointer to CurLevel.name.
+    char name[256] = {0};
+    strcpy(name, name_original);
+
     char filepath[1024];
     sprintf(filepath, "%s/%s", GameLevelsPath, name);
     char* data = LoadFileText(filepath);
@@ -615,6 +643,11 @@ static void GameUpdate(float delta_time) {
     if (!EditorEnabled) {
         Entity* player = LevelDataGetPlayer(&CurLevel);
         PlayerUpdate(player, delta_time);
+        // Detect hit goal and then reset the level.
+        if (CurLevel.finished) {
+            LoadLevel(CurLevel.name);
+        }
+
     } else {
         EditorUpdate(&GameEditor);
     }
