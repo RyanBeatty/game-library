@@ -200,6 +200,18 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         if (Walking && CheckCollisionBoxes(player_bb, goal_bb)) {
             CurLevel.finished = true;
             Walking = false;
+        } else if (Walking) {
+            for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+                Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
+                if (entity2 == entity || entity2 == goal) {
+                    continue;
+                }
+
+                BoundingBox e2_bb = GetBoundingBox(entity2->position);
+                if (CheckCollisionBoxes(player_bb, e2_bb)) {
+                    Walking = false;
+                }
+            }
         }
     }
 
