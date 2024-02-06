@@ -137,6 +137,13 @@ static void LevelSetStart(LevelData* level_data) {
 static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEntity(level_data, 1); }
 
 /////////////////////////////////////////////////////////////////////////////////////
+typedef enum PlayerState {
+    PS_IDLE = 0,
+    PS_WALKING,
+
+    PS_COUNT
+} PlayerState;
+
 static void PlayerInit(Entity* player, Vector3 position) {
     player->position = position;
     player->orientation = QuaternionIdentity();
@@ -144,63 +151,69 @@ static void PlayerInit(Entity* player, Vector3 position) {
 }
 
 static void PlayerUpdate(Entity* entity, float delta_time) {
-    static bool Walking = false;
+    static PlayerState State = PS_IDLE;
     static float T = 0;
     static Quaternion StartOrientation;
     static Quaternion EndOrientation;
     static Vector3 StartPosition;
     static Vector3 EndPosition;
 
-    if (!Walking) {
-        if (IsKeyPressed(KEY_UP)) {
-            Walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
-        }
-        if (IsKeyPressed(KEY_RIGHT)) {
-            Walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
-        }
-        if (IsKeyPressed(KEY_DOWN)) {
-            Walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
-        }
-        if (IsKeyPressed(KEY_LEFT)) {
-            Walking = true;
-            T = 0;
-            StartOrientation = entity->orientation;
-            StartPosition = entity->position;
-            EndOrientation =
-                QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
-            EndPosition = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
-        }
+    switch (State) {
+        case PS_IDLE: {
+            if (IsKeyPressed(KEY_UP)) {
+                State = PS_WALKING;
+                T = 0;
+                StartOrientation = entity->orientation;
+                StartPosition = entity->position;
+                EndOrientation =
+                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
+                EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
+            }
+            if (IsKeyPressed(KEY_RIGHT)) {
+                State = PS_WALKING;
+                T = 0;
+                StartOrientation = entity->orientation;
+                StartPosition = entity->position;
+                EndOrientation =
+                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
+                EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
+            }
+            if (IsKeyPressed(KEY_DOWN)) {
+                State = PS_WALKING;
+                T = 0;
+                StartOrientation = entity->orientation;
+                StartPosition = entity->position;
+                EndOrientation =
+                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
+                EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
+            }
+            if (IsKeyPressed(KEY_LEFT)) {
+                State = PS_WALKING;
+                T = 0;
+                StartOrientation = entity->orientation;
+                StartPosition = entity->position;
+                EndOrientation =
+                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
+                EndPosition = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+            }
 
-        // Check for collision with goal.
-        // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for example,
-        // if we make the bounding box the same size as cube, then we will accidentally collide if we move to a square
-        // next to goal. Maybe instead we should convert entity positions to a "grid space" where each grid spot has a
-        // unique id and use that to check collisions.
-        Entity* goal = LevelDataGetGoal(&CurLevel);
-        BoundingBox player_bb = GetBoundingBox(EndPosition);
-        BoundingBox goal_bb = GetBoundingBox(goal->position);
-        if (Walking && CheckCollisionBoxes(player_bb, goal_bb)) {
-            CurLevel.finished = true;
-            Walking = false;
-        } else if (Walking) {
+            break;
+        }
+        case PS_WALKING: {
+            // Check for collision with goal.
+            // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for
+            // example, if we make the bounding box the same size as cube, then we will accidentally collide if we move
+            // to a square next to goal. Maybe instead we should convert entity positions to a "grid space" where each
+            // grid spot has a unique id and use that to check collisions.
+            Entity* goal = LevelDataGetGoal(&CurLevel);
+            BoundingBox player_bb = GetBoundingBox(EndPosition);
+            BoundingBox goal_bb = GetBoundingBox(goal->position);
+            if (CheckCollisionBoxes(player_bb, goal_bb)) {
+                CurLevel.finished = true;
+                State = PS_IDLE;
+                break;
+            }
+
             for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
                 Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
                 if (entity2 == entity || entity2 == goal) {
@@ -209,22 +222,30 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
 
                 BoundingBox e2_bb = GetBoundingBox(entity2->position);
                 if (CheckCollisionBoxes(player_bb, e2_bb)) {
-                    Walking = false;
+                    State = PS_IDLE;
                 }
             }
-        }
-    }
 
-    if (Walking) {
-        T += delta_time;
-        float t = T / 0.2;
-        if (t >= 1.0f) {
-            Walking = false;
-            entity->orientation = EndOrientation;
-            entity->position = EndPosition;
-        } else {
-            entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
-            entity->position = Vector3Lerp(StartPosition, EndPosition, t);
+            // We hit something, stop walking.
+            if (State != PS_WALKING) {
+                break;
+            }
+
+            T += delta_time;
+            float t = T / 0.2;
+            if (t >= 1.0f) {
+                State = PS_IDLE;
+                entity->orientation = EndOrientation;
+                entity->position = EndPosition;
+            } else {
+                entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
+                entity->position = Vector3Lerp(StartPosition, EndPosition, t);
+            }
+
+            break;
+        }
+        default: {
+            exit(0);
         }
     }
 
