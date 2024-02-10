@@ -57,6 +57,29 @@ static Texture GenCubeTexture(Color color) {
     return texture;
 }
 
+static Texture GenCubeTexture2(Color colors[6]) {
+    const int width = 128;
+    const int height = 128;
+    const int edge_thickness = 5;
+    const int num_colors = 6;
+    Image image = GenImageColor(width * num_colors, height, BLACK);
+    for (uint32_t i = 0; i < num_colors; ++i) {
+        // Fill with color for face.
+        ImageDrawRectangle(&image, i * width, 0, width, height, colors[i]);
+
+        // Horizontal lines.
+        ImageDrawRectangle(&image, 0, 0, width, edge_thickness, BLACK);
+        ImageDrawRectangle(&image, 0, height - edge_thickness, width, edge_thickness, BLACK);
+        // Vertical lines.
+        ImageDrawRectangle(&image, 0, 0, edge_thickness, height, BLACK);
+        ImageDrawRectangle(&image, width - edge_thickness, 0, edge_thickness, height, BLACK);
+    }
+
+    Texture texture = LoadTextureFromImage(image);
+    UnloadImage(image);
+    return texture;
+}
+
 static Texture GetTextureForColor(Color color) {
     ptrdiff_t idx = hmgeti(TextureCache, color);
     if (idx == -1) {
@@ -147,6 +170,33 @@ static void PlayerInit(Entity* player, Vector3 position) {
     player->position = position;
     player->orientation = QuaternionIdentity();
     player->model = GenCubeModel(RED);
+
+    Texture texture = GenCubeTexture2((Color[6]){RED, BLUE, GREEN, YELLOW, PINK, ORANGE});
+
+    // Remap the texture coordinates for all of the faces of the cube such that each face has a different color.
+    // TODO: Seems like the edges aren't quite working for all of the faces.
+    player->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    Mesh* mesh = &player->model.meshes[0];
+    for (uint32_t i = 0; i < 6; ++i) {
+        uint32_t tidx = i * 2 * 4;
+        const float face_width = 128.0f;
+        float min = (i * face_width);
+        float max = min + face_width;
+        float min_u = min / texture.width;
+        float max_u = max / texture.width;
+        mesh->texcoords[tidx + 0] = min_u;
+        mesh->texcoords[tidx + 1] = 0.0f;
+        mesh->texcoords[tidx + 2] = max_u;
+        mesh->texcoords[tidx + 3] = 0.0f;
+        mesh->texcoords[tidx + 4] = max_u;
+        mesh->texcoords[tidx + 5] = 1.0f;
+        mesh->texcoords[tidx + 6] = min_u;
+        mesh->texcoords[tidx + 7] = 1.0f;
+    }
+    // TODO: This feels hacky, but it works. Just forget the mesh buffer ids and reupload.
+    mesh->vaoId = 0;
+    mesh->vboId = NULL;
+    UploadMesh(mesh, false);
 }
 
 static void PlayerUpdate(Entity* entity, float delta_time) {
