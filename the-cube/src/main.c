@@ -68,11 +68,11 @@ static Texture GenCubeTexture2(Color colors[6]) {
         ImageDrawRectangle(&image, i * width, 0, width, height, colors[i]);
 
         // Horizontal lines.
-        ImageDrawRectangle(&image, 0, 0, width, edge_thickness, BLACK);
-        ImageDrawRectangle(&image, 0, height - edge_thickness, width, edge_thickness, BLACK);
+        ImageDrawRectangle(&image, i * width, 0, width, edge_thickness, BLACK);
+        ImageDrawRectangle(&image, i * width, height - edge_thickness, width, edge_thickness, BLACK);
         // Vertical lines.
-        ImageDrawRectangle(&image, 0, 0, edge_thickness, height, BLACK);
-        ImageDrawRectangle(&image, width - edge_thickness, 0, edge_thickness, height, BLACK);
+        ImageDrawRectangle(&image, i * width, 0, edge_thickness, height, BLACK);
+        ImageDrawRectangle(&image, (i * width) + width - edge_thickness, 0, edge_thickness, height, BLACK);
     }
 
     Texture texture = LoadTextureFromImage(image);
@@ -174,7 +174,6 @@ static void PlayerInit(Entity* player, Vector3 position) {
     Texture texture = GenCubeTexture2((Color[6]){RED, BLUE, GREEN, YELLOW, PINK, ORANGE});
 
     // Remap the texture coordinates for all of the faces of the cube such that each face has a different color.
-    // TODO: Seems like the edges aren't quite working for all of the faces.
     player->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
     Mesh* mesh = &player->model.meshes[0];
     for (uint32_t i = 0; i < 6; ++i) {
