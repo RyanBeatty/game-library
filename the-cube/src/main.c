@@ -69,7 +69,6 @@ static Texture GetTextureForColor(Color color) {
 
 static Model GenCubeModel(Color color) {
     Model model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
-    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = color;
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = GetTextureForColor(color);
     return model;
 }
