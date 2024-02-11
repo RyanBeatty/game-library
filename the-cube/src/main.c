@@ -27,6 +27,8 @@ typedef struct Entity {
     Vector3 position;
     Quaternion orientation;
 
+    Color block_color;  // Only used for non player entities.
+
     Model model;
 } Entity;
 
@@ -418,8 +420,7 @@ static void SaveLevel(LevelData* level_data) {
         pos = PackDelim(pos);
         pos = PackQuaternion(pos, entity->orientation);
         pos = PackDelim(pos);
-        // TODO: Probably temp until we figure out mesh storage.
-        pos = PackColor(pos, entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color);
+        pos = PackColor(pos, entity->block_color);
 
         data = WriteBuffer(data, buffer, strlen(buffer));
     }
@@ -522,6 +523,7 @@ static void LoadLevel(const char* name_original) {
 
         Color color;
         buffer = UnpackColor(buffer, &color);
+        entity->block_color = color;
         entity->model = GenCubeModel(color);
 
         line = strtok(NULL, "\n");
