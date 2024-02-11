@@ -168,12 +168,29 @@ typedef enum PlayerState {
     PS_COUNT
 } PlayerState;
 
+static Color FaceColors[6] = {RED, BLUE, GREEN, YELLOW, PINK, ORANGE};
+
+static Color GetTopFaceColor(Mesh* mesh, Quaternion rotation) {
+    Vector3 up = {0.0f, 1.0f, 0.0f};
+    for (uint32_t i = 0; i < (sizeof(FaceColors) / sizeof(FaceColors[0])); ++i) {
+        uint32_t offset = i * 4 * 3;
+        Vector3 normal = {mesh->normals[offset + 0], mesh->normals[offset + 1], mesh->normals[offset + 2]};
+        normal = Vector3RotateByQuaternion(normal, rotation);
+        float angle = Vector3Angle(normal, up);
+        if (fabs(angle) <= 1e-5) {
+            return FaceColors[i];
+        }
+    }
+
+    assert(0);
+}
+
 static void PlayerInit(Entity* player, Vector3 position) {
     player->position = position;
     player->orientation = QuaternionIdentity();
     player->model = GenCubeModel(RED);
 
-    Texture texture = GenCubeTexture2((Color[6]){RED, BLUE, GREEN, YELLOW, PINK, ORANGE});
+    Texture texture = GenCubeTexture2(FaceColors);
 
     // Remap the texture coordinates for all of the faces of the cube such that each face has a different color.
     player->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
@@ -250,6 +267,9 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             break;
         }
         case PS_WALKING: {
+            Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
+            TraceLog(LOG_INFO, "Color: %d %d %d", top_color.r, top_color.g, top_color.b);
+
             // Check for collision with goal.
             // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for
             // example, if we make the bounding box the same size as cube, then we will accidentally collide if we move
