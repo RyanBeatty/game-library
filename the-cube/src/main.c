@@ -170,6 +170,7 @@ typedef enum PlayerState {
     PS_COUNT
 } PlayerState;
 
+static Color Colors[7] = {GRAY, RED, BLUE, GREEN, YELLOW, PINK, ORANGE};
 static Color FaceColors[6] = {RED, BLUE, GREEN, YELLOW, PINK, ORANGE};
 
 static Color GetTopFaceColor(Mesh* mesh, Quaternion rotation) {
@@ -565,7 +566,11 @@ static void EditorDisable() {
 
 static Entity* EditorGetFocus(Editor* editor) { return &CurLevel.entities[editor->focus_idx]; }
 
+static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
+
 static void EditorUpdate(Editor* editor) {
+    static uint32_t color_idx = 0;
+
     assert(EditorEnabled);
 
     // TODO: Figure out something better here. I can't control-e to toggle editor and control-s to save without lifting
@@ -579,10 +584,11 @@ static void EditorUpdate(Editor* editor) {
             if (IsKeyPressed(KEY_A)) {
                 Entity* focus = CreateLevelDataEntity(&CurLevel);
                 focus->model = GenCubeModel(GRAY);
-                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
+                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
                 focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
                 editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
+                color_idx = 0;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_S) &&
                        editor->control_key_unpressed) {
                 // TOOD: Add text fade to screen.
@@ -616,9 +622,14 @@ static void EditorUpdate(Editor* editor) {
             } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
                 focus->position.y -= CubeSideLength;
             } else if (IsKeyPressed(KEY_ENTER)) {
-                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
                 focus = NULL;
                 editor->state = ES_IDLE;
+            } else if (IsKeyPressed(KEY_C)) {
+                color_idx = (color_idx + 1) % (sizeof(Colors) / sizeof(Colors[0]));
+                focus->block_color = Colors[color_idx];
+                focus->model = GenCubeModel(focus->block_color);
+                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
             }
             break;
         }
@@ -662,10 +673,17 @@ static void EditorUpdate(Editor* editor) {
         }
         case ES_SELECT_FOCUS: {
             if (IsKeyPressed(KEY_ENTER)) {
+                Entity* entity = EditorGetFocus(editor);
                 editor->state = ES_EDITING;
+                for (uint32_t i = 0; i < (sizeof(Colors) / sizeof(Colors[0])); ++i) {
+                    Color c = Colors[i];
+                    if (c.r == entity->block_color.r && c.g == entity->block_color.g && c.b == entity->block_color.b) {
+                        color_idx = i;
+                    }
+                }
             } else {
                 Entity* entity = EditorGetFocus(editor);
-                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GRAY;
+                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
 
                 int32_t dir = 0;
                 if (IsKeyPressed(KEY_UP)) {
@@ -676,7 +694,7 @@ static void EditorUpdate(Editor* editor) {
                 editor->focus_idx = (editor->focus_idx + dir) % LevelDataNumEntities(&CurLevel);
 
                 entity = EditorGetFocus(editor);
-                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
+                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(entity->block_color);
             }
             break;
         }
