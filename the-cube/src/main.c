@@ -57,6 +57,8 @@ static Texture GenCubeTexture(Color color) {
     return texture;
 }
 
+// TODO: This is only used to generate the player cube texture. Maybe we can combine this with normal texture gen above
+// since the above is just a special case of this method where all the colors are the same.
 static Texture GenCubeTexture2(Color colors[6]) {
     const int width = 128;
     const int height = 128;
@@ -280,7 +282,7 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
             }
 
             T += delta_time;
-            float t = T / 0.2;
+            float t = T / 0.15;
             if (t >= 1.0f) {
                 State = PS_IDLE;
                 entity->orientation = EndOrientation;
