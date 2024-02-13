@@ -271,7 +271,6 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         }
         case PS_WALKING: {
             Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
-            TraceLog(LOG_INFO, "Color: %d %d %d", top_color.r, top_color.g, top_color.b);
 
             // Check for collision with goal.
             // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for
@@ -293,8 +292,10 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
                     continue;
                 }
 
+                Color e2_color = entity2->block_color;
                 BoundingBox e2_bb = GetBoundingBox(entity2->position);
-                if (CheckCollisionBoxes(player_bb, e2_bb)) {
+                if (CheckCollisionBoxes(player_bb, e2_bb) && (top_color.r != e2_color.r || top_color.g != e2_color.g ||
+                                                              top_color.b != e2_color.b || top_color.a != e2_color.a)) {
                     State = PS_IDLE;
                 }
             }
