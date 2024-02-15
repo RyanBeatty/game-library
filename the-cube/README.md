@@ -9,3 +9,14 @@ THE CUBE IDEATION
 This can effect hunters too
 * beams of light that are colored and follow same rules as blocks. Light can move??
 * 
+
+
+
+
+ISSUES/IMPROVMENTS
+* better editor, its pretty jank/hacky.
+* Sound/Music
+* Menus
+* ACTUAL LEVELS
+
+

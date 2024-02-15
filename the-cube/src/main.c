@@ -163,6 +163,27 @@ static void LevelSetStart(LevelData* level_data) {
 static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEntity(level_data, 1); }
 
 /////////////////////////////////////////////////////////////////////////////////////
+// Non-Playable.
+
+static void NPCUpdate(Entity* entity, float delta_time) {
+    Entity* player = LevelDataGetPlayer(&CurLevel);
+    BoundingBox e_bb = GetBoundingBox(entity->position);
+    BoundingBox p_bb = GetBoundingBox(player->position);
+
+    unsigned char alpha = 255;
+    if (CheckCollisionBoxes(e_bb, p_bb)) {
+        Color p_color = entity->block_color;
+        Color e_color = entity->block_color;
+        if ((e_color.r == p_color.r || e_color.g == p_color.g || e_color.b == p_color.b)) {
+            alpha = 255 / 2;
+        } else {
+            alpha = 255;
+        }
+    }
+    entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color.a = alpha;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
 typedef enum PlayerState {
     PS_IDLE = 0,
     PS_WALKING,
@@ -770,6 +791,16 @@ static void GameUpdate(float delta_time) {
         // Detect hit goal and then reset the level.
         if (CurLevel.finished) {
             LoadLevel(CurLevel.name);
+        }
+
+        Entity* goal = LevelDataGetGoal(&CurLevel);
+
+        for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+            Entity* entity = LevelDataGetEntity(&CurLevel, i);
+            if (entity == player || entity == goal) {
+                continue;
+            }
+            NPCUpdate(entity, delta_time);
         }
 
     } else {
