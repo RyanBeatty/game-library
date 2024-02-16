@@ -569,9 +569,7 @@ static void LoadLevel(const char* name_original) {
         entity->block_color = color;
         entity->model = GenCubeModel(color);
 
-        breakpoint();
         EntitySetFlag(entity, EF_TRANSPARENT_ON_COLLISION);
-        breakpoint();
 
         line = strtok(NULL, "\n");
     }
@@ -824,7 +822,7 @@ static void GameUpdate(float delta_time) {
             if (entity == player || entity == goal) {
                 continue;
             }
-            EntityTransparentOnCollision(entity, delta_time);
+            EntityUpdate(entity, delta_time);
         }
 
     } else {
