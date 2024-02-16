@@ -26,6 +26,7 @@ typedef enum EntityFlag {
     EF_NONE = 0,
     EF_TRANSPARENT_ON_COLLISION,
     EF_LEVEL_SUCCESS_ON_COLLISION,
+    EF_PLAYER_CONTROLLED,
 
     EF_COUNT
 } EntityFlag;
@@ -228,12 +229,17 @@ static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
     entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color.a = alpha;
 }
 
+static void EntityPlayerControlled(Entity* entity, float delta_time);
+
 static void EntityUpdate(Entity* entity, float delta_time) {
     if (EntityTestFlag(entity, EF_TRANSPARENT_ON_COLLISION)) {
         EntityTransparentOnCollision(entity, delta_time);
     }
     if (EntityTestFlag(entity, EF_LEVEL_SUCCESS_ON_COLLISION)) {
         EntityLevelSuccessOnCollision(entity, delta_time);
+    }
+    if (EntityTestFlag(entity, EF_PLAYER_CONTROLLED)) {
+        EntityPlayerControlled(entity, delta_time);
     }
 }
 
@@ -267,6 +273,7 @@ static void PlayerInit(Entity* player, Vector3 position) {
     player->position = position;
     player->orientation = QuaternionIdentity();
     player->model = GenCubeModel(RED);
+    EntitySetFlag(player, EF_PLAYER_CONTROLLED);
 
     Texture texture = GenCubeTexture2(FaceColors);
 
@@ -295,7 +302,7 @@ static void PlayerInit(Entity* player, Vector3 position) {
     UploadMesh(mesh, false);
 }
 
-static void PlayerUpdate(Entity* entity, float delta_time) {
+static void EntityPlayerControlled(Entity* entity, float delta_time) {
     static PlayerState State = PS_IDLE;
     static float T = 0;
     static Quaternion StartOrientation;
@@ -845,14 +852,8 @@ static void GameUpdate(float delta_time) {
     }
 
     if (!EditorEnabled) {
-        Entity* player = LevelDataGetPlayer(&CurLevel);
-        PlayerUpdate(player, delta_time);
-
         for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
             Entity* entity = LevelDataGetEntity(&CurLevel, i);
-            if (entity == player) {
-                continue;
-            }
             EntityUpdate(entity, delta_time);
         }
 
