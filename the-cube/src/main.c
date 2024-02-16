@@ -33,15 +33,17 @@ typedef struct Entity {
     uint32_t idx;
     Vector3 position;
     Quaternion orientation;
-    EntityFlag flags[((int)(EF_COUNT / 8)) == 0 ? 1 : EF_COUNT / 8];
+    uint8_t flags[((int)(EF_COUNT / 8)) == 0 ? 1 : EF_COUNT / 8];
 
     Color block_color;  // Only used for non player entities.
 
     Model model;
 } Entity;
 
-static bool EntityTestFlag(Entity* entity, EntityFlag flag) { return entity->flags[flag / 8] & (1 << (flag % 8)); }
-static void EntitySetFlag(Entity* entity, EntityFlag flag) { entity->flags[flag / 8] |= (1 << (flag % 8)); }
+static bool EntityTestFlag(Entity* entity, EntityFlag flag) {
+    return entity->flags[flag / 8] & (1 << ((flag % 8) - 1));
+}
+static void EntitySetFlag(Entity* entity, EntityFlag flag) { entity->flags[flag / 8] |= (1 << ((flag % 8) - 1)); }
 
 static void EntityUpdateTransform(Entity* entity) {
     // Remember matrices are applied left to right order, so the rotation is first.
@@ -149,6 +151,7 @@ static LevelData CurLevel = {0};
 
 static Entity* LevelDataCreateEntity(LevelData* level_data) {
     Entity* entity = arraddnptr(level_data->entities, 1);
+    memset(entity, 0, sizeof(Entity));
     entity->idx = arrlen(level_data->entities) - 1;
     return entity;
 }
@@ -566,6 +569,7 @@ static void LoadLevel(const char* name_original) {
         entity->block_color = color;
         entity->model = GenCubeModel(color);
 
+        breakpoint();
         EntitySetFlag(entity, EF_TRANSPARENT_ON_COLLISION);
         breakpoint();
 
