@@ -31,11 +31,13 @@ typedef enum EntityFlag {
     EF_COUNT
 } EntityFlag;
 
+#define FLAGS_LEN (((int)(EF_COUNT / 8)) == 0 ? 1 : EF_COUNT / 8)
+
 typedef struct Entity {
     uint32_t idx;
     Vector3 position;
     Quaternion orientation;
-    uint8_t flags[((int)(EF_COUNT / 8)) == 0 ? 1 : EF_COUNT / 8];
+    uint8_t flags[FLAGS_LEN];
 
     Color block_color;  // Only used for non player entities.
 
@@ -45,7 +47,8 @@ typedef struct Entity {
 static bool EntityTestFlag(Entity* entity, EntityFlag flag) {
     return entity->flags[flag / 8] & (1 << ((flag % 8) - 1));
 }
-static void EntitySetFlag(Entity* entity, EntityFlag flag) { entity->flags[flag / 8] |= (1 << ((flag % 8) - 1)); }
+static void SetFlag(uint8_t flags[FLAGS_LEN], EntityFlag flag) { flags[flag / 8] |= (1 << ((flag % 8) - 1)); }
+static void EntitySetFlag(Entity* entity, EntityFlag flag) { SetFlag(entity->flags, flag); }
 
 static void EntityUpdateTransform(Entity* entity) {
     // Remember matrices are applied left to right order, so the rotation is first.
@@ -430,6 +433,11 @@ static char* PackU8(char* buffer, uint8_t b) {
     return &buffer[i];
 }
 
+static char* PackU32(char* buffer, uint32_t x) {
+    int i = sprintf(buffer, "%u", x);
+    return &buffer[i];
+}
+
 static char* PackColor(char* buffer, Color c) {
     buffer = PackU8(buffer, c.r);
     buffer = PackDelim(buffer);
@@ -462,6 +470,18 @@ static char* PackVector4(char* buffer, Vector4 v) {
 }
 
 static char* PackQuaternion(char* buffer, Quaternion q) { return PackVector4(buffer, q); }
+
+static char* PackFlags(char* buffer, uint8_t flags[FLAGS_LEN]) {
+    buffer = PackU32(buffer, FLAGS_LEN);
+    buffer = PackDelim(buffer);
+    for (uint32_t i = 0; i < FLAGS_LEN; ++i) {
+        buffer = PackU32(buffer, flags[i]);
+        if (i < FLAGS_LEN - 1) {
+            buffer = PackDelim(buffer);
+        }
+    }
+    return buffer;
+}
 
 static char* WriteBuffer(char* data, char* to_write, size_t len) {
     for (uint32_t i = 0; i < len; ++i) {
@@ -507,6 +527,8 @@ static void SaveLevel(LevelData* level_data) {
         pos = PackQuaternion(pos, entity->orientation);
         pos = PackDelim(pos);
         pos = PackColor(pos, entity->block_color);
+        pos = PackDelim(pos);
+        pos = PackFlags(pos, entity->flags);
 
         data = WriteBuffer(data, buffer, strlen(buffer));
     }
@@ -566,6 +588,18 @@ static char* UnpackColor(char* buffer, Color* c) {
     return buffer;
 }
 
+static char* UnpackFlags(char* buffer, uint8_t flags[FLAGS_LEN]) {
+    uint32_t len = 0;
+    buffer = UnpackU32(buffer, &len);
+    assert(len <= FLAGS_LEN);
+    for (uint32_t i = 0; i < len; ++i) {
+        uint32_t flag = 0;
+        buffer = UnpackU32(buffer, &flag);
+        SetFlag(flags, (EntityFlag)flag);
+    }
+    return buffer;
+}
+
 static void LoadLevel(const char* name_original) {
     // We make this dumb copy here because we will run into issues where when we clear CurLevel down below,
     // name_original might be wiped if we passed in the pointer to CurLevel.name.
@@ -613,7 +647,7 @@ static void LoadLevel(const char* name_original) {
         entity->block_color = color;
         entity->model = GenCubeModel(color);
 
-        EntitySetFlag(entity, EF_TRANSPARENT_ON_COLLISION);
+        buffer = UnpackFlags(buffer, entity->flags);
 
         line = strtok(NULL, "\n");
     }
