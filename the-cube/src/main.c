@@ -27,6 +27,7 @@ typedef enum EntityFlag {
     EF_TRANSPARENT_ON_COLLISION,
     EF_LEVEL_SUCCESS_ON_COLLISION,
     EF_PLAYER_CONTROLLED,
+    EF_HUNT_PLAYER,
 
     EF_COUNT
 } EntityFlag;
@@ -628,13 +629,10 @@ static void LoadLevel(const char* name_original) {
         buffer = UnpackU32(buffer, &entity->idx);
         buffer = UnpackVector3(buffer, &entity->position);
         buffer = UnpackQuaternion(buffer, &entity->orientation);
-
-        Color color;
-        buffer = UnpackColor(buffer, &color);
-        entity->block_color = color;
-        entity->model = GenCubeModel(color);
-
+        buffer = UnpackColor(buffer, &entity->block_color);
         buffer = UnpackFlags(buffer, entity->flags);
+
+        entity->model = GenCubeModel(entity->block_color);
 
         line = strtok(NULL, "\n");
     }
