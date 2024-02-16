@@ -357,21 +357,8 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
         case PS_WALKING: {
             Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
 
-            // // Check for collision with goal.
-            // // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for
-            // // example, if we make the bounding box the same size as cube, then we will accidentally collide if we
-            // move
-            // // to a square next to goal. Maybe instead we should convert entity positions to a "grid space" where
-            // each
-            // // grid spot has a unique id and use that to check collisions.
             Entity* goal = LevelDataGetGoal(&CurLevel);
             BoundingBox player_bb = GetBoundingBox(EndPosition);
-            // BoundingBox goal_bb = GetBoundingBox(goal->position);
-            // if (CheckCollisionBoxes(player_bb, goal_bb)) {
-            //     CurLevel.finished = true;
-            //     State = PS_IDLE;
-            //     break;
-            // }
 
             for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
                 Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
@@ -475,7 +462,7 @@ static char* PackFlags(char* buffer, uint8_t flags[FLAGS_LEN]) {
     buffer = PackU32(buffer, FLAGS_LEN);
     buffer = PackDelim(buffer);
     for (uint32_t i = 0; i < FLAGS_LEN; ++i) {
-        buffer = PackU32(buffer, flags[i]);
+        buffer = PackU8(buffer, flags[i]);
         if (i < FLAGS_LEN - 1) {
             buffer = PackDelim(buffer);
         }
@@ -593,9 +580,9 @@ static char* UnpackFlags(char* buffer, uint8_t flags[FLAGS_LEN]) {
     buffer = UnpackU32(buffer, &len);
     assert(len <= FLAGS_LEN);
     for (uint32_t i = 0; i < len; ++i) {
-        uint32_t flag = 0;
-        buffer = UnpackU32(buffer, &flag);
-        SetFlag(flags, (EntityFlag)flag);
+        uint8_t flag = 0;
+        buffer = UnpackU8(buffer, &flag);
+        flags[i] = flag;
     }
     return buffer;
 }
