@@ -119,6 +119,59 @@ static Model GenCubeModel(Color color) {
     return model;
 }
 
+// TODO: Texture coords aren't correct. black lines aren't showing. fix later.
+static Mesh GenMeshHunter() {
+    Mesh mesh = {0};
+    mesh.triangleCount = 1;
+    mesh.vertexCount = mesh.triangleCount * 3;
+    mesh.vertices = (float*)MemAlloc(mesh.vertexCount * 3 * sizeof(float));   // 3 vertices, 3 coordinates each
+    mesh.texcoords = (float*)MemAlloc(mesh.vertexCount * 2 * sizeof(float));  // 3 vertices, 2 coordinates each
+    mesh.normals = (float*)MemAlloc(mesh.vertexCount * 3 * sizeof(float));    // 3 vertices, 3 coordinates each
+
+    float radius = CubeSideLength / 2.0f;
+
+    // v1 - Rmemeber center needs to be at origin.
+    mesh.vertices[0] = -radius;
+    mesh.vertices[1] = 0;
+    mesh.vertices[2] = radius;
+    mesh.normals[0] = 0;
+    mesh.normals[1] = 1;
+    mesh.normals[2] = 0;
+    mesh.texcoords[0] = 0;
+    mesh.texcoords[1] = 0;
+
+    // v2
+    mesh.vertices[3] = radius;
+    mesh.vertices[4] = 0;
+    mesh.vertices[5] = radius;
+    mesh.normals[3] = 0;
+    mesh.normals[4] = 1;
+    mesh.normals[5] = 0;
+    mesh.texcoords[2] = 0.5f;
+    mesh.texcoords[3] = 1.0f;
+
+    // v3
+    mesh.vertices[6] = 0;
+    mesh.vertices[7] = 0;
+    mesh.vertices[8] = -radius;
+    mesh.normals[6] = 0;
+    mesh.normals[7] = 1;
+    mesh.normals[8] = 0;
+    mesh.texcoords[4] = 1;
+    mesh.texcoords[5] = 0;
+
+    // Upload mesh data from CPU (RAM) to GPU (VRAM) memory
+    UploadMesh(&mesh, false);
+
+    return mesh;
+}
+
+static Model GenHunterModel(Color color) {
+    Model model = LoadModelFromMesh(GenMeshHunter());
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = GetTextureForColor(color);
+    return model;
+}
+
 static BoundingBox EntityGetBoundingBox(Entity* entity) {
     // NOTE: Make the bounding box smaller than the cube for now so that we don't accidentally collide two boxes if they
     // move next to eachother.
@@ -632,7 +685,18 @@ static void LoadLevel(const char* name_original) {
         buffer = UnpackColor(buffer, &entity->block_color);
         buffer = UnpackFlags(buffer, entity->flags);
 
-        entity->model = GenCubeModel(entity->block_color);
+        if (entity->block_color.r == BLUE.r && entity->block_color.g == BLUE.g && entity->block_color.b == BLUE.b) {
+            breakpoint();
+        }
+
+        // TODO: Make this better. Come up with way to store model info on each entity.
+        if (EntityTestFlag(entity, EF_HUNT_PLAYER)) {
+            entity->model = GenHunterModel(entity->block_color);
+            // TODO: improve this. just for visual debugging at the moment.
+            entity->position.y = 0;
+        } else {
+            entity->model = GenCubeModel(entity->block_color);
+        }
 
         line = strtok(NULL, "\n");
     }
