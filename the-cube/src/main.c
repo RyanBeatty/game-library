@@ -25,6 +25,7 @@ static void PrintMatrix(Matrix m) {
 typedef enum EntityFlag {
     EF_NONE = 0,
     EF_TRANSPARENT_ON_COLLISION,
+    EF_LEVEL_SUCCESS_ON_COLLISION,
 
     EF_COUNT
 } EntityFlag;
@@ -113,6 +114,21 @@ static Model GenCubeModel(Color color) {
     return model;
 }
 
+static BoundingBox EntityGetBoundingBox(Entity* entity) {
+    // NOTE: Make the bounding box smaller than the cube for now so that we don't accidentally collide two boxes if they
+    // move next to eachother.
+    float radius = CubeSideLength / 4.0f;
+    Vector3 min = {-radius, -radius, -radius};
+    Vector3 max = {radius, radius, radius};
+    // TODO: Why doesn't this work??
+    // min = Vector3RotateByQuaternion(min, entity->orientation);
+    // max = Vector3RotateByQuaternion(max, entity->orientation);
+    min = Vector3Add(min, entity->position);
+    max = Vector3Add(max, entity->position);
+    BoundingBox bb = {.min = min, .max = max};
+    return bb;
+}
+
 static BoundingBox GetBoundingBox(Vector3 position) {
     // NOTE: Make the bounding box smaller than the cube for now so that we don't accidentally collide two boxes if they
     // move next to eachother.
@@ -179,6 +195,21 @@ static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEnti
 /////////////////////////////////////////////////////////////////////////////////////
 // Non-Playable.
 
+static void EntityLevelSuccessOnCollision(Entity* entity, float delta_time) {
+    // Check for collision with goal.
+    // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for
+    // example, if we make the bounding box the same size as cube, then we will accidentally collide if we move
+    // to a square next to goal. Maybe instead we should convert entity positions to a "grid space" where each
+    // grid spot has a unique id and use that to check collisions.
+    Entity* player = LevelDataGetPlayer(&CurLevel);
+    BoundingBox player_bb = EntityGetBoundingBox(player);
+    BoundingBox goal_bb = EntityGetBoundingBox(entity);
+    if (CheckCollisionBoxes(player_bb, goal_bb)) {
+        breakpoint();
+        CurLevel.finished = true;
+    }
+}
+
 static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
     Entity* player = LevelDataGetPlayer(&CurLevel);
     BoundingBox e_bb = GetBoundingBox(entity->position);
@@ -200,6 +231,9 @@ static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
 static void EntityUpdate(Entity* entity, float delta_time) {
     if (EntityTestFlag(entity, EF_TRANSPARENT_ON_COLLISION)) {
         EntityTransparentOnCollision(entity, delta_time);
+    }
+    if (EntityTestFlag(entity, EF_LEVEL_SUCCESS_ON_COLLISION)) {
+        EntityLevelSuccessOnCollision(entity, delta_time);
     }
 }
 
@@ -313,19 +347,21 @@ static void PlayerUpdate(Entity* entity, float delta_time) {
         case PS_WALKING: {
             Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
 
-            // Check for collision with goal.
-            // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for
-            // example, if we make the bounding box the same size as cube, then we will accidentally collide if we move
-            // to a square next to goal. Maybe instead we should convert entity positions to a "grid space" where each
-            // grid spot has a unique id and use that to check collisions.
+            // // Check for collision with goal.
+            // // TODO: Maybe rethink this since this causes problems depending on the size of the bounding box. for
+            // // example, if we make the bounding box the same size as cube, then we will accidentally collide if we
+            // move
+            // // to a square next to goal. Maybe instead we should convert entity positions to a "grid space" where
+            // each
+            // // grid spot has a unique id and use that to check collisions.
             Entity* goal = LevelDataGetGoal(&CurLevel);
             BoundingBox player_bb = GetBoundingBox(EndPosition);
-            BoundingBox goal_bb = GetBoundingBox(goal->position);
-            if (CheckCollisionBoxes(player_bb, goal_bb)) {
-                CurLevel.finished = true;
-                State = PS_IDLE;
-                break;
-            }
+            // BoundingBox goal_bb = GetBoundingBox(goal->position);
+            // if (CheckCollisionBoxes(player_bb, goal_bb)) {
+            //     CurLevel.finished = true;
+            //     State = PS_IDLE;
+            //     break;
+            // }
 
             for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
                 Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
@@ -552,6 +588,7 @@ static void LoadLevel(const char* name_original) {
     goal->orientation = QuaternionIdentity();
     goal->model = GenCubeModel(GREEN);
     goal->position = level_data->goal;
+    EntitySetFlag(goal, EF_LEVEL_SUCCESS_ON_COLLISION);
 
     // Unpack entities.
     while (line != NULL) {
@@ -810,19 +847,18 @@ static void GameUpdate(float delta_time) {
     if (!EditorEnabled) {
         Entity* player = LevelDataGetPlayer(&CurLevel);
         PlayerUpdate(player, delta_time);
-        // Detect hit goal and then reset the level.
-        if (CurLevel.finished) {
-            LoadLevel(CurLevel.name);
-        }
-
-        Entity* goal = LevelDataGetGoal(&CurLevel);
 
         for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
             Entity* entity = LevelDataGetEntity(&CurLevel, i);
-            if (entity == player || entity == goal) {
+            if (entity == player) {
                 continue;
             }
             EntityUpdate(entity, delta_time);
+        }
+
+        // Detect hit goal and then reset the level.
+        if (CurLevel.finished) {
+            LoadLevel(CurLevel.name);
         }
 
     } else {
