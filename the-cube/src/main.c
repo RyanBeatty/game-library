@@ -22,15 +22,26 @@ static void PrintMatrix(Matrix m) {
     printf("\n");
 }
 
+typedef enum EntityFlag {
+    EF_NONE = 0,
+    EF_TRANSPARENT_ON_COLLISION,
+
+    EF_COUNT
+} EntityFlag;
+
 typedef struct Entity {
     uint32_t idx;
     Vector3 position;
     Quaternion orientation;
+    EntityFlag flags[((int)(EF_COUNT / 8)) == 0 ? 1 : EF_COUNT / 8];
 
     Color block_color;  // Only used for non player entities.
 
     Model model;
 } Entity;
+
+static bool EntityTestFlag(Entity* entity, EntityFlag flag) { return entity->flags[flag / 8] & (1 << (flag % 8)); }
+static void EntitySetFlag(Entity* entity, EntityFlag flag) { entity->flags[flag / 8] |= (1 << (flag % 8)); }
 
 static void EntityUpdateTransform(Entity* entity) {
     // Remember matrices are applied left to right order, so the rotation is first.
@@ -165,7 +176,7 @@ static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEnti
 /////////////////////////////////////////////////////////////////////////////////////
 // Non-Playable.
 
-static void NPCUpdate(Entity* entity, float delta_time) {
+static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
     Entity* player = LevelDataGetPlayer(&CurLevel);
     BoundingBox e_bb = GetBoundingBox(entity->position);
     BoundingBox p_bb = GetBoundingBox(player->position);
@@ -181,6 +192,12 @@ static void NPCUpdate(Entity* entity, float delta_time) {
         }
     }
     entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color.a = alpha;
+}
+
+static void EntityUpdate(Entity* entity, float delta_time) {
+    if (EntityTestFlag(entity, EF_TRANSPARENT_ON_COLLISION)) {
+        EntityTransparentOnCollision(entity, delta_time);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -549,6 +566,9 @@ static void LoadLevel(const char* name_original) {
         entity->block_color = color;
         entity->model = GenCubeModel(color);
 
+        EntitySetFlag(entity, EF_TRANSPARENT_ON_COLLISION);
+        breakpoint();
+
         line = strtok(NULL, "\n");
     }
 }
@@ -800,7 +820,7 @@ static void GameUpdate(float delta_time) {
             if (entity == player || entity == goal) {
                 continue;
             }
-            NPCUpdate(entity, delta_time);
+            EntityTransparentOnCollision(entity, delta_time);
         }
 
     } else {
