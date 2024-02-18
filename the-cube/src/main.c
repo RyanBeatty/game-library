@@ -279,7 +279,6 @@ static void EntityLevelSuccessOnCollision(Entity* entity, float delta_time) {
     BoundingBox player_bb = EntityGetBoundingBox(player);
     BoundingBox goal_bb = EntityGetBoundingBox(entity);
     if (CheckCollisionBoxes(player_bb, goal_bb)) {
-        breakpoint();
         CurLevel.finished = true;
     }
 }
@@ -316,45 +315,58 @@ static void EntityHuntPlayer(Entity* entity, float delta_time) {
         Vector3 start = World2Grid(entity->position);
         hmput(parents, start, start);
 
-        Vector3* queue = NULL;
-        arrpush(queue, start);
-        while (arrlenu(queue) != 0) {
-            Vector3* next_queue = NULL;
-            for (uint32_t i = 0; i < arrlenu(queue); ++i) {
-                Vector3 curr = queue[i];
-                if (Vector3Equals(curr, end)) {
-                    goto ret;
-                }
+        Vector3 queue[128];
+        uint32_t head = 0;
+        uint32_t tail = 1;
+        queue[head] = start;
 
-                // Remember, everything in grid coords here so offsets all 1 instead of cube size.
-                Vector3 dirs[4] = {{0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
-                for (uint32_t j = 0; j < 4; ++j) {
-                    Vector3 position = Vector3Add(curr, dirs[j]);
-                    if (hmgeti(parents, position) == -1) {
-                        bool hit = false;
-                        for (uint32_t k = 0; k < LevelDataNumEntities(&CurLevel); ++k) {
-                            Entity* e2 = LevelDataGetEntity(&CurLevel, k);
-                            if (e2 == entity || e2 == player) {
-                                continue;
-                            }
+        // BFS to find next move.
+        for (; head < tail; ++head) {
+            Vector3 curr = queue[head];
+            if (Vector3Equals(curr, end)) {
+                break;
+            }
 
-                            if (Vector3Equals(position, World2Grid(e2->position))) {
-                                hit = true;
-                                break;
-                            }
+            // Remember, everything in grid coords here so offsets all 1 instead of cube size.
+            Vector3 dirs[4] = {{0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
+            for (uint32_t i = 0; i < 4; ++i) {
+                Vector3 child = Vector3Add(curr, dirs[i]);
+                if (hmgeti(parents, child) == -1) {
+                    bool hit = false;
+                    for (uint32_t k = 0; k < LevelDataNumEntities(&CurLevel); ++k) {
+                        Entity* e2 = LevelDataGetEntity(&CurLevel, k);
+                        if (e2 == entity || e2 == player) {
+                            continue;
                         }
 
-                        hmput(parents, position, curr);
-                        if (!hit) {
-                            arrpush(next_queue, position);
+                        if (Vector3Equals(child, World2Grid(e2->position))) {
+                            hit = true;
+                            break;
                         }
+                    }
+
+                    hmput(parents, child, curr);
+                    if (!hit) {
+                        assert(tail < 128);
+                        queue[tail] = child;
+                        ++tail;
                     }
                 }
             }
         }
-    }
 
-ret:
+        ptrdiff_t idx = hmgeti(parents, end);
+        assert(idx != -1);
+        Vector3 next_move = end;
+        Vector3 parent = parents[idx].value;
+        while (!Vector3Equals(parent, start)) {
+            next_move = parent;
+            parent = hmget(parents, next_move);
+        }
+
+        next_move = GridToWorld(next_move);
+        entity->position = next_move;
+    }
 }
 
 static void EntityUpdate(Entity* entity, float delta_time) {
@@ -366,6 +378,9 @@ static void EntityUpdate(Entity* entity, float delta_time) {
     }
     if (EntityTestFlag(entity, EF_PLAYER_CONTROLLED)) {
         EntityPlayerControlled(entity, delta_time);
+    }
+    if (EntityTestFlag(entity, EF_HUNT_PLAYER)) {
+        EntityHuntPlayer(entity, delta_time);
     }
 }
 
@@ -753,10 +768,6 @@ static void LoadLevel(const char* name_original) {
         buffer = UnpackQuaternion(buffer, &entity->orientation);
         buffer = UnpackColor(buffer, &entity->block_color);
         buffer = UnpackFlags(buffer, entity->flags);
-
-        if (entity->block_color.r == BLUE.r && entity->block_color.g == BLUE.g && entity->block_color.b == BLUE.b) {
-            breakpoint();
-        }
 
         // TODO: Make this better. Come up with way to store model info on each entity.
         if (EntityTestFlag(entity, EF_HUNT_PLAYER)) {
