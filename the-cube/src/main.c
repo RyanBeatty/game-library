@@ -231,6 +231,7 @@ static char* GameLevelsPath = "resources/levels";
 typedef struct LevelData {
     char name[256];
     bool finished;
+    bool failed;
     Vector3 start;
     Vector3 goal;
     // stbds array.
@@ -362,6 +363,12 @@ static void EntityHuntPlayer(Entity* entity, float delta_time) {
         while (!Vector3Equals(parent, start)) {
             next_move = parent;
             parent = hmget(parents, next_move);
+        }
+
+        // Reached player, signal level failed.
+        if (Vector3Equals(next_move, end)) {
+            CurLevel.failed = true;
+            return;
         }
 
         next_move = GridToWorld(next_move);
@@ -1022,6 +1029,9 @@ static void GameUpdate(float delta_time) {
 
         // Detect hit goal and then reset the level.
         if (CurLevel.finished) {
+            LoadLevel(CurLevel.name);
+        }
+        if (CurLevel.failed) {
             LoadLevel(CurLevel.name);
         }
 
