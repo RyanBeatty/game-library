@@ -366,6 +366,9 @@ static void EntityHuntPlayer(Entity* entity, float delta_time) {
         }
 
         // Reached player, signal level failed.
+        // TOOD: Bug here. If player and hunter try to move to same square, player will not because of the way we
+        // interpolate its position during movement. Need to figure this out in a way that doesn't mess with the
+        // animation.
         if (Vector3Equals(next_move, end)) {
             CurLevel.failed = true;
             return;
