@@ -22,7 +22,7 @@ static void PrintMatrix(Matrix m) {
     printf("\n");
 }
 
-#define ORIGIN ((Vector3){CubeSideLength / 2.0f, CubeSideLength / 2.0f, CubeSideLength / 2.0f})
+#define ORIGIN ((Vector3){0, 0, 0})
 
 typedef enum EntityFlag {
     EF_NONE = 0,
