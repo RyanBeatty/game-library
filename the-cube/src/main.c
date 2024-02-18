@@ -24,6 +24,20 @@ static void PrintMatrix(Matrix m) {
 
 #define ORIGIN ((Vector3){0, 0, 0})
 
+static Vector3 World2Grid(Vector3 position) {
+    position.x = floorf(position.x / CubeSideLength);
+    position.y = floorf(position.y / CubeSideLength);
+    position.z = floorf(position.z / CubeSideLength);
+    return position;
+}
+
+static Vector3 GridToWorld(Vector3 position) {
+    position.x *= CubeSideLength;
+    position.y *= CubeSideLength;
+    position.z *= CubeSideLength;
+    return position;
+}
+
 typedef enum EntityFlag {
     EF_NONE = 0,
     EF_TRANSPARENT_ON_COLLISION,
@@ -291,57 +305,57 @@ static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
 static void EntityPlayerControlled(Entity* entity, float delta_time);
 
 // TODO: Fully implement this once I shift grid to be on
-// static void EntityHuntPlayer(Entity* entity, float delta_time) {
-//     struct {
-//         Vector3 key;
-//         Vector3 value;
-//     }* parents = NULL;
-//     Entity* player = LevelDataGetPlayer(&CurLevel);
-//     BoundingBox end_bb = EntityGetBoundingBox(player);
-//     Vector3 start = entity->position;
-//     hmput(parents, start, start);
+static void EntityHuntPlayer(Entity* entity, float delta_time) {
+    if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN)) {
+        struct {
+            Vector3 key;
+            Vector3 value;
+        }* parents = NULL;
+        Entity* player = LevelDataGetPlayer(&CurLevel);
+        Vector3 end = World2Grid(player->position);
+        Vector3 start = World2Grid(entity->position);
+        hmput(parents, start, start);
 
-//     Vector3* queue = NULL;
-//     arrpush(queue, start);
-//     while (arrlenu(queue) != 0) {
-//         Vector3* next_queue = NULL;
-//         for (uint32_t i = 0; i < arrlenu(queue); ++i) {
-//             Vector3 curr = queue[i];
-//             BoundingBox bb = GetBoundingBox(curr);
-//             if (CheckCollisionBoxes(bb, end_bb)) {
-//                 goto ret;
-//             }
+        Vector3* queue = NULL;
+        arrpush(queue, start);
+        while (arrlenu(queue) != 0) {
+            Vector3* next_queue = NULL;
+            for (uint32_t i = 0; i < arrlenu(queue); ++i) {
+                Vector3 curr = queue[i];
+                if (Vector3Equals(curr, end)) {
+                    goto ret;
+                }
 
-//             Vector3 dirs[4] = {
-//                 {0, 0, -CubeSideLength}, {0, 0, CubeSideLength}, {-CubeSideLength, 0, 0}, {CubeSideLength, 0, 0}};
-//             for (uint32_t j = 0; j < 4; ++j) {
-//                 Vector3 position = Vector3Add(curr, dirs[j]);
-//                 if (hmgeti(parents, position) == -1) {
-//                     bb = GetBoundingBox(position);
-//                     bool hit = false;
-//                     for (uint32_t k = 0; k < LevelDataNumEntities(&CurLevel); ++k) {
-//                         Entity* e2 = LevelDataGetEntity(&CurLevel, k);
-//                         if (e2 == entity || e2 == player) {
-//                             continue;
-//                         }
+                // Remember, everything in grid coords here so offsets all 1 instead of cube size.
+                Vector3 dirs[4] = {{0, 0, -1}, {0, 0, 1}, {-1, 0, 0}, {1, 0, 0}};
+                for (uint32_t j = 0; j < 4; ++j) {
+                    Vector3 position = Vector3Add(curr, dirs[j]);
+                    if (hmgeti(parents, position) == -1) {
+                        bool hit = false;
+                        for (uint32_t k = 0; k < LevelDataNumEntities(&CurLevel); ++k) {
+                            Entity* e2 = LevelDataGetEntity(&CurLevel, k);
+                            if (e2 == entity || e2 == player) {
+                                continue;
+                            }
 
-//                         if (CheckCollisionBoxes(bb, EntityGetBoundingBox(e2))) {
-//                             hit = true;
-//                             break;
-//                         }
-//                     }
+                            if (Vector3Equals(position, World2Grid(e2->position))) {
+                                hit = true;
+                                break;
+                            }
+                        }
 
-//                     if (!hit) {
-//                         hmput(parents, position, curr);
-//                         arrpush(next_queue, position);
-//                     }
-//                 }
-//             }
-//         }
-//     }
+                        hmput(parents, position, curr);
+                        if (!hit) {
+                            arrpush(next_queue, position);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-// ret:
-// }
+ret:
+}
 
 static void EntityUpdate(Entity* entity, float delta_time) {
     if (EntityTestFlag(entity, EF_TRANSPARENT_ON_COLLISION)) {
