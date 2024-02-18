@@ -22,6 +22,8 @@ static void PrintMatrix(Matrix m) {
     printf("\n");
 }
 
+#define ORIGIN ((Vector3){CubeSideLength / 2.0f, CubeSideLength / 2.0f, CubeSideLength / 2.0f})
+
 typedef enum EntityFlag {
     EF_NONE = 0,
     EF_TRANSPARENT_ON_COLLISION,
@@ -287,6 +289,59 @@ static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
 }
 
 static void EntityPlayerControlled(Entity* entity, float delta_time);
+
+// TODO: Fully implement this once I shift grid to be on
+// static void EntityHuntPlayer(Entity* entity, float delta_time) {
+//     struct {
+//         Vector3 key;
+//         Vector3 value;
+//     }* parents = NULL;
+//     Entity* player = LevelDataGetPlayer(&CurLevel);
+//     BoundingBox end_bb = EntityGetBoundingBox(player);
+//     Vector3 start = entity->position;
+//     hmput(parents, start, start);
+
+//     Vector3* queue = NULL;
+//     arrpush(queue, start);
+//     while (arrlenu(queue) != 0) {
+//         Vector3* next_queue = NULL;
+//         for (uint32_t i = 0; i < arrlenu(queue); ++i) {
+//             Vector3 curr = queue[i];
+//             BoundingBox bb = GetBoundingBox(curr);
+//             if (CheckCollisionBoxes(bb, end_bb)) {
+//                 goto ret;
+//             }
+
+//             Vector3 dirs[4] = {
+//                 {0, 0, -CubeSideLength}, {0, 0, CubeSideLength}, {-CubeSideLength, 0, 0}, {CubeSideLength, 0, 0}};
+//             for (uint32_t j = 0; j < 4; ++j) {
+//                 Vector3 position = Vector3Add(curr, dirs[j]);
+//                 if (hmgeti(parents, position) == -1) {
+//                     bb = GetBoundingBox(position);
+//                     bool hit = false;
+//                     for (uint32_t k = 0; k < LevelDataNumEntities(&CurLevel); ++k) {
+//                         Entity* e2 = LevelDataGetEntity(&CurLevel, k);
+//                         if (e2 == entity || e2 == player) {
+//                             continue;
+//                         }
+
+//                         if (CheckCollisionBoxes(bb, EntityGetBoundingBox(e2))) {
+//                             hit = true;
+//                             break;
+//                         }
+//                     }
+
+//                     if (!hit) {
+//                         hmput(parents, position, curr);
+//                         arrpush(next_queue, position);
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+// ret:
+// }
 
 static void EntityUpdate(Entity* entity, float delta_time) {
     if (EntityTestFlag(entity, EF_TRANSPARENT_ON_COLLISION)) {
@@ -756,7 +811,7 @@ static void EditorUpdate(Editor* editor) {
                 Entity* focus = CreateLevelDataEntity(&CurLevel);
                 focus->model = GenCubeModel(GRAY);
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
-                focus->position = (Vector3){CubeSideLength / 2, CubeSideLength / 2, CubeSideLength / 2};
+                focus->position = ORIGIN;
                 editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
                 color_idx = 0;
