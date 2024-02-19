@@ -319,12 +319,13 @@ static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
 
 // TODO: Fully implement this once I shift grid to be on
 static void EntityHuntPlayer(Entity* entity, float delta_time) {
+    Entity* player = LevelDataGetPlayer(&CurLevel);
+
     if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN)) {
         struct {
             Vector3 key;
             Vector3 value;
         }* parents = NULL;
-        Entity* player = LevelDataGetPlayer(&CurLevel);
         Vector3 end = World2Grid(player->position);
         Vector3 start = World2Grid(entity->position);
         hmput(parents, start, start);
@@ -389,6 +390,14 @@ static void EntityHuntPlayer(Entity* entity, float delta_time) {
 
         next_move = GridToWorld(next_move);
         entity->position = next_move;
+    }
+
+    // TODO: Maybe improve this. Should think about centrallizing collision response since I want to respond differently
+    // depending on what entity types are colliding. Its a bit hard otherwise to deal with this logic since I have to
+    // spread the collision response logic across multiple update functions. Having the logic be spread in update
+    // functions can be convenient though.
+    if (Vector3Equals(World2Grid(entity->position), World2Grid(player->position))) {
+        CurLevel.failed = true;
     }
 }
 
@@ -508,30 +517,6 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
             break;
         }
         case PS_WALKING: {
-            Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
-
-            Entity* goal = LevelDataGetGoal(&CurLevel);
-            BoundingBox player_bb = GetBoundingBox(EndPosition);
-
-            for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-                Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
-                if (entity2 == entity || entity2 == goal) {
-                    continue;
-                }
-
-                Color e2_color = entity2->block_color;
-                BoundingBox e2_bb = GetBoundingBox(entity2->position);
-                if (CheckCollisionBoxes(player_bb, e2_bb) && (top_color.r != e2_color.r || top_color.g != e2_color.g ||
-                                                              top_color.b != e2_color.b || top_color.a != e2_color.a)) {
-                    entity->player_state = PS_IDLE;
-                }
-            }
-
-            // We hit something, stop walking.
-            if (entity->player_state != PS_WALKING) {
-                break;
-            }
-
             T += delta_time;
             float t = T / 0.15;
             if (t >= 1.0f) {
@@ -541,6 +526,29 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
             } else {
                 entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
                 entity->position = Vector3Lerp(StartPosition, EndPosition, t);
+            }
+
+            Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
+
+            Entity* goal = LevelDataGetGoal(&CurLevel);
+            BoundingBox player_bb = GetBoundingBox(entity->position);
+
+            for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+                Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
+                if (entity2 == entity || entity2 == goal) {
+                    continue;
+                }
+
+                Color e2_color = entity2->block_color;
+                BoundingBox e2_bb = GetBoundingBox(entity2->position);
+                if (CheckCollisionBoxes(player_bb, e2_bb) &&
+                    (top_color.r != e2_color.r || top_color.g != e2_color.g || top_color.b != e2_color.b ||
+                     top_color.a != e2_color.a) &&
+                    !EntityTestFlag(entity2, EF_HUNT_PLAYER)) {
+                    entity->player_state = PS_IDLE;
+                    entity->position = StartPosition;
+                    entity->orientation = StartOrientation;
+                }
             }
 
             break;
@@ -1034,7 +1042,7 @@ static void GameUpdate(float delta_time) {
             if (IsKeyPressed(KEY_ENTER)) {
                 LoadLevel(CurLevel.name);
             }
-        } else if (CurLevel.finished) {
+        } else if (CurLevel.failed) {
             if (IsKeyPressed(KEY_ENTER)) {
                 LoadLevel(CurLevel.name);
             }
@@ -1076,7 +1084,7 @@ static void GameDraw(float delta_time) {
         char text[256] = {0};
         sprintf(text, "Level Completed! Press Enter to Replay");
         DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
-    } else if (CurLevel.finished) {
+    } else if (CurLevel.failed) {
         char text[256] = {0};
         sprintf(text, "Level Failed! Press Enter to Replay");
         DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
