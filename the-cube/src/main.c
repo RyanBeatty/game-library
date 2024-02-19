@@ -1034,14 +1034,15 @@ static void GameUpdate(float delta_time) {
             if (IsKeyPressed(KEY_ENTER)) {
                 LoadLevel(CurLevel.name);
             }
+        } else if (CurLevel.finished) {
+            if (IsKeyPressed(KEY_ENTER)) {
+                LoadLevel(CurLevel.name);
+            }
         } else {
             for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
                 Entity* entity = LevelDataGetEntity(&CurLevel, i);
                 EntityUpdate(entity, delta_time);
             }
-        }
-        if (CurLevel.failed) {
-            LoadLevel(CurLevel.name);
         }
 
     } else {
@@ -1074,6 +1075,10 @@ static void GameDraw(float delta_time) {
     if (CurLevel.finished) {
         char text[256] = {0};
         sprintf(text, "Level Completed! Press Enter to Replay");
+        DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
+    } else if (CurLevel.finished) {
+        char text[256] = {0};
+        sprintf(text, "Level Failed! Press Enter to Replay");
         DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
     }
 
