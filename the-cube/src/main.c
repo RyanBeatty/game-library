@@ -6,6 +6,13 @@
 #include "raymath.h"
 #include "rlgl.h"
 
+/////////////////////////////////////////////////////////////////////////////
+// Forward Decls.
+typedef struct Entity Entity;
+static void EntityPlayerControlled(Entity* entity, float delta_time);
+
+/////////////////////////////////////////////////////////////////////////////
+
 const int ScreenWidth = 800;
 const int ScreenHeight = 450;
 
@@ -38,6 +45,13 @@ static Vector3 GridToWorld(Vector3 position) {
     return position;
 }
 
+typedef enum PlayerState {
+    PS_IDLE = 0,
+    PS_WALKING,
+
+    PS_COUNT
+} PlayerState;
+
 typedef enum EntityFlag {
     EF_NONE = 0,
     EF_TRANSPARENT_ON_COLLISION,
@@ -57,6 +71,7 @@ typedef struct Entity {
     uint8_t flags[FLAGS_LEN];
 
     Color block_color;  // Only used for non player entities.
+    PlayerState player_state;
 
     Model model;
 } Entity;
@@ -302,8 +317,6 @@ static void EntityTransparentOnCollision(Entity* entity, float delta_time) {
     entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color.a = alpha;
 }
 
-static void EntityPlayerControlled(Entity* entity, float delta_time);
-
 // TODO: Fully implement this once I shift grid to be on
 static void EntityHuntPlayer(Entity* entity, float delta_time) {
     if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN)) {
@@ -395,13 +408,6 @@ static void EntityUpdate(Entity* entity, float delta_time) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-typedef enum PlayerState {
-    PS_IDLE = 0,
-    PS_WALKING,
-
-    PS_COUNT
-} PlayerState;
-
 static Color Colors[7] = {GRAY, RED, BLUE, GREEN, YELLOW, PINK, ORANGE};
 static Color FaceColors[6] = {RED, BLUE, GREEN, YELLOW, PINK, ORANGE};
 
@@ -454,17 +460,16 @@ static void PlayerInit(Entity* player, Vector3 position) {
 }
 
 static void EntityPlayerControlled(Entity* entity, float delta_time) {
-    static PlayerState State = PS_IDLE;
     static float T = 0;
     static Quaternion StartOrientation;
     static Quaternion EndOrientation;
     static Vector3 StartPosition;
     static Vector3 EndPosition;
 
-    switch (State) {
+    switch (entity->player_state) {
         case PS_IDLE: {
             if (IsKeyPressed(KEY_UP)) {
-                State = PS_WALKING;
+                entity->player_state = PS_WALKING;
                 T = 0;
                 StartOrientation = entity->orientation;
                 StartPosition = entity->position;
@@ -473,7 +478,7 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
                 EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
             }
             if (IsKeyPressed(KEY_RIGHT)) {
-                State = PS_WALKING;
+                entity->player_state = PS_WALKING;
                 T = 0;
                 StartOrientation = entity->orientation;
                 StartPosition = entity->position;
@@ -482,7 +487,7 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
                 EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
             }
             if (IsKeyPressed(KEY_DOWN)) {
-                State = PS_WALKING;
+                entity->player_state = PS_WALKING;
                 T = 0;
                 StartOrientation = entity->orientation;
                 StartPosition = entity->position;
@@ -491,7 +496,7 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
                 EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
             }
             if (IsKeyPressed(KEY_LEFT)) {
-                State = PS_WALKING;
+                entity->player_state = PS_WALKING;
                 T = 0;
                 StartOrientation = entity->orientation;
                 StartPosition = entity->position;
@@ -518,19 +523,19 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
                 BoundingBox e2_bb = GetBoundingBox(entity2->position);
                 if (CheckCollisionBoxes(player_bb, e2_bb) && (top_color.r != e2_color.r || top_color.g != e2_color.g ||
                                                               top_color.b != e2_color.b || top_color.a != e2_color.a)) {
-                    State = PS_IDLE;
+                    entity->player_state = PS_IDLE;
                 }
             }
 
             // We hit something, stop walking.
-            if (State != PS_WALKING) {
+            if (entity->player_state != PS_WALKING) {
                 break;
             }
 
             T += delta_time;
             float t = T / 0.15;
             if (t >= 1.0f) {
-                State = PS_IDLE;
+                entity->player_state = PS_IDLE;
                 entity->orientation = EndOrientation;
                 entity->position = EndPosition;
             } else {
@@ -1025,14 +1030,15 @@ static void GameUpdate(float delta_time) {
     }
 
     if (!EditorEnabled) {
-        for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-            Entity* entity = LevelDataGetEntity(&CurLevel, i);
-            EntityUpdate(entity, delta_time);
-        }
-
-        // Detect hit goal and then reset the level.
         if (CurLevel.finished) {
-            LoadLevel(CurLevel.name);
+            if (IsKeyPressed(KEY_ENTER)) {
+                LoadLevel(CurLevel.name);
+            }
+        } else {
+            for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+                Entity* entity = LevelDataGetEntity(&CurLevel, i);
+                EntityUpdate(entity, delta_time);
+            }
         }
         if (CurLevel.failed) {
             LoadLevel(CurLevel.name);
@@ -1053,6 +1059,7 @@ static void GameDraw(float delta_time) {
     ClearBackground(RAYWHITE);
 
     BeginDrawing();
+
     BeginMode3D(GameCamera);
 
     Vector3 position = {0};
@@ -1063,6 +1070,12 @@ static void GameDraw(float delta_time) {
 
     EndMode3D();
     EditorDraw(&GameEditor, delta_time);
+
+    if (CurLevel.finished) {
+        char text[256] = {0};
+        sprintf(text, "Level Completed! Press Enter to Replay");
+        DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
+    }
 
     EndDrawing();
 }
