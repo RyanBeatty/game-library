@@ -29,10 +29,17 @@ void __attribute__((noinline)) breakpoint() {}
 ///////////////////////////////////////////////
 // Project files below
 
+//
 #include "entity.c"
+//
 #include "level.c"
+//
 #include "npc.c"
+//
 #include "player.c"
+//
 #include "serde.c"
+//
+#include "editor.c"
 // don't reorder
 #include "main.c"
