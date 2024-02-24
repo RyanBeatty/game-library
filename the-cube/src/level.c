@@ -19,6 +19,7 @@ typedef struct LevelData {
 } LevelData;
 
 static LevelData CurLevel = {0};
+#define GetCurLevel() (&CurLevel)
 
 static Entity* LevelDataCreateEntity(LevelData* level_data) {
     Entity* entity = arraddnptr(level_data->entities, 1);

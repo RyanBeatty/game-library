@@ -47,7 +47,7 @@ static void EditorDisable() {
     EnableGameUpdate();
 }
 
-static Entity* EditorGetFocus(Editor* editor) { return &CurLevel.entities[editor->focus_idx]; }
+static Entity* EditorGetFocus(Editor* editor) { return LevelDataGetEntity(GetCurLevel(), editor->focus_idx); }
 
 static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
 
@@ -58,7 +58,7 @@ static void EditorUpdate(Editor* editor) {
     switch (editor->state) {
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
-                Entity* focus = CreateLevelDataEntity(&CurLevel);
+                Entity* focus = CreateLevelDataEntity(GetCurLevel());
                 focus->model = GenCubeModel(GRAY);
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
                 focus->position = ORIGIN;
@@ -68,7 +68,7 @@ static void EditorUpdate(Editor* editor) {
             } else if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
                 if (IsKeyDown(KEY_LEFT_SHIFT)) {
                     if (IsKeyPressed(KEY_S)) {
-                        LevelSetStart(&CurLevel);
+                        LevelSetStart(GetCurLevel());
                     }
                 } else if (IsKeyPressed(KEY_S)) {
                     editor->state = ES_SAVING;
@@ -108,7 +108,7 @@ static void EditorUpdate(Editor* editor) {
         }
         case ES_SAVING: {
             if (IsKeyPressed(KEY_ENTER)) {
-                SaveLevel(&CurLevel);
+                SaveLevel(GetCurLevel());
                 editor->state = ES_IDLE;
             } else if (IsKeyPressed(KEY_BACKSPACE)) {
                 uint32_t len = strlen(CurLevel.name);
@@ -164,7 +164,7 @@ static void EditorUpdate(Editor* editor) {
                 } else if (IsKeyPressed(KEY_DOWN)) {
                     dir = -1;
                 }
-                editor->focus_idx = (editor->focus_idx + dir) % LevelDataNumEntities(&CurLevel);
+                editor->focus_idx = (editor->focus_idx + dir) % LevelDataNumEntities(GetCurLevel());
 
                 entity = EditorGetFocus(editor);
                 entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(entity->block_color);
