@@ -217,4 +217,6 @@ static void EditorDraw(Editor* editor, float delta_time) {
             break;
         }
     }
+
+    nk_clear(&GameEditor.nuklear_context);
 }

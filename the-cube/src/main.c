@@ -46,27 +46,25 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
-    if (GameUpdateEnabled) {
-        if (CurLevel.finished) {
-            if (IsKeyPressed(KEY_ENTER)) {
-                LoadLevel(CurLevel.name);
-            }
-        } else if (CurLevel.failed) {
-            if (IsKeyPressed(KEY_ENTER)) {
-                LoadLevel(CurLevel.name);
-            }
-        } else {
-            for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-                Entity* entity = LevelDataGetEntity(&CurLevel, i);
-                EntityUpdate(entity, delta_time);
-            }
+    if (CurLevel.finished) {
+        if (IsKeyPressed(KEY_ENTER)) {
+            LoadLevel(CurLevel.name);
         }
-
-        // Ensure we do this after all above updates so that the transforms reflect updated entity info.
+    } else if (CurLevel.failed) {
+        if (IsKeyPressed(KEY_ENTER)) {
+            LoadLevel(CurLevel.name);
+        }
+    } else {
         for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
             Entity* entity = LevelDataGetEntity(&CurLevel, i);
-            EntityUpdateTransform(entity);
+            EntityUpdate(entity, delta_time);
         }
+    }
+
+    // Ensure we do this after all above updates so that the transforms reflect updated entity info.
+    for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+        Entity* entity = LevelDataGetEntity(&CurLevel, i);
+        EntityUpdateTransform(entity);
     }
 }
 
@@ -111,7 +109,9 @@ int main(void) {
             EditorUpdate(&GameEditor);
         }
 
-        GameUpdate(delta_time);
+        if (GameUpdateEnabled) {
+            GameUpdate(delta_time);
+        }
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
