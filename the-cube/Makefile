@@ -3,7 +3,7 @@ TARGET_EXEC := main
 
 BUILD_DIR := ./build
 SRC_DIRS := ./src
-LIB_DIR := ./libs
+LIB_DIR := ./external
 
 LIBS := ""
 LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
@@ -24,6 +24,8 @@ DEPS := $(OBJS:.o=.d)
 
 # Every folder in ./src will need to be passed to GCC so that it can find header files
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
+# Include external libs.
+INC_DIRS := $(INC_DIRS) $(shell find $(LIB_DIR) -maxdepth 1 -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
@@ -31,7 +33,7 @@ INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 # These files will have .d instead of .o as the output.
 CPPFLAGS := $(INC_FLAGS) -MMD -MP -g3 -Wall
 
-BTFLAGS := -D BT_INTERNAL=1 -DBT_SLOW=1 -DPLATFORM_DESKTOP=1
+BTFLAGS := -D BT_INTERNAL=1 -DBT_SLOW=1 -DPLATFORM_DESKTOP=1 -DUNITY_BUILD=1
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)

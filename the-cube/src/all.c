@@ -8,6 +8,14 @@
 #include "stb_ds.h"
 // Comment to prevent autolinting
 
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "raylib.h"
+#include "raymath.h"
+#include "rlgl.h"
+
 #define Assert(expr)        \
     {                       \
         if (!(expr)) {      \
@@ -20,4 +28,6 @@ void __attribute__((noinline)) breakpoint() {}
 
 ///////////////////////////////////////////////
 // Project files below
+
+#include "entity.c"
 #include "main.c"

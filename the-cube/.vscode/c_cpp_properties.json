@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "the-cube",
+            "defines": [
+                "UNITY_BUILD"
+            ],
+            "compilerPath": "cc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/path/to/your/include/folder"
+            ]
+        }
+    ],
+    "version": 4
+}
