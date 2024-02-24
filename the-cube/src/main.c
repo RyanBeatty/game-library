@@ -40,16 +40,14 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
-    static bool editor_just_toggled = false;
-    if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_E) && !editor_just_toggled) {
-        editor_just_toggled = true;
-        if (!EditorEnabled) {
-            EditorEnable();
-        } else {
-            EditorDisable();
+    if (IsKeyDown(KEY_LEFT_CONTROL)) {
+        if (IsKeyPressed(KEY_E)) {
+            if (!EditorEnabled) {
+                EditorEnable();
+            } else {
+                EditorDisable();
+            }
         }
-    } else if (!(IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_E))) {
-        editor_just_toggled = false;
     }
 
     if (!EditorEnabled) {
