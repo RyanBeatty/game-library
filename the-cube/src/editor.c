@@ -7,6 +7,12 @@
 
 #endif
 
+//////////////////////////////////////////////////////////////////////
+// Forward decls
+static void EnableGameUpdate();
+static void DisableGameUpdate();
+//////////////////////////////////////////////////////////////////////
+
 typedef enum EditorState {
     ES_IDLE = 0,
     ES_EDITING,
@@ -33,11 +39,13 @@ static bool EditorEnabled = false;
 static void EditorEnable() {
     EditorEnabled = true;
     GameEditor = (Editor){0};
+    DisableGameUpdate();
 }
 
 static void EditorDisable() {
     EditorEnabled = false;
     GameEditor = (Editor){0};
+    EnableGameUpdate();
 }
 
 static Entity* EditorGetFocus(Editor* editor) { return &CurLevel.entities[editor->focus_idx]; }

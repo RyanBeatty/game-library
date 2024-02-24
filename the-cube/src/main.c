@@ -16,6 +16,12 @@
 #include "editor.c"
 #endif
 
+bool GameUpdateEnabled = true;
+
+static void EnableGameUpdate() { GameUpdateEnabled = true; }
+
+static void DisableGameUpdate() { GameUpdateEnabled = false; }
+
 /////////////////////////////////////////////////////////////////////////////////////
 static Camera3D GameCamera;
 
@@ -40,21 +46,7 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
-    if (IsKeyDown(KEY_LEFT_CONTROL)) {
-        if (IsKeyPressed(KEY_E)) {
-            if (!IsEditorEnabled()) {
-                EditorEnable();
-            } else {
-                EditorDisable();
-            }
-        }
-    }
-
-    if (IsEditorEnabled()) {
-        EditorUpdate(&GameEditor);
-    }
-
-    if (!IsEditorEnabled()) {
+    if (GameUpdateEnabled) {
         if (CurLevel.finished) {
             if (IsKeyPressed(KEY_ENTER)) {
                 LoadLevel(CurLevel.name);
@@ -69,12 +61,12 @@ static void GameUpdate(float delta_time) {
                 EntityUpdate(entity, delta_time);
             }
         }
-    }
 
-    // Ensure we do this after all above updates so that the transforms reflect updated entity info.
-    for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-        Entity* entity = LevelDataGetEntity(&CurLevel, i);
-        EntityUpdateTransform(entity);
+        // Ensure we do this after all above updates so that the transforms reflect updated entity info.
+        for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+            Entity* entity = LevelDataGetEntity(&CurLevel, i);
+            EntityUpdateTransform(entity);
+        }
     }
 }
 
@@ -112,6 +104,20 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
+        if (IsKeyDown(KEY_LEFT_CONTROL)) {
+            if (IsKeyPressed(KEY_E)) {
+                if (!IsEditorEnabled()) {
+                    EditorEnable();
+                } else {
+                    EditorDisable();
+                }
+            }
+        }
+
+        if (IsEditorEnabled()) {
+            EditorUpdate(&GameEditor);
+        }
+
         GameUpdate(delta_time);
         GameDraw(delta_time);
     }
