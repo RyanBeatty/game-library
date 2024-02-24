@@ -71,10 +71,6 @@ static void GameUpdate(float delta_time) {
 }
 
 static void GameDraw(float delta_time) {
-    ClearBackground(RAYWHITE);
-
-    BeginDrawing();
-
     BeginMode3D(GameCamera);
 
     Vector3 position = {0};
@@ -84,7 +80,6 @@ static void GameDraw(float delta_time) {
     }
 
     EndMode3D();
-    EditorDraw(&GameEditor, delta_time);
 
     if (CurLevel.finished) {
         char text[256] = {0};
@@ -95,8 +90,6 @@ static void GameDraw(float delta_time) {
         sprintf(text, "Level Failed! Press Enter to Replay");
         DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
     }
-
-    EndDrawing();
 }
 
 int main(void) {
@@ -119,7 +112,16 @@ int main(void) {
         }
 
         GameUpdate(delta_time);
+
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
         GameDraw(delta_time);
+
+        if (IsEditorEnabled()) {
+            EditorDraw(&GameEditor, delta_time);
+        }
+        EndDrawing();
     }
 
     CloseWindow();

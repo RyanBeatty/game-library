@@ -79,6 +79,7 @@ static void EditorUpdate(Editor* editor) {
                     editor->state = ES_SELECT_FOCUS;
                 }
             }
+            break;
         }
         case ES_EDITING: {
             Entity* focus = EditorGetFocus(editor);
@@ -181,32 +182,30 @@ static void EditorDraw(Editor* editor, float delta_time) {
     static bool show_cursor = true;
     static float show_cursor_cooldown = 0.0f;
 
-    if (EditorEnabled) {
-        show_cursor_cooldown += delta_time;
-        if (show_cursor_cooldown >= 0.650f) {
-            show_cursor = !show_cursor;
-            show_cursor_cooldown = 0.0f;
+    show_cursor_cooldown += delta_time;
+    if (show_cursor_cooldown >= 0.650f) {
+        show_cursor = !show_cursor;
+        show_cursor_cooldown = 0.0f;
+    }
+
+    // Not in Mode3D. All coords are screen space.
+    DrawFPS(10, 10);
+    DrawText("Editor Enabled", 100, 10, 20, BLACK);
+
+    switch (editor->state) {
+        case ES_SAVING: {
+            char text[1024] = {0};
+            sprintf(text, "Save level as: %s%c", CurLevel.name, show_cursor ? '|' : '\0');
+            DrawText(text, 200, 40, 20, BLACK);
+            break;
         }
-
-        // Not in Mode3D. All coords are screen space.
-        DrawFPS(10, 10);
-        DrawText("Editor Enabled", 100, 10, 20, BLACK);
-
-        switch (editor->state) {
-            case ES_SAVING: {
-                char text[1024] = {0};
-                sprintf(text, "Save level as: %s%c", CurLevel.name, show_cursor ? '|' : '\0');
-                DrawText(text, 200, 40, 20, BLACK);
-                break;
-            }
-            case ES_LOADING: {
-                char text[1024] = {0};
-                sprintf(text, "Load level: %s%c", editor->load_level_filename, show_cursor ? '|' : '\0');
-                DrawText(text, 200, 40, 20, BLACK);
-            }
-            default: {
-                break;
-            }
+        case ES_LOADING: {
+            char text[1024] = {0};
+            sprintf(text, "Load level: %s%c", editor->load_level_filename, show_cursor ? '|' : '\0');
+            DrawText(text, 200, 40, 20, BLACK);
+        }
+        default: {
+            break;
         }
     }
 }
