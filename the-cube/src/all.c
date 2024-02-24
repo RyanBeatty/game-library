@@ -30,4 +30,5 @@ void __attribute__((noinline)) breakpoint() {}
 // Project files below
 
 #include "entity.c"
+#include "level.c"
 #include "main.c"
