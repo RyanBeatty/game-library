@@ -7,11 +7,16 @@
 
 #endif
 
+#define NK_IMPLEMENTATION
+#include "nuklear.h"
+
 //////////////////////////////////////////////////////////////////////
 // Forward decls
 static void EnableGameUpdate();
 static void DisableGameUpdate();
 //////////////////////////////////////////////////////////////////////
+
+typedef struct nk_context NuklearCtx;
 
 typedef enum EditorState {
     ES_IDLE = 0,
@@ -28,6 +33,7 @@ typedef struct Editor {
     // Index to entity we are focused on.
     uint32_t focus_idx;
     char load_level_filename[256];
+    NuklearCtx nuklear_context;
 } Editor;
 
 static Editor GameEditor = {0};
@@ -38,6 +44,8 @@ static bool EditorEnabled = false;
 static void EditorEnable() {
     EditorEnabled = true;
     GameEditor = (Editor){0};
+    int res = nk_init_default(&GameEditor.nuklear_context, NULL);
+    assert(res);
     DisableGameUpdate();
 }
 
@@ -45,6 +53,7 @@ static void EditorDisable() {
     EditorEnabled = false;
     GameEditor = (Editor){0};
     EnableGameUpdate();
+    nk_free(&GameEditor.nuklear_context);
 }
 
 static Entity* EditorGetFocus(Editor* editor) { return LevelDataGetEntity(GetCurLevel(), editor->focus_idx); }
