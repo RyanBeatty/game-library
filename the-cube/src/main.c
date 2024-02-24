@@ -42,7 +42,7 @@ static void GameInit() {
 static void GameUpdate(float delta_time) {
     if (IsKeyDown(KEY_LEFT_CONTROL)) {
         if (IsKeyPressed(KEY_E)) {
-            if (!EditorEnabled) {
+            if (!IsEditorEnabled()) {
                 EditorEnable();
             } else {
                 EditorDisable();
@@ -50,11 +50,11 @@ static void GameUpdate(float delta_time) {
         }
     }
 
-    if (EditorEnabled) {
+    if (IsEditorEnabled()) {
         EditorUpdate(&GameEditor);
     }
 
-    if (!EditorEnabled) {
+    if (!IsEditorEnabled()) {
         if (CurLevel.finished) {
             if (IsKeyPressed(KEY_ENTER)) {
                 LoadLevel(CurLevel.name);

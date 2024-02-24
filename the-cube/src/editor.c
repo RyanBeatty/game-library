@@ -28,6 +28,7 @@ typedef struct Editor {
 static Editor GameEditor = {0};
 // Yuck -- figure out something better later.
 static bool EditorEnabled = false;
+#define IsEditorEnabled() (EditorEnabled)
 
 static void EditorEnable() {
     EditorEnabled = true;
