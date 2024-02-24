@@ -50,6 +50,10 @@ static void GameUpdate(float delta_time) {
         }
     }
 
+    if (EditorEnabled) {
+        EditorUpdate(&GameEditor);
+    }
+
     if (!EditorEnabled) {
         if (CurLevel.finished) {
             if (IsKeyPressed(KEY_ENTER)) {
@@ -65,9 +69,6 @@ static void GameUpdate(float delta_time) {
                 EntityUpdate(entity, delta_time);
             }
         }
-
-    } else {
-        EditorUpdate(&GameEditor);
     }
 
     // Ensure we do this after all above updates so that the transforms reflect updated entity info.
