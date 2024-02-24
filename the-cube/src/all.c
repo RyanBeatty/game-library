@@ -31,4 +31,8 @@ void __attribute__((noinline)) breakpoint() {}
 
 #include "entity.c"
 #include "level.c"
+#include "npc.c"
+#include "player.c"
+#include "serde.c"
+// don't reorder
 #include "main.c"
