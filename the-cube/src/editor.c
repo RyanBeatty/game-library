@@ -27,7 +27,6 @@ typedef struct Editor {
     EditorState state;
     // Index to entity we are focused on.
     uint32_t focus_idx;
-    bool control_key_unpressed;
     char load_level_filename[256];
 } Editor;
 
@@ -54,14 +53,7 @@ static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g,
 
 static void EditorUpdate(Editor* editor) {
     static uint32_t color_idx = 0;
-
     assert(EditorEnabled);
-
-    // TODO: Figure out something better here. I can't control-e to toggle editor and control-s to save without lifting
-    // off control key.
-    if (!IsKeyDown(KEY_LEFT_CONTROL)) {
-        editor->control_key_unpressed = true;
-    }
 
     switch (editor->state) {
         case ES_IDLE: {
@@ -73,23 +65,20 @@ static void EditorUpdate(Editor* editor) {
                 editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
                 color_idx = 0;
-            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_LEFT_SHIFT) && IsKeyDown(KEY_S) &&
-                       editor->control_key_unpressed) {
-                // TOOD: Add text fade to screen.
-                editor->control_key_unpressed = false;
-                LevelSetStart(&CurLevel);
-            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_S) && editor->control_key_unpressed) {
-                editor->control_key_unpressed = false;
-                editor->state = ES_SAVING;
-            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_L) && editor->control_key_unpressed) {
-                editor->control_key_unpressed = false;
-                editor->state = ES_LOADING;
-            } else if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyDown(KEY_F) && editor->control_key_unpressed) {
-                editor->control_key_unpressed = false;
-                editor->focus_idx = 0;
-                editor->state = ES_SELECT_FOCUS;
+            } else if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
+                if (IsKeyDown(KEY_LEFT_SHIFT)) {
+                    if (IsKeyPressed(KEY_S)) {
+                        LevelSetStart(&CurLevel);
+                    }
+                } else if (IsKeyPressed(KEY_S)) {
+                    editor->state = ES_SAVING;
+                } else if (IsKeyPressed(KEY_L)) {
+                    editor->state = ES_LOADING;
+                } else if (IsKeyPressed(KEY_F)) {
+                    editor->focus_idx = 0;
+                    editor->state = ES_SELECT_FOCUS;
+                }
             }
-            break;
         }
         case ES_EDITING: {
             Entity* focus = EditorGetFocus(editor);
