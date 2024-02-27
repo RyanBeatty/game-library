@@ -3,20 +3,16 @@
 
 #include "entity.c"
 #include "level.c"
+#include "nuklear_shim.c"
 #include "raylib.h"
 
 #endif
-
-#define NK_IMPLEMENTATION
-#include "nuklear.h"
 
 //////////////////////////////////////////////////////////////////////
 // Forward decls
 static void EnableGameUpdate();
 static void DisableGameUpdate();
 //////////////////////////////////////////////////////////////////////
-
-typedef struct nk_context NuklearCtx;
 
 typedef enum EditorState {
     ES_IDLE = 0,
@@ -33,6 +29,8 @@ typedef struct Editor {
     // Index to entity we are focused on.
     uint32_t focus_idx;
     char load_level_filename[256];
+
+    NuklearFont nuklear_font;
     NuklearCtx nuklear_context;
 } Editor;
 
@@ -44,8 +42,8 @@ static bool EditorEnabled = false;
 static void EditorEnable() {
     EditorEnabled = true;
     GameEditor = (Editor){0};
-    int res = nk_init_default(&GameEditor.nuklear_context, NULL);
-    assert(res);
+    NuklearInit(&GameEditor.nuklear_context, &GameEditor.nuklear_font);
+
     DisableGameUpdate();
 }
 
@@ -56,18 +54,20 @@ static void EditorDisable() {
     nk_free(&GameEditor.nuklear_context);
 }
 
-static Entity* EditorGetFocus(Editor* editor) { return LevelDataGetEntity(GetCurLevel(), editor->focus_idx); }
+static Entity *EditorGetFocus(Editor *editor) { return LevelDataGetEntity(GetCurLevel(), editor->focus_idx); }
 
 static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
 
-static void EditorUpdate(Editor* editor) {
+static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
     assert(EditorEnabled);
+
+    NuklearUpdate(&editor->nuklear_context, delta_time);
 
     switch (editor->state) {
         case ES_IDLE: {
             if (IsKeyPressed(KEY_A)) {
-                Entity* focus = CreateLevelDataEntity(GetCurLevel());
+                Entity *focus = CreateLevelDataEntity(GetCurLevel());
                 focus->model = GenCubeModel(GRAY);
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
                 focus->position = ORIGIN;
@@ -91,7 +91,7 @@ static void EditorUpdate(Editor* editor) {
             break;
         }
         case ES_EDITING: {
-            Entity* focus = EditorGetFocus(editor);
+            Entity *focus = EditorGetFocus(editor);
             if (IsKeyPressed(KEY_UP)) {
                 focus->position.z -= CubeSideLength;
             } else if (IsKeyPressed(KEY_RIGHT)) {
@@ -156,7 +156,7 @@ static void EditorUpdate(Editor* editor) {
         }
         case ES_SELECT_FOCUS: {
             if (IsKeyPressed(KEY_ENTER)) {
-                Entity* entity = EditorGetFocus(editor);
+                Entity *entity = EditorGetFocus(editor);
                 editor->state = ES_EDITING;
                 for (uint32_t i = 0; i < (sizeof(Colors) / sizeof(Colors[0])); ++i) {
                     Color c = Colors[i];
@@ -165,7 +165,7 @@ static void EditorUpdate(Editor* editor) {
                     }
                 }
             } else {
-                Entity* entity = EditorGetFocus(editor);
+                Entity *entity = EditorGetFocus(editor);
                 entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
 
                 int32_t dir = 0;
@@ -187,7 +187,7 @@ static void EditorUpdate(Editor* editor) {
     }
 }
 
-static void EditorDraw(Editor* editor, float delta_time) {
+static void EditorDraw(Editor *editor, float delta_time) {
     static bool show_cursor = true;
     static float show_cursor_cooldown = 0.0f;
 
@@ -218,5 +218,5 @@ static void EditorDraw(Editor* editor, float delta_time) {
         }
     }
 
-    nk_clear(&GameEditor.nuklear_context);
+    NuklearDraw(&editor->nuklear_context);
 }

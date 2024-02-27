@@ -40,6 +40,8 @@ void __attribute__((noinline)) breakpoint() {}
 //
 #include "serde.c"
 //
+#include "nuklear_shim.c"
+//
 #include "editor.c"
 // don't reorder
 #include "main.c"

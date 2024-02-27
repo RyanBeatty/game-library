@@ -106,7 +106,7 @@ int main(void) {
         }
 
         if (IsEditorEnabled()) {
-            EditorUpdate(&GameEditor);
+            EditorUpdate(&GameEditor, delta_time);
         }
 
         if (GameUpdateEnabled) {
