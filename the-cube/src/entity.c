@@ -228,3 +228,11 @@ static BoundingBox GetBoundingBox(Vector3 position) {
                       .max = Vector3Add(position, (Vector3){radius, radius, radius})};
     return bb;
 }
+
+static RayCollision GetRayCollisionEntity(Ray ray, Entity* entity) {
+    assert(entity->model.meshCount != 0);
+    EntityUpdateTransform(entity);
+    return GetRayCollisionMesh(ray, entity->model.meshes[0], entity->model.transform);
+    // BoundingBox bb = EntityGetBoundingBox(entity);
+    // return
+}

@@ -62,14 +62,29 @@ static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
     assert(EditorEnabled);
 
-    NuklearUpdate(&editor->nuklear_context, delta_time);
+    // NuklearUpdate(&editor->nuklear_context, delta_time);
 
     switch (editor->state) {
         case ES_IDLE: {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                Vector2 mouse_position = GetMousePosition();
+                Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+
+                LevelData *cur_level = GetCurLevel();
+                RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+                if (collision.collision.hit) {
+                    Entity *entity = LevelDataGetEntity(cur_level, collision.entity_idx);
+                    entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color =
+                        EntityGetFocusColor(entity->block_color);
+                    editor->focus_idx = entity->idx;
+                    editor->state = ES_EDITING;
+                    color_idx = 0;
+                }
+            }
+
             if (IsKeyPressed(KEY_A)) {
                 Entity *focus = CreateLevelDataEntity(GetCurLevel());
                 focus->model = GenCubeModel(GRAY);
-                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
                 focus->position = ORIGIN;
                 editor->focus_idx = focus->idx;
                 editor->state = ES_EDITING;
@@ -218,5 +233,5 @@ static void EditorDraw(Editor *editor, float delta_time) {
         }
     }
 
-    NuklearDraw(&editor->nuklear_context);
+    // NuklearDraw(&editor->nuklear_context);
 }

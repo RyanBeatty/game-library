@@ -30,6 +30,8 @@ void __attribute__((noinline)) breakpoint() {}
 // Project files below
 
 //
+#include "camera.c"
+//
 #include "entity.c"
 //
 #include "level.c"

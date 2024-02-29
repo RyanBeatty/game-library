@@ -47,3 +47,21 @@ static void LevelSetStart(LevelData* level_data) {
 }
 
 static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEntity(level_data, 1); }
+
+typedef struct RayCollisionLevelData {
+    RayCollision collision;
+    uint32_t entity_idx;
+} RayCollisionLevelData;
+
+static RayCollisionLevelData GetRayCollisionLevelData(Ray ray, LevelData* level_data) {
+    RayCollisionLevelData collision = {0};
+    for (uint32_t i = 0; i < LevelDataNumEntities(level_data); ++i) {
+        Entity* entity = LevelDataGetEntity(level_data, i);
+        RayCollision new_collision = GetRayCollisionEntity(ray, entity);
+        if (!collision.collision.hit || (new_collision.hit && new_collision.distance < collision.collision.distance)) {
+            collision.collision = new_collision;
+            collision.entity_idx = entity->idx;
+        }
+    }
+    return collision;
+}
