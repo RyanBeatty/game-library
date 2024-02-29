@@ -3,7 +3,7 @@
 
 #include "entity.c"
 #include "level.c"
-#include "nuklear_shim.c"
+// #include "nuklear_shim.c"
 #include "raylib.h"
 
 #endif
@@ -30,8 +30,8 @@ typedef struct Editor {
     uint32_t focus_idx;
     char load_level_filename[256];
 
-    NuklearFont nuklear_font;
-    NuklearCtx nuklear_context;
+    // NuklearFont nuklear_font;
+    // NuklearCtx nuklear_context;
 } Editor;
 
 static Editor GameEditor = {0};
@@ -42,7 +42,7 @@ static bool EditorEnabled = false;
 static void EditorEnable() {
     EditorEnabled = true;
     GameEditor = (Editor){0};
-    NuklearInit(&GameEditor.nuklear_context, &GameEditor.nuklear_font);
+    // NuklearInit(&GameEditor.nuklear_context, &GameEditor.nuklear_font);
 
     DisableGameUpdate();
 }
@@ -51,7 +51,7 @@ static void EditorDisable() {
     EditorEnabled = false;
     GameEditor = (Editor){0};
     EnableGameUpdate();
-    nk_free(&GameEditor.nuklear_context);
+    // nk_free(&GameEditor.nuklear_context);
 }
 
 static Entity *EditorGetFocus(Editor *editor) { return LevelDataGetEntity(GetCurLevel(), editor->focus_idx); }
