@@ -74,18 +74,14 @@ static void EditorSetFocus(Editor *editor, Entity *focus) {
     editor->focus_idx = focus->idx;
     editor->state = ES_EDITING;
 
-    {
-        Entity *entity = &editor->x_arrow;
-        entity->model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
-        entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
-        entity->initial_transform = MatrixTranslate(0, 3, 0);
-        // model->transform = MatrixMultiply(model->transform, MatrixRotate((Vector3){0, 0, 1}, -90 * DEG2RAD));
-        // model->transform = MatrixMultiply(model->transform, MatrixTranslate(0, -3, 0));
-        entity->position = focus->position;
-        // position = (Vector3){0, 0, 0};
-        // orientation = QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD);
-    }
-    // editor->x_arrow.position = Vector3Add((Vector3){5, 0, 0}, focus->position);
+    editor->x_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
+    editor->x_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
+
+    editor->y_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
+    editor->y_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GREEN;
+
+    editor->z_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
+    editor->z_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = RED;
 }
 
 static void EditorUpdate(Editor *editor, float delta_time) {
@@ -93,11 +89,6 @@ static void EditorUpdate(Editor *editor, float delta_time) {
     assert(EditorEnabled);
 
     // NuklearUpdate(&editor->nuklear_context, delta_time);
-
-    {
-        Entity *focus = EditorGetFocus(editor);
-        editor->x_arrow.position = focus->position;
-    }
 
     switch (editor->state) {
         case ES_IDLE: {
@@ -232,6 +223,37 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         }
     }
 
+    {
+        Entity *focus = EditorGetFocus(editor);
+        {
+            Entity *entity = &editor->x_arrow;
+            entity->initial_transform =
+                MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){0, 0, 1}, -90 * DEG2RAD));
+            // TODO: Do I need this?
+            // entity->initial_transform = MatrixMultiply(entity->initial_transform, MatrixTranslate(0, -3, 0));
+            entity->position = focus->position;
+            entity->orientation = focus->orientation;
+        }
+        {
+            Entity *entity = &editor->y_arrow;
+            entity->initial_transform =
+                MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){0, 0, 1}, 0 * DEG2RAD));
+            // TODO: Do I need this?
+            // entity->initial_transform = MatrixMultiply(entity->initial_transform, MatrixTranslate(0, -3, 0));
+            entity->position = focus->position;
+            entity->orientation = focus->orientation;
+        }
+        {
+            Entity *entity = &editor->z_arrow;
+            entity->initial_transform =
+                MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){1, 0, 0}, 90 * DEG2RAD));
+            // TODO: Do I need this?
+            // entity->initial_transform = MatrixMultiply(entity->initial_transform, MatrixTranslate(0, -3, 0));
+            entity->position = focus->position;
+            entity->orientation = focus->orientation;
+        }
+    }
+
     for (uint32_t i = 0; i < EditorNumEntities; ++i) {
         Entity *entity = &editor->entities[i];
         EntityUpdateTransform(entity);
@@ -254,15 +276,10 @@ static void EditorDraw(Editor *editor, float delta_time) {
 
     BeginMode3D(GameCamera);
 
-    // Model model = LoadModelFromMesh(GenMeshCube(15, 15, 15));
-    // model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = PURPLE;
-    // DrawModel(model, (Vector3){0, 0, 0}, 1, WHITE);
-
     if (editor->state == ES_EDITING) {
         Vector3 zero = {0};
         for (uint32_t i = 0; i < EditorNumEntities; ++i) {
             Entity *entity = &editor->entities[i];
-            breakpoint();
             DrawModel(entity->model, zero, 1, WHITE);
         }
     }
