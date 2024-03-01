@@ -4,6 +4,8 @@
 
 static Camera3D GameCamera;
 
+#define GetGameCamera() (GameCamera)
+
 void GameCameraInit(Camera3D* camera) {
     camera->position = (Vector3){0.0f, 20.0f, 20.0f};
     camera->target = (Vector3){0.0f, 0.0f, 0.0f};

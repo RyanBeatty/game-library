@@ -24,12 +24,23 @@ typedef enum EditorState {
     ES_COUNT
 } EditorState;
 
+#define EditorNumEntities 3
+
 typedef struct Editor {
     EditorState state;
     // Index to entity we are focused on.
     uint32_t focus_idx;
     char load_level_filename[256];
 
+    union {
+        struct {
+            Entity x_arrow;
+            Entity y_arrow;
+            Entity z_arrow;
+        };
+
+        Entity entities[EditorNumEntities];
+    };
     // NuklearFont nuklear_font;
     // NuklearCtx nuklear_context;
 } Editor;
@@ -58,11 +69,35 @@ static Entity *EditorGetFocus(Editor *editor) { return LevelDataGetEntity(GetCur
 
 static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
 
+static void EditorSetFocus(Editor *editor, Entity *focus) {
+    focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
+    editor->focus_idx = focus->idx;
+    editor->state = ES_EDITING;
+
+    {
+        Entity *entity = &editor->x_arrow;
+        entity->model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
+        entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
+        entity->initial_transform = MatrixTranslate(0, 3, 0);
+        // model->transform = MatrixMultiply(model->transform, MatrixRotate((Vector3){0, 0, 1}, -90 * DEG2RAD));
+        // model->transform = MatrixMultiply(model->transform, MatrixTranslate(0, -3, 0));
+        entity->position = focus->position;
+        // position = (Vector3){0, 0, 0};
+        // orientation = QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD);
+    }
+    // editor->x_arrow.position = Vector3Add((Vector3){5, 0, 0}, focus->position);
+}
+
 static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
     assert(EditorEnabled);
 
     // NuklearUpdate(&editor->nuklear_context, delta_time);
+
+    {
+        Entity *focus = EditorGetFocus(editor);
+        editor->x_arrow.position = focus->position;
+    }
 
     switch (editor->state) {
         case ES_IDLE: {
@@ -74,10 +109,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
                 if (collision.collision.hit) {
                     Entity *entity = LevelDataGetEntity(cur_level, collision.entity_idx);
-                    entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color =
-                        EntityGetFocusColor(entity->block_color);
-                    editor->focus_idx = entity->idx;
-                    editor->state = ES_EDITING;
+                    EditorSetFocus(editor, entity);
                     color_idx = 0;
                 }
             }
@@ -86,8 +118,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 Entity *focus = CreateLevelDataEntity(GetCurLevel());
                 focus->model = GenCubeModel(GRAY);
                 focus->position = ORIGIN;
-                editor->focus_idx = focus->idx;
-                editor->state = ES_EDITING;
+                EditorSetFocus(editor, focus);
                 color_idx = 0;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
                 if (IsKeyDown(KEY_LEFT_SHIFT)) {
@@ -200,6 +231,11 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             exit(EXIT_FAILURE);
         }
     }
+
+    for (uint32_t i = 0; i < EditorNumEntities; ++i) {
+        Entity *entity = &editor->entities[i];
+        EntityUpdateTransform(entity);
+    }
 }
 
 static void EditorDraw(Editor *editor, float delta_time) {
@@ -215,6 +251,23 @@ static void EditorDraw(Editor *editor, float delta_time) {
     // Not in Mode3D. All coords are screen space.
     DrawFPS(10, 10);
     DrawText("Editor Enabled", 100, 10, 20, BLACK);
+
+    BeginMode3D(GameCamera);
+
+    // Model model = LoadModelFromMesh(GenMeshCube(15, 15, 15));
+    // model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = PURPLE;
+    // DrawModel(model, (Vector3){0, 0, 0}, 1, WHITE);
+
+    if (editor->state == ES_EDITING) {
+        Vector3 zero = {0};
+        for (uint32_t i = 0; i < EditorNumEntities; ++i) {
+            Entity *entity = &editor->entities[i];
+            breakpoint();
+            DrawModel(entity->model, zero, 1, WHITE);
+        }
+    }
+
+    EndMode3D();
 
     switch (editor->state) {
         case ES_SAVING: {

@@ -70,6 +70,7 @@ typedef struct Entity {
     uint32_t idx;
     Vector3 position;
     Quaternion orientation;
+    Matrix initial_transform;
     uint8_t flags[FLAGS_LEN];
 
     Color block_color;  // Only used for non player entities.
@@ -87,8 +88,9 @@ static void EntitySetFlag(Entity* entity, EntityFlag flag) { SetFlag(entity->fla
 static void EntityUpdateTransform(Entity* entity) {
     // Remember matrices are applied left to right order, so the rotation is first.
     entity->model.transform =
-        MatrixMultiply(QuaternionToMatrix(entity->orientation),
-                       MatrixTranslate(entity->position.x, entity->position.y, entity->position.z));
+        MatrixMultiply(entity->initial_transform,
+                       MatrixMultiply(QuaternionToMatrix(entity->orientation),
+                                      MatrixTranslate(entity->position.x, entity->position.y, entity->position.z)));
 }
 
 struct {
@@ -233,6 +235,4 @@ static RayCollision GetRayCollisionEntity(Ray ray, Entity* entity) {
     assert(entity->model.meshCount != 0);
     EntityUpdateTransform(entity);
     return GetRayCollisionMesh(ray, entity->model.meshes[0], entity->model.transform);
-    // BoundingBox bb = EntityGetBoundingBox(entity);
-    // return
 }
