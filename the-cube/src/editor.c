@@ -19,7 +19,6 @@ typedef enum EditorState {
     ES_EDITING,
     ES_SAVING,
     ES_LOADING,
-    ES_SELECT_FOCUS,
 
     ES_COUNT
 } EditorState;
@@ -126,9 +125,6 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                     editor->state = ES_SAVING;
                 } else if (IsKeyPressed(KEY_L)) {
                     editor->state = ES_LOADING;
-                } else if (IsKeyPressed(KEY_F)) {
-                    editor->focus_idx = 0;
-                    editor->state = ES_SELECT_FOCUS;
                 }
             }
             break;
@@ -198,33 +194,6 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                     editor->load_level_filename[name_len] = (char)key;
                     editor->load_level_filename[name_len + 1] = '\0';
                 }
-            }
-            break;
-        }
-        case ES_SELECT_FOCUS: {
-            if (IsKeyPressed(KEY_ENTER)) {
-                Entity *entity = EditorGetFocus(editor);
-                editor->state = ES_EDITING;
-                for (uint32_t i = 0; i < (sizeof(Colors) / sizeof(Colors[0])); ++i) {
-                    Color c = Colors[i];
-                    if (c.r == entity->block_color.r && c.g == entity->block_color.g && c.b == entity->block_color.b) {
-                        color_idx = i;
-                    }
-                }
-            } else {
-                Entity *entity = EditorGetFocus(editor);
-                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-
-                int32_t dir = 0;
-                if (IsKeyPressed(KEY_UP)) {
-                    dir = 1;
-                } else if (IsKeyPressed(KEY_DOWN)) {
-                    dir = -1;
-                }
-                editor->focus_idx = (editor->focus_idx + dir) % LevelDataNumEntities(GetCurLevel());
-
-                entity = EditorGetFocus(editor);
-                entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(entity->block_color);
             }
             break;
         }
