@@ -125,7 +125,8 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 focus = NULL;
                 editor->state = ES_IDLE;
             } else {
-                if (IsKeyPressed(KEY_UP)) {
+                if (IsKeyPressed(KEY_DELETE)) {
+                } else if (IsKeyPressed(KEY_UP)) {
                     focus->position.z -= CubeSideLength;
                 } else if (IsKeyPressed(KEY_RIGHT)) {
                     focus->position.x += CubeSideLength;

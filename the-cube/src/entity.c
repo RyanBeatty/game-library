@@ -60,7 +60,6 @@ typedef enum EntityFlag {
     EF_LEVEL_SUCCESS_ON_COLLISION,
     EF_PLAYER_CONTROLLED,
     EF_HUNT_PLAYER,
-
     EF_COUNT
 } EntityFlag;
 

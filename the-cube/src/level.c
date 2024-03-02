@@ -21,10 +21,13 @@ typedef struct LevelData {
 static LevelData CurLevel = {0};
 #define GetCurLevel() (&CurLevel)
 
+#define LevelDataNextEntityId(level_data) (arrlenu((level_data->entities)))
+
 static Entity* LevelDataCreateEntity(LevelData* level_data) {
+    uint32_t idx = LevelDataNextEntityId(level_data);
     Entity* entity = arraddnptr(level_data->entities, 1);
     memset(entity, 0, sizeof(Entity));
-    entity->idx = arrlen(level_data->entities) - 1;
+    entity->idx = idx;
     return entity;
 }
 
@@ -40,11 +43,6 @@ static Entity* LevelDataGetPlayer(LevelData* level_data) { return &level_data->e
 static Entity* LevelDataGetEntity(LevelData* level_data, uint32_t i) { return &level_data->entities[i]; }
 
 static uint32_t LevelDataNumEntities(LevelData* level_data) { return arrlenu(level_data->entities); }
-
-static void LevelSetStart(LevelData* level_data) {
-    Entity* player = LevelDataGetPlayer(level_data);
-    level_data->start = player->position;
-}
 
 static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEntity(level_data, 1); }
 
