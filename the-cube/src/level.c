@@ -47,13 +47,11 @@ static uint32_t LevelDataNumEntities(LevelData* level_data) { return arrlenu(lev
 static Entity* LevelDataGetGoal(LevelData* level_data) { return LevelDataGetEntity(level_data, 1); }
 
 static void LevelDataDeleteEntity(LevelData* level_data, uint32_t index) {
-    breakpoint();
     arrdel(level_data->entities, index);
     for (uint32_t i = 0; i < LevelDataNumEntities(level_data); ++i) {
         Entity* entity = LevelDataGetEntity(level_data, i);
         entity->idx = i;
     }
-    breakpoint();
 }
 
 typedef struct RayCollisionLevelData {
