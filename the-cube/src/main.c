@@ -51,12 +51,6 @@ static void GameUpdate(float delta_time) {
             EntityUpdate(entity, delta_time);
         }
     }
-
-    // Ensure we do this after all above updates so that the transforms reflect updated entity info.
-    for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-        Entity* entity = LevelDataGetEntity(&CurLevel, i);
-        EntityUpdateTransform(entity);
-    }
 }
 
 static void GameDraw(float delta_time) {
@@ -102,6 +96,13 @@ int main(void) {
 
         if (GameUpdateEnabled) {
             GameUpdate(delta_time);
+        }
+        // Ensure we do this after all above updates so that the transforms reflect updated entity info.
+        // TODO: Feels like this should be in GameUpdate, but run into issues when editing entities in editor mode (they
+        // wont get updated in graphics). Wonder if we can control this via Flags maybe?
+        for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+            Entity* entity = LevelDataGetEntity(&CurLevel, i);
+            EntityUpdateTransform(entity);
         }
 
         BeginDrawing();

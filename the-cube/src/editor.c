@@ -151,7 +151,6 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                     focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color =
                         EntityGetFocusColor(focus->block_color);
                 }
-                EntityUpdateTransform(focus);
             }
             break;
         }
