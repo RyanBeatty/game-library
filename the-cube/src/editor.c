@@ -229,26 +229,12 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         }
     }
 
-    {
-        Entity *focus = EditorGetFocus(editor);
-        {
-            Entity *entity = &editor->x_arrow;
-            entity->initial_transform = MatrixIdentity();
-            entity->position = focus->position;
-            entity->orientation = focus->orientation;
-        }
-        {
-            Entity *entity = &editor->y_arrow;
-            entity->initial_transform = MatrixIdentity();
-            entity->position = focus->position;
-            entity->orientation = focus->orientation;
-        }
-        {
-            Entity *entity = &editor->z_arrow;
-            entity->initial_transform = MatrixIdentity();
-            entity->position = focus->position;
-            entity->orientation = focus->orientation;
-        }
+    // UpdateEntities.
+    Entity *focus = EditorGetFocus(editor);
+    for (uint32_t i = 0; i < 3; ++i) {
+        Entity *entity = &editor->entities[i];
+        entity->position = focus->position;
+        entity->orientation = focus->orientation;
     }
 
     for (uint32_t i = 0; i < EditorNumEntities; ++i) {
