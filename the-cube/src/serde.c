@@ -84,6 +84,9 @@ static char* WriteBuffer(char* data, char* to_write, size_t len) {
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
+    level_data->start = LevelDataGetPlayer(level_data)->position;
+    level_data->goal = LevelDataGetGoal(level_data)->position;
+
     {
         char buffer[256] = {0};
         PackVector3(buffer, level_data->start);
