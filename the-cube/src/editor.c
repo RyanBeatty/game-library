@@ -117,11 +117,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 EditorSetFocus(editor, focus);
                 color_idx = 0;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
-                if (IsKeyDown(KEY_LEFT_SHIFT)) {
-                    if (IsKeyPressed(KEY_S)) {
-                        LevelSetStart(GetCurLevel());
-                    }
-                } else if (IsKeyPressed(KEY_S)) {
+                if (IsKeyPressed(KEY_S)) {
                     editor->state = ES_SAVING;
                 } else if (IsKeyPressed(KEY_L)) {
                     editor->state = ES_LOADING;
