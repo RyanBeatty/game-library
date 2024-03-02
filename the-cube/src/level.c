@@ -25,7 +25,6 @@ static Entity* LevelDataCreateEntity(LevelData* level_data) {
     Entity* entity = arraddnptr(level_data->entities, 1);
     memset(entity, 0, sizeof(Entity));
     entity->idx = arrlen(level_data->entities) - 1;
-    entity->initial_transform = MatrixIdentity();
     return entity;
 }
 

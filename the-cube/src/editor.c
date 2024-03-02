@@ -135,27 +135,31 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         }
         case ES_EDITING: {
             Entity *focus = EditorGetFocus(editor);
-            if (IsKeyPressed(KEY_UP)) {
-                focus->position.z -= CubeSideLength;
-            } else if (IsKeyPressed(KEY_RIGHT)) {
-                focus->position.x += CubeSideLength;
-            } else if (IsKeyPressed(KEY_DOWN)) {
-                focus->position.z += CubeSideLength;
-            } else if (IsKeyPressed(KEY_LEFT)) {
-                focus->position.x -= CubeSideLength;
-            } else if (IsKeyPressed(KEY_PAGE_UP)) {
-                focus->position.y += CubeSideLength;
-            } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
-                focus->position.y -= CubeSideLength;
-            } else if (IsKeyPressed(KEY_ENTER)) {
+            if (IsKeyPressed(KEY_ENTER)) {
                 focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
                 focus = NULL;
                 editor->state = ES_IDLE;
-            } else if (IsKeyPressed(KEY_C)) {
-                color_idx = (color_idx + 1) % (sizeof(Colors) / sizeof(Colors[0]));
-                focus->block_color = Colors[color_idx];
-                focus->model = GenCubeModel(focus->block_color);
-                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
+            } else {
+                if (IsKeyPressed(KEY_UP)) {
+                    focus->position.z -= CubeSideLength;
+                } else if (IsKeyPressed(KEY_RIGHT)) {
+                    focus->position.x += CubeSideLength;
+                } else if (IsKeyPressed(KEY_DOWN)) {
+                    focus->position.z += CubeSideLength;
+                } else if (IsKeyPressed(KEY_LEFT)) {
+                    focus->position.x -= CubeSideLength;
+                } else if (IsKeyPressed(KEY_PAGE_UP)) {
+                    focus->position.y += CubeSideLength;
+                } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
+                    focus->position.y -= CubeSideLength;
+                } else if (IsKeyPressed(KEY_C)) {
+                    color_idx = (color_idx + 1) % (sizeof(Colors) / sizeof(Colors[0]));
+                    focus->block_color = Colors[color_idx];
+                    focus->model = GenCubeModel(focus->block_color);
+                    focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color =
+                        EntityGetFocusColor(focus->block_color);
+                }
+                EntityUpdateTransform(focus);
             }
             break;
         }
