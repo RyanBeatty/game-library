@@ -76,12 +76,18 @@ static void EditorSetFocus(Editor *editor, Entity *focus) {
 
     editor->x_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
     editor->x_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
+    EntityTransformMesh(&editor->x_arrow,
+                        MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){0, 0, 1}, -90 * DEG2RAD)));
 
     editor->y_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
     editor->y_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GREEN;
+    EntityTransformMesh(&editor->y_arrow,
+                        MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){0, 0, 1}, 0 * DEG2RAD)));
 
     editor->z_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
     editor->z_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = RED;
+    EntityTransformMesh(&editor->z_arrow,
+                        MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){1, 0, 0}, 90 * DEG2RAD)));
 }
 
 static void EditorUpdate(Editor *editor, float delta_time) {
@@ -227,28 +233,19 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         Entity *focus = EditorGetFocus(editor);
         {
             Entity *entity = &editor->x_arrow;
-            entity->initial_transform =
-                MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){0, 0, 1}, -90 * DEG2RAD));
-            // TODO: Do I need this?
-            // entity->initial_transform = MatrixMultiply(entity->initial_transform, MatrixTranslate(0, -3, 0));
+            entity->initial_transform = MatrixIdentity();
             entity->position = focus->position;
             entity->orientation = focus->orientation;
         }
         {
             Entity *entity = &editor->y_arrow;
-            entity->initial_transform =
-                MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){0, 0, 1}, 0 * DEG2RAD));
-            // TODO: Do I need this?
-            // entity->initial_transform = MatrixMultiply(entity->initial_transform, MatrixTranslate(0, -3, 0));
+            entity->initial_transform = MatrixIdentity();
             entity->position = focus->position;
             entity->orientation = focus->orientation;
         }
         {
             Entity *entity = &editor->z_arrow;
-            entity->initial_transform =
-                MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){1, 0, 0}, 90 * DEG2RAD));
-            // TODO: Do I need this?
-            // entity->initial_transform = MatrixMultiply(entity->initial_transform, MatrixTranslate(0, -3, 0));
+            entity->initial_transform = MatrixIdentity();
             entity->position = focus->position;
             entity->orientation = focus->orientation;
         }

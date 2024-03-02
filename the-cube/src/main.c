@@ -65,7 +65,7 @@ static void GameDraw(float delta_time) {
     Vector3 position = {0};
     for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
         Entity* entity = LevelDataGetEntity(&CurLevel, i);
-        DrawModel(entity->model, position, 1, WHITE);
+        // DrawModel(entity->model, position, 1, WHITE);
     }
 
     EndMode3D();

@@ -236,3 +236,31 @@ static RayCollision GetRayCollisionEntity(Ray ray, Entity* entity) {
     EntityUpdateTransform(entity);
     return GetRayCollisionMesh(ray, entity->model.meshes[0], entity->model.transform);
 }
+
+static void EntityTransformMesh(Entity* entity, Matrix transform) {
+    assert(entity->model.meshCount == 1);
+    Mesh* mesh = &entity->model.meshes[0];
+    for (uint32_t i = 0; i < mesh->vertexCount; ++i) {
+        uint32_t offset = i * 3;
+        Vector3 vertex = {mesh->vertices[offset], mesh->vertices[offset + 1], mesh->vertices[offset + 2]};
+        vertex = Vector3Transform(vertex, transform);
+        mesh->vertices[offset] = vertex.x;
+        mesh->vertices[offset + 1] = vertex.y;
+        mesh->vertices[offset + 2] = vertex.z;
+    }
+
+    for (uint32_t i = 0; i < mesh->vertexCount; ++i) {
+        uint32_t offset = i * 3;
+        Vector3 vertex = {mesh->normals[offset], mesh->normals[offset + 1], mesh->normals[offset + 2]};
+        vertex = Vector3Transform(vertex, transform);
+        mesh->normals[offset] = vertex.x;
+        mesh->normals[offset + 1] = vertex.y;
+        mesh->normals[offset + 2] = vertex.z;
+    }
+
+    // TODO: Do I need to handle texcoords or tangents??
+    // TODO: This feels hacky, but it works. Just forget the mesh buffer ids and reupload.
+    mesh->vaoId = 0;
+    mesh->vboId = NULL;
+    UploadMesh(mesh, false);
+}
