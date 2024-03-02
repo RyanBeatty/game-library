@@ -125,7 +125,10 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 focus = NULL;
                 editor->state = ES_IDLE;
             } else {
-                if (IsKeyPressed(KEY_DELETE)) {
+                if (IsKeyPressed(KEY_BACKSPACE)) {
+                    LevelData *level_data = GetCurLevel();
+                    LevelDataDeleteEntity(level_data, editor->focus_idx);
+                    editor->state = ES_IDLE;
                 } else if (IsKeyPressed(KEY_UP)) {
                     focus->position.z -= CubeSideLength;
                 } else if (IsKeyPressed(KEY_RIGHT)) {
