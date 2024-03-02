@@ -50,9 +50,10 @@ static void LevelDataDeleteEntity(LevelData* level_data, uint32_t index) {
     breakpoint();
     arrdel(level_data->entities, index);
     for (uint32_t i = 0; i < LevelDataNumEntities(level_data); ++i) {
-        Entity* entity = LevelDataGetEntity(level_data, index);
+        Entity* entity = LevelDataGetEntity(level_data, i);
         entity->idx = i;
     }
+    breakpoint();
 }
 
 typedef struct RayCollisionLevelData {
