@@ -18,11 +18,14 @@ typedef enum EditorState {
     ES_EDITING,
     ES_SAVING,
     ES_LOADING,
+    ES_FOCUSING,
 
     ES_COUNT
 } EditorState;
 
 #define EditorNumEntities 3
+
+static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
 
 typedef struct Focus {
     uint32_t *entity_idxs;  // stb_arr.
@@ -40,13 +43,22 @@ static void FocusDeInit(Focus *focus) {
 }
 
 static void FocusAdd(Focus *focus, uint32_t idx) {
+    LevelData *level_data = GetCurLevel();
+    Entity *entity = LevelDataGetEntity(level_data, idx);
+    entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(entity->block_color);
+
     // Insert in sorted order so we can delete okay.
-    for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
+    uint32_t i = 0;
+    for (; i < arrlenu(focus->entity_idxs); ++i) {
+        // Don't allow duplicates.
+        if (idx == focus->entity_idxs[i]) {
+            return;
+        }
         if (idx < focus->entity_idxs[i]) {
-            arrins(focus->entity_idxs, i, idx);
+            break;
         }
     }
-    arrpush(focus->entity_idxs, idx);
+    arrins(focus->entity_idxs, i, idx);
 }
 
 static void FocusDelete(Focus *focus) {
@@ -79,8 +91,6 @@ static Quaternion FocusGetOrientation(Focus *focus) {
     }
     return LevelDataGetEntity(GetCurLevel(), focus->entity_idxs[0])->orientation;
 }
-
-static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
 
 static void FocusChangeColor(Focus *focus, uint32_t color_idx) {
     LevelData *level_data = GetCurLevel();
@@ -130,10 +140,9 @@ static void EditorDisable() {
 static Focus *EditorGetFocus(Editor *editor) { return &editor->focus; }
 
 static void EditorSetFocus(Editor *editor, Entity *focus) {
-    focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
     FocusInit(&editor->focus);
     FocusAdd(&editor->focus, focus->idx);
-    editor->state = ES_EDITING;
+    editor->state = ES_FOCUSING;
 
     editor->x_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
     editor->x_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
@@ -157,7 +166,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
 
     switch (editor->state) {
         case ES_IDLE: {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 Vector2 mouse_position = GetMousePosition();
                 Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
 
@@ -214,6 +223,23 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                     }
 
                     FocusMove(EditorGetFocus(editor), direction);
+                }
+            }
+            break;
+        }
+        case ES_FOCUSING: {
+            if (!IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+                editor->state = ES_EDITING;
+            } else {
+                // TODO: Remove duplication.
+                Vector2 mouse_position = GetMousePosition();
+                Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+
+                LevelData *cur_level = GetCurLevel();
+                RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+                if (collision.collision.hit) {
+                    Focus *focus = EditorGetFocus(editor);
+                    FocusAdd(focus, collision.entity_idx);
                 }
             }
             break;
