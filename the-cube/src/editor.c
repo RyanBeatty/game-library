@@ -129,7 +129,7 @@ static void EditorDisable() {
 
 static Focus *EditorGetFocus(Editor *editor) { return &editor->focus; }
 
-static void FocusFocus(Editor *editor, Entity *focus) {
+static void EditorSetFocus(Editor *editor, Entity *focus) {
     focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
     FocusInit(&editor->focus);
     FocusAdd(&editor->focus, focus->idx);
@@ -165,7 +165,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
                 if (collision.collision.hit) {
                     Entity *entity = LevelDataGetEntity(cur_level, collision.entity_idx);
-                    FocusFocus(editor, entity);
+                    EditorSetFocus(editor, entity);
                     color_idx = 0;
                 }
             }
@@ -174,7 +174,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 Entity *focus = CreateLevelDataEntity(GetCurLevel());
                 focus->model = GenCubeModel(GRAY);
                 focus->position = ORIGIN;
-                FocusFocus(editor, focus);
+                EditorSetFocus(editor, focus);
                 color_idx = 0;
             } else if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
                 if (IsKeyPressed(KEY_S)) {
