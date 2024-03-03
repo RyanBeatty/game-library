@@ -24,10 +24,71 @@ typedef enum EditorState {
 
 #define EditorNumEntities 3
 
+typedef struct EditorSet {
+    uint32_t *entity_idxs;  // stb_arr.
+} EditorSet;
+
+static void EditorSetInit(EditorSet *editor_set) { editor_set->entity_idxs = NULL; }
+
+static void EditorSetDeInit(EditorSet *editor_set) {
+    LevelData *level_data = GetCurLevel();
+    for (uint32_t i = 0; i < arrlenu(editor_set->entity_idxs); ++i) {
+        Entity *entity = LevelDataGetEntity(level_data, editor_set->entity_idxs[i]);
+        entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+    }
+    editor_set->entity_idxs = NULL;
+}
+
+static void EditorSetAdd(EditorSet *editor_set, uint32_t idx) { arrpush(editor_set->entity_idxs, idx); }
+
+static void EditorSetDelete(EditorSet *editor_set) {
+    LevelData *level_data = GetCurLevel();
+    // TODO: Delete in reverse order.
+    for (uint32_t i = 0; i < arrlenu(editor_set->entity_idxs); ++i) {
+        LevelDataDeleteEntity(level_data, editor_set->entity_idxs[i]);
+    }
+    editor_set->entity_idxs = NULL;
+}
+
+static void EditorSetMove(EditorSet *editor_set, Vector3 direction) {
+    LevelData *level_data = GetCurLevel();
+    for (uint32_t i = 0; i < arrlenu(editor_set->entity_idxs); ++i) {
+        Entity *entity = LevelDataGetEntity(level_data, editor_set->entity_idxs[i]);
+        breakpoint();
+        entity->position = Vector3Add(entity->position, direction);
+    }
+}
+
+static Vector3 EditorSetGetPosition(EditorSet *editor_set) {
+    if (arrlenu(editor_set->entity_idxs) == 0) {
+        return Vector3Zero();
+    }
+    return LevelDataGetEntity(GetCurLevel(), editor_set->entity_idxs[0])->position;
+}
+
+static Quaternion EditorSetGetOrientation(EditorSet *editor_set) {
+    if (arrlenu(editor_set->entity_idxs) == 0) {
+        return QuaternionIdentity();
+    }
+    return LevelDataGetEntity(GetCurLevel(), editor_set->entity_idxs[0])->orientation;
+}
+
+static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
+
+static void EditorSetChangeColor(EditorSet *editor_set, uint32_t color_idx) {
+    LevelData *level_data = GetCurLevel();
+    for (uint32_t i = 0; i < arrlenu(editor_set->entity_idxs); ++i) {
+        Entity *entity = LevelDataGetEntity(level_data, i);
+        entity->block_color = Colors[color_idx];
+        entity->model = GenCubeModel(entity->block_color);
+        entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(entity->block_color);
+    }
+}
+
 typedef struct Editor {
     EditorState state;
     // Index to entity we are focused on.
-    uint32_t focus_idx;
+    EditorSet editor_set;
     char load_level_filename[256];
 
     union {
@@ -59,13 +120,13 @@ static void EditorDisable() {
     EnableGameUpdate();
 }
 
-static Entity *EditorGetFocus(Editor *editor) { return LevelDataGetEntity(GetCurLevel(), editor->focus_idx); }
-
-static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
+static EditorSet *EditorGetFocus(Editor *editor) { return &editor->editor_set; }
 
 static void EditorSetFocus(Editor *editor, Entity *focus) {
     focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
-    editor->focus_idx = focus->idx;
+    EditorSetInit(&editor->editor_set);
+    breakpoint();
+    EditorSetAdd(&editor->editor_set, focus->idx);
     editor->state = ES_EDITING;
 
     editor->x_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
@@ -119,34 +180,34 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             break;
         }
         case ES_EDITING: {
-            Entity *focus = EditorGetFocus(editor);
+            EditorSet *focus = EditorGetFocus(editor);
             if (IsKeyPressed(KEY_ENTER)) {
-                focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-                focus = NULL;
+                EditorSetDeInit(focus);
                 editor->state = ES_IDLE;
             } else {
                 if (IsKeyPressed(KEY_BACKSPACE)) {
-                    LevelData *level_data = GetCurLevel();
-                    LevelDataDeleteEntity(level_data, editor->focus_idx);
+                    EditorSetDelete(focus);
                     editor->state = ES_IDLE;
-                } else if (IsKeyPressed(KEY_UP)) {
-                    focus->position.z -= CubeSideLength;
-                } else if (IsKeyPressed(KEY_RIGHT)) {
-                    focus->position.x += CubeSideLength;
-                } else if (IsKeyPressed(KEY_DOWN)) {
-                    focus->position.z += CubeSideLength;
-                } else if (IsKeyPressed(KEY_LEFT)) {
-                    focus->position.x -= CubeSideLength;
-                } else if (IsKeyPressed(KEY_PAGE_UP)) {
-                    focus->position.y += CubeSideLength;
-                } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
-                    focus->position.y -= CubeSideLength;
                 } else if (IsKeyPressed(KEY_C)) {
                     color_idx = (color_idx + 1) % (sizeof(Colors) / sizeof(Colors[0]));
-                    focus->block_color = Colors[color_idx];
-                    focus->model = GenCubeModel(focus->block_color);
-                    focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color =
-                        EntityGetFocusColor(focus->block_color);
+                    EditorSetChangeColor(focus, color_idx);
+                } else {
+                    Vector3 direction = {0};
+                    if (IsKeyPressed(KEY_UP)) {
+                        direction.z -= CubeSideLength;
+                    } else if (IsKeyPressed(KEY_RIGHT)) {
+                        direction.x += CubeSideLength;
+                    } else if (IsKeyPressed(KEY_DOWN)) {
+                        direction.z += CubeSideLength;
+                    } else if (IsKeyPressed(KEY_LEFT)) {
+                        direction.x -= CubeSideLength;
+                    } else if (IsKeyPressed(KEY_PAGE_UP)) {
+                        direction.y += CubeSideLength;
+                    } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
+                        direction.y -= CubeSideLength;
+                    }
+
+                    EditorSetMove(EditorGetFocus(editor), direction);
                 }
             }
             break;
@@ -195,11 +256,13 @@ static void EditorUpdate(Editor *editor, float delta_time) {
     }
 
     // UpdateEntities.
-    Entity *focus = EditorGetFocus(editor);
+    EditorSet *focus = EditorGetFocus(editor);
+    Vector3 focus_position = EditorSetGetPosition(focus);
+    Quaternion focus_orientation = EditorSetGetOrientation(focus);
     for (uint32_t i = 0; i < 3; ++i) {
         Entity *entity = &editor->entities[i];
-        entity->position = focus->position;
-        entity->orientation = focus->orientation;
+        entity->position = focus_position;
+        entity->orientation = focus_orientation;
     }
 
     for (uint32_t i = 0; i < EditorNumEntities; ++i) {
