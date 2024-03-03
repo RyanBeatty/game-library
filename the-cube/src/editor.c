@@ -39,12 +39,20 @@ static void EditorSetDeInit(EditorSet *editor_set) {
     editor_set->entity_idxs = NULL;
 }
 
-static void EditorSetAdd(EditorSet *editor_set, uint32_t idx) { arrpush(editor_set->entity_idxs, idx); }
+static void EditorSetAdd(EditorSet *editor_set, uint32_t idx) {
+    // Insert in sorted order so we can delete okay.
+    for (uint32_t i = 0; i < arrlenu(editor_set->entity_idxs); ++i) {
+        if (idx < editor_set->entity_idxs[i]) {
+            arrins(editor_set->entity_idxs, i, idx);
+        }
+    }
+    arrpush(editor_set->entity_idxs, idx);
+}
 
 static void EditorSetDelete(EditorSet *editor_set) {
     LevelData *level_data = GetCurLevel();
-    // TODO: Delete in reverse order.
-    for (uint32_t i = 0; i < arrlenu(editor_set->entity_idxs); ++i) {
+    // Delete in reverse order so that our indexes are stable.
+    for (int i = arrlenu(editor_set->entity_idxs) - 1; i >= 0; --i) {
         LevelDataDeleteEntity(level_data, editor_set->entity_idxs[i]);
     }
     editor_set->entity_idxs = NULL;
@@ -54,7 +62,6 @@ static void EditorSetMove(EditorSet *editor_set, Vector3 direction) {
     LevelData *level_data = GetCurLevel();
     for (uint32_t i = 0; i < arrlenu(editor_set->entity_idxs); ++i) {
         Entity *entity = LevelDataGetEntity(level_data, editor_set->entity_idxs[i]);
-        breakpoint();
         entity->position = Vector3Add(entity->position, direction);
     }
 }
@@ -125,7 +132,6 @@ static EditorSet *EditorGetFocus(Editor *editor) { return &editor->editor_set; }
 static void EditorSetFocus(Editor *editor, Entity *focus) {
     focus->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(focus->block_color);
     EditorSetInit(&editor->editor_set);
-    breakpoint();
     EditorSetAdd(&editor->editor_set, focus->idx);
     editor->state = ES_EDITING;
 
