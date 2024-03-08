@@ -98,11 +98,11 @@ static char* WriteBuffer(char* data, char* to_write, size_t len) {
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
-    {
-        char buffer[256] = {0};
-        PackCamera3D(buffer, level_data->camera);
-        data = WriteBuffer(data, buffer, strlen(buffer));
-    }
+    // {
+    //     char buffer[256] = {0};
+    //     PackCamera3D(buffer, level_data->camera);
+    //     data = WriteBuffer(data, buffer, strlen(buffer));
+    // }
 
     level_data->start = LevelDataGetPlayer(level_data)->position;
     level_data->goal = LevelDataGetGoal(level_data)->position;
