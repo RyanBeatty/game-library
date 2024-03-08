@@ -31,7 +31,7 @@ static void GameInit() {
 
     SetTargetFPS(60);
 
-    LoadLevel("level_0");
+    LoadLevel("test_level_0");
 
     GameCameraInit(&GameCamera);
 }
