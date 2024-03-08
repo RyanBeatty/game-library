@@ -28,6 +28,11 @@ static char* PackU32(char* buffer, uint32_t x) {
     return &buffer[i];
 }
 
+static char* PackI32(char* buffer, int32_t x) {
+    int i = sprintf(buffer, "%d", x);
+    return &buffer[i];
+}
+
 static char* PackColor(char* buffer, Color c) {
     buffer = PackU8(buffer, c.r);
     buffer = PackDelim(buffer);
@@ -73,6 +78,15 @@ static char* PackFlags(char* buffer, uint8_t flags[FLAGS_LEN]) {
     return buffer;
 }
 
+static char* PackCamera3D(char* buffer, Camera3D camera) {
+    buffer = PackVector3(buffer, camera.position);
+    buffer = PackVector3(buffer, camera.target);
+    buffer = PackVector3(buffer, camera.up);
+    buffer = PackFloat(buffer, camera.fovy);
+    buffer = PackI32(buffer, camera.projection);
+    return buffer;
+}
+
 static char* WriteBuffer(char* data, char* to_write, size_t len) {
     for (uint32_t i = 0; i < len; ++i) {
         arrpush(data, to_write[i]);
@@ -83,6 +97,12 @@ static char* WriteBuffer(char* data, char* to_write, size_t len) {
 
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
+
+    {
+        char buffer[256] = {0};
+        PackCamera3D(buffer, level_data->camera);
+        data = WriteBuffer(data, buffer, strlen(buffer));
+    }
 
     level_data->start = LevelDataGetPlayer(level_data)->position;
     level_data->goal = LevelDataGetGoal(level_data)->position;
@@ -142,6 +162,13 @@ static char* UnpackU32(char* buffer, uint32_t* idx) {
     return buffer;
 }
 
+static char* UnpackI32(char* buffer, int32_t* idx) {
+    char* tok = GetNextToken(&buffer);
+    int i = sscanf(tok, "%d", idx);
+    assert(i != -1);
+    return buffer;
+}
+
 static char* UnpackFloat(char* buffer, float* f) {
     char* tok = GetNextToken(&buffer);
     int i = sscanf(tok, "%f", f);
@@ -168,6 +195,15 @@ static char* UnpackVector4(char* buffer, Vector4* v) {
     buffer = UnpackFloat(buffer, &v->y);
     buffer = UnpackFloat(buffer, &v->z);
     buffer = UnpackFloat(buffer, &v->w);
+    return buffer;
+}
+
+static char* UnpackCamera3D(char* buffer, Camera3D* camera) {
+    buffer = UnpackVector3(buffer, &camera->position);
+    buffer = UnpackVector3(buffer, &camera->target);
+    buffer = UnpackVector3(buffer, &camera->up);
+    buffer = UnpackFloat(buffer, &camera->fovy);
+    buffer = UnpackI32(buffer, &camera->projection);
     return buffer;
 }
 
@@ -206,6 +242,13 @@ static void LoadLevel(const char* name_original) {
     CurLevel = (LevelData){0};
     LevelData* level_data = &CurLevel;  // Do this so we don't lose the stbarry entity info.
     strcpy(level_data->name, name);
+
+    level_data->camera.position = (Vector3){0.0f, 20.0f, 20.0f};
+    level_data->camera.target = (Vector3){0.0f, 0.0f, 0.0f};
+    level_data->camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+    level_data->camera.fovy = 45.0f;
+    level_data->camera.projection = CAMERA_PERSPECTIVE;
+    SetCamera(&level_data->camera);
 
     // Reset Player/entities.
     Entity* player = LevelDataCreateEntity(level_data);

@@ -14,6 +14,7 @@ typedef struct LevelData {
     bool failed;
     Vector3 start;
     Vector3 goal;
+    Camera3D camera;
     // stbds array.
     Entity* entities;
 } LevelData;

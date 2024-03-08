@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "entity.c"
 #include "level.c"
@@ -32,8 +33,6 @@ static void GameInit() {
     SetTargetFPS(60);
 
     LoadLevel("test_level_0");
-
-    GameCameraInit(&GameCamera);
 }
 
 static void GameUpdate(float delta_time) {
@@ -76,6 +75,27 @@ static void GameDraw(float delta_time) {
 }
 
 int main(void) {
+    // chdir("..");
+    // char wd[1024] = {0};
+    // getcwd(wd, 1024);
+
+    // char dir[1024] = {0};
+    // sprintf(dir, "%s/the-cube/resources/levels", wd);
+    // FilePathList files = LoadDirectoryFiles(dir);
+    // // // breakpoint();
+    // for (uint32_t i = 0; i < files.count; ++i) {
+    //     char* filename = files.paths[i];
+    //     char full_filename[1024] = {0};
+    //     strcat(full_filename, dir);
+    //     strcat(full_filename, filename);
+    //     printf("%s\n", full_filename);
+    //     // LoadLevel(full_filename);
+    //     // LevelData* level = GetCurLevel();
+    //     // SaveLevel(level);
+    // }
+
+    // return 0;
+
     GameInit();
 
     while (!WindowShouldClose()) {
