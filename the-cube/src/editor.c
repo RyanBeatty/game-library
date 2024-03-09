@@ -19,6 +19,7 @@ typedef enum EditorState {
     ES_SAVING,
     ES_LOADING,
     ES_FOCUSING,
+    ES_CAMERA,
 
     ES_COUNT
 } EditorState;
@@ -162,6 +163,7 @@ static void EditorSetFocus(Editor *editor, Entity *focus) {
 
 static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
+    static Camera3D saved_camera = {0};
     assert(EditorEnabled);
 
     switch (editor->state) {
@@ -191,6 +193,9 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 } else if (IsKeyPressed(KEY_L)) {
                     editor->state = ES_LOADING;
                 }
+            } else if (IsKeyPressed(KEY_C)) {
+                editor->state = ES_CAMERA;
+                saved_camera = GetGameCamera();
             }
             break;
         }
@@ -279,6 +284,19 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                     editor->load_level_filename[name_len] = (char)key;
                     editor->load_level_filename[name_len + 1] = '\0';
                 }
+            }
+            break;
+        }
+        case ES_CAMERA: {
+            Camera3D *camera = &GetGameCamera();
+            if (IsKeyPressed(KEY_C)) {
+                editor->state = ES_IDLE;
+                *camera = saved_camera;
+            } else {
+                if (IsKeyPressed(KEY_ENTER)) {
+                    saved_camera = *camera;
+                }
+                UpdateCamera(camera, CAMERA_FREE);
             }
             break;
         }
