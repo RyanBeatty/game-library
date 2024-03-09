@@ -104,7 +104,7 @@ static void SaveLevel(LevelData* level_data) {
 
     {
         char buffer[256] = {0};
-        PackCamera3D(buffer, GetGameCamera());
+        PackCamera3D(buffer, level_data->camera);
         data = WriteBuffer(data, buffer, strlen(buffer));
     }
 

@@ -163,7 +163,6 @@ static void EditorSetFocus(Editor *editor, Entity *focus) {
 
 static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
-    static Camera3D saved_camera = {0};
     assert(EditorEnabled);
 
     switch (editor->state) {
@@ -192,10 +191,11 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                     editor->state = ES_SAVING;
                 } else if (IsKeyPressed(KEY_L)) {
                     editor->state = ES_LOADING;
+                } else if (IsKeyPressed(KEY_R)) {
+                    LoadLevel(GetCurLevel()->name);
                 }
             } else if (IsKeyPressed(KEY_C)) {
                 editor->state = ES_CAMERA;
-                saved_camera = GetGameCamera();
             }
             break;
         }
@@ -288,13 +288,12 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             break;
         }
         case ES_CAMERA: {
-            Camera3D *camera = &GetGameCamera();
             if (IsKeyPressed(KEY_C)) {
                 editor->state = ES_IDLE;
-                *camera = saved_camera;
             } else {
+                Camera3D *camera = &GetGameCamera();
                 if (IsKeyPressed(KEY_ENTER)) {
-                    saved_camera = *camera;
+                    GetCurLevel()->camera = *camera;
                 }
                 UpdateCamera(camera, CAMERA_FREE);
             }
