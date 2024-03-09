@@ -80,9 +80,13 @@ static char* PackFlags(char* buffer, uint8_t flags[FLAGS_LEN]) {
 
 static char* PackCamera3D(char* buffer, Camera3D camera) {
     buffer = PackVector3(buffer, camera.position);
+    buffer = PackDelim(buffer);
     buffer = PackVector3(buffer, camera.target);
+    buffer = PackDelim(buffer);
     buffer = PackVector3(buffer, camera.up);
+    buffer = PackDelim(buffer);
     buffer = PackFloat(buffer, camera.fovy);
+    buffer = PackDelim(buffer);
     buffer = PackI32(buffer, camera.projection);
     return buffer;
 }
@@ -98,11 +102,11 @@ static char* WriteBuffer(char* data, char* to_write, size_t len) {
 static void SaveLevel(LevelData* level_data) {
     char* data = NULL;
 
-    // {
-    //     char buffer[256] = {0};
-    //     PackCamera3D(buffer, level_data->camera);
-    //     data = WriteBuffer(data, buffer, strlen(buffer));
-    // }
+    {
+        char buffer[256] = {0};
+        PackCamera3D(buffer, GetGameCamera());
+        data = WriteBuffer(data, buffer, strlen(buffer));
+    }
 
     level_data->start = LevelDataGetPlayer(level_data)->position;
     level_data->goal = LevelDataGetGoal(level_data)->position;
@@ -243,17 +247,15 @@ static void LoadLevel(const char* name_original) {
     LevelData* level_data = &CurLevel;  // Do this so we don't lose the stbarry entity info.
     strcpy(level_data->name, name);
 
-    level_data->camera.position = (Vector3){0.0f, 20.0f, 20.0f};
-    level_data->camera.target = (Vector3){0.0f, 0.0f, 0.0f};
-    level_data->camera.up = (Vector3){0.0f, 1.0f, 0.0f};
-    level_data->camera.fovy = 45.0f;
-    level_data->camera.projection = CAMERA_PERSPECTIVE;
+    // Set GameCamera
+    char* line = strtok(data, "\n");
+    UnpackCamera3D(line, &level_data->camera);
+    line = strtok(NULL, "\n");
     SetCamera(&level_data->camera);
 
     // Reset Player/entities.
     Entity* player = LevelDataCreateEntity(level_data);
 
-    char* line = strtok(data, "\n");
     UnpackVector3(line, &level_data->start);
     line = strtok(NULL, "\n");
     PlayerInit(player, level_data->start);
