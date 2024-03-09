@@ -96,7 +96,7 @@ static Quaternion FocusGetOrientation(Focus *focus) {
 static void FocusChangeColor(Focus *focus, uint32_t color_idx) {
     LevelData *level_data = GetCurLevel();
     for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
-        Entity *entity = LevelDataGetEntity(level_data, i);
+        Entity *entity = LevelDataGetEntity(level_data, focus->entity_idxs[i]);
         entity->block_color = Colors[color_idx];
         entity->model = GenCubeModel(entity->block_color);
         entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(entity->block_color);
