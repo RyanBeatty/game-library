@@ -58,6 +58,38 @@ static void PlayerInit(Entity* player, Vector3 position) {
 }
 
 static void EntityPlayerControlled(Entity* entity, float delta_time) {
+    Vector3 direction = {0};
+    if (IsKeyPressed(KEY_UP)) {
+        direction = Vector3Add(direction, (Vector3){0, 0, -CubeSideLength});
+    }
+    if (IsKeyPressed(KEY_RIGHT)) {
+        direction = Vector3Add(direction, (Vector3){CubeSideLength, 0, 0});
+    }
+    if (IsKeyPressed(KEY_DOWN)) {
+        direction = Vector3Add(direction, (Vector3){0, 0, CubeSideLength});
+    }
+    if (IsKeyPressed(KEY_LEFT)) {
+        direction = Vector3Add(direction, (Vector3){-CubeSideLength, 0, 0});
+    }
+
+    Vector3 position = Vector3Add(entity->position, direction);
+    BoundingBox bb = GetBoundingBox(position);
+    LevelData* level = GetCurLevel();
+    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
+        if (i == entity->idx) {
+            continue;
+        }
+        Entity* e2 = LevelDataGetEntity(level, i);
+        BoundingBox e2_bb = EntityGetBoundingBox(e2);
+        if (CheckCollisionBoxes(bb, e2_bb)) {
+            e2->position = Vector3Add(e2->position, direction);
+        }
+    }
+
+    entity->position = position;
+}
+
+static void EntityPlayerControlled2(Entity* entity, float delta_time) {
     static float T = 0;
     static Quaternion StartOrientation;
     static Quaternion EndOrientation;
