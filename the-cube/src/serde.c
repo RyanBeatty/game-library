@@ -288,6 +288,9 @@ static void LoadLevel(const char* name_original) {
             // TODO: improve this. just for visual debugging at the moment.
             entity->position.y = 0;
         } else {
+            if (EntityTestFlag(entity, EF_PUSHABLE)) {
+                entity->block_color = RED;
+            }
             entity->model = GenCubeModel(entity->block_color);
         }
 

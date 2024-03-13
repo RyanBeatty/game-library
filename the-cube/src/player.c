@@ -82,10 +82,12 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
         Entity* e2 = LevelDataGetEntity(level, i);
         BoundingBox e2_bb = EntityGetBoundingBox(e2);
         if (CheckCollisionBoxes(bb, e2_bb)) {
-            if (EntityTestFlag(e2, EF_BLOCK_IS_PUSHABLE)) {
-                e2->position = Vector3Add(e2->position, direction);
-            } else {
+            if (EntityTestFlag(e2, EF_WALL)) {
                 position = entity->position;
+                break;
+            }
+            if (EntityTestFlag(e2, EF_PUSHABLE)) {
+                e2->position = Vector3Add(e2->position, direction);
                 break;
             }
         }
