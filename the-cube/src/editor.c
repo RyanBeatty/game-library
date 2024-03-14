@@ -182,6 +182,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
 
             if (IsKeyPressed(KEY_A)) {
                 Entity *focus = CreateLevelDataEntity(GetCurLevel());
+                focus->block_color = GRAY;
                 focus->model = GenCubeModel(GRAY);
                 focus->position = ORIGIN;
                 EditorSetFocus(editor, focus);
