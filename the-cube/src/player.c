@@ -57,6 +57,54 @@ static void PlayerInit(Entity* player, Vector3 position) {
     UploadMesh(mesh, false);
 }
 
+static Entity* Transaction = NULL;
+
+static void TransactionBegin() {
+    Transaction = NULL;
+    LevelData* level = GetCurLevel();
+    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
+        Entity* entity = arraddnptr(Transaction, 1);
+        *entity = *LevelDataGetEntity(level, i);
+    }
+}
+
+static void TransactionCommit() {
+    arrfree(Transaction);
+    Transaction = NULL;
+}
+
+static void TransactionRollback() {
+    LevelData* level = GetCurLevel();
+    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
+        Entity* entity = LevelDataGetEntity(level, i);
+        *entity = Transaction[i];
+    }
+    TransactionCommit();
+}
+
+static void EntityMoveRecursive(Entity* entity, float delta_time, Vector3 dir) {
+    entity->position = Vector3Add(entity->position, dir);
+    BoundingBox bb = EntityGetBoundingBox(entity);
+    LevelData* level = GetCurLevel();
+    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
+        if (i == entity->idx) {
+            continue;
+        }
+        Entity* e2 = LevelDataGetEntity(level, i);
+        BoundingBox e2_bb = EntityGetBoundingBox(e2);
+        if (CheckCollisionBoxes(bb, e2_bb)) {
+            if (EntityTestFlag(e2, EF_WALL)) {
+                TransactionRollback();
+                return;
+            }
+            if (EntityTestFlag(e2, EF_PUSHABLE)) {
+                EntityMoveRecursive(e2, delta_time, dir);
+            }
+        }
+    }
+    return;
+}
+
 static void EntityPlayerControlled(Entity* entity, float delta_time) {
     Vector3 direction = {0};
     if (IsKeyPressed(KEY_UP)) {
@@ -72,121 +120,128 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
         direction = Vector3Add(direction, (Vector3){-CubeSideLength, 0, 0});
     }
 
-    Vector3 position = Vector3Add(entity->position, direction);
-    BoundingBox bb = GetBoundingBox(position);
-    LevelData* level = GetCurLevel();
-    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
-        if (i == entity->idx) {
-            continue;
-        }
-        Entity* e2 = LevelDataGetEntity(level, i);
-        BoundingBox e2_bb = EntityGetBoundingBox(e2);
-        if (CheckCollisionBoxes(bb, e2_bb)) {
-            if (EntityTestFlag(e2, EF_WALL)) {
-                position = entity->position;
-                break;
-            }
-            if (EntityTestFlag(e2, EF_PUSHABLE)) {
-                e2->position = Vector3Add(e2->position, direction);
-                break;
-            }
-        }
-    }
+    TransactionBegin();
+    EntityMoveRecursive(entity, delta_time, direction);
+    TransactionCommit();
+    // Vector3 position = Vector3Add(entity->position, direction);
+    // BoundingBox bb = GetBoundingBox(position);
+    // LevelData* level = GetCurLevel();
+    // for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
+    //     if (i == entity->idx) {
+    //         continue;
+    //     }
+    //     Entity* e2 = LevelDataGetEntity(level, i);
+    //     BoundingBox e2_bb = EntityGetBoundingBox(e2);
+    //     if (CheckCollisionBoxes(bb, e2_bb)) {
+    //         if (EntityTestFlag(e2, EF_WALL)) {
+    //             position = entity->position;
+    //             break;
+    //         }
+    //         if (EntityTestFlag(e2, EF_PUSHABLE)) {
+    //             e2->position = Vector3Add(e2->position, direction);
+    //             break;
+    //         }
+    //     }
+    // }
 
-    entity->position = position;
+    // entity->position = position;
 }
 
-static void EntityPlayerControlled2(Entity* entity, float delta_time) {
-    static float T = 0;
-    static Quaternion StartOrientation;
-    static Quaternion EndOrientation;
-    static Vector3 StartPosition;
-    static Vector3 EndPosition;
+// static void EntityPlayerControlled2(Entity* entity, float delta_time) {
+//     static float T = 0;
+//     static Quaternion StartOrientation;
+//     static Quaternion EndOrientation;
+//     static Vector3 StartPosition;
+//     static Vector3 EndPosition;
 
-    switch (entity->player_state) {
-        case PS_IDLE: {
-            if (IsKeyPressed(KEY_UP)) {
-                entity->player_state = PS_WALKING;
-                T = 0;
-                StartOrientation = entity->orientation;
-                StartPosition = entity->position;
-                EndOrientation =
-                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD), entity->orientation);
-                EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
-            }
-            if (IsKeyPressed(KEY_RIGHT)) {
-                entity->player_state = PS_WALKING;
-                T = 0;
-                StartOrientation = entity->orientation;
-                StartPosition = entity->position;
-                EndOrientation =
-                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD), entity->orientation);
-                EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
-            }
-            if (IsKeyPressed(KEY_DOWN)) {
-                entity->player_state = PS_WALKING;
-                T = 0;
-                StartOrientation = entity->orientation;
-                StartPosition = entity->position;
-                EndOrientation =
-                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD), entity->orientation);
-                EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
-            }
-            if (IsKeyPressed(KEY_LEFT)) {
-                entity->player_state = PS_WALKING;
-                T = 0;
-                StartOrientation = entity->orientation;
-                StartPosition = entity->position;
-                EndOrientation =
-                    QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD), entity->orientation);
-                EndPosition = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
-            }
+//     switch (entity->player_state) {
+//         case PS_IDLE: {
+//             if (IsKeyPressed(KEY_UP)) {
+//                 entity->player_state = PS_WALKING;
+//                 T = 0;
+//                 StartOrientation = entity->orientation;
+//                 StartPosition = entity->position;
+//                 EndOrientation =
+//                     QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, -90 * DEG2RAD),
+//                     entity->orientation);
+//                 EndPosition = Vector3Add(entity->position, (Vector3){0, 0, -CubeSideLength});
+//             }
+//             if (IsKeyPressed(KEY_RIGHT)) {
+//                 entity->player_state = PS_WALKING;
+//                 T = 0;
+//                 StartOrientation = entity->orientation;
+//                 StartPosition = entity->position;
+//                 EndOrientation =
+//                     QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, -90 * DEG2RAD),
+//                     entity->orientation);
+//                 EndPosition = Vector3Add(entity->position, (Vector3){CubeSideLength, 0, 0});
+//             }
+//             if (IsKeyPressed(KEY_DOWN)) {
+//                 entity->player_state = PS_WALKING;
+//                 T = 0;
+//                 StartOrientation = entity->orientation;
+//                 StartPosition = entity->position;
+//                 EndOrientation =
+//                     QuaternionMultiply(QuaternionFromAxisAngle((Vector3){1, 0, 0}, 90 * DEG2RAD),
+//                     entity->orientation);
+//                 EndPosition = Vector3Add(entity->position, (Vector3){0, 0, CubeSideLength});
+//             }
+//             if (IsKeyPressed(KEY_LEFT)) {
+//                 entity->player_state = PS_WALKING;
+//                 T = 0;
+//                 StartOrientation = entity->orientation;
+//                 StartPosition = entity->position;
+//                 EndOrientation =
+//                     QuaternionMultiply(QuaternionFromAxisAngle((Vector3){0, 0, 1}, 90 * DEG2RAD),
+//                     entity->orientation);
+//                 EndPosition = Vector3Add(entity->position, (Vector3){-CubeSideLength, 0, 0});
+//             }
 
-            break;
-        }
-        case PS_WALKING: {
-            T += delta_time;
-            float t = T / 0.15;
-            if (t >= 1.0f) {
-                entity->player_state = PS_IDLE;
-                entity->orientation = EndOrientation;
-                entity->position = EndPosition;
-            } else {
-                entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
-                entity->position = Vector3Lerp(StartPosition, EndPosition, t);
-            }
+//             break;
+//         }
+//         case PS_WALKING: {
+//             T += delta_time;
+//             float t = T / 0.15;
+//             if (t >= 1.0f) {
+//                 entity->player_state = PS_IDLE;
+//                 entity->orientation = EndOrientation;
+//                 entity->position = EndPosition;
+//             } else {
+//                 entity->orientation = QuaternionSlerp(StartOrientation, EndOrientation, t);
+//                 entity->position = Vector3Lerp(StartPosition, EndPosition, t);
+//             }
 
-            Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
+//             Color top_color = GetTopFaceColor(&entity->model.meshes[0], StartOrientation);
 
-            Entity* goal = LevelDataGetGoal(&CurLevel);
-            BoundingBox player_bb = GetBoundingBox(entity->position);
+//             Entity* goal = LevelDataGetGoal(&CurLevel);
+//             BoundingBox player_bb = GetBoundingBox(entity->position);
 
-            for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-                Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
-                if (entity2 == entity || entity2 == goal) {
-                    continue;
-                }
+//             for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
+//                 Entity* entity2 = LevelDataGetEntity(&CurLevel, i);
+//                 if (entity2 == entity || entity2 == goal) {
+//                     continue;
+//                 }
 
-                Color e2_color = entity2->block_color;
-                BoundingBox e2_bb = GetBoundingBox(entity2->position);
-                if (CheckCollisionBoxes(player_bb, e2_bb) &&
-                    (top_color.r != e2_color.r || top_color.g != e2_color.g || top_color.b != e2_color.b ||
-                     top_color.a != e2_color.a) &&
-                    !EntityTestFlag(entity2, EF_HUNT_PLAYER)) {
-                    entity->player_state = PS_IDLE;
-                    entity->position = StartPosition;
-                    entity->orientation = StartOrientation;
-                }
-            }
+//                 Color e2_color = entity2->block_color;
+//                 BoundingBox e2_bb = GetBoundingBox(entity2->position);
+//                 if (CheckCollisionBoxes(player_bb, e2_bb) &&
+//                     (top_color.r != e2_color.r || top_color.g != e2_color.g || top_color.b != e2_color.b ||
+//                      top_color.a != e2_color.a) &&
+//                     !EntityTestFlag(entity2, EF_HUNT_PLAYER)) {
+//                     entity->player_state = PS_IDLE;
+//                     entity->position = StartPosition;
+//                     entity->orientation = StartOrientation;
+//                 }
+//             }
 
-            break;
-        }
-        default: {
-            exit(0);
-        }
-    }
+//             break;
+//         }
+//         default: {
+//             exit(0);
+//         }
+//     }
 
-    if (false) {
-        PrintMatrix(QuaternionToMatrix(entity->orientation));
-    }
-}
+//     if (false) {
+//         PrintMatrix(QuaternionToMatrix(entity->orientation));
+//     }
+// }
