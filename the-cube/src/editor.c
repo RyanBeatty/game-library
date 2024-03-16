@@ -14,37 +14,35 @@ static void DisableGameUpdate();
 //////////////////////////////////////////////////////////////////////
 // Immediate Mode GUI
 
-typedef struct GuiTextBoxState {
+typedef struct GuiElement {
     bool enabled;
     char buffer[256];
     uint32_t len;
-} GuiTextBoxState;
+} GuiElement;
 
-bool GuiTextBox(GuiTextBoxState *tb, char *id, bool toggle, int x, int y, int pressed) {
+bool GuiTextBox(GuiElement *element, char *id, bool toggle, int x, int y, int pressed) {
     if (toggle) {
-        tb->enabled = !tb->enabled;
+        element->enabled = !element->enabled;
 #ifndef BT_DEBUG
 
-        TraceLog(LOG_INFO, "%s %s", id, ONOFF(tb->enabled));
+        TraceLog(LOG_INFO, "%s %s", id, ONOFF(element->enabled));
 #endif
         return false;
     }
 
-    if (tb->enabled) {
+    if (element->enabled) {
         if (pressed == KEY_ENTER) {
             return true;
         } else if (pressed == KEY_DELETE) {
-            --tb->len;
-            tb->len = tb->len < 0 ? 0 : tb->len;
+            --element->len;
+            element->len = element->len < 0 ? 0 : element->len;
         } else if (pressed != 0) {
-            tb->buffer[tb->len] = pressed;
-            ++tb->len;
+            element->buffer[element->len] = pressed;
+            ++element->len;
         }
 
-        if (tb->len) {
-            BeginDrawing();
-            DrawText(tb->buffer, x, y, 22, BLACK);
-            EndDrawing();
+        if (element->len) {
+            DrawText(element->buffer, x, y, 22, BLACK);
         }
     }
 
@@ -244,7 +242,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             Focus *focus = EditorGetFocus(editor);
 
             int key = GetKeyPressed();
-            static GuiTextBoxState EditFlagsTextBox = {0};
+            static GuiElement EditFlagsTextBox = {0};
             if (GuiTextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
             }
 

@@ -99,10 +99,6 @@ int main(void) {
             }
         }
 
-        if (IsEditorEnabled()) {
-            EditorUpdate(&GameEditor, delta_time);
-        }
-
         if (GameUpdateEnabled) {
             GameUpdate(delta_time);
         }
@@ -120,6 +116,8 @@ int main(void) {
         GameDraw(delta_time);
 
         if (IsEditorEnabled()) {
+            EditorUpdate(&GameEditor, delta_time);
+
             EditorDraw(&GameEditor, delta_time);
         }
         EndDrawing();
