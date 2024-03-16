@@ -167,6 +167,24 @@ static void FocusUnsetFlag(Focus *focus, EntityFlag flag) {
     }
 }
 
+static bool FocusIsInFocus(Focus *focus, uint32_t entity_idx, uint32_t *idx) {
+    for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
+        if (entity_idx == focus->entity_idxs[i]) {
+            *idx = i;
+            return true;
+        }
+    }
+    *idx = 0;
+    return false;
+}
+
+static void FocusRemove(Focus *focus, uint32_t idx) {
+    LevelData *level = GetCurLevel();
+    Entity *entity = LevelDataGetEntity(level, focus->entity_idxs[idx]);
+    entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+    arrdel(focus->entity_idxs, idx);
+}
+
 typedef struct Editor {
     EditorState state;
     // Index to entity we are focused on.
@@ -275,6 +293,27 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             break;
         }
         case ES_EDITING: {
+            {
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                    // TODO: Remove duplication.
+                    Vector2 mouse_position = GetMousePosition();
+                    Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+
+                    LevelData *cur_level = GetCurLevel();
+                    RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+                    if (collision.collision.hit) {
+                        uint32_t idx = 0;
+                        Focus *focus = EditorGetFocus(editor);
+                        if (FocusIsInFocus(focus, collision.entity_idx, &idx)) {
+                            breakpoint();
+                            FocusRemove(focus, idx);
+                        } else {
+                            FocusAdd(focus, collision.entity_idx);
+                        }
+                    }
+                }
+            }
+
             Focus *focus = EditorGetFocus(editor);
 
             int key = GetKeyPressed();
