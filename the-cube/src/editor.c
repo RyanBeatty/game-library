@@ -14,35 +14,35 @@ static void DisableGameUpdate();
 //////////////////////////////////////////////////////////////////////
 // Immediate Mode GUI
 
-typedef struct GuiElement {
+typedef struct UIWidget {
     bool enabled;
     char buffer[256];
     uint32_t len;
-} GuiElement;
+} UIWidget;
 
-bool GuiTextBox(GuiElement *element, char *id, bool toggle, int x, int y, int pressed) {
+bool UITextBox(UIWidget *widget, char *id, bool toggle, int x, int y, int pressed) {
     if (toggle) {
-        element->enabled = !element->enabled;
+        widget->enabled = !widget->enabled;
 #ifndef BT_DEBUG
 
-        TraceLog(LOG_INFO, "%s %s", id, ONOFF(element->enabled));
+        TraceLog(LOG_INFO, "%s %s", id, ONOFF(widget->enabled));
 #endif
         return false;
     }
 
-    if (element->enabled) {
+    if (widget->enabled) {
         if (pressed == KEY_ENTER) {
             return true;
         } else if (pressed == KEY_DELETE) {
-            --element->len;
-            element->len = element->len < 0 ? 0 : element->len;
+            --widget->len;
+            widget->len = widget->len < 0 ? 0 : widget->len;
         } else if (pressed != 0) {
-            element->buffer[element->len] = pressed;
-            ++element->len;
+            widget->buffer[widget->len] = pressed;
+            ++widget->len;
         }
 
-        if (element->len) {
-            DrawText(element->buffer, x, y, 22, BLACK);
+        if (widget->len) {
+            DrawText(widget->buffer, x, y, 22, BLACK);
         }
     }
 
@@ -242,8 +242,8 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             Focus *focus = EditorGetFocus(editor);
 
             int key = GetKeyPressed();
-            static GuiElement EditFlagsTextBox = {0};
-            if (GuiTextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
+            static UIWidget EditFlagsTextBox = {0};
+            if (UITextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
             }
 
             if (key == KEY_ENTER) {
