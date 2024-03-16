@@ -26,6 +26,8 @@
 
 void __attribute__((noinline)) breakpoint() {}
 
+#define ONOFF(f) ((f) ? "On" : "Off")
+
 ///////////////////////////////////////////////
 // Project files below
 

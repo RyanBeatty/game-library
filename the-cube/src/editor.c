@@ -12,6 +12,50 @@
 static void EnableGameUpdate();
 static void DisableGameUpdate();
 //////////////////////////////////////////////////////////////////////
+// Immediate Mode GUI
+
+typedef struct GuiTextBoxState {
+    bool enabled;
+    char buffer[256];
+    uint32_t len;
+} GuiTextBoxState;
+
+bool GuiTextBox(GuiTextBoxState *tb, char *id, bool toggle, int x, int y, int pressed) {
+    if (pressed == 0) {
+        return false;
+    }
+
+    if (toggle) {
+        tb->enabled = !tb->enabled;
+#ifndef BT_DEBUG
+
+        TraceLog(LOG_INFO, "%s %s", id, ONOFF(tb->enabled));
+#endif
+        return false;
+    }
+
+    if (tb->enabled) {
+        if (pressed == KEY_ENTER) {
+            return true;
+        } else if (pressed == KEY_DELETE) {
+            --tb->len;
+            tb->len = tb->len < 0 ? 0 : tb->len;
+        } else if (pressed != 0) {
+            tb->buffer[tb->len] = pressed;
+            ++tb->len;
+        }
+
+        if (tb->len) {
+            BeginDrawing();
+            DrawText(tb->buffer, x, y, 22, BLACK);
+            EndDrawing();
+        }
+    }
+
+    return false;
+}
+
+//////////////////////////////////////////////////////////////////////
 
 typedef enum EditorState {
     ES_IDLE = 0,
@@ -167,6 +211,11 @@ static void EditorUpdate(Editor *editor, float delta_time) {
 
     switch (editor->state) {
         case ES_IDLE: {
+            int key = GetKeyPressed();
+            static GuiTextBoxState EditFlagsTextBox = {0};
+            if (GuiTextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
+            }
+
             if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 Vector2 mouse_position = GetMousePosition();
                 Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
