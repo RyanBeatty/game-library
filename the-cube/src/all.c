@@ -8,6 +8,7 @@
 #include "stb_ds.h"
 // Comment to prevent autolinting
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

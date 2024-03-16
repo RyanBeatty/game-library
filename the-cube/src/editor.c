@@ -1,4 +1,5 @@
 #ifndef UNITY_BUILD
+#include <errno.h>
 #include <stdbool.h>
 
 #include "entity.c"
@@ -34,6 +35,9 @@ bool UITextBox(UIWidget *widget, char *id, bool toggle, int x, int y, int presse
         if (pressed == KEY_ENTER) {
             return true;
         } else if (pressed == KEY_DELETE) {
+            // TODO: I need to implement focus. Problems that arise, are if I hit delete, the entity that
+            // gets focus will get deleted because of other deletion code. I should implement some concept of widget
+            // focus, so that deletion will work correctly.
             --widget->len;
             widget->len = widget->len < 0 ? 0 : widget->len;
         } else if (pressed != 0) {
@@ -44,6 +48,12 @@ bool UITextBox(UIWidget *widget, char *id, bool toggle, int x, int y, int presse
         if (widget->len) {
             DrawText(widget->buffer, x, y, 22, BLACK);
         }
+    } else {
+        // TODO: I need to implement focus. Problems that arise, are if I hit delete, the entity that
+        // gets focus will get deleted because of other deletion code. I should implement some concept of widget
+        // focus, so that deletion will work correctly.
+        widget->len = 0;
+        memset(widget->buffer, 0, 256);
     }
 
     return false;
@@ -138,6 +148,22 @@ static void FocusChangeColor(Focus *focus, uint32_t color_idx) {
         entity->block_color = Colors[color_idx];
         entity->model = GenCubeModel(entity->block_color);
         entity->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = EntityGetFocusColor(entity->block_color);
+    }
+}
+
+static void FocusSetFlag(Focus *focus, EntityFlag flag) {
+    LevelData *level = GetCurLevel();
+    for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
+        Entity *entity = LevelDataGetEntity(level, focus->entity_idxs[i]);
+        EntitySetFlag(entity, flag);
+    }
+}
+
+static void FocusUnsetFlag(Focus *focus, EntityFlag flag) {
+    LevelData *level = GetCurLevel();
+    for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
+        Entity *entity = LevelDataGetEntity(level, focus->entity_idxs[i]);
+        EntityUnsetFlag(entity, flag);
     }
 }
 
@@ -244,6 +270,20 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             int key = GetKeyPressed();
             static UIWidget EditFlagsTextBox = {0};
             if (UITextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
+                char *endptr;
+                long flag = strtol(EditFlagsTextBox.buffer, &endptr, 10);
+                assert(errno != ERANGE);
+                assert(*endptr == '\0');
+                if (flag < EF_COUNT) {
+                    if (flag >= 0) {
+                        // FocusSetFlag(focus, (EntityFlag)flag);
+                    } else {
+                        flag *= -1;
+                        // FocusUnsetFlag(focus, (EntityFlag)flag);
+                    }
+                } else {
+                    TraceLog(LOG_INFO, "EditFlags Flag Value Too High: %d > %d", flag, EF_COUNT);
+                }
             }
 
             if (key == KEY_ENTER) {

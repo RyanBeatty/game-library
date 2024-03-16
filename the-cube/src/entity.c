@@ -83,7 +83,9 @@ static bool EntityTestFlag(Entity* entity, EntityFlag flag) {
     return entity->flags[flag / 8] & (1 << ((flag % 8) - 1));
 }
 static void SetFlag(uint8_t flags[FLAGS_LEN], EntityFlag flag) { flags[flag / 8] |= (1 << ((flag % 8) - 1)); }
+static void UnsetFlag(uint8_t flags[FLAGS_LEN], EntityFlag flag) { flags[flag / 8] &= (0 << ((flag % 8) - 1)); }
 static void EntitySetFlag(Entity* entity, EntityFlag flag) { SetFlag(entity->flags, flag); }
+static void EntityUnsetFlag(Entity* entity, EntityFlag flag) { UnsetFlag(entity->flags, flag); }
 
 static void EntityUpdateTransform(Entity* entity) {
     // Remember matrices are applied left to right order, so the rotation is first.
