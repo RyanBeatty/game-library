@@ -276,10 +276,10 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 assert(*endptr == '\0');
                 if (flag < EF_COUNT) {
                     if (flag >= 0) {
-                        // FocusSetFlag(focus, (EntityFlag)flag);
+                        FocusSetFlag(focus, (EntityFlag)flag);
                     } else {
                         flag *= -1;
-                        // FocusUnsetFlag(focus, (EntityFlag)flag);
+                        FocusUnsetFlag(focus, (EntityFlag)flag);
                     }
                 } else {
                     TraceLog(LOG_INFO, "EditFlags Flag Value Too High: %d > %d", flag, EF_COUNT);
