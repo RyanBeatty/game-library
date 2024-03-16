@@ -204,7 +204,7 @@ static void EditorDisable() {
 
 static Focus *EditorGetFocus(Editor *editor) { return &editor->focus; }
 
-static void EditorSetFocus(Editor *editor, Entity *focus) {
+static Focus *EditorSetFocus(Editor *editor, Entity *focus) {
     FocusInit(&editor->focus);
     FocusAdd(&editor->focus, focus->idx);
     editor->state = ES_FOCUSING;
@@ -223,6 +223,7 @@ static void EditorSetFocus(Editor *editor, Entity *focus) {
     editor->z_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = RED;
     EntityTransformMesh(&editor->z_arrow,
                         MatrixMultiply(MatrixTranslate(0, 3, 0), MatrixRotate((Vector3){1, 0, 0}, 90 * DEG2RAD)));
+    return EditorGetFocus(editor);
 }
 
 static void EditorUpdate(Editor *editor, float delta_time) {
@@ -244,23 +245,32 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 }
             }
 
-            if (IsKeyPressed(KEY_A)) {
-                Entity *focus = CreateLevelDataEntity(GetCurLevel());
-                focus->block_color = GRAY;
-                focus->model = GenCubeModel(GRAY);
-                focus->position = ORIGIN;
-                EditorSetFocus(editor, focus);
-                color_idx = 0;
-            } else if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
+            if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
                 if (IsKeyPressed(KEY_S)) {
                     editor->state = ES_SAVING;
                 } else if (IsKeyPressed(KEY_L)) {
                     editor->state = ES_LOADING;
                 } else if (IsKeyPressed(KEY_R)) {
                     LoadLevel(GetCurLevel()->name);
+                } else if (IsKeyPressed(KEY_A)) {
+                    LevelData *level = GetCurLevel();
+                    Entity *entity = LevelDataGetEntity(level, 0);
+                    Focus *focus = EditorSetFocus(editor, entity);
+                    for (uint32_t i = 1; i < LevelDataNumEntities(level); ++i) {
+                        entity = LevelDataGetEntity(level, i);
+                        FocusAdd(focus, entity->idx);
+                    }
+                    editor->state = ES_EDITING;
                 }
             } else if (IsKeyPressed(KEY_C)) {
                 editor->state = ES_CAMERA;
+            } else if (IsKeyPressed(KEY_A)) {
+                Entity *focus = CreateLevelDataEntity(GetCurLevel());
+                focus->block_color = GRAY;
+                focus->model = GenCubeModel(GRAY);
+                focus->position = ORIGIN;
+                EditorSetFocus(editor, focus);
+                color_idx = 0;
             }
             break;
         }
