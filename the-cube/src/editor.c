@@ -21,10 +21,6 @@ typedef struct GuiTextBoxState {
 } GuiTextBoxState;
 
 bool GuiTextBox(GuiTextBoxState *tb, char *id, bool toggle, int x, int y, int pressed) {
-    if (pressed == 0) {
-        return false;
-    }
-
     if (toggle) {
         tb->enabled = !tb->enabled;
 #ifndef BT_DEBUG
@@ -211,11 +207,6 @@ static void EditorUpdate(Editor *editor, float delta_time) {
 
     switch (editor->state) {
         case ES_IDLE: {
-            int key = GetKeyPressed();
-            static GuiTextBoxState EditFlagsTextBox = {0};
-            if (GuiTextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
-            }
-
             if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                 Vector2 mouse_position = GetMousePosition();
                 Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
@@ -251,29 +242,35 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         }
         case ES_EDITING: {
             Focus *focus = EditorGetFocus(editor);
-            if (IsKeyPressed(KEY_ENTER)) {
+
+            int key = GetKeyPressed();
+            static GuiTextBoxState EditFlagsTextBox = {0};
+            if (GuiTextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
+            }
+
+            if (key == KEY_ENTER) {
                 FocusDeInit(focus);
                 editor->state = ES_IDLE;
             } else {
-                if (IsKeyPressed(KEY_BACKSPACE)) {
+                if (key == KEY_BACKSPACE) {
                     FocusDelete(focus);
                     editor->state = ES_IDLE;
-                } else if (IsKeyPressed(KEY_C)) {
+                } else if (key == KEY_C) {
                     color_idx = (color_idx + 1) % (sizeof(Colors) / sizeof(Colors[0]));
                     FocusChangeColor(focus, color_idx);
                 } else {
                     Vector3 direction = {0};
-                    if (IsKeyPressed(KEY_UP)) {
+                    if (key == KEY_UP) {
                         direction.z -= CubeSideLength;
-                    } else if (IsKeyPressed(KEY_RIGHT)) {
+                    } else if (key == KEY_RIGHT) {
                         direction.x += CubeSideLength;
-                    } else if (IsKeyPressed(KEY_DOWN)) {
+                    } else if (key == KEY_DOWN) {
                         direction.z += CubeSideLength;
-                    } else if (IsKeyPressed(KEY_LEFT)) {
+                    } else if (key == KEY_LEFT) {
                         direction.x -= CubeSideLength;
-                    } else if (IsKeyPressed(KEY_PAGE_UP)) {
+                    } else if (key == KEY_PAGE_UP) {
                         direction.y += CubeSideLength;
-                    } else if (IsKeyPressed(KEY_PAGE_DOWN)) {
+                    } else if (key == KEY_PAGE_DOWN) {
                         direction.y -= CubeSideLength;
                     }
 
