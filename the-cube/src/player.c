@@ -99,6 +99,13 @@ static void EntityMoveRecursive(Entity* entity, float delta_time, Vector3 dir) {
             }
             if (EntityTestFlag(e2, EF_PUSHABLE)) {
                 EntityMoveRecursive(e2, delta_time, dir);
+            } else if (EntityTestFlag(e2, EF_LEVEL_SUCCESS_ON_COLLISION)) {
+                if (EntityTestFlag(entity, EF_PLAYER_CONTROLLED)) {
+                    return;
+                } else {
+                    TransactionRollback();
+                    return;
+                }
             }
         }
     }
