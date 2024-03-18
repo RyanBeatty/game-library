@@ -7,6 +7,9 @@
 #include "entity.c"
 #include "level.c"
 #include "npc.c"
+//
+#include "transaction.c"
+//
 #include "player.c"
 #include "raylib.h"
 #include "raymath.h"
@@ -43,6 +46,8 @@ static void GameUpdate(float delta_time) {
         if (IsKeyPressed(KEY_ENTER)) {
             LoadLevel(CurLevel.name);
         }
+    } else if (IsKeyPressed(KEY_U)) {
+        TransactionUndo();
     } else {
         for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
             Entity* entity = LevelDataGetEntity(&CurLevel, i);

@@ -4,6 +4,7 @@
 #include "entity.c"
 #include "level.c"
 #include "raylib.h"
+#include "transaction.c"
 #endif
 
 static Color Colors[7] = {GRAY, RED, BLUE, GREEN, YELLOW, PINK, ORANGE};
@@ -57,31 +58,6 @@ static void PlayerInit(Entity* player, Vector3 position) {
     UploadMesh(mesh, false);
 }
 
-static Entity* Transaction = NULL;
-
-static void TransactionBegin() {
-    Transaction = NULL;
-    LevelData* level = GetCurLevel();
-    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
-        Entity* entity = arraddnptr(Transaction, 1);
-        *entity = *LevelDataGetEntity(level, i);
-    }
-}
-
-static void TransactionCommit() {
-    arrfree(Transaction);
-    Transaction = NULL;
-}
-
-static void TransactionRollback() {
-    LevelData* level = GetCurLevel();
-    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
-        Entity* entity = LevelDataGetEntity(level, i);
-        *entity = Transaction[i];
-    }
-    TransactionCommit();
-}
-
 static void EntityMoveRecursive(Entity* entity, float delta_time, Vector3 dir) {
     entity->position = Vector3Add(entity->position, dir);
     BoundingBox bb = EntityGetBoundingBox(entity);
@@ -127,9 +103,11 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
         direction = Vector3Add(direction, (Vector3){-CubeSideLength, 0, 0});
     }
 
-    TransactionBegin();
-    EntityMoveRecursive(entity, delta_time, direction);
-    TransactionCommit();
+    if (!Vector3Equals(direction, Vector3Zero())) {
+        TransactionBegin();
+        EntityMoveRecursive(entity, delta_time, direction);
+        TransactionCommit();
+    }
 }
 
 // static void EntityPlayerControlled2(Entity* entity, float delta_time) {

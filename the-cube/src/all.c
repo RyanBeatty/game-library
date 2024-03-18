@@ -41,6 +41,8 @@ void __attribute__((noinline)) breakpoint() {}
 //
 #include "npc.c"
 //
+#include "transaction.c"
+//
 #include "player.c"
 //
 #include "serde.c"
