@@ -123,28 +123,6 @@ static void EntityPlayerControlled(Entity* entity, float delta_time) {
     TransactionBegin();
     EntityMoveRecursive(entity, delta_time, direction);
     TransactionCommit();
-    // Vector3 position = Vector3Add(entity->position, direction);
-    // BoundingBox bb = GetBoundingBox(position);
-    // LevelData* level = GetCurLevel();
-    // for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
-    //     if (i == entity->idx) {
-    //         continue;
-    //     }
-    //     Entity* e2 = LevelDataGetEntity(level, i);
-    //     BoundingBox e2_bb = EntityGetBoundingBox(e2);
-    //     if (CheckCollisionBoxes(bb, e2_bb)) {
-    //         if (EntityTestFlag(e2, EF_WALL)) {
-    //             position = entity->position;
-    //             break;
-    //         }
-    //         if (EntityTestFlag(e2, EF_PUSHABLE)) {
-    //             e2->position = Vector3Add(e2->position, direction);
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // entity->position = position;
 }
 
 // static void EntityPlayerControlled2(Entity* entity, float delta_time) {
