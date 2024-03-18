@@ -34,7 +34,7 @@ static void GameInit() {
 
     SetTargetFPS(60);
 
-    LoadLevel("test_level_0");
+    LoadLevel("level_1");
 }
 
 static void GameUpdate(float delta_time) {
