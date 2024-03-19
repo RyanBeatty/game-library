@@ -13,6 +13,11 @@ typedef struct Transaction {
 static Transaction* Txns = NULL;
 static Transaction* ActiveTxn = NULL;
 
+static void TransactionsReset() {
+    Txns = NULL;
+    ActiveTxn = NULL;
+}
+
 static void TransactionBegin() {
     Transaction* txn = arraddnptr(Txns, 1);
     ActiveTxn = txn;

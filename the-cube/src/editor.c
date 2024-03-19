@@ -273,6 +273,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 } else if (IsKeyPressed(KEY_A)) {
                     LevelData *level = GetCurLevel();
                     Entity *entity = LevelDataGetEntity(level, 0);
+                    EntitySetFlag(entity, EF_WALL);
                     Focus *focus = EditorSetFocus(editor, entity);
                     for (uint32_t i = 1; i < LevelDataNumEntities(level); ++i) {
                         entity = LevelDataGetEntity(level, i);
