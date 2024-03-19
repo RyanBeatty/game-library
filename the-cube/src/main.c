@@ -39,6 +39,7 @@ static void GameInit() {
 
 static void GameUpdate(float delta_time) {
     if (CurLevel.finished || CurLevel.failed) {
+        // TODO: Consider moving this call into LoadLevel.
         TransactionsReset();
         if (IsKeyPressed(KEY_ENTER)) {
             LoadLevel(CurLevel.name);
