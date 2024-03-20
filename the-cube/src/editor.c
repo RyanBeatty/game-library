@@ -273,7 +273,6 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 } else if (IsKeyPressed(KEY_A)) {
                     LevelData *level = GetCurLevel();
                     Entity *entity = LevelDataGetEntity(level, 0);
-                    EntitySetFlag(entity, EF_WALL);
                     Focus *focus = EditorSetFocus(editor, entity);
                     for (uint32_t i = 1; i < LevelDataNumEntities(level); ++i) {
                         entity = LevelDataGetEntity(level, i);
@@ -288,6 +287,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
                 focus->block_color = GRAY;
                 focus->model = GenCubeModel(GRAY);
                 focus->position = ORIGIN;
+                EntitySetFlag(focus, EF_WALL);
                 EditorSetFocus(editor, focus);
                 color_idx = 0;
             }
