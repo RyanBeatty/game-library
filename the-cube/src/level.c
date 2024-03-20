@@ -55,6 +55,17 @@ static void LevelDataDeleteEntity(LevelData* level_data, uint32_t index) {
     }
 }
 
+static char* LevelDataGetNextLevelName(LevelData* level) {
+    uint32_t num = 0;
+    int res = sscanf(level->name, "level_%d", &num);
+    assert(res == 1);
+    ++num;
+
+    char* buffer = (char*)calloc(256, sizeof(char));
+    sprintf(buffer, "level_%d", num);
+    return buffer;
+}
+
 typedef struct RayCollisionLevelData {
     RayCollision collision;
     uint32_t entity_idx;

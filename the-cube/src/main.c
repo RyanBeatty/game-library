@@ -38,17 +38,21 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
-    if (CurLevel.finished || CurLevel.failed) {
+    LevelData* level = GetCurLevel();
+    if (level->finished || level->failed) {
         // TODO: Consider moving this call into LoadLevel.
         TransactionsReset();
         if (IsKeyPressed(KEY_ENTER)) {
-            LoadLevel(CurLevel.name);
+            LoadLevel(level->name);
+        } else if (IsKeyPressed(KEY_N)) {
+            char* next_level = LevelDataGetNextLevelName(level);
+            LoadLevel(next_level);
         }
     } else if (IsKeyPressed(KEY_U)) {
         TransactionUndo();
     } else {
-        for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-            Entity* entity = LevelDataGetEntity(&CurLevel, i);
+        for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
+            Entity* entity = LevelDataGetEntity(level, i);
             EntityUpdate(entity, delta_time);
         }
     }
