@@ -59,21 +59,23 @@ static void GameUpdate(float delta_time) {
 }
 
 static void GameDraw(float delta_time) {
+    LevelData* level = GetCurLevel();
+
     BeginMode3D(GameCamera);
 
     Vector3 position = {0};
-    for (uint32_t i = 0; i < LevelDataNumEntities(&CurLevel); ++i) {
-        Entity* entity = LevelDataGetEntity(&CurLevel, i);
+    for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
+        Entity* entity = LevelDataGetEntity(level, i);
         DrawModel(entity->model, position, 1, WHITE);
     }
 
     EndMode3D();
 
-    if (CurLevel.finished) {
+    if (level->finished) {
         char text[256] = {0};
         sprintf(text, "Level Completed! Press Enter to Replay");
         DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
-    } else if (CurLevel.failed) {
+    } else if (level->failed) {
         char text[256] = {0};
         sprintf(text, "Level Failed! Press Enter to Replay");
         DrawText(text, 20 + 5, 20 + 5, 18, BLACK);
