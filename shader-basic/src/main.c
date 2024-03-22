@@ -69,7 +69,7 @@ int main(void) {
     cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
     Model cube2 = LoadModelFromMesh(GenMeshCube(20.0, 2.0, 2.0));
     cube2.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = RED;
-    cube2.transform = MatrixTranslate(2, -3, -10);
+    cube2.transform = MatrixTranslate(2, 0, -10);
     Model cube3 = LoadModelFromMesh(GenMeshCube(2, 2, 2));
     cube3.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GREEN;
 
@@ -125,7 +125,7 @@ int main(void) {
 
         BeginMode3D(camera);
 
-        DrawModel(model, Vector3Zero(), 1.0f, WHITE);
+        // DrawModel(model, Vector3Zero(), 1.0f, WHITE);
         DrawModel(cube, Vector3Zero(), 1.0f, WHITE);
         // DrawModel(cube2, (Vector3){6, -3, -6}, 1.0f, WHITE);
         DrawModel(cube2, Vector3Zero(), 1.0, WHITE);
@@ -139,7 +139,7 @@ int main(void) {
                 DrawSphereWires(lights[i].position, 0.2f, 8, 8, ColorAlpha(lights[i].color, 0.3f));
         }
 
-        DrawGrid(10, 1.0f);
+        // DrawGrid(10, 1.0f);
 
         EndMode3D();
 
