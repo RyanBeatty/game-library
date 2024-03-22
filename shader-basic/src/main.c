@@ -42,6 +42,28 @@ int main(void) {
     SetConfigFlags(FLAG_MSAA_4X_HINT);  // Enable Multi Sampling Anti Aliasing 4x (if available)
     InitWindow(screenWidth, screenHeight, "raylib [shaders] example - basic lighting");
 
+    Image image = GenImageColor(128, 128, ORANGE);
+    // Horizontal lines.
+    // const int thickness = 5;
+    // ImageDrawRectangle(&image, 0, 0, 128, thickness, BLACK);
+    // ImageDrawRectangle(&image, 0, 128 - thickness, 128, thickness, BLACK);
+    // // Vertical lines.
+    // ImageDrawRectangle(&image, 0, 0, thickness, 128, BLACK);
+    // ImageDrawRectangle(&image, 128 - thickness, 0, thickness, 128, BLACK);
+
+    Texture texture = LoadTextureFromImage(image);
+
+    Image image2 = GenImageColor(128, 128, PURPLE);
+    // Horizontal lines.
+    // const int thickness = 5;
+    // ImageDrawRectangle(&image, 0, 0, 128, thickness, BLACK);
+    // ImageDrawRectangle(&image, 0, 128 - thickness, 128, thickness, BLACK);
+    // // Vertical lines.
+    // ImageDrawRectangle(&image, 0, 0, thickness, 128, BLACK);
+    // ImageDrawRectangle(&image, 128 - thickness, 0, thickness, 128, BLACK);
+
+    Texture texture2 = LoadTextureFromImage(image2);
+
     // Load basic lighting shader
     Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting.vs", GLSL_VERSION),
                                TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
@@ -78,6 +100,9 @@ int main(void) {
     cube.materials[0].shader = shader;
     cube2.materials[0].shader = shader;
     cube3.materials[0].shader = shader;
+    cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+
+    cube2.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture2;
 
     // Create lights
     Light lights[MAX_LIGHTS] = {0};

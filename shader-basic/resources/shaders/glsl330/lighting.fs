@@ -76,9 +76,17 @@ void main()
     // finalColor = fragColor;
 
 
+    // if (fragPosition.y <= 0) {
+    //     finalColor = vec4(0, 0, 0, 1);
+    // } else {
+    //     finalColor = colDiffuse;
+    // }
+    
+    vec4 diffuse = colDiffuse;
     if (fragPosition.y <= 0) {
-        finalColor = vec4(0, 0, 0, 1);
-    } else {
-        finalColor = colDiffuse;
+        diffuse = vec4(0.3, 0.3, 0.3, 1);
     }
+
+    vec4 texelColor = texture(texture0, fragTexCoord);
+    finalColor = texelColor * diffuse;
 }
