@@ -42,18 +42,6 @@ int main(void) {
     SetConfigFlags(FLAG_MSAA_4X_HINT);  // Enable Multi Sampling Anti Aliasing 4x (if available)
     InitWindow(screenWidth, screenHeight, "raylib [shaders] example - basic lighting");
 
-    // Define the camera to look into our 3d world
-    Camera camera = {0};
-    camera.position = (Vector3){2.0f, 4.0f, 6.0f};  // Camera position
-    camera.target = (Vector3){0.0f, 0.5f, 0.0f};    // Camera looking at point
-    camera.up = (Vector3){0.0f, 1.0f, 0.0f};        // Camera up vector (rotation towards target)
-    camera.fovy = 45.0f;                            // Camera field-of-view Y
-    camera.projection = CAMERA_PERSPECTIVE;         // Camera projection type
-
-    // Load plane model from a generated mesh
-    Model model = LoadModelFromMesh(GenMeshPlane(10.0f, 10.0f, 3, 3));
-    Model cube = LoadModelFromMesh(GenMeshCube(2.0f, 4.0f, 2.0f));
-
     // Load basic lighting shader
     Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting.vs", GLSL_VERSION),
                                TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
@@ -67,9 +55,29 @@ int main(void) {
     int ambientLoc = GetShaderLocation(shader, "ambient");
     SetShaderValue(shader, ambientLoc, (float[4]){0.1f, 0.1f, 0.1f, 1.0f}, SHADER_UNIFORM_VEC4);
 
+    // Define the camera to look into our 3d world
+    Camera camera = {0};
+    camera.position = (Vector3){0.0f, 7.0f, 12.0f};  // Camera position
+    camera.target = (Vector3){0.0f, 0.5f, 0.0f};     // Camera looking at point
+    camera.up = (Vector3){0.0f, 1.0f, 0.0f};         // Camera up vector (rotation towards target)
+    camera.fovy = 45.0f;                             // Camera field-of-view Y
+    camera.projection = CAMERA_PERSPECTIVE;          // Camera projection type
+
+    // Load plane model from a generated mesh
+    Model model = LoadModelFromMesh(GenMeshPlane(10.0f, 10.0f, 3, 3));
+    Model cube = LoadModelFromMesh(GenMeshCube(2.0f, 4.0f, 2.0f));
+    cube.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
+    Model cube2 = LoadModelFromMesh(GenMeshCube(20.0, 2.0, 2.0));
+    cube2.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = RED;
+    cube2.transform = MatrixTranslate(2, -3, -10);
+    Model cube3 = LoadModelFromMesh(GenMeshCube(2, 2, 2));
+    cube3.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = GREEN;
+
     // Assign out lighting shader to model
     model.materials[0].shader = shader;
     cube.materials[0].shader = shader;
+    cube2.materials[0].shader = shader;
+    cube3.materials[0].shader = shader;
 
     // Create lights
     Light lights[MAX_LIGHTS] = {0};
@@ -86,13 +94,12 @@ int main(void) {
     {
         // Update
         //----------------------------------------------------------------------------------
-        UpdateCamera(&camera, CAMERA_ORBITAL);
+        // UpdateCamera(&camera, CAMERA_ORBITAL);
 
         // Update the shader with the camera view vector (points towards { 0.0f, 0.0f, 0.0f })
         float cameraPos[3] = {camera.position.x, camera.position.y, camera.position.z};
         SetShaderValue(shader, shader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
-        // Check key inputs to enable/disable lights
         if (IsKeyPressed(KEY_Y)) {
             lights[0].enabled = !lights[0].enabled;
         }
@@ -120,6 +127,9 @@ int main(void) {
 
         DrawModel(model, Vector3Zero(), 1.0f, WHITE);
         DrawModel(cube, Vector3Zero(), 1.0f, WHITE);
+        // DrawModel(cube2, (Vector3){6, -3, -6}, 1.0f, WHITE);
+        DrawModel(cube2, Vector3Zero(), 1.0, WHITE);
+        DrawModel(cube3, (Vector3){0, 4, 0}, 1.0, WHITE);
 
         // Draw spheres to show where the lights are
         for (int i = 0; i < MAX_LIGHTS; i++) {
