@@ -22,7 +22,7 @@ void main()
 {
     vec4 diffuse = colDiffuse;
     if (fragPosition.y <= -0.9) {
-        diffuse = vec4(0.3, 0.3, 0.3, 1);
+        diffuse = vec4(0.6, 0.6, 0.6, 1);
     }
 
     vec4 texelColor = texture(texture0, fragTexCoord);
