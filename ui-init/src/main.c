@@ -67,6 +67,10 @@ int main(void) {
 
         PushParent(10, 10, 300, 400);
 
+        UIButton("Button");
+
+        PopParent();
+
         BeginDrawing();
 
         ClearBackground(RAYWHITE);
