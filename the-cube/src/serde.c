@@ -234,6 +234,8 @@ static char* UnpackFlags(char* buffer, uint8_t flags[FLAGS_LEN]) {
 }
 
 static void LoadLevel(const char* name_original) {
+    InitShader();
+
     // We make this dumb copy here because we will run into issues where when we clear CurLevel down below,
     // name_original might be wiped if we passed in the pointer to CurLevel.name.
     char name[256] = {0};

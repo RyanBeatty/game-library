@@ -38,6 +38,10 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
+    Shader* shader = GetShader();
+    float cameraPos[3] = {GameCamera.position.x, GameCamera.position.y, GameCamera.position.z};
+    SetShaderValue(*shader, shader->locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+
     LevelData* level = GetCurLevel();
     if (level->finished || level->failed) {
         // TODO: Consider moving this call into LoadLevel.

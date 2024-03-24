@@ -14,6 +14,25 @@ typedef struct Entity Entity;
 static void EntityPlayerControlled(Entity* entity, float delta_time);
 
 /////////////////////////////////////////////////////////////////////////////
+// Shader stuff.
+
+Shader GlobalShader = {0};
+
+static void InitShader() {
+    Shader shader = LoadShader(TextFormat("resources/shaders/glsl%i/lighting.vs", GLSL_VERSION),
+                               TextFormat("resources/shaders/glsl%i/lighting.fs", GLSL_VERSION));
+    assert(IsShaderReady(shader));
+
+    shader.locs[SHADER_LOC_VECTOR_VIEW] = GetShaderLocation(shader, "viewPos");
+    int ambientLoc = GetShaderLocation(shader, "ambient");
+    SetShaderValue(shader, ambientLoc, (float[4]){0.1f, 0.1f, 0.1f, 1.0f}, SHADER_UNIFORM_VEC4);
+
+    GlobalShader = shader;
+}
+
+static Shader* GetShader() { return &GlobalShader; }
+
+/////////////////////////////////////////////////////////////////////////////
 
 const int ScreenWidth = 800;
 const int ScreenHeight = 450;
@@ -152,6 +171,7 @@ static Texture GetTextureForColor(Color color) {
 static Model GenCubeModel(Color color) {
     Model model = LoadModelFromMesh(GenMeshCube(CubeSideLength, CubeSideLength, CubeSideLength));
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = GetTextureForColor(color);
+    model.materials[0].shader = *GetShader();
     return model;
 }
 

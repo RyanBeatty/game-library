@@ -29,6 +29,8 @@ void __attribute__((noinline)) breakpoint() {}
 
 #define ONOFF(f) ((f) ? "On" : "Off")
 
+#define GLSL_VERSION 330
+
 ///////////////////////////////////////////////
 // Project files below
 
