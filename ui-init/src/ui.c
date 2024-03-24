@@ -166,10 +166,15 @@ static UIBoxOutput UIButton(char* text) {
     if (UIBoxIsMouseInside(box)) {
         TraceLog(LOG_INFO, "%s hot", text);
         box->hot = true;
+    } else {
+        box->hot = false;
     }
 
     if (box->active) {
         TraceLog(LOG_INFO, "%s active", text);
+        if (!Input.mouse_down) {
+            box->active = false;
+        }
     } else if (box->hot) {
         if (Input.mouse_down) {
             box->active = true;
