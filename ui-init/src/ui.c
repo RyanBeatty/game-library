@@ -117,8 +117,8 @@ static UIBox* MakeUIBox(char* text, int x, int y, int width, int height, UIFlag 
     if (idx == -1) {
         UIBox* parent = GetParent();
         if (parent != NULL) {
-            x = UIBoxReserveSpaceX(parent, width);
-            y = UIBoxReserveSpaceY(parent, height);
+            x = UIBoxReserveSpaceX(parent, width) + x;
+            y = UIBoxReserveSpaceY(parent, height) + y;
         }
 
         UIBox box = {.x = x, .y = y, .width = width, .height = height, .flags = flags, .sub_x = x, .sub_y = y};
@@ -161,7 +161,7 @@ static UIBoxOutput UIButton(char* text) {
     UIBox* parent = GetParent();
     uint32_t width = GetTextPixelWidth(text);
     uint32_t height = GetTextPixelHeight(text);
-    UIBox* box = MakeUIBox(text, 0, 0, width, height, UIF_CLICKABLE);
+    UIBox* box = MakeUIBox(text, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_CLICKABLE);
 
     if (UIBoxIsMouseInside(box)) {
         TraceLog(LOG_INFO, "%s hot", text);
