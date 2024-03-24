@@ -65,7 +65,7 @@ int main(void) {
             ToggleUI();
         }
 
-        PushParent(10, 10, 300, 400);
+        PushParent("parent1", 10, 10, 300, 400);
 
         UIButton("Button");
 

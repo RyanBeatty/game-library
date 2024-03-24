@@ -44,7 +44,10 @@ typedef struct UIBoxOutput {
 typedef struct UIState {
     bool enabled;
 
-    UIBox* boxes;
+    struct {
+        char* key;
+        UIBox value;
+    } * widgets;
     UIBox* parents;
 
     int font_size;
@@ -61,8 +64,6 @@ static void ToggleUI() {
 }
 
 static void UIReset() {
-    arrfree(State.boxes);
-    State.boxes = NULL;
     arrfree(State.parents);
     State.parents = NULL;
     State.font_size = 22;
@@ -83,32 +84,59 @@ static void UIUpdateInput() {
 //////////////////////////////////////////////////////////////////////
 // Parent stuff.
 
-static void PushParent(int x, int y, int width, int height) {
-    UIBox widget = {.x = x,
-                    .y = y,
-                    .width = width,
-                    .height = height,
-                    .sub_x = x + TEXT_WIDTH_BUFFER,
-                    .sub_y = y + TEXT_HEIGHT_BUFFER,
-                    .flags = UIF_GROW_VERTICAL};
-    arrpush(State.parents, widget);
-
-    if (State.enabled) {
-        DrawRectangle(x, y, width, height, GRAY);
-    }
-};
-
 static void PopParent() {
     assert(arrlenu(State.parents) > 0);
     arrpop(State.parents);
 }
 
 static UIBox* GetParent() {
-    assert(arrlenu(State.parents) > 0);
+    if (arrlenu(State.parents) == 0) {
+        return NULL;
+    }
     return &State.parents[arrlenu(State.parents) - 1];
 }
 
 //////////////////////////////////////////////////////////////////////
+// UIBox.
+
+static uint32_t UIBoxReserveSpaceX(UIBox* box, uint32_t width) {
+    uint32_t x = box->sub_x;
+    return x;
+}
+
+static uint32_t UIBoxReserveSpaceY(UIBox* box, uint32_t height) {
+    uint32_t y = box->sub_y;
+    if (UIBoxTestFlag(box, UIF_GROW_VERTICAL)) {
+        box->sub_y += height + TEXT_HEIGHT_BUFFER;
+    }
+    return y;
+}
+
+static UIBox* MakeUIBox(char* text, int x, int y, int width, int height, UIFlag flags) {
+    ptrdiff_t idx = hmgeti(State.widgets, text);
+    if (idx == -1) {
+        UIBox* parent = GetParent();
+        if (parent != NULL) {
+            x = UIBoxReserveSpaceX(parent, width);
+            y = UIBoxReserveSpaceY(parent, height);
+        }
+        UIBox box = {.x = x, .y = y, .width = width, .height = height, .flags = flags, .sub_x = x, .sub_y = y};
+        hmput(State.widgets, text, box);
+    }
+    return &State.widgets[idx].value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+static void PushParent(char* text, int x, int y, int width, int height) {
+    UIBox* box = MakeUIBox(text, x, y, width, height, UIF_GROW_VERTICAL);
+
+    arrpush(State.parents, *box);
+
+    if (State.enabled) {
+        DrawRectangle(box->x, box->y, box->width, box->height, GRAY);
+    }
+};
 
 static bool UIBoxIsMouseInside(UIBox* box) {
     return (box->x <= Input.mouse_x && Input.mouse_x <= box->x + box->width) &&
@@ -125,19 +153,6 @@ static uint32_t GetTextPixelWidth(char* text) {
 }
 static uint32_t GetTextPixelHeight(char* text) { return (uint32_t)(ceil(State.font_size * 1.33) + TEXT_HEIGHT_BUFFER); }
 
-static uint32_t UIBoxReserveSpaceX(UIBox* box, uint32_t width) {
-    uint32_t x = box->sub_x;
-    return x;
-}
-
-static uint32_t UIBoxReserveSpaceY(UIBox* box, uint32_t height) {
-    uint32_t y = box->sub_y;
-    if (UIBoxTestFlag(box, UIF_GROW_VERTICAL)) {
-        box->sub_y += height + TEXT_HEIGHT_BUFFER;
-    }
-    return y;
-}
-
 static UIBoxOutput UIButton(char* text) {
     UIBox* parent = GetParent();
     uint32_t width = GetTextPixelWidth(text);
@@ -152,6 +167,7 @@ static UIBoxOutput UIButton(char* text) {
     }
 
     if (box.active) {
+        TraceLog(LOG_INFO, "%s active", text);
     } else if (box.hot) {
         if (Input.mouse_down) {
             box.active = true;
