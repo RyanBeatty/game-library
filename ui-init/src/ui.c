@@ -19,7 +19,7 @@ typedef struct UIInput {
 } UIInput;
 
 typedef struct UIBox {
-    int id;
+    char* text;  // stb array
 
     int x;
     int y;
@@ -120,8 +120,12 @@ static UIBox* MakeUIBox(char* text, int x, int y, int width, int height, UIFlag 
             x = UIBoxReserveSpaceX(parent, width);
             y = UIBoxReserveSpaceY(parent, height);
         }
+
         UIBox box = {.x = x, .y = y, .width = width, .height = height, .flags = flags, .sub_x = x, .sub_y = y};
+        box.text = (char*)calloc(strlen(text) + 1, sizeof(char));
+        box.text = strcat(box.text, text);
         hmput(State.widgets, text, box);
+        idx = hmgeti(State.widgets, text);
     }
     return &State.widgets[idx].value;
 }
@@ -157,27 +161,25 @@ static UIBoxOutput UIButton(char* text) {
     UIBox* parent = GetParent();
     uint32_t width = GetTextPixelWidth(text);
     uint32_t height = GetTextPixelHeight(text);
-    uint32_t x = UIBoxReserveSpaceX(parent, width);
-    uint32_t y = UIBoxReserveSpaceY(parent, height);
-    UIBox box = {.x = x, .y = y, .width = width, .height = height};
+    UIBox* box = MakeUIBox(text, 0, 0, width, height, UIF_CLICKABLE);
 
-    if (UIBoxIsMouseInside(&box)) {
+    if (UIBoxIsMouseInside(box)) {
         TraceLog(LOG_INFO, "%s hot", text);
-        box.hot = true;
+        box->hot = true;
     }
 
-    if (box.active) {
+    if (box->active) {
         TraceLog(LOG_INFO, "%s active", text);
-    } else if (box.hot) {
+    } else if (box->hot) {
         if (Input.mouse_down) {
-            box.active = true;
+            box->active = true;
         }
     }
 
     if (State.enabled) {
-        DrawRectangle(x, y, width, height, GREEN);
-        int pos_x = x + TEXT_WIDTH_BUFFER;
-        int pos_y = y + TEXT_HEIGHT_BUFFER;
+        DrawRectangle(box->x, box->y, box->width, box->height, GREEN);
+        int pos_x = box->x + TEXT_WIDTH_BUFFER;
+        int pos_y = box->y + TEXT_HEIGHT_BUFFER;
         DrawText(text, pos_x, pos_y, State.font_size, BLACK);
     }
 }
