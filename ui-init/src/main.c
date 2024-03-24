@@ -69,6 +69,8 @@ int main(void) {
 
         UIButton("Button");
 
+        UIButton("Another Button");
+
         PopParent();
 
         BeginDrawing();
