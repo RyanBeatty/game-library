@@ -283,7 +283,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             } else if (IsKeyPressed(KEY_C)) {
                 editor->state = ES_CAMERA;
             } else if (IsKeyPressed(KEY_A)) {
-                Entity *focus = CreateLevelDataEntity(GetCurLevel());
+                Entity *focus = LevelDataCreateEntity(GetCurLevel());
                 focus->block_color = GRAY;
                 focus->model = GenCubeModel(GRAY);
                 focus->position = ORIGIN;

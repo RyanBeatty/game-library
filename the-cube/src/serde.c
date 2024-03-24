@@ -263,7 +263,7 @@ static void LoadLevel(const char* name_original) {
     UnpackVector3(line, &level_data->goal);
     line = strtok(NULL, "\n");
 
-    Entity* goal = CreateLevelDataEntity(level_data);
+    Entity* goal = LevelDataCreateEntity(level_data);
     goal->orientation = QuaternionIdentity();
     goal->model = GenCubeModel(GREEN);
     goal->position = level_data->goal;
@@ -274,7 +274,7 @@ static void LoadLevel(const char* name_original) {
         // Start buffer at the beginning of line, this is just so we have line around in case debuggin is needed.
         char* buffer = line;
 
-        Entity* entity = CreateLevelDataEntity(level_data);
+        Entity* entity = LevelDataCreateEntity(level_data);
 
         buffer = UnpackU32(buffer, &entity->idx);
         buffer = UnpackVector3(buffer, &entity->position);

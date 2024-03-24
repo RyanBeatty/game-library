@@ -32,11 +32,6 @@ static Entity* LevelDataCreateEntity(LevelData* level_data) {
     return entity;
 }
 
-static Entity* CreateLevelDataEntity(LevelData* level_data) {
-    Entity* entity = LevelDataCreateEntity(level_data);
-    return entity;
-}
-
 #define LevelDataGetStart(level_data) ((level_data)->start)
 
 static Entity* LevelDataGetPlayer(LevelData* level_data) { return &level_data->entities[0]; }
