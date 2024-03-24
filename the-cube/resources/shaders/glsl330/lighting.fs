@@ -21,7 +21,7 @@ uniform vec3 viewPos;
 void main()
 {
     vec4 diffuse = colDiffuse;
-    if (fragPosition.y <= 0) {
+    if (fragPosition.y <= -0.9) {
         diffuse = vec4(0.3, 0.3, 0.3, 1);
     }
 
