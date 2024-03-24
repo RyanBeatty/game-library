@@ -8,8 +8,7 @@ LIB_DIR := ./external
 CC=gcc
 
 LIBS := ""
-LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
-LDFLAGS := $(LDFLAGS) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+LDFLAGS := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. Make will incorrectly expand these otherwise.
