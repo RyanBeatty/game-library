@@ -11,28 +11,24 @@
 typedef struct UIInputState {
 } UIInputState;
 
-typedef struct UIWidget {
+typedef struct UIBox {
     int id;
 
     int x;
     int y;
     int width;
     int height;
-} UIWidget;
+} UIBox;
 
-typedef struct UIWidgetOutput {
+typedef struct UIBoxOutput {
     bool clicked;
-} UIWidgetOutput;
-
-UIWidget* Widgets = NULL;
-
-UIWidget* Parents = NULL;
+} UIBoxOutput;
 
 typedef struct UIState {
     bool enabled;
 
-    UIWidget* widgets;
-    UIWidget* parents;
+    UIBox* boxes;
+    UIBox* parents;
 
     int font_size;
 } UIState;
@@ -45,8 +41,8 @@ static void ToggleUI() {
 }
 
 static void UIReset() {
-    arrfree(State.widgets);
-    State.widgets = NULL;
+    arrfree(State.boxes);
+    State.boxes = NULL;
     arrfree(State.parents);
     State.parents = NULL;
     State.font_size = 22;
@@ -56,7 +52,7 @@ static void UIReset() {
 // Parent stuff.
 
 static void PushParent(int x, int y, int width, int height) {
-    UIWidget widget = {.x = x, .y = y, .width = width, .height = height};
+    UIBox widget = {.x = x, .y = y, .width = width, .height = height};
     arrpush(State.parents, widget);
 
     if (State.enabled) {
@@ -69,7 +65,7 @@ static void PopParent() {
     arrpop(State.parents);
 }
 
-static UIWidget* GetParent() {
+static UIBox* GetParent() {
     assert(arrlenu(State.parents) > 0);
     return &State.parents[arrlenu(State.parents) - 1];
 }
@@ -84,13 +80,12 @@ static uint32_t GetTextPixelWidth(char* text) {
 }
 static uint32_t GetTextPixelHeight(char* text) { return (uint32_t)(ceil(State.font_size * 1.33) + TEXT_HEIGHT_BUFFER); }
 
-static UIWidgetOutput UIButton(char* text) {
-    if (State.enabled) {
-        UIWidget* parent = GetParent();
-        int size = strlen(text);
-        uint32_t width = GetTextPixelWidth(text);
-        uint32_t height = GetTextPixelHeight(text);
+static UIBoxOutput UIButton(char* text) {
+    UIBox* parent = GetParent();
+    uint32_t width = GetTextPixelWidth(text);
+    uint32_t height = GetTextPixelHeight(text);
 
+    if (State.enabled) {
         DrawRectangle(parent->x + 10, parent->y + 10, width, height, GREEN);
     }
 }
