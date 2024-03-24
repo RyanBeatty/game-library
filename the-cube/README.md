@@ -5,10 +5,14 @@ THE CUBE IDEATION
 * switches that effect things in world (like raise or lower blocks)
 * colored hunters can only move through same block color types
 * leave paint trail on floor
-* certain floor tiles that cause inputs to be remapped (like going up moves you right instead).
-This can effect hunters too
 * beams of light that are colored and follow same rules as blocks. Light can move??
 * 
+
+
+TODO
+* Make "holes" i.e. spaces that can consume a block to allow player to then cross
+* switches (still think maybe this could be good idea)
+* color changing
 
 
 
