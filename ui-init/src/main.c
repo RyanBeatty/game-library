@@ -59,7 +59,7 @@ int main(void) {
     // Main game loop
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
-        UIReset();
+        UIUpdateInput();
 
         if (IsKeyPressed(KEY_E)) {
             ToggleUI();

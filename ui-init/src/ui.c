@@ -8,12 +8,15 @@
 
 #endif
 
-typedef enum UIFlag { UIF_NONE = 0, UIF_GROW_VERTICAL = (1 << 0), UIF_COUNT = 2 } UIFlag;
+typedef enum UIFlag { UIF_NONE = 0, UIF_GROW_VERTICAL = (1 << 0), UIF_CLICKABLE = (1 << 1) } UIFlag;
 
 #define UIFlagTestFlag(flags, flag) ((flags) & (flag))
 
-typedef struct UIInputState {
-} UIInputState;
+typedef struct UIInput {
+    int mouse_x;
+    int mouse_y;
+    bool mouse_down;
+} UIInput;
 
 typedef struct UIBox {
     int id;
@@ -27,6 +30,9 @@ typedef struct UIBox {
     int sub_y;
 
     UIFlag flags;
+
+    bool hot;
+    bool active;
 } UIBox;
 
 #define UIBoxTestFlag(box, flag) (UIFlagTestFlag((box)->flags, (flag)))
@@ -63,6 +69,18 @@ static void UIReset() {
 }
 
 //////////////////////////////////////////////////////////////////////
+// UIInpu
+
+UIInput Input = {0};
+
+static void UIUpdateInput() {
+    UIReset();
+    Input.mouse_x = GetMouseX();
+    Input.mouse_y = GetMouseY();
+    Input.mouse_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+}
+
+//////////////////////////////////////////////////////////////////////
 // Parent stuff.
 
 static void PushParent(int x, int y, int width, int height) {
@@ -92,6 +110,16 @@ static UIBox* GetParent() {
 
 //////////////////////////////////////////////////////////////////////
 
+static bool UIBoxIsMouseInside(UIBox* box) {
+    return (box->x <= Input.mouse_x && Input.mouse_x <= box->x + box->width) &&
+           (box->y <= Input.mouse_y && Input.mouse_y <= box->y + box->height);
+}
+
+static UIBoxOutput UIBoxGetOutput(UIBox* box) {
+    if (UIBoxTestFlag(box, UIF_CLICKABLE)) {
+    }
+}
+
 static uint32_t GetTextPixelWidth(char* text) {
     return (uint32_t)(ceil(State.font_size * 1.33 * strlen(text)) + TEXT_WIDTH_BUFFER);
 }
@@ -116,6 +144,19 @@ static UIBoxOutput UIButton(char* text) {
     uint32_t height = GetTextPixelHeight(text);
     uint32_t x = UIBoxReserveSpaceX(parent, width);
     uint32_t y = UIBoxReserveSpaceY(parent, height);
+    UIBox box = {.x = x, .y = y, .width = width, .height = height};
+
+    if (UIBoxIsMouseInside(&box)) {
+        TraceLog(LOG_INFO, "%s hot", text);
+        box.hot = true;
+    }
+
+    if (box.active) {
+    } else if (box.hot) {
+        if (Input.mouse_down) {
+            box.active = true;
+        }
+    }
 
     if (State.enabled) {
         DrawRectangle(x, y, width, height, GREEN);
