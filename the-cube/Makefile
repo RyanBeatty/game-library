@@ -5,6 +5,8 @@ BUILD_DIR := ./build
 SRC_DIRS := ./src
 LIB_DIR := ./external
 
+CC=gcc
+
 LIBS := ""
 LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
 LDFLAGS := $(LDFLAGS) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
