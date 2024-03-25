@@ -175,7 +175,7 @@ static UIBoxOutput UIButton(char* text) {
         TraceLog(LOG_INFO, "%s active", text);
         if (!Input.mouse_down) {
             box->active = false;
-            output.clicked = true;
+            output.clicked = UIBoxTestFlag(box, UIF_CLICKABLE);
         }
     } else if (box->hot) {
         if (Input.mouse_down) {
