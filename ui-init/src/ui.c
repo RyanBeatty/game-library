@@ -86,7 +86,7 @@ static void UIUpdateInput() {
 
 static void PopParent() {
     assert(arrlenu(State.parents) > 0);
-    arrpop(State.parents);
+    arrdel(State.parents, arrlenu(State.parents) - 1);
 }
 
 static UIBox* GetParent() {
@@ -145,11 +145,6 @@ static void PushParent(char* label, int x, int y, int width, int height) {
 static bool UIBoxIsMouseInside(UIBox* box) {
     return (box->x <= Input.mouse_x && Input.mouse_x <= box->x + box->width) &&
            (box->y <= Input.mouse_y && Input.mouse_y <= box->y + box->height);
-}
-
-static UIBoxOutput UIBoxGetOutput(UIBox* box) {
-    if (UIBoxTestFlag(box, UIF_CLICKABLE)) {
-    }
 }
 
 static uint32_t GetTextPixelWidth(char* text) {
