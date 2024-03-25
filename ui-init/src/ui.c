@@ -19,7 +19,7 @@ typedef struct UIInput {
 } UIInput;
 
 typedef struct UIBox {
-    char* text;  // stb array
+    char* label;
 
     int x;
     int y;
@@ -112,8 +112,8 @@ static uint32_t UIBoxReserveSpaceY(UIBox* box, uint32_t height) {
     return y;
 }
 
-static UIBox* MakeUIBox(char* text, int x, int y, int width, int height, UIFlag flags) {
-    ptrdiff_t idx = hmgeti(State.widgets, text);
+static UIBox* MakeUIBox(char* label, int x, int y, int width, int height, UIFlag flags) {
+    ptrdiff_t idx = hmgeti(State.widgets, label);
     if (idx == -1) {
         UIBox* parent = GetParent();
         if (parent != NULL) {
@@ -122,18 +122,18 @@ static UIBox* MakeUIBox(char* text, int x, int y, int width, int height, UIFlag 
         }
 
         UIBox box = {.x = x, .y = y, .width = width, .height = height, .flags = flags, .sub_x = x, .sub_y = y};
-        box.text = (char*)calloc(strlen(text) + 1, sizeof(char));
-        box.text = strcat(box.text, text);
-        hmput(State.widgets, text, box);
-        idx = hmgeti(State.widgets, text);
+        box.label = (char*)calloc(strlen(label) + 1, sizeof(char));
+        box.label = strcat(box.label, label);
+        hmput(State.widgets, label, box);
+        idx = hmgeti(State.widgets, label);
     }
     return &State.widgets[idx].value;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-static void PushParent(char* text, int x, int y, int width, int height) {
-    UIBox* box = MakeUIBox(text, x, y, width, height, UIF_GROW_VERTICAL);
+static void PushParent(char* label, int x, int y, int width, int height) {
+    UIBox* box = MakeUIBox(label, x, y, width, height, UIF_GROW_VERTICAL);
 
     arrpush(State.parents, *box);
 
@@ -157,14 +157,13 @@ static uint32_t GetTextPixelWidth(char* text) {
 }
 static uint32_t GetTextPixelHeight(char* text) { return (uint32_t)(ceil(State.font_size * 1.33) + TEXT_HEIGHT_BUFFER); }
 
-static UIBoxOutput UIButton(char* text) {
-    UIBox* parent = GetParent();
-    uint32_t width = GetTextPixelWidth(text);
-    uint32_t height = GetTextPixelHeight(text);
-    UIBox* box = MakeUIBox(text, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_CLICKABLE);
+static UIBoxOutput UIButton(char* label) {
+    uint32_t width = GetTextPixelWidth(label);
+    uint32_t height = GetTextPixelHeight(label);
+    UIBox* box = MakeUIBox(label, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_CLICKABLE);
 
     if (UIBoxIsMouseInside(box)) {
-        TraceLog(LOG_INFO, "%s hot", text);
+        TraceLog(LOG_INFO, "%s hot", label);
         box->hot = true;
     } else {
         box->hot = false;
@@ -172,7 +171,7 @@ static UIBoxOutput UIButton(char* text) {
 
     UIBoxOutput output = {0};
     if (box->active) {
-        TraceLog(LOG_INFO, "%s active", text);
+        TraceLog(LOG_INFO, "%s active", label);
         if (!Input.mouse_down) {
             box->active = false;
             output.clicked = UIBoxTestFlag(box, UIF_CLICKABLE);
@@ -183,11 +182,10 @@ static UIBoxOutput UIButton(char* text) {
         }
     }
 
-    if (State.enabled) {
-        DrawRectangle(box->x, box->y, box->width, box->height, GREEN);
-        int pos_x = box->x + TEXT_WIDTH_BUFFER;
-        int pos_y = box->y + TEXT_HEIGHT_BUFFER;
-        DrawText(text, pos_x, pos_y, State.font_size, BLACK);
-    }
+    return output;
+}
+
+static UIBoxOutput UITextField(char* text, char* pre_edit, char** edit_out) {
+    UIBoxOutput output = {0};
     return output;
 }
