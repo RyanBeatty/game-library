@@ -16,6 +16,7 @@ typedef struct UIInput {
     int mouse_x;
     int mouse_y;
     bool mouse_down;
+    bool mouse_released;
 } UIInput;
 
 typedef struct UIBox {
@@ -78,7 +79,9 @@ static void UIUpdateInput() {
     UIReset();
     Input.mouse_x = GetMouseX();
     Input.mouse_y = GetMouseY();
-    Input.mouse_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    bool is_mouse_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    Input.mouse_released = Input.mouse_down && !is_mouse_down;
+    Input.mouse_down = is_mouse_down;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -167,14 +170,25 @@ static UIBoxOutput UIButton(char* label) {
     UIBoxOutput output = {0};
     if (box->active) {
         TraceLog(LOG_INFO, "%s active", label);
-        if (!Input.mouse_down) {
-            box->active = false;
+        if (Input.mouse_released) {
+            // TODO: Probably not accurate. Can probably run into strange situations where you press down  while
+            // hot and release while hot on another widget.
+            if (!box->hot) {
+                box->active = false;
+            }
             output.clicked = UIBoxTestFlag(box, UIF_CLICKABLE);
         }
     } else if (box->hot) {
         if (Input.mouse_down) {
             box->active = true;
         }
+    }
+
+    if (State.enabled) {
+        DrawRectangle(box->x, box->y, box->width, box->height, GREEN);
+        int pos_x = box->x + TEXT_WIDTH_BUFFER;
+        int pos_y = box->y + TEXT_HEIGHT_BUFFER;
+        DrawText(label, pos_x, pos_y, State.font_size, BLACK);
     }
 
     return output;
