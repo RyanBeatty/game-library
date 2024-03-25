@@ -75,6 +75,10 @@ int main(void) {
             TraceLog(LOG_INFO, "Another Button Clicked");
         }
 
+        if (UITextField("Text Field 1", "hello, workd").clicked) {
+            TraceLog(LOG_INFO, "Text Field 1 Clicked");
+        }
+
         PopParent();
 
         BeginDrawing();

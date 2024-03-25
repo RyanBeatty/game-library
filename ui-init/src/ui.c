@@ -8,7 +8,13 @@
 
 #endif
 
-typedef enum UIFlag { UIF_NONE = 0, UIF_GROW_VERTICAL = (1 << 0), UIF_CLICKABLE = (1 << 1) } UIFlag;
+typedef enum UIFlag {
+    UIF_NONE = 0,
+    UIF_GROW_VERTICAL = (1 << 0),
+    UIF_CLICKABLE = (1 << 1),
+    UIF_DISPLAY_TEXT = (1 << 2),
+    UIF_ENTERABLE = (1 << 3),
+} UIFlag;
 
 #define UIFlagTestFlag(flags, flag) ((flags) & (flag))
 
@@ -171,9 +177,11 @@ static UIBoxOutput MakeUIBoxOutput(UIBox* box) {
 static void DrawUIBox(UIBox* box) {
     if (State.enabled) {
         DrawRectangle(box->x, box->y, box->width, box->height, GREEN);
-        int pos_x = box->x + TEXT_WIDTH_BUFFER;
-        int pos_y = box->y + TEXT_HEIGHT_BUFFER;
-        DrawText(box->label, pos_x, pos_y, State.font_size, BLACK);
+        if (UIBoxTestFlag(box, UIF_DISPLAY_TEXT)) {
+            int pos_x = box->x + TEXT_WIDTH_BUFFER;
+            int pos_y = box->y + TEXT_HEIGHT_BUFFER;
+            DrawText(box->label, pos_x, pos_y, State.font_size, BLACK);
+        }
     }
 }
 
@@ -197,7 +205,20 @@ static uint32_t GetTextPixelHeight(char* text) { return (uint32_t)(ceil(State.fo
 static UIBoxOutput UIButton(char* label) {
     uint32_t width = GetTextPixelWidth(label);
     uint32_t height = GetTextPixelHeight(label);
-    UIBox* box = MakeUIBox(label, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_CLICKABLE);
+    UIBox* box =
+        MakeUIBox(label, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_CLICKABLE | UIF_DISPLAY_TEXT);
+    box->text = box->label;
+    UIBoxOutput output = MakeUIBoxOutput(box);
+    DrawUIBox(box);
+    return output;
+}
+
+static UIBoxOutput UITextField(char* label, char* pre_edit) {
+    uint32_t width = GetTextPixelWidth(pre_edit);
+    uint32_t height = GetTextPixelHeight(pre_edit);
+    UIBox* box =
+        MakeUIBox(label, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_ENTERABLE | UIF_DISPLAY_TEXT);
+    box->text = pre_edit;
     UIBoxOutput output = MakeUIBoxOutput(box);
     DrawUIBox(box);
     return output;
