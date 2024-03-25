@@ -67,9 +67,13 @@ int main(void) {
 
         PushParent("parent1", 10, 10, 300, 400);
 
-        UIButton("Button");
+        if (UIButton("Button").clicked) {
+            TraceLog(LOG_INFO, "Button clicked");
+        }
 
-        UIButton("Another Button");
+        if (UIButton("Another Button").clicked) {
+            TraceLog(LOG_INFO, "Another Button Clicked");
+        }
 
         PopParent();
 

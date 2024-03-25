@@ -170,10 +170,12 @@ static UIBoxOutput UIButton(char* text) {
         box->hot = false;
     }
 
+    UIBoxOutput output = {0};
     if (box->active) {
         TraceLog(LOG_INFO, "%s active", text);
         if (!Input.mouse_down) {
             box->active = false;
+            output.clicked = true;
         }
     } else if (box->hot) {
         if (Input.mouse_down) {
@@ -187,4 +189,5 @@ static UIBoxOutput UIButton(char* text) {
         int pos_y = box->y + TEXT_HEIGHT_BUFFER;
         DrawText(text, pos_x, pos_y, State.font_size, BLACK);
     }
+    return output;
 }
