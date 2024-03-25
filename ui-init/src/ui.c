@@ -22,6 +22,8 @@ typedef struct UIInput {
 typedef struct UIBox {
     char* label;
 
+    char* text;
+
     int x;
     int y;
     int width;
@@ -115,6 +117,11 @@ static uint32_t UIBoxReserveSpaceY(UIBox* box, uint32_t height) {
     return y;
 }
 
+static bool UIBoxIsMouseInside(UIBox* box) {
+    return (box->x <= Input.mouse_x && Input.mouse_x <= box->x + box->width) &&
+           (box->y <= Input.mouse_y && Input.mouse_y <= box->y + box->height);
+}
+
 static UIBox* MakeUIBox(char* label, int x, int y, int width, int height, UIFlag flags) {
     ptrdiff_t idx = hmgeti(State.widgets, label);
     if (idx == -1) {
@@ -133,35 +140,9 @@ static UIBox* MakeUIBox(char* label, int x, int y, int width, int height, UIFlag
     return &State.widgets[idx].value;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-static void PushParent(char* label, int x, int y, int width, int height) {
-    UIBox* box = MakeUIBox(label, x, y, width, height, UIF_GROW_VERTICAL);
-
-    arrpush(State.parents, *box);
-
-    if (State.enabled) {
-        DrawRectangle(box->x, box->y, box->width, box->height, GRAY);
-    }
-};
-
-static bool UIBoxIsMouseInside(UIBox* box) {
-    return (box->x <= Input.mouse_x && Input.mouse_x <= box->x + box->width) &&
-           (box->y <= Input.mouse_y && Input.mouse_y <= box->y + box->height);
-}
-
-static uint32_t GetTextPixelWidth(char* text) {
-    return (uint32_t)(ceil(State.font_size * 1.33 * strlen(text)) + TEXT_WIDTH_BUFFER);
-}
-static uint32_t GetTextPixelHeight(char* text) { return (uint32_t)(ceil(State.font_size * 1.33) + TEXT_HEIGHT_BUFFER); }
-
-static UIBoxOutput UIButton(char* label) {
-    uint32_t width = GetTextPixelWidth(label);
-    uint32_t height = GetTextPixelHeight(label);
-    UIBox* box = MakeUIBox(label, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_CLICKABLE);
-
+static UIBoxOutput MakeUIBoxOutput(UIBox* box) {
     if (UIBoxIsMouseInside(box)) {
-        TraceLog(LOG_INFO, "%s hot", label);
+        TraceLog(LOG_INFO, "%s hot", box->label);
         box->hot = true;
     } else {
         box->hot = false;
@@ -169,7 +150,7 @@ static UIBoxOutput UIButton(char* label) {
 
     UIBoxOutput output = {0};
     if (box->active) {
-        TraceLog(LOG_INFO, "%s active", label);
+        TraceLog(LOG_INFO, "%s active", box->label);
         if (Input.mouse_released) {
             // TODO: Probably not accurate. Can probably run into strange situations where you press down  while
             // hot and release while hot on another widget.
@@ -184,17 +165,40 @@ static UIBoxOutput UIButton(char* label) {
         }
     }
 
+    return output;
+}
+
+static void DrawUIBox(UIBox* box) {
     if (State.enabled) {
         DrawRectangle(box->x, box->y, box->width, box->height, GREEN);
         int pos_x = box->x + TEXT_WIDTH_BUFFER;
         int pos_y = box->y + TEXT_HEIGHT_BUFFER;
-        DrawText(label, pos_x, pos_y, State.font_size, BLACK);
+        DrawText(box->label, pos_x, pos_y, State.font_size, BLACK);
     }
-
-    return output;
 }
 
-static UIBoxOutput UITextField(char* text, char* pre_edit, char** edit_out) {
-    UIBoxOutput output = {0};
+//////////////////////////////////////////////////////////////////////
+
+static void PushParent(char* label, int x, int y, int width, int height) {
+    UIBox* box = MakeUIBox(label, x, y, width, height, UIF_GROW_VERTICAL);
+
+    arrpush(State.parents, *box);
+
+    if (State.enabled) {
+        DrawRectangle(box->x, box->y, box->width, box->height, GRAY);
+    }
+};
+
+static uint32_t GetTextPixelWidth(char* text) {
+    return (uint32_t)(ceil(State.font_size * 1.33 * strlen(text)) + TEXT_WIDTH_BUFFER);
+}
+static uint32_t GetTextPixelHeight(char* text) { return (uint32_t)(ceil(State.font_size * 1.33) + TEXT_HEIGHT_BUFFER); }
+
+static UIBoxOutput UIButton(char* label) {
+    uint32_t width = GetTextPixelWidth(label);
+    uint32_t height = GetTextPixelHeight(label);
+    UIBox* box = MakeUIBox(label, TEXT_WIDTH_BUFFER, TEXT_HEIGHT_BUFFER, width, height, UIF_CLICKABLE);
+    UIBoxOutput output = MakeUIBoxOutput(box);
+    DrawUIBox(box);
     return output;
 }
