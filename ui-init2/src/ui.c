@@ -31,22 +31,31 @@ static size_t GetSeed() {
 
 typedef size_t UIKey;
 
-static UIKey UIKeyFromCStr(char* str) { return stbds_hash_string(str, GetSeed()); }
+static UIKey UIKeyFromCStr(char* str) {
+    size_t key = stbds_hash_string(str, GetSeed());
+    assert(key != 0);
+    return key;
+}
 
 typedef struct UIState {
     int mx;
     int my;
 
     UIKey hot;
+    UIKey active;
 } UIState;
 
 UIState State = {0};
 
 static void UIStateSetHot(UIKey key) { State.hot = key; }
+static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
+static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 
 static void UIFrameStart() {
     State.mx = GetMouseX();
     State.my = GetMouseY();
+
+    State.hot = 0;
 }
 
 static bool InRect(int x, int y, int width, int height) {
@@ -58,10 +67,13 @@ static bool UIButton(char* label, int x, int y, int width, int height) {
 
     UIKey key = UIKeyFromCStr(label);
     if (InRect(x, y, width, height)) {
-        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
         UIStateSetHot(key);
     }
 
+    if (UIKeyIsActive(key)) {
+    } else if (UIKeyIsHot(key)) {
+        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+    }
     return false;
 }
 
