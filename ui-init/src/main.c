@@ -59,7 +59,8 @@ int main(void) {
     // Main game loop
     while (!WindowShouldClose())  // Detect window close button or ESC key
     {
-        UIUpdateInput();
+        float delta_time = GetFrameTime();
+        UIUpdateInput(delta_time);
 
         if (IsKeyPressed(KEY_E)) {
             ToggleUI();
