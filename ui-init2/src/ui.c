@@ -40,6 +40,8 @@ static UIKey UIKeyFromCStr(char* str) {
 typedef struct UIState {
     int mx;
     int my;
+    bool left_down;
+    bool left_up;
 
     UIKey hot;
     UIKey active;
@@ -48,12 +50,17 @@ typedef struct UIState {
 UIState State = {0};
 
 static void UIStateSetHot(UIKey key) { State.hot = key; }
+static void UIStateSetActive(UIKey key) { State.active = key; }
+static void UIStateClearActive() { State.active = 0; }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 
 static void UIFrameStart() {
     State.mx = GetMouseX();
     State.my = GetMouseY();
+    State.left_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    State.left_up = IsMouseButtonUp(MOUSE_BUTTON_LEFT);
+    assert(!State.left_down || !State.left_up);
 
     State.hot = 0;
 }
@@ -71,8 +78,16 @@ static bool UIButton(char* label, int x, int y, int width, int height) {
     }
 
     if (UIKeyIsActive(key)) {
+        TraceLog(LOG_INFO, "label %s is Active", label);
+        if (State.left_up) {
+            UIStateClearActive();
+            return true;
+        }
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        if (State.left_down) {
+            UIStateSetActive(key);
+        }
     }
     return false;
 }
