@@ -169,9 +169,13 @@ static bool UITextField(char* label, char* edit, int x, int y, int width, int he
 
         int key = GetKeyPressed();
         if (key != 0) {
+            bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
             int len = strlen(edit);
 
             if (key >= 32 && key <= 126) {
+                if (!shift && key >= 65 && key <= 90) {
+                    key -= (int)('A' - 'a');
+                }
                 edit[len] = (char)key;
                 ++len;
                 edit[len] = '\0';
