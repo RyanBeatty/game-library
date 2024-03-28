@@ -141,7 +141,8 @@ static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int
     return false;
 }
 
-// NOTE: We assume that edit
+// TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
+// consider passing in a max capacity here.
 static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
 
