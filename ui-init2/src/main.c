@@ -39,6 +39,9 @@ int main(void) {
     const int screenWidth = 800;
     const int screenHeight = 450;
     static bool radio_button_1 = false;
+    static char text_field[256] = {0};
+
+    strcat(text_field, "hello, world");
 
     SetConfigFlags(FLAG_MSAA_4X_HINT);  // Enable Multi Sampling Anti Aliasing 4x (if available)
     InitWindow(screenWidth, screenHeight, "raylib [shaders] example - basic lighting");
@@ -102,6 +105,11 @@ int main(void) {
             if (UIRadioButton("Radio Button", &radio_button_1, 300, 20, 100, 100)) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
+
+            if (UITextField("Text Field", text_field, 300, 150, 200, 50)) {
+                TraceLog(LOG_INFO, "Text Field Entered");
+            }
+
             UIFrameEnd();
         }
 
@@ -111,7 +119,7 @@ int main(void) {
 
         BeginMode3D(camera);
 
-        DrawModel(model, Vector3Zero(), 1.0f, WHITE);
+        // DrawModel(model, Vector3Zero(), 1.0f, WHITE);
 
         EndMode3D();
 
