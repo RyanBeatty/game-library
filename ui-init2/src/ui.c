@@ -109,4 +109,35 @@ static bool UIButton(char* label, int x, int y, int width, int height) {
     return false;
 }
 
+static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int height) {
+    // TODO: Draw text.
+    DrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
+    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+    Vector2 text_size = MeasureTextEx(UIGetFont(), label, UIGetFontSize(), UIGetFontSpacing());
+    float x_offset = (width - text_size.x) / 2;
+    x_offset = x_offset < 0 ? 0 : x_offset;
+    float y_offset = (height - text_size.y) / 2;
+    y_offset = y_offset < 0 ? 0 : y_offset;
+    DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
+
+    UIKey key = UIKeyFromCStr(label);
+    if (InRect(x, y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    if (UIKeyIsActive(key)) {
+        TraceLog(LOG_INFO, "label %s is Active", label);
+        if (State.left_up) {
+            *state = !(*state);
+            UIStateClearActive();
+            return true;
+        }
+    } else if (UIKeyIsHot(key)) {
+        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        if (State.left_down) {
+            UIStateSetActive(key);
+        }
+    }
+    return false;
+}
 static void UIFrameEnd() {}
