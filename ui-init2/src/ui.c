@@ -42,6 +42,8 @@ typedef struct UIState {
     int my;
     bool left_down;
     bool left_up;
+    int font_size;
+    Font font;
 
     UIKey hot;
     UIKey active;
@@ -54,6 +56,9 @@ static void UIStateSetActive(UIKey key) { State.active = key; }
 static void UIStateClearActive() { State.active = 0; }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
+static int UIGetFontSize() { return State.font_size; }
+static Font UIGetFont() { return State.font; }
+static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 
 static void UIFrameStart() {
     State.mx = GetMouseX();
@@ -61,6 +66,10 @@ static void UIFrameStart() {
     State.left_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
     State.left_up = IsMouseButtonUp(MOUSE_BUTTON_LEFT);
     assert(!State.left_down || !State.left_up);
+
+    State.font_size = 16;
+    State.font = GetFontDefault();
+    assert(State.font.texture.id != 0);
 
     State.hot = 0;
 }
@@ -70,7 +79,15 @@ static bool InRect(int x, int y, int width, int height) {
 }
 
 static bool UIButton(char* label, int x, int y, int width, int height) {
+    // TODO: Draw text.
     DrawRectangle(x, y, width, height, GRAY);
+    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+    Vector2 text_size = MeasureTextEx(UIGetFont(), label, UIGetFontSize(), UIGetFontSpacing());
+    float x_offset = (width - text_size.x) / 2;
+    x_offset = x_offset < 0 ? 0 : x_offset;
+    float y_offset = (height - text_size.y) / 2;
+    y_offset = y_offset < 0 ? 0 : y_offset;
+    DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
 
     UIKey key = UIKeyFromCStr(label);
     if (InRect(x, y, width, height)) {
