@@ -166,9 +166,27 @@ static bool UITextField(char* label, char* edit, int x, int y, int width, int he
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
-        if (IsKeyPressed(KEY_ENTER)) {
-            UIStateClearActive();
-            return true;
+
+        int key = GetKeyPressed();
+        if (key != 0) {
+            int len = strlen(edit);
+
+            if (key >= 32 && key <= 126) {
+                edit[len] = (char)key;
+                ++len;
+                edit[len] = '\0';
+            } else if (IsKeyPressed(KEY_BACKSPACE)) {
+                TraceLog(LOG_INFO, "%s backspace", label);
+                if (len != 0) {
+                    --len;
+                    edit[len] = '\0';
+                }
+            }
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                UIStateClearActive();
+                return true;
+            }
         }
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
