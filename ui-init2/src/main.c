@@ -67,7 +67,7 @@ int main(void) {
     {
         float delta_time = GetFrameTime();
 
-        if (IsKeyPressed(KEY_E)) {
+        if (!UIIsActive() && IsKeyPressed(KEY_E)) {
             enabled = !enabled;
         }
         // UIUpdateInput(delta_time);

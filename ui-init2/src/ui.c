@@ -54,6 +54,7 @@ UIState State = {0};
 static void UIStateSetHot(UIKey key) { State.hot = key; }
 static void UIStateSetActive(UIKey key) { State.active = key; }
 static void UIStateClearActive() { State.active = 0; }
+static bool UIIsActive() { return State.active != 0; }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 static int UIGetFontSize() { return State.font_size; }
