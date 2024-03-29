@@ -100,7 +100,7 @@ int main(void) {
         ClearBackground(RAYWHITE);
 
         if (enabled) {
-            UIFrameStart();
+            UIFrameStart(delta_time);
             if (UIButton("Button 1", 10, 10, 100, 100)) {
                 TraceLog(LOG_INFO, "Button 1 clicked");
             }

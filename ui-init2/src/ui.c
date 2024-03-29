@@ -46,6 +46,8 @@ typedef struct UIState {
     Font font;
 
     uint16_t cursor;
+    bool show_cursor;
+    float cursor_cooldown;
 
     UIKey hot;
     UIKey active;
@@ -63,7 +65,9 @@ static int UIGetFontSize() { return State.font_size; }
 static Font UIGetFont() { return State.font; }
 static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 
-static void UIFrameStart() {
+static void UIFrameStart(float delta_time) {
+    static const float CURSOR_COOLDOWN_DEFAULT_SEC = 0.6;
+
     State.mx = GetMouseX();
     State.my = GetMouseY();
     State.left_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
@@ -73,6 +77,12 @@ static void UIFrameStart() {
     State.font_size = 16;
     State.font = GetFontDefault();
     assert(State.font.texture.id != 0);
+
+    State.cursor_cooldown += delta_time;
+    if (State.cursor_cooldown >= CURSOR_COOLDOWN_DEFAULT_SEC) {
+        State.show_cursor = !State.show_cursor;
+        State.cursor_cooldown = 0.0f;
+    }
 
     State.hot = 0;
 }
@@ -160,10 +170,19 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
         float y_offset = (height - edit_text_size.y) / 2;
         y_offset = y_offset < 0 ? 0 : y_offset;
 
-        // TODO: Improve clippingr rect calculation to take into account cursor position.
+        char display_text[256] = {0};
+        int edit_len = strlen(edit);
+        assert(sizeof(display_text) / sizeof(display_text[0]) > edit_len);
+        strcat(display_text, edit);
+        if (UIKeyIsActive(key)) {
+            if (State.show_cursor) {
+                display_text[edit_len] = '|';
+            }
+        }
 
+        // TODO: Improve clipping rect calculation to take into account cursor position.
         BeginScissorMode(x, y, width, height);
-        DrawText(edit, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
+        DrawText(display_text, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
         EndScissorMode();
     }
 
@@ -178,6 +197,7 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
         if (key != 0) {
             bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
 
+            bool made_edit = false;
             if (key >= 32 && key <= 126) {
                 if (!shift && key >= 65 && key <= 90) {
                     key -= (int)('A' - 'a');
@@ -190,6 +210,7 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
 
                 edit[State.cursor] = (char)key;
                 ++State.cursor;
+                made_edit = true;
             } else if (IsKeyPressed(KEY_BACKSPACE)) {
                 if (State.cursor != 0) {
                     int len = strlen(edit);
@@ -198,6 +219,7 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
                     }
 
                     --State.cursor;
+                    made_edit = true;
                 }
             } else if (IsKeyPressed(KEY_LEFT)) {
                 if (State.cursor != 0) {
@@ -207,6 +229,11 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
                 if (edit[State.cursor] != '\0') {
                     ++State.cursor;
                 }
+            }
+
+            if (made_edit) {
+                State.show_cursor = true;
+                State.cursor_cooldown = 0.0f;
             }
 
             if (IsKeyPressed(KEY_ENTER)) {
@@ -219,6 +246,8 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
         if (State.left_down) {
             UIStateSetActive(key);
             State.cursor = strlen(edit);
+            State.show_cursor = true;
+            State.cursor_cooldown = 0.0f;
         }
     }
     return false;
