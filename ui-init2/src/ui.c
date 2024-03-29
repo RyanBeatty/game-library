@@ -170,20 +170,24 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
         float y_offset = (height - edit_text_size.y) / 2;
         y_offset = y_offset < 0 ? 0 : y_offset;
 
-        char display_text[256] = {0};
+        char* display_text = NULL;
         int edit_len = strlen(edit);
-        assert(sizeof(display_text) / sizeof(display_text[0]) > edit_len);
-        strcat(display_text, edit);
+        for (uint16_t i = 0; i < edit_len; ++i) {
+            arrput(display_text, edit[i]);
+        }
         if (UIKeyIsActive(key)) {
             if (State.show_cursor) {
-                display_text[edit_len] = '|';
+                arrins(display_text, State.cursor, '|');
             }
         }
+        arrput(display_text, '\0');
 
         // TODO: Improve clipping rect calculation to take into account cursor position.
         BeginScissorMode(x, y, width, height);
         DrawText(display_text, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
         EndScissorMode();
+        arrfree(display_text);
+        display_text = NULL;
     }
 
     if (InRect(x, y, width, height)) {
