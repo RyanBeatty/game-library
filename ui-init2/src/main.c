@@ -71,6 +71,7 @@ int main(void) {
 
         if (!UIIsActive() && IsKeyPressed(KEY_E)) {
             enabled = !enabled;
+            TraceLog(LOG_INFO, "UI %s", enabled ? "Enabled" : "Disabled");
         }
         // UIUpdateInput(delta_time);
 
@@ -93,6 +94,10 @@ int main(void) {
         // }
 
         // PopParent();
+
+        BeginDrawing();
+
+        ClearBackground(RAYWHITE);
 
         if (enabled) {
             UIFrameStart();
@@ -118,10 +123,6 @@ int main(void) {
 
             UIFrameEnd();
         }
-
-        BeginDrawing();
-
-        ClearBackground(RAYWHITE);
 
         BeginMode3D(camera);
 

@@ -160,7 +160,11 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
         float y_offset = (height - edit_text_size.y) / 2;
         y_offset = y_offset < 0 ? 0 : y_offset;
 
+        // TODO: Improve clippingr rect calculation to take into account cursor position.
+
+        BeginScissorMode(x, y, width, height);
         DrawText(edit, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
+        EndScissorMode();
     }
 
     if (InRect(x, y, width, height)) {
