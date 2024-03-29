@@ -146,16 +146,13 @@ static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int
 
 // TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
 // consider passing in a max capacity here.
-static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
+static bool UITextBox(char* label, char* edit, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
 
     DrawRectangle(x, y, width, height, GRAY);
 
     // Draw Text.
     {
-        char display_text[256] = {0};
-        int display_text_len = 0;
-
         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
         Vector2 edit_text_size = MeasureTextEx(UIGetFont(), edit, UIGetFontSize(), UIGetFontSpacing());
         float x_offset = (width - edit_text_size.x) / 2;
@@ -190,7 +187,6 @@ static bool UITextField(char* label, char* edit, int x, int y, int width, int he
                 edit[State.cursor] = (char)key;
                 ++State.cursor;
             } else if (IsKeyPressed(KEY_BACKSPACE)) {
-                TraceLog(LOG_INFO, "%s backspace", label);
                 if (State.cursor != 0) {
                     int len = strlen(edit);
                     for (uint16_t i = State.cursor; i < len + 1; ++i) {
