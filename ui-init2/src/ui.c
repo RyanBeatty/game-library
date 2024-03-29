@@ -209,7 +209,6 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
         if (key != 0) {
             bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
 
-            bool made_edit = false;
             if (key >= 32 && key <= 126) {
                 if (!shift && key >= 65 && key <= 90) {
                     key -= (int)('A' - 'a');
@@ -222,7 +221,6 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
 
                 edit[State.cursor] = (char)key;
                 ++State.cursor;
-                made_edit = true;
             } else if (IsKeyPressed(KEY_BACKSPACE)) {
                 if (State.cursor != 0) {
                     int len = strlen(edit);
@@ -231,7 +229,6 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
                     }
 
                     --State.cursor;
-                    made_edit = true;
                 }
             } else if (IsKeyPressed(KEY_LEFT)) {
                 if (State.cursor != 0) {
@@ -243,7 +240,7 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
                 }
             }
 
-            if (made_edit) {
+            if (key != 0) {
                 State.show_cursor = true;
                 State.cursor_cooldown = 0.0f;
             }
