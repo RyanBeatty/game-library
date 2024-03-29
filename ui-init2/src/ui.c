@@ -155,7 +155,7 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
     {
         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
         Vector2 edit_text_size = MeasureTextEx(UIGetFont(), edit, UIGetFontSize(), UIGetFontSpacing());
-        float x_offset = (width - edit_text_size.x) / 2;
+        float x_offset = 5;
         x_offset = x_offset < 0 ? 0 : x_offset;
         float y_offset = (height - edit_text_size.y) / 2;
         y_offset = y_offset < 0 ? 0 : y_offset;
