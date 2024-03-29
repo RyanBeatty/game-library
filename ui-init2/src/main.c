@@ -117,10 +117,9 @@ int main(void) {
                 TraceLog(LOG_INFO, "Text Box Entered");
             }
 
-            if (UITextBox("Text Box2", text_box2, 300, 250, 200, 150)) {
-                TraceLog(LOG_INFO, "Text Box Entered");
+            if (UITextField("Health", text_box2, 300, 250, 200, 150)) {
+                TraceLog(LOG_INFO, "Health Entered");
             }
-            UILabel("Health", 300, 250, 200);
 
             UIFrameEnd();
         }

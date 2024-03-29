@@ -266,3 +266,8 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
 }
 
 static void UIFrameEnd() {}
+
+static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
+    UILabel(label, x, y, width);
+    return UITextBox(label, edit, x, y, width, height);
+}
