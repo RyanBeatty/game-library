@@ -62,8 +62,11 @@ static bool UIIsActive() { return State.active != 0; }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 static int UIGetFontSize() { return State.font_size; }
-static Font UIGetFont() { return State.font; }
+// static Font UIGetFont() { return State.font; }
 static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
+static Vector2 UIMeasureText(char* text) {
+    return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
+}
 
 static void UIFrameStart(float delta_time) {
     static const float CURSOR_COOLDOWN_DEFAULT_SEC = 0.6;
@@ -95,7 +98,7 @@ static bool UIButton(char* label, int x, int y, int width, int height) {
     // TODO: Draw text.
     DrawRectangle(x, y, width, height, GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-    Vector2 text_size = MeasureTextEx(UIGetFont(), label, UIGetFontSize(), UIGetFontSpacing());
+    Vector2 text_size = UIMeasureText(label);
     float x_offset = (width - text_size.x) / 2;
     x_offset = x_offset < 0 ? 0 : x_offset;
     float y_offset = (height - text_size.y) / 2;
@@ -126,7 +129,7 @@ static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int
     // TODO: Draw text.
     DrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-    Vector2 text_size = MeasureTextEx(UIGetFont(), label, UIGetFontSize(), UIGetFontSpacing());
+    Vector2 text_size = UIMeasureText(label);
     float x_offset = (width - text_size.x) / 2;
     x_offset = x_offset < 0 ? 0 : x_offset;
     float y_offset = (height - text_size.y) / 2;
@@ -154,6 +157,11 @@ static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int
     return false;
 }
 
+static void UILabel(char* label, int x, int y, int width) {
+    Vector2 size = UIMeasureText(label);
+    DrawText(label, x + ((width - size.x) * 0.5), y - size.y - 5, UIGetFontSize(), BLACK);
+}
+
 // TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
 // consider passing in a max capacity here.
 static bool UITextBox(char* label, char* edit, int x, int y, int width, int height) {
@@ -164,7 +172,7 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
     // Draw Text.
     {
         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-        Vector2 edit_text_size = MeasureTextEx(UIGetFont(), edit, UIGetFontSize(), UIGetFontSpacing());
+        Vector2 edit_text_size = UIMeasureText(edit);
         float x_offset = 5;
         x_offset = x_offset < 0 ? 0 : x_offset;
         float y_offset = (height - edit_text_size.y) / 2;
