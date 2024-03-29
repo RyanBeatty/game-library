@@ -146,25 +146,15 @@ static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int
 
 // TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
 // consider passing in a max capacity here.
-static bool UITextField(char* label, bool show_label, char* edit, int x, int y, int width, int height) {
+static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
 
     DrawRectangle(x, y, width, height, GRAY);
 
     // Draw Text.
     {
-        float edit_text_y_start_offset = height / 4.0;
-        if (!show_label) {
-            edit_text_y_start_offset = 0;
-        }
-
         char display_text[256] = {0};
         int display_text_len = 0;
-        if (show_label) {
-            display_text_len = strlen(label);
-            assert(sizeof(display_text) / sizeof(display_text[0]) > display_text_len);
-            strcat(display_text, label);
-        }
 
         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
         Vector2 edit_text_size = MeasureTextEx(UIGetFont(), edit, UIGetFontSize(), UIGetFontSpacing());
@@ -173,7 +163,7 @@ static bool UITextField(char* label, bool show_label, char* edit, int x, int y, 
         float y_offset = (height - edit_text_size.y) / 2;
         y_offset = y_offset < 0 ? 0 : y_offset;
 
-        DrawText(edit, x + x_offset, y + edit_text_y_start_offset + y_offset, UIGetFontSize(), BLACK);
+        DrawText(edit, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
     }
 
     if (InRect(x, y, width, height)) {

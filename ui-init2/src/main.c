@@ -108,11 +108,11 @@ int main(void) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
 
-            if (UITextField("Text Field", false, text_field, 300, 150, 200, 50)) {
+            if (UITextField("Text Field", text_field, 300, 150, 200, 50)) {
                 TraceLog(LOG_INFO, "Text Field Entered");
             }
 
-            if (UITextField("Text Field2", true, text_field2, 300, 250, 200, 150)) {
+            if (UITextField("Text Field2", text_field2, 300, 250, 200, 150)) {
                 TraceLog(LOG_INFO, "Text Field Entered");
             }
 
