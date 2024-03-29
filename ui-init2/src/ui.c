@@ -190,8 +190,12 @@ static bool UITextField(char* label, char* edit, int x, int y, int width, int he
             } else if (IsKeyPressed(KEY_BACKSPACE)) {
                 TraceLog(LOG_INFO, "%s backspace", label);
                 if (State.cursor != 0) {
+                    int len = strlen(edit);
+                    for (uint16_t i = State.cursor; i < len + 1; ++i) {
+                        edit[i - 1] = edit[i];
+                    }
+
                     --State.cursor;
-                    edit[State.cursor] = '\0';
                 }
             } else if (IsKeyPressed(KEY_LEFT)) {
                 if (State.cursor != 0) {
