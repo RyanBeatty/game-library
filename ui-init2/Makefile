@@ -1,13 +1,21 @@
 # Thanks to Job Vranish (https://spin.atomicobject.com/2016/08/26/makefile-c-projects/)
 TARGET_EXEC := main
 
-BUILD_DIR := ./build
-SRC_DIRS := ./src
-LIB_DIR := ./libs
+IS_WINDOWS := $(findstring Windows_NT,$(OS))
+
+BUILD_DIR := build
+SRC_DIRS := src
+LIB_DIR := libs
+
+ifeq ($(IS_WINDOWS), Windows_NT)
+	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm
+else
+	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
+endif
 
 LIBS := ""
 LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
-LDFLAGS := $(LDFLAGS) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+LDFLAGS := $(LDFLAGS) -lraylib -lm -lpthread -lraylib -lopengl32 -lgdi32 -lwinmm -L/raylib/raylib/src -I/raylib/raylib/src
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. Make will incorrectly expand these otherwise.
