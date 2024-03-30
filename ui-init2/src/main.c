@@ -86,8 +86,9 @@ int main(void) {
                                  "button5", "button6", "button7", "button8"};
             for (uint32_t r = 0; r < 4; ++r) {
                 UIRowStart();
+                UISetSpacing(10);
                 for (uint32_t c = 0; c < 2; ++c) {
-                    UIButton(labels[r + c]);
+                    UIButton(labels[(r * 2) + c]);
                 }
                 UIRowStop();
             }

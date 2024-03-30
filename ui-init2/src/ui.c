@@ -158,8 +158,12 @@ static bool InRect(int x, int y, int width, int height) {
 }
 
 static bool UIButtonEx(char* label, int x, int y, int width, int height) {
-    // TODO: Draw text.
-    DrawRectangle(x, y, width, height, GRAY);
+    UIKey key = UIKeyFromCStr(label);
+    if (InRect(x, y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    DrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(label);
     float x_offset = (width - text_size.x) / 2;
@@ -167,11 +171,6 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     float y_offset = (height - text_size.y) / 2;
     y_offset = y_offset < 0 ? 0 : y_offset;
     DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
-
-    UIKey key = UIKeyFromCStr(label);
-    if (InRect(x, y, width, height)) {
-        UIStateSetHot(key);
-    }
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
@@ -338,6 +337,6 @@ static bool UIButton(char* label) {
     int height = size.y + State.paddingy;
     int x = State.cx;
     int y = State.cy;
-    UIReserveSpace(size.x, size.y);
+    UIReserveSpace(width, height);
     return UIButtonEx(label, x, y, width, height);
 }
