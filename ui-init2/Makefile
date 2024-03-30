@@ -15,7 +15,7 @@ endif
 
 LIBS := ""
 LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
-LDFLAGS := $(LDFLAGS) -lraylib -lm -lpthread -lraylib -lopengl32 -lgdi32 -lwinmm -L/raylib/raylib/src -I/raylib/raylib/src
+LDFLAGS := $(LDFLAGS) -lraylib -lm -lpthread -lraylib $(PLATFORM_LDFLAGS) -I/raylib/raylib/src
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. Make will incorrectly expand these otherwise.
