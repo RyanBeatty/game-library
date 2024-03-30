@@ -81,13 +81,13 @@ int main(void) {
         if (enabled) {
             UIFrameStart(delta_time);
 
-            if (UIButton("Button 3")) {
-                TraceLog(LOG_INFO, "Button 3 clicked");
+            UISetSpacing(30);
+            char *(labels)[5] = {"button1", "button2", "button3", "button4", "button5"};
+            for (uint32_t i = 0; i < sizeof(labels) / sizeof(labels[0]); ++i) {
+                UIButton(labels[i]);
             }
 
-            if (UIButton("Button 4")) {
-                TraceLog(LOG_INFO, "Button 4 clicked");
-            }
+            UISetSpacing(0);
 
             if (UIButtonEx("Button 1", 300, 10, 100, 100)) {
                 TraceLog(LOG_INFO, "Button 1 clicked");
