@@ -340,3 +340,5 @@ static bool UIButton(char* label) {
     UIReserveSpace(width, height);
     return UIButtonEx(label, x, y, width, height);
 }
+
+static void UISpacer(int size) { UIReserveSpace(size, size); }

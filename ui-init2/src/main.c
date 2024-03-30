@@ -91,6 +91,8 @@ int main(void) {
                     UIButton(labels[(r * 2) + c]);
                 }
                 UIRowStop();
+                UISetSpacing(0);
+                UISpacer(10);
             }
 
             UISetSpacing(0);
