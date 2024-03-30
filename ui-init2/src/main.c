@@ -36,8 +36,8 @@
 int main(void) {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+    const int screenWidth = 1366;
+    const int screenHeight = 768;
     static bool radio_button_1 = false;
     static char text_box[256] = {0};
     static char text_box2[256] = {0};
@@ -73,27 +73,6 @@ int main(void) {
             enabled = !enabled;
             TraceLog(LOG_INFO, "UI %s", enabled ? "Enabled" : "Disabled");
         }
-        // UIUpdateInput(delta_time);
-
-        // if (IsKeyPressed(KEY_E)) {
-        //     ToggleUI();
-        // }
-
-        // PushParent("parent1", 10, 10, 300, 400);
-
-        // if (UIButton("Button").clicked) {
-        //     TraceLog(LOG_INFO, "Button clicked");
-        // }
-
-        // if (UIButton("Another Button").clicked) {
-        //     TraceLog(LOG_INFO, "Another Button Clicked");
-        // }
-
-        // if (UITextField("Text Field 1", "hello, workd").clicked) {
-        //     TraceLog(LOG_INFO, "Text Field 1 Clicked");
-        // }
-
-        // PopParent();
 
         BeginDrawing();
 
@@ -101,23 +80,32 @@ int main(void) {
 
         if (enabled) {
             UIFrameStart(delta_time);
-            if (UIButton("Button 1", 10, 10, 100, 100)) {
+
+            if (UIButton("Button 3")) {
+                TraceLog(LOG_INFO, "Button 3 clicked");
+            }
+
+            if (UIButton("Button 4")) {
+                TraceLog(LOG_INFO, "Button 4 clicked");
+            }
+
+            if (UIButtonEx("Button 1", 300, 10, 100, 100)) {
                 TraceLog(LOG_INFO, "Button 1 clicked");
             }
 
-            if (UIButton("Button 2", 10, 200, 200, 200)) {
+            if (UIButtonEx("Button 2", 300, 200, 200, 200)) {
                 TraceLog(LOG_INFO, "Button 2 Clicked");
             }
 
-            if (UIRadioButton("Radio Button", &radio_button_1, 300, 20, 100, 100)) {
+            if (UIRadioButton("Radio Button", &radio_button_1, 600, 20, 100, 100)) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
 
-            if (UITextBox("Text Box", text_box, 300, 150, 200, 50)) {
+            if (UITextBox("Text Box", text_box, 600, 150, 200, 50)) {
                 TraceLog(LOG_INFO, "Text Box Entered");
             }
 
-            if (UITextField("Health", text_box2, 300, 250, 200, 150)) {
+            if (UITextField("Health", text_box2, 600, 250, 200, 150)) {
                 TraceLog(LOG_INFO, "Health Entered");
             }
 
@@ -126,11 +114,7 @@ int main(void) {
 
         BeginMode3D(camera);
 
-        // DrawModel(model, Vector3Zero(), 1.0f, WHITE);
-
         EndMode3D();
-
-        // DrawFPS(?("Use keys [Y][R][G][B] to toggle lights", 10, 40, 20, DARKGRAY);
 
         EndDrawing();
         //----------------------------------------------------------------------------------

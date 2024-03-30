@@ -37,6 +37,20 @@ static UIKey UIKeyFromCStr(char* str) {
     return key;
 }
 
+// defualt to growing along Y axis because thats more natural default for UIs.
+typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
+
+// typedef struct UIBox {
+//     int x;
+//     int y;
+//     int width;
+//     int height;
+
+//     int cx;
+//     int cy;
+//     UIAxis axis;
+// } UIBox;
+
 typedef struct UIState {
     int mx;
     int my;
@@ -48,6 +62,11 @@ typedef struct UIState {
     uint16_t cursor;
     bool show_cursor;
     float cursor_cooldown;
+
+    // TODO: This will need to be refactored into state variables per Box.
+    int cx;
+    int cy;
+    UIAxis axis;
 
     UIKey hot;
     UIKey active;
@@ -66,6 +85,22 @@ static int UIGetFontSize() { return State.font_size; }
 static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
+}
+
+static void UIReserveSpace(int width, int height) {
+    switch (State.axis) {
+        case AXIS_Y: {
+            State.cy += height;
+            break;
+        }
+        case AXIS_X: {
+            State.cx += width;
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
 }
 
 static void UIFrameStart(float delta_time) {
@@ -87,6 +122,10 @@ static void UIFrameStart(float delta_time) {
         State.cursor_cooldown = 0.0f;
     }
 
+    State.cx = 0;
+    State.cy = 0;
+    State.axis = AXIS_Y;
+
     State.hot = 0;
 }
 
@@ -94,7 +133,7 @@ static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
 }
 
-static bool UIButton(char* label, int x, int y, int width, int height) {
+static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     // TODO: Draw text.
     DrawRectangle(x, y, width, height, GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
@@ -267,4 +306,12 @@ static void UIFrameEnd() {}
 static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
     UILabel(label, x, y, width);
     return UITextBox(label, edit, x, y, width, height);
+}
+
+static bool UIButton(char* label) {
+    Vector2 size = UIMeasureText(label);
+    int x = State.cx;
+    int y = State.cy;
+    UIReserveSpace(size.x, size.y);
+    return UIButtonEx(label, x, y, size.x, size.y);
 }
