@@ -54,6 +54,9 @@ typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 typedef struct UIState {
     int mx;
     int my;
+    int dragx;
+    int dragy;
+    bool dragging;
     bool left_down;
     bool left_up;
     int font_size;
@@ -82,7 +85,10 @@ UIState State = {0};
 
 static void UIStateSetHot(UIKey key) { State.hot = key; }
 static void UIStateSetActive(UIKey key) { State.active = key; }
-static void UIStateClearActive() { State.active = 0; }
+static void UIStateClearActive() {
+    State.active = 0;
+    State.dragging = false;
+}
 static bool UIIsActive() { return State.active != 0; }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
@@ -125,8 +131,12 @@ static void UIReserveSpace(int width, int height) {
 static void UIFrameStart(float delta_time) {
     static const float CURSOR_COOLDOWN_DEFAULT_SEC = 0.6;
 
-    State.mx = GetMouseX();
-    State.my = GetMouseY();
+    int mx = GetMouseX();
+    int my = GetMouseY();
+    State.dragx = mx - State.mx;
+    State.dragy = my - State.my;
+    State.mx = mx;
+    State.my = my;
     State.left_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
     State.left_up = IsMouseButtonUp(MOUSE_BUTTON_LEFT);
     assert(!State.left_down || !State.left_up);
@@ -342,3 +352,34 @@ static bool UIButton(char* label) {
 }
 
 static void UISpacer(int size) { UIReserveSpace(size, size); }
+
+static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
+    UIKey key = UIKeyFromCStr(label);
+    if (InRect(*x, *y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    DrawRectangle(*x, *y, width, height, BLACK);
+    DrawRectangle(*x, *y, width, 20, BLUE);
+
+    if (UIKeyIsActive(key)) {
+        TraceLog(LOG_INFO, "label %s is Active", label);
+        if (State.left_up) {
+            UIStateClearActive();
+            return true;
+        } else {
+            *x += State.dragx;
+            *y += State.dragy;
+        }
+    } else if (UIKeyIsHot(key)) {
+        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        if (State.left_down) {
+            UIStateSetActive(key);
+            if (InRect(*x, *y, width, 20)) {
+                TraceLog(LOG_INFO, "%s click drag", label);
+                State.dragging = true;
+            }
+        }
+    }
+    return false;
+}

@@ -41,6 +41,8 @@ int main(void) {
     static bool radio_button_1 = false;
     static char text_box[256] = {0};
     static char text_box2[256] = {0};
+    static int wx = 30;
+    static int wy = 400;
 
     strcat(text_box, "hello, world");
     strcat(text_box2, "foo");
@@ -96,6 +98,10 @@ int main(void) {
             }
 
             UISetSpacing(0);
+
+            if (UIWindowEx("Window", &wx, &wy, 300, 300)) {
+                TraceLog(LOG_INFO, "Window active");
+            }
 
             if (UIButtonEx("Button 1", 300, 10, 100, 100)) {
                 TraceLog(LOG_INFO, "Button 1 clicked");
