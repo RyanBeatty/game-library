@@ -367,7 +367,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
         if (State.left_up) {
             UIStateClearActive();
             return true;
-        } else {
+        } else if (State.dragging) {
             *x += State.dragx;
             *y += State.dragy;
         }
