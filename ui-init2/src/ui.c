@@ -68,6 +68,8 @@ typedef struct UIState {
     int cy;
     int spacing;
     UIAxis axis;
+    int nextrowx;
+    int nextrowy;
 
     int paddingx;  // Padding around button text and stuff.
     int paddingy;
@@ -92,6 +94,16 @@ static Vector2 UIMeasureText(char* text) {
 }
 static void UIDrawRect(int x, int y, int width, int height) { DrawRectangle(x, y, width, height, GRAY); }
 static void UISetSpacing(int spacing) { State.spacing = spacing; }
+static void UIRowStart() {
+    State.nextrowx = State.cx;
+    State.nextrowy = State.cy;
+    State.axis = AXIS_X;
+}
+static void UIRowStop() {
+    State.cx = State.nextrowx;
+    State.cy = State.nextrowy;
+    State.axis = AXIS_Y;
+}
 
 static void UIReserveSpace(int width, int height) {
     switch (State.axis) {
@@ -101,6 +113,7 @@ static void UIReserveSpace(int width, int height) {
         }
         case AXIS_X: {
             State.cx += width + State.spacing;
+            State.nextrowy = (State.cy + height) > State.nextrowy ? (State.cy + height) : State.nextrowy;
             break;
         }
         default: {
@@ -132,6 +145,8 @@ static void UIFrameStart(float delta_time) {
     State.cy = 0;
     State.spacing = 0;
     State.axis = AXIS_Y;
+    State.nextrowx = 0;
+    State.nextrowy = 0;
     State.paddingx = 10;
     State.paddingy = 5;
 

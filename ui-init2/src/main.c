@@ -82,9 +82,14 @@ int main(void) {
             UIFrameStart(delta_time);
 
             UISetSpacing(30);
-            char *(labels)[5] = {"button1", "button2", "button3", "button4", "button5"};
-            for (uint32_t i = 0; i < sizeof(labels) / sizeof(labels[0]); ++i) {
-                UIButton(labels[i]);
+            char *(labels)[8] = {"button1", "button2", "button3", "button4",
+                                 "button5", "button6", "button7", "button8"};
+            for (uint32_t r = 0; r < 4; ++r) {
+                UIRowStart();
+                for (uint32_t c = 0; c < 2; ++c) {
+                    UIButton(labels[r + c]);
+                }
+                UIRowStop();
             }
 
             UISetSpacing(0);
