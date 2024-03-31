@@ -375,22 +375,21 @@ typedef enum UIWindowRect {
     RECT_EAST,
     RECT_WEST,
 
-    // // Resize NWSE
-    // RECT_NWSE,
-    // RECT_SENW,
+    // Resize NWSE
+    RECT_NW,
+    RECT_SE,
 
-    // // Resize NESW
-    // RECT_NESW,
-    // RECT_SWNE,
+    // Resize NESW
+    RECT_NE,
+    RECT_SW,
 
     RECT_COUNT
 } UIWindowRect;
 
-static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,   MOUSE_CURSOR_DEFAULT,   MOUSE_CURSOR_DEFAULT,
-                                       MOUSE_CURSOR_RESIZE_NS, MOUSE_CURSOR_RESIZE_NS, MOUSE_CURSOR_RESIZE_EW,
-                                       MOUSE_CURSOR_RESIZE_EW};
-// MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NESW,
-// MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_DEFAULT};
+static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DEFAULT,
+                                       MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_EW,
+                                       MOUSE_CURSOR_RESIZE_EW,   MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE,
+                                       MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_RESIZE_NESW};
 
 static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
     static const int Padding = 20;  // 8;
@@ -418,19 +417,18 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
         case RECT_WEST: {
             return (Rectangle){.x = x - Padding, .y = y, .width = Padding, .height = height};
         }
-        // case RECT_SENW: {
-        //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
-        // }
-        // case RECT_SOUTH: {
-        //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
-        // }
-        // case RECT_SWNE: {
-        //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
-        // }
-
-        // case RECT_NWSE: {
-        //     return (Rectangle){.x=x-Padding, .y=y-Padding, .width=Padding, .height=Padding};
-        // }
+        case RECT_NW: {
+            return (Rectangle){.x = x - Padding, .y = y - Padding, .width = Padding, .height = Padding};
+        }
+        case RECT_SE: {
+            return (Rectangle){.x = x + width, .y = y + height, .width = Padding, .height = Padding};
+        }
+        case RECT_NE: {
+            return (Rectangle){.x = x + width, .y = y - Padding, .width = Padding, .height = Padding};
+        }
+        case RECT_SW: {
+            return (Rectangle){.x = x - Padding, .y = y + height, .width = Padding, .height = Padding};
+        }
         default: {
             exit(1);
         }
@@ -457,7 +455,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
     DrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
     // Debug resize zones.
     if (true) {
-        Color colors[4] = {RED, PURPLE, GREEN, YELLOW, ORANGE};
+        Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
         for (int i = RECT_NORTH, c = 0; i < RECT_COUNT; ++i, ++c) {
             DrawRectangleRec(recs[i], colors[c % (sizeof(colors) / sizeof(colors[0]))]);
         }
