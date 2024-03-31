@@ -88,6 +88,7 @@ static void UIStateSetActive(UIKey key) { State.active = key; }
 static void UIStateClearActive() {
     State.active = 0;
     State.dragging = false;
+    SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 }
 static bool UIIsActive() { return State.active != 0; }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
@@ -98,7 +99,6 @@ static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
-static void UIDrawRect(int x, int y, int width, int height) { DrawRectangle(x, y, width, height, GRAY); }
 static void UISetSpacing(int spacing) { State.spacing = spacing; }
 static void UIRowStart() {
     State.nextrowx = State.cx;
@@ -362,16 +362,29 @@ typedef enum UIWindowRect{
     RECT_FULL,
     RECT_VISIBLE,
     RECT_DRAG,
-    RECT_UP,
-    RECT_DIAG_UP_RIGHT,
-    RECT_RIGHT,
-    RECT_DIAG_DOWN_RIGHT,
-    RECT_DOWN,
-    RECT_DIAG_DOWN_LEFT,
-    RECT_LEFT,
-    RECT_DIAG_UP_LEFT,
+
+    // Resize rects.
+
+    // Resize NS
+    RECT_NORTH,
+    RECT_SOUTH,
+
+    // Resize EW
+    RECT_EAST,
+    RECT_WEST,
+
+    // Resize NWSE
+    RECT_NWSE,
+    RECT_SENW,
+
+    // Resize NESW
+    RECT_NESW,
+    RECT_SWNE,
+    
     RECT_COUNT
 } UIWindowRect;
+
+static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT, MOUSE_CURSOR_DEFAULT, MOUSE_CURSOR_DEFAULT, MOUSE_CURSOR_RESIZE_NS, MOUSE_CURSOR_RESIZE_NS, MOUSE_CURSOR_RESIZE_EW, MOUSE_CURSOR_RESIZE_EW, MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_DEFAULT};
 
 // static Rectangle GetUIWindowRect(int x, int, y, int width, int height) {
 //     static const int Padding = 5;
@@ -395,28 +408,28 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
         case RECT_DRAG: {
             return (Rectangle){.x=x, .y=y, .width=width, .height=20};
         }
-        case RECT_UP: {
+        case RECT_NORTH: {
             return (Rectangle){.x=x+Padding, .y=y-Padding, .width=width-(Padding*2), .height=Padding};
         }
-        case RECT_DIAG_UP_RIGHT: {
+        case RECT_NESW: {
             return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         }
-        case RECT_RIGHT: {
+        case RECT_WEST: {
             return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         }
-        case RECT_DIAG_DOWN_RIGHT: {
+        case RECT_SENW: {
             return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         }
-        case RECT_DOWN: {
+        case RECT_SOUTH: {
             return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         }
-        case RECT_DIAG_DOWN_LEFT: {
+        case RECT_SWNE: {
             return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         }
-        case RECT_LEFT: {
+        case RECT_EAST: {
             return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         }
-        case RECT_DIAG_UP_LEFT: {
+        case RECT_NWSE: {
             return (Rectangle){.x=x-Padding, .y=y-Padding, .width=Padding, .height=Padding};
         }
         default: {
@@ -438,6 +451,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
     DrawRectangle(rect_draw.x, rect_draw.y, rect_draw.width, rect_draw.height, BLACK);
     Rectangle drag_rect = GetUIWindowRect(*x, *y, width, height, RECT_DRAG);
     DrawRectangle(drag_rect.x, drag_rect.y, drag_rect.width, drag_rect.height, BLUE);
+    if (true) {
+        DrawRectangleRec(GetUIWindowRect(*x, *y, width, height, RECT_NORTH), RED);
+    }
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
@@ -455,6 +471,16 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
             if (InRect(drag_rect.x, drag_rect.y, drag_rect.width, drag_rect.height)) {
                 TraceLog(LOG_INFO, "%s click drag", label);
                 State.dragging = true;
+            }
+
+            for (int i = RECT_NORTH; i < RECT_COUNT; ++i) {
+                Rectangle resize_rect = GetUIWindowRect(*x, *y, width, height, i);
+                if (InRect(resize_rect.x, resize_rect.y, resize_rect.width, resize_rect.height)) {
+                    TraceLog(LOG_INFO, "Resizingggggggg");
+                    // State.resizing = true;
+                    // SetMouseCursor(RectToCursor[i]);
+                    SetMouse
+                }
             }
         }
     }
