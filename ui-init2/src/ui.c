@@ -78,12 +78,13 @@ typedef struct UIState {
     int paddingy;
 
     UIKey hot;
+    UIKey hot_to_be;
     UIKey active;
 } UIState;
 
 UIState State = {0};
 
-static void UIStateSetHot(UIKey key) { State.hot = key; }
+static void UIStateSetHot(UIKey key) { State.hot_to_be = key; }
 static void UIStateSetActive(UIKey key) { State.active = key; }
 static void UIStateClearActive() {
     State.active = 0;
@@ -160,8 +161,10 @@ static void UIFrameStart(float delta_time) {
     State.paddingx = 10;
     State.paddingy = 5;
 
-    State.hot = 0;
-    SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+    State.hot_to_be = 0;
+    if (State.hot == 0) {
+        SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+    }
 }
 
 static bool InRect(int x, int y, int width, int height) {
@@ -335,7 +338,7 @@ static bool UITextBox(char* label, char* edit, int x, int y, int width, int heig
     return false;
 }
 
-static void UIFrameEnd() {}
+static void UIFrameEnd() { State.hot = State.hot_to_be; }
 
 static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
     UILabel(label, x, y, width);
@@ -483,9 +486,10 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
                 }
             }
         } else {
-            for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
+            for (int i = RECT_FULL + 1; i < RECT_COUNT; ++i) {
                 if (over[i]) {
                     SetMouseCursor(RectToCursor[i]);
+                    break;
                 }
             }
         }
