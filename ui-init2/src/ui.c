@@ -407,7 +407,7 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
             return (Rectangle){.x = x, .y = y, .width = width, .height = 20};
         }
         case RECT_NORTH: {
-            return (Rectangle){.x = x + Padding, .y = y - Padding, .width = width - (Padding * 2), .height = Padding};
+            return (Rectangle){.x = x, .y = y - Padding, .width = width, .height = Padding};
         }
         // case RECT_NESW: {
         //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
