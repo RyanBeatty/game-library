@@ -37,9 +37,26 @@ static UIKey UIKeyFromCStr(char* str) {
     return key;
 }
 
+// defualt to growing along Y axis because thats more natural default for UIs.
+typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
+
+// typedef struct UIBox {
+//     int x;
+//     int y;
+//     int width;
+//     int height;
+
+//     int cx;
+//     int cy;
+//     UIAxis axis;
+// } UIBox;
+
 typedef struct UIState {
     int mx;
     int my;
+    int dragx;
+    int dragy;
+    bool dragging;
     bool left_down;
     bool left_up;
     int font_size;
@@ -49,6 +66,17 @@ typedef struct UIState {
     bool show_cursor;
     float cursor_cooldown;
 
+    // TODO: This will need to be refactored into state variables per Box.
+    int cx;
+    int cy;
+    int spacing;
+    UIAxis axis;
+    int nextrowx;
+    int nextrowy;
+
+    int paddingx;  // Padding around button text and stuff.
+    int paddingy;
+
     UIKey hot;
     UIKey active;
 } UIState;
@@ -57,7 +85,10 @@ UIState State = {0};
 
 static void UIStateSetHot(UIKey key) { State.hot = key; }
 static void UIStateSetActive(UIKey key) { State.active = key; }
-static void UIStateClearActive() { State.active = 0; }
+static void UIStateClearActive() {
+    State.active = 0;
+    State.dragging = false;
+}
 static bool UIIsActive() { return State.active != 0; }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
@@ -67,12 +98,45 @@ static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
+static void UIDrawRect(int x, int y, int width, int height) { DrawRectangle(x, y, width, height, GRAY); }
+static void UISetSpacing(int spacing) { State.spacing = spacing; }
+static void UIRowStart() {
+    State.nextrowx = State.cx;
+    State.nextrowy = State.cy;
+    State.axis = AXIS_X;
+}
+static void UIRowStop() {
+    State.cx = State.nextrowx;
+    State.cy = State.nextrowy;
+    State.axis = AXIS_Y;
+}
+
+static void UIReserveSpace(int width, int height) {
+    switch (State.axis) {
+        case AXIS_Y: {
+            State.cy += height + State.spacing;
+            break;
+        }
+        case AXIS_X: {
+            State.cx += width + State.spacing;
+            State.nextrowy = (State.cy + height) > State.nextrowy ? (State.cy + height) : State.nextrowy;
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+}
 
 static void UIFrameStart(float delta_time) {
     static const float CURSOR_COOLDOWN_DEFAULT_SEC = 0.6;
 
-    State.mx = GetMouseX();
-    State.my = GetMouseY();
+    int mx = GetMouseX();
+    int my = GetMouseY();
+    State.dragx = mx - State.mx;
+    State.dragy = my - State.my;
+    State.mx = mx;
+    State.my = my;
     State.left_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
     State.left_up = IsMouseButtonUp(MOUSE_BUTTON_LEFT);
     assert(!State.left_down || !State.left_up);
@@ -87,6 +151,15 @@ static void UIFrameStart(float delta_time) {
         State.cursor_cooldown = 0.0f;
     }
 
+    State.cx = 0;
+    State.cy = 0;
+    State.spacing = 0;
+    State.axis = AXIS_Y;
+    State.nextrowx = 0;
+    State.nextrowy = 0;
+    State.paddingx = 10;
+    State.paddingy = 5;
+
     State.hot = 0;
 }
 
@@ -94,9 +167,13 @@ static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
 }
 
-static bool UIButton(char* label, int x, int y, int width, int height) {
-    // TODO: Draw text.
-    DrawRectangle(x, y, width, height, GRAY);
+static bool UIButtonEx(char* label, int x, int y, int width, int height) {
+    UIKey key = UIKeyFromCStr(label);
+    if (InRect(x, y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    DrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(label);
     float x_offset = (width - text_size.x) / 2;
@@ -104,11 +181,6 @@ static bool UIButton(char* label, int x, int y, int width, int height) {
     float y_offset = (height - text_size.y) / 2;
     y_offset = y_offset < 0 ? 0 : y_offset;
     DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
-
-    UIKey key = UIKeyFromCStr(label);
-    if (InRect(x, y, width, height)) {
-        UIStateSetHot(key);
-    }
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
@@ -267,4 +339,47 @@ static void UIFrameEnd() {}
 static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
     UILabel(label, x, y, width);
     return UITextBox(label, edit, x, y, width, height);
+}
+
+static bool UIButton(char* label) {
+    Vector2 size = UIMeasureText(label);
+    int width = size.x + State.paddingx;
+    int height = size.y + State.paddingy;
+    int x = State.cx;
+    int y = State.cy;
+    UIReserveSpace(width, height);
+    return UIButtonEx(label, x, y, width, height);
+}
+
+static void UISpacer(int size) { UIReserveSpace(size, size); }
+
+static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
+    UIKey key = UIKeyFromCStr(label);
+    if (InRect(*x, *y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    DrawRectangle(*x, *y, width, height, BLACK);
+    DrawRectangle(*x, *y, width, 20, BLUE);
+
+    if (UIKeyIsActive(key)) {
+        TraceLog(LOG_INFO, "label %s is Active", label);
+        if (State.left_up) {
+            UIStateClearActive();
+            return true;
+        } else if (State.dragging) {
+            *x += State.dragx;
+            *y += State.dragy;
+        }
+    } else if (UIKeyIsHot(key)) {
+        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        if (State.left_down) {
+            UIStateSetActive(key);
+            if (InRect(*x, *y, width, 20)) {
+                TraceLog(LOG_INFO, "%s click drag", label);
+                State.dragging = true;
+            }
+        }
+    }
+    return false;
 }
