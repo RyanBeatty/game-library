@@ -56,7 +56,10 @@ typedef struct UIState {
     int my;
     int dragx;
     int dragy;
-    int drag;
+    int resizex;
+    int resizey;
+    int resizew;
+    int resizeh;
     bool left_down;
     bool left_up;
     int font_size;
@@ -88,7 +91,10 @@ static void UIStateSetHot(UIKey key) { State.hot_to_be = key; }
 static void UIStateSetActive(UIKey key) { State.active = key; }
 static void UIStateClearActive() {
     State.active = 0;
-    State.drag = 0;
+    State.resizex = 0;
+    State.resizey = 0;
+    State.resizew = 0;
+    State.resizey = 0;
     SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 }
 static bool UIIsActive() { return State.active != 0; }
@@ -390,7 +396,10 @@ static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DE
                                        MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_EW,
                                        MOUSE_CURSOR_RESIZE_EW,   MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE,
                                        MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_RESIZE_NESW};
-static int RectToDrag[RECT_COUNT] = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
+static int RectToResizeX[RECT_COUNT] = {0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0};
+static int RectToResizeY[RECT_COUNT] = {0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0};
+static int RectToResizeW[RECT_COUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static int RectToResizeH[RECT_COUNT] = {0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0};
 
 static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
     static const int Padding = 20;  // 8;
@@ -468,23 +477,36 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
             UIStateClearActive();
             return true;
         }
-        *x += State.drag * State.dragx;
-        *y += State.drag * State.dragy;
+        *x += State.resizex * State.dragx;
+        *y += State.resizey * State.dragy;
+        width += State.resizew * State.dragx;
+        height += State.resizeh * State.dragy;
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
         int cursor = MOUSE_CURSOR_DEFAULT;
-        int drag = 0;
+        int resizex = 0;
+        int resizey = 0;
+        int resizew = 0;
+        int resizeh = 0;
+        // NOTE: We rely on the ordering of the enum to make sure these settings are okay.
+        // We expect multiple matches, so need to remember last match/writer wins.
         for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
             if (over[i]) {
                 cursor = RectToCursor[i];
-                drag |= RectToDrag[i];
+                resizex = RectToResizeX[i];
+                resizey = RectToResizeY[i];
+                resizew = RectToResizeW[i];
+                resizeh = RectToResizeH[i];
             }
         }
         SetMouseCursor(cursor);
 
         if (State.left_down) {
             UIStateSetActive(key);
-            State.drag = drag;
+            State.resizex = resizex;
+            State.resizey = resizey;
+            State.resizew = resizew;
+            State.resizeh = resizeh;
         }
     }
     return false;
