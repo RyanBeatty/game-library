@@ -399,7 +399,7 @@ static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DE
 static int RectToResizeX[RECT_COUNT] = {0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0};
 static int RectToResizeY[RECT_COUNT] = {0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0};
 static int RectToResizeW[RECT_COUNT] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static int RectToResizeH[RECT_COUNT] = {0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0};
+static int RectToResizeH[RECT_COUNT] = {0, 0, 0, -1, 1, 0, 0, 0, 0, 0, 0};
 
 static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
     static const int Padding = 20;  // 8;
