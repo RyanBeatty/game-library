@@ -457,8 +457,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
     DrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
     // Debug resize zones.
     if (true) {
-        for (int i = RECT_NORTH; i < RECT_COUNT; ++i) {
-            DrawRectangleRec(recs[i], RED);
+        Color colors[4] = {RED, PURPLE, GREEN, YELLOW, ORANGE};
+        for (int i = RECT_NORTH, c = 0; i < RECT_COUNT; ++i, ++c) {
+            DrawRectangleRec(recs[i], colors[c % (sizeof(colors) / sizeof(colors[0]))]);
         }
     }
 
