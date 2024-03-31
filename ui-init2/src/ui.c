@@ -369,11 +369,11 @@ typedef enum UIWindowRect {
 
     // Resize NS
     RECT_NORTH,
-    // RECT_SOUTH,
+    RECT_SOUTH,
 
-    // // Resize EW
-    // RECT_EAST,
-    // RECT_WEST,
+    // Resize EW
+    RECT_EAST,
+    RECT_WEST,
 
     // // Resize NWSE
     // RECT_NWSE,
@@ -386,11 +386,11 @@ typedef enum UIWindowRect {
     RECT_COUNT
 } UIWindowRect;
 
-static int RectToCursor[RECT_COUNT] = {
-    MOUSE_CURSOR_DEFAULT, MOUSE_CURSOR_DEFAULT, MOUSE_CURSOR_DEFAULT,
-    MOUSE_CURSOR_RESIZE_NS};  //, MOUSE_CURSOR_RESIZE_NS, MOUSE_CURSOR_RESIZE_EW, MOUSE_CURSOR_RESIZE_EW,
-                              // MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NESW,
-                              // MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_DEFAULT};
+static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,   MOUSE_CURSOR_DEFAULT,   MOUSE_CURSOR_DEFAULT,
+                                       MOUSE_CURSOR_RESIZE_NS, MOUSE_CURSOR_RESIZE_NS, MOUSE_CURSOR_RESIZE_EW,
+                                       MOUSE_CURSOR_RESIZE_EW};
+// MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NESW,
+// MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_DEFAULT};
 
 static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
     static const int Padding = 20;  // 8;
@@ -409,12 +409,15 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
         case RECT_NORTH: {
             return (Rectangle){.x = x, .y = y - Padding, .width = width, .height = Padding};
         }
-        // case RECT_NESW: {
-        //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
-        // }
-        // case RECT_WEST: {
-        //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
-        // }
+        case RECT_SOUTH: {
+            return (Rectangle){.x = x, .y = y + height, .width = width, .height = Padding};
+        }
+        case RECT_EAST: {
+            return (Rectangle){.x = x + width, .y = y, .width = Padding, .height = height};
+        }
+        case RECT_WEST: {
+            return (Rectangle){.x = x - Padding, .y = y, .width = Padding, .height = height};
+        }
         // case RECT_SENW: {
         //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         // }
@@ -424,9 +427,7 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
         // case RECT_SWNE: {
         //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
         // }
-        // case RECT_EAST: {
-        //     return (Rectangle){.x=x, .y=y, .width=width, .height=height};
-        // }
+
         // case RECT_NWSE: {
         //     return (Rectangle){.x=x-Padding, .y=y-Padding, .width=Padding, .height=Padding};
         // }
@@ -456,7 +457,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
     DrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
     // Debug resize zones.
     if (true) {
-        DrawRectangleRec(recs[RECT_NORTH], RED);
+        for (int i = RECT_NORTH; i < RECT_COUNT; ++i) {
+            DrawRectangleRec(recs[i], RED);
+        }
     }
 
     if (UIKeyIsActive(key)) {
