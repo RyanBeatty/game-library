@@ -472,27 +472,19 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
         }
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        int cursor = MOUSE_CURSOR_DEFAULT;
+        for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
+            if (over[i]) {
+                cursor = RectToCursor[i];
+            }
+        }
+        SetMouseCursor(cursor);
+
         if (State.left_down) {
             UIStateSetActive(key);
-            if (InRect(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height)) {
+            if (over[RECT_DRAG]) {
                 TraceLog(LOG_INFO, "%s click drag", label);
                 State.dragging = true;
-            }
-
-            for (int i = RECT_NORTH; i < RECT_COUNT; ++i) {
-                Rectangle resize_rect = GetUIWindowRect(*x, *y, width, height, i);
-                if (InRect(resize_rect.x, resize_rect.y, resize_rect.width, resize_rect.height)) {
-                    TraceLog(LOG_INFO, "Resizingggggggg");
-                    // State.resizing = true;
-                    // SetMouseCursor(RectToCursor[i]);
-                }
-            }
-        } else {
-            for (int i = RECT_FULL + 1; i < RECT_COUNT; ++i) {
-                if (over[i]) {
-                    SetMouseCursor(RectToCursor[i]);
-                    break;
-                }
             }
         }
     }
