@@ -56,7 +56,7 @@ typedef struct UIState {
     int my;
     int dragx;
     int dragy;
-    bool dragging;
+    int drag;
     bool left_down;
     bool left_up;
     int font_size;
@@ -88,7 +88,7 @@ static void UIStateSetHot(UIKey key) { State.hot_to_be = key; }
 static void UIStateSetActive(UIKey key) { State.active = key; }
 static void UIStateClearActive() {
     State.active = 0;
-    State.dragging = false;
+    State.drag = 0;
     SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 }
 static bool UIIsActive() { return State.active != 0; }
@@ -390,6 +390,7 @@ static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DE
                                        MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_EW,
                                        MOUSE_CURSOR_RESIZE_EW,   MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE,
                                        MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_RESIZE_NESW};
+static int RectToDrag[RECT_COUNT] = {0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0};
 
 static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
     static const int Padding = 20;  // 8;
@@ -466,26 +467,24 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
         if (State.left_up) {
             UIStateClearActive();
             return true;
-        } else if (State.dragging) {
-            *x += State.dragx;
-            *y += State.dragy;
         }
+        *x += State.drag * State.dragx;
+        *y += State.drag * State.dragy;
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
         int cursor = MOUSE_CURSOR_DEFAULT;
+        int drag = 0;
         for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
             if (over[i]) {
                 cursor = RectToCursor[i];
+                drag |= RectToDrag[i];
             }
         }
         SetMouseCursor(cursor);
 
         if (State.left_down) {
             UIStateSetActive(key);
-            if (over[RECT_DRAG]) {
-                TraceLog(LOG_INFO, "%s click drag", label);
-                State.dragging = true;
-            }
+            State.drag = drag;
         }
     }
     return false;
