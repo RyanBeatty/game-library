@@ -353,14 +353,91 @@ static bool UIButton(char* label) {
 
 static void UISpacer(int size) { UIReserveSpace(size, size); }
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Windows.
+
+typedef enum UIWindowRect{
+    RECT_NONE = 0,
+    RECT_FULL,
+    RECT_VISIBLE,
+    RECT_DRAG,
+    RECT_UP,
+    RECT_DIAG_UP_RIGHT,
+    RECT_RIGHT,
+    RECT_DIAG_DOWN_RIGHT,
+    RECT_DOWN,
+    RECT_DIAG_DOWN_LEFT,
+    RECT_LEFT,
+    RECT_DIAG_UP_LEFT,
+    RECT_COUNT
+} UIWindowRect;
+
+// static Rectangle GetUIWindowRect(int x, int, y, int width, int height) {
+//     static const int Padding = 5;
+//     return (Rectangle){.x=x-Padding, .y=-Padding, width + (Padding*2), height + (Padding+5); }
+// }
+
+// static Rectangle GetUIWindowDragRect(int x, int, y, int width, int height) {
+//     return (Rectangle){.x=x, .y=y, .width=width, .height=20};
+// }
+
+static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
+    static const int Padding = 5;
+
+    switch (kind) {
+        case RECT_FULL: {
+            return (Rectangle){.x=x-Padding, .y=y-Padding, .width=width+(Padding*2), .height=height+(Padding*2)};
+        }
+        case RECT_VISIBLE: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=height};
+        }
+        case RECT_DRAG: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=20};
+        }
+        case RECT_UP: {
+            return (Rectangle){.x=x+Padding, .y=y-Padding, .width=width-(Padding*2), .height=Padding};
+        }
+        case RECT_DIAG_UP_RIGHT: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=height};
+        }
+        case RECT_RIGHT: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=height};
+        }
+        case RECT_DIAG_DOWN_RIGHT: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=height};
+        }
+        case RECT_DOWN: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=height};
+        }
+        case RECT_DIAG_DOWN_LEFT: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=height};
+        }
+        case RECT_LEFT: {
+            return (Rectangle){.x=x, .y=y, .width=width, .height=height};
+        }
+        case RECT_DIAG_UP_LEFT: {
+            return (Rectangle){.x=x-Padding, .y=y-Padding, .width=Padding, .height=Padding};
+        }
+        default: {
+            exit(1);
+        }
+    }
+}
+
+
+
 static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
-    if (InRect(*x, *y, width, height)) {
+    Rectangle full = GetUIWindowRect(*x, *y, width, height, RECT_FULL);
+    if (InRect(full.x, full.y, full.width, full.height)) {
         UIStateSetHot(key);
     }
 
-    DrawRectangle(*x, *y, width, height, BLACK);
-    DrawRectangle(*x, *y, width, 20, BLUE);
+    Rectangle rect_draw = GetUIWindowRect(*x, *y, width, height, RECT_VISIBLE);
+    DrawRectangle(rect_draw.x, rect_draw.y, rect_draw.width, rect_draw.height, BLACK);
+    Rectangle drag_rect = GetUIWindowRect(*x, *y, width, height, RECT_DRAG);
+    DrawRectangle(drag_rect.x, drag_rect.y, drag_rect.width, drag_rect.height, BLUE);
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
@@ -375,7 +452,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
         if (State.left_down) {
             UIStateSetActive(key);
-            if (InRect(*x, *y, width, 20)) {
+            if (InRect(drag_rect.x, drag_rect.y, drag_rect.width, drag_rect.height)) {
                 TraceLog(LOG_INFO, "%s click drag", label);
                 State.dragging = true;
             }
