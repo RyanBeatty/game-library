@@ -445,13 +445,13 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
     }
 }
 
-static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
+static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
     UIKey key = UIKeyFromCStr(label);
 
     Rectangle recs[RECT_COUNT] = {0};
     bool over[RECT_COUNT] = {0};
     for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
-        Rectangle rec = GetUIWindowRect(*x, *y, width, height, i);
+        Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, i);
         recs[i] = rec;
         over[i] = InRect(rec.x, rec.y, rec.width, rec.height);
     }
@@ -479,8 +479,8 @@ static bool UIWindowEx(char* label, int* x, int* y, int width, int height) {
         }
         *x += State.resizex * State.dragx;
         *y += State.resizey * State.dragy;
-        width += State.resizew * State.dragx;
-        height += State.resizeh * State.dragy;
+        *width += State.resizew * State.dragx;
+        *height += State.resizeh * State.dragy;
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
         int cursor = MOUSE_CURSOR_DEFAULT;

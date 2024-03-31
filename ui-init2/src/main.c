@@ -43,6 +43,8 @@ int main(void) {
     static char text_box2[256] = {0};
     static int wx = 30;
     static int wy = 400;
+    static int ww = 300;
+    static int wh = 300;
 
     strcat(text_box, "hello, world");
     strcat(text_box2, "foo");
@@ -99,7 +101,7 @@ int main(void) {
 
             UISetSpacing(0);
 
-            if (UIWindowEx("Window", &wx, &wy, 300, 300)) {
+            if (UIWindowEx("Window", &wx, &wy, &ww, &wh)) {
                 TraceLog(LOG_INFO, "Window active");
             }
 
