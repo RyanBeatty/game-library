@@ -106,15 +106,15 @@ int main(void) {
                 TraceLog(LOG_INFO, "Button 2 Clicked");
             }
 
-            if (UIRadioButton("Radio Button", &radio_button_1, 800, 20, 100, 100)) {
+            if (UIRadioButton("Radio Button", &radio_button_1)) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
 
-            if (UITextBox("Text Box", text_box, 600, 150, 200, 50)) {
+            if (UITextBox("Text Box", text_box, 800, 150, 200, 50)) {
                 TraceLog(LOG_INFO, "Text Box Entered");
             }
 
-            if (UITextField("Health", text_box2, 600, 250, 200, 150)) {
+            if (UITextField("Health", text_box2, 800, 250, 200, 150)) {
                 TraceLog(LOG_INFO, "Health Entered");
             }
 

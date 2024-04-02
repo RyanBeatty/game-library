@@ -114,21 +114,28 @@ static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color)
 }
 static void UISetSpacing(int spacing) { State.spacing = spacing; }
 
-static void UIReserveSpace(int width, int height) {
-    switch (State.axis) {
-        case AXIS_Y: {
-            State.cy += height + State.spacing;
-            break;
-        }
-        case AXIS_X: {
-            State.cx += width + State.spacing;
-            State.nextrowy = (State.cy + height) > State.nextrowy ? (State.cy + height) : State.nextrowy;
-            break;
-        }
-        default: {
-            exit(1);
-        }
-    }
+static Vector2 UIReserveSpace(int width, int height) {
+    int midx = (State.cx + State.width) * 0.5;
+    int x = midx - (width * 0.5);
+
+    State.cy += State.spacing;
+    int y = State.cy;
+    State.cy += height;
+    return (Vector2){.x = x, .y = y};
+    // switch (State.axis) {
+    //     case AXIS_Y: {
+    //         State.cy += height + State.spacing;
+    //         break;
+    //     }
+    //     case AXIS_X: {
+    //         State.cx += width + State.spacing;
+    //         State.nextrowy = (State.cy + height) > State.nextrowy ? (State.cy + height) : State.nextrowy;
+    //         break;
+    //     }
+    //     default: {
+    //         exit(1);
+    //     }
+    // }
 }
 
 static void UIFrameStart(float delta_time) {
@@ -205,7 +212,7 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     return false;
 }
 
-static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int height) {
+static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
     // TODO: Draw text.
     UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
@@ -354,14 +361,18 @@ static bool UIButton(char* label) {
     int width = size.x + State.paddingx;
     int height = size.y + State.paddingy;
 
-    int midx = (State.cx + State.width) * 0.5;
-    int x = midx - (width * 0.5);
+    Vector2 pos = UIReserveSpace(width, height);
 
-    State.cy += State.spacing;
-    int y = State.cy;
-    State.cy += height;
+    return UIButtonEx(label, pos.x, pos.y, width, height);
+}
 
-    return UIButtonEx(label, x, y, width, height);
+static bool UIRadioButton(char* label, bool* state) {
+    Vector2 size = UIMeasureText(label);
+    int width = size.x + State.paddingx;
+    int height = size.y + State.paddingy;
+
+    Vector2 pos = UIReserveSpace(width, height);
+    return UIRadioButtonEx(label, state, pos.x, pos.y, width, height);
 }
 
 static void UISpacer(int size) { UIReserveSpace(size, size); }
