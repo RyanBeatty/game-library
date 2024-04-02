@@ -41,14 +41,10 @@ static UIKey UIKeyFromCStr(char* str) {
 typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
 // typedef struct UIBox {
-//     int x;
-//     int y;
-//     int width;
-//     int height;
-
 //     int cx;
 //     int cy;
-//     UIAxis axis;
+//     int width;
+//     int height;
 // } UIBox;
 
 typedef struct UIState {
@@ -75,7 +71,11 @@ typedef struct UIState {
     int width;
     int height;
     int spacing;
+
+    // TODO: Do something with this.
     UIAxis axis;
+
+    // TODO: Remove.
     int nextrowx;
     int nextrowy;
 
