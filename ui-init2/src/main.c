@@ -110,7 +110,7 @@ int main(void) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
 
-            if (UITextBox("Text Box", text_box, 800, 150, 200, 50)) {
+            if (UITextBox("Text Box", text_box, 200, 50)) {
                 TraceLog(LOG_INFO, "Text Box Entered");
             }
 

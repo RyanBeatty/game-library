@@ -251,7 +251,7 @@ static void UILabel(char* label, int x, int y, int width) {
 
 // TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
 // consider passing in a max capacity here.
-static bool UITextBox(char* label, char* edit, int x, int y, int width, int height) {
+static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
 
     UIDrawRectangle(x, y, width, height, GRAY);
@@ -353,7 +353,7 @@ static void UIFrameEnd() { State.hot = State.hot_to_be; }
 
 static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
     UILabel(label, x, y, width);
-    return UITextBox(label, edit, x, y, width, height);
+    return UITextBoxEx(label, edit, x, y, width, height);
 }
 
 static bool UIButton(char* label) {
@@ -373,6 +373,11 @@ static bool UIRadioButton(char* label, bool* state) {
 
     Vector2 pos = UIReserveSpace(width, height);
     return UIRadioButtonEx(label, state, pos.x, pos.y, width, height);
+}
+
+static bool UITextBox(char* label, char* edit, int width, int height) {
+    Vector2 pos = UIReserveSpace(width, height);
+    return UITextBoxEx(label, edit, pos.x, pos.y, width, height);
 }
 
 static void UISpacer(int size) { UIReserveSpace(size, size); }
