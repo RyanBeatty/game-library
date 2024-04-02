@@ -244,11 +244,6 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
     return false;
 }
 
-static void UILabel(char* label, int x, int y, int width) {
-    Vector2 size = UIMeasureText(label);
-    DrawText(label, x + ((width - size.x) * 0.5), y - size.y - 5, UIGetFontSize(), BLACK);
-}
-
 // TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
 // consider passing in a max capacity here.
 static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int height) {
@@ -351,9 +346,10 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
 
 static void UIFrameEnd() { State.hot = State.hot_to_be; }
 
-static bool UITextField(char* label, char* edit, int x, int y, int width, int height) {
-    UILabel(label, x, y, width);
-    return UITextBoxEx(label, edit, x, y, width, height);
+static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
+    Vector2 size = UIMeasureText(label);
+    DrawText(label, x, y, UIGetFontSize(), BLACK);
+    return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
 }
 
 static bool UIButton(char* label) {
@@ -375,12 +371,15 @@ static bool UIRadioButton(char* label, bool* state) {
     return UIRadioButtonEx(label, state, pos.x, pos.y, width, height);
 }
 
+static bool UITextField(char* label, char* edit, int width, int height) {
+    Vector2 pos = UIReserveSpace(width, height);
+    return UITextFieldEx(label, edit, pos.x, pos.y, width, height);
+}
+
 static bool UITextBox(char* label, char* edit, int width, int height) {
     Vector2 pos = UIReserveSpace(width, height);
     return UITextBoxEx(label, edit, pos.x, pos.y, width, height);
 }
-
-static void UISpacer(int size) { UIReserveSpace(size, size); }
 
 //////////////////////////////////////////////////////////////////////////////
 // Windows.

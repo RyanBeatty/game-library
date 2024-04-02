@@ -114,7 +114,7 @@ int main(void) {
                 TraceLog(LOG_INFO, "Text Box Entered");
             }
 
-            if (UITextField("Health", text_box2, 800, 250, 200, 150)) {
+            if (UITextField("Health", text_box2, 200, 150)) {
                 TraceLog(LOG_INFO, "Health Entered");
             }
 
