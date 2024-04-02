@@ -85,21 +85,14 @@ int main(void) {
         if (enabled) {
             UIFrameStart(delta_time);
 
-            UISetSpacing(30);
-            char *(labels)[8] = {"button1", "button2", "button3", "button4",
-                                 "button5", "button6", "button7", "button8"};
-            for (uint32_t r = 0; r < 4; ++r) {
-                UIRowStart();
-                UISetSpacing(10);
-                for (uint32_t c = 0; c < 2; ++c) {
-                    UIButton(labels[(r * 2) + c]);
-                }
-                UIRowStop();
-                UISetSpacing(0);
-                UISpacer(10);
-            }
+            UIButton("button center");
 
-            UISetSpacing(0);
+            UIButton("button center2");
+
+            UISetSpacing(30);
+
+            UIButton("button center 3");
+            UIButton("Button Center 4");
 
             if (UIWindowEx("Window", &wx, &wy, &ww, &wh)) {
                 TraceLog(LOG_INFO, "Window active");
@@ -113,7 +106,7 @@ int main(void) {
                 TraceLog(LOG_INFO, "Button 2 Clicked");
             }
 
-            if (UIRadioButton("Radio Button", &radio_button_1, 600, 20, 100, 100)) {
+            if (UIRadioButton("Radio Button", &radio_button_1, 800, 20, 100, 100)) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
 

@@ -72,6 +72,8 @@ typedef struct UIState {
     // TODO: This will need to be refactored into state variables per Box.
     int cx;
     int cy;
+    int width;
+    int height;
     int spacing;
     UIAxis axis;
     int nextrowx;
@@ -106,17 +108,11 @@ static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
+static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) {
+    DrawRectangle(x, y, width, height, bg_color);
+    DrawRectangleLines(x, y, width, height, BLACK);
+}
 static void UISetSpacing(int spacing) { State.spacing = spacing; }
-static void UIRowStart() {
-    State.nextrowx = State.cx;
-    State.nextrowy = State.cy;
-    State.axis = AXIS_X;
-}
-static void UIRowStop() {
-    State.cx = State.nextrowx;
-    State.cy = State.nextrowy;
-    State.axis = AXIS_Y;
-}
 
 static void UIReserveSpace(int width, int height) {
     switch (State.axis) {
@@ -160,6 +156,8 @@ static void UIFrameStart(float delta_time) {
 
     State.cx = 0;
     State.cy = 0;
+    State.width = GetScreenWidth();
+    State.height = GetScreenHeight();
     State.spacing = 0;
     State.axis = AXIS_Y;
     State.nextrowx = 0;
@@ -183,7 +181,7 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
         UIStateSetHot(key);
     }
 
-    DrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
+    UIDrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(label);
     float x_offset = (width - text_size.x) / 2;
@@ -209,7 +207,7 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
 
 static bool UIRadioButton(char* label, bool* state, int x, int y, int width, int height) {
     // TODO: Draw text.
-    DrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
+    UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(label);
     float x_offset = (width - text_size.x) / 2;
@@ -249,7 +247,7 @@ static void UILabel(char* label, int x, int y, int width) {
 static bool UITextBox(char* label, char* edit, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
 
-    DrawRectangle(x, y, width, height, GRAY);
+    UIDrawRectangle(x, y, width, height, GRAY);
 
     // Draw Text.
     {
@@ -355,9 +353,14 @@ static bool UIButton(char* label) {
     Vector2 size = UIMeasureText(label);
     int width = size.x + State.paddingx;
     int height = size.y + State.paddingy;
-    int x = State.cx;
+
+    int midx = (State.cx + State.width) * 0.5;
+    int x = midx - (width * 0.5);
+
+    State.cy += State.spacing;
     int y = State.cy;
-    UIReserveSpace(width, height);
+    State.cy += height;
+
     return UIButtonEx(label, x, y, width, height);
 }
 
@@ -460,9 +463,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         UIStateSetHot(key);
     }
 
-    DrawRectangle(recs[RECT_VISIBLE].x, recs[RECT_VISIBLE].y, recs[RECT_VISIBLE].width, recs[RECT_VISIBLE].height,
-                  BLACK);
-    DrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
+    UIDrawRectangle(recs[RECT_VISIBLE].x, recs[RECT_VISIBLE].y, recs[RECT_VISIBLE].width, recs[RECT_VISIBLE].height,
+                    BLACK);
+    UIDrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
     // Debug resize zones.
     if (false) {
         Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
