@@ -505,6 +505,12 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         *y += State.resizey * State.dragy;
         *width += State.resizew * State.dragx;
         *height += State.resizeh * State.dragy;
+        if (*width < 0) {
+            *width = 0;
+        }
+        if (*height < 0) {
+            *height = 0;
+        }
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
         int cursor = MOUSE_CURSOR_DEFAULT;
