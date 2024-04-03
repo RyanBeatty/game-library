@@ -92,7 +92,17 @@ int main(void) {
             UISetSpacing(30);
 
             UIButton("button center 3");
+
+            UISetSpacing(0);
             UIButton("Button Center 4");
+
+            if (UITextBox("Text Box", text_box)) {
+                TraceLog(LOG_INFO, "Text Box Entered");
+            }
+
+            if (UITextField("Health", text_box2)) {
+                TraceLog(LOG_INFO, "Health Entered");
+            }
 
             if (UIWindowEx("Window", &wx, &wy, &ww, &wh)) {
                 TraceLog(LOG_INFO, "Window active");
@@ -108,14 +118,6 @@ int main(void) {
 
             if (UIRadioButton("Radio Button", &radio_button_1)) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
-            }
-
-            if (UITextBox("Text Box", text_box)) {
-                TraceLog(LOG_INFO, "Text Box Entered");
-            }
-
-            if (UITextField("Health", text_box2, 200, 150)) {
-                TraceLog(LOG_INFO, "Health Entered");
             }
 
             UIFrameEnd();

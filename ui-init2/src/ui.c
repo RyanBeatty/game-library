@@ -348,6 +348,7 @@ static void UIFrameEnd() { State.hot = State.hot_to_be; }
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
     Vector2 size = UIMeasureText(label);
+    UIDrawRectangle(x, y, width, size.y, GRAY);
     DrawText(label, x, y, UIGetFontSize(), BLACK);
     return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
 }
@@ -380,7 +381,14 @@ static bool UITextBox(char* label, char* edit) {
     return UITextBoxEx(label, edit, pos.x, pos.y, width, height);
 }
 
-static bool UITextField(char* label, char* edit, int width, int height) {
+static bool UITextField(char* label, char* edit) {
+    Vector2 size = UIMeasureText(edit);
+    int width = State.width;
+    int height = size.y + State.paddingy;
+
+    size = UIMeasureText(label);
+    height += size.y + State.paddingy;
+
     Vector2 pos = UIReserveSpace(width, height);
     return UITextFieldEx(label, edit, pos.x, pos.y, width, height);
 }
