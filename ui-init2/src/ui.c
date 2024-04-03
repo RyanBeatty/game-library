@@ -354,7 +354,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 
 static bool UIButton(char* label) {
     Vector2 size = UIMeasureText(label);
-    int width = size.x + State.paddingx;
+    int width = State.width;
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -364,21 +364,25 @@ static bool UIButton(char* label) {
 
 static bool UIRadioButton(char* label, bool* state) {
     Vector2 size = UIMeasureText(label);
-    int width = size.x + State.paddingx;
+    int width = State.width;
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
     return UIRadioButtonEx(label, state, pos.x, pos.y, width, height);
 }
 
+static bool UITextBox(char* label, char* edit) {
+    Vector2 size = UIMeasureText(edit);
+    int width = State.width;
+    int height = size.y + State.paddingy;
+
+    Vector2 pos = UIReserveSpace(width, height);
+    return UITextBoxEx(label, edit, pos.x, pos.y, width, height);
+}
+
 static bool UITextField(char* label, char* edit, int width, int height) {
     Vector2 pos = UIReserveSpace(width, height);
     return UITextFieldEx(label, edit, pos.x, pos.y, width, height);
-}
-
-static bool UITextBox(char* label, char* edit, int width, int height) {
-    Vector2 pos = UIReserveSpace(width, height);
-    return UITextBoxEx(label, edit, pos.x, pos.y, width, height);
 }
 
 //////////////////////////////////////////////////////////////////////////////
