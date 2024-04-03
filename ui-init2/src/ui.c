@@ -75,10 +75,6 @@ typedef struct UIState {
     // TODO: Do something with this.
     UIAxis axis;
 
-    // TODO: Remove.
-    int nextrowx;
-    int nextrowy;
-
     int paddingx;  // Padding around button text and stuff.
     int paddingy;
 
@@ -89,6 +85,9 @@ typedef struct UIState {
 
 UIState State = {0};
 
+static bool InRect(int x, int y, int width, int height) {
+    return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
+}
 static void UIStateSetHot(UIKey key) { State.hot_to_be = key; }
 static void UIStateSetActive(UIKey key) { State.active = key; }
 static void UIStateClearActive() {
@@ -100,6 +99,7 @@ static void UIStateClearActive() {
     SetMouseCursor(MOUSE_CURSOR_DEFAULT);
 }
 static bool UIIsActive() { return State.active != 0; }
+static bool UIShouldSetHot(int x, int y, int width, int height) { return !UIIsActive() && InRect(x, y, width, height); }
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 static int UIGetFontSize() { return State.font_size; }
@@ -167,8 +167,6 @@ static void UIFrameStart(float delta_time) {
     State.height = GetScreenHeight();
     State.spacing = 0;
     State.axis = AXIS_Y;
-    State.nextrowx = 0;
-    State.nextrowy = 0;
     State.paddingx = 10;
     State.paddingy = 5;
 
@@ -178,13 +176,9 @@ static void UIFrameStart(float delta_time) {
     }
 }
 
-static bool InRect(int x, int y, int width, int height) {
-    return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
-}
-
 static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
-    if (InRect(x, y, width, height)) {
+    if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
     }
 
@@ -224,7 +218,7 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
     DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
 
     UIKey key = UIKeyFromCStr(label);
-    if (InRect(x, y, width, height)) {
+    if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
     }
 
@@ -280,7 +274,7 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
         display_text = NULL;
     }
 
-    if (InRect(x, y, width, height)) {
+    if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
     }
 
@@ -486,7 +480,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         over[i] = InRect(rec.x, rec.y, rec.width, rec.height);
     }
 
-    if (InRect(recs[RECT_FULL].x, recs[RECT_FULL].y, recs[RECT_FULL].width, recs[RECT_FULL].height)) {
+    if (UIShouldSetHot(recs[RECT_FULL].x, recs[RECT_FULL].y, recs[RECT_FULL].width, recs[RECT_FULL].height)) {
         UIStateSetHot(key);
     }
 
