@@ -42,6 +42,8 @@ typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
 typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignment;
 
+typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
+
 typedef struct UIBox {
     int x;
     int y;
@@ -161,12 +163,12 @@ static void UISetSpacing1(int spacing) {
 
 static Vector2 UIReserveSpace(int width, int height) {
     UIBox* parent = UIGetParent();
-    int x = parent->x;
+    int offsetx = (parent->width - width) * 0.5;
 
     parent->cy += State.spacing;
-    int y = parent->y + parent->cy;
+    float offsety = parent->cy;
     parent->cy += height;
-    return (Vector2){.x = x, .y = y};
+    return (Vector2){.x = parent->x + offsetx, .y = parent->y + offsety};
 }
 
 static void UIFrameStart(float delta_time) {
