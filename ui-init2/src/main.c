@@ -41,10 +41,10 @@ int main(void) {
     static bool radio_button_1 = false;
     static char text_box[256] = {0};
     static char text_box2[256] = {0};
-    static int wx = 30;
+    static int wx = 0;
     static int wy = 200;
-    static int ww = 500;
-    static int wh = 700;
+    static int ww = 200;
+    static int wh = 300;
 
     strcat(text_box, "hello, world");
     strcat(text_box2, "foo");
@@ -106,14 +106,6 @@ int main(void) {
 
             if (UITextField("Health", text_box2)) {
                 TraceLog(LOG_INFO, "Health Entered");
-            }
-
-            if (UIButtonEx("Button 1", 300, 10, 100, 100)) {
-                TraceLog(LOG_INFO, "Button 1 clicked");
-            }
-
-            if (UIButtonEx("Button 2", 300, 200, 200, 200)) {
-                TraceLog(LOG_INFO, "Button 2 Clicked");
             }
 
             if (UIRadioButton("Radio Button", &radio_button_1)) {

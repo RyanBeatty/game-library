@@ -114,10 +114,10 @@ static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
-static Rectangle UIGetClipRec() {
-    UIBox* parent = UIGetParent();
-    return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
-}
+// static Rectangle UIGetClipRec() {
+//     UIBox* parent = UIGetParent();
+//     return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
+// }
 static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) {
     DrawRectangle(x, y, width, height, bg_color);
     DrawRectangleLines(x, y, width, height, BLACK);
