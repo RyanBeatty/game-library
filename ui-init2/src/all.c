@@ -21,7 +21,6 @@ void __attribute__((noinline)) breakpoint() {}
 ///////////////////////////////////////////////
 // Project files below
 #include "raylib.h"
-#include "rlights.h"
 //
 #include "ui.c"
 //

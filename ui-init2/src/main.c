@@ -21,9 +21,6 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#define RLIGHTS_IMPLEMENTATION
-#include "rlights.h"
-
 #if defined(PLATFORM_DESKTOP)
 #define GLSL_VERSION 330
 #else  // PLATFORM_ANDROID, PLATFORM_WEB
@@ -108,9 +105,11 @@ int main(void) {
                 TraceLog(LOG_INFO, "Health Entered");
             }
 
+            UISetFill(FILL_NONE);
             if (UIRadioButton("Radio Button", &radio_button_1)) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
+            UISetFill(FILL_WIDTH);
 
             UIPopWindow();
 

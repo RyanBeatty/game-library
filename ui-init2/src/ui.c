@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "raylib.h"
-
 #endif
 
 #include <time.h>
@@ -162,6 +160,7 @@ static void UISetSpacing1(int spacing) {
     // Note: Will get overwritten by spacing_to_be at end of frame.
     State.spacing = spacing;
 }
+static void UISetFill(UIFill fill) { State.fill = fill; }
 
 static int UIGetWidth(int width) {
     UIBox* parent = UIGetParent();
