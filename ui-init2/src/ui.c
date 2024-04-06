@@ -83,6 +83,8 @@ typedef struct UIState {
     int paddingx;  // Padding around button text and stuff.
     int paddingy;
 
+    UIFill fill;  // Horizontal fill.
+
     UIKey hot;
     UIKey hot_to_be;
     UIKey active;
@@ -161,9 +163,19 @@ static void UISetSpacing1(int spacing) {
     State.spacing = spacing;
 }
 
-static int UIGetWidth() {
+static int UIGetWidth(int width) {
     UIBox* parent = UIGetParent();
-    return parent->width;
+    switch (State.fill) {
+        case FILL_WIDTH: {
+            return parent->width;
+        }
+        case FILL_NONE: {
+            return width;
+        }
+        default: {
+            exit(1);
+        }
+    }
 }
 
 static Vector2 UIReserveSpace(int width, int height) {
@@ -385,7 +397,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 
 static bool UIButton(char* label) {
     Vector2 size = UIMeasureText(label);
-    int width = UIGetWidth();
+    int width = UIGetWidth(size.x);
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -395,7 +407,7 @@ static bool UIButton(char* label) {
 
 static bool UIRadioButton(char* label, bool* state) {
     Vector2 size = UIMeasureText(label);
-    int width = UIGetWidth();
+    int width = UIGetWidth(size.x);
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -404,7 +416,7 @@ static bool UIRadioButton(char* label, bool* state) {
 
 static bool UITextBox(char* label, char* edit) {
     Vector2 size = UIMeasureText(edit);
-    int width = UIGetWidth();
+    int width = UIGetWidth(size.x);
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -413,7 +425,7 @@ static bool UITextBox(char* label, char* edit) {
 
 static bool UITextField(char* label, char* edit) {
     Vector2 size = UIMeasureText(edit);
-    int width = UIGetWidth();
+    int width = UIGetWidth(size.x);
     int height = size.y + State.paddingy;
 
     size = UIMeasureText(label);
