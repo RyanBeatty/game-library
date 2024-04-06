@@ -530,6 +530,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         }
         if (*height < 0) {
             *height = 0;
+            *y -= State.resizey * State.dragy;
         }
     } else if (UIKeyIsHot(key)) {
         TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
