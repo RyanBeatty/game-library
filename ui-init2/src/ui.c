@@ -71,6 +71,7 @@ typedef struct UIState {
 
     UIBox* parents;  // stb_arr.
     int spacing;
+    int spacing_to_be;
 
     // TODO: Do something with this.
     UIAxis axis;
@@ -109,15 +110,25 @@ static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
-// static Rectangle UIGetClipRec() {
-//     UIBox* parent = UIGetParent();
-//     return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
-// }
+static Rectangle UIGetClipRec() {
+    UIBox* parent = UIGetParent();
+    return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
+}
 static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) {
+    Rectangle rec = UIGetClipRec();
+    BeginScissorMode(rec.x, rec.y, rec.width, rec.height);
     DrawRectangle(x, y, width, height, bg_color);
     DrawRectangleLines(x, y, width, height, BLACK);
+    EndScissorMode();
 }
-static void UISetSpacing(int spacing) { State.spacing = spacing; }
+static void UISetSpacing(int spacing) {
+    State.spacing = spacing;
+    State.spacing_to_be = spacing;
+}
+static void UISetSpacing1(int spacing) {
+    // Note: Will get overwritten by spacing_to_be at end of frame.
+    State.spacing = spacing;
+}
 
 static Vector2 UIReserveSpace(int width, int height) {
     UIBox* parent = UIGetParent();
@@ -342,6 +353,7 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
 
 static void UIFrameEnd() {
     State.hot = State.hot_to_be;
+    State.spacing = State.spacing_to_be;
     arrfree(State.parents);
     State.parents = NULL;
 }
