@@ -527,6 +527,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         *height += State.resizeh * State.dragy;
         if (*width < 0) {
             *width = 0;
+            *x -= State.resizex * State.dragx;
         }
         if (*height < 0) {
             *height = 0;
