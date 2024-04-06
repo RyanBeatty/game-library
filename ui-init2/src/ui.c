@@ -161,6 +161,11 @@ static void UISetSpacing1(int spacing) {
     State.spacing = spacing;
 }
 
+static int UIGetWidth() {
+    UIBox* parent = UIGetParent();
+    return parent->width;
+}
+
 static Vector2 UIReserveSpace(int width, int height) {
     UIBox* parent = UIGetParent();
     // NOTE: We always try to center a new box to its parent. In cases where
@@ -380,7 +385,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 
 static bool UIButton(char* label) {
     Vector2 size = UIMeasureText(label);
-    int width = UIGetParent()->width;
+    int width = UIGetWidth();
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -390,7 +395,7 @@ static bool UIButton(char* label) {
 
 static bool UIRadioButton(char* label, bool* state) {
     Vector2 size = UIMeasureText(label);
-    int width = UIGetParent()->width;
+    int width = UIGetWidth();
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -399,7 +404,7 @@ static bool UIRadioButton(char* label, bool* state) {
 
 static bool UITextBox(char* label, char* edit) {
     Vector2 size = UIMeasureText(edit);
-    int width = UIGetParent()->width;
+    int width = UIGetWidth();
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -408,7 +413,7 @@ static bool UITextBox(char* label, char* edit) {
 
 static bool UITextField(char* label, char* edit) {
     Vector2 size = UIMeasureText(edit);
-    int width = UIGetParent()->width;
+    int width = UIGetWidth();
     int height = size.y + State.paddingy;
 
     size = UIMeasureText(label);
