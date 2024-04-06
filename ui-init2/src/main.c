@@ -46,6 +46,7 @@ int main(void) {
     strcat(text_box, "hello, world");
     strcat(text_box2, "foo");
 
+    SetTraceLogLevel(getenv("DEBUG") != NULL ? LOG_DEBUG : LOG_INFO);
     SetConfigFlags(FLAG_MSAA_4X_HINT);  // Enable Multi Sampling Anti Aliasing 4x (if available)
     InitWindow(screenWidth, screenHeight, "raylib [shaders] example - basic lighting");
 

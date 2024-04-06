@@ -247,13 +247,13 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     UIDrawText(parent, ALIGN_CENTER, label);
 
     if (UIKeyIsActive(key)) {
-        TraceLog(LOG_INFO, "label %s is Active", label);
+        TraceLog(LOG_DEBUG, "label %s is Active", label);
         if (State.left_up) {
             UIStateClearActive();
             return true;
         }
     } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
         if (State.left_down) {
             UIStateSetActive(key);
         }
@@ -273,14 +273,14 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
     }
 
     if (UIKeyIsActive(key)) {
-        TraceLog(LOG_INFO, "label %s is Active", label);
+        TraceLog(LOG_DEBUG, "label %s is Active", label);
         if (State.left_up) {
             *state = !(*state);
             UIStateClearActive();
             return true;
         }
     } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
         if (State.left_down) {
             UIStateSetActive(key);
         }
@@ -323,7 +323,7 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
     }
 
     if (UIKeyIsActive(key)) {
-        TraceLog(LOG_INFO, "label %s is Active", label);
+        TraceLog(LOG_DEBUG, "label %s is Active", label);
 
         int key = GetKeyPressed();
         if (key != 0) {
@@ -371,7 +371,7 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
             }
         }
     } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
         if (State.left_down) {
             UIStateSetActive(key);
             State.cursor = strlen(edit);
@@ -545,7 +545,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
     }
 
     if (UIKeyIsActive(key)) {
-        TraceLog(LOG_INFO, "label %s is Active", label);
+        TraceLog(LOG_DEBUG, "label %s is Active", label);
         if (State.left_up) {
             UIStateClearActive();
             return true;
@@ -563,7 +563,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
             *y -= State.resizey * State.dragy;
         }
     } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_INFO, "label %s is Hot. key %zu", label, key);
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
         int cursor = MOUSE_CURSOR_DEFAULT;
         int resizex = 0;
         int resizey = 0;
