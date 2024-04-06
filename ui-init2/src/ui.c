@@ -194,9 +194,9 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     UIDrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(label);
-    float x_offset = (width - text_size.x) / 2;
+    float x_offset = (width - text_size.x) * 0.5;
     x_offset = x_offset < 0 ? 0 : x_offset;
-    float y_offset = (height - text_size.y) / 2;
+    float y_offset = (height - text_size.y) * 0.5;
     y_offset = y_offset < 0 ? 0 : y_offset;
     BeginScissorMode(x, y, width, height);
     DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
@@ -222,9 +222,9 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
     UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(label);
-    float x_offset = (width - text_size.x) / 2;
+    float x_offset = (width - text_size.x) * 0.5;
     x_offset = x_offset < 0 ? 0 : x_offset;
-    float y_offset = (height - text_size.y) / 2;
+    float y_offset = (height - text_size.y) * 0.5;
     y_offset = y_offset < 0 ? 0 : y_offset;
     BeginScissorMode(x, y, width, height);
     DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
@@ -264,7 +264,7 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
         Vector2 edit_text_size = UIMeasureText(edit);
         float x_offset = 5;
         x_offset = x_offset < 0 ? 0 : x_offset;
-        float y_offset = (height - edit_text_size.y) / 2;
+        float y_offset = (height - edit_text_size.y) * 0.5;
         y_offset = y_offset < 0 ? 0 : y_offset;
 
         char* display_text = NULL;
