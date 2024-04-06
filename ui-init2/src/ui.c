@@ -192,7 +192,9 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     x_offset = x_offset < 0 ? 0 : x_offset;
     float y_offset = (height - text_size.y) / 2;
     y_offset = y_offset < 0 ? 0 : y_offset;
+    BeginScissorMode(x, y, width, height);
     DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
+    EndScissorMode();
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
@@ -218,7 +220,9 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
     x_offset = x_offset < 0 ? 0 : x_offset;
     float y_offset = (height - text_size.y) / 2;
     y_offset = y_offset < 0 ? 0 : y_offset;
+    BeginScissorMode(x, y, width, height);
     DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
+    EndScissorMode();
 
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
@@ -350,7 +354,9 @@ static void UIFrameEnd() {
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
     Vector2 size = UIMeasureText(label);
     UIDrawRectangle(x, y, width, size.y, GRAY);
+    BeginScissorMode(x, y, width, height);
     DrawText(label, x, y, UIGetFontSize(), BLACK);
+    EndScissorMode();
     return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
 }
 
