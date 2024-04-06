@@ -40,6 +40,8 @@ static UIKey UIKeyFromCStr(char* str) {
 // defualt to growing along Y axis because thats more natural default for UIs.
 typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
+typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignment;
+
 typedef struct UIBox {
     int x;
     int y;
@@ -121,15 +123,29 @@ static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color)
     DrawRectangleLines(x, y, width, height, BLACK);
     EndScissorMode();
 }
-static void UIDrawText(UIBox parent, char* text) {
+static void UIDrawText(UIBox parent, UIAlignment alignment, char* text) {
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(text);
 
-    // TODO: Support different kinds of text centering.
-    float x_offset = (parent.width - text_size.x) * 0.5;
-    x_offset = x_offset < 0 ? 0 : x_offset;
+    // Alignment.
+    float x_offset = 0.0;
     float y_offset = (parent.height - text_size.y) * 0.5;
-    y_offset = y_offset < 0 ? 0 : y_offset;
+    y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+    switch (alignment) {
+        case ALIGN_CENTER: {
+            x_offset = (parent.width - text_size.x) * 0.5;
+            x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+            break;
+        }
+        case ALIGN_LEFT: {
+            x_offset = 0.0;
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+
     BeginScissorMode(parent.x, parent.y, parent.width, parent.height);
     DrawText(text, parent.x + x_offset, parent.y + y_offset, UIGetFontSize(), BLACK);
     EndScissorMode();
@@ -206,7 +222,7 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
 
     UIDrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    UIDrawText(parent, label);
+    UIDrawText(parent, ALIGN_CENTER, label);
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
@@ -227,7 +243,7 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
     // TODO: Draw text.
     UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    UIDrawText(parent, label);
+    UIDrawText(parent, ALIGN_CENTER, label);
 
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
@@ -260,11 +276,6 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
     // Draw Text.
     {
         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-        Vector2 edit_text_size = UIMeasureText(edit);
-        float x_offset = 5;
-        x_offset = x_offset < 0 ? 0 : x_offset;
-        float y_offset = (height - edit_text_size.y) * 0.5;
-        y_offset = y_offset < 0 ? 0 : y_offset;
 
         char* display_text = NULL;
         int edit_len = strlen(edit);
@@ -278,10 +289,9 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
         }
         arrput(display_text, '\0');
 
-        // TODO: Improve clipping rect calculation to take into account cursor position.
-        BeginScissorMode(x, y, width, height);
-        DrawText(display_text, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
-        EndScissorMode();
+        UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+        UIDrawText(parent, ALIGN_LEFT, display_text);
+
         arrfree(display_text);
         display_text = NULL;
     }
@@ -359,10 +369,8 @@ static void UIFrameEnd() {
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
     Vector2 size = UIMeasureText(label);
-    UIDrawRectangle(x, y, width, size.y, GRAY);
-    BeginScissorMode(x, y, width, height);
-    DrawText(label, x, y, UIGetFontSize(), BLACK);
-    EndScissorMode();
+    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+    UIDrawText(parent, ALIGN_LEFT, label);
     return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
 }
 
