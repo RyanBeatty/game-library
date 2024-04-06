@@ -1,6 +1,8 @@
 #ifndef UNITY_BUILD
 
 #include <math.h>
+#include <raylib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
