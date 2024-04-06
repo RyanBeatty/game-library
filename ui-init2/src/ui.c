@@ -40,12 +40,12 @@ static UIKey UIKeyFromCStr(char* str) {
 // defualt to growing along Y axis because thats more natural default for UIs.
 typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
-// typedef struct UIBox {
-//     int cx;
-//     int cy;
-//     int width;
-//     int height;
-// } UIBox;
+typedef struct UIBox {
+    int cx;
+    int cy;
+    int width;
+    int height;
+} UIBox;
 
 typedef struct UIState {
     int mx;
@@ -66,10 +66,11 @@ typedef struct UIState {
     float cursor_cooldown;
 
     // TODO: This will need to be refactored into state variables per Box.
-    int cx;
-    int cy;
-    int width;
-    int height;
+    // int cx;
+    // int cy;
+    // int width;
+    // int height;
+    UIBox parent;
     int spacing;
 
     // TODO: Do something with this.
@@ -114,28 +115,17 @@ static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color)
 }
 static void UISetSpacing(int spacing) { State.spacing = spacing; }
 
+static UIBox* UIGetParent() { return &State.parent; }
+
 static Vector2 UIReserveSpace(int width, int height) {
-    int midx = (State.cx + State.width) * 0.5;
+    UIBox* parent = UIGetParent();
+    int midx = (parent->cx + parent->width) * 0.5;
     int x = midx - (width * 0.5);
 
-    State.cy += State.spacing;
-    int y = State.cy;
-    State.cy += height;
+    parent->cy += State.spacing;
+    int y = parent->cy;
+    parent->cy += height;
     return (Vector2){.x = x, .y = y};
-    // switch (State.axis) {
-    //     case AXIS_Y: {
-    //         State.cy += height + State.spacing;
-    //         break;
-    //     }
-    //     case AXIS_X: {
-    //         State.cx += width + State.spacing;
-    //         State.nextrowy = (State.cy + height) > State.nextrowy ? (State.cy + height) : State.nextrowy;
-    //         break;
-    //     }
-    //     default: {
-    //         exit(1);
-    //     }
-    // }
 }
 
 static void UIFrameStart(float delta_time) {
@@ -161,10 +151,13 @@ static void UIFrameStart(float delta_time) {
         State.cursor_cooldown = 0.0f;
     }
 
-    State.cx = 0;
-    State.cy = 0;
-    State.width = GetScreenWidth();
-    State.height = GetScreenHeight();
+    // TODO: need to remove this. Need to cache the parent state and then
+    // setting these should be driven by calls to UIWindow
+    State.parent.cx = 0;
+    State.parent.cy = 0;
+    State.parent.width = GetScreenWidth();
+    State.parent.height = GetScreenHeight();
+
     State.spacing = 0;
     State.axis = AXIS_Y;
     State.paddingx = 10;
@@ -349,7 +342,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 
 static bool UIButton(char* label) {
     Vector2 size = UIMeasureText(label);
-    int width = State.width;
+    int width = UIGetParent()->width;
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -359,7 +352,7 @@ static bool UIButton(char* label) {
 
 static bool UIRadioButton(char* label, bool* state) {
     Vector2 size = UIMeasureText(label);
-    int width = State.width;
+    int width = UIGetParent()->width;
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -368,7 +361,7 @@ static bool UIRadioButton(char* label, bool* state) {
 
 static bool UITextBox(char* label, char* edit) {
     Vector2 size = UIMeasureText(edit);
-    int width = State.width;
+    int width = UIGetParent()->width;
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
@@ -377,7 +370,7 @@ static bool UITextBox(char* label, char* edit) {
 
 static bool UITextField(char* label, char* edit) {
     Vector2 size = UIMeasureText(edit);
-    int width = State.width;
+    int width = UIGetParent()->width;
     int height = size.y + State.paddingy;
 
     size = UIMeasureText(label);
