@@ -121,6 +121,19 @@ static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color)
     DrawRectangleLines(x, y, width, height, BLACK);
     EndScissorMode();
 }
+static void UIDrawText(UIBox parent, char* text) {
+    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+    Vector2 text_size = UIMeasureText(text);
+
+    // TODO: Support different kinds of text centering.
+    float x_offset = (parent.width - text_size.x) * 0.5;
+    x_offset = x_offset < 0 ? 0 : x_offset;
+    float y_offset = (parent.height - text_size.y) * 0.5;
+    y_offset = y_offset < 0 ? 0 : y_offset;
+    BeginScissorMode(parent.x, parent.y, parent.width, parent.height);
+    DrawText(text, parent.x + x_offset, parent.y + y_offset, UIGetFontSize(), BLACK);
+    EndScissorMode();
+}
 static void UISetSpacing(int spacing) {
     State.spacing = spacing;
     State.spacing_to_be = spacing;
@@ -192,15 +205,8 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     }
 
     UIDrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
-    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-    Vector2 text_size = UIMeasureText(label);
-    float x_offset = (width - text_size.x) * 0.5;
-    x_offset = x_offset < 0 ? 0 : x_offset;
-    float y_offset = (height - text_size.y) * 0.5;
-    y_offset = y_offset < 0 ? 0 : y_offset;
-    BeginScissorMode(x, y, width, height);
-    DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
-    EndScissorMode();
+    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+    UIDrawText(parent, label);
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_INFO, "label %s is Active", label);
@@ -220,15 +226,8 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
 static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
     // TODO: Draw text.
     UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
-    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-    Vector2 text_size = UIMeasureText(label);
-    float x_offset = (width - text_size.x) * 0.5;
-    x_offset = x_offset < 0 ? 0 : x_offset;
-    float y_offset = (height - text_size.y) * 0.5;
-    y_offset = y_offset < 0 ? 0 : y_offset;
-    BeginScissorMode(x, y, width, height);
-    DrawText(label, x + x_offset, y + y_offset, UIGetFontSize(), BLACK);
-    EndScissorMode();
+    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+    UIDrawText(parent, label);
 
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
