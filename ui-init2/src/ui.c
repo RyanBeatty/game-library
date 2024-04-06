@@ -552,6 +552,8 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 static bool UIPushWindow(char* label, int* x, int* y, int* width, int* height) {
     UIBox parent = {.x = *x, .y = *y, .width = *width, .height = *height, .cx = 0, .cy = 0};
     arrpush(State.parents, parent);
+    Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
+    UIReserveSpace(rec.width, rec.height);
     return UIWindowEx(label, x, y, width, height);
 }
 
