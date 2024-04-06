@@ -163,6 +163,8 @@ static void UISetSpacing1(int spacing) {
 
 static Vector2 UIReserveSpace(int width, int height) {
     UIBox* parent = UIGetParent();
+    // NOTE: We always try to center a new box to its parent. In cases where
+    // the box needs to fill width, offsetx will end up being 0.
     int offsetx = (parent->width - width) * 0.5;
 
     parent->cy += State.spacing;
