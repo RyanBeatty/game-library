@@ -171,7 +171,7 @@ static int UIGetWidth(int width) {
             return parent->width;
         }
         case FILL_NONE: {
-            return width;
+            return width + State.paddingx;
         }
         default: {
             exit(1);
