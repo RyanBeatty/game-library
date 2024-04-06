@@ -41,10 +41,14 @@ static UIKey UIKeyFromCStr(char* str) {
 typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
 typedef struct UIBox {
-    int cx;
-    int cy;
+    int x;
+    int y;
     int width;
     int height;
+
+    // For reserving space inside parent if has children.
+    int cx;
+    int cy;
 } UIBox;
 
 typedef struct UIState {
@@ -70,7 +74,7 @@ typedef struct UIState {
     // int cy;
     // int width;
     // int height;
-    UIBox parent;
+    UIBox* parents;  // stb_arr.
     int spacing;
 
     // TODO: Do something with this.
@@ -109,21 +113,23 @@ static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
+static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
+static Rectangle UIGetClipRec() {
+    UIBox* parent = UIGetParent();
+    return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
+}
 static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) {
     DrawRectangle(x, y, width, height, bg_color);
     DrawRectangleLines(x, y, width, height, BLACK);
 }
 static void UISetSpacing(int spacing) { State.spacing = spacing; }
 
-static UIBox* UIGetParent() { return &State.parent; }
-
 static Vector2 UIReserveSpace(int width, int height) {
     UIBox* parent = UIGetParent();
-    int midx = (parent->cx + parent->width) * 0.5;
-    int x = midx - (width * 0.5);
+    int x = parent->x;
 
     parent->cy += State.spacing;
-    int y = parent->cy;
+    int y = parent->y + parent->cy;
     parent->cy += height;
     return (Vector2){.x = x, .y = y};
 }
@@ -151,12 +157,16 @@ static void UIFrameStart(float delta_time) {
         State.cursor_cooldown = 0.0f;
     }
 
-    // TODO: need to remove this. Need to cache the parent state and then
-    // setting these should be driven by calls to UIWindow
-    State.parent.cx = 0;
-    State.parent.cy = 0;
-    State.parent.width = GetScreenWidth();
-    State.parent.height = GetScreenHeight();
+    // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
+    // parent here.
+    UIBox parent = {0};
+    parent.x = 0;
+    parent.y = 0;
+    parent.width = GetScreenWidth();
+    parent.height = GetScreenHeight();
+    parent.cx = 0;
+    parent.cy = 0;
+    arrpush(State.parents, parent);
 
     State.spacing = 0;
     State.axis = AXIS_Y;
@@ -331,7 +341,11 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
     return false;
 }
 
-static void UIFrameEnd() { State.hot = State.hot_to_be; }
+static void UIFrameEnd() {
+    State.hot = State.hot_to_be;
+    arrfree(State.parents);
+    State.parents = NULL;
+}
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
     Vector2 size = UIMeasureText(label);
@@ -533,4 +547,15 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         }
     }
     return false;
+}
+
+static bool UIPushWindow(char* label, int* x, int* y, int* width, int* height) {
+    UIBox parent = {.x = *x, .y = *y, .width = *width, .height = *height, .cx = 0, .cy = 0};
+    arrpush(State.parents, parent);
+    return UIWindowEx(label, x, y, width, height);
+}
+
+static void UIPopWindow() {
+    assert(arrlenu(State.parents) != 0);
+    (void)arrpop(State.parents);
 }

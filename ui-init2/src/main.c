@@ -42,9 +42,9 @@ int main(void) {
     static char text_box[256] = {0};
     static char text_box2[256] = {0};
     static int wx = 30;
-    static int wy = 400;
-    static int ww = 300;
-    static int wh = 300;
+    static int wy = 200;
+    static int ww = 500;
+    static int wh = 700;
 
     strcat(text_box, "hello, world");
     strcat(text_box2, "foo");
@@ -85,6 +85,10 @@ int main(void) {
         if (enabled) {
             UIFrameStart(delta_time);
 
+            if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {
+                TraceLog(LOG_INFO, "Window active");
+            }
+
             UIButton("button center");
 
             UIButton("button center2");
@@ -104,10 +108,6 @@ int main(void) {
                 TraceLog(LOG_INFO, "Health Entered");
             }
 
-            if (UIWindowEx("Window", &wx, &wy, &ww, &wh)) {
-                TraceLog(LOG_INFO, "Window active");
-            }
-
             if (UIButtonEx("Button 1", 300, 10, 100, 100)) {
                 TraceLog(LOG_INFO, "Button 1 clicked");
             }
@@ -119,6 +119,8 @@ int main(void) {
             if (UIRadioButton("Radio Button", &radio_button_1)) {
                 TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
             }
+
+            UIPopWindow();
 
             UIFrameEnd();
         }
