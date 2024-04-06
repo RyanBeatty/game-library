@@ -114,6 +114,14 @@ int main(void) {
 
             UIPopWindow();
 
+            UISetSpacing1(50);
+            UISetFill(FILL_NONE);
+            UISetPaddingX(40);
+            UISetFontSize(26);
+            UIButton("Start Game");
+            UISetSpacing(20);
+            UIButton("Continue");
+
             UIFrameEnd();
         }
 

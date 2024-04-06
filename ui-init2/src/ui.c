@@ -162,7 +162,9 @@ static void UISetSpacing1(int spacing) {
     // Note: Will get overwritten by spacing_to_be at end of frame.
     State.spacing = spacing;
 }
+static void UISetPaddingX(int padding) { State.paddingx = padding; }
 static void UISetFill(UIFill fill) { State.fill = fill; }
+static void UISetFontSize(int font_size) { State.font_size = font_size; }
 
 static int UIGetWidth(int width) {
     UIBox* parent = UIGetParent();
@@ -171,7 +173,7 @@ static int UIGetWidth(int width) {
             return parent->width;
         }
         case FILL_NONE: {
-            return width + State.paddingx;
+            return width + (State.paddingx * 2);
         }
         default: {
             exit(1);
@@ -229,6 +231,7 @@ static void UIFrameStart(float delta_time) {
     State.axis = AXIS_Y;
     State.paddingx = 10;
     State.paddingy = 5;
+    State.fill = 0;
 
     State.hot_to_be = 0;
     if (State.hot == 0) {
