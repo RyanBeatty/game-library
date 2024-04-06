@@ -69,11 +69,6 @@ typedef struct UIState {
     bool show_cursor;
     float cursor_cooldown;
 
-    // TODO: This will need to be refactored into state variables per Box.
-    // int cx;
-    // int cy;
-    // int width;
-    // int height;
     UIBox* parents;  // stb_arr.
     int spacing;
 
