@@ -53,6 +53,10 @@ typedef struct UIBox {
     // For reserving space inside parent if has children.
     int cx;
     int cy;
+
+    UIKey key;
+
+    char* display;
 } UIBox;
 
 typedef struct UIState {
@@ -74,6 +78,10 @@ typedef struct UIState {
     float cursor_cooldown;
 
     UIBox* parents;  // stb_arr.
+    struct {
+        UIKey key;
+        UIBox value;
+    }* boxes;  // stb hash map.
     int spacing;
     int spacing_to_be;
 
@@ -91,6 +99,18 @@ typedef struct UIState {
 } UIState;
 
 UIState State = {0};
+
+static UIBox* MakeUIBox(char* label, int x, int y, int width, int height) {
+    UIKey key = UIKeyFromCStr(label);
+    ptrdiff_t idx = hmgeti(State.boxes, key);
+    if (idx == -1) {
+        UIBox box = {.x = x, .y = y, .width = width, .height = height, .key = key};
+        hmput(State.boxes, key, box);
+        idx = hmgeti(State.boxes, key);
+        assert(idx != -1);
+    }
+    return &State.boxes[idx].value;
+}
 
 static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
@@ -216,16 +236,12 @@ static void UIFrameStart(float delta_time) {
         State.cursor_cooldown = 0.0f;
     }
 
+    State.boxes = NULL;
+
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
-    UIBox parent = {0};
-    parent.x = 0;
-    parent.y = 0;
-    parent.width = GetScreenWidth();
-    parent.height = GetScreenHeight();
-    parent.cx = 0;
-    parent.cy = 0;
-    arrpush(State.parents, parent);
+    UIBox* window = MakeUIBox("window", 0, 0, GetScreenWidth(), GetScreenHeight());
+    arrpush(State.parents, *window);
 
     State.spacing = 0;
     State.axis = AXIS_Y;
@@ -390,6 +406,8 @@ static void UIFrameEnd() {
     State.spacing = State.spacing_to_be;
     arrfree(State.parents);
     State.parents = NULL;
+    hmfree(State.boxes);
+    State.boxes = NULL;
 }
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
