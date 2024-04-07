@@ -55,9 +55,24 @@ typedef struct UIBox {
     int cy;
 
     UIKey key;
+    struct UIBox* neighor;
+    struct UIBox* child;
+    struct UIBox* last_child;
+    struct UIBox* parent;
 
     char* display;
 } UIBox;
+
+static void UIBoxAddChild(UIBox* parent, UIBox* child) {
+    if (parent->child == NULL) {
+        parent->child = child;
+        parent->last_child = child;
+    } else {
+        parent->last_child->neighor = child;
+        parent->last_child = child;
+    }
+    child->parent = parent;
+}
 
 typedef struct UIState {
     int mx;
@@ -82,6 +97,7 @@ typedef struct UIState {
         UIKey key;
         UIBox value;
     }* boxes;  // stb hash map.
+    UIKey root;
     int spacing;
     int spacing_to_be;
 
@@ -99,18 +115,6 @@ typedef struct UIState {
 } UIState;
 
 UIState State = {0};
-
-static UIBox* MakeUIBox(char* label, int x, int y, int width, int height) {
-    UIKey key = UIKeyFromCStr(label);
-    ptrdiff_t idx = hmgeti(State.boxes, key);
-    if (idx == -1) {
-        UIBox box = {.x = x, .y = y, .width = width, .height = height, .key = key};
-        hmput(State.boxes, key, box);
-        idx = hmgeti(State.boxes, key);
-        assert(idx != -1);
-    }
-    return &State.boxes[idx].value;
-}
 
 static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
@@ -136,6 +140,20 @@ static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
+static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
+static void UIPushParent() {
+    UIBox* root = UIGetParent2();
+    assert(root != NULL);
+    UIBox* new_root = root->last_child;
+    assert(new_root != NULL);
+    State.root = new_root->key;
+}
+static void UIPopParent() {
+    UIBox* root = UIGetParent2();
+    assert(root != NULL);
+    assert(root->parent != NULL);
+    State.root = root->parent->key;
+}
 static Rectangle UIGetClipRec() {
     UIBox* parent = UIGetParent();
     return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
@@ -213,6 +231,20 @@ static Vector2 UIReserveSpace(int width, int height) {
     return (Vector2){.x = parent->x + offsetx, .y = parent->y + offsety};
 }
 
+static UIBox* MakeUIBox(char* label, int x, int y, int width, int height) {
+    UIKey key = UIKeyFromCStr(label);
+    ptrdiff_t idx = hmgeti(State.boxes, key);
+    if (idx == -1) {
+        UIBox box = {.x = x, .y = y, .width = width, .height = height, .key = key};
+        hmput(State.boxes, key, box);
+        idx = hmgeti(State.boxes, key);
+        assert(idx != -1);
+    }
+    UIBox* box = &State.boxes[idx].value;
+    UIBoxAddChild(UIGetParent2(), box);
+    return box;
+}
+
 static void UIFrameStart(float delta_time) {
     static const float CURSOR_COOLDOWN_DEFAULT_SEC = 0.6;
 
@@ -240,8 +272,11 @@ static void UIFrameStart(float delta_time) {
 
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
-    UIBox* window = MakeUIBox("window", 0, 0, GetScreenWidth(), GetScreenHeight());
-    arrpush(State.parents, *window);
+    UIKey window_key = UIKeyFromCStr("window");
+    UIBox box = {.x = 0, .y = 0, .width = GetScreenWidth(), .height = GetScreenHeight(), .key = window_key};
+    hmput(State.boxes, window_key, box);
+    arrpush(State.parents, box);
+    State.root = window_key;
 
     State.spacing = 0;
     State.axis = AXIS_Y;
@@ -424,7 +459,8 @@ static bool UIButton(char* label) {
 
     Vector2 pos = UIReserveSpace(width, height);
 
-    return UIButtonEx(label, pos.x, pos.y, width, height);
+    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
 static bool UIRadioButton(char* label, bool* state) {
@@ -433,7 +469,8 @@ static bool UIRadioButton(char* label, bool* state) {
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
-    return UIRadioButtonEx(label, state, pos.x, pos.y, width, height);
+    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
 }
 
 static bool UITextBox(char* label, char* edit) {
@@ -442,7 +479,8 @@ static bool UITextBox(char* label, char* edit) {
     int height = size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
-    return UITextBoxEx(label, edit, pos.x, pos.y, width, height);
+    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    return UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
 }
 
 static bool UITextField(char* label, char* edit) {
@@ -454,7 +492,8 @@ static bool UITextField(char* label, char* edit) {
     height += size.y + State.paddingy;
 
     Vector2 pos = UIReserveSpace(width, height);
-    return UITextFieldEx(label, edit, pos.x, pos.y, width, height);
+    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    return UITextFieldEx(label, edit, box->x, box->y, box->width, box->height);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -615,8 +654,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 }
 
 static bool UIPushWindow(char* label, int* x, int* y, int* width, int* height) {
-    UIBox parent = {.x = *x, .y = *y, .width = *width, .height = *height, .cx = 0, .cy = 0};
-    arrpush(State.parents, parent);
+    UIBox* parent = MakeUIBox(label, *x, *y, *width, *height);
+    UIPushParent();
+    arrpush(State.parents, *parent);
     Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
     UIReserveSpace(rec.width, rec.height);
     return UIWindowEx(label, x, y, width, height);
@@ -625,4 +665,5 @@ static bool UIPushWindow(char* label, int* x, int* y, int* width, int* height) {
 static void UIPopWindow() {
     assert(arrlenu(State.parents) != 0);
     (void)arrpop(State.parents);
+    UIPopParent();
 }
