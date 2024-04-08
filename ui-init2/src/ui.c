@@ -142,6 +142,9 @@ static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
 static Vector2 UIMeasureText(char* text) {
     return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
 }
+static Vector2 UIMeasureTextEx(char* text, int fontsize) {
+    return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
+}
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
 static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
 static void UIPushParent() {
@@ -477,7 +480,7 @@ static void UIFrameEnd() {
                 if (cur->display != NULL) {
                     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about
                     // this too?
-                    Vector2 text_size = UIMeasureText(cur->display);
+                    Vector2 text_size = UIMeasureTextEx(cur->display, cur->fontsize);
 
                     // Alignment.
                     float x_offset = 0.0;
