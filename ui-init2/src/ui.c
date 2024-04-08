@@ -558,24 +558,28 @@ static bool UITextBox(char* label, char* edit) {
 
     Vector2 pos = UIReserveSpace(width, height);
     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-    box->display = edit;
-    // {
-    //     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+    box->display = NULL;
 
-    //     char* display_text = NULL;
-    //     int edit_len = strlen(edit);
-    //     for (uint16_t i = 0; i < edit_len; ++i) {
-    //         arrput(display_text, edit[i]);
-    //     }
-    //     if (UIKeyIsActive(box->key)) {
-    //         if (State.show_cursor) {
-    //             arrins(display_text, State.cursor, '|');
-    //         }
-    //     }
-    //     arrput(display_text, '\0');
-    //     box->display = display_text;
-    // }
-    return UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
+    bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
+
+    {
+        // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+
+        int edit_len = strlen(edit);
+        for (uint16_t i = 0; i < edit_len; ++i) {
+            arrput(box->display, edit[i]);
+        }
+        if (UIKeyIsActive(box->key)) {
+            // TraceLog(LOG_INFO, "Activeeeee");
+            if (State.show_cursor) {
+                // TraceLog(LOG_INFO, "cursor");
+
+                arrins(box->display, State.cursor, '|');
+            }
+        }
+        arrput(box->display, '\0');
+    }
+    return res;
 }
 
 static bool UITextField(char* label, char* edit) {
