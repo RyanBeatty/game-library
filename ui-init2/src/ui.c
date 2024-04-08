@@ -55,10 +55,13 @@ typedef struct UIBox {
     int cy;
 
     UIKey key;
-    struct UIBox* neighor;
+    struct UIBox* neighbor;
     struct UIBox* child;
     struct UIBox* last_child;
     struct UIBox* parent;
+
+    Color bg_color;
+    int fontsize;
 
     char* display;
 } UIBox;
@@ -68,7 +71,7 @@ static void UIBoxAddChild(UIBox* parent, UIBox* child) {
         parent->child = child;
         parent->last_child = child;
     } else {
-        parent->last_child->neighor = child;
+        parent->last_child->neighbor = child;
         parent->last_child = child;
     }
     child->parent = parent;
@@ -159,13 +162,15 @@ static Rectangle UIGetClipRec() {
     return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
 }
 static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) {
-    Rectangle rec = UIGetClipRec();
-    BeginScissorMode(rec.x, rec.y, rec.width, rec.height);
-    DrawRectangle(x, y, width, height, bg_color);
-    DrawRectangleLines(x, y, width, height, BLACK);
-    EndScissorMode();
+    return;
+    // Rectangle rec = UIGetClipRec();
+    // BeginScissorMode(rec.x, rec.y, rec.width, rec.height);
+    // DrawRectangle(x, y, width, height, bg_color);
+    // DrawRectangleLines(x, y, width, height, BLACK);
+    // EndScissorMode();
 }
 static void UIDrawText(UIBox parent, UIAlignment alignment, char* text) {
+    return;
     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
     Vector2 text_size = UIMeasureText(text);
 
@@ -235,13 +240,14 @@ static UIBox* MakeUIBox(char* label, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
     ptrdiff_t idx = hmgeti(State.boxes, key);
     if (idx == -1) {
-        UIBox box = {.x = x, .y = y, .width = width, .height = height, .key = key};
+        UIBox box = {.x = x, .y = y, .width = width, .height = height, .key = key, .bg_color = GRAY};
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         assert(idx != -1);
     }
     UIBox* box = &State.boxes[idx].value;
     UIBoxAddChild(UIGetParent2(), box);
+    box->fontsize = UIGetFontSize();
     return box;
 }
 
@@ -272,6 +278,7 @@ static void UIFrameStart(float delta_time) {
 
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
+    // NOTE: Use special logic to push first parent. Can't use MakeUIBox because it assumes a first parent.
     UIKey window_key = UIKeyFromCStr("window");
     UIBox box = {.x = 0, .y = 0, .width = GetScreenWidth(), .height = GetScreenHeight(), .key = window_key};
     hmput(State.boxes, window_key, box);
@@ -349,28 +356,28 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
 
     UIDrawRectangle(x, y, width, height, GRAY);
 
-    // Draw Text.
-    {
-        // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+    // // Draw Text.
+    // {
+    //     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
 
-        char* display_text = NULL;
-        int edit_len = strlen(edit);
-        for (uint16_t i = 0; i < edit_len; ++i) {
-            arrput(display_text, edit[i]);
-        }
-        if (UIKeyIsActive(key)) {
-            if (State.show_cursor) {
-                arrins(display_text, State.cursor, '|');
-            }
-        }
-        arrput(display_text, '\0');
+    //     char* display_text = NULL;
+    //     int edit_len = strlen(edit);
+    //     for (uint16_t i = 0; i < edit_len; ++i) {
+    //         arrput(display_text, edit[i]);
+    //     }
+    //     if (UIKeyIsActive(key)) {
+    //         if (State.show_cursor) {
+    //             arrins(display_text, State.cursor, '|');
+    //         }
+    //     }
+    //     arrput(display_text, '\0');
 
-        UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-        UIDrawText(parent, ALIGN_LEFT, display_text);
+    //     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+    //     UIDrawText(parent, ALIGN_LEFT, display_text);
 
-        arrfree(display_text);
-        display_text = NULL;
-    }
+    //     arrfree(display_text);
+    //     display_text = NULL;
+    // }
 
     if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
@@ -437,6 +444,73 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
 }
 
 static void UIFrameEnd() {
+    // Drawing.
+    {
+        UIBox* root = UIGetParent2();
+        while (root->parent != NULL) {
+            // Possibly inefficient, should just follow pointers up?
+            UIPopParent();
+            root = UIGetParent2();
+        }
+
+        UIBox* boxes[256];
+        size_t len = 0;
+        if (root->child != NULL) {
+            boxes[len] = root->child;
+            ++len;
+        }
+        UIBox* cur = NULL;
+        for (size_t i = 0; i < len; ++i) {
+            cur = boxes[i];
+            UIBox* neighbor = cur->neighbor;
+            while (neighbor != NULL) {
+                boxes[len] = neighbor;
+                ++len;
+                neighbor = neighbor->neighbor;
+            }
+            {
+                BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
+                DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
+                DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
+
+                // Draw Text.
+                if (cur->display != NULL) {
+                    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about
+                    // this too?
+                    Vector2 text_size = UIMeasureText(cur->display);
+
+                    // Alignment.
+                    float x_offset = 0.0;
+                    float y_offset = (cur->height - text_size.y) * 0.5;
+                    y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+                    switch (ALIGN_CENTER) {
+                        case ALIGN_CENTER: {
+                            x_offset = (cur->width - text_size.x) * 0.5;
+                            x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+                            break;
+                        }
+                        case ALIGN_LEFT: {
+                            x_offset = 0.0;
+                            break;
+                        }
+                        default: {
+                            exit(1);
+                        }
+                    }
+
+                    DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
+                }
+
+                EndScissorMode();
+            }
+
+            if (cur->child != NULL) {
+                boxes[len] = cur->child;
+                ++len;
+            }
+        }
+    }
+
     State.hot = State.hot_to_be;
     State.spacing = State.spacing_to_be;
     arrfree(State.parents);
@@ -460,6 +534,8 @@ static bool UIButton(char* label) {
     Vector2 pos = UIReserveSpace(width, height);
 
     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    box->display = label;
+    box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? GREEN : GRAY;
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
@@ -470,6 +546,8 @@ static bool UIRadioButton(char* label, bool* state) {
 
     Vector2 pos = UIReserveSpace(width, height);
     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    box->display = label;
+    box->bg_color = *state ? YELLOW : GRAY;
     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
 }
 
@@ -480,6 +558,23 @@ static bool UITextBox(char* label, char* edit) {
 
     Vector2 pos = UIReserveSpace(width, height);
     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    box->display = edit;
+    // {
+    //     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+
+    //     char* display_text = NULL;
+    //     int edit_len = strlen(edit);
+    //     for (uint16_t i = 0; i < edit_len; ++i) {
+    //         arrput(display_text, edit[i]);
+    //     }
+    //     if (UIKeyIsActive(box->key)) {
+    //         if (State.show_cursor) {
+    //             arrins(display_text, State.cursor, '|');
+    //         }
+    //     }
+    //     arrput(display_text, '\0');
+    //     box->display = display_text;
+    // }
     return UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
 }
 
@@ -493,6 +588,7 @@ static bool UITextField(char* label, char* edit) {
 
     Vector2 pos = UIReserveSpace(width, height);
     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    box->display = edit;
     return UITextFieldEx(label, edit, box->x, box->y, box->width, box->height);
 }
 
