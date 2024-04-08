@@ -78,6 +78,8 @@ int main(void) {
 
         BeginDrawing();
 
+        DrawFPS(10, 10);
+
         ClearBackground(RAYWHITE);
 
         if (enabled) {
