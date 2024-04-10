@@ -501,6 +501,35 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
 //     Vector2 size = UIMeasureTextEx(root->display, root->fontsize);
 // }
 
+static void CalculateFixedSizes(UIBox* parent, UIAxis axis) {
+    if (parent == NULL) {
+        return;
+    }
+
+    switch (parent->semantic_size[axis].kind) {
+        case SK_PIXEL: {
+            parent->size[axis] = parent->semantic_size[axis].value;
+            break;
+        }
+        case SK_MEASURE_TEXT: {
+            assert(parent->display != NULL);
+            Vector2 text_size = UIMeasureTextEx(parent->display, parent->fontsize);
+            float value = axis == AXIS_X ? text_size.x : text_size.y;
+            parent->size[axis] = value;
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+
+    UIBox* child = GetUIBox(parent->hash_child);
+    while (child != NULL) {
+        CalculateFixedSizes(child, axis);
+        child = GetUIBox(child->hash_sibling);
+    }
+}
+
 static void UIFrameEnd() {
     // Drawing.
     {
@@ -513,18 +542,15 @@ static void UIFrameEnd() {
         cur_child = GetUIBox(cur_parent->hash_child);
         assert(cur_child != NULL);
 
-        breakpoint();
-        assert(cur_parent->semantic_size[AXIS_X].kind == SK_PIXEL);
-        assert(cur_parent->semantic_size[AXIS_Y].kind == SK_PIXEL);
-        cur_parent->size[AXIS_X] = cur_parent->semantic_size[AXIS_X].value;
-        cur_parent->size[AXIS_Y] = cur_parent->semantic_size[AXIS_Y].value;
+        // breakpoint();
+        // assert(cur_parent->semantic_size[AXIS_X].kind == SK_PIXEL);
+        // assert(cur_parent->semantic_size[AXIS_Y].kind == SK_PIXEL);
 
-        assert(cur_child->semantic_size[AXIS_X].kind == SK_MEASURE_TEXT);
-        assert(cur_child->semantic_size[AXIS_Y].kind == SK_MEASURE_TEXT);
-        assert(cur_child->display != NULL);
-        Vector2 text_size = UIMeasureTextEx(cur_child->display, cur_child->fontsize);
-        cur_child->size[AXIS_X] = text_size.x;
-        cur_child->size[AXIS_Y] = text_size.y;
+        // assert(cur_child->semantic_size[AXIS_X].kind == SK_MEASURE_TEXT);
+        // assert(cur_child->semantic_size[AXIS_Y].kind == SK_MEASURE_TEXT);
+        // assert(cur_child->display != NULL);
+        CalculateFixedSizes(cur_parent, AXIS_X);
+        CalculateFixedSizes(cur_parent, AXIS_Y);
 
         cur_child->position[AXIS_X] = cur_parent->position[AXIS_X];
         cur_child->position[AXIS_Y] = cur_parent->position[AXIS_Y];
@@ -546,8 +572,8 @@ static void UIFrameEnd() {
                 if (cur->display != NULL) {
                     // Alignment.
                     float x_offset = 0.0;
-                    float y_offset = (cur->height - text_size.y) * 0.5;
-                    y_offset = 0;
+                    // float y_offset = (cur->height - text_size.y) * 0.5;
+                    float y_offset = 0;
                     // y_offset = y_offset < 0.0 ? 0.0 : y_offset;
                     // switch (ALIGN_CENTER) {
                     //     case ALIGN_CENTER: {
