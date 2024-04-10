@@ -44,38 +44,44 @@ typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignme
 
 typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
 
+typedef enum UISizeKind { SK_MEASURE_TEXT = 0, SK_PIXEL, SK_COUNT } UISizeKind;
+
+typedef struct UISize {
+    UISizeKind kind;
+    float value;
+} UISize;
+
 typedef struct UIBox {
     int x;
     int y;
     int width;
     int height;
 
+    float position[AXIS_COUNT];
+    float size[AXIS_COUNT];
+
     // For reserving space inside parent if has children.
     int cx;
     int cy;
 
+    // Hash info. Updated during frame.
     UIKey key;
-    struct UIBox* neighbor;
-    struct UIBox* child;
-    struct UIBox* last_child;
-    struct UIBox* parent;
+    UIKey hash_child;
+    UIKey hash_sibling;
+    UIKey hash_parent;
+    // // Tree info. Rebuilt at end of frame using hash info.
+    // struct UIBox* neighbor;
+    // struct UIBox* child;
+    // struct UIBox* final_child;
+    // struct UIBox* parent;
 
+    // Sizing info.
     Color bg_color;
     int fontsize;
+    UISize semantic_size[AXIS_COUNT];  // Semantic size.
 
     char* display;
 } UIBox;
-
-static void UIBoxAddChild(UIBox* parent, UIBox* child) {
-    if (parent->child == NULL) {
-        parent->child = child;
-        parent->last_child = child;
-    } else {
-        parent->last_child->neighbor = child;
-        parent->last_child = child;
-    }
-    child->parent = parent;
-}
 
 typedef struct UIState {
     int mx;
@@ -99,8 +105,9 @@ typedef struct UIState {
     struct {
         UIKey key;
         UIBox value;
-    }* boxes;  // stb hash map.
+    } * boxes;  // stb hash map.
     UIKey root;
+
     int spacing;
     int spacing_to_be;
 
@@ -146,19 +153,43 @@ static Vector2 UIMeasureTextEx(char* text, int fontsize) {
     return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
 }
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
-static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
-static void UIPushParent() {
-    UIBox* root = UIGetParent2();
-    assert(root != NULL);
-    UIBox* new_root = root->last_child;
-    assert(new_root != NULL);
-    State.root = new_root->key;
+static UIBox* GetUIBox(UIKey key) {
+    struct {
+        UIKey key;
+        UIBox value;
+    }* res = hmgetp_null(State.boxes, key);
+    if (res == NULL) {
+        return NULL;
+    }
+    return &res->value;
+}
+static UIBox* UIGetParent2() { return GetUIBox(State.root); }
+
+static void UIPushParent(UIKey key) {
+    State.root = key;
+    // State.root = parent_key;
+    // UIBox* root = UIGetParent2();
+    // assert(root != NULL);
+    // UIBox* new_root = root->last_child;
+    // assert(new_root != NULL);
+    // State.root = new_root->key;
 }
 static void UIPopParent() {
-    UIBox* root = UIGetParent2();
-    assert(root != NULL);
-    assert(root->parent != NULL);
-    State.root = root->parent->key;
+    UIBox* parent = UIGetParent2();
+    assert(parent != NULL);
+    State.root = parent->hash_parent;
+    // UIBox* root = UIGetParent2();
+    // assert(root != NULL);
+    // assert(root->parent != NULL);
+    // State.root = root->parent->key;
+}
+
+static void UIBoxAddChild(UIBox* parent, UIBox* child) {
+    assert(parent != NULL);
+    assert(child != NULL);
+    child->hash_sibling = parent->hash_child;
+    parent->hash_child = child->key;
+    child->hash_parent = parent->key;
 }
 static Rectangle UIGetClipRec() {
     UIBox* parent = UIGetParent();
@@ -239,18 +270,29 @@ static Vector2 UIReserveSpace(int width, int height) {
     return (Vector2){.x = parent->x + offsetx, .y = parent->y + offsety};
 }
 
-static UIBox* MakeUIBox(char* label, int x, int y, int width, int height) {
+static UIBox* MakeUIBox(char* label, UISize size_x, UISize size_y) {
     UIKey key = UIKeyFromCStr(label);
     ptrdiff_t idx = hmgeti(State.boxes, key);
     if (idx == -1) {
-        UIBox box = {.x = x, .y = y, .width = width, .height = height, .key = key, .bg_color = GRAY};
+        UIBox box = {0};
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         assert(idx != -1);
     }
     UIBox* box = &State.boxes[idx].value;
-    UIBoxAddChild(UIGetParent2(), box);
+    box->key = key;
     box->fontsize = UIGetFontSize();
+    box->bg_color = GRAY;
+    box->semantic_size[AXIS_X] = size_x;
+    box->semantic_size[AXIS_Y] = size_y;
+
+    UIBox* parent = UIGetParent2();
+    breakpoint();
+    if (parent) {
+        UIBoxAddChild(parent, box);
+    } else {
+        UIPushParent(box->key);
+    }
     return box;
 }
 
@@ -282,11 +324,13 @@ static void UIFrameStart(float delta_time) {
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
     // NOTE: Use special logic to push first parent. Can't use MakeUIBox because it assumes a first parent.
-    UIKey window_key = UIKeyFromCStr("window");
-    UIBox box = {.x = 0, .y = 0, .width = GetScreenWidth(), .height = GetScreenHeight(), .key = window_key};
-    hmput(State.boxes, window_key, box);
-    arrpush(State.parents, box);
-    State.root = window_key;
+    UIBox* window = MakeUIBox("__window__", (UISize){.kind = SK_PIXEL, .value = GetScreenWidth()},
+                              (UISize){.kind = SK_PIXEL, .value = GetScreenHeight()});
+    // UIKey window_key = UIKeyFromCStr("window");
+    // UIBox box = {.x = 0, .y = 0, .width = GetScreenWidth(), .height = GetScreenHeight(), .key = window_key};
+    // hmput(State.boxes, window_key, box);
+    // arrpush(State.parents, box);
+    // State.root = window_key;
 
     State.spacing = 0;
     State.axis = AXIS_Y;
@@ -325,193 +369,282 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     return false;
 }
 
-static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
-    // TODO: Draw text.
-    UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
-    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    UIDrawText(parent, ALIGN_CENTER, label);
+// static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
+//     // TODO: Draw text.
+//     UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
+//     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+//     UIDrawText(parent, ALIGN_CENTER, label);
 
-    UIKey key = UIKeyFromCStr(label);
-    if (UIShouldSetHot(x, y, width, height)) {
-        UIStateSetHot(key);
-    }
+//     UIKey key = UIKeyFromCStr(label);
+//     if (UIShouldSetHot(x, y, width, height)) {
+//         UIStateSetHot(key);
+//     }
 
-    if (UIKeyIsActive(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Active", label);
-        if (State.left_up) {
-            *state = !(*state);
-            UIStateClearActive();
-            return true;
-        }
-    } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
-        if (State.left_down) {
-            UIStateSetActive(key);
-        }
-    }
-    return false;
-}
+//     if (UIKeyIsActive(key)) {
+//         TraceLog(LOG_DEBUG, "label %s is Active", label);
+//         if (State.left_up) {
+//             *state = !(*state);
+//             UIStateClearActive();
+//             return true;
+//         }
+//     } else if (UIKeyIsHot(key)) {
+//         TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
+//         if (State.left_down) {
+//             UIStateSetActive(key);
+//         }
+//     }
+//     return false;
+// }
 
-// TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
-// consider passing in a max capacity here.
-static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int height) {
-    UIKey key = UIKeyFromCStr(label);
+// // TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
+// // consider passing in a max capacity here.
+// static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int height) {
+//     UIKey key = UIKeyFromCStr(label);
 
-    UIDrawRectangle(x, y, width, height, GRAY);
+//     UIDrawRectangle(x, y, width, height, GRAY);
 
-    // // Draw Text.
-    // {
-    //     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+//     // // Draw Text.
+//     // {
+//     //     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this
+//     too?
 
-    //     char* display_text = NULL;
-    //     int edit_len = strlen(edit);
-    //     for (uint16_t i = 0; i < edit_len; ++i) {
-    //         arrput(display_text, edit[i]);
-    //     }
-    //     if (UIKeyIsActive(key)) {
-    //         if (State.show_cursor) {
-    //             arrins(display_text, State.cursor, '|');
-    //         }
-    //     }
-    //     arrput(display_text, '\0');
+//     //     char* display_text = NULL;
+//     //     int edit_len = strlen(edit);
+//     //     for (uint16_t i = 0; i < edit_len; ++i) {
+//     //         arrput(display_text, edit[i]);
+//     //     }
+//     //     if (UIKeyIsActive(key)) {
+//     //         if (State.show_cursor) {
+//     //             arrins(display_text, State.cursor, '|');
+//     //         }
+//     //     }
+//     //     arrput(display_text, '\0');
 
-    //     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    //     UIDrawText(parent, ALIGN_LEFT, display_text);
+//     //     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+//     //     UIDrawText(parent, ALIGN_LEFT, display_text);
 
-    //     arrfree(display_text);
-    //     display_text = NULL;
-    // }
+//     //     arrfree(display_text);
+//     //     display_text = NULL;
+//     // }
 
-    if (UIShouldSetHot(x, y, width, height)) {
-        UIStateSetHot(key);
-    }
+//     if (UIShouldSetHot(x, y, width, height)) {
+//         UIStateSetHot(key);
+//     }
 
-    if (UIKeyIsActive(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Active", label);
+//     if (UIKeyIsActive(key)) {
+//         TraceLog(LOG_DEBUG, "label %s is Active", label);
 
-        int key = GetKeyPressed();
-        if (key != 0) {
-            bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+//         int key = GetKeyPressed();
+//         if (key != 0) {
+//             bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
 
-            if (key >= 32 && key <= 126) {
-                if (!shift && key >= 65 && key <= 90) {
-                    key -= (int)('A' - 'a');
-                }
+//             if (key >= 32 && key <= 126) {
+//                 if (!shift && key >= 65 && key <= 90) {
+//                     key -= (int)('A' - 'a');
+//                 }
 
-                int len = strlen(edit);
-                for (uint16_t i = len + 1; i > State.cursor; --i) {
-                    edit[i] = edit[i - 1];
-                }
+//                 int len = strlen(edit);
+//                 for (uint16_t i = len + 1; i > State.cursor; --i) {
+//                     edit[i] = edit[i - 1];
+//                 }
 
-                edit[State.cursor] = (char)key;
-                ++State.cursor;
-            } else if (IsKeyPressed(KEY_BACKSPACE)) {
-                if (State.cursor != 0) {
-                    int len = strlen(edit);
-                    for (uint16_t i = State.cursor; i < len + 1; ++i) {
-                        edit[i - 1] = edit[i];
-                    }
+//                 edit[State.cursor] = (char)key;
+//                 ++State.cursor;
+//             } else if (IsKeyPressed(KEY_BACKSPACE)) {
+//                 if (State.cursor != 0) {
+//                     int len = strlen(edit);
+//                     for (uint16_t i = State.cursor; i < len + 1; ++i) {
+//                         edit[i - 1] = edit[i];
+//                     }
 
-                    --State.cursor;
-                }
-            } else if (IsKeyPressed(KEY_LEFT)) {
-                if (State.cursor != 0) {
-                    --State.cursor;
-                }
-            } else if (IsKeyPressed(KEY_RIGHT)) {
-                if (edit[State.cursor] != '\0') {
-                    ++State.cursor;
-                }
-            }
+//                     --State.cursor;
+//                 }
+//             } else if (IsKeyPressed(KEY_LEFT)) {
+//                 if (State.cursor != 0) {
+//                     --State.cursor;
+//                 }
+//             } else if (IsKeyPressed(KEY_RIGHT)) {
+//                 if (edit[State.cursor] != '\0') {
+//                     ++State.cursor;
+//                 }
+//             }
 
-            if (key != 0) {
-                State.show_cursor = true;
-                State.cursor_cooldown = 0.0f;
-            }
+//             if (key != 0) {
+//                 State.show_cursor = true;
+//                 State.cursor_cooldown = 0.0f;
+//             }
 
-            if (IsKeyPressed(KEY_ENTER)) {
-                UIStateClearActive();
-                return true;
-            }
-        }
-    } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
-        if (State.left_down) {
-            UIStateSetActive(key);
-            State.cursor = strlen(edit);
-            State.show_cursor = true;
-            State.cursor_cooldown = 0.0f;
-        }
-    }
-    return false;
-}
+//             if (IsKeyPressed(KEY_ENTER)) {
+//                 UIStateClearActive();
+//                 return true;
+//             }
+//         }
+//     } else if (UIKeyIsHot(key)) {
+//         TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
+//         if (State.left_down) {
+//             UIStateSetActive(key);
+//             State.cursor = strlen(edit);
+//             State.show_cursor = true;
+//             State.cursor_cooldown = 0.0f;
+//         }
+//     }
+//     return false;
+// }
+
+// static void CalculateSize(UIBox* root, UIAxis axis) {
+//     if (root == NULL) {
+//         return;
+//     }
+
+//     assert(root->size[axis] == SK_MEASURE_TEXT);
+//     assert(root->display != NULL);
+//     Vector2 size = UIMeasureTextEx(root->display, root->fontsize);
+// }
 
 static void UIFrameEnd() {
     // Drawing.
     {
-        UIBox* root = UIGetParent2();
-        while (root->parent != NULL) {
-            // Possibly inefficient, should just follow pointers up?
-            UIPopParent();
-            root = UIGetParent2();
-        }
+        UIKey root_key = State.root;
+        UIBox* cur_parent = GetUIBox(root_key);
+        UIBox* cur_child = GetUIBox(cur_parent->hash_child);
+        assert(cur_child != NULL);
+        breakpoint();
+        cur_parent = cur_child;
+        cur_child = GetUIBox(cur_parent->hash_child);
+        assert(cur_child != NULL);
 
-        UIBox* boxes[256];
-        size_t len = 0;
-        if (root->child != NULL) {
-            boxes[len] = root->child;
-            ++len;
-        }
-        UIBox* cur = NULL;
-        for (size_t i = 0; i < len; ++i) {
-            cur = boxes[i];
-            UIBox* neighbor = cur->neighbor;
-            while (neighbor != NULL) {
-                boxes[len] = neighbor;
-                ++len;
-                neighbor = neighbor->neighbor;
-            }
+        breakpoint();
+        assert(cur_parent->semantic_size[AXIS_X].kind == SK_PIXEL);
+        assert(cur_parent->semantic_size[AXIS_Y].kind == SK_PIXEL);
+        cur_parent->size[AXIS_X] = cur_parent->semantic_size[AXIS_X].value;
+        cur_parent->size[AXIS_Y] = cur_parent->semantic_size[AXIS_Y].value;
+
+        assert(cur_child->semantic_size[AXIS_X].kind == SK_MEASURE_TEXT);
+        assert(cur_child->semantic_size[AXIS_Y].kind == SK_MEASURE_TEXT);
+        assert(cur_child->display != NULL);
+        Vector2 text_size = UIMeasureTextEx(cur_child->display, cur_child->fontsize);
+        cur_child->size[AXIS_X] = text_size.x;
+        cur_child->size[AXIS_Y] = text_size.y;
+
+        cur_child->position[AXIS_X] = cur_parent->position[AXIS_X];
+        cur_child->position[AXIS_Y] = cur_parent->position[AXIS_Y];
+
+        UIBox* boxes[2] = {cur_parent, cur_child};
+        for (uint32_t i = 0; i < 2; ++i) {
             {
-                BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
-                DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
-                DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
+                UIBox* cur = boxes[i];
+                int x = cur->position[AXIS_X];
+                int y = cur->position[AXIS_Y];
+                int width = cur->size[AXIS_X];
+                int height = cur->size[AXIS_Y];
+                BeginScissorMode(x, y, width, height);
+                DrawRectangle(x, y, width, height, cur->bg_color);
+                DrawRectangleLines(x, y, width, height, BLACK);
+                EndScissorMode();
 
                 // Draw Text.
                 if (cur->display != NULL) {
-                    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about
-                    // this too?
-                    Vector2 text_size = UIMeasureTextEx(cur->display, cur->fontsize);
-
                     // Alignment.
                     float x_offset = 0.0;
                     float y_offset = (cur->height - text_size.y) * 0.5;
-                    y_offset = y_offset < 0.0 ? 0.0 : y_offset;
-                    switch (ALIGN_CENTER) {
-                        case ALIGN_CENTER: {
-                            x_offset = (cur->width - text_size.x) * 0.5;
-                            x_offset = x_offset < 0.0 ? 0.0 : x_offset;
-                            break;
-                        }
-                        case ALIGN_LEFT: {
-                            x_offset = 0.0;
-                            break;
-                        }
-                        default: {
-                            exit(1);
-                        }
-                    }
+                    y_offset = 0;
+                    // y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+                    // switch (ALIGN_CENTER) {
+                    //     case ALIGN_CENTER: {
+                    //         x_offset = (cur->width - text_size.x) * 0.5;
+                    //         x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+                    //         break;
+                    //     }
+                    //     case ALIGN_LEFT: {
+                    //         x_offset = 0.0;
+                    //         break;
+                    //     }
+                    //     default: {
+                    //         exit(1);
+                    //     }
+                    // }
 
-                    DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
+                    DrawText(cur->display, x + x_offset, x + y_offset, cur->fontsize, BLACK);
                 }
-
-                EndScissorMode();
-            }
-
-            if (cur->child != NULL) {
-                boxes[len] = cur->child;
-                ++len;
             }
         }
+
+        // assert(cur_parent != NULL);
+        // while (cur_parent != NULL) {
+        //     assert(cur_parent->size[AXIS_X] == SK_MEASURE_TEXT);
+        //     assert(cur_parent->size[AXIS_Y] == SK_MEASURE_TEXT);
+        //     UIBox* cur_child = GetUIBox(cur_parent->hash_child);
+        //     while (cur_child != NULL) {
+        //         assert(cur_child->size[AXIS_X] == SK_MEASURE_TEXT);
+        //         assert(cur_child->size[AXIS_Y] == SK_MEASURE_TEXT);
+        //         cur_child = GetUIBox(cur_child->hash_sibling);
+        //     }
+        //     cur_parent =
+        // }
+
+        // while (root->parent != NULL) {
+        //     // Possibly inefficient, should just follow pointers up?
+        //     UIPopParent();
+        //     root = UIGetParent2();
+        // }
+
+        // UIBox* boxes[256];
+        // size_t len = 0;
+        // if (root->child != NULL) {
+        //     boxes[len] = root->child;
+        //     ++len;
+        // }
+        // UIBox* cur = NULL;
+        // for (size_t i = 0; i < len; ++i) {
+        //     cur = boxes[i];
+        //     UIBox* neighbor = cur->neighbor;
+        //     while (neighbor != NULL) {
+        //         boxes[len] = neighbor;
+        //         ++len;
+        //         neighbor = neighbor->neighbor;
+        //     }
+        //     {
+        //         BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
+        //         DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
+        //         DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
+
+        //         // Draw Text.
+        //         if (cur->display != NULL) {
+        //             // TODO: raylib MeasureText worries about fontsize < default font size...do I need to
+        //             worry about
+        //             // this too?
+        //             Vector2 text_size = UIMeasureTextEx(cur->display, cur->fontsize);
+
+        //             // Alignment.
+        //             float x_offset = 0.0;
+        //             float y_offset = (cur->height - text_size.y) * 0.5;
+        //             y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+        //             switch (ALIGN_CENTER) {
+        //                 case ALIGN_CENTER: {
+        //                     x_offset = (cur->width - text_size.x) * 0.5;
+        //                     x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+        //                     break;
+        //                 }
+        //                 case ALIGN_LEFT: {
+        //                     x_offset = 0.0;
+        //                     break;
+        //                 }
+        //                 default: {
+        //                     exit(1);
+        //                 }
+        //             }
+
+        //             DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
+        //         }
+
+        //         EndScissorMode();
+        //     }
+
+        //     if (cur->child != NULL) {
+        //         boxes[len] = cur->child;
+        //         ++len;
+        //     }
+        // }
     }
 
     State.hot = State.hot_to_be;
@@ -522,12 +655,12 @@ static void UIFrameEnd() {
     State.boxes = NULL;
 }
 
-static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
-    Vector2 size = UIMeasureText(label);
-    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    UIDrawText(parent, ALIGN_LEFT, label);
-    return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
-}
+// static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
+//     Vector2 size = UIMeasureText(label);
+//     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+//     UIDrawText(parent, ALIGN_LEFT, label);
+//     return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
+// }
 
 static bool UIButton(char* label) {
     Vector2 size = UIMeasureText(label);
@@ -536,68 +669,69 @@ static bool UIButton(char* label) {
 
     Vector2 pos = UIReserveSpace(width, height);
 
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    UIBox* box = MakeUIBox(label, (UISize){.kind = SK_MEASURE_TEXT}, (UISize){.kind = SK_MEASURE_TEXT});
     box->display = label;
     box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? GREEN : GRAY;
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
-static bool UIRadioButton(char* label, bool* state) {
-    Vector2 size = UIMeasureText(label);
-    int width = UIGetWidth(size.x);
-    int height = size.y + State.paddingy;
+// static bool UIRadioButton(char* label, bool* state) {
+//     Vector2 size = UIMeasureText(label);
+//     int width = UIGetWidth(size.x);
+//     int height = size.y + State.paddingy;
 
-    Vector2 pos = UIReserveSpace(width, height);
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-    box->display = label;
-    box->bg_color = *state ? YELLOW : GRAY;
-    return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
-}
+//     Vector2 pos = UIReserveSpace(width, height);
+//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+//     box->display = label;
+//     box->bg_color = *state ? YELLOW : GRAY;
+//     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
+// }
 
-static bool UITextBox(char* label, char* edit) {
-    Vector2 size = UIMeasureText(edit);
-    int width = UIGetWidth(size.x);
-    int height = size.y + State.paddingy;
+// static bool UITextBox(char* label, char* edit) {
+//     Vector2 size = UIMeasureText(edit);
+//     int width = UIGetWidth(size.x);
+//     int height = size.y + State.paddingy;
 
-    Vector2 pos = UIReserveSpace(width, height);
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-    box->display = NULL;
+//     Vector2 pos = UIReserveSpace(width, height);
+//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+//     box->display = NULL;
 
-    bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
+//     bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
 
-    {
-        // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+//     {
+//         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about
+//         this too?
 
-        int edit_len = strlen(edit);
-        for (uint16_t i = 0; i < edit_len; ++i) {
-            arrput(box->display, edit[i]);
-        }
-        if (UIKeyIsActive(box->key)) {
-            // TraceLog(LOG_INFO, "Activeeeee");
-            if (State.show_cursor) {
-                // TraceLog(LOG_INFO, "cursor");
+//         int edit_len = strlen(edit);
+//         for (uint16_t i = 0; i < edit_len; ++i) {
+//             arrput(box->display, edit[i]);
+//         }
+//         if (UIKeyIsActive(box->key)) {
+//             // TraceLog(LOG_INFO, "Activeeeee");
+//             if (State.show_cursor) {
+//                 // TraceLog(LOG_INFO, "cursor");
 
-                arrins(box->display, State.cursor, '|');
-            }
-        }
-        arrput(box->display, '\0');
-    }
-    return res;
-}
+//                 arrins(box->display, State.cursor, '|');
+//             }
+//         }
+//         arrput(box->display, '\0');
+//     }
+//     return res;
+// }
 
-static bool UITextField(char* label, char* edit) {
-    Vector2 size = UIMeasureText(edit);
-    int width = UIGetWidth(size.x);
-    int height = size.y + State.paddingy;
+// static bool UITextField(char* label, char* edit) {
+//     Vector2 size = UIMeasureText(edit);
+//     int width = UIGetWidth(size.x);
+//     int height = size.y + State.paddingy;
 
-    size = UIMeasureText(label);
-    height += size.y + State.paddingy;
+//     size = UIMeasureText(label);
+//     height += size.y + State.paddingy;
 
-    Vector2 pos = UIReserveSpace(width, height);
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-    box->display = edit;
-    return UITextFieldEx(label, edit, box->x, box->y, box->width, box->height);
-}
+//     Vector2 pos = UIReserveSpace(width, height);
+//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+//     box->display = edit;
+//     return UITextFieldEx(label, edit, box->x, box->y, box->width, box->height);
+// }
 
 //////////////////////////////////////////////////////////////////////////////
 // Windows.
@@ -757,8 +891,11 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 }
 
 static bool UIPushWindow(char* label, int* x, int* y, int* width, int* height) {
-    UIBox* parent = MakeUIBox(label, *x, *y, *width, *height);
-    UIPushParent();
+    UIBox* parent =
+        MakeUIBox(label, (UISize){.kind = SK_PIXEL, .value = *width}, (UISize){.kind = SK_PIXEL, .value = *height});
+    parent->position[AXIS_X] = *x;
+    parent->position[AXIS_Y] = *y;
+    UIPushParent(parent->key);
     arrpush(State.parents, *parent);
     Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
     UIReserveSpace(rec.width, rec.height);

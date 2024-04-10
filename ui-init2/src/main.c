@@ -78,9 +78,9 @@ int main(void) {
 
         BeginDrawing();
 
-        DrawFPS(10, 10);
-
         ClearBackground(RAYWHITE);
+
+        DrawFPS(10, 10);
 
         if (enabled) {
             UIFrameStart(delta_time);
@@ -91,38 +91,38 @@ int main(void) {
 
             UIButton("button center");
 
-            UIButton("button center2");
+            // UIButton("button center2");
 
-            UISetSpacing(30);
+            // UISetSpacing(30);
 
-            UIButton("button center 3");
+            // UIButton("button center 3");
 
-            UISetSpacing(0);
-            UIButton("Button Center 4");
+            // UISetSpacing(0);
+            // UIButton("Button Center 4");
 
-            if (UITextBox("Text Box", text_box)) {
-                TraceLog(LOG_INFO, "Text Box Entered");
-            }
+            // if (UITextBox("Text Box", text_box)) {
+            //     TraceLog(LOG_INFO, "Text Box Entered");
+            // }
 
-            if (UITextField("Health", text_box2)) {
-                TraceLog(LOG_INFO, "Health Entered");
-            }
+            // if (UITextField("Health", text_box2)) {
+            //     TraceLog(LOG_INFO, "Health Entered");
+            // }
 
-            UISetFill(FILL_NONE);
-            if (UIRadioButton("Radio Button", &radio_button_1)) {
-                TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
-            }
-            UISetFill(FILL_WIDTH);
+            // UISetFill(FILL_NONE);
+            // if (UIRadioButton("Radio Button", &radio_button_1)) {
+            //     TraceLog(LOG_INFO, "Radio Button is %s", radio_button_1 ? "on" : "off");
+            // }
+            // UISetFill(FILL_WIDTH);
 
             UIPopWindow();
 
-            UISetSpacing1(50);
-            UISetFill(FILL_NONE);
-            UISetPaddingX(40);
-            UISetFontSize(26);
-            UIButton("Start Game");
-            UISetSpacing(20);
-            UIButton("Continue");
+            // UISetSpacing1(50);
+            // UISetFill(FILL_NONE);
+            // UISetPaddingX(40);
+            // UISetFontSize(26);
+            // UIButton("Start Game");
+            // UISetSpacing(20);
+            // UIButton("Continue");
 
             UIFrameEnd();
         }
