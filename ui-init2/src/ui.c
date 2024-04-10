@@ -530,6 +530,54 @@ static void CalculateFixedSizes(UIBox* parent, UIAxis axis) {
     }
 }
 
+static void DrawBoxes(UIBox* parent) {
+    if (parent == NULL) {
+        return;
+    }
+
+    {
+        int x = parent->position[AXIS_X];
+        int y = parent->position[AXIS_Y];
+        int width = parent->size[AXIS_X];
+        int height = parent->size[AXIS_Y];
+        BeginScissorMode(x, y, width, height);
+        DrawRectangle(x, y, width, height, parent->bg_color);
+        DrawRectangleLines(x, y, width, height, BLACK);
+        EndScissorMode();
+
+        // Draw Text.
+        if (parent->display != NULL) {
+            // Alignment.
+            float x_offset = 0.0;
+            // float y_offset = (parent->height - text_size.y) * 0.5;
+            float y_offset = 0;
+            // y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+            // switch (ALIGN_CENTER) {
+            //     case ALIGN_CENTER: {
+            //         x_offset = (parent->width - text_size.x) * 0.5;
+            //         x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+            //         break;
+            //     }
+            //     case ALIGN_LEFT: {
+            //         x_offset = 0.0;
+            //         break;
+            //     }
+            //     default: {
+            //         exit(1);
+            //     }
+            // }
+
+            DrawText(parent->display, x + x_offset, x + y_offset, parent->fontsize, BLACK);
+        }
+    }
+
+    UIBox* child = GetUIBox(parent->hash_child);
+    while (child != NULL) {
+        DrawBoxes(child);
+        child = GetUIBox(child->hash_sibling);
+    }
+}
+
 static void UIFrameEnd() {
     // Drawing.
     {
@@ -555,45 +603,46 @@ static void UIFrameEnd() {
         cur_child->position[AXIS_X] = cur_parent->position[AXIS_X];
         cur_child->position[AXIS_Y] = cur_parent->position[AXIS_Y];
 
-        UIBox* boxes[2] = {cur_parent, cur_child};
-        for (uint32_t i = 0; i < 2; ++i) {
-            {
-                UIBox* cur = boxes[i];
-                int x = cur->position[AXIS_X];
-                int y = cur->position[AXIS_Y];
-                int width = cur->size[AXIS_X];
-                int height = cur->size[AXIS_Y];
-                BeginScissorMode(x, y, width, height);
-                DrawRectangle(x, y, width, height, cur->bg_color);
-                DrawRectangleLines(x, y, width, height, BLACK);
-                EndScissorMode();
+        DrawBoxes(cur_parent);
+        // UIBox* boxes[2] = {cur_parent, cur_child};
+        // for (uint32_t i = 0; i < 2; ++i) {
+        //     {
+        //         UIBox* cur = boxes[i];
+        //         int x = cur->position[AXIS_X];
+        //         int y = cur->position[AXIS_Y];
+        //         int width = cur->size[AXIS_X];
+        //         int height = cur->size[AXIS_Y];
+        //         BeginScissorMode(x, y, width, height);
+        //         DrawRectangle(x, y, width, height, cur->bg_color);
+        //         DrawRectangleLines(x, y, width, height, BLACK);
+        //         EndScissorMode();
 
-                // Draw Text.
-                if (cur->display != NULL) {
-                    // Alignment.
-                    float x_offset = 0.0;
-                    // float y_offset = (cur->height - text_size.y) * 0.5;
-                    float y_offset = 0;
-                    // y_offset = y_offset < 0.0 ? 0.0 : y_offset;
-                    // switch (ALIGN_CENTER) {
-                    //     case ALIGN_CENTER: {
-                    //         x_offset = (cur->width - text_size.x) * 0.5;
-                    //         x_offset = x_offset < 0.0 ? 0.0 : x_offset;
-                    //         break;
-                    //     }
-                    //     case ALIGN_LEFT: {
-                    //         x_offset = 0.0;
-                    //         break;
-                    //     }
-                    //     default: {
-                    //         exit(1);
-                    //     }
-                    // }
+        //         // Draw Text.
+        //         if (cur->display != NULL) {
+        //             // Alignment.
+        //             float x_offset = 0.0;
+        //             // float y_offset = (cur->height - text_size.y) * 0.5;
+        //             float y_offset = 0;
+        //             // y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+        //             // switch (ALIGN_CENTER) {
+        //             //     case ALIGN_CENTER: {
+        //             //         x_offset = (cur->width - text_size.x) * 0.5;
+        //             //         x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+        //             //         break;
+        //             //     }
+        //             //     case ALIGN_LEFT: {
+        //             //         x_offset = 0.0;
+        //             //         break;
+        //             //     }
+        //             //     default: {
+        //             //         exit(1);
+        //             //     }
+        //             // }
 
-                    DrawText(cur->display, x + x_offset, x + y_offset, cur->fontsize, BLACK);
-                }
-            }
-        }
+        //             DrawText(cur->display, x + x_offset, x + y_offset, cur->fontsize, BLACK);
+        //         }
+        //     }
+        // }
 
         // assert(cur_parent != NULL);
         // while (cur_parent != NULL) {
