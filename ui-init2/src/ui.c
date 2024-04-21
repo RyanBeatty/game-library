@@ -70,10 +70,10 @@ typedef struct UIBox {
     UIKey key;
     UIKey neighor_key;
     UIKey child_key;
+    UIKey parent_key;
 
     struct UIBox* neighbor;
     struct UIBox* child;
-    struct UIBox* last_child;
     struct UIBox* parent;
 
     Color bg_color;
@@ -83,6 +83,7 @@ typedef struct UIBox {
 } UIBox;
 
 static void UIBoxAddChild(UIBox* parent, UIBox* child) {
+    child->parent_key = parent->key;
     child->neighor_key = parent->child_key;
     parent->child_key = child->key;
 }
@@ -169,11 +170,11 @@ static UIBox* GetUIBox(UIKey key) {
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
 static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
 static void UIPushParent() {
-    UIBox* root = UIGetParent2();
-    assert(root != NULL);
-    UIBox* new_root = root->last_child;
-    assert(new_root != NULL);
-    State.root = new_root->key;
+    // UIBox* root = UIGetParent2();
+    // assert(root != NULL);
+    // UIBox* new_root = root->last_child;
+    // assert(new_root != NULL);
+    // State.root = new_root->key;
 }
 static void UIPopParent() {
     UIBox* root = UIGetParent2();
