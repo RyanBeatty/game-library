@@ -55,6 +55,9 @@ typedef struct UIBox {
     int cy;
 
     UIKey key;
+    UIKey neighor_key;
+    UIKey child_key;
+
     struct UIBox* neighbor;
     struct UIBox* child;
     struct UIBox* last_child;
@@ -67,14 +70,8 @@ typedef struct UIBox {
 } UIBox;
 
 static void UIBoxAddChild(UIBox* parent, UIBox* child) {
-    if (parent->child == NULL) {
-        parent->child = child;
-        parent->last_child = child;
-    } else {
-        parent->last_child->neighbor = child;
-        parent->last_child = child;
-    }
-    child->parent = parent;
+    child->neighor_key = parent->child_key;
+    parent->child_key = child->key;
 }
 
 typedef struct UIState {
@@ -144,6 +141,17 @@ static Vector2 UIMeasureText(char* text) {
 }
 static Vector2 UIMeasureTextEx(char* text, int fontsize) {
     return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
+}
+static UIBox* GetUIBox(UIKey key) {
+    struct {
+        UIKey key;
+        UIBox value;
+    }* res = hmgetp_null(State.boxes, key);
+    if (res == NULL) {
+        return NULL;
+    }
+
+    return &res->value;
 }
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
 static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
@@ -283,7 +291,12 @@ static void UIFrameStart(float delta_time) {
     // parent here.
     // NOTE: Use special logic to push first parent. Can't use MakeUIBox because it assumes a first parent.
     UIKey window_key = UIKeyFromCStr("window");
-    UIBox box = {.x = 0, .y = 0, .width = GetScreenWidth(), .height = GetScreenHeight(), .key = window_key};
+    UIBox box = {.x = 0,
+                 .y = 0,
+                 .width = GetScreenWidth(),
+                 .height = GetScreenHeight(),
+                 .key = window_key,
+                 .bg_color = (Color){255, 255, 255, 0}};
     hmput(State.boxes, window_key, box);
     arrpush(State.parents, box);
     State.root = window_key;
@@ -446,72 +459,168 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
     return false;
 }
 
+static void DrawUIBox(UIBox* cur) {
+    BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
+    DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
+    DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
+
+    // Draw Text.
+    if (cur->display != NULL) {
+        // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry
+        // about this too?
+        Vector2 text_size = UIMeasureTextEx(cur->display, cur->fontsize);
+
+        // Alignment.
+        float x_offset = 0.0;
+        float y_offset = (cur->height - text_size.y) * 0.5;
+        y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+        switch (ALIGN_CENTER) {
+            case ALIGN_CENTER: {
+                x_offset = (cur->width - text_size.x) * 0.5;
+                x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+                break;
+            }
+            case ALIGN_LEFT: {
+                x_offset = 0.0;
+                break;
+            }
+            default: {
+                exit(1);
+            }
+        }
+
+        DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
+    }
+
+    EndScissorMode();
+}
+
+static void DrawUI(UIBox* parent) {
+    if (parent == NULL) {
+        return;
+    }
+
+    breakpoint();
+    DrawUIBox(parent);
+    for (UIBox* child = GetUIBox(parent->child_key); child != NULL; child = GetUIBox(child->neighor_key)) {
+        child->x = 0;
+        child->y = 0;
+        child->width = 100;
+        child->height = 100;
+
+        DrawUI(child);
+    }
+}
+
 static void UIFrameEnd() {
     // Drawing.
     {
-        UIBox* root = UIGetParent2();
-        while (root->parent != NULL) {
-            // Possibly inefficient, should just follow pointers up?
-            UIPopParent();
-            root = UIGetParent2();
-        }
+        UIBox* root = GetUIBox(State.root);
+        assert(root != NULL);
+        DrawUI(root);
+        // for (UIBox* cur = GetUIBox(root->key); cur != NULL; cur = GetUIBox(cur->neighor_key);) {
+        //     cur->x = 0;
+        //     cur->y = 0;
+        //     cur->width = 100;
+        //     cur->height = 100;
 
-        UIBox* boxes[256];
-        size_t len = 0;
-        if (root->child != NULL) {
-            boxes[len] = root->child;
-            ++len;
-        }
-        UIBox* cur = NULL;
-        for (size_t i = 0; i < len; ++i) {
-            cur = boxes[i];
-            UIBox* neighbor = cur->neighbor;
-            while (neighbor != NULL) {
-                boxes[len] = neighbor;
-                ++len;
-                neighbor = neighbor->neighbor;
-            }
-            {
-                BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
-                DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
-                DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
+        //     BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
+        //     DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
+        //     DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
 
-                // Draw Text.
-                if (cur->display != NULL) {
-                    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about
-                    // this too?
-                    Vector2 text_size = UIMeasureTextEx(cur->display, cur->fontsize);
+        //     // Draw Text.
+        //     if (cur->display != NULL) {
+        //         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry
+        //         // about this too?
+        //         Vector2 text_size = UIMeasureTextEx(cur->display, cur->fontsize);
 
-                    // Alignment.
-                    float x_offset = 0.0;
-                    float y_offset = (cur->height - text_size.y) * 0.5;
-                    y_offset = y_offset < 0.0 ? 0.0 : y_offset;
-                    switch (ALIGN_CENTER) {
-                        case ALIGN_CENTER: {
-                            x_offset = (cur->width - text_size.x) * 0.5;
-                            x_offset = x_offset < 0.0 ? 0.0 : x_offset;
-                            break;
-                        }
-                        case ALIGN_LEFT: {
-                            x_offset = 0.0;
-                            break;
-                        }
-                        default: {
-                            exit(1);
-                        }
-                    }
+        //         // Alignment.
+        //         float x_offset = 0.0;
+        //         float y_offset = (cur->height - text_size.y) * 0.5;
+        //         y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+        //         switch (ALIGN_CENTER) {
+        //             case ALIGN_CENTER: {
+        //                 x_offset = (cur->width - text_size.x) * 0.5;
+        //                 x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+        //                 break;
+        //             }
+        //             case ALIGN_LEFT: {
+        //                 x_offset = 0.0;
+        //                 break;
+        //             }
+        //             default: {
+        //                 exit(1);
+        //             }
+        //         }
 
-                    DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
-                }
+        //         DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
+        //     }
 
-                EndScissorMode();
-            }
+        //     EndScissorMode();
+        // }
+        // UIBox* root = UIGetParent2();
+        // while (root->parent != NULL) {
+        //     // Possibly inefficient, should just follow pointers up?
+        //     UIPopParent();
+        //     root = UIGetParent2();
+        // }
 
-            if (cur->child != NULL) {
-                boxes[len] = cur->child;
-                ++len;
-            }
-        }
+        // UIBox* boxes[256];
+        // size_t len = 0;
+        // if (root->child != NULL) {
+        //     boxes[len] = root->child;
+        //     ++len;
+        // }
+        // UIBox* cur = NULL;
+        // for (size_t i = 0; i < len; ++i) {
+        //     cur = boxes[i];
+        //     UIBox* neighbor = cur->neighbor;
+        //     while (neighbor != NULL) {
+        //         boxes[len] = neighbor;
+        //         ++len;
+        //         neighbor = neighbor->neighbor;
+        //     }
+        //     {
+        //         BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
+        //         DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
+        //         DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
+
+        //         // Draw Text.
+        //         if (cur->display != NULL) {
+        //             // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about
+        //             // this too?
+        //             Vector2 text_size = UIMeasureTextEx(cur->display, cur->fontsize);
+
+        //             // Alignment.
+        //             float x_offset = 0.0;
+        //             float y_offset = (cur->height - text_size.y) * 0.5;
+        //             y_offset = y_offset < 0.0 ? 0.0 : y_offset;
+        //             switch (ALIGN_CENTER) {
+        //                 case ALIGN_CENTER: {
+        //                     x_offset = (cur->width - text_size.x) * 0.5;
+        //                     x_offset = x_offset < 0.0 ? 0.0 : x_offset;
+        //                     break;
+        //                 }
+        //                 case ALIGN_LEFT: {
+        //                     x_offset = 0.0;
+        //                     break;
+        //                 }
+        //                 default: {
+        //                     exit(1);
+        //                 }
+        //             }
+
+        //             DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
+        //         }
+
+        //         EndScissorMode();
+        //     }
+
+        //     if (cur->child != NULL) {
+        //         boxes[len] = cur->child;
+        //         ++len;
+        //     }
+        // }
     }
 
     State.hot = State.hot_to_be;
