@@ -40,6 +40,17 @@ static UIKey UIKeyFromCStr(char* str) {
 // defualt to growing along Y axis because thats more natural default for UIs.
 typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
+typedef enum UISizeKind {
+    SIZE_KIND_PIXEL = 0,
+
+    SIZE_KIND_COUNT
+} UISizeKind;
+
+typedef struct UISize {
+    UISizeKind kind;
+    float value;
+} UISize;
+
 typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignment;
 
 typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
@@ -63,9 +74,11 @@ typedef struct UIBox {
         float size[AXIS_COUNT];
     };
 
+    UISize semantic_size[AXIS_COUNT];
+
     // For reserving space inside parent if has children.
-    int cx;
-    int cy;
+    // int cx;
+    // int cy;
 
     UIKey key;
     UIKey neighor_key;
@@ -250,15 +263,15 @@ static int UIGetWidth(int width) {
 }
 
 static Vector2 UIReserveSpace(int width, int height) {
-    UIBox* parent = UIGetParent();
-    // NOTE: We always try to center a new box to its parent. In cases where
-    // the box needs to fill width, offsetx will end up being 0.
-    int offsetx = (parent->width - width) * 0.5;
+    // UIBox* parent = UIGetParent();
+    // // NOTE: We always try to center a new box to its parent. In cases where
+    // // the box needs to fill width, offsetx will end up being 0.
+    // int offsetx = (parent->width - width) * 0.5;
 
-    parent->cy += State.spacing;
-    float offsety = parent->cy;
-    parent->cy += height;
-    return (Vector2){.x = parent->x + offsetx, .y = parent->y + offsety};
+    // parent->cy += State.spacing;
+    // float offsety = parent->cy;
+    // parent->cy += height;
+    // return (Vector2){.x = parent->x + offsetx, .y = parent->y + offsety};
 }
 
 static UIBox* MakeUIBox(char* label, int x, int y, int width, int height) {
@@ -473,6 +486,26 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
     return false;
 }
 
+static void BuildTree(UIBox* cur) {
+    if (cur == NULL) {
+        return NULL;
+    }
+
+    UIBox* parent = GetUIBox(cur->parent_key);
+    if (parent != NULL) {
+        // TODO: Recursive build tree call on neighbor first.
+        cur->parent = parent;
+        if (parent->child != cur) {
+            cur->neighbor = parent->child;
+            parent->child = cur;
+        }
+    }
+
+    UIBox* child = GetUIBox(cur->child_key);
+    cur->child = child;
+    BuildTree(child);
+}
+
 static void DrawUIBox(UIBox* cur) {
     BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
     DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
@@ -515,7 +548,7 @@ static void DrawUI(UIBox* parent) {
     }
 
     DrawUIBox(parent);
-    for (UIBox* child = GetUIBox(parent->child_key); child != NULL; child = GetUIBox(child->neighor_key)) {
+    for (UIBox* child = parent->child; child != NULL; child = child->neighbor) {
         child->x = 0;
         child->y = 0;
         child->width = 100;
@@ -530,6 +563,7 @@ static void UIFrameEnd() {
     {
         UIBox* root = GetUIBox(State.root);
         assert(root != NULL);
+        BuildTree(root);
         DrawUI(root);
         // for (UIBox* cur = GetUIBox(root->key); cur != NULL; cur = GetUIBox(cur->neighor_key);) {
         //     cur->x = 0;
