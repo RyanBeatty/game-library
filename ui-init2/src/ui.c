@@ -41,7 +41,8 @@ static UIKey UIKeyFromCStr(char* str) {
 typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
 typedef enum UISizeKind {
-    SIZE_KIND_PIXEL = 0,
+    SIZE_KIND_PIXELS = 0,
+    SIZE_KIND_TEXT_CONTENT,
 
     SIZE_KIND_COUNT
 } UISizeKind;
@@ -58,8 +59,8 @@ typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
 typedef struct UIBox {
     union {
         struct {
-            float x;
             float y;
+            float x;
         };
 
         float pos[AXIS_COUNT];
@@ -67,8 +68,8 @@ typedef struct UIBox {
 
     union {
         struct {
-            float width;
             float height;
+            float width;
         };
 
         float size[AXIS_COUNT];
@@ -274,16 +275,18 @@ static Vector2 UIReserveSpace(int width, int height) {
     // return (Vector2){.x = parent->x + offsetx, .y = parent->y + offsety};
 }
 
-static UIBox* MakeUIBox(char* label, int x, int y, int width, int height) {
+static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_height) {
     UIKey key = UIKeyFromCStr(label);
     ptrdiff_t idx = hmgeti(State.boxes, key);
     if (idx == -1) {
-        UIBox box = {.x = x, .y = y, .width = width, .height = height, .key = key, .bg_color = GRAY};
+        UIBox box = {.key = key, .bg_color = GRAY};
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         assert(idx != -1);
     }
     UIBox* box = &State.boxes[idx].value;
+    box->semantic_size[AXIS_X] = semantic_width;
+    box->semantic_size[AXIS_Y] = semantic_height;
     UIBoxAddChild(UIGetParent2(), box);
     box->fontsize = UIGetFontSize();
     return box;
@@ -506,6 +509,52 @@ static void BuildTree(UIBox* cur) {
     BuildTree(child);
 }
 
+static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
+    if (cur == NULL) {
+        return;
+    }
+
+    switch (cur->semantic_size[axis].kind) {
+        case SIZE_KIND_PIXELS: {
+            cur->size[axis] = cur->semantic_size[axis].value;
+            break;
+        }
+        case SIZE_KIND_TEXT_CONTENT: {
+            assert(cur->display != NULL);
+            Vector2 size = UIMeasureTextEx(cur->display, cur->fontsize);
+            float value = size.x;
+            if (axis == AXIS_Y) {
+                value = size.y;
+            }
+            cur->size[axis] = value;
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+
+    for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
+        CalculateFixedSizes(child, axis);
+    }
+}
+
+static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
+    if (cur == NULL) {
+        return;
+    }
+
+    float offset = 0.0f;
+    for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
+        child->pos[axis] = offset;
+        LayoutUIBoxes(child, axis);
+
+        if (axis == AXIS_Y) {
+            offset += child->size[axis];
+        }
+    }
+}
+
 static void DrawUIBox(UIBox* cur) {
     BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
     DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
@@ -551,8 +600,8 @@ static void DrawUI(UIBox* parent) {
     for (UIBox* child = parent->child; child != NULL; child = child->neighbor) {
         child->x = 0;
         child->y = 0;
-        child->width = 100;
-        child->height = 100;
+        // child->width = 100;
+        // child->height = 100;
 
         DrawUI(child);
     }
@@ -564,6 +613,10 @@ static void UIFrameEnd() {
         UIBox* root = GetUIBox(State.root);
         assert(root != NULL);
         BuildTree(root);
+        for (UIAxis axis; axis < AXIS_COUNT; ++axis) {
+            CalculateFixedSizes(root, axis);
+            LayoutUIBoxes(root, axis);
+        }
         DrawUI(root);
         // for (UIBox* cur = GetUIBox(root->key); cur != NULL; cur = GetUIBox(cur->neighor_key);) {
         //     cur->x = 0;
@@ -692,68 +745,68 @@ static bool UIButton(char* label) {
 
     Vector2 pos = UIReserveSpace(width, height);
 
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+    UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, 100.0}, (UISize){SIZE_KIND_TEXT_CONTENT});
     box->display = label;
     box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? GREEN : GRAY;
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
-static bool UIRadioButton(char* label, bool* state) {
-    Vector2 size = UIMeasureText(label);
-    int width = UIGetWidth(size.x);
-    int height = size.y + State.paddingy;
+// static bool UIRadioButton(char* label, bool* state) {
+//     Vector2 size = UIMeasureText(label);
+//     int width = UIGetWidth(size.x);
+//     int height = size.y + State.paddingy;
 
-    Vector2 pos = UIReserveSpace(width, height);
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-    box->display = label;
-    box->bg_color = *state ? YELLOW : GRAY;
-    return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
-}
+//     Vector2 pos = UIReserveSpace(width, height);
+//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+//     box->display = label;
+//     box->bg_color = *state ? YELLOW : GRAY;
+//     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
+// }
 
-static bool UITextBox(char* label, char* edit) {
-    Vector2 size = UIMeasureText(edit);
-    int width = UIGetWidth(size.x);
-    int height = size.y + State.paddingy;
+// static bool UITextBox(char* label, char* edit) {
+//     Vector2 size = UIMeasureText(edit);
+//     int width = UIGetWidth(size.x);
+//     int height = size.y + State.paddingy;
 
-    Vector2 pos = UIReserveSpace(width, height);
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-    box->display = NULL;
+//     Vector2 pos = UIReserveSpace(width, height);
+//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+//     box->display = NULL;
 
-    bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
+//     bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
 
-    {
-        // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+//     {
+//         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
 
-        int edit_len = strlen(edit);
-        for (uint16_t i = 0; i < edit_len; ++i) {
-            arrput(box->display, edit[i]);
-        }
-        if (UIKeyIsActive(box->key)) {
-            // TraceLog(LOG_INFO, "Activeeeee");
-            if (State.show_cursor) {
-                // TraceLog(LOG_INFO, "cursor");
+//         int edit_len = strlen(edit);
+//         for (uint16_t i = 0; i < edit_len; ++i) {
+//             arrput(box->display, edit[i]);
+//         }
+//         if (UIKeyIsActive(box->key)) {
+//             // TraceLog(LOG_INFO, "Activeeeee");
+//             if (State.show_cursor) {
+//                 // TraceLog(LOG_INFO, "cursor");
 
-                arrins(box->display, State.cursor, '|');
-            }
-        }
-        arrput(box->display, '\0');
-    }
-    return res;
-}
+//                 arrins(box->display, State.cursor, '|');
+//             }
+//         }
+//         arrput(box->display, '\0');
+//     }
+//     return res;
+// }
 
-static bool UITextField(char* label, char* edit) {
-    Vector2 size = UIMeasureText(edit);
-    int width = UIGetWidth(size.x);
-    int height = size.y + State.paddingy;
+// static bool UITextField(char* label, char* edit) {
+//     Vector2 size = UIMeasureText(edit);
+//     int width = UIGetWidth(size.x);
+//     int height = size.y + State.paddingy;
 
-    size = UIMeasureText(label);
-    height += size.y + State.paddingy;
+//     size = UIMeasureText(label);
+//     height += size.y + State.paddingy;
 
-    Vector2 pos = UIReserveSpace(width, height);
-    UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-    box->display = edit;
-    return UITextFieldEx(label, edit, box->x, box->y, box->width, box->height);
-}
+//     Vector2 pos = UIReserveSpace(width, height);
+//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
+//     box->display = edit;
+//     return UITextFieldEx(label, edit, box->x, box->y, box->width, box->height);
+// }
 
 //////////////////////////////////////////////////////////////////////////////
 // Windows.
@@ -913,7 +966,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 }
 
 static bool UIPushWindow(char* label, int* x, int* y, int* width, int* height) {
-    UIBox* parent = MakeUIBox(label, *x, *y, *width, *height);
+    UIBox* parent = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, *width}, (UISize){SIZE_KIND_PIXELS, *height});
+    parent->x = *x;
+    parent->y = *y;
     UIPushParent();
     arrpush(State.parents, *parent);
     Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
