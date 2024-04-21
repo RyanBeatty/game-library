@@ -493,9 +493,9 @@ static void BuildTree(UIBox* cur) {
 
     UIBox* parent = GetUIBox(cur->parent_key);
     if (parent != NULL) {
-        // TODO: Recursive build tree call on neighbor first.
         cur->parent = parent;
         if (parent->child != cur) {
+            BuildTree(parent->child);
             cur->neighbor = parent->child;
             parent->child = cur;
         }

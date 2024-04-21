@@ -86,6 +86,7 @@ int main(void) {
             UIFrameStart(delta_time);
 
             UIButton("button 1");
+            UIButton("button 12");
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {
             //     TraceLog(LOG_INFO, "Window active");
