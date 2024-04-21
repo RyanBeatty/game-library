@@ -45,10 +45,23 @@ typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignme
 typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
 
 typedef struct UIBox {
-    int x;
-    int y;
-    int width;
-    int height;
+    union {
+        struct {
+            float x;
+            float y;
+        };
+
+        float pos[AXIS_COUNT];
+    };
+
+    union {
+        struct {
+            float width;
+            float height;
+        };
+
+        float size[AXIS_COUNT];
+    };
 
     // For reserving space inside parent if has children.
     int cx;
@@ -500,7 +513,6 @@ static void DrawUI(UIBox* parent) {
         return;
     }
 
-    breakpoint();
     DrawUIBox(parent);
     for (UIBox* child = GetUIBox(parent->child_key); child != NULL; child = GetUIBox(child->neighor_key)) {
         child->x = 0;
