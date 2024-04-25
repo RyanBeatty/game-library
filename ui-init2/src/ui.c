@@ -497,9 +497,21 @@ static void BuildTree(UIBox* cur) {
     cur->parent = GetUIBox(cur->parent_key);
     cur->neighbor = GetUIBox(cur->neighor_key);
     cur->child = GetUIBox(cur->child_key);
-    for (UIBox* child = child; child != NULL; child = child->neighbor) {
+    for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         BuildTree(child);
     }
+
+    // Reverse linked list to draw elements in correct order.
+    UIBox* prev = NULL;
+    UIBox* it = cur->child;
+    UIBox* next = NULL;
+    while (it != NULL) {
+        next = it->neighbor;
+        it->neighbor = prev;
+        prev = it;
+        it = next;
+    }
+    cur->child = prev;
 }
 
 static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
