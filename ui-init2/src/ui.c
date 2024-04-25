@@ -41,8 +41,10 @@ static UIKey UIKeyFromCStr(char* str) {
 typedef enum UIAxis { AXIS_Y = 0, AXIS_X, AXIS_COUNT } UIAxis;
 
 typedef enum UISizeKind {
-    SIZE_KIND_PIXELS = 0,
+    SIZE_KIND_NULL = 0,
+    SIZE_KIND_PIXELS,
     SIZE_KIND_TEXT_CONTENT,
+    SIZE_KIND_PERCENT_OF_PARENT,
 
     SIZE_KIND_COUNT
 } UISizeKind;
@@ -534,6 +536,10 @@ static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
             cur->size[axis] = value;
             break;
         }
+        case SIZE_KIND_PERCENT_OF_PARENT:
+        case SIZE_KIND_NULL: {
+            break;
+        }
         default: {
             exit(1);
         }
@@ -541,6 +547,31 @@ static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
 
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         CalculateFixedSizes(child, axis);
+    }
+}
+
+static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
+    if (cur == NULL) {
+        return;
+    }
+
+    switch (cur->semantic_size[axis].kind) {
+        case SIZE_KIND_PERCENT_OF_PARENT: {
+            assert(cur->parent != NULL);
+            cur->size[axis] = cur->parent->size[axis] * cur->semantic_size[axis].value;
+            break;
+        }
+        case SIZE_KIND_PIXELS:
+        case SIZE_KIND_TEXT_CONTENT:
+        case SIZE_KIND_NULL: {
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+    for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
+        CalculateUpwardSizes(child, axis);
     }
 }
 
@@ -603,12 +634,6 @@ static void DrawUI(UIBox* parent) {
 
     DrawUIBox(parent);
     for (UIBox* child = parent->child; child != NULL; child = child->neighbor) {
-        // child->x = 0;
-        // child->y = 0;
-        // child->width = 100;
-        // child->height = 100;
-        breakpoint();
-
         DrawUI(child);
     }
 }
@@ -621,6 +646,7 @@ static void UIFrameEnd() {
         BuildTree(root);
         for (UIAxis axis; axis < AXIS_COUNT; ++axis) {
             CalculateFixedSizes(root, axis);
+            CalculateUpwardSizes(root, axis);
             LayoutUIBoxes(root, axis);
         }
         DrawUI(root);
@@ -751,7 +777,7 @@ static bool UIButton(char* label) {
 
     Vector2 pos = UIReserveSpace(width, height);
 
-    UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, 100.0}, (UISize){SIZE_KIND_TEXT_CONTENT});
+    UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PERCENT_OF_PARENT, 1.0}, (UISize){SIZE_KIND_TEXT_CONTENT});
     box->display = label;
     box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? GREEN : GRAY;
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
