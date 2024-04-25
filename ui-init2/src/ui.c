@@ -494,19 +494,12 @@ static void BuildTree(UIBox* cur) {
         return NULL;
     }
 
-    UIBox* parent = GetUIBox(cur->parent_key);
-    if (parent != NULL) {
-        cur->parent = parent;
-        if (parent->child != cur) {
-            BuildTree(parent->child);
-            cur->neighbor = parent->child;
-            parent->child = cur;
-        }
+    cur->parent = GetUIBox(cur->parent_key);
+    cur->neighbor = GetUIBox(cur->neighor_key);
+    cur->child = GetUIBox(cur->child_key);
+    for (UIBox* child = child; child != NULL; child = child->neighbor) {
+        BuildTree(child);
     }
-
-    UIBox* child = GetUIBox(cur->child_key);
-    cur->child = child;
-    BuildTree(child);
 }
 
 static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
@@ -598,10 +591,11 @@ static void DrawUI(UIBox* parent) {
 
     DrawUIBox(parent);
     for (UIBox* child = parent->child; child != NULL; child = child->neighbor) {
-        child->x = 0;
-        child->y = 0;
+        // child->x = 0;
+        // child->y = 0;
         // child->width = 100;
         // child->height = 100;
+        breakpoint();
 
         DrawUI(child);
     }
