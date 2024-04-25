@@ -202,42 +202,8 @@ static Rectangle UIGetClipRec() {
     UIBox* parent = UIGetParent();
     return (Rectangle){.x = parent->x, .y = parent->y, .width = parent->width, .height = parent->height};
 }
-static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) {
-    return;
-    // Rectangle rec = UIGetClipRec();
-    // BeginScissorMode(rec.x, rec.y, rec.width, rec.height);
-    // DrawRectangle(x, y, width, height, bg_color);
-    // DrawRectangleLines(x, y, width, height, BLACK);
-    // EndScissorMode();
-}
-static void UIDrawText(UIBox parent, UIAlignment alignment, char* text) {
-    return;
-    // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-    Vector2 text_size = UIMeasureText(text);
-
-    // Alignment.
-    float x_offset = 0.0;
-    float y_offset = (parent.height - text_size.y) * 0.5;
-    y_offset = y_offset < 0.0 ? 0.0 : y_offset;
-    switch (alignment) {
-        case ALIGN_CENTER: {
-            x_offset = (parent.width - text_size.x) * 0.5;
-            x_offset = x_offset < 0.0 ? 0.0 : x_offset;
-            break;
-        }
-        case ALIGN_LEFT: {
-            x_offset = 0.0;
-            break;
-        }
-        default: {
-            exit(1);
-        }
-    }
-
-    BeginScissorMode(parent.x, parent.y, parent.width, parent.height);
-    DrawText(text, parent.x + x_offset, parent.y + y_offset, UIGetFontSize(), BLACK);
-    EndScissorMode();
-}
+static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) { return; }
+static void UIDrawText(UIBox parent, UIAlignment alignment, char* text) { return; }
 static void UISetSpacing(int spacing) {
     State.spacing = spacing;
     State.spacing_to_be = spacing;
@@ -317,8 +283,6 @@ static void UIFrameStart(float delta_time) {
         State.cursor_cooldown = 0.0f;
     }
 
-    State.boxes = NULL;
-
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
     // NOTE: Use special logic to push first parent. Can't use MakeUIBox because it assumes a first parent.
@@ -346,14 +310,11 @@ static void UIFrameStart(float delta_time) {
 }
 
 static bool UIButtonEx(char* label, int x, int y, int width, int height) {
+    TraceLog(LOG_DEBUG, "label %s %d %d %d %d", label, x, y, width, height);
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
     }
-
-    UIDrawRectangle(x, y, width, height, UIKeyIsHot(key) && !UIKeyIsActive(key) ? GREEN : GRAY);
-    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    UIDrawText(parent, ALIGN_CENTER, label);
 
     if (UIKeyIsActive(key)) {
         TraceLog(LOG_DEBUG, "label %s is Active", label);
@@ -759,8 +720,6 @@ static void UIFrameEnd() {
     State.spacing = State.spacing_to_be;
     arrfree(State.parents);
     State.parents = NULL;
-    hmfree(State.boxes);
-    State.boxes = NULL;
 }
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
