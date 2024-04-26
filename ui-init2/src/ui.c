@@ -84,7 +84,7 @@ typedef struct UIBox {
     // int cy;
 
     UIKey key;
-    UIKey neighor_key;
+    UIKey neighbor_key;
     UIKey child_key;
     UIKey parent_key;
 
@@ -100,7 +100,7 @@ typedef struct UIBox {
 
 static void UIBoxAddChild(UIBox* parent, UIBox* child) {
     child->parent_key = parent->key;
-    child->neighor_key = parent->child_key;
+    child->neighbor_key = parent->child_key;
     parent->child_key = child->key;
 }
 
@@ -459,7 +459,7 @@ static void BuildTree(UIBox* cur) {
     }
 
     cur->parent = GetUIBox(cur->parent_key);
-    cur->neighbor = GetUIBox(cur->neighor_key);
+    cur->neighbor = GetUIBox(cur->neighbor_key);
     cur->child = GetUIBox(cur->child_key);
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         BuildTree(child);
@@ -510,6 +510,7 @@ static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         CalculateFixedSizes(child, axis);
     }
+    CalculateFixedSizes(cur->neighbor, axis);
 }
 
 static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
@@ -535,6 +536,7 @@ static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         CalculateUpwardSizes(child, axis);
     }
+    CalculateUpwardSizes(cur->neighbor, axis);
 }
 
 static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
@@ -551,6 +553,7 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
             offset += child->size[axis];
         }
     }
+    LayoutUIBoxes(cur->neighbor, axis);
 }
 
 static void DrawUIBox(UIBox* cur) {
@@ -598,6 +601,7 @@ static void DrawUI(UIBox* parent) {
     for (UIBox* child = parent->child; child != NULL; child = child->neighbor) {
         DrawUI(child);
     }
+    DrawUI(parent->neighbor);
 }
 
 static void UIFrameEnd() {
@@ -612,7 +616,7 @@ static void UIFrameEnd() {
             LayoutUIBoxes(root, axis);
         }
         DrawUI(root);
-        // for (UIBox* cur = GetUIBox(root->key); cur != NULL; cur = GetUIBox(cur->neighor_key);) {
+        // for (UIBox* cur = GetUIBox(root->key); cur != NULL; cur = GetUIBox(cur->neighbor_key);) {
         //     cur->x = 0;
         //     cur->y = 0;
         //     cur->width = 100;
@@ -958,12 +962,28 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 }
 
 static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
-    UIBox* parent = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, *width}, (UISize){SIZE_KIND_PIXELS, *height});
-    parent->x = *x;
-    parent->y = *y;
-    UIRootPush();
+    UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, *width}, (UISize){SIZE_KIND_PIXELS, *height});
+    box->x = *x;
+    box->y = *y;
+
+    UIBox* parent = GetUIBox(box->parent_key);
+    assert(parent != NULL);
+    parent->child_key = box->neighbor_key;
+    box->neighbor_key = parent->neighbor_key;
+    parent->neighbor_key = box->key;
+    box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
+    State.root = box->key;
+
     Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
     return UIWindowEx(label, x, y, width, height);
 }
 
-static void UIWindowPop() { UIRootPop(); }
+static void UIWindowPop() {
+    UIBox* root = GetUIBox(State.root);
+    assert(root != NULL);
+    State.root = root->neighbor_key;
+    UIBox* parent = GetUIBox(root->parent_key);
+    assert(parent != NULL);
+    root->parent_key = parent->parent_key;
+    State.root = parent->key;
+}

@@ -90,6 +90,8 @@ int main(void) {
 
             UIWindowPush("w1", &wx, &wy, &ww, &wh);
 
+            UIButton("button 3");
+
             UIWindowPop();
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {
