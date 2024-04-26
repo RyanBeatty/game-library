@@ -476,6 +476,8 @@ static void BuildTree(UIBox* cur) {
         it = next;
     }
     cur->child = prev;
+
+    BuildTree(cur->neighbor);
 }
 
 static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
@@ -546,7 +548,7 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
 
     float offset = 0.0f;
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
-        child->pos[axis] = offset;
+        child->pos[axis] = cur->pos[axis] + offset;
         LayoutUIBoxes(child, axis);
 
         if (axis == AXIS_Y) {
@@ -981,7 +983,6 @@ static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
 static void UIWindowPop() {
     UIBox* root = GetUIBox(State.root);
     assert(root != NULL);
-    State.root = root->neighbor_key;
     UIBox* parent = GetUIBox(root->parent_key);
     assert(parent != NULL);
     root->parent_key = parent->parent_key;
