@@ -79,10 +79,6 @@ typedef struct UIBox {
 
     UISize semantic_size[AXIS_COUNT];
 
-    // For reserving space inside parent if has children.
-    // int cx;
-    // int cy;
-
     UIKey key;
     UIKey neighbor_key;
     UIKey child_key;
@@ -129,9 +125,6 @@ typedef struct UIState {
     UIKey root;
     int spacing;
     int spacing_to_be;
-
-    // TODO: Do something with this.
-    UIAxis axis;
 
     int paddingx;  // Padding around button text and stuff.
     int paddingy;
@@ -265,7 +258,6 @@ static void UIFrameStart(float delta_time) {
     State.root = window_key;
 
     State.spacing = 0;
-    State.axis = AXIS_Y;
     State.paddingx = 10;
     State.paddingy = 5;
     State.fill = 0;
