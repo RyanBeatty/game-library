@@ -85,8 +85,12 @@ int main(void) {
         if (enabled) {
             UIFrameStart(delta_time);
 
+            // UIWindowPush("w1", &wx, &wy, &ww, &wh);
+
             UIButton("button 1");
             UIButton("button 12");
+
+            // UIWindowPop();
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {
             //     TraceLog(LOG_INFO, "Window active");

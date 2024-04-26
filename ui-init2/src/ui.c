@@ -185,18 +185,19 @@ static UIBox* GetUIBox(UIKey key) {
 }
 static UIBox* UIGetParent() { return &State.parents[arrlenu(State.parents) - 1]; }
 static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
-static void UIPushParent() {
-    // UIBox* root = UIGetParent2();
-    // assert(root != NULL);
-    // UIBox* new_root = root->last_child;
-    // assert(new_root != NULL);
-    // State.root = new_root->key;
+static void UIRootPush() {
+    UIBox* root = GetUIBox(State.root);
+    assert(root != NULL);
+    UIBox* child = GetUIBox(root->child_key);
+    assert(child != NULL);
+    State.root = child->key;
 }
-static void UIPopParent() {
+static void UIRootPop() {
     UIBox* root = UIGetParent2();
     assert(root != NULL);
-    assert(root->parent != NULL);
-    State.root = root->parent->key;
+    UIBox* parent = GetUIBox(root->parent_key);
+    assert(parent != NULL);
+    State.root = parent->key;
 }
 static Rectangle UIGetClipRec() {
     UIBox* parent = UIGetParent();
@@ -654,7 +655,7 @@ static void UIFrameEnd() {
         // UIBox* root = UIGetParent2();
         // while (root->parent != NULL) {
         //     // Possibly inefficient, should just follow pointers up?
-        //     UIPopParent();
+        //     UIRootPop();
         //     root = UIGetParent2();
         // }
 
@@ -956,19 +957,13 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
     return false;
 }
 
-static bool UIPushWindow(char* label, int* x, int* y, int* width, int* height) {
+static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
     UIBox* parent = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, *width}, (UISize){SIZE_KIND_PIXELS, *height});
     parent->x = *x;
     parent->y = *y;
-    UIPushParent();
-    arrpush(State.parents, *parent);
+    UIRootPush();
     Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
-    UIReserveSpace(rec.width, rec.height);
     return UIWindowEx(label, x, y, width, height);
 }
 
-static void UIPopWindow() {
-    assert(arrlenu(State.parents) != 0);
-    (void)arrpop(State.parents);
-    UIPopParent();
-}
+static void UIWindowPop() { UIRootPop(); }
