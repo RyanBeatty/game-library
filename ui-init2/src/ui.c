@@ -606,7 +606,7 @@ static void UIFrameEnd() {
         UIBox* root = GetUIBox(State.root);
         assert(root != NULL);
         BuildTree(root);
-        for (UIAxis axis; axis < AXIS_COUNT; ++axis) {
+        for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
             CalculateFixedSizes(root, axis);
             CalculateUpwardSizes(root, axis);
             LayoutUIBoxes(root, axis);
