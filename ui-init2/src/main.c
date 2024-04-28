@@ -89,8 +89,10 @@ int main(void) {
             UIButton("button 12");
 
             // UIWindowPush("w1", &wx, &wy, &ww, &wh);
-
+            UIRowBegin("row1");
             UIButton("button 3");
+            UIButton("buttonnnnnnn");
+            UIRowEnd();
 
             // UIWindowPop();
 

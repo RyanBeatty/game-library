@@ -54,6 +54,9 @@ typedef struct UISize {
     float value;
 } UISize;
 
+#define UISizePixel(px) ((UISize){.kind = SIZE_KIND_PIXELS, .value = (px)})
+#define UISizePct(pct) ((UISize){.kind = SIZE_KIND_PERCENT_OF_PARENT, .value = (pct)})
+
 typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignment;
 
 typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
@@ -136,7 +139,7 @@ typedef struct UIState {
 UIState State = {0};
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
-static void UIPopLayoutAxis(UIAxis axis) {
+static void UIPopLayoutAxis() {
     assert(arrlenu(State.layout_axis_stack) != 0);
     arrpop(State.layout_axis_stack);
 }
@@ -183,7 +186,14 @@ static UIBox* GetUIBox(UIKey key) {
 
     return &res->value;
 }
-static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
+static UIBox* UIGetParent() { return &hmgetp(State.boxes, State.root)->value; }
+static void UIPushParent(UIBox* box) { State.root = box->key; }
+static void UIPopParent() {
+    UIBox* root = UIGetParent();
+    assert(root != NULL);
+    State.root = root->parent_key;
+}
+
 static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) { return; }
 static void UIDrawText(UIBox parent, UIAlignment alignment, char* text) { return; }
 
@@ -202,7 +212,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     // Reset per frame tree links
     box->child = box->neighbor = box->parent = NULL;
 
-    UIBox* parent = UIGetParent2();
+    UIBox* parent = UIGetParent();
     if (first_frame && parent != NULL) {
         UIBoxAddChild(parent, box);
     }
@@ -825,3 +835,12 @@ static void UIWindowPop() {
     // root->parent_key = parent->parent_key;
     State.root = parent->key;
 }
+
+static void UIRowBegin(char* label) {
+    UIPushLayoutAxis(AXIS_X);
+    UIBox* box = MakeUIBox(label, UISizePixel(100), UISizePixel(200));
+    UIPopLayoutAxis();
+    UIPushParent(box);
+}
+
+static void UIRowEnd() { UIPopParent(); }
