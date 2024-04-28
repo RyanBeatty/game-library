@@ -53,11 +53,12 @@ typedef enum UISizeKind {
 typedef struct UISize {
     UISizeKind kind;
     float value;
+    float strictness;  // [0.0, 1.0]
 } UISize;
 
-#define UISizePx(px) ((UISize){.kind = SIZE_KIND_PIXELS, .value = (px)})
-#define UISizePct(pct) ((UISize){.kind = SIZE_KIND_PERCENT_OF_PARENT, .value = (pct)})
-#define UISizeSum() ((UISize){.kind = SIZE_KIND_SUM_OF_CHILDREN})
+#define UISizePx(px, strct) ((UISize){.kind = SIZE_KIND_PIXELS, .value = (px), .strictness = (strct)})
+#define UISizePct(pct, strct) ((UISize){.kind = SIZE_KIND_PERCENT_OF_PARENT, .value = (pct), .strictness = (strct)})
+#define UISizeSum() ((UISize){.kind = SIZE_KIND_SUM_OF_CHILDREN, .strictness = 0.0f})
 
 typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignment;
 
@@ -665,7 +666,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 }
 
 static bool UIButton(char* label) {
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f), (UISize){SIZE_KIND_TEXT_CONTENT});
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), (UISize){SIZE_KIND_TEXT_CONTENT});
     box->display = label;
     box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? UIGetActiveColor() : UIGetBgColor();
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
@@ -912,7 +913,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 
 static void UIRowBegin(char* label) {
     UIPushLayoutAxis(AXIS_X);
-    UIBox* box = MakeUIBox(label, UISizePx(100), UISizeSum());
+    UIBox* box = MakeUIBox(label, UISizePx(100, 0.0f), UISizeSum());
     UIPopLayoutAxis();
     UIPushParent(box);
 }
