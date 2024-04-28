@@ -123,6 +123,7 @@ typedef struct UIState {
         UIBox value;
     }* boxes;  // stb hash map.
     UIKey root;
+    UIKey orig_root;
     int spacing;
     int spacing_to_be;
 
@@ -219,11 +220,9 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     // Reset per frame tree links
     box->child = box->neighbor = box->parent = NULL;
 
-    if (first_frame) {
-        UIBox* parent = UIGetParent2();
-        if (parent != NULL) {
-            UIBoxAddChild(parent, box);
-        }
+    UIBox* parent = UIGetParent2();
+    if (first_frame && parent != NULL) {
+        UIBoxAddChild(parent, box);
     }
 
     box->semantic_size[AXIS_X] = semantic_width;
@@ -261,6 +260,7 @@ static void UIFrameStart(float delta_time) {
                            (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
     box->bg_color = (Color){255, 255, 255, 0};
     State.root = box->key;
+    State.orig_root = box->key;
 
     State.spacing = 0;
     State.paddingx = 10;
@@ -573,6 +573,7 @@ static void DrawUI(UIBox* parent) {
 static void UIFrameEnd() {
     // Drawing.
     {
+        assert(State.orig_root == State.root);
         UIBox* root = GetUIBox(State.root);
         assert(root != NULL);
         BuildTree(root);
