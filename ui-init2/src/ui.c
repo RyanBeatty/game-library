@@ -124,13 +124,6 @@ typedef struct UIState {
     }* boxes;  // stb hash map.
     UIKey root;
     UIKey orig_root;
-    int spacing;
-    int spacing_to_be;
-
-    int paddingx;  // Padding around button text and stuff.
-    int paddingy;
-
-    UIFill fill;  // Horizontal fill.
 
     UIKey hot;
     UIKey hot_to_be;
@@ -177,33 +170,8 @@ static UIBox* GetUIBox(UIKey key) {
     return &res->value;
 }
 static UIBox* UIGetParent2() { return &hmgetp(State.boxes, State.root)->value; }
-static void UIRootPush() {
-    UIBox* root = GetUIBox(State.root);
-    assert(root != NULL);
-    UIBox* child = GetUIBox(root->child_key);
-    assert(child != NULL);
-    State.root = child->key;
-}
-static void UIRootPop() {
-    UIBox* root = UIGetParent2();
-    assert(root != NULL);
-    UIBox* parent = GetUIBox(root->parent_key);
-    assert(parent != NULL);
-    State.root = parent->key;
-}
 static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) { return; }
 static void UIDrawText(UIBox parent, UIAlignment alignment, char* text) { return; }
-static void UISetSpacing(int spacing) {
-    State.spacing = spacing;
-    State.spacing_to_be = spacing;
-}
-static void UISetSpacing1(int spacing) {
-    // Note: Will get overwritten by spacing_to_be at end of frame.
-    State.spacing = spacing;
-}
-static void UISetPaddingX(int padding) { State.paddingx = padding; }
-static void UISetFill(UIFill fill) { State.fill = fill; }
-static void UISetFontSize(int font_size) { State.font_size = font_size; }
 
 static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_height) {
     UIKey key = UIKeyFromCStr(label);
@@ -261,11 +229,6 @@ static void UIFrameStart(float delta_time) {
     box->bg_color = (Color){255, 255, 255, 0};
     State.root = box->key;
     State.orig_root = box->key;
-
-    State.spacing = 0;
-    State.paddingx = 10;
-    State.paddingy = 5;
-    State.fill = 0;
 
     State.hot_to_be = 0;
     if (State.hot == 0) {
@@ -418,7 +381,7 @@ static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int he
 
 static void BuildTree(UIBox* cur) {
     if (cur == NULL) {
-        return NULL;
+        return;
     }
 
     cur->parent = GetUIBox(cur->parent_key);
@@ -586,7 +549,6 @@ static void UIFrameEnd() {
     }
 
     State.hot = State.hot_to_be;
-    State.spacing = State.spacing_to_be;
 }
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
@@ -830,7 +792,6 @@ static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
     // box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
     State.root = box->key;
 
-    Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
     return UIWindowEx(label, x, y, width, height);
 }
 
