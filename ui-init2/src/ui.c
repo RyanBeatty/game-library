@@ -90,6 +90,7 @@ typedef struct UIBox {
 
     Color bg_color;
     int fontsize;
+    UIAxis layout_axis;
 
     char* display;
 } UIBox;
@@ -125,12 +126,25 @@ typedef struct UIState {
     UIKey root;
     UIKey orig_root;
 
+    UIAxis* layout_axis_stack;
+
     UIKey hot;
     UIKey hot_to_be;
     UIKey active;
 } UIState;
 
 UIState State = {0};
+
+static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
+static void UIPopLayoutAxis(UIAxis axis) {
+    assert(arrlenu(State.layout_axis_stack) != 0);
+    arrpop(State.layout_axis_stack);
+}
+static UIAxis UIGetLayoutAxis() {
+    size_t len = arrlenu(State.layout_axis_stack);
+    assert(len != 0);
+    return State.layout_axis_stack[len - 1];
+}
 
 static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
@@ -196,6 +210,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     box->semantic_size[AXIS_X] = semantic_width;
     box->semantic_size[AXIS_Y] = semantic_height;
     box->fontsize = UIGetFontSize();
+    box->layout_axis = UIGetLayoutAxis();
     return box;
 }
 
@@ -212,6 +227,9 @@ static void UIFrameStart(float delta_time) {
     State.left_up = IsMouseButtonUp(MOUSE_BUTTON_LEFT);
     assert(!State.left_down || !State.left_up);
 
+    // Init stacks
+    { State.layout_axis_stack = NULL; }
+
     State.font_size = 16;
     State.font = GetFontDefault();
     assert(State.font.texture.id != 0);
@@ -224,6 +242,7 @@ static void UIFrameStart(float delta_time) {
 
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
+    UIPushLayoutAxis(AXIS_Y);
     UIBox* box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
                            (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
     box->bg_color = (Color){255, 255, 255, 0};
@@ -477,7 +496,7 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
         child->pos[axis] = cur->pos[axis] + offset;
         LayoutUIBoxes(child, axis);
 
-        if (axis == AXIS_Y) {
+        if (axis == cur->layout_axis) {
             offset += child->size[axis];
         }
     }
@@ -549,6 +568,9 @@ static void UIFrameEnd() {
     }
 
     State.hot = State.hot_to_be;
+
+    // Deinit stacks.
+    { arrfree(State.layout_axis_stack); }
 }
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
