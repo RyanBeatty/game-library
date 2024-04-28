@@ -93,7 +93,10 @@ int main(void) {
             UIPushBgColor(RED);
             UIButton("button 3");
             UIPopBgColor();
+
+            UIPushActiveColor(BLUE);
             UIButton("buttonnnnnnn");
+            UIPopActiveColor();
 
             UIRowEnd();
 
