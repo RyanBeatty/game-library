@@ -90,6 +90,8 @@ typedef struct UIBox {
     UIKey child_key;
     UIKey parent_key;
 
+    uint32_t num_children;
+
     struct UIBox* neighbor;
     struct UIBox* child;
     struct UIBox* parent;
@@ -105,6 +107,7 @@ static void UIBoxAddChild(UIBox* parent, UIBox* child) {
     child->parent_key = parent->key;
     child->neighbor_key = parent->child_key;
     parent->child_key = child->key;
+    ++parent->num_children;
 }
 
 typedef struct UIState {
@@ -229,7 +232,8 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     ptrdiff_t idx = hmgeti(State.boxes, key);
     bool first_frame = idx == -1;
     if (first_frame) {
-        UIBox box = {.key = key};
+        UIBox box = {0};
+        box.key = key;
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         assert(idx != -1);
@@ -469,7 +473,7 @@ static void BuildTree(UIBox* cur) {
     }
     cur->child = prev;
 
-    BuildTree(cur->neighbor);
+    // BuildTree(cur->neighbor);
 }
 
 static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
@@ -505,7 +509,7 @@ static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         CalculateFixedSizes(child, axis);
     }
-    CalculateFixedSizes(cur->neighbor, axis);
+    // CalculateFixedSizes(cur->neighbor, axis);
 }
 
 static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
@@ -532,7 +536,7 @@ static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         CalculateUpwardSizes(child, axis);
     }
-    CalculateUpwardSizes(cur->neighbor, axis);
+    // CalculateUpwardSizes(cur->neighbor, axis);
 }
 
 static void CalculateDownwardSizes(UIBox* cur, UIAxis axis) {
@@ -563,7 +567,34 @@ static void CalculateDownwardSizes(UIBox* cur, UIAxis axis) {
         }
     }
 
-    CalculateDownwardSizes(cur->neighbor, axis);
+    // CalculateDownwardSizes(cur->neighbor, axis);
+}
+
+static void SolveConstraints(UIBox* cur, UIAxis axis) {
+    if (cur == NULL || cur->num_children == 0.0f) {
+        return;
+    }
+
+    float children_sum_size = 0.0f;
+    float children_max_size = 0.0f;
+    for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
+        SolveConstraints(child, axis);
+        children_sum_size += child->size[axis];
+        children_max_size = fmaxf(child->size[axis], children_max_size);
+    }
+
+    float size = axis == cur->layout_axis ? children_sum_size : children_max_size;
+    float remaining = fabs(size - cur->size[axis]);
+    if (size > cur->size[axis]) {
+        breakpoint();
+        float remaining = size - cur->size[axis];
+        float negative_size = remaining / cur->num_children;
+        for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
+            child->size[axis] -= negative_size;
+        }
+    }
+
+    // SolveConstraints(cur->neighbor, axis);
 }
 
 static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
@@ -580,7 +611,7 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
             offset += child->size[axis];
         }
     }
-    LayoutUIBoxes(cur->neighbor, axis);
+    // LayoutUIBoxes(cur->neighbor, axis);
 }
 
 static void DrawUIBox(UIBox* cur) {
@@ -643,6 +674,7 @@ static void UIFrameEnd() {
             CalculateFixedSizes(root, axis);
             CalculateUpwardSizes(root, axis);
             CalculateDownwardSizes(root, axis);
+            SolveConstraints(root, axis);
             LayoutUIBoxes(root, axis);
         }
         DrawUI(root);
@@ -913,7 +945,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 
 static void UIRowBegin(char* label) {
     UIPushLayoutAxis(AXIS_X);
-    UIBox* box = MakeUIBox(label, UISizePx(100, 0.0f), UISizeSum());
+    UIBox* box = MakeUIBox(label, UISizePx(300, 0.0f), UISizeSum());
     UIPopLayoutAxis();
     UIPushParent(box);
 }
