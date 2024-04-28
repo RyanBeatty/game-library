@@ -535,7 +535,7 @@ static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
     CalculateUpwardSizes(cur->neighbor, axis);
 }
 
-static void CalculateDownardSizes(UIBox* cur, UIAxis axis) {
+static void CalculateDownwardSizes(UIBox* cur, UIAxis axis) {
     if (cur == NULL) {
         return;
     }
@@ -543,7 +543,7 @@ static void CalculateDownardSizes(UIBox* cur, UIAxis axis) {
     float children_sum_size = 0.0f;
     float children_max_size = 0.0f;
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
-        CalculateDownardSizes(child, axis);
+        CalculateDownwardSizes(child, axis);
         children_sum_size += child->size[axis];
         children_max_size = fmax(children_max_size, child->size[axis]);
     }
@@ -563,7 +563,7 @@ static void CalculateDownardSizes(UIBox* cur, UIAxis axis) {
         }
     }
 
-    CalculateDownardSizes(cur->neighbor, axis);
+    CalculateDownwardSizes(cur->neighbor, axis);
 }
 
 static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
@@ -642,7 +642,7 @@ static void UIFrameEnd() {
         for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
             CalculateFixedSizes(root, axis);
             CalculateUpwardSizes(root, axis);
-            CalculateDownardSizes(root, axis);
+            CalculateDownwardSizes(root, axis);
             LayoutUIBoxes(root, axis);
         }
         DrawUI(root);
