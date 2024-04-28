@@ -472,8 +472,6 @@ static void BuildTree(UIBox* cur) {
         it = next;
     }
     cur->child = prev;
-
-    // BuildTree(cur->neighbor);
 }
 
 static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
@@ -509,7 +507,6 @@ static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         CalculateFixedSizes(child, axis);
     }
-    // CalculateFixedSizes(cur->neighbor, axis);
 }
 
 static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
@@ -536,7 +533,6 @@ static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         CalculateUpwardSizes(child, axis);
     }
-    // CalculateUpwardSizes(cur->neighbor, axis);
 }
 
 static void CalculateDownwardSizes(UIBox* cur, UIAxis axis) {
@@ -566,8 +562,6 @@ static void CalculateDownwardSizes(UIBox* cur, UIAxis axis) {
             exit(1);
         }
     }
-
-    // CalculateDownwardSizes(cur->neighbor, axis);
 }
 
 static void SolveConstraints(UIBox* cur, UIAxis axis) {
@@ -586,15 +580,12 @@ static void SolveConstraints(UIBox* cur, UIAxis axis) {
     float size = axis == cur->layout_axis ? children_sum_size : children_max_size;
     float remaining = fabs(size - cur->size[axis]);
     if (size > cur->size[axis]) {
-        breakpoint();
         float remaining = size - cur->size[axis];
         float negative_size = remaining / cur->num_children;
         for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
             child->size[axis] -= negative_size;
         }
     }
-
-    // SolveConstraints(cur->neighbor, axis);
 }
 
 static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
@@ -611,11 +602,9 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
             offset += child->size[axis];
         }
     }
-    // LayoutUIBoxes(cur->neighbor, axis);
 }
 
 static void DrawUIBox(UIBox* cur) {
-    breakpoint();
     BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
     DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
     DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
