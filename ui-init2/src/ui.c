@@ -934,7 +934,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 
 static void UIRowBegin(char* label) {
     UIPushLayoutAxis(AXIS_X);
-    UIBox* box = MakeUIBox(label, UISizePx(300, 0.0f), UISizeSum());
+    UIBox* box = MakeUIBox(label, UISizePct(1.0, 0.0), UISizeSum());
     UIPopLayoutAxis();
     UIPushParent(box);
 }
