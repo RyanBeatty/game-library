@@ -131,6 +131,7 @@ typedef struct UIState {
 
     UIAxis* layout_axis_stack;
     Color* bg_color_stack;
+    Color* active_color_stack;
 
     UIKey hot;
     UIKey hot_to_be;
@@ -159,6 +160,17 @@ static Color UIGetBgColor() {
     size_t len = arrlenu(State.bg_color_stack);
     assert(len != 0);
     return State.bg_color_stack[len - 1];
+}
+static void UIPushActiveColor(Color color) { arrput(State.active_color_stack, color); }
+static void UIPopActiveColor() {
+    size_t len = arrlenu(State.active_color_stack);
+    assert(len != 0);
+    arrpop(State.active_color_stack);
+}
+static Color UIGetActiveColor() {
+    size_t len = arrlenu(State.active_color_stack);
+    assert(len != 0);
+    return State.active_color_stack[len - 1];
 }
 
 static bool InRect(int x, int y, int width, int height) {
@@ -257,6 +269,9 @@ static void UIFrameStart(float delta_time) {
 
         State.bg_color_stack = NULL;
         UIPushBgColor(GRAY);
+
+        State.active_color_stack = NULL;
+        UIPushActiveColor(GREEN);
     }
 
     State.font_size = 16;
@@ -602,6 +617,7 @@ static void UIFrameEnd() {
     {
         arrfree(State.layout_axis_stack);
         arrfree(State.bg_color_stack);
+        arrfree(State.active_color_stack);
     }
 }
 
@@ -615,7 +631,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 static bool UIButton(char* label) {
     UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PERCENT_OF_PARENT, 1.0}, (UISize){SIZE_KIND_TEXT_CONTENT});
     box->display = label;
-    box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? GREEN : UIGetBgColor();
+    box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? UIGetActiveColor() : UIGetBgColor();
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
