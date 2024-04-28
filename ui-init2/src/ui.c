@@ -207,16 +207,27 @@ static void UISetFontSize(int font_size) { State.font_size = font_size; }
 static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_height) {
     UIKey key = UIKeyFromCStr(label);
     ptrdiff_t idx = hmgeti(State.boxes, key);
-    if (idx == -1) {
+    bool first_frame = idx == -1;
+    if (first_frame) {
         UIBox box = {.key = key, .bg_color = GRAY};
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         assert(idx != -1);
     }
     UIBox* box = &State.boxes[idx].value;
+
+    // Reset per frame tree links
+    box->child = box->neighbor = box->parent = NULL;
+
+    if (first_frame) {
+        UIBox* parent = UIGetParent2();
+        if (parent != NULL) {
+            UIBoxAddChild(parent, box);
+        }
+    }
+
     box->semantic_size[AXIS_X] = semantic_width;
     box->semantic_size[AXIS_Y] = semantic_height;
-    UIBoxAddChild(UIGetParent2(), box);
     box->fontsize = UIGetFontSize();
     return box;
 }
@@ -246,16 +257,10 @@ static void UIFrameStart(float delta_time) {
 
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
-    // NOTE: Use special logic to push first parent. Can't use MakeUIBox because it assumes a first parent.
-    UIKey window_key = UIKeyFromCStr("window");
-    UIBox box = {.x = 0,
-                 .y = 0,
-                 .width = GetScreenWidth(),
-                 .height = GetScreenHeight(),
-                 .key = window_key,
-                 .bg_color = (Color){255, 255, 255, 0}};
-    hmput(State.boxes, window_key, box);
-    State.root = window_key;
+    UIBox* box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
+                           (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
+    box->bg_color = (Color){255, 255, 255, 0};
+    State.root = box->key;
 
     State.spacing = 0;
     State.paddingx = 10;
@@ -517,6 +522,7 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
 }
 
 static void DrawUIBox(UIBox* cur) {
+    breakpoint();
     BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
     DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
     DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
@@ -815,12 +821,12 @@ static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
     box->x = *x;
     box->y = *y;
 
-    UIBox* parent = GetUIBox(box->parent_key);
-    assert(parent != NULL);
-    parent->child_key = box->neighbor_key;
-    box->neighbor_key = parent->neighbor_key;
-    parent->neighbor_key = box->key;
-    box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
+    // UIBox* parent = GetUIBox(box->parent_key);
+    // assert(parent != NULL);
+    // parent->child_key = box->neighbor_key;
+    // box->neighbor_key = parent->neighbor_key;
+    // parent->neighbor_key = box->key;
+    // box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
     State.root = box->key;
 
     Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
@@ -832,6 +838,6 @@ static void UIWindowPop() {
     assert(root != NULL);
     UIBox* parent = GetUIBox(root->parent_key);
     assert(parent != NULL);
-    root->parent_key = parent->parent_key;
+    // root->parent_key = parent->parent_key;
     State.root = parent->key;
 }
