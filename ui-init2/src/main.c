@@ -90,8 +90,11 @@ int main(void) {
 
             // UIWindowPush("w1", &wx, &wy, &ww, &wh);
             UIRowBegin("row1");
+            UIPushBgColor(RED);
             UIButton("button 3");
+            UIPopBgColor();
             UIButton("buttonnnnnnn");
+
             UIRowEnd();
 
             // UIWindowPop();

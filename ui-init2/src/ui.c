@@ -130,6 +130,7 @@ typedef struct UIState {
     UIKey orig_root;
 
     UIAxis* layout_axis_stack;
+    Color* bg_color_stack;
 
     UIKey hot;
     UIKey hot_to_be;
@@ -147,6 +148,17 @@ static UIAxis UIGetLayoutAxis() {
     size_t len = arrlenu(State.layout_axis_stack);
     assert(len != 0);
     return State.layout_axis_stack[len - 1];
+}
+static void UIPushBgColor(Color color) { arrput(State.bg_color_stack, color); }
+static void UIPopBgColor() {
+    size_t len = arrlenu(State.bg_color_stack);
+    assert(len != 0);
+    arrpop(State.bg_color_stack);
+}
+static Color UIGetBgColor() {
+    size_t len = arrlenu(State.bg_color_stack);
+    assert(len != 0);
+    return State.bg_color_stack[len - 1];
 }
 
 static bool InRect(int x, int y, int width, int height) {
@@ -202,7 +214,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     ptrdiff_t idx = hmgeti(State.boxes, key);
     bool first_frame = idx == -1;
     if (first_frame) {
-        UIBox box = {.key = key, .bg_color = GRAY};
+        UIBox box = {.key = key};
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         assert(idx != -1);
@@ -221,6 +233,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     box->semantic_size[AXIS_Y] = semantic_height;
     box->fontsize = UIGetFontSize();
     box->layout_axis = UIGetLayoutAxis();
+    box->bg_color = UIGetBgColor();
     return box;
 }
 
@@ -238,7 +251,13 @@ static void UIFrameStart(float delta_time) {
     assert(!State.left_down || !State.left_up);
 
     // Init stacks
-    { State.layout_axis_stack = NULL; }
+    {
+        State.layout_axis_stack = NULL;
+        UIPushLayoutAxis(AXIS_Y);
+
+        State.bg_color_stack = NULL;
+        UIPushBgColor(GRAY);
+    }
 
     State.font_size = 16;
     State.font = GetFontDefault();
@@ -252,10 +271,10 @@ static void UIFrameStart(float delta_time) {
 
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
-    UIPushLayoutAxis(AXIS_Y);
+    UIPushBgColor((Color){255, 255, 255, 0});
     UIBox* box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
                            (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
-    box->bg_color = (Color){255, 255, 255, 0};
+    UIPopBgColor();
     State.root = box->key;
     State.orig_root = box->key;
 
@@ -580,7 +599,10 @@ static void UIFrameEnd() {
     State.hot = State.hot_to_be;
 
     // Deinit stacks.
-    { arrfree(State.layout_axis_stack); }
+    {
+        arrfree(State.layout_axis_stack);
+        arrfree(State.bg_color_stack);
+    }
 }
 
 static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
@@ -593,7 +615,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 static bool UIButton(char* label) {
     UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PERCENT_OF_PARENT, 1.0}, (UISize){SIZE_KIND_TEXT_CONTENT});
     box->display = label;
-    box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? GREEN : GRAY;
+    box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? GREEN : UIGetBgColor();
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
