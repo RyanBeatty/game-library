@@ -38,10 +38,10 @@ int main(void) {
     static bool radio_button_1 = false;
     static char text_box[256] = {0};
     static char text_box2[256] = {0};
-    static int wx = 0;
-    static int wy = 200;
-    static int ww = 200;
-    static int wh = 300;
+    // static int wx = 0;
+    // static int wy = 200;
+    // static int ww = 200;
+    // static int wh = 300;
 
     strcat(text_box, "hello, world");
     strcat(text_box2, "foo");

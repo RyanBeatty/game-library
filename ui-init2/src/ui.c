@@ -45,6 +45,7 @@ typedef enum UISizeKind {
     SIZE_KIND_PIXELS,
     SIZE_KIND_TEXT_CONTENT,
     SIZE_KIND_PERCENT_OF_PARENT,
+    SIZE_KIND_SUM_OF_CHILDREN,
 
     SIZE_KIND_COUNT
 } UISizeKind;
@@ -54,8 +55,9 @@ typedef struct UISize {
     float value;
 } UISize;
 
-#define UISizePixel(px) ((UISize){.kind = SIZE_KIND_PIXELS, .value = (px)})
+#define UISizePx(px) ((UISize){.kind = SIZE_KIND_PIXELS, .value = (px)})
 #define UISizePct(pct) ((UISize){.kind = SIZE_KIND_PERCENT_OF_PARENT, .value = (pct)})
+#define UISizeSum() ((UISize){.kind = SIZE_KIND_SUM_OF_CHILDREN})
 
 typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignment;
 
@@ -489,6 +491,7 @@ static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
             cur->size[axis] = value;
             break;
         }
+        case SIZE_KIND_SUM_OF_CHILDREN:
         case SIZE_KIND_PERCENT_OF_PARENT:
         case SIZE_KIND_NULL: {
             break;
@@ -515,6 +518,7 @@ static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
             cur->size[axis] = cur->parent->size[axis] * cur->semantic_size[axis].value;
             break;
         }
+        case SIZE_KIND_SUM_OF_CHILDREN:
         case SIZE_KIND_PIXELS:
         case SIZE_KIND_TEXT_CONTENT:
         case SIZE_KIND_NULL: {
@@ -528,6 +532,37 @@ static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
         CalculateUpwardSizes(child, axis);
     }
     CalculateUpwardSizes(cur->neighbor, axis);
+}
+
+static void CalculateDownardSizes(UIBox* cur, UIAxis axis) {
+    if (cur == NULL) {
+        return;
+    }
+
+    float children_sum_size = 0.0f;
+    float children_max_size = 0.0f;
+    for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
+        CalculateDownardSizes(child, axis);
+        children_sum_size += child->size[axis];
+        children_max_size = fmax(children_max_size, child->size[axis]);
+    }
+    switch (cur->semantic_size[axis].kind) {
+        case SIZE_KIND_SUM_OF_CHILDREN: {
+            cur->size[axis] = axis == cur->layout_axis ? children_sum_size : children_max_size;
+            break;
+        }
+        case SIZE_KIND_PERCENT_OF_PARENT:
+        case SIZE_KIND_PIXELS:
+        case SIZE_KIND_TEXT_CONTENT:
+        case SIZE_KIND_NULL: {
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+
+    CalculateDownardSizes(cur->neighbor, axis);
 }
 
 static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
@@ -606,6 +641,7 @@ static void UIFrameEnd() {
         for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
             CalculateFixedSizes(root, axis);
             CalculateUpwardSizes(root, axis);
+            CalculateDownardSizes(root, axis);
             LayoutUIBoxes(root, axis);
         }
         DrawUI(root);
@@ -629,7 +665,7 @@ static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int 
 }
 
 static bool UIButton(char* label) {
-    UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PERCENT_OF_PARENT, 1.0}, (UISize){SIZE_KIND_TEXT_CONTENT});
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f), (UISize){SIZE_KIND_TEXT_CONTENT});
     box->display = label;
     box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? UIGetActiveColor() : UIGetBgColor();
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
@@ -849,34 +885,34 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
     return false;
 }
 
-static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
-    UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, *width}, (UISize){SIZE_KIND_PIXELS, *height});
-    box->x = *x;
-    box->y = *y;
+// static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
+//     UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, *width}, (UISize){SIZE_KIND_PIXELS, *height});
+//     box->x = *x;
+//     box->y = *y;
 
-    // UIBox* parent = GetUIBox(box->parent_key);
-    // assert(parent != NULL);
-    // parent->child_key = box->neighbor_key;
-    // box->neighbor_key = parent->neighbor_key;
-    // parent->neighbor_key = box->key;
-    // box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
-    State.root = box->key;
+//     // UIBox* parent = GetUIBox(box->parent_key);
+//     // assert(parent != NULL);
+//     // parent->child_key = box->neighbor_key;
+//     // box->neighbor_key = parent->neighbor_key;
+//     // parent->neighbor_key = box->key;
+//     // box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
+//     State.root = box->key;
 
-    return UIWindowEx(label, x, y, width, height);
-}
+//     return UIWindowEx(label, x, y, width, height);
+// }
 
-static void UIWindowPop() {
-    UIBox* root = GetUIBox(State.root);
-    assert(root != NULL);
-    UIBox* parent = GetUIBox(root->parent_key);
-    assert(parent != NULL);
-    // root->parent_key = parent->parent_key;
-    State.root = parent->key;
-}
+// static void UIWindowPop() {
+//     UIBox* root = GetUIBox(State.root);
+//     assert(root != NULL);
+//     UIBox* parent = GetUIBox(root->parent_key);
+//     assert(parent != NULL);
+//     // root->parent_key = parent->parent_key;
+//     State.root = parent->key;
+// }
 
 static void UIRowBegin(char* label) {
     UIPushLayoutAxis(AXIS_X);
-    UIBox* box = MakeUIBox(label, UISizePixel(100), UISizePixel(200));
+    UIBox* box = MakeUIBox(label, UISizePx(100), UISizeSum());
     UIPopLayoutAxis();
     UIPushParent(box);
 }
