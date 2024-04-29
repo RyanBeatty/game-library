@@ -103,6 +103,10 @@ int main(void) {
             UIEditBox("text box", text_box);
             UIRadioButton("radio button", &radio_button_1);
 
+            UIPushBgColor(BLACK);
+            UIText("hello, world!");
+            UIPopBgColor();
+
             // UIWindowPop();
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {

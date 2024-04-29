@@ -98,6 +98,7 @@ typedef struct UIBox {
     struct UIBox* parent;
 
     Color bg_color;
+    Color font_color;
     int fontsize;
     UIAxis layout_axis;
 
@@ -139,6 +140,7 @@ typedef struct UIState {
     UIAxis* layout_axis_stack;
     Color* bg_color_stack;
     Color* active_color_stack;
+    Color* font_color_stack;
 
     UIKey hot;
     UIKey hot_to_be;
@@ -157,6 +159,7 @@ static UIAxis UIGetLayoutAxis() {
     assert(len != 0);
     return State.layout_axis_stack[len - 1];
 }
+
 static void UIPushBgColor(Color color) { arrput(State.bg_color_stack, color); }
 static void UIPopBgColor() {
     size_t len = arrlenu(State.bg_color_stack);
@@ -168,6 +171,7 @@ static Color UIGetBgColor() {
     assert(len != 0);
     return State.bg_color_stack[len - 1];
 }
+
 static void UIPushActiveColor(Color color) { arrput(State.active_color_stack, color); }
 static void UIPopActiveColor() {
     size_t len = arrlenu(State.active_color_stack);
@@ -178,6 +182,18 @@ static Color UIGetActiveColor() {
     size_t len = arrlenu(State.active_color_stack);
     assert(len != 0);
     return State.active_color_stack[len - 1];
+}
+
+static void UIPushFontColor(Color color) { arrput(State.font_color_stack, color); }
+static void UIPopFontColor() {
+    size_t len = arrlenu(State.font_color_stack);
+    assert(len != 0);
+    arrpop(State.font_color_stack);
+}
+static Color UIGetFontColor() {
+    size_t len = arrlenu(State.font_color_stack);
+    assert(len != 0);
+    return State.font_color_stack[len - 1];
 }
 
 static bool InRect(int x, int y, int width, int height) {
@@ -225,9 +241,6 @@ static void UIPopParent() {
     State.root = root->parent_key;
 }
 
-static void UIDrawRectangle(int x, int y, int width, int height, Color bg_color) { return; }
-static void UIDrawText(UIBox parent, UIAlignment alignment, char* text) { return; }
-
 static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_height) {
     UIKey key = UIKeyFromCStr(label);
     ptrdiff_t idx = hmgeti(State.boxes, key);
@@ -251,6 +264,9 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
 
     box->semantic_size[AXIS_X] = semantic_width;
     box->semantic_size[AXIS_Y] = semantic_height;
+
+    // Set Stack-based atts.
+    box->font_color = UIGetFontColor();
     box->fontsize = UIGetFontSize();
     box->layout_axis = UIGetLayoutAxis();
     box->bg_color = UIGetBgColor();
@@ -280,6 +296,9 @@ static void UIFrameStart(float delta_time) {
 
         State.active_color_stack = NULL;
         UIPushActiveColor(GREEN);
+
+        State.font_color_stack = NULL;
+        UIPushFontColor(WHITE);
     }
 
     State.font_size = 16;
@@ -330,11 +349,6 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
 }
 
 static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
-    // TODO: Draw text.
-    UIDrawRectangle(x, y, width, height, *state ? YELLOW : GRAY);
-    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    UIDrawText(parent, ALIGN_CENTER, label);
-
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
@@ -360,31 +374,6 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
 // consider passing in a max capacity here.
 static bool UIEditBoxEx(char* label, char* edit, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
-
-    UIDrawRectangle(x, y, width, height, GRAY);
-
-    // // Draw Text.
-    // {
-    //     // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-
-    //     char* display_text = NULL;
-    //     int edit_len = strlen(edit);
-    //     for (uint16_t i = 0; i < edit_len; ++i) {
-    //         arrput(display_text, edit[i]);
-    //     }
-    //     if (UIKeyIsActive(key)) {
-    //         if (State.show_cursor) {
-    //             arrins(display_text, State.cursor, '|');
-    //         }
-    //     }
-    //     arrput(display_text, '\0');
-
-    //     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    //     UIDrawText(parent, ALIGN_LEFT, display_text);
-
-    //     arrfree(display_text);
-    //     display_text = NULL;
-    // }
 
     if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
@@ -635,7 +624,7 @@ static void DrawUIBox(UIBox* cur) {
             }
         }
 
-        DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, BLACK);
+        DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, cur->font_color);
     }
 
     EndScissorMode();
@@ -677,6 +666,7 @@ static void UIFrameEnd() {
         arrfree(State.layout_axis_stack);
         arrfree(State.bg_color_stack);
         arrfree(State.active_color_stack);
+        arrfree(State.font_color_stack);
     }
 }
 
@@ -687,6 +677,10 @@ static void UIFrameEnd() {
 //     return UIEditBoxEx(label, edit, x, y + size.y, width, height - size.y);
 // }
 
+static bool UIText(char* label) {
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
+    box->display = label;
+}
 static bool UIButton(char* label) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
@@ -839,9 +833,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         UIStateSetHot(key);
     }
 
-    UIDrawRectangle(recs[RECT_VISIBLE].x, recs[RECT_VISIBLE].y, recs[RECT_VISIBLE].width, recs[RECT_VISIBLE].height,
-                    BLACK);
-    UIDrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
+    // UIDrawRectangle(recs[RECT_VISIBLE].x, recs[RECT_VISIBLE].y, recs[RECT_VISIBLE].width, recs[RECT_VISIBLE].height,
+    //                 BLACK);
+    // UIDrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
     // Debug resize zones.
     if (false) {
         Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
