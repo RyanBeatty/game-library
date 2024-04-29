@@ -100,7 +100,7 @@ int main(void) {
 
             UIRowEnd();
 
-            UITextBox("text box", text_box);
+            UIEditBox("text box", text_box);
 
             // UIWindowPop();
 

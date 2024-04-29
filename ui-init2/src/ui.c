@@ -358,7 +358,7 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
 
 // TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
 // consider passing in a max capacity here.
-static bool UITextBoxEx(char* label, char* edit, int x, int y, int width, int height) {
+static bool UIEditBoxEx(char* label, char* edit, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
 
     UIDrawRectangle(x, y, width, height, GRAY);
@@ -684,7 +684,7 @@ static void UIFrameEnd() {
 //     Vector2 size = UIMeasureText(label);
 //     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
 //     UIDrawText(parent, ALIGN_LEFT, label);
-//     return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
+//     return UIEditBoxEx(label, edit, x, y + size.y, width, height - size.y);
 // }
 
 static bool UIButton(char* label) {
@@ -706,9 +706,9 @@ static bool UIButton(char* label) {
 //     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
 // }
 
-static bool UITextBox(char* label, char* edit) {
+static bool UIEditBox(char* label, char* edit) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
-    bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
+    bool res = UIEditBoxEx(label, edit, box->x, box->y, box->width, box->height);
 
     {
         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
