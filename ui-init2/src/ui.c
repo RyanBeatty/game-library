@@ -89,12 +89,14 @@ typedef struct UIBox {
     UIKey key;
     UIKey neighbor_key;
     UIKey child_key;
+    UIKey last_child_key;
     UIKey parent_key;
 
     uint32_t num_children;
 
     struct UIBox* neighbor;
     struct UIBox* child;
+    struct UIBox* last_child;
     struct UIBox* parent;
 
     Color bg_color;
@@ -104,13 +106,6 @@ typedef struct UIBox {
 
     char* display;
 } UIBox;
-
-static void UIBoxAddChild(UIBox* parent, UIBox* child) {
-    child->parent_key = parent->key;
-    child->neighbor_key = parent->child_key;
-    parent->child_key = child->key;
-    ++parent->num_children;
-}
 
 typedef struct UIState {
     int mx;
@@ -148,6 +143,35 @@ typedef struct UIState {
 } UIState;
 
 UIState State = {0};
+
+static UIBox* GetUIBox(UIKey key) {
+    struct {
+        UIKey key;
+        UIBox value;
+    }* res = hmgetp_null(State.boxes, key);
+    if (res == NULL) {
+        return NULL;
+    }
+
+    return &res->value;
+}
+
+static void UIBoxAddChild(UIBox* parent, UIBox* child) {
+    child->parent_key = parent->key;
+
+    if (parent->child_key == 0 || parent->last_child_key == 0) {
+        parent->child_key = child->key;
+        parent->last_child_key = child->key;
+    } else {
+        UIBox* last_child = GetUIBox(parent->last_child_key);
+        last_child->neighbor_key = child->key;
+        parent->last_child_key = child->key;
+    }
+
+    // child->neighbor_key = parent->child_key;
+    // parent->child_key = child->key;
+    ++parent->num_children;
+}
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
 static void UIPopLayoutAxis() {
@@ -218,17 +242,6 @@ static int UIGetFontSize() { return State.font_size; }
 static Vector2 UIMeasureTextEx(char* text, int fontsize) {
     return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
 }
-static UIBox* GetUIBox(UIKey key) {
-    struct {
-        UIKey key;
-        UIBox value;
-    }* res = hmgetp_null(State.boxes, key);
-    if (res == NULL) {
-        return NULL;
-    }
-
-    return &res->value;
-}
 static UIBox* UIGetParent() { return &hmgetp(State.boxes, State.root)->value; }
 static void UIPushParent(UIBox* box) { State.root = box->key; }
 static void UIPopParent() {
@@ -251,7 +264,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     UIBox* box = &State.boxes[idx].value;
 
     // Reset per frame tree links
-    box->child = box->neighbor = box->parent = NULL;
+    box->child = box->neighbor = box->parent = box->last_child = NULL;
 
     UIBox* parent = UIGetParent();
     if (first_frame && parent != NULL) {
@@ -443,21 +456,10 @@ static void BuildTree(UIBox* cur) {
     cur->parent = GetUIBox(cur->parent_key);
     cur->neighbor = GetUIBox(cur->neighbor_key);
     cur->child = GetUIBox(cur->child_key);
+    cur->last_child = GetUIBox(cur->last_child_key);
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
         BuildTree(child);
     }
-
-    // Reverse linked list to draw elements in correct order.
-    UIBox* prev = NULL;
-    UIBox* it = cur->child;
-    UIBox* next = NULL;
-    while (it != NULL) {
-        next = it->neighbor;
-        it->neighbor = prev;
-        prev = it;
-        it = next;
-    }
-    cur->child = prev;
 }
 
 static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
