@@ -152,7 +152,7 @@ UIState State = {0};
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
 static void UIPopLayoutAxis() {
     assert(arrlenu(State.layout_axis_stack) != 0);
-    arrpop(State.layout_axis_stack);
+    (void)arrpop(State.layout_axis_stack);
 }
 static UIAxis UIGetLayoutAxis() {
     size_t len = arrlenu(State.layout_axis_stack);
@@ -164,7 +164,7 @@ static void UIPushBgColor(Color color) { arrput(State.bg_color_stack, color); }
 static void UIPopBgColor() {
     size_t len = arrlenu(State.bg_color_stack);
     assert(len != 0);
-    arrpop(State.bg_color_stack);
+    (void)arrpop(State.bg_color_stack);
 }
 static Color UIGetBgColor() {
     size_t len = arrlenu(State.bg_color_stack);
@@ -176,7 +176,7 @@ static void UIPushActiveColor(Color color) { arrput(State.active_color_stack, co
 static void UIPopActiveColor() {
     size_t len = arrlenu(State.active_color_stack);
     assert(len != 0);
-    arrpop(State.active_color_stack);
+    (void)arrpop(State.active_color_stack);
 }
 static Color UIGetActiveColor() {
     size_t len = arrlenu(State.active_color_stack);
@@ -188,7 +188,7 @@ static void UIPushFontColor(Color color) { arrput(State.font_color_stack, color)
 static void UIPopFontColor() {
     size_t len = arrlenu(State.font_color_stack);
     assert(len != 0);
-    arrpop(State.font_color_stack);
+    (void)arrpop(State.font_color_stack);
 }
 static Color UIGetFontColor() {
     size_t len = arrlenu(State.font_color_stack);
@@ -215,10 +215,6 @@ static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 static int UIGetFontSize() { return State.font_size; }
 // static Font UIGetFont() { return State.font; }
-static int UIGetFontSpacing() { return State.font_size / State.font.baseSize; }
-static Vector2 UIMeasureText(char* text) {
-    return MeasureTextEx(State.font, text, State.font_size, UIGetFontSpacing());
-}
 static Vector2 UIMeasureTextEx(char* text, int fontsize) {
     return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
 }
@@ -568,7 +564,6 @@ static void SolveConstraints(UIBox* cur, UIAxis axis) {
     }
 
     float size = axis == cur->layout_axis ? children_sum_size : children_max_size;
-    float remaining = fabs(size - cur->size[axis]);
     if (size > cur->size[axis]) {
         float remaining = size - cur->size[axis];
         float negative_size = remaining / cur->num_children;
@@ -677,7 +672,7 @@ static void UIFrameEnd() {
 //     return UIEditBoxEx(label, edit, x, y + size.y, width, height - size.y);
 // }
 
-static bool UIText(char* label) {
+static void UIText(char* label) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
 }

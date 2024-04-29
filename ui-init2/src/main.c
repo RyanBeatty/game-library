@@ -103,9 +103,11 @@ int main(void) {
             UIEditBox("text box", text_box);
             UIRadioButton("radio button", &radio_button_1);
 
+            UIPushFontColor(RED);
             UIPushBgColor(BLACK);
             UIText("hello, world!");
             UIPopBgColor();
+            UIPopFontColor();
 
             // UIWindowPop();
 
