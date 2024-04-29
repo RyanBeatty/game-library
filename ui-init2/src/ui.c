@@ -688,23 +688,18 @@ static void UIFrameEnd() {
 // }
 
 static bool UIButton(char* label) {
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), (UISize){SIZE_KIND_TEXT_CONTENT});
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
     box->bg_color = UIKeyIsHot(box->key) && !UIKeyIsActive(box->key) ? UIGetActiveColor() : UIGetBgColor();
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
-// static bool UIRadioButton(char* label, bool* state) {
-//     Vector2 size = UIMeasureText(label);
-//     int width = UIGetWidth(size.x);
-//     int height = size.y + State.paddingy;
-
-//     Vector2 pos = UIReserveSpace(width, height);
-//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-//     box->display = label;
-//     box->bg_color = *state ? YELLOW : GRAY;
-//     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
-// }
+static bool UIRadioButton(char* label, bool* state) {
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
+    box->display = label;
+    box->bg_color = *state ? UIGetActiveColor() : UIGetBgColor();
+    return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
+}
 
 static bool UIEditBox(char* label, char* edit) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));

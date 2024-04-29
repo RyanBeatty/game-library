@@ -101,6 +101,7 @@ int main(void) {
             UIRowEnd();
 
             UIEditBox("text box", text_box);
+            UIRadioButton("radio button", &radio_button_1);
 
             // UIWindowPop();
 
