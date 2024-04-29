@@ -100,6 +100,8 @@ int main(void) {
 
             UIRowEnd();
 
+            UITextBox("text box", text_box);
+
             // UIWindowPop();
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {

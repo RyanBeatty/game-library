@@ -59,6 +59,7 @@ typedef struct UISize {
 #define UISizePx(px, strct) ((UISize){.kind = SIZE_KIND_PIXELS, .value = (px), .strictness = (strct)})
 #define UISizePct(pct, strct) ((UISize){.kind = SIZE_KIND_PERCENT_OF_PARENT, .value = (pct), .strictness = (strct)})
 #define UISizeSum() ((UISize){.kind = SIZE_KIND_SUM_OF_CHILDREN, .strictness = 0.0f})
+#define UISizeTxt(strct) ((UISize){.kind = SIZE_KIND_TEXT_CONTENT, .strictness = (strct)})
 
 typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignment;
 
@@ -679,12 +680,12 @@ static void UIFrameEnd() {
     }
 }
 
-static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
-    Vector2 size = UIMeasureText(label);
-    UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-    UIDrawText(parent, ALIGN_LEFT, label);
-    return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
-}
+// static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
+//     Vector2 size = UIMeasureText(label);
+//     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
+//     UIDrawText(parent, ALIGN_LEFT, label);
+//     return UITextBoxEx(label, edit, x, y + size.y, width, height - size.y);
+// }
 
 static bool UIButton(char* label) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), (UISize){SIZE_KIND_TEXT_CONTENT});
@@ -705,36 +706,32 @@ static bool UIButton(char* label) {
 //     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
 // }
 
-// static bool UITextBox(char* label, char* edit) {
-//     Vector2 size = UIMeasureText(edit);
-//     int width = UIGetWidth(size.x);
-//     int height = size.y + State.paddingy;
+static bool UITextBox(char* label, char* edit) {
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
+    bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
 
-//     Vector2 pos = UIReserveSpace(width, height);
-//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-//     box->display = NULL;
+    {
+        // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
+        if (box->display != NULL) {
+            arrfree(box->display);
+            box->display = NULL;
+        }
+        int edit_len = strlen(edit);
+        for (uint16_t i = 0; i < edit_len; ++i) {
+            arrput(box->display, edit[i]);
+        }
+        if (UIKeyIsActive(box->key)) {
+            // TraceLog(LOG_INFO, "Activeeeee");
+            if (State.show_cursor) {
+                // TraceLog(LOG_INFO, "cursor");
 
-//     bool res = UITextBoxEx(label, edit, box->x, box->y, box->width, box->height);
-
-//     {
-//         // TODO: raylib MeasureText worries about fontsize < default font size...do I need to worry about this too?
-
-//         int edit_len = strlen(edit);
-//         for (uint16_t i = 0; i < edit_len; ++i) {
-//             arrput(box->display, edit[i]);
-//         }
-//         if (UIKeyIsActive(box->key)) {
-//             // TraceLog(LOG_INFO, "Activeeeee");
-//             if (State.show_cursor) {
-//                 // TraceLog(LOG_INFO, "cursor");
-
-//                 arrins(box->display, State.cursor, '|');
-//             }
-//         }
-//         arrput(box->display, '\0');
-//     }
-//     return res;
-// }
+                arrins(box->display, State.cursor, '|');
+            }
+        }
+        arrput(box->display, '\0');
+    }
+    return res;
+}
 
 // static bool UITextField(char* label, char* edit) {
 //     Vector2 size = UIMeasureText(edit);
