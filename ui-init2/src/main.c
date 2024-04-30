@@ -109,6 +109,9 @@ int main(void) {
             UIPopBgColor();
             UIPopFontColor();
 
+            UISpacer("s1", UISizePct(1.0f, 0.0f), UISizePx(10.0f, 0.0f));
+            UIButton("space button");
+
             // UIWindowPop();
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {

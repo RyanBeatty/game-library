@@ -674,6 +674,14 @@ static void UIFrameEnd() {
 //     return UIEditBoxEx(label, edit, x, y + size.y, width, height - size.y);
 // }
 
+static void UISpacer(char* label, UISize width, UISize height) {
+    Color white = WHITE;
+    white.a = 0;
+    UIPushBgColor(white);
+    MakeUIBox(label, width, height);
+    UIPopBgColor();
+}
+
 static void UIText(char* label) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
