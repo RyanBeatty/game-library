@@ -92,9 +92,7 @@ int main(void) {
             UIRowBegin("row1");
             UIBgColor(RED) { UIButton("button 3"); }
 
-            UIPushActiveColor(BLUE);
-            UIButton("buttonnnnnnn");
-            UIPopActiveColor();
+            UIActiveColor(BLUE) { UIButton("buttonnnnnnn"); }
 
             UIRowEnd();
 

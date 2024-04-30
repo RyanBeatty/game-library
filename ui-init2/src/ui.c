@@ -235,6 +235,7 @@ static Color UIGetActiveColor() {
     assert(len != 0);
     return State.active_color_stack[len - 1];
 }
+#define UIActiveColor(color) UIDeferLoop(UIPushActiveColor(color), UIPopActiveColor())
 
 static void UIPushFontColor(Color color) { arrput(State.font_color_stack, color); }
 static void UIPopFontColor() {
