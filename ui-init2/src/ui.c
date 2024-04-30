@@ -942,6 +942,7 @@ static UIBox* UIRowBegin(char* label) {
 }
 
 static void UIRowEnd() { UIPopParent(); }
+#define UIRow(label) UIDeferLoop(UIRowBegin(label), UIRowEnd())
 
 static void UITableBegin(char* label, uint32_t nrows, uint32_t ncols) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeSum());
@@ -964,17 +965,20 @@ static void UITableEnd() {
             char* row_str = (char*)calloc(len + num_len + 1, sizeof(char));
             row_str = strcat(row_str, table->key_str);
             row_str = strcat(row_str, num);
-            UIBox* row = UIRowBegin(row_str);
-            UIBox* cur = GetUIBox(table->child_key);
-            UIBox* next = GetUIBox(cur->neighbor_key);
-            for (uint32_t j = 0; j < table->ncols; ++j) {
-                assert(cur != NULL);
-                UIBoxChildPopLeft(table);
-                UIBoxAddChild(row, cur);
-                cur = next;
-                next = GetUIBox(next->neighbor_key);
+            UIRow(row_str) {
+                UIKey row_key = UIKeyFromCStr(row_str);
+                UIBox* row = GetUIBox(row_key);
+                assert(row != NULL);
+                UIBox* cur = GetUIBox(table->child_key);
+                UIBox* next = GetUIBox(cur->neighbor_key);
+                for (uint32_t j = 0; j < table->ncols; ++j) {
+                    assert(cur != NULL);
+                    UIBoxChildPopLeft(table);
+                    UIBoxAddChild(row, cur);
+                    cur = next;
+                    next = GetUIBox(next->neighbor_key);
+                }
             }
-            UIRowEnd();
         }
     }
 

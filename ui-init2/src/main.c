@@ -88,13 +88,10 @@ int main(void) {
             UIButton("button 1");
             UIButton("button 12");
 
-            // UIWindowPush("w1", &wx, &wy, &ww, &wh);
-            UIRowBegin("row1");
-            UIBgColor(RED) { UIButton("button 3"); }
-
-            UIActiveColor(BLUE) { UIButton("buttonnnnnnn"); }
-
-            UIRowEnd();
+            UIRow("row1") {
+                UIBgColor(RED) { UIButton("button 3"); }
+                UIActiveColor(BLUE) { UIButton("buttonnnnnnn"); }
+            }
 
             UIEditBox("text box", text_box);
             UIRadioButton("radio button", &radio_button_1);
