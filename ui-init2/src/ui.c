@@ -11,6 +11,8 @@
 
 #include <time.h>
 
+#define UIDeferLoop(begin, end) for (int _i_ = ((begin), 0); !_i_; _i_ += 1, (end))
+
 static size_t GenerateRandomSeed() {
     // Get current time in seconds since Epoch
     time_t currentTime = time(NULL);
@@ -207,6 +209,7 @@ static UIAxis UIGetLayoutAxis() {
     assert(len != 0);
     return State.layout_axis_stack[len - 1];
 }
+#define UILayoutAxis(axis) UIDeferLoop(UIPushLayoutAxis(axis), UIPopLayoutAxis())
 
 static void UIPushBgColor(Color color) { arrput(State.bg_color_stack, color); }
 static void UIPopBgColor() {
@@ -930,9 +933,8 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 // }
 
 static UIBox* UIRowBegin(char* label) {
-    UIPushLayoutAxis(AXIS_X);
-    UIBox* box = MakeUIBox(label, UISizePct(1.0, 0.0), UISizeSum());
-    UIPopLayoutAxis();
+    UIBox* box = NULL;
+    UILayoutAxis(AXIS_X) { box = MakeUIBox(label, UISizePct(1.0, 0.0), UISizeSum()); }
     UIPushParent(box);
     return box;
 }
