@@ -138,9 +138,9 @@ typedef struct UIState {
         UIKey key;
         UIBox value;
     }* boxes;  // stb hash map.
-    UIKey root;
-    UIKey orig_root;
 
+    // Stacks.
+    UIKey* root_stack;
     UIAxis* layout_axis_stack;
     Color* bg_color_stack;
     Color* active_color_stack;
@@ -250,6 +250,20 @@ static Color UIGetFontColor() {
 }
 #define UIFontColor(color) UIDeferLoop(UIPushFontColor(color), UIPopFontColor())
 
+static void UIPushParent(UIBox* box) { arrput(State.root_stack, box->key); }
+static void UIPopParent() {
+    size_t len = arrlenu(State.root_stack);
+    assert(len != 0);
+    (void)arrpop(State.root_stack);
+}
+static UIBox* UIGetParent() {
+    size_t len = arrlenu(State.root_stack);
+    if (len == 0) {
+        return NULL;
+    }
+    return &hmgetp(State.boxes, State.root_stack[len - 1])->value;
+}
+
 static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
 }
@@ -270,13 +284,6 @@ static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 static int UIGetFontSize() { return State.font_size; }
 static Vector2 UIMeasureTextEx(char* text, int fontsize) {
     return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
-}
-static UIBox* UIGetParent() { return &hmgetp(State.boxes, State.root)->value; }
-static void UIPushParent(UIBox* box) { State.root = box->key; }
-static void UIPopParent() {
-    UIBox* root = UIGetParent();
-    assert(root != NULL);
-    State.root = root->parent_key;
 }
 
 static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_height) {
@@ -341,6 +348,8 @@ static void UIFrameStart(float delta_time) {
 
         State.font_color_stack = NULL;
         UIPushFontColor(WHITE);
+
+        State.root_stack = NULL;
     }
 
     State.font_size = 16;
@@ -360,8 +369,7 @@ static void UIFrameStart(float delta_time) {
         box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
                         (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
     }
-    State.root = box->key;
-    State.orig_root = box->key;
+    UIPushParent(box);
 
     State.hot_to_be = 0;
     if (State.hot == 0) {
@@ -563,8 +571,7 @@ static void DrawUI(UIBox* parent) {
 static void UIFrameEnd() {
     // Drawing.
     {
-        assert(State.orig_root == State.root);
-        UIBox* root = GetUIBox(State.root);
+        UIBox* root = UIGetParent();
         assert(root != NULL);
         BuildTree(root);
         for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
@@ -585,6 +592,7 @@ static void UIFrameEnd() {
         arrfree(State.bg_color_stack);
         arrfree(State.active_color_stack);
         arrfree(State.font_color_stack);
+        arrfree(State.root_stack);
     }
 }
 
