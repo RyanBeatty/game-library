@@ -248,6 +248,7 @@ static Color UIGetFontColor() {
     assert(len != 0);
     return State.font_color_stack[len - 1];
 }
+#define UIFontColor(color) UIDeferLoop(UIPushFontColor(color), UIPopFontColor())
 
 static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);

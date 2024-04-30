@@ -99,9 +99,9 @@ int main(void) {
             UIEditBox("text box", text_box);
             UIRadioButton("radio button", &radio_button_1);
 
-            UIPushFontColor(RED);
-            UIBgColor(BLACK) { UIText("hello, world!"); }
-            UIPopFontColor();
+            UIFontColor(RED) {
+                UIBgColor(BLACK) { UIText("hello, world!"); }
+            }
 
             UISpacer("s1", UISizePct(1.0f, 0.0f), UISizePx(10.0f, 0.0f));
             UIButton("space button");
