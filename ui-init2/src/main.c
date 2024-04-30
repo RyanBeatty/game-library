@@ -112,6 +112,13 @@ int main(void) {
             UISpacer("s1", UISizePct(1.0f, 0.0f), UISizePx(10.0f, 0.0f));
             UIButton("space button");
 
+            UITableBegin("table1", 2, 2);
+            UIButton("table button 1");
+            UIButton("table button 2");
+            UIButton("table button 3");
+            UIButton("table button 4");
+            UITableEnd();
+
             // UIWindowPop();
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {

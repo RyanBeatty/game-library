@@ -87,6 +87,7 @@ typedef struct UIBox {
     UISize semantic_size[AXIS_COUNT];
 
     UIKey key;
+    const char* key_str;
     UIKey neighbor_key;
     UIKey child_key;
     UIKey last_child_key;
@@ -103,6 +104,12 @@ typedef struct UIBox {
     Color font_color;
     int fontsize;
     UIAxis layout_axis;
+
+    // Table info.
+    uint32_t nrows;
+    uint32_t ncols;
+
+    uint32_t nframes;
 
     char* display;
 } UIBox;
@@ -166,11 +173,28 @@ static void UIBoxAddChild(UIBox* parent, UIBox* child) {
         UIBox* last_child = GetUIBox(parent->last_child_key);
         last_child->neighbor_key = child->key;
         parent->last_child_key = child->key;
+        // Might be necessary for things that rebalance tree after node creation (i.e. tables).
+        child->neighbor_key = 0;
     }
 
     // child->neighbor_key = parent->child_key;
     // parent->child_key = child->key;
     ++parent->num_children;
+}
+
+static void UIBoxChildPopFront(UIBox* parent) {
+    assert(parent->child_key != 0 && parent->last_child_key != 0);
+    UIBox* child = GetUIBox(parent->child_key);
+    assert(child != NULL);
+    if (parent->child_key == parent->last_child_key) {
+        parent->child_key = 0;
+        parent->last_child_key = 0;
+    } else {
+        parent->child_key = child->neighbor_key;
+    }
+    child->neighbor_key = 0;
+    child->neighbor_key = 0;
+    --parent->num_children;
 }
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
@@ -238,7 +262,6 @@ static bool UIShouldSetHot(int x, int y, int width, int height) { return !UIIsAc
 static bool UIKeyIsHot(UIKey key) { return State.hot == key; }
 static bool UIKeyIsActive(UIKey key) { return State.active == key; }
 static int UIGetFontSize() { return State.font_size; }
-// static Font UIGetFont() { return State.font; }
 static Vector2 UIMeasureTextEx(char* text, int fontsize) {
     return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
 }
@@ -257,6 +280,9 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     if (first_frame) {
         UIBox box = {0};
         box.key = key;
+        size_t len = strlen(label);
+        char* str = (char*)calloc(len + 1, sizeof(char));
+        box.key_str = strcat(str, label);
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         assert(idx != -1);
@@ -279,6 +305,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     box->fontsize = UIGetFontSize();
     box->layout_axis = UIGetLayoutAxis();
     box->bg_color = UIGetBgColor();
+    ++box->nframes;
     return box;
 }
 
@@ -667,13 +694,6 @@ static void UIFrameEnd() {
     }
 }
 
-// static bool UITextFieldEx(char* label, char* edit, int x, int y, int width, int height) {
-//     Vector2 size = UIMeasureText(label);
-//     UIBox parent = {.x = x, .y = y, .width = width, .height = height};
-//     UIDrawText(parent, ALIGN_LEFT, label);
-//     return UIEditBoxEx(label, edit, x, y + size.y, width, height - size.y);
-// }
-
 static void UISpacer(char* label, UISize width, UISize height) {
     Color white = WHITE;
     white.a = 0;
@@ -726,20 +746,6 @@ static bool UIEditBox(char* label, char* edit) {
     }
     return res;
 }
-
-// static bool UITextField(char* label, char* edit) {
-//     Vector2 size = UIMeasureText(edit);
-//     int width = UIGetWidth(size.x);
-//     int height = size.y + State.paddingy;
-
-//     size = UIMeasureText(label);
-//     height += size.y + State.paddingy;
-
-//     Vector2 pos = UIReserveSpace(width, height);
-//     UIBox* box = MakeUIBox(label, pos.x, pos.y, width, height);
-//     box->display = edit;
-//     return UITextFieldEx(label, edit, box->x, box->y, box->width, box->height);
-// }
 
 //////////////////////////////////////////////////////////////////////////////
 // Windows.
@@ -923,11 +929,49 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 //     State.root = parent->key;
 // }
 
-static void UIRowBegin(char* label) {
+static UIBox* UIRowBegin(char* label) {
     UIPushLayoutAxis(AXIS_X);
     UIBox* box = MakeUIBox(label, UISizePct(1.0, 0.0), UISizeSum());
     UIPopLayoutAxis();
     UIPushParent(box);
+    return box;
 }
 
 static void UIRowEnd() { UIPopParent(); }
+
+static void UITableBegin(char* label, uint32_t nrows, uint32_t ncols) {
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeSum());
+    box->nrows = nrows;
+    box->ncols = ncols;
+    UIPushParent(box);
+}
+
+static void UITableEnd() {
+    UIBox* table = UIGetParent();
+    assert(table != NULL);
+    if (table->nframes == 1) {
+        // TODO: Should probably assert the correct number of children.
+        for (uint32_t i = 0; i < table->nrows; ++i) {
+            char num[256] = {0};
+            sprintf(num, "%d", i);
+            size_t num_len = strlen(num);
+            size_t len = strlen(table->key_str);
+            char* row_str = (char*)calloc(len + num_len + 1, sizeof(char));
+            row_str = strcat(row_str, table->key_str);
+            row_str = strcat(row_str, num);
+            UIBox* row = UIRowBegin(row_str);
+            UIBox* cur = GetUIBox(table->child_key);
+            UIBox* next = GetUIBox(cur->neighbor_key);
+            for (uint32_t j = 0; j < table->ncols; ++j) {
+                assert(cur != NULL);
+                UIBoxChildPopFront(table);
+                UIBoxAddChild(row, cur);
+                cur = next;
+                next = GetUIBox(next->neighbor_key);
+            }
+            UIRowEnd();
+        }
+    }
+
+    UIPopParent();
+}
