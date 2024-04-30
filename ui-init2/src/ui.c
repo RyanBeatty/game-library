@@ -369,119 +369,6 @@ static void UIFrameStart(float delta_time) {
     }
 }
 
-static bool UIButtonEx(char* label, int x, int y, int width, int height) {
-    TraceLog(LOG_DEBUG, "label %s %d %d %d %d", label, x, y, width, height);
-    UIKey key = UIKeyFromCStr(label);
-    if (UIShouldSetHot(x, y, width, height)) {
-        UIStateSetHot(key);
-    }
-
-    if (UIKeyIsActive(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Active", label);
-        if (State.left_up) {
-            UIStateClearActive();
-            return true;
-        }
-    } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
-        if (State.left_down) {
-            UIStateSetActive(key);
-        }
-    }
-    return false;
-}
-
-static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
-    UIKey key = UIKeyFromCStr(label);
-    if (UIShouldSetHot(x, y, width, height)) {
-        UIStateSetHot(key);
-    }
-
-    if (UIKeyIsActive(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Active", label);
-        if (State.left_up) {
-            *state = !(*state);
-            UIStateClearActive();
-            return true;
-        }
-    } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
-        if (State.left_down) {
-            UIStateSetActive(key);
-        }
-    }
-    return false;
-}
-
-// TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
-// consider passing in a max capacity here.
-static bool UIEditBoxEx(char* label, char* edit, int x, int y, int width, int height) {
-    UIKey key = UIKeyFromCStr(label);
-
-    if (UIShouldSetHot(x, y, width, height)) {
-        UIStateSetHot(key);
-    }
-
-    if (UIKeyIsActive(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Active", label);
-
-        int key = GetKeyPressed();
-        if (key != 0) {
-            bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
-
-            if (key >= 32 && key <= 126) {
-                if (!shift && key >= 65 && key <= 90) {
-                    key -= (int)('A' - 'a');
-                }
-
-                int len = strlen(edit);
-                for (uint16_t i = len + 1; i > State.cursor; --i) {
-                    edit[i] = edit[i - 1];
-                }
-
-                edit[State.cursor] = (char)key;
-                ++State.cursor;
-            } else if (IsKeyPressed(KEY_BACKSPACE)) {
-                if (State.cursor != 0) {
-                    int len = strlen(edit);
-                    for (uint16_t i = State.cursor; i < len + 1; ++i) {
-                        edit[i - 1] = edit[i];
-                    }
-
-                    --State.cursor;
-                }
-            } else if (IsKeyPressed(KEY_LEFT)) {
-                if (State.cursor != 0) {
-                    --State.cursor;
-                }
-            } else if (IsKeyPressed(KEY_RIGHT)) {
-                if (edit[State.cursor] != '\0') {
-                    ++State.cursor;
-                }
-            }
-
-            if (key != 0) {
-                State.show_cursor = true;
-                State.cursor_cooldown = 0.0f;
-            }
-
-            if (IsKeyPressed(KEY_ENTER)) {
-                UIStateClearActive();
-                return true;
-            }
-        }
-    } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
-        if (State.left_down) {
-            UIStateSetActive(key);
-            State.cursor = strlen(edit);
-            State.show_cursor = true;
-            State.cursor_cooldown = 0.0f;
-        }
-    }
-    return false;
-}
-
 static void BuildTree(UIBox* cur) {
     if (cur == NULL) {
         return;
@@ -711,6 +598,29 @@ static void UIText(char* label) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
 }
+
+static bool UIButtonEx(char* label, int x, int y, int width, int height) {
+    TraceLog(LOG_DEBUG, "label %s %d %d %d %d", label, x, y, width, height);
+    UIKey key = UIKeyFromCStr(label);
+    if (UIShouldSetHot(x, y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    if (UIKeyIsActive(key)) {
+        TraceLog(LOG_DEBUG, "label %s is Active", label);
+        if (State.left_up) {
+            UIStateClearActive();
+            return true;
+        }
+    } else if (UIKeyIsHot(key)) {
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
+        if (State.left_down) {
+            UIStateSetActive(key);
+        }
+    }
+    return false;
+}
+
 static bool UIButton(char* label) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
@@ -718,11 +628,102 @@ static bool UIButton(char* label) {
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
+static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
+    UIKey key = UIKeyFromCStr(label);
+    if (UIShouldSetHot(x, y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    if (UIKeyIsActive(key)) {
+        TraceLog(LOG_DEBUG, "label %s is Active", label);
+        if (State.left_up) {
+            *state = !(*state);
+            UIStateClearActive();
+            return true;
+        }
+    } else if (UIKeyIsHot(key)) {
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
+        if (State.left_down) {
+            UIStateSetActive(key);
+        }
+    }
+    return false;
+}
+
 static bool UIRadioButton(char* label, bool* state) {
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
     box->bg_color = *state ? UIGetActiveColor() : UIGetBgColor();
     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
+}
+
+// TODO: We assume that edit has enough capacity to deal with any edits. This is a bad assumption
+// consider passing in a max capacity here.
+static bool UIEditBoxEx(char* label, char* edit, int x, int y, int width, int height) {
+    UIKey key = UIKeyFromCStr(label);
+
+    if (UIShouldSetHot(x, y, width, height)) {
+        UIStateSetHot(key);
+    }
+
+    if (UIKeyIsActive(key)) {
+        TraceLog(LOG_DEBUG, "label %s is Active", label);
+
+        int key = GetKeyPressed();
+        if (key != 0) {
+            bool shift = IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT);
+
+            if (key >= 32 && key <= 126) {
+                if (!shift && key >= 65 && key <= 90) {
+                    key -= (int)('A' - 'a');
+                }
+
+                int len = strlen(edit);
+                for (uint16_t i = len + 1; i > State.cursor; --i) {
+                    edit[i] = edit[i - 1];
+                }
+
+                edit[State.cursor] = (char)key;
+                ++State.cursor;
+            } else if (IsKeyPressed(KEY_BACKSPACE)) {
+                if (State.cursor != 0) {
+                    int len = strlen(edit);
+                    for (uint16_t i = State.cursor; i < len + 1; ++i) {
+                        edit[i - 1] = edit[i];
+                    }
+
+                    --State.cursor;
+                }
+            } else if (IsKeyPressed(KEY_LEFT)) {
+                if (State.cursor != 0) {
+                    --State.cursor;
+                }
+            } else if (IsKeyPressed(KEY_RIGHT)) {
+                if (edit[State.cursor] != '\0') {
+                    ++State.cursor;
+                }
+            }
+
+            if (key != 0) {
+                State.show_cursor = true;
+                State.cursor_cooldown = 0.0f;
+            }
+
+            if (IsKeyPressed(KEY_ENTER)) {
+                UIStateClearActive();
+                return true;
+            }
+        }
+    } else if (UIKeyIsHot(key)) {
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
+        if (State.left_down) {
+            UIStateSetActive(key);
+            State.cursor = strlen(edit);
+            State.show_cursor = true;
+            State.cursor_cooldown = 0.0f;
+        }
+    }
+    return false;
 }
 
 static bool UIEditBox(char* label, char* edit) {
@@ -849,9 +850,6 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
         UIStateSetHot(key);
     }
 
-    // UIDrawRectangle(recs[RECT_VISIBLE].x, recs[RECT_VISIBLE].y, recs[RECT_VISIBLE].width, recs[RECT_VISIBLE].height,
-    //                 BLACK);
-    // UIDrawRectangle(recs[RECT_DRAG].x, recs[RECT_DRAG].y, recs[RECT_DRAG].width, recs[RECT_DRAG].height, BLUE);
     // Debug resize zones.
     if (false) {
         Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
