@@ -93,7 +93,7 @@ typedef struct UIBox {
     UIKey last_child_key;
     UIKey parent_key;
 
-    uint32_t num_children;
+    uint32_t nchildren;
 
     struct UIBox* neighbor;
     struct UIBox* child;
@@ -179,7 +179,7 @@ static void UIBoxAddChild(UIBox* parent, UIBox* child) {
 
     // child->neighbor_key = parent->child_key;
     // parent->child_key = child->key;
-    ++parent->num_children;
+    ++parent->nchildren;
 }
 
 static void UIBoxChildPopFront(UIBox* parent) {
@@ -194,7 +194,7 @@ static void UIBoxChildPopFront(UIBox* parent) {
     }
     child->neighbor_key = 0;
     child->neighbor_key = 0;
-    --parent->num_children;
+    --parent->nchildren;
 }
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
@@ -580,7 +580,7 @@ static void CalculateDownwardSizes(UIBox* cur, UIAxis axis) {
 }
 
 static void SolveConstraints(UIBox* cur, UIAxis axis) {
-    if (cur == NULL || cur->num_children == 0.0f) {
+    if (cur == NULL || cur->nchildren == 0.0f) {
         return;
     }
 
@@ -595,7 +595,7 @@ static void SolveConstraints(UIBox* cur, UIAxis axis) {
     float size = axis == cur->layout_axis ? children_sum_size : children_max_size;
     if (size > cur->size[axis]) {
         float remaining = size - cur->size[axis];
-        float negative_size = remaining / cur->num_children;
+        float negative_size = remaining / cur->nchildren;
         for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
             child->size[axis] -= negative_size;
         }
@@ -950,7 +950,7 @@ static void UITableEnd() {
     UIBox* table = UIGetParent();
     assert(table != NULL);
     if (table->nframes == 1) {
-        assert(table->num_children == table->nrows * table->ncols);
+        assert(table->nchildren == table->nrows * table->ncols);
         for (uint32_t i = 0; i < table->nrows; ++i) {
             char num[256] = {0};
             sprintf(num, "%d", i);
