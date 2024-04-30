@@ -222,6 +222,7 @@ static Color UIGetBgColor() {
     assert(len != 0);
     return State.bg_color_stack[len - 1];
 }
+#define UIBgColor(color) UIDeferLoop(UIPushBgColor(color), UIPopBgColor())
 
 static void UIPushActiveColor(Color color) { arrput(State.active_color_stack, color); }
 static void UIPopActiveColor() {
@@ -352,10 +353,11 @@ static void UIFrameStart(float delta_time) {
 
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
     // parent here.
-    UIPushBgColor((Color){255, 255, 255, 0});
-    UIBox* box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
-                           (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
-    UIPopBgColor();
+    UIBox* box = NULL;
+    UIBgColor(((Color){255, 255, 255, 0})) {
+        box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
+                        (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
+    }
     State.root = box->key;
     State.orig_root = box->key;
 
