@@ -950,7 +950,7 @@ static void UITableEnd() {
     UIBox* table = UIGetParent();
     assert(table != NULL);
     if (table->nframes == 1) {
-        // TODO: Should probably assert the correct number of children.
+        assert(table->num_children == table->nrows * table->ncols);
         for (uint32_t i = 0; i < table->nrows; ++i) {
             char num[256] = {0};
             sprintf(num, "%d", i);
