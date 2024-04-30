@@ -702,9 +702,7 @@ static void UIFrameEnd() {
 static void UISpacer(char* label, UISize width, UISize height) {
     Color white = WHITE;
     white.a = 0;
-    UIPushBgColor(white);
-    MakeUIBox(label, width, height);
-    UIPopBgColor();
+    UIBgColor(white) { MakeUIBox(label, width, height); }
 }
 
 static void UIText(char* label) {

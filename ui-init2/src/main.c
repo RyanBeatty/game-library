@@ -90,9 +90,7 @@ int main(void) {
 
             // UIWindowPush("w1", &wx, &wy, &ww, &wh);
             UIRowBegin("row1");
-            UIPushBgColor(RED);
-            UIButton("button 3");
-            UIPopBgColor();
+            UIBgColor(RED) { UIButton("button 3"); }
 
             UIPushActiveColor(BLUE);
             UIButton("buttonnnnnnn");
@@ -104,9 +102,7 @@ int main(void) {
             UIRadioButton("radio button", &radio_button_1);
 
             UIPushFontColor(RED);
-            UIPushBgColor(BLACK);
-            UIText("hello, world!");
-            UIPopBgColor();
+            UIBgColor(BLACK) { UIText("hello, world!"); }
             UIPopFontColor();
 
             UISpacer("s1", UISizePct(1.0f, 0.0f), UISizePx(10.0f, 0.0f));
