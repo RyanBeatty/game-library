@@ -182,7 +182,7 @@ static void UIBoxAddChild(UIBox* parent, UIBox* child) {
     ++parent->nchildren;
 }
 
-static void UIBoxChildPopFront(UIBox* parent) {
+static void UIBoxChildPopLeft(UIBox* parent) {
     assert(parent->child_key != 0 && parent->last_child_key != 0);
     UIBox* child = GetUIBox(parent->child_key);
     assert(child != NULL);
@@ -950,6 +950,7 @@ static void UITableEnd() {
     UIBox* table = UIGetParent();
     assert(table != NULL);
     if (table->nframes == 1) {
+        // Rewrite the children pushed in table's scope such that row nodes are inserted where necessary.
         assert(table->nchildren == table->nrows * table->ncols);
         for (uint32_t i = 0; i < table->nrows; ++i) {
             char num[256] = {0};
@@ -964,7 +965,7 @@ static void UITableEnd() {
             UIBox* next = GetUIBox(cur->neighbor_key);
             for (uint32_t j = 0; j < table->ncols; ++j) {
                 assert(cur != NULL);
-                UIBoxChildPopFront(table);
+                UIBoxChildPopLeft(table);
                 UIBoxAddChild(row, cur);
                 cur = next;
                 next = GetUIBox(next->neighbor_key);
