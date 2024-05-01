@@ -38,10 +38,10 @@ int main(void) {
     static bool radio_button_1 = false;
     static char text_box[256] = {0};
     static char text_box2[256] = {0};
-    // static int wx = 0;
-    // static int wy = 200;
-    // static int ww = 200;
-    // static int wh = 300;
+    static int wx = 0;
+    static int wy = 200;
+    static int ww = 200;
+    static int wh = 300;
 
     strcat(text_box, "hello, world");
     strcat(text_box2, "foo");
@@ -85,6 +85,7 @@ int main(void) {
         if (enabled) {
             UIFrameStart(delta_time);
 
+            // UIClearWindow("window") {
             UIButton("button 1");
             UIButton("button 12");
 
@@ -110,6 +111,10 @@ int main(void) {
             UIButton("table button 4");
             UITableEnd();
 
+            UIWindow("windowwwww", &wx, &wy, &ww, &wh) {
+                UIButton("window button 1");
+                UIButton("Window button 2");
+            }
             // UIWindowPop();
 
             // if (UIPushWindow("Window", &wx, &wy, &ww, &wh)) {

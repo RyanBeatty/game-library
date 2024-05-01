@@ -58,6 +58,7 @@ typedef struct UISize {
     float strictness;  // [0.0, 1.0]
 } UISize;
 
+#define UISizeNull() ((UISize){.kind = SIZE_KIND_NULL})
 #define UISizePx(px, strct) ((UISize){.kind = SIZE_KIND_PIXELS, .value = (px), .strictness = (strct)})
 #define UISizePct(pct, strct) ((UISize){.kind = SIZE_KIND_PERCENT_OF_PARENT, .value = (pct), .strictness = (strct)})
 #define UISizeSum() ((UISize){.kind = SIZE_KIND_SUM_OF_CHILDREN, .strictness = 0.0f})
@@ -91,6 +92,7 @@ typedef struct UIBox {
     UIKey key;
     const char* key_str;
     UIKey neighbor_key;
+    UIKey left_key;
     UIKey child_key;
     UIKey last_child_key;
     UIKey parent_key;
@@ -98,6 +100,7 @@ typedef struct UIBox {
     uint32_t nchildren;
 
     struct UIBox* neighbor;
+    struct UIBox* left;
     struct UIBox* child;
     struct UIBox* last_child;
     struct UIBox* parent;
@@ -177,11 +180,23 @@ static void UIBoxAddChild(UIBox* parent, UIBox* child) {
         parent->last_child_key = child->key;
         // Might be necessary for things that rebalance tree after node creation (i.e. tables).
         child->neighbor_key = 0;
+        child->left_key = last_child->key;
     }
 
     // child->neighbor_key = parent->child_key;
     // parent->child_key = child->key;
     ++parent->nchildren;
+}
+
+static void UIBoxAddNeighbor(UIBox* box, UIBox* neighbor) {
+    UIBox* parent = GetUIBox(box->parent_key);
+    if (parent != NULL) {
+        UIBoxAddChild(parent, neighbor);
+    } else {
+        box->neighbor_key = neighbor->key;
+        neighbor->left_key = box->key;
+        neighbor->parent_key = 0;
+    }
 }
 
 static void UIBoxChildPopLeft(UIBox* parent) {
@@ -194,8 +209,27 @@ static void UIBoxChildPopLeft(UIBox* parent) {
     } else {
         parent->child_key = child->neighbor_key;
     }
+    child->left_key = 0;
     child->neighbor_key = 0;
-    child->neighbor_key = 0;
+    child->parent_key = 0;
+    --parent->nchildren;
+}
+static void UIBoxChildPopRight(UIBox* parent) {
+    assert(parent->child_key != 0 && parent->last_child_key != 0);
+    UIBox* last_child = GetUIBox(parent->last_child_key);
+    assert(last_child != NULL);
+    if (parent->child_key == parent->last_child_key) {
+        parent->child_key = 0;
+        parent->last_child_key = 0;
+    } else {
+        UIBox* left = GetUIBox(last_child->left_key);
+        assert(left != NULL);
+        parent->last_child_key = left->key;
+        left->neighbor_key = 0;
+    }
+    last_child->neighbor_key = 0;
+    last_child->left_key = 0;
+    last_child->parent_key = 0;
     --parent->nchildren;
 }
 
@@ -303,7 +337,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     UIBox* box = &State.boxes[idx].value;
 
     // Reset per frame tree links
-    box->child = box->neighbor = box->parent = box->last_child = NULL;
+    box->child = box->neighbor = box->parent = box->last_child = box->left = NULL;
 
     UIBox* parent = UIGetParent();
     if (first_frame && parent != NULL) {
@@ -363,13 +397,12 @@ static void UIFrameStart(float delta_time) {
     }
 
     // TODO: Once we are pushing and saving multiple parents. Need to make sure we push the first
-    // parent here.
-    UIBox* box = NULL;
+    // // parent here.
     UIBgColor(((Color){255, 255, 255, 0})) {
-        box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
-                        (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
+        UIBox* box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
+                               (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
+        UIPushParent(box);
     }
-    UIPushParent(box);
 
     State.hot_to_be = 0;
     if (State.hot == 0) {
@@ -384,6 +417,7 @@ static void BuildTree(UIBox* cur) {
 
     cur->parent = GetUIBox(cur->parent_key);
     cur->neighbor = GetUIBox(cur->neighbor_key);
+    cur->left = GetUIBox(cur->left_key);
     cur->child = GetUIBox(cur->child_key);
     cur->last_child = GetUIBox(cur->last_child_key);
     for (UIBox* child = cur->child; child != NULL; child = child->neighbor) {
@@ -568,20 +602,68 @@ static void DrawUI(UIBox* parent) {
     DrawUI(parent->neighbor);
 }
 
+static void BuildTreeRoot(UIBox* root) {
+    BuildTree(root);
+    for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
+        BuildTree(neighbor);
+    }
+}
+
+static void CalculateFixedSizesRoot(UIBox* root, UIAxis axis) {
+    CalculateFixedSizes(root, axis);
+    for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
+        CalculateFixedSizes(neighbor, axis);
+    }
+}
+
+static void CalculateUpwardSizesRoot(UIBox* root, UIAxis axis) {
+    CalculateUpwardSizes(root, axis);
+    for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
+        CalculateUpwardSizes(neighbor, axis);
+    }
+}
+
+static void CalculateDownwardSizesRoot(UIBox* root, UIAxis axis) {
+    CalculateDownwardSizes(root, axis);
+    for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
+        CalculateDownwardSizes(neighbor, axis);
+    }
+}
+
+static void SolveConstraintsRoot(UIBox* root, UIAxis axis) {
+    SolveConstraints(root, axis);
+    for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
+        SolveConstraints(neighbor, axis);
+    }
+}
+
+static void LayoutUIBoxesRoot(UIBox* root, UIAxis axis) {
+    LayoutUIBoxes(root, axis);
+    for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
+        LayoutUIBoxes(neighbor, axis);
+    }
+}
+
+static void DrawUIRoot(UIBox* root) {
+    DrawUI(root);
+    for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
+        DrawUI(neighbor);
+    }
+}
 static void UIFrameEnd() {
     // Drawing.
     {
         UIBox* root = UIGetParent();
         assert(root != NULL);
-        BuildTree(root);
+        BuildTreeRoot(root);
         for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
-            CalculateFixedSizes(root, axis);
-            CalculateUpwardSizes(root, axis);
-            CalculateDownwardSizes(root, axis);
-            SolveConstraints(root, axis);
-            LayoutUIBoxes(root, axis);
+            CalculateFixedSizesRoot(root, axis);
+            CalculateUpwardSizesRoot(root, axis);
+            CalculateDownwardSizesRoot(root, axis);
+            SolveConstraintsRoot(root, axis);
+            LayoutUIBoxesRoot(root, axis);
         }
-        DrawUI(root);
+        DrawUIRoot(root);
     }
 
     State.hot = State.hot_to_be;
@@ -939,6 +1021,40 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 //     // root->parent_key = parent->parent_key;
 //     State.root = parent->key;
 // }
+static void UIWindowBegin(char* label, int* x, int* y, int* width, int* height) {
+    UIBox* box = MakeUIBox(label, UISizePx(*width, 0.0f), UISizePx(*height, 0.0f));
+    box->x = *x;
+    box->y = *y;
+    if (box->nframes == 1) {
+        UIBox* parent = UIGetParent();
+        // TODO: This needs to be popright
+        UIBoxChildPopRight(parent);
+        if (parent != NULL) {
+            UIBoxAddNeighbor(parent, box);
+        }
+    }
+
+    UIPushParent(box);
+}
+static void UIWindowEnd() { UIPopParent(); }
+#define UIWindow(label, x, y, width, height) UIDeferLoop(UIWindowBegin(label, x, y, width, height), UIWindowEnd())
+
+static void UIClearWindowBegin(char* label) {
+    Color white = WHITE;
+    white.a = 0;
+    UIPushBgColor(white);
+
+    int x = 0;
+    int y = 0;
+    int width = GetScreenWidth();
+    int height = GetScreenHeight();
+    UIWindowBegin(label, &x, &y, &width, &height);
+}
+static void UIClearWindowEnd() {
+    UIWindowEnd();
+    UIPopBgColor();
+}
+#define UIClearWindow(label) UIDeferLoop(UIClearWindowBegin(label), UIClearWindowEnd())
 
 static UIBox* UIRowBegin(char* label) {
     UIBox* box = NULL;
