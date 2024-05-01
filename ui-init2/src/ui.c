@@ -119,6 +119,11 @@ typedef struct UIBox {
     char* display;
 } UIBox;
 
+typedef struct UIBoxEntry {
+    UIKey key;
+    UIBox value;
+} UIBoxEntry;
+
 typedef struct UIState {
     int mx;
     int my;
@@ -137,10 +142,7 @@ typedef struct UIState {
     bool show_cursor;
     float cursor_cooldown;
 
-    struct {
-        UIKey key;
-        UIBox value;
-    }* boxes;  // stb hash map.
+    UIBoxEntry* boxes;  // stb hash map.
 
     // Stacks.
     UIKey* root_stack;
@@ -157,10 +159,7 @@ typedef struct UIState {
 UIState State = {0};
 
 static UIBox* GetUIBox(UIKey key) {
-    struct {
-        UIKey key;
-        UIBox value;
-    }* res = hmgetp_null(State.boxes, key);
+    UIBoxEntry* res = hmgetp_null(State.boxes, key);
     if (res == NULL) {
         return NULL;
     }
