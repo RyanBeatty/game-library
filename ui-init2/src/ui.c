@@ -1106,3 +1106,4 @@ static void UITableEnd() {
 
     UIPopParent();
 }
+#define UITable(label, nrows, ncols) UIDeferLoop(UITableBegin(label, nrows, ncols), UITableEnd())
