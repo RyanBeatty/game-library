@@ -408,7 +408,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     Color bg_color = UIGetBgColor();
     if (UIKeyIsHot(box->key)) {
         // color = UIGetHotColor();
-        bg_color = UIGetActiveColor();
+        bg_color = UIGetHotColor();
     } else if (UIKeyIsActive(box->key)) {
         bg_color = UIGetActiveColor();
     }
@@ -440,6 +440,7 @@ static void UIFrameStart(float delta_time) {
         UIPushBgColor(GRAY);
 
         State.hot_color_stack = NULL;
+        UIPushHotColor(GRAY);
 
         State.active_color_stack = NULL;
         UIPushActiveColor(GREEN);
