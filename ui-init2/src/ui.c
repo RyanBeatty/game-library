@@ -39,7 +39,18 @@ static UIKey UIKeyFromCStr(char* str) {
     return key;
 }
 
-typedef enum UIStyleKind { STYLE_DEFAULT = 0, STYLE_TEXT, STYLE_BUTTON, STYLE_COUNT } UIStyleKind;
+typedef enum UIStyleKind {
+    STYLE_DEFAULT = 0,
+
+    STYLE_TEXT,
+
+    STYLE_BUTTON,
+    STYLE_BUTTON_HOT,
+    STYLE_BUTTON_ACTIVE,
+
+    STYLE_COUNT
+
+} UIStyleKind;
 
 typedef struct UIStyle {
     Color colors[STYLE_COUNT];
@@ -47,8 +58,10 @@ typedef struct UIStyle {
 
 static UIStyle DefaultUIStyle() {
     UIStyle style = {0};
-    style.colors[STYLE_TEXT] = (Color){0.0f, 0.0f, 0.0f, 1.0f};
-    style.colors[STYLE_BUTTON] = (Color){0.26f, 0.59f, 0.98f, 0.40};
+    style.colors[STYLE_TEXT] = ColorFromNormalized((Vector4){0.90f, 0.90f, 0.90f, 0.90f});
+    style.colors[STYLE_BUTTON] = ColorFromNormalized((Vector4){0.48f, 0.72f, 0.89f, 0.49f});
+    style.colors[STYLE_BUTTON_HOT] = ColorFromNormalized((Vector4){0.50f, 0.69f, 0.99f, 0.68f});
+    style.colors[STYLE_BUTTON_ACTIVE] = ColorFromNormalized((Vector4){0.80f, 0.50f, 0.50f, 1.00f});
     return style;
 }
 
@@ -411,7 +424,8 @@ static void UIFrameStart(float delta_time) {
         State.root_stack = NULL;
 
         State.style_stack = NULL;
-        UIPushStyle(DefaultUIStyle());
+        UIStyle style = DefaultUIStyle();
+        UIPushStyle(style);
     }
 
     State.font_size = 16;
@@ -741,13 +755,13 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
 }
 
 static bool UIButton(char* label) {
+    UIPushBgColor(UIGetStyleColor(STYLE_BUTTON));
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
-    if (UIKeyIsHot(box->key) && !UIKeyIsActive(box->key)) {
-        box->bg_color = UIGetActiveColor();
-    } else {
-        box->bg_color = UIGetBgColor();
+    if (UIKeyIsHot(box->key)) {
+        box->bg_color = UIGetStyleColor(STYLE_BUTTON_HOT);
     }
+    UIPopBgColor();
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
