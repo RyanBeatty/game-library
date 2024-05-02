@@ -174,6 +174,7 @@ typedef struct UIState {
     UIKey* root_stack;
     UIAxis* layout_axis_stack;
     Color* bg_color_stack;
+    Color* hot_color_stack;
     Color* active_color_stack;
     Color* font_color_stack;
     UIStyle* style_stack;
@@ -295,6 +296,19 @@ static Color UIGetActiveColor() {
 }
 #define UIActiveColor(color) UIDeferLoop(UIPushActiveColor(color), UIPopActiveColor())
 
+static void UIPushHotColor(Color color) { arrput(State.hot_color_stack, color); }
+static void UIPopHotColor() {
+    size_t len = arrlenu(State.hot_color_stack);
+    assert(len != 0);
+    (void)arrpop(State.hot_color_stack);
+}
+static Color UIGetHotColor() {
+    size_t len = arrlenu(State.hot_color_stack);
+    assert(len != 0);
+    return State.hot_color_stack[len - 1];
+}
+#define UIHotColor(color) UIDeferLoop(UIPushHotColor(color), UIPopHotColor())
+
 static void UIPushFontColor(Color color) { arrput(State.font_color_stack, color); }
 static void UIPopFontColor() {
     size_t len = arrlenu(State.font_color_stack);
@@ -314,11 +328,12 @@ static void UIPopStyle() {
     assert(len != 0);
     (void)arrpop(State.style_stack);
 }
-static Color UIGetStyleColor(UIStyleKind kind) {
-    assert(kind < STYLE_COUNT);
+static UIStyle* UIGetStyle() {
     size_t len = arrlenu(State.style_stack);
-    assert(len != 0);
-    return State.style_stack[len - 1].colors[kind];
+    if (len == 0) {
+        return NULL;
+    }
+    return &State.style_stack[len - 1];
 }
 #define UIStyle(style) UIDeferLoop(UIPushStyle(style), UIPopStyle)
 
@@ -389,7 +404,16 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     box->font_color = UIGetFontColor();
     box->fontsize = UIGetFontSize();
     box->layout_axis = UIGetLayoutAxis();
-    box->bg_color = UIGetBgColor();
+
+    Color bg_color = UIGetBgColor();
+    if (UIKeyIsHot(box->key)) {
+        // color = UIGetHotColor();
+        bg_color = UIGetActiveColor();
+    } else if (UIKeyIsActive(box->key)) {
+        bg_color = UIGetActiveColor();
+    }
+    box->bg_color = bg_color;
+
     ++box->nframes;
     return box;
 }
@@ -414,6 +438,8 @@ static void UIFrameStart(float delta_time) {
 
         State.bg_color_stack = NULL;
         UIPushBgColor(GRAY);
+
+        State.hot_color_stack = NULL;
 
         State.active_color_stack = NULL;
         UIPushActiveColor(GREEN);
@@ -714,6 +740,7 @@ static void UIFrameEnd() {
     {
         arrfree(State.layout_axis_stack);
         arrfree(State.bg_color_stack);
+        arrfree(State.hot_color_stack);
         arrfree(State.active_color_stack);
         arrfree(State.font_color_stack);
         arrfree(State.root_stack);
@@ -755,12 +782,17 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
 }
 
 static bool UIButton(char* label) {
-    UIPushBgColor(UIGetStyleColor(STYLE_BUTTON));
+    UIStyle* style = UIGetStyle();
+    UIPushBgColor(style->colors[STYLE_BUTTON]);
+    UIPushHotColor(style->colors[STYLE_BUTTON_HOT]);
+    UIPushActiveColor(style->colors[STYLE_BUTTON_ACTIVE]);
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
-    if (UIKeyIsHot(box->key)) {
-        box->bg_color = UIGetStyleColor(STYLE_BUTTON_HOT);
-    }
+    // if (UIKeyIsHot(box->key)) {
+    //     box->bg_color = UIGetStyleColor(STYLE_BUTTON_HOT);
+    // }
+    UIPopActiveColor();
+    UIPopHotColor();
     UIPopBgColor();
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
