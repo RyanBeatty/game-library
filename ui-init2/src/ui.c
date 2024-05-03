@@ -51,6 +51,14 @@ typedef enum UIStyleKind {
     STYLE_RADIO_BUTTON,
     STYLE_RADIO_BUTTON_ACTIVE,
 
+    STYLE_WINDOW,
+    STYLE_WINDOW_HOT,
+    STYLE_WINDOW_ACTIVE,
+
+    STYLE_HEADER,
+    STYLE_HEADER_HOT,
+    STYLE_HEADER_ACTIVE,
+
     STYLE_COUNT
 
 } UIStyleKind;
@@ -68,6 +76,13 @@ static UIStyle DefaultUIStyle() {
 
     style.colors[STYLE_RADIO_BUTTON] = ColorFromNormalized((Vector4){0.48f, 0.72f, 0.89f, 0.49f});
     style.colors[STYLE_RADIO_BUTTON_ACTIVE] = ColorFromNormalized((Vector4){0.80f, 0.50f, 0.50f, 1.00f});
+
+    style.colors[STYLE_WINDOW] = ColorFromNormalized((Vector4){0.09f, 0.09f, 0.15f, 1.00f});
+    style.colors[STYLE_WINDOW_HOT] = ColorFromNormalized((Vector4){0.09f, 0.09f, 0.15f, 1.00f});
+    style.colors[STYLE_WINDOW_ACTIVE] = ColorFromNormalized((Vector4){0.09f, 0.09f, 0.15f, 1.00f});
+    style.colors[STYLE_HEADER] = ColorFromNormalized((Vector4){0.30f, 0.69f, 1.00f, 0.53f});
+    style.colors[STYLE_HEADER_HOT] = ColorFromNormalized((Vector4){0.30f, 0.69f, 1.00f, 0.53f});
+    style.colors[STYLE_HEADER_ACTIVE] = ColorFromNormalized((Vector4){0.30f, 0.69f, 1.00f, 0.53f});
     return style;
 }
 
@@ -764,8 +779,11 @@ static void UISpacer(char* label, UISize width, UISize height) {
 }
 
 static void UIText(char* label) {
+    UIStyle* style = UIGetStyle();
+    UIPushBgColor(style->colors[STYLE_WINDOW]);
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
+    UIPopBgColor();
 }
 
 static bool UIButtonEx(char* label, int x, int y, int width, int height) {
@@ -1110,7 +1128,11 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 //     // root->parent_key = parent->parent_key;
 //     State.root = parent->key;
 // }
-static void UIWindowBegin(char* label, int* x, int* y, int* width, int* height) {
+static bool UIWindowBegin(char* label, int* x, int* y, int* width, int* height) {
+    UIStyle* style = UIGetStyle();
+    UIPushBgColor(style->colors[STYLE_WINDOW]);
+    UIPushHotColor(style->colors[STYLE_WINDOW_HOT]);
+    UIPushActiveColor(style->colors[STYLE_WINDOW_ACTIVE]);
     UIBox* box = MakeUIBox(label, UISizePx(*width, 0.0f), UISizePx(*height, 0.0f));
     box->x = *x;
     box->y = *y;
@@ -1124,8 +1146,19 @@ static void UIWindowBegin(char* label, int* x, int* y, int* width, int* height) 
     }
 
     UIPushParent(box);
+
+    UIPushBgColor(style->colors[STYLE_HEADER]);
+    Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
+    (void)MakeUIBox("blah", UISizePx(rec.width, 0.0f), UISizePx(rec.height, 0.0f));
+    UIPopBgColor();
+    return UIWindowEx(label, x, y, width, height);
 }
-static void UIWindowEnd() { UIPopParent(); }
+static void UIWindowEnd() {
+    UIPopParent();
+    UIPopActiveColor();
+    UIPopHotColor();
+    UIPopBgColor();
+}
 #define UIWindow(label, x, y, width, height) UIDeferLoop(UIWindowBegin(label, x, y, width, height), UIWindowEnd())
 
 // static void UIClearWindowBegin(char* label) {
