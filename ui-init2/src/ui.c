@@ -48,6 +48,9 @@ typedef enum UIStyleKind {
     STYLE_BUTTON_HOT,
     STYLE_BUTTON_ACTIVE,
 
+    STYLE_RADIO_BUTTON,
+    STYLE_RADIO_BUTTON_ACTIVE,
+
     STYLE_COUNT
 
 } UIStyleKind;
@@ -62,6 +65,9 @@ static UIStyle DefaultUIStyle() {
     style.colors[STYLE_BUTTON] = ColorFromNormalized((Vector4){0.48f, 0.72f, 0.89f, 0.49f});
     style.colors[STYLE_BUTTON_HOT] = ColorFromNormalized((Vector4){0.50f, 0.69f, 0.99f, 0.68f});
     style.colors[STYLE_BUTTON_ACTIVE] = ColorFromNormalized((Vector4){0.80f, 0.50f, 0.50f, 1.00f});
+
+    style.colors[STYLE_RADIO_BUTTON] = ColorFromNormalized((Vector4){0.48f, 0.72f, 0.89f, 0.49f});
+    style.colors[STYLE_RADIO_BUTTON_ACTIVE] = ColorFromNormalized((Vector4){0.80f, 0.50f, 0.50f, 1.00f});
     return style;
 }
 
@@ -739,6 +745,8 @@ static void UIFrameEnd() {
 
     // Deinit stacks.
     {
+        UIPopStyle();
+
         arrfree(State.layout_axis_stack);
         arrfree(State.bg_color_stack);
         arrfree(State.hot_color_stack);
@@ -821,9 +829,10 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
 }
 
 static bool UIRadioButton(char* label, bool* state) {
+    UIStyle* style = UIGetStyle();
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
     box->display = label;
-    box->bg_color = *state ? UIGetActiveColor() : UIGetBgColor();
+    box->bg_color = *state ? style->colors[STYLE_RADIO_BUTTON_ACTIVE] : style->colors[STYLE_RADIO_BUTTON];
     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
 }
 
@@ -1119,22 +1128,22 @@ static void UIWindowBegin(char* label, int* x, int* y, int* width, int* height) 
 static void UIWindowEnd() { UIPopParent(); }
 #define UIWindow(label, x, y, width, height) UIDeferLoop(UIWindowBegin(label, x, y, width, height), UIWindowEnd())
 
-static void UIClearWindowBegin(char* label) {
-    Color white = WHITE;
-    white.a = 0;
-    UIPushBgColor(white);
+// static void UIClearWindowBegin(char* label) {
+//     Color white = WHITE;
+//     white.a = 0;
+//     UIPushBgColor(white);
 
-    int x = 0;
-    int y = 0;
-    int width = GetScreenWidth();
-    int height = GetScreenHeight();
-    UIWindowBegin(label, &x, &y, &width, &height);
-}
-static void UIClearWindowEnd() {
-    UIWindowEnd();
-    UIPopBgColor();
-}
-#define UIClearWindow(label) UIDeferLoop(UIClearWindowBegin(label), UIClearWindowEnd())
+//     int x = 0;
+//     int y = 0;
+//     int width = GetScreenWidth();
+//     int height = GetScreenHeight();
+//     UIWindowBegin(label, &x, &y, &width, &height);
+// }
+// static void UIClearWindowEnd() {
+//     UIWindowEnd();
+//     UIPopBgColor();
+// }
+// #define UIClearWindow(label) UIDeferLoop(UIClearWindowBegin(label), UIClearWindowEnd())
 
 static UIBox* UIRowBegin(char* label) {
     UIBox* box = NULL;
