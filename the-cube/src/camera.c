@@ -4,6 +4,6 @@
 
 static Camera3D GameCamera;
 
-#define GetGameCamera() (GameCamera)
+#define GetGameCamera() (&GameCamera)
 
 void SetCamera(Camera3D* camera) { GameCamera = *camera; }

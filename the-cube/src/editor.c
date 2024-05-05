@@ -254,6 +254,8 @@ static void EditorUpdate(Editor *editor, float delta_time) {
 
     DrawText("Editor Enabled", 10, 40, 18, BLACK);
 
+    Camera *camera = GetGameCamera();
+
     Focus *focus = EditorGetFocus(editor);
     assert(focus != NULL);
     if (!FocusOn(focus)) {
@@ -271,6 +273,9 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         }
     } else {
         TraceLog(LOG_INFO, "focus");
+
+        Vector3 focus_pos_world = FocusGetPosition(focus);
+        Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, *camera);
     }
 
     // switch (editor->state) {
