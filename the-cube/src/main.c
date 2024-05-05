@@ -117,11 +117,9 @@ int main(void) {
 
         GameDebugEnabled = IsKeyPressed(KEY_ONE) ^ GameDebugEnabled;
         if (GameDebugEnabled) {
-            UIBgColor(ClearColor) {
-                char buffer[256] = {0};
-                sprintf(buffer, "%d", GetFPS());
-                UIText("fps", buffer);
-            }
+            char buffer[256] = {0};
+            sprintf(buffer, "FPS: %d", GetFPS());
+            UIText("fps", buffer);
         }
 
         GameUpdate(delta_time);
