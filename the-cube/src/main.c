@@ -95,6 +95,14 @@ static void GameDraw(float delta_time) {
 int main(void) {
     GameInit();
 
+    Camera3D* camera = GetGameCamera();
+    camera->position = (Vector3){0, 10, 0};
+    camera->position = (Vector3){0, 30, 0.0f};     // Position above the scene
+    camera->target = (Vector3){0.0f, 0.0f, 0.0f};  // Target at the center of the scene
+    camera->up = (Vector3){0.0f, 0.0f, 1.0f};      // Up vector (positive Y-axis)
+    camera->fovy = 20.0f;
+    camera->projection = CAMERA_ORTHOGRAPHIC;
+
     // {
     //     FilePathList files = LoadDirectoryFiles("resources/levels");
     //     for (uint32_t i = 0; i < files.count; ++i) {

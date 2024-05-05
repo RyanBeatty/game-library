@@ -90,24 +90,31 @@ static void EntityMoveRecursive(Entity* entity, float delta_time, Vector3 dir) {
 }
 
 static void EntityPlayerControlled(Entity* entity, float delta_time) {
-    Vector3 direction = {0};
+    Camera3D* camera = GetGameCamera();
+    assert(camera != NULL);
+    Matrix mview = GetCameraMatrix(*camera);
+
+    Vector3 dir_world = {0};
     if (IsKeyPressed(KEY_UP)) {
-        direction = Vector3Add(direction, (Vector3){0, 0, -CubeSideLength});
-    }
-    if (IsKeyPressed(KEY_RIGHT)) {
-        direction = Vector3Add(direction, (Vector3){CubeSideLength, 0, 0});
+        dir_world = Vector3Add(dir_world, (Vector3){mview.m1, mview.m5, mview.m9});
     }
     if (IsKeyPressed(KEY_DOWN)) {
-        direction = Vector3Add(direction, (Vector3){0, 0, CubeSideLength});
+        dir_world = Vector3Add(dir_world, Vector3Scale((Vector3){mview.m1, mview.m5, mview.m9}, -1));
     }
     if (IsKeyPressed(KEY_LEFT)) {
-        direction = Vector3Add(direction, (Vector3){-CubeSideLength, 0, 0});
+        dir_world = Vector3Add(dir_world, Vector3Scale((Vector3){mview.m0, mview.m4, mview.m8}, -1));
+    }
+    if (IsKeyPressed(KEY_RIGHT)) {
+        dir_world = Vector3Add(dir_world, (Vector3){mview.m0, mview.m4, mview.m8});
     }
 
-    if (!Vector3Equals(direction, Vector3Zero())) {
-        TransactionBegin();
-        EntityMoveRecursive(entity, delta_time, direction);
+    if (!Vector3Equals(dir_world, Vector3Zero())) {
+        breakpoint();
+        // TODO: Want to remove this.
+        dir_world = Vector3Scale(dir_world, CubeSideLength);
+        EntityMoveRecursive(entity, delta_time, dir_world);
         TransactionCommit();
+        breakpoint();
     }
 }
 
