@@ -206,7 +206,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
     assert(EditorEnabled);
 
-    DrawText("Editor Enabled", 10, 40, 18, BLACK);
+    UIText("Editor greeting", "Editor Enabled");
 
     Camera *camera = GetGameCamera();
 
