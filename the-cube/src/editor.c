@@ -82,6 +82,8 @@ typedef struct Focus {
 
 static void FocusInit(Focus *focus) { focus->entity_idxs = NULL; }
 
+static bool FocusOn(Focus *focus) { return arrlenu(focus->entity_idxs) != 0; }
+
 static void FocusDeInit(Focus *focus) {
     LevelData *level_data = GetCurLevel();
     for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
@@ -249,6 +251,27 @@ static Focus *EditorSetFocus(Editor *editor, Entity *focus) {
 static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
     assert(EditorEnabled);
+
+    DrawText("Editor Enabled", 10, 40, 18, BLACK);
+
+    Focus *focus = EditorGetFocus(editor);
+    assert(focus != NULL);
+    if (!FocusOn(focus)) {
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            Vector2 mouse_position = GetMousePosition();
+            Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+
+            LevelData *cur_level = GetCurLevel();
+            RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+            if (collision.collision.hit) {
+                Entity *entity = LevelDataGetEntity(cur_level, collision.entity_idx);
+                EditorSetFocus(editor, entity);
+                color_idx = 0;
+            }
+        }
+    } else {
+        TraceLog(LOG_INFO, "focus");
+    }
 
     // switch (editor->state) {
     //     case ES_IDLE: {
@@ -442,7 +465,6 @@ static void EditorUpdate(Editor *editor, float delta_time) {
     // }
 
     // UpdateEntities.
-    Focus *focus = EditorGetFocus(editor);
     Vector3 focus_position = FocusGetPosition(focus);
     Quaternion focus_orientation = FocusGetOrientation(focus);
     for (uint32_t i = 0; i < 3; ++i) {
