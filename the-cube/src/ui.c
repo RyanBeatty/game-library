@@ -13,6 +13,8 @@
 
 #define UIDeferLoop(begin, end) for (int _i_ = ((begin), 0); !_i_; _i_ += 1, (end))
 
+Color ClearColor = {255, 255, 255, 0};
+
 static size_t GenerateRandomSeed() {
     // Get current time in seconds since Epoch
     time_t currentTime = time(NULL);
@@ -162,6 +164,7 @@ typedef struct UIBox {
     uint32_t ncols;
 
     uint32_t nframes;
+    uint32_t last_frame_touched;
 
     char* display;
 } UIBox;
@@ -203,6 +206,8 @@ typedef struct UIState {
     UIKey hot;
     UIKey hot_to_be;
     UIKey active;
+
+    uint32_t frame_count;
 } UIState;
 
 UIState State = {0};
@@ -436,11 +441,14 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     box->bg_color = bg_color;
 
     ++box->nframes;
+    box->last_frame_touched = State.frame_count;
     return box;
 }
 
 static void UIFrameStart(float delta_time) {
     static const float CURSOR_COOLDOWN_DEFAULT_SEC = 0.6;
+
+    ++State.frame_count;
 
     int mx = GetMouseX();
     int my = GetMouseY();
@@ -645,6 +653,11 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
 }
 
 static void DrawUIBox(UIBox* cur) {
+    assert(cur != NULL);
+    if (cur->last_frame_touched != State.frame_count) {
+        return;
+    }
+
     BeginScissorMode(cur->x, cur->y, cur->width, cur->height);
     DrawRectangle(cur->x, cur->y, cur->width, cur->height, cur->bg_color);
     DrawRectangleLines(cur->x, cur->y, cur->width, cur->height, BLACK);
