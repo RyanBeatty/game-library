@@ -778,11 +778,11 @@ static void UISpacer(char* label, UISize width, UISize height) {
     UIBgColor(white) { MakeUIBox(label, width, height); }
 }
 
-static void UIText(char* label) {
+static void UIText(char* label, char* display) {
     UIStyle* style = UIGetStyle();
     UIPushBgColor(style->colors[STYLE_WINDOW]);
     UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
-    box->display = label;
+    box->display = display;
     UIPopBgColor();
 }
 

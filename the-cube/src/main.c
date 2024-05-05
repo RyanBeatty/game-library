@@ -19,9 +19,11 @@
 #include "editor.c"
 //
 #include "camera.c"
+#include "ui.c"
 #endif
 
 bool GameUpdateEnabled = true;
+bool GameDebugEnabled = false;
 
 static void EnableGameUpdate() { GameUpdateEnabled = true; }
 
@@ -111,6 +113,11 @@ int main(void) {
             if (IsKeyPressed(KEY_E)) {
                 EditorToggle();
             }
+        }
+
+        GameDebugEnabled = IsKeyPressed(KEY_ONE) ^ GameDebugEnabled;
+        if (GameDebugEnabled) {
+            DrawFPS(10, 10);
         }
 
         GameUpdate(delta_time);
