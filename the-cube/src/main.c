@@ -38,6 +38,10 @@ static void GameInit() {
 }
 
 static void GameUpdate(float delta_time) {
+    if (!GameUpdateEnabled) {
+        return;
+    }
+
     Shader* shader = GetShader();
     float cameraPos[3] = {GameCamera.position.x, GameCamera.position.y, GameCamera.position.z};
     SetShaderValue(*shader, shader->locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
@@ -112,9 +116,8 @@ int main(void) {
             }
         }
 
-        if (GameUpdateEnabled) {
-            GameUpdate(delta_time);
-        }
+        GameUpdate(delta_time);
+
         // Ensure we do this after all above updates so that the transforms reflect updated entity info.
         // TODO: Feels like this should be in GameUpdate, but run into issues when editing entities in editor mode (they
         // wont get updated in graphics). Wonder if we can control this via Flags maybe?
