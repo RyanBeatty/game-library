@@ -15,17 +15,6 @@ static void DisableGameUpdate();
 
 //////////////////////////////////////////////////////////////////////
 
-typedef enum EditorState {
-    ES_IDLE = 0,
-    ES_EDITING,
-    ES_SAVING,
-    ES_LOADING,
-    ES_FOCUSING,
-    ES_CAMERA,
-
-    ES_COUNT
-} EditorState;
-
 #define EditorNumEntities 3
 
 static Color EntityGetFocusColor(Color color) { return (Color){color.r, color.g, color.b, 255 / 2}; }
@@ -142,7 +131,6 @@ static void FocusRemove(Focus *focus, uint32_t idx) {
 }
 
 typedef struct Editor {
-    EditorState state;
     // Index to entity we are focused on.
     Focus focus;
     char load_level_filename[256];
@@ -183,7 +171,6 @@ static Focus *EditorGetFocus(Editor *editor) { return &editor->focus; }
 static Focus *EditorSetFocus(Editor *editor, Entity *focus) {
     FocusInit(&editor->focus);
     FocusAdd(&editor->focus, focus->idx);
-    editor->state = ES_FOCUSING;
 
     editor->x_arrow.model = LoadModelFromMesh(GenMeshCube(0.5, 6, 0.5));
     editor->x_arrow.model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLUE;
