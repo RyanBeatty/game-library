@@ -280,6 +280,7 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         Vector3 arrows[3] = {(Vector3){1, 0, 0}, (Vector3){0, 1, 0}, (Vector3){0, 0, 1}};
         for (uint32_t i = 0; i < 3; ++i) {
             // Scale and Translate arrows from model space to world space and then to screen space.
+            // TODO: Should just use the model transform to do the translate and incorporate the rotation.
             Vector3 arrow_pos_world = Vector3Add(focus_pos_world, Vector3Scale(arrows[i], 3));
             Vector2 arrow_pos_screen = GetWorldToScreen(arrow_pos_world, *camera);
             DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
