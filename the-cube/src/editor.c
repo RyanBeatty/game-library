@@ -12,52 +12,6 @@
 // Forward decls
 static void EnableGameUpdate();
 static void DisableGameUpdate();
-//////////////////////////////////////////////////////////////////////
-// Immediate Mode GUI
-
-typedef struct UIWidget {
-    bool enabled;
-    char buffer[256];
-    uint32_t len;
-} UIWidget;
-
-bool UITextBox(UIWidget *widget, char *id, bool toggle, int x, int y, int pressed) {
-    if (toggle) {
-        widget->enabled = !widget->enabled;
-#ifndef BT_DEBUG
-
-        TraceLog(LOG_INFO, "%s %s", id, ONOFF(widget->enabled));
-#endif
-        return false;
-    }
-
-    if (widget->enabled) {
-        if (pressed == KEY_ENTER) {
-            return true;
-        } else if (pressed == KEY_DELETE) {
-            // TODO: I need to implement focus. Problems that arise, are if I hit delete, the entity that
-            // gets focus will get deleted because of other deletion code. I should implement some concept of widget
-            // focus, so that deletion will work correctly.
-            --widget->len;
-            widget->len = widget->len < 0 ? 0 : widget->len;
-        } else if (pressed != 0) {
-            widget->buffer[widget->len] = pressed;
-            ++widget->len;
-        }
-
-        if (widget->len) {
-            DrawText(widget->buffer, x, y, 22, BLACK);
-        }
-    } else {
-        // TODO: I need to implement focus. Problems that arise, are if I hit delete, the entity that
-        // gets focus will get deleted because of other deletion code. I should implement some concept of widget
-        // focus, so that deletion will work correctly.
-        widget->len = 0;
-        memset(widget->buffer, 0, 256);
-    }
-
-    return false;
-}
 
 //////////////////////////////////////////////////////////////////////
 
