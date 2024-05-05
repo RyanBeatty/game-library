@@ -250,196 +250,196 @@ static void EditorUpdate(Editor *editor, float delta_time) {
     static uint32_t color_idx = 0;
     assert(EditorEnabled);
 
-    switch (editor->state) {
-        case ES_IDLE: {
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                Vector2 mouse_position = GetMousePosition();
-                Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+    // switch (editor->state) {
+    //     case ES_IDLE: {
+    //         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    //             Vector2 mouse_position = GetMousePosition();
+    //             Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
 
-                LevelData *cur_level = GetCurLevel();
-                RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
-                if (collision.collision.hit) {
-                    Entity *entity = LevelDataGetEntity(cur_level, collision.entity_idx);
-                    EditorSetFocus(editor, entity);
-                    color_idx = 0;
-                }
-            }
+    //             LevelData *cur_level = GetCurLevel();
+    //             RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+    //             if (collision.collision.hit) {
+    //                 Entity *entity = LevelDataGetEntity(cur_level, collision.entity_idx);
+    //                 EditorSetFocus(editor, entity);
+    //                 color_idx = 0;
+    //             }
+    //         }
 
-            if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
-                if (IsKeyPressed(KEY_S)) {
-                    editor->state = ES_SAVING;
-                } else if (IsKeyPressed(KEY_L)) {
-                    editor->state = ES_LOADING;
-                } else if (IsKeyPressed(KEY_R)) {
-                    LoadLevel(GetCurLevel()->name);
-                } else if (IsKeyPressed(KEY_A)) {
-                    LevelData *level = GetCurLevel();
-                    Entity *entity = LevelDataGetEntity(level, 0);
-                    Focus *focus = EditorSetFocus(editor, entity);
-                    for (uint32_t i = 1; i < LevelDataNumEntities(level); ++i) {
-                        entity = LevelDataGetEntity(level, i);
-                        FocusAdd(focus, entity->idx);
-                    }
-                    editor->state = ES_EDITING;
-                }
-            } else if (IsKeyPressed(KEY_C)) {
-                editor->state = ES_CAMERA;
-            } else if (IsKeyPressed(KEY_A)) {
-                Entity *focus = LevelDataCreateEntity(GetCurLevel());
-                focus->block_color = GRAY;
-                focus->model = GenCubeModel(GRAY);
-                focus->position = ORIGIN;
-                EntitySetFlag(focus, EF_WALL);
-                EditorSetFocus(editor, focus);
-                color_idx = 0;
-            }
-            break;
-        }
-        case ES_EDITING: {
-            {
-                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                    // TODO: Remove duplication.
-                    Vector2 mouse_position = GetMousePosition();
-                    Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+    //         if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_SHIFT)) {
+    //             if (IsKeyPressed(KEY_S)) {
+    //                 editor->state = ES_SAVING;
+    //             } else if (IsKeyPressed(KEY_L)) {
+    //                 editor->state = ES_LOADING;
+    //             } else if (IsKeyPressed(KEY_R)) {
+    //                 LoadLevel(GetCurLevel()->name);
+    //             } else if (IsKeyPressed(KEY_A)) {
+    //                 LevelData *level = GetCurLevel();
+    //                 Entity *entity = LevelDataGetEntity(level, 0);
+    //                 Focus *focus = EditorSetFocus(editor, entity);
+    //                 for (uint32_t i = 1; i < LevelDataNumEntities(level); ++i) {
+    //                     entity = LevelDataGetEntity(level, i);
+    //                     FocusAdd(focus, entity->idx);
+    //                 }
+    //                 editor->state = ES_EDITING;
+    //             }
+    //         } else if (IsKeyPressed(KEY_C)) {
+    //             editor->state = ES_CAMERA;
+    //         } else if (IsKeyPressed(KEY_A)) {
+    //             Entity *focus = LevelDataCreateEntity(GetCurLevel());
+    //             focus->block_color = GRAY;
+    //             focus->model = GenCubeModel(GRAY);
+    //             focus->position = ORIGIN;
+    //             EntitySetFlag(focus, EF_WALL);
+    //             EditorSetFocus(editor, focus);
+    //             color_idx = 0;
+    //         }
+    //         break;
+    //     }
+    //     case ES_EDITING: {
+    //         {
+    //             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+    //                 // TODO: Remove duplication.
+    //                 Vector2 mouse_position = GetMousePosition();
+    //                 Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
 
-                    LevelData *cur_level = GetCurLevel();
-                    RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
-                    if (collision.collision.hit) {
-                        uint32_t idx = 0;
-                        Focus *focus = EditorGetFocus(editor);
-                        if (FocusIsInFocus(focus, collision.entity_idx, &idx)) {
-                            breakpoint();
-                            FocusRemove(focus, idx);
-                        } else {
-                            FocusAdd(focus, collision.entity_idx);
-                        }
-                    }
-                }
-            }
+    //                 LevelData *cur_level = GetCurLevel();
+    //                 RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+    //                 if (collision.collision.hit) {
+    //                     uint32_t idx = 0;
+    //                     Focus *focus = EditorGetFocus(editor);
+    //                     if (FocusIsInFocus(focus, collision.entity_idx, &idx)) {
+    //                         breakpoint();
+    //                         FocusRemove(focus, idx);
+    //                     } else {
+    //                         FocusAdd(focus, collision.entity_idx);
+    //                     }
+    //                 }
+    //             }
+    //         }
 
-            Focus *focus = EditorGetFocus(editor);
+    //         Focus *focus = EditorGetFocus(editor);
 
-            int key = GetKeyPressed();
-            static UIWidget EditFlagsTextBox = {0};
-            if (UITextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
-                char *endptr;
-                long flag = strtol(EditFlagsTextBox.buffer, &endptr, 10);
-                assert(errno != ERANGE);
-                assert(*endptr == '\0');
-                if (flag < EF_COUNT) {
-                    if (flag >= 0) {
-                        FocusSetFlag(focus, (EntityFlag)flag);
-                    } else {
-                        flag *= -1;
-                        FocusUnsetFlag(focus, (EntityFlag)flag);
-                    }
-                } else {
-                    TraceLog(LOG_INFO, "EditFlags Flag Value Too High: %d > %d", flag, EF_COUNT);
-                }
-            }
+    //         int key = GetKeyPressed();
+    //         static UIWidget EditFlagsTextBox = {0};
+    //         if (UITextBox(&EditFlagsTextBox, "EditFlags", key == KEY_F, 200, 40, key)) {
+    //             char *endptr;
+    //             long flag = strtol(EditFlagsTextBox.buffer, &endptr, 10);
+    //             assert(errno != ERANGE);
+    //             assert(*endptr == '\0');
+    //             if (flag < EF_COUNT) {
+    //                 if (flag >= 0) {
+    //                     FocusSetFlag(focus, (EntityFlag)flag);
+    //                 } else {
+    //                     flag *= -1;
+    //                     FocusUnsetFlag(focus, (EntityFlag)flag);
+    //                 }
+    //             } else {
+    //                 TraceLog(LOG_INFO, "EditFlags Flag Value Too High: %d > %d", flag, EF_COUNT);
+    //             }
+    //         }
 
-            if (key == KEY_ENTER) {
-                FocusDeInit(focus);
-                editor->state = ES_IDLE;
-            } else {
-                if (key == KEY_BACKSPACE) {
-                    FocusDelete(focus);
-                    editor->state = ES_IDLE;
-                } else if (key == KEY_C) {
-                    color_idx = (color_idx + 1) % (sizeof(Colors) / sizeof(Colors[0]));
-                    FocusChangeColor(focus, color_idx);
-                } else {
-                    Vector3 direction = {0};
-                    if (key == KEY_UP) {
-                        direction.z -= CubeSideLength;
-                    } else if (key == KEY_RIGHT) {
-                        direction.x += CubeSideLength;
-                    } else if (key == KEY_DOWN) {
-                        direction.z += CubeSideLength;
-                    } else if (key == KEY_LEFT) {
-                        direction.x -= CubeSideLength;
-                    } else if (key == KEY_PAGE_UP) {
-                        direction.y += CubeSideLength;
-                    } else if (key == KEY_PAGE_DOWN) {
-                        direction.y -= CubeSideLength;
-                    }
+    //         if (key == KEY_ENTER) {
+    //             FocusDeInit(focus);
+    //             editor->state = ES_IDLE;
+    //         } else {
+    //             if (key == KEY_BACKSPACE) {
+    //                 FocusDelete(focus);
+    //                 editor->state = ES_IDLE;
+    //             } else if (key == KEY_C) {
+    //                 color_idx = (color_idx + 1) % (sizeof(Colors) / sizeof(Colors[0]));
+    //                 FocusChangeColor(focus, color_idx);
+    //             } else {
+    //                 Vector3 direction = {0};
+    //                 if (key == KEY_UP) {
+    //                     direction.z -= CubeSideLength;
+    //                 } else if (key == KEY_RIGHT) {
+    //                     direction.x += CubeSideLength;
+    //                 } else if (key == KEY_DOWN) {
+    //                     direction.z += CubeSideLength;
+    //                 } else if (key == KEY_LEFT) {
+    //                     direction.x -= CubeSideLength;
+    //                 } else if (key == KEY_PAGE_UP) {
+    //                     direction.y += CubeSideLength;
+    //                 } else if (key == KEY_PAGE_DOWN) {
+    //                     direction.y -= CubeSideLength;
+    //                 }
 
-                    FocusMove(EditorGetFocus(editor), direction);
-                }
-            }
-            break;
-        }
-        case ES_FOCUSING: {
-            if (!IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-                editor->state = ES_EDITING;
-            } else {
-                // TODO: Remove duplication.
-                Vector2 mouse_position = GetMousePosition();
-                Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+    //                 FocusMove(EditorGetFocus(editor), direction);
+    //             }
+    //         }
+    //         break;
+    //     }
+    //     case ES_FOCUSING: {
+    //         if (!IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+    //             editor->state = ES_EDITING;
+    //         } else {
+    //             // TODO: Remove duplication.
+    //             Vector2 mouse_position = GetMousePosition();
+    //             Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
 
-                LevelData *cur_level = GetCurLevel();
-                RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
-                if (collision.collision.hit) {
-                    Focus *focus = EditorGetFocus(editor);
-                    FocusAdd(focus, collision.entity_idx);
-                }
-            }
-            break;
-        }
-        case ES_SAVING: {
-            if (IsKeyPressed(KEY_ENTER)) {
-                SaveLevel(GetCurLevel());
-                editor->state = ES_IDLE;
-            } else if (IsKeyPressed(KEY_BACKSPACE)) {
-                uint32_t len = strlen(CurLevel.name);
-                if (len > 0) {
-                    CurLevel.name[len - 1] = '\0';
-                }
-            } else {
-                int key = GetCharPressed();
-                uint32_t name_len = strlen(CurLevel.name);
-                if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
-                    CurLevel.name[name_len] = (char)key;
-                    CurLevel.name[name_len + 1] = '\0';
-                }
-            }
-            break;
-        }
-        case ES_LOADING: {
-            if (IsKeyPressed(KEY_ENTER)) {
-                LoadLevel(editor->load_level_filename);
-                editor->state = ES_IDLE;
-            } else if (IsKeyPressed(KEY_BACKSPACE)) {
-                uint32_t len = strlen(editor->load_level_filename);
-                if (len > 0) {
-                    editor->load_level_filename[len - 1] = '\0';
-                }
-            } else {
-                int key = GetCharPressed();
-                uint32_t name_len = strlen(editor->load_level_filename);
-                if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
-                    editor->load_level_filename[name_len] = (char)key;
-                    editor->load_level_filename[name_len + 1] = '\0';
-                }
-            }
-            break;
-        }
-        case ES_CAMERA: {
-            if (IsKeyPressed(KEY_C)) {
-                editor->state = ES_IDLE;
-            } else {
-                Camera3D *camera = &GetGameCamera();
-                if (IsKeyPressed(KEY_ENTER)) {
-                    GetCurLevel()->camera = *camera;
-                }
-                UpdateCamera(camera, CAMERA_FREE);
-            }
-            break;
-        }
-        default: {
-            exit(EXIT_FAILURE);
-        }
-    }
+    //             LevelData *cur_level = GetCurLevel();
+    //             RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+    //             if (collision.collision.hit) {
+    //                 Focus *focus = EditorGetFocus(editor);
+    //                 FocusAdd(focus, collision.entity_idx);
+    //             }
+    //         }
+    //         break;
+    //     }
+    //     case ES_SAVING: {
+    //         if (IsKeyPressed(KEY_ENTER)) {
+    //             SaveLevel(GetCurLevel());
+    //             editor->state = ES_IDLE;
+    //         } else if (IsKeyPressed(KEY_BACKSPACE)) {
+    //             uint32_t len = strlen(CurLevel.name);
+    //             if (len > 0) {
+    //                 CurLevel.name[len - 1] = '\0';
+    //             }
+    //         } else {
+    //             int key = GetCharPressed();
+    //             uint32_t name_len = strlen(CurLevel.name);
+    //             if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
+    //                 CurLevel.name[name_len] = (char)key;
+    //                 CurLevel.name[name_len + 1] = '\0';
+    //             }
+    //         }
+    //         break;
+    //     }
+    //     case ES_LOADING: {
+    //         if (IsKeyPressed(KEY_ENTER)) {
+    //             LoadLevel(editor->load_level_filename);
+    //             editor->state = ES_IDLE;
+    //         } else if (IsKeyPressed(KEY_BACKSPACE)) {
+    //             uint32_t len = strlen(editor->load_level_filename);
+    //             if (len > 0) {
+    //                 editor->load_level_filename[len - 1] = '\0';
+    //             }
+    //         } else {
+    //             int key = GetCharPressed();
+    //             uint32_t name_len = strlen(editor->load_level_filename);
+    //             if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
+    //                 editor->load_level_filename[name_len] = (char)key;
+    //                 editor->load_level_filename[name_len + 1] = '\0';
+    //             }
+    //         }
+    //         break;
+    //     }
+    //     case ES_CAMERA: {
+    //         if (IsKeyPressed(KEY_C)) {
+    //             editor->state = ES_IDLE;
+    //         } else {
+    //             Camera3D *camera = &GetGameCamera();
+    //             if (IsKeyPressed(KEY_ENTER)) {
+    //                 GetCurLevel()->camera = *camera;
+    //             }
+    //             UpdateCamera(camera, CAMERA_FREE);
+    //         }
+    //         break;
+    //     }
+    //     default: {
+    //         exit(EXIT_FAILURE);
+    //     }
+    // }
 
     // UpdateEntities.
     Focus *focus = EditorGetFocus(editor);
@@ -454,49 +454,5 @@ static void EditorUpdate(Editor *editor, float delta_time) {
     for (uint32_t i = 0; i < EditorNumEntities; ++i) {
         Entity *entity = &editor->entities[i];
         EntityUpdateTransform(entity);
-    }
-}
-
-static void EditorDraw(Editor *editor, float delta_time) {
-    static bool show_cursor = true;
-    static float show_cursor_cooldown = 0.0f;
-
-    show_cursor_cooldown += delta_time;
-    if (show_cursor_cooldown >= 0.650f) {
-        show_cursor = !show_cursor;
-        show_cursor_cooldown = 0.0f;
-    }
-
-    // Not in Mode3D. All coords are screen space.
-    DrawFPS(10, 10);
-    DrawText("Editor Enabled", 100, 10, 20, BLACK);
-
-    BeginMode3D(GameCamera);
-
-    if (editor->state == ES_EDITING) {
-        Vector3 zero = {0};
-        for (uint32_t i = 0; i < EditorNumEntities; ++i) {
-            Entity *entity = &editor->entities[i];
-            DrawModel(entity->model, zero, 1, WHITE);
-        }
-    }
-
-    EndMode3D();
-
-    switch (editor->state) {
-        case ES_SAVING: {
-            char text[1024] = {0};
-            sprintf(text, "Save level as: %s%c", CurLevel.name, show_cursor ? '|' : '\0');
-            DrawText(text, 200, 40, 20, BLACK);
-            break;
-        }
-        case ES_LOADING: {
-            char text[1024] = {0};
-            sprintf(text, "Load level: %s%c", editor->load_level_filename, show_cursor ? '|' : '\0');
-            DrawText(text, 200, 40, 20, BLACK);
-        }
-        default: {
-            break;
-        }
     }
 }
