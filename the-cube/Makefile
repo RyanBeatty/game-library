@@ -1,14 +1,21 @@
 # Thanks to Job Vranish (https://spin.atomicobject.com/2016/08/26/makefile-c-projects/)
 TARGET_EXEC := main
 
-BUILD_DIR := ./build
-SRC_DIRS := ./src
-LIB_DIR := ./external
+IS_WINDOWS := $(findstring Windows_NT,$(OS))
 
-CC=gcc
+BUILD_DIR := build
+SRC_DIRS := src
+LIB_DIR := libs
+
+ifeq ($(IS_WINDOWS), Windows_NT)
+	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm  -L/raylib/raylib/src -I/raylib/raylib/src
+else
+	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
+endif
 
 LIBS := ""
-LDFLAGS := -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
+LDFLAGS := $(LDFLAGS) -lraylib -lm -lpthread -lraylib $(PLATFORM_LDFLAGS)
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. Make will incorrectly expand these otherwise.
@@ -25,8 +32,6 @@ DEPS := $(OBJS:.o=.d)
 
 # Every folder in ./src will need to be passed to GCC so that it can find header files
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
-# Include external libs.
-INC_DIRS := $(INC_DIRS) $(shell find $(LIB_DIR) -maxdepth 1 -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
