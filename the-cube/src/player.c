@@ -23,6 +23,7 @@ static Color GetTopFaceColor(Mesh* mesh, Quaternion rotation) {
     }
 
     assert(0);
+    return WHITE;
 }
 
 static void PlayerInit(Entity* player, Vector3 position) {
