@@ -207,17 +207,19 @@ static Editor GameEditor = {0};
 static bool EditorEnabled = false;
 #define IsEditorEnabled() (EditorEnabled)
 
-static void EditorEnable() {
-    EditorEnabled = true;
-    GameEditor = (Editor){0};
+static void EditorToggle() {
+    if (EditorEnabled) {
+        // Enable.
+        EditorEnabled = false;
+        GameEditor = (Editor){0};
+        EnableGameUpdate();
+    } else {
+        // Disable.
+        EditorEnabled = true;
+        GameEditor = (Editor){0};
 
-    DisableGameUpdate();
-}
-
-static void EditorDisable() {
-    EditorEnabled = false;
-    GameEditor = (Editor){0};
-    EnableGameUpdate();
+        DisableGameUpdate();
+    }
 }
 
 static Focus *EditorGetFocus(Editor *editor) { return &editor->focus; }

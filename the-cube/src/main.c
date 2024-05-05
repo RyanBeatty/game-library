@@ -108,11 +108,7 @@ int main(void) {
         float delta_time = GetFrameTime();
         if (IsKeyDown(KEY_LEFT_CONTROL)) {
             if (IsKeyPressed(KEY_E)) {
-                if (!IsEditorEnabled()) {
-                    EditorEnable();
-                } else {
-                    EditorDisable();
-                }
+                EditorToggle();
             }
         }
 
