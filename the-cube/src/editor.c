@@ -272,10 +272,18 @@ static void EditorUpdate(Editor *editor, float delta_time) {
             }
         }
     } else {
-        TraceLog(LOG_INFO, "focus");
-
         Vector3 focus_pos_world = FocusGetPosition(focus);
         Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, *camera);
+
+        // Draw arrows.
+        Color colors[3] = {BLUE, GREEN, RED};
+        Vector3 arrows[3] = {(Vector3){1, 0, 0}, (Vector3){0, 1, 0}, (Vector3){0, 0, 1}};
+        for (uint32_t i = 0; i < 3; ++i) {
+            // Scale and Translate arrows from model space to world space and then to screen space.
+            Vector3 arrow_pos_world = Vector3Add(focus_pos_world, Vector3Scale(arrows[i], 3));
+            Vector2 arrow_pos_screen = GetWorldToScreen(arrow_pos_world, *camera);
+            DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
+        }
     }
 
     // switch (editor->state) {
