@@ -106,6 +106,7 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         float delta_time = GetFrameTime();
+        UIFrameStart(delta_time);
         if (IsKeyDown(KEY_LEFT_CONTROL)) {
             if (IsKeyPressed(KEY_E)) {
                 EditorToggle();
@@ -132,6 +133,7 @@ int main(void) {
 
             EditorDraw(&GameEditor, delta_time);
         }
+        UIFrameEnd();
         EndDrawing();
     }
 
