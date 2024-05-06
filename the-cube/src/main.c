@@ -60,6 +60,8 @@ static void GameUpdate(float delta_time) {
         }
     } else if (IsKeyPressed(KEY_U)) {
         TransactionUndo();
+    } else if (IsKeyPressed(KEY_R)) {
+        LoadLevel(level->name);
     } else {
         for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
             Entity* entity = LevelDataGetEntity(level, i);
