@@ -146,7 +146,7 @@ int main(void) {
         GameDraw(delta_time);
 
         if (IsEditorEnabled()) {
-            EditorUpdate(&GameEditor, delta_time);
+            EditorUpdate(delta_time);
         }
         UIFrameEnd();
         EndDrawing();

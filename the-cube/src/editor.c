@@ -130,7 +130,7 @@ static void FocusRemove(Focus *focus, uint32_t idx) {
     arrdel(focus->entity_idxs, idx);
 }
 
-typedef struct Editor {
+typedef struct EditorState {
     // Index to entity we are focused on.
     Focus focus;
     char load_level_filename[256];
@@ -144,9 +144,9 @@ typedef struct Editor {
 
         Entity entities[EditorNumEntities];
     };
-} Editor;
+} EditorState;
 
-static Editor GameEditor = {0};
+static EditorState Editor = {0};
 // Yuck -- figure out something better later.
 static bool EditorEnabled = false;
 #define IsEditorEnabled() (EditorEnabled)
@@ -155,20 +155,20 @@ static void EditorToggle() {
     if (EditorEnabled) {
         // Enable.
         EditorEnabled = false;
-        GameEditor = (Editor){0};
+        Editor = (EditorState){0};
         EnableGameUpdate();
     } else {
         // Disable.
         EditorEnabled = true;
-        GameEditor = (Editor){0};
+        Editor = (EditorState){0};
 
         DisableGameUpdate();
     }
 }
 
-static Focus *EditorGetFocus(Editor *editor) { return &editor->focus; }
+static Focus *EditorGetFocus(EditorState *editor) { return &editor->focus; }
 
-static Focus *EditorSetFocus(Editor *editor, Entity *focus) {
+static Focus *EditorSetFocus(EditorState *editor, Entity *focus) {
     FocusInit(&editor->focus);
     FocusAdd(&editor->focus, focus->idx);
 
@@ -189,7 +189,7 @@ static Focus *EditorSetFocus(Editor *editor, Entity *focus) {
     return EditorGetFocus(editor);
 }
 
-static void EditorUpdate(Editor *editor, float delta_time) {
+static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static uint32_t color_idx = 0;
     assert(EditorEnabled);
 
@@ -433,3 +433,5 @@ static void EditorUpdate(Editor *editor, float delta_time) {
         EntityUpdateTransform(entity);
     }
 }
+
+static void EditorUpdate(float delta_time) { EditorUpdateEx(&Editor, delta_time); }
