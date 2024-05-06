@@ -230,17 +230,23 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         }
     }
 
-    bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
-    if (saving_toggled) {
-        if (editor->saving) {
-            editor->saving = false;
-        } else {
-            editor->saving = true;
+    // Level saving.
+    {
+        bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
+        if (saving_toggled) {
+            if (editor->saving) {
+                editor->saving = false;
+            } else {
+                editor->saving = true;
+            }
         }
-    }
 
-    if (editor->saving) {
-        UIText("saving", "Saving");
+        if (editor->saving) {
+            UIRow("saving row") {
+                UIText("saving", "Saving");
+                UIEditBox("level edit", editor->load_level_filename);
+            }
+        }
     }
 
     // switch (editor->state) {
