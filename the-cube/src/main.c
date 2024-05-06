@@ -18,7 +18,6 @@
 //
 #include "editor.c"
 //
-#include "camera.c"
 #include "ui.c"
 #endif
 
