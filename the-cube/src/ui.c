@@ -771,6 +771,11 @@ static void UIFrameEnd() {
 
     State.hot = State.hot_to_be;
 
+    UIBox* hot = GetUIBox(State.hot);
+    if (hot != NULL && hot->last_frame_touched != State.frame_count) {
+        State.hot = 0;
+    }
+
     // Deinit stacks.
     {
         UIPopStyle();
