@@ -198,26 +198,25 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
 
     UIText("Editor greeting", "Editor Enabled");
 
-    Camera *camera = GetGameCamera();
+    LevelData *level = GetCurLevel();
 
     Focus *focus = EditorGetFocus(editor);
     assert(focus != NULL);
     if (!FocusOn(focus)) {
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             Vector2 mouse_position = GetMousePosition();
-            Ray mouse_click = GetMouseRay(mouse_position, GameCamera);
+            Ray mouse_click = GetMouseRay(mouse_position, level->camera);
 
-            LevelData *cur_level = GetCurLevel();
-            RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, cur_level);
+            RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, level);
             if (collision.collision.hit) {
-                Entity *entity = LevelDataGetEntity(cur_level, collision.entity_idx);
+                Entity *entity = LevelDataGetEntity(level, collision.entity_idx);
                 EditorSetFocus(editor, entity);
                 color_idx = 0;
             }
         }
     } else {
         Vector3 focus_pos_world = FocusGetPosition(focus);
-        Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, *camera);
+        Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, level->camera);
 
         // Draw arrows.
         Color colors[3] = {BLUE, GREEN, RED};
@@ -226,14 +225,13 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             // Scale and Translate arrows from model space to world space and then to screen space.
             // TODO: Should just use the model transform to do the translate and incorporate the rotation.
             Vector3 arrow_pos_world = Vector3Add(focus_pos_world, Vector3Scale(arrows[i], 3));
-            Vector2 arrow_pos_screen = GetWorldToScreen(arrow_pos_world, *camera);
+            Vector2 arrow_pos_screen = GetWorldToScreen(arrow_pos_world, level->camera);
             DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
         }
     }
 
     // Level saving.
     {
-        LevelData *level = GetCurLevel();
         bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
         if (saving_toggled) {
             if (editor->saving) {

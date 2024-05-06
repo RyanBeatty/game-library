@@ -90,9 +90,9 @@ static void EntityMoveRecursive(Entity* entity, float delta_time, Vector3 dir) {
 }
 
 static void EntityPlayerControlled(Entity* entity, float delta_time) {
-    Camera3D* camera = GetGameCamera();
-    assert(camera != NULL);
-    Matrix mview = GetCameraMatrix(*camera);
+    LevelData* level = GetCurLevel();
+    assert(level != NULL);
+    Matrix mview = GetCameraMatrix(level->camera);
 
     Vector3 dir_world = {0};
     if (IsKeyPressed(KEY_UP)) {

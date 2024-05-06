@@ -45,10 +45,11 @@ static void GameUpdate(float delta_time) {
     }
 
     Shader* shader = GetShader();
-    float cameraPos[3] = {GameCamera.position.x, GameCamera.position.y, GameCamera.position.z};
+    LevelData* level = GetCurLevel();
+    assert(level != NULL);
+    float cameraPos[3] = {level->camera.position.x, level->camera.position.y, level->camera.position.z};
     SetShaderValue(*shader, shader->locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
-    LevelData* level = GetCurLevel();
     if (level->finished || level->failed) {
         // TODO: Consider moving this call into LoadLevel.
         TransactionsReset();
@@ -70,8 +71,9 @@ static void GameUpdate(float delta_time) {
 
 static void GameDraw(float delta_time) {
     LevelData* level = GetCurLevel();
+    assert(level != NULL);
 
-    BeginMode3D(GameCamera);
+    BeginMode3D(level->camera);
 
     Vector3 position = {0};
     for (uint32_t i = 0; i < LevelDataNumEntities(level); ++i) {
@@ -95,13 +97,7 @@ static void GameDraw(float delta_time) {
 int main(void) {
     GameInit();
 
-    Camera3D* camera = GetGameCamera();
-    camera->position = (Vector3){0, 10, 0};
-    camera->position = (Vector3){0, 30, 0.0f};     // Position above the scene
-    camera->target = (Vector3){0.0f, 0.0f, 0.0f};  // Target at the center of the scene
-    camera->up = (Vector3){0.0f, 0.0f, 1.0f};      // Up vector (positive Y-axis)
-    camera->fovy = 20.0f;
-    camera->projection = CAMERA_ORTHOGRAPHIC;
+    // Camera3D* camera = GetGameCamera();
 
     // {
     //     FilePathList files = LoadDirectoryFiles("resources/levels");

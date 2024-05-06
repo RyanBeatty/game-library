@@ -253,8 +253,12 @@ static void LoadLevel(const char* name_original) {
     char* line = strtok(data, "\n");
     UnpackCamera3D(line, &level_data->camera);
     line = strtok(NULL, "\n");
-    SetCamera(&level_data->camera);
-
+    // camera->position = (Vector3){0, 10, 0};
+    // camera->position = (Vector3){0, 30, 0.0f};     // Position above the scene
+    // camera->target = (Vector3){0.0f, 0.0f, 0.0f};  // Target at the center of the scene
+    // camera->up = (Vector3){0.0f, 0.0f, 1.0f};      // Up vector (positive Y-axis)
+    // camera->fovy = 20.0f;
+    // camera->projection = CAMERA_ORTHOGRAPHIC;
     // Reset Player/entities.
     Entity* player = LevelDataCreateEntity(level_data);
 
