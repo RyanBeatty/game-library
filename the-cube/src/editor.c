@@ -135,6 +135,8 @@ typedef struct EditorState {
     Focus focus;
     char load_level_filename[256];
 
+    bool saving;
+
     union {
         struct {
             Entity x_arrow;
@@ -226,6 +228,19 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             Vector2 arrow_pos_screen = GetWorldToScreen(arrow_pos_world, *camera);
             DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
         }
+    }
+
+    bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
+    if (saving_toggled) {
+        if (editor->saving) {
+            editor->saving = false;
+        } else {
+            editor->saving = true;
+        }
+    }
+
+    if (editor->saving) {
+        UIText("saving", "Saving");
     }
 
     // switch (editor->state) {
