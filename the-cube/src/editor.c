@@ -244,7 +244,8 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         if (editor->saving) {
             UIRow("saving row") {
                 UIText("saving", "Saving");
-                UIEditBox("level edit", editor->load_level_filename);
+                LevelData *level = GetCurLevel();
+                UIEditBox("level edit", level->name);
             }
         }
     }

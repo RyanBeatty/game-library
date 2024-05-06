@@ -123,7 +123,7 @@ int main(void) {
             }
         }
 
-        GameDebugEnabled = IsKeyPressed(KEY_ONE) ^ GameDebugEnabled;
+        GameDebugEnabled = (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D)) ^ GameDebugEnabled;
         if (GameDebugEnabled) {
             char buffer[256] = {0};
             sprintf(buffer, "FPS: %d", GetFPS());
