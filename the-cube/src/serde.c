@@ -253,6 +253,7 @@ static void LoadLevel(const char* name_original) {
     char* line = strtok(data, "\n");
     UnpackCamera3D(line, &level_data->camera);
     line = strtok(NULL, "\n");
+    // Convert camera to look down at level in 2d fashion.
     level_data->camera.position = (Vector3){0, 10, 0};
     level_data->camera.position = (Vector3){0, 30, 0.0f};     // Position above the scene
     level_data->camera.target = (Vector3){0.0f, 0.0f, 0.0f};  // Target at the center of the scene
