@@ -235,7 +235,8 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     // Level saving.
     {
         bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
-        if (saving_toggled) {
+        bool active = !editor->loading;
+        if (saving_toggled && active) {
             if (editor->saving) {
                 editor->saving = false;
             } else {
@@ -267,7 +268,8 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     // Level loading.
     {
         bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
-        if (loading_toggled) {
+        bool active = !editor->saving;
+        if (loading_toggled && active) {
             if (editor->loading) {
                 editor->loading = false;
             } else {
