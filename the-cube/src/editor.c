@@ -244,20 +244,52 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
 
         if (editor->saving) {
             UIRow("saving row") {
-                UIText("saving", "Saving");
-                if (UIEditBox("level edit", saving_buffer)) {
+                bool button = UIButton("Save Level");
+                bool edit_box = UIEditBox("level edit", saving_buffer);
+                bool enter = IsKeyDown(KEY_ENTER);
+                if (button || edit_box || enter) {
                     int len = strlen(level->name);
                     assert(len != 0);
                     memset(level->name, 0, len * sizeof(level->name[0]));
                     strcat(level->name, saving_buffer);
                     TraceLog(LOG_INFO, "Saving Level: %s", level->name);
                     SaveLevel(level);
+                    editor->saving = false;
                 }
             }
         } else {
             memset(saving_buffer, 0, sizeof(saving_buffer) * sizeof(saving_buffer[0]));
         }
     }
+
+    // // Level loading.
+    // {
+    //     bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
+    //     if (loading_toggled) {
+    //         if (editor->saving) {
+    //             editor->saving = false;
+    //         } else {
+    //             editor->saving = true;
+    //             strcat(saving_buffer, level->name);
+    //         }
+    //     }
+
+    //     if (editor->saving) {
+    //         UIRow("saving row") {
+    //             UIText("saving", "Saving");
+    //             if (UIEditBox("level edit", saving_buffer)) {
+    //                 int len = strlen(level->name);
+    //                 assert(len != 0);
+    //                 memset(level->name, 0, len * sizeof(level->name[0]));
+    //                 strcat(level->name, saving_buffer);
+    //                 TraceLog(LOG_INFO, "Saving Level: %s", level->name);
+    //                 SaveLevel(level);
+    //             }
+    //         }
+    //     } else {
+    //         memset(saving_buffer, 0, sizeof(saving_buffer) * sizeof(saving_buffer[0]));
+    //     }
+    // }
 
     // switch (editor->state) {
     //     case ES_IDLE: {
