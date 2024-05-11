@@ -136,6 +136,7 @@ typedef struct EditorState {
     char load_level_filename[256];
 
     bool saving;
+    bool loading;
 
     union {
         struct {
@@ -194,6 +195,7 @@ static Focus *EditorSetFocus(EditorState *editor, Entity *focus) {
 static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static uint32_t color_idx = 0;
     static char saving_buffer[256] = {0};
+    static char loading_buffer[256] = {0};
     assert(EditorEnabled);
 
     UIText("Editor greeting", "Editor Enabled");
@@ -245,7 +247,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         if (editor->saving) {
             UIRow("saving row") {
                 bool button = UIButton("Save Level");
-                bool edit_box = UIEditBox("level edit", saving_buffer);
+                bool edit_box = UIEditBox("saving text edit", saving_buffer);
                 bool enter = IsKeyDown(KEY_ENTER);
                 if (button || edit_box || enter) {
                     int len = strlen(level->name);
@@ -259,6 +261,38 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             }
         } else {
             memset(saving_buffer, 0, sizeof(saving_buffer) * sizeof(saving_buffer[0]));
+        }
+    }
+
+    // Level loading.
+    {
+        bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
+        if (loading_toggled) {
+            if (editor->loading) {
+                editor->loading = false;
+            } else {
+                editor->loading = true;
+                strcat(loading_buffer, level->name);
+            }
+        }
+
+        if (editor->loading) {
+            UIRow("loading row") {
+                bool button = UIButton("Load Level");
+                bool edit_box = UIEditBox("loading text edit", loading_buffer);
+                bool enter = IsKeyDown(KEY_ENTER);
+                if (button || edit_box || enter) {
+                    int len = strlen(level->name);
+                    assert(len != 0);
+                    memset(level->name, 0, len * sizeof(level->name[0]));
+                    strcat(level->name, loading_buffer);
+                    TraceLog(LOG_INFO, "loading Level: %s", level->name);
+                    SaveLevel(level);
+                    editor->loading = false;
+                }
+            }
+        } else {
+            memset(loading_buffer, 0, sizeof(loading_buffer) * sizeof(loading_buffer[0]));
         }
     }
 
