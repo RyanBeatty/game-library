@@ -221,11 +221,13 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static uint32_t color_idx = 0;
     static char saving_buffer[256] = {0};
     static char loading_buffer[256] = {0};
+    static char editor_buffer[256] = {0};
     assert(EditorEnabled);
 
-    UIText("Editor greeting", "Editor Enabled");
-
     LevelData *level = GetCurLevel();
+
+    sprintf(editor_buffer, "Editing: %s", level->name);
+    UIText("Editor greeting", editor_buffer);
 
     Focus *focus = EditorGetFocus(editor);
     assert(focus != NULL);
