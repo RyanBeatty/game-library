@@ -296,35 +296,6 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         }
     }
 
-    // // Level loading.
-    // {
-    //     bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
-    //     if (loading_toggled) {
-    //         if (editor->saving) {
-    //             editor->saving = false;
-    //         } else {
-    //             editor->saving = true;
-    //             strcat(saving_buffer, level->name);
-    //         }
-    //     }
-
-    //     if (editor->saving) {
-    //         UIRow("saving row") {
-    //             UIText("saving", "Saving");
-    //             if (UIEditBox("level edit", saving_buffer)) {
-    //                 int len = strlen(level->name);
-    //                 assert(len != 0);
-    //                 memset(level->name, 0, len * sizeof(level->name[0]));
-    //                 strcat(level->name, saving_buffer);
-    //                 TraceLog(LOG_INFO, "Saving Level: %s", level->name);
-    //                 SaveLevel(level);
-    //             }
-    //         }
-    //     } else {
-    //         memset(saving_buffer, 0, sizeof(saving_buffer) * sizeof(saving_buffer[0]));
-    //     }
-    // }
-
     // switch (editor->state) {
     //     case ES_IDLE: {
     //         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
@@ -457,44 +428,6 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     //             if (collision.collision.hit) {
     //                 Focus *focus = EditorGetFocus(editor);
     //                 FocusAdd(focus, collision.entity_idx);
-    //             }
-    //         }
-    //         break;
-    //     }
-    //     case ES_SAVING: {
-    //         if (IsKeyPressed(KEY_ENTER)) {
-    //             SaveLevel(GetCurLevel());
-    //             editor->state = ES_IDLE;
-    //         } else if (IsKeyPressed(KEY_BACKSPACE)) {
-    //             uint32_t len = strlen(CurLevel.name);
-    //             if (len > 0) {
-    //                 CurLevel.name[len - 1] = '\0';
-    //             }
-    //         } else {
-    //             int key = GetCharPressed();
-    //             uint32_t name_len = strlen(CurLevel.name);
-    //             if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
-    //                 CurLevel.name[name_len] = (char)key;
-    //                 CurLevel.name[name_len + 1] = '\0';
-    //             }
-    //         }
-    //         break;
-    //     }
-    //     case ES_LOADING: {
-    //         if (IsKeyPressed(KEY_ENTER)) {
-    //             LoadLevel(editor->load_level_filename);
-    //             editor->state = ES_IDLE;
-    //         } else if (IsKeyPressed(KEY_BACKSPACE)) {
-    //             uint32_t len = strlen(editor->load_level_filename);
-    //             if (len > 0) {
-    //                 editor->load_level_filename[len - 1] = '\0';
-    //             }
-    //         } else {
-    //             int key = GetCharPressed();
-    //             uint32_t name_len = strlen(editor->load_level_filename);
-    //             if ((key >= 32) && (key <= 125) && (name_len < 255)) {  // 255 to allow for null terminator.
-    //                 editor->load_level_filename[name_len] = (char)key;
-    //                 editor->load_level_filename[name_len + 1] = '\0';
     //             }
     //         }
     //         break;
