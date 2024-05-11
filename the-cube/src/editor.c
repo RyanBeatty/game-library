@@ -130,13 +130,26 @@ static void FocusRemove(Focus *focus, uint32_t idx) {
     arrdel(focus->entity_idxs, idx);
 }
 
+typedef enum EditorBool {
+    SAVING = 0,
+    LOADING,
+
+    BOOLS_COUNT
+} EditorBool;
+
 typedef struct EditorState {
     // Index to entity we are focused on.
     Focus focus;
     char load_level_filename[256];
 
-    bool saving;
-    bool loading;
+    union {
+        struct {
+            bool saving;
+            bool loading;
+        };
+
+        bool bools[BOOLS_COUNT];
+    };
 
     union {
         struct {
@@ -192,6 +205,18 @@ static Focus *EditorSetFocus(EditorState *editor, Entity *focus) {
     return EditorGetFocus(editor);
 }
 
+static bool EditorBoolIsActive(EditorState *editor, EditorBool editor_bool) {
+    for (EditorBool i = 0; i < BOOLS_COUNT; ++i) {
+        if (i == editor_bool) {
+            continue;
+        }
+        if (editor->bools[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static uint32_t color_idx = 0;
     static char saving_buffer[256] = {0};
@@ -235,8 +260,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     // Level saving.
     {
         bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
-        bool active = !editor->loading;
-        if (saving_toggled && active) {
+        if (saving_toggled && EditorBoolIsActive(editor, SAVING)) {
             if (editor->saving) {
                 editor->saving = false;
             } else {
@@ -268,8 +292,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     // Level loading.
     {
         bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
-        bool active = !editor->saving;
-        if (loading_toggled && active) {
+        if (loading_toggled && EditorBoolIsActive(editor, LOADING)) {
             if (editor->loading) {
                 editor->loading = false;
             } else {
