@@ -787,6 +787,7 @@ static void UIFrameEnd() {
         arrfree(State.font_color_stack);
         arrfree(State.root_stack);
         arrfree(State.style_stack);
+        hmfree(State.boxes);
     }
 }
 
