@@ -212,6 +212,9 @@ typedef struct UIState {
 
 UIState State = {0};
 
+static bool UIWindowBegin(char*, int*, int*, int*, int*);
+static void UIWindowEnd();
+
 static UIBox* GetUIBox(UIKey key) {
     UIBoxEntry* res = hmgetp_null(State.boxes, key);
     if (res == NULL) {
@@ -805,7 +808,7 @@ static void UIText(char* label, char* display) {
     UIPopBgColor();
 }
 
-static bool UIButtonEx(char* label, int x, int y, int width, int height) {
+static bool UIButtonPro(char* label, int x, int y, int width, int height) {
     TraceLog(LOG_DEBUG, "label %s %d %d %d %d", label, x, y, width, height);
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
@@ -840,7 +843,16 @@ static bool UIButton(char* label) {
     UIPopActiveColor();
     UIPopHotColor();
     UIPopBgColor();
-    return UIButtonEx(label, box->x, box->y, box->width, box->height);
+    return UIButtonPro(label, box->x, box->y, box->width, box->height);
+}
+
+static bool UIButtonEx(char* label, int x, int y, int width, int height) {
+    char buffer[256] = {0};
+    sprintf(buffer, "%s_window", label);
+    UIWindowBegin(buffer, &x, &y, &width, &height);
+    bool result = UIButton(label);
+    UIWindowEnd();
+    return result;
 }
 
 static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {

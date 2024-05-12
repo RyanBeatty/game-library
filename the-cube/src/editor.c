@@ -248,14 +248,16 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, level->camera);
 
         // Draw arrows.
+        char labels[2][256] = {"x box", "y box"};
         Color colors[3] = {BLUE, GREEN, RED};
+        Rectangle recs[2] = {{0, 0, 100, 10}, {-5, -100, 10, 100}};
         Vector3 arrows[3] = {(Vector3){1, 0, 0}, (Vector3){0, 1, 0}, (Vector3){0, 0, 1}};
-        for (uint32_t i = 0; i < 3; ++i) {
-            // Scale and Translate arrows from model space to world space and then to screen space.
-            // TODO: Should just use the model transform to do the translate and incorporate the rotation.
-            Vector3 arrow_pos_world = Vector3Add(focus_pos_world, Vector3Scale(arrows[i], 3));
-            Vector2 arrow_pos_screen = GetWorldToScreen(arrow_pos_world, level->camera);
-            DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
+        for (uint32_t i = 0; i < 2; ++i) {
+            breakpoint();
+            Vector2 pos = Vector2Add(focus_pos_screen, (Vector2){recs[i].x, recs[i].y});
+            DrawRectangle(pos.x, pos.y, recs[i].width, recs[i].height, colors[i]);
+            // UIButtonEx(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
+            // DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
         }
 
         // Vector3 direction = {0};
