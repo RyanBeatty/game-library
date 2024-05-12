@@ -262,23 +262,6 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             UIBgColor(colors[i]) { UIButtonEx(labels[i], pos.x, pos.y, recs[i].width, recs[i].height); }
             // DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
         }
-
-        // Vector3 direction = {0};
-        // if (key == KEY_UP) {
-        //     direction.z -= CubeSideLength;
-        // } else if (key == KEY_RIGHT) {
-        //     direction.x += CubeSideLength;
-        // } else if (key == KEY_DOWN) {
-        //     direction.z += CubeSideLength;
-        // } else if (key == KEY_LEFT) {
-        //     direction.x -= CubeSideLength;
-        // } else if (key == KEY_PAGE_UP) {
-        //     direction.y += CubeSideLength;
-        // } else if (key == KEY_PAGE_DOWN) {
-        //     direction.y -= CubeSideLength;
-        // }
-
-        // FocusMove(EditorGetFocus(editor), direction);
     }
 
     // Level saving.

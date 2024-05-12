@@ -1169,7 +1169,6 @@ static bool UIWindowBegin(char* label, int* x, int* y, int* width, int* height) 
     box->y = *y;
     if (box->nframes == 1) {
         UIBox* parent = UIGetParent();
-        // TODO: This needs to be popright
         UIBoxChildPopRight(parent);
         if (parent != NULL) {
             UIBoxAddNeighbor(parent, box);
