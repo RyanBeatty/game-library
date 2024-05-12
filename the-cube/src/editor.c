@@ -258,7 +258,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             if (i != 0) {
                 continue;
             }
-            // UIBgColor(colors[i]) { UIButtonEx(labels[i], pos.x, pos.y, recs[i].width, recs[i].height); }
+            UIBgColor(colors[i]) { UIButtonEx(labels[i], pos.x, pos.y, recs[i].width, recs[i].height); }
             // DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
         }
     }

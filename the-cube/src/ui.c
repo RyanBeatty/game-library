@@ -214,6 +214,7 @@ UIState State = {0};
 
 static bool UIWindowBegin(char*, int*, int*, int*, int*);
 static void UIWindowEnd();
+static void UIClearBoxBegin(char*, int, int, int, int);
 
 static UIBox* GetUIBox(UIKey key) {
     UIBoxEntry* res = hmgetp_null(State.boxes, key);
@@ -905,7 +906,7 @@ static bool UIButton(char* label) {
 static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     char buffer[256] = {0};
     sprintf(buffer, "%s_window", label);
-    UIWindowBegin(buffer, &x, &y, &width, &height);
+    UIClearBoxBegin(buffer, x, y, width, height);
     bool result = UIButton(label);
     UIWindowEnd();
     return result;
@@ -1244,22 +1245,28 @@ static void UIWindowEnd() {
 }
 #define UIWindow(label, x, y, width, height) UIDeferLoop(UIWindowBegin(label, x, y, width, height), UIWindowEnd())
 
-// static void UIClearWindowBegin(char* label) {
-//     Color white = WHITE;
-//     white.a = 0;
-//     UIPushBgColor(white);
+static void UIClearBoxBegin(char* label, int x, int y, int width, int height) {
+    Color white = WHITE;
+    white.a = 0;
+    UIPushBgColor(white);
 
-//     int x = 0;
-//     int y = 0;
-//     int width = GetScreenWidth();
-//     int height = GetScreenHeight();
-//     UIWindowBegin(label, &x, &y, &width, &height);
-// }
-// static void UIClearWindowEnd() {
-//     UIWindowEnd();
-//     UIPopBgColor();
-// }
-// #define UIClearWindow(label) UIDeferLoop(UIClearWindowBegin(label), UIClearWindowEnd())
+    UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f));
+    box->x = x;
+    box->y = y;
+    if (box->nframes == 1) {
+        UIBox* parent = UIGetParent();
+        UIBoxChildPopRight(parent);
+        if (parent != NULL) {
+            UIBoxAddNeighbor(parent, box);
+        }
+    }
+
+    UIPushParent(box);
+}
+static void UIClearWindowEnd() {
+    UIPopParent();
+    UIPopBgColor();
+}
 
 static UIBox* UIRowBegin(char* label) {
     UIBox* box = NULL;
