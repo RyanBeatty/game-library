@@ -1245,6 +1245,7 @@ static void UIWindowEnd() {
 }
 #define UIWindow(label, x, y, width, height) UIDeferLoop(UIWindowBegin(label, x, y, width, height), UIWindowEnd())
 
+// TODO: Consolidate code with uiwindowbegin.
 static void UIClearBoxBegin(char* label, int x, int y, int width, int height) {
     Color white = WHITE;
     white.a = 0;
