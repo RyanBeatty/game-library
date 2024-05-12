@@ -301,9 +301,12 @@ static void UIBoxRemoveChild(UIBox* parent, UIKey child_key) {
         children[len] = child;
         ++len;
     }
+    if (len == 0) {
+        return;
+    }
 
-    for (uint32_t i = 0; i < len; ++i) {
-        UIBoxAddChild(parent, children[i]);
+    for (uint32_t i = len; i != 0; --i) {
+        UIBoxAddChild(parent, children[i - 1]);
     }
 }
 
@@ -541,13 +544,10 @@ static void PruneTree(UIBox* cur) {
     while (child != NULL) {
         next = GetUIBox(child->neighbor_key);
         PruneTree(child);
-        TraceLog(LOG_INFO, "pruneee");
         child = next;
     }
 
-    TraceLog(LOG_INFO, "%s %d %d", cur->key_str, cur->last_frame_touched, State.frame_count);
     if (cur->last_frame_touched != State.frame_count) {
-        // breakpoint();
         assert(cur->nchildren == 0);
         UIBox* parent = GetUIBox(cur->parent_key);
         assert(parent != NULL);
