@@ -31,6 +31,8 @@ static void DisableGameUpdate() { GameUpdateEnabled = false; }
 /////////////////////////////////////////////////////////////////////////////////////
 
 static void GameInit() {
+    SetTraceLogLevel(getenv("DEBUG") != NULL ? LOG_DEBUG : LOG_INFO);
+
     InitWindow(ScreenWidth, ScreenHeight, "Game");
 
     SetTargetFPS(60);

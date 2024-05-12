@@ -224,6 +224,8 @@ static UIBox* GetUIBox(UIKey key) {
     return &res->value;
 }
 
+#define RemoveUIBox(key) (hmdel(State.boxes, key))
+
 static void UIBoxAddChild(UIBox* parent, UIBox* child) {
     child->parent_key = parent->key;
 
@@ -268,7 +270,7 @@ static void UIBoxChildPopLeft(UIBox* parent) {
     child->parent_key = 0;
     --parent->nchildren;
 }
-static void UIBoxChildPopRight(UIBox* parent) {
+static UIBox* UIBoxChildPopRight(UIBox* parent) {
     assert(parent->child_key != 0 && parent->last_child_key != 0);
     UIBox* last_child = GetUIBox(parent->last_child_key);
     assert(last_child != NULL);
@@ -285,6 +287,24 @@ static void UIBoxChildPopRight(UIBox* parent) {
     last_child->left_key = 0;
     last_child->parent_key = 0;
     --parent->nchildren;
+    return last_child;
+}
+static void UIBoxRemoveChild(UIBox* parent, UIKey child_key) {
+    UIBox* children[100] = {0};
+    uint32_t len = 0;
+    while (parent->nchildren != 0) {
+        UIBox* child = UIBoxChildPopRight(parent);
+        assert(child != NULL);
+        if (child->key == child_key) {
+            continue;
+        }
+        children[len] = child;
+        ++len;
+    }
+
+    for (uint32_t i = 0; i < len; ++i) {
+        UIBoxAddChild(parent, children[i]);
+    }
 }
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
@@ -511,6 +531,31 @@ static void UIFrameStart(float delta_time) {
     }
 }
 
+static void PruneTree(UIBox* cur) {
+    if (cur == NULL) {
+        return;
+    }
+
+    UIBox* next = NULL;
+    UIBox* child = GetUIBox(cur->child_key);
+    while (child != NULL) {
+        next = GetUIBox(child->neighbor_key);
+        PruneTree(child);
+        TraceLog(LOG_INFO, "pruneee");
+        child = next;
+    }
+
+    TraceLog(LOG_INFO, "%s %d %d", cur->key_str, cur->last_frame_touched, State.frame_count);
+    if (cur->last_frame_touched != State.frame_count) {
+        // breakpoint();
+        assert(cur->nchildren == 0);
+        UIBox* parent = GetUIBox(cur->parent_key);
+        assert(parent != NULL);
+        UIBoxRemoveChild(parent, cur->key);
+        RemoveUIBox(cur->key);
+    }
+}
+
 static void BuildTree(UIBox* cur) {
     if (cur == NULL) {
         return;
@@ -708,6 +753,16 @@ static void DrawUI(UIBox* parent) {
     DrawUI(parent->neighbor);
 }
 
+static void PruneTreeRoot(UIBox* root) {
+    PruneTree(root);
+    UIBox* neighbor = GetUIBox(root->neighbor_key);
+    UIBox* next = NULL;
+    for (; neighbor != NULL; neighbor = next) {
+        next = GetUIBox(neighbor->neighbor_key);
+        PruneTreeRoot(neighbor);
+    }
+}
+
 static void BuildTreeRoot(UIBox* root) {
     BuildTree(root);
     for (UIBox* neighbor = root->neighbor; neighbor != NULL; neighbor = neighbor->neighbor) {
@@ -761,6 +816,7 @@ static void UIFrameEnd() {
     {
         UIBox* root = UIGetParent();
         assert(root != NULL);
+        PruneTreeRoot(root);
         BuildTreeRoot(root);
         for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
             CalculateFixedSizesRoot(root, axis);
@@ -790,7 +846,8 @@ static void UIFrameEnd() {
         arrfree(State.font_color_stack);
         arrfree(State.root_stack);
         arrfree(State.style_stack);
-        hmfree(State.boxes);
+        // NOTE: Do NOT free entire State.boxes or else any sort of interactivity won't work because sizes
+        // won't have been calculated yet.
     }
 }
 
@@ -809,7 +866,6 @@ static void UIText(char* label, char* display) {
 }
 
 static bool UIButtonPro(char* label, int x, int y, int width, int height) {
-    TraceLog(LOG_DEBUG, "label %s %d %d %d %d", label, x, y, width, height);
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
@@ -969,10 +1025,7 @@ static bool UIEditBox(char* label, char* edit) {
             arrput(box->display, edit[i]);
         }
         if (UIKeyIsActive(box->key)) {
-            // TraceLog(LOG_INFO, "Activeeeee");
             if (State.show_cursor) {
-                // TraceLog(LOG_INFO, "cursor");
-
                 arrins(box->display, State.cursor, '|');
             }
         }
