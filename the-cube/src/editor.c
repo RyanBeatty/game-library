@@ -130,12 +130,12 @@ static void FocusRemove(Focus *focus, uint32_t idx) {
     arrdel(focus->entity_idxs, idx);
 }
 
-typedef enum EditorBool {
+typedef enum EditorMode {
     SAVING = 0,
     LOADING,
 
-    BOOLS_COUNT
-} EditorBool;
+    MODE_COUNT
+} EditorMode;
 
 typedef struct EditorState {
     // Index to entity we are focused on.
@@ -148,7 +148,7 @@ typedef struct EditorState {
             bool loading;
         };
 
-        bool bools[BOOLS_COUNT];
+        bool modes[MODE_COUNT];
     };
 
     union {
@@ -205,12 +205,12 @@ static Focus *EditorSetFocus(EditorState *editor, Entity *focus) {
     return EditorGetFocus(editor);
 }
 
-static bool EditorBoolIsActive(EditorState *editor, EditorBool editor_bool) {
-    for (EditorBool i = 0; i < BOOLS_COUNT; ++i) {
+static bool EditorModeIsActive(EditorState *editor, EditorMode editor_bool) {
+    for (EditorMode i = 0; i < MODE_COUNT; ++i) {
         if (i == editor_bool) {
             continue;
         }
-        if (editor->bools[i]) {
+        if (editor->modes[i]) {
             return false;
         }
     }
@@ -257,12 +257,29 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             Vector2 arrow_pos_screen = GetWorldToScreen(arrow_pos_world, level->camera);
             DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
         }
+
+        // Vector3 direction = {0};
+        // if (key == KEY_UP) {
+        //     direction.z -= CubeSideLength;
+        // } else if (key == KEY_RIGHT) {
+        //     direction.x += CubeSideLength;
+        // } else if (key == KEY_DOWN) {
+        //     direction.z += CubeSideLength;
+        // } else if (key == KEY_LEFT) {
+        //     direction.x -= CubeSideLength;
+        // } else if (key == KEY_PAGE_UP) {
+        //     direction.y += CubeSideLength;
+        // } else if (key == KEY_PAGE_DOWN) {
+        //     direction.y -= CubeSideLength;
+        // }
+
+        // FocusMove(EditorGetFocus(editor), direction);
     }
 
     // Level saving.
     {
         bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
-        if (saving_toggled && EditorBoolIsActive(editor, SAVING)) {
+        if (saving_toggled && EditorModeIsActive(editor, SAVING)) {
             if (editor->saving) {
                 editor->saving = false;
             } else {
@@ -294,7 +311,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     // Level loading.
     {
         bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
-        if (loading_toggled && EditorBoolIsActive(editor, LOADING)) {
+        if (loading_toggled && EditorModeIsActive(editor, LOADING)) {
             if (editor->loading) {
                 editor->loading = false;
             } else {
