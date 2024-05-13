@@ -255,9 +255,9 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         for (uint32_t i = 0; i < 2; ++i) {
             Vector2 pos = Vector2Add(focus_pos_screen, (Vector2){recs[i].x, recs[i].y});
             // DrawRectangle(pos.x, pos.y, recs[i].width, recs[i].height, colors[i]);
-            if (i != 0) {
-                continue;
-            }
+            // if (i != 0) {
+            //     continue;
+            // }
             UIBgColor(colors[i]) { UIButtonEx(labels[i], pos.x, pos.y, recs[i].width, recs[i].height); }
             // DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
         }

@@ -37,7 +37,7 @@ typedef size_t UIKey;
 
 static UIKey UIKeyFromCStr(char* str) {
     size_t key = stbds_hash_string(str, GetSeed());
-    assert(key != 0);
+    Assert(key != 0);
     return key;
 }
 
@@ -215,6 +215,7 @@ UIState State = {0};
 static bool UIWindowBegin(char*, int*, int*, int*, int*);
 static void UIWindowEnd();
 static void UIClearBoxBegin(char*, int, int, int, int);
+static void UIClearBoxEnd();
 
 static UIBox* GetUIBox(UIKey key) {
     UIBoxEntry* res = hmgetp_null(State.boxes, key);
@@ -257,9 +258,9 @@ static void UIBoxAddNeighbor(UIBox* box, UIBox* neighbor) {
 }
 
 static void UIBoxChildPopLeft(UIBox* parent) {
-    assert(parent->child_key != 0 && parent->last_child_key != 0);
+    Assert(parent->child_key != 0 && parent->last_child_key != 0);
     UIBox* child = GetUIBox(parent->child_key);
-    assert(child != NULL);
+    Assert(child != NULL);
     if (parent->child_key == parent->last_child_key) {
         parent->child_key = 0;
         parent->last_child_key = 0;
@@ -272,15 +273,15 @@ static void UIBoxChildPopLeft(UIBox* parent) {
     --parent->nchildren;
 }
 static UIBox* UIBoxChildPopRight(UIBox* parent) {
-    assert(parent->child_key != 0 && parent->last_child_key != 0);
+    Assert(parent->child_key != 0 && parent->last_child_key != 0);
     UIBox* last_child = GetUIBox(parent->last_child_key);
-    assert(last_child != NULL);
+    Assert(last_child != NULL);
     if (parent->child_key == parent->last_child_key) {
         parent->child_key = 0;
         parent->last_child_key = 0;
     } else {
         UIBox* left = GetUIBox(last_child->left_key);
-        assert(left != NULL);
+        Assert(left != NULL);
         parent->last_child_key = left->key;
         left->neighbor_key = 0;
     }
@@ -295,7 +296,7 @@ static void UIBoxRemoveChild(UIBox* parent, UIKey child_key) {
     uint32_t len = 0;
     while (parent->nchildren != 0) {
         UIBox* child = UIBoxChildPopRight(parent);
-        assert(child != NULL);
+        Assert(child != NULL);
         if (child->key == child_key) {
             continue;
         }
@@ -313,12 +314,12 @@ static void UIBoxRemoveChild(UIBox* parent, UIKey child_key) {
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
 static void UIPopLayoutAxis() {
-    assert(arrlenu(State.layout_axis_stack) != 0);
+    Assert(arrlenu(State.layout_axis_stack) != 0);
     (void)arrpop(State.layout_axis_stack);
 }
 static UIAxis UIGetLayoutAxis() {
     size_t len = arrlenu(State.layout_axis_stack);
-    assert(len != 0);
+    Assert(len != 0);
     return State.layout_axis_stack[len - 1];
 }
 #define UILayoutAxis(axis) UIDeferLoop(UIPushLayoutAxis(axis), UIPopLayoutAxis())
@@ -326,12 +327,12 @@ static UIAxis UIGetLayoutAxis() {
 static void UIPushBgColor(Color color) { arrput(State.bg_color_stack, color); }
 static void UIPopBgColor() {
     size_t len = arrlenu(State.bg_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     (void)arrpop(State.bg_color_stack);
 }
 static Color UIGetBgColor() {
     size_t len = arrlenu(State.bg_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     return State.bg_color_stack[len - 1];
 }
 #define UIBgColor(color) UIDeferLoop(UIPushBgColor(color), UIPopBgColor())
@@ -339,12 +340,12 @@ static Color UIGetBgColor() {
 static void UIPushActiveColor(Color color) { arrput(State.active_color_stack, color); }
 static void UIPopActiveColor() {
     size_t len = arrlenu(State.active_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     (void)arrpop(State.active_color_stack);
 }
 static Color UIGetActiveColor() {
     size_t len = arrlenu(State.active_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     return State.active_color_stack[len - 1];
 }
 #define UIActiveColor(color) UIDeferLoop(UIPushActiveColor(color), UIPopActiveColor())
@@ -352,12 +353,12 @@ static Color UIGetActiveColor() {
 static void UIPushHotColor(Color color) { arrput(State.hot_color_stack, color); }
 static void UIPopHotColor() {
     size_t len = arrlenu(State.hot_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     (void)arrpop(State.hot_color_stack);
 }
 static Color UIGetHotColor() {
     size_t len = arrlenu(State.hot_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     return State.hot_color_stack[len - 1];
 }
 #define UIHotColor(color) UIDeferLoop(UIPushHotColor(color), UIPopHotColor())
@@ -365,12 +366,12 @@ static Color UIGetHotColor() {
 static void UIPushFontColor(Color color) { arrput(State.font_color_stack, color); }
 static void UIPopFontColor() {
     size_t len = arrlenu(State.font_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     (void)arrpop(State.font_color_stack);
 }
 static Color UIGetFontColor() {
     size_t len = arrlenu(State.font_color_stack);
-    assert(len != 0);
+    Assert(len != 0);
     return State.font_color_stack[len - 1];
 }
 #define UIFontColor(color) UIDeferLoop(UIPushFontColor(color), UIPopFontColor())
@@ -378,7 +379,7 @@ static Color UIGetFontColor() {
 static void UIPushStyle(UIStyle style) { arrput(State.style_stack, style); }
 static void UIPopStyle() {
     size_t len = arrlenu(State.style_stack);
-    assert(len != 0);
+    Assert(len != 0);
     (void)arrpop(State.style_stack);
 }
 static UIStyle* UIGetStyle() {
@@ -393,7 +394,7 @@ static UIStyle* UIGetStyle() {
 static void UIPushParent(UIBox* box) { arrput(State.root_stack, box->key); }
 static void UIPopParent() {
     size_t len = arrlenu(State.root_stack);
-    assert(len != 0);
+    Assert(len != 0);
     (void)arrpop(State.root_stack);
 }
 static UIBox* UIGetParent() {
@@ -438,7 +439,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
         box.key_str = strcat(str, label);
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
-        assert(idx != -1);
+        Assert(idx != -1);
     }
     UIBox* box = &State.boxes[idx].value;
 
@@ -485,7 +486,7 @@ static void UIFrameStart(float delta_time) {
     State.my = my;
     State.left_down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
     State.left_up = IsMouseButtonUp(MOUSE_BUTTON_LEFT);
-    assert(!State.left_down || !State.left_up);
+    Assert(!State.left_down || !State.left_up);
 
     // Init stacks
     {
@@ -513,7 +514,7 @@ static void UIFrameStart(float delta_time) {
 
     State.font_size = 16;
     State.font = GetFontDefault();
-    assert(State.font.texture.id != 0);
+    Assert(State.font.texture.id != 0);
 
     State.cursor_cooldown += delta_time;
     if (State.cursor_cooldown >= CURSOR_COOLDOWN_DEFAULT_SEC) {
@@ -549,9 +550,9 @@ static void PruneTree(UIBox* cur) {
     }
 
     if (cur->last_frame_touched != State.frame_count) {
-        assert(cur->nchildren == 0);
+        Assert(cur->nchildren == 0);
         UIBox* parent = GetUIBox(cur->parent_key);
-        assert(parent != NULL);
+        Assert(parent != NULL);
         UIBoxRemoveChild(parent, cur->key);
         RemoveUIBox(cur->key);
     }
@@ -583,7 +584,7 @@ static void CalculateFixedSizes(UIBox* cur, UIAxis axis) {
             break;
         }
         case SIZE_KIND_TEXT_CONTENT: {
-            assert(cur->display != NULL);
+            Assert(cur->display != NULL);
             Vector2 size = UIMeasureTextEx(cur->display, cur->fontsize);
             float value = size.x;
             if (axis == AXIS_Y) {
@@ -614,7 +615,7 @@ static void CalculateUpwardSizes(UIBox* cur, UIAxis axis) {
 
     switch (cur->semantic_size[axis].kind) {
         case SIZE_KIND_PERCENT_OF_PARENT: {
-            assert(cur->parent != NULL);
+            Assert(cur->parent != NULL);
             cur->size[axis] = cur->parent->size[axis] * cur->semantic_size[axis].value;
             break;
         }
@@ -702,7 +703,7 @@ static void LayoutUIBoxes(UIBox* cur, UIAxis axis) {
 }
 
 static void DrawUIBox(UIBox* cur) {
-    assert(cur != NULL);
+    Assert(cur != NULL);
     if (cur->last_frame_touched != State.frame_count) {
         return;
     }
@@ -816,7 +817,7 @@ static void UIFrameEnd() {
     // Drawing.
     {
         UIBox* root = UIGetParent();
-        assert(root != NULL);
+        Assert(root != NULL);
         PruneTreeRoot(root);
         BuildTreeRoot(root);
         for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
@@ -908,7 +909,7 @@ static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     sprintf(buffer, "%s_window", label);
     UIClearBoxBegin(buffer, x, y, width, height);
     bool result = UIButton(label);
-    UIWindowEnd();
+    UIClearBoxEnd();
     return result;
 }
 
@@ -1195,7 +1196,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 //     box->y = *y;
 
 //     // UIBox* parent = GetUIBox(box->parent_key);
-//     // assert(parent != NULL);
+//     // Assert(parent != NULL);
 //     // parent->child_key = box->neighbor_key;
 //     // box->neighbor_key = parent->neighbor_key;
 //     // parent->neighbor_key = box->key;
@@ -1207,9 +1208,9 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 
 // static void UIWindowPop() {
 //     UIBox* root = GetUIBox(State.root);
-//     assert(root != NULL);
+//     Assert(root != NULL);
 //     UIBox* parent = GetUIBox(root->parent_key);
-//     assert(parent != NULL);
+//     Assert(parent != NULL);
 //     // root->parent_key = parent->parent_key;
 //     State.root = parent->key;
 // }
@@ -1264,7 +1265,7 @@ static void UIClearBoxBegin(char* label, int x, int y, int width, int height) {
 
     UIPushParent(box);
 }
-static void UIClearWindowEnd() {
+static void UIClearBoxEnd() {
     UIPopParent();
     UIPopBgColor();
 }
@@ -1288,10 +1289,10 @@ static void UITableBegin(char* label, uint32_t nrows, uint32_t ncols) {
 
 static void UITableEnd() {
     UIBox* table = UIGetParent();
-    assert(table != NULL);
+    Assert(table != NULL);
     if (table->nframes == 1) {
         // Rewrite the children pushed in table's scope such that row nodes are inserted where necessary.
-        assert(table->nchildren == table->nrows * table->ncols);
+        Assert(table->nchildren == table->nrows * table->ncols);
         for (uint32_t i = 0; i < table->nrows; ++i) {
             char num[256] = {0};
             sprintf(num, "%d", i);
@@ -1303,11 +1304,11 @@ static void UITableEnd() {
             UIRow(row_str) {
                 UIKey row_key = UIKeyFromCStr(row_str);
                 UIBox* row = GetUIBox(row_key);
-                assert(row != NULL);
+                Assert(row != NULL);
                 UIBox* cur = GetUIBox(table->child_key);
                 UIBox* next = GetUIBox(cur->neighbor_key);
                 for (uint32_t j = 0; j < table->ncols; ++j) {
-                    assert(cur != NULL);
+                    Assert(cur != NULL);
                     UIBoxChildPopLeft(table);
                     UIBoxAddChild(row, cur);
                     cur = next;
