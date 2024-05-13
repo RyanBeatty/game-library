@@ -214,8 +214,8 @@ UIState State = {0};
 
 static bool UIWindowBegin(char*, int*, int*, int*, int*);
 static void UIWindowEnd();
-static void UIClearBoxBegin(char*, int, int, int, int);
-static void UIClearBoxEnd();
+static void UIRegionBegin(char*, int, int, int, int);
+static void UIRegionEnd();
 
 static UIBox* GetUIBox(UIKey key) {
     UIBoxEntry* res = hmgetp_null(State.boxes, key);
@@ -868,7 +868,7 @@ static void UIText(char* label, char* display) {
     UIPopBgColor();
 }
 
-static bool UIButtonPro(char* label, int x, int y, int width, int height) {
+static bool UIButtonEx(char* label, int x, int y, int width, int height) {
     UIKey key = UIKeyFromCStr(label);
     if (UIShouldSetHot(x, y, width, height)) {
         UIStateSetHot(key);
@@ -902,16 +902,16 @@ static bool UIButton(char* label) {
     UIPopActiveColor();
     UIPopHotColor();
     UIPopBgColor();
-    return UIButtonPro(label, box->x, box->y, box->width, box->height);
+    return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
-static bool UIButtonEx(char* label, int x, int y, int width, int height) {
-    char buffer[256] = {0};
-    sprintf(buffer, "%s_window", label);
-    UIClearBoxBegin(buffer, x, y, width, height);
-    bool result = UIButton(label);
-    UIClearBoxEnd();
-    return result;
+static bool UIClickableRegion(char* label, int x, int y, int width, int height) {
+    char window_label[256] = {0};
+    sprintf(window_label, "%s_window", label);
+    UIRegionBegin(window_label, x, y, width, height);
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizePct(1.0f, 0.0f));
+    UIRegionEnd();
+    return UIButtonEx(label, x, y, width, height);
 }
 
 static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
@@ -1248,11 +1248,7 @@ static void UIWindowEnd() {
 #define UIWindow(label, x, y, width, height) UIDeferLoop(UIWindowBegin(label, x, y, width, height), UIWindowEnd())
 
 // TODO: Consolidate code with uiwindowbegin.
-static void UIClearBoxBegin(char* label, int x, int y, int width, int height) {
-    Color white = WHITE;
-    white.a = 0;
-    UIPushBgColor(white);
-
+static void UIRegionBegin(char* label, int x, int y, int width, int height) {
     UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f));
     box->x = x;
     box->y = y;
@@ -1266,11 +1262,7 @@ static void UIClearBoxBegin(char* label, int x, int y, int width, int height) {
 
     UIPushParent(box);
 }
-static void UIClearBoxEnd() {
-    UIPopParent();
-    UIPopBgColor();
-    breakpoint();
-}
+static void UIRegionEnd() { UIPopParent(); }
 
 static UIBox* UIRowBegin(char* label) {
     UIBox* box = NULL;
