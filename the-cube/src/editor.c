@@ -133,6 +133,8 @@ static void FocusRemove(Focus *focus, uint32_t idx) {
 typedef enum EditorMode {
     SAVING = 0,
     LOADING,
+    DRAG_X,
+    DRAG_Y,
 
     MODE_COUNT
 } EditorMode;
@@ -142,14 +144,7 @@ typedef struct EditorState {
     Focus focus;
     char load_level_filename[256];
 
-    union {
-        struct {
-            bool saving;
-            bool loading;
-        };
-
-        bool modes[MODE_COUNT];
-    };
+    bool modes[MODE_COUNT];
 
     union {
         struct {
@@ -205,7 +200,7 @@ static Focus *EditorSetFocus(EditorState *editor, Entity *focus) {
     return EditorGetFocus(editor);
 }
 
-static bool EditorModeIsActive(EditorState *editor, EditorMode editor_bool) {
+static bool IsEditorModeHot(EditorState *editor, EditorMode editor_bool) {
     for (EditorMode i = 0; i < MODE_COUNT; ++i) {
         if (i == editor_bool) {
             continue;
@@ -215,6 +210,15 @@ static bool EditorModeIsActive(EditorState *editor, EditorMode editor_bool) {
         }
     }
     return true;
+}
+
+static bool IsEditorModeActive(EditorState *editor, EditorMode editor_mode) {
+    Assert(IsEditorModeHot(editor, editor_mode));
+    return editor->modes[editor_mode];
+}
+
+static void EditorModeToggle(EditorState *editor, EditorMode editor_mode) {
+    editor->modes[editor_mode] = !editor->modes[editor_mode];
 }
 
 static void EditorUpdateEx(EditorState *editor, float delta_time) {
@@ -271,16 +275,14 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     // Level saving.
     {
         bool saving_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S);
-        if (saving_toggled && EditorModeIsActive(editor, SAVING)) {
-            if (editor->saving) {
-                editor->saving = false;
-            } else {
-                editor->saving = true;
+        if (saving_toggled && IsEditorModeHot(editor, SAVING)) {
+            EditorModeToggle(editor, SAVING);
+            if (editor->modes[SAVING]) {
                 strcat(saving_buffer, level->name);
             }
         }
 
-        if (editor->saving) {
+        if (editor->modes[SAVING]) {
             UIRow("saving row") {
                 bool button = UIButton("Save Level");
                 bool edit_box = UIEditBox("saving text edit", saving_buffer);
@@ -292,7 +294,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                     strcat(level->name, saving_buffer);
                     TraceLog(LOG_INFO, "Saving Level: %s", level->name);
                     SaveLevel(level);
-                    editor->saving = false;
+                    editor->modes[SAVING] = false;
                 }
             }
         } else {
@@ -303,16 +305,14 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     // Level loading.
     {
         bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
-        if (loading_toggled && EditorModeIsActive(editor, LOADING)) {
-            if (editor->loading) {
-                editor->loading = false;
-            } else {
-                editor->loading = true;
+        if (loading_toggled && IsEditorModeHot(editor, LOADING)) {
+            EditorModeToggle(editor, LOADING);
+            if (editor->modes[LOADING]) {
                 strcat(loading_buffer, level->name);
             }
         }
 
-        if (editor->loading) {
+        if (editor->modes[LOADING]) {
             UIRow("loading row") {
                 bool button = UIButton("Load Level");
                 bool edit_box = UIEditBox("loading text edit", loading_buffer);
@@ -324,7 +324,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                     strcat(level->name, loading_buffer);
                     TraceLog(LOG_INFO, "loading Level: %s", level->name);
                     SaveLevel(level);
-                    editor->loading = false;
+                    editor->modes[LOADING] = false;
                 }
             }
         } else {
