@@ -255,8 +255,16 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         for (uint32_t i = 0; i < 2; ++i) {
             Vector2 pos = Vector2Add(focus_pos_screen, (Vector2){recs[i].x, recs[i].y});
             // DrawRectangle(pos.x, pos.y, recs[i].width, recs[i].height, colors[i]);
-            UIBgColor(colors[i]) { UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height); }
-            // DrawLineEx(focus_pos_screen, arrow_pos_screen, 10, colors[i]);
+            Color bg_color = colors[i];
+            Color hot_color = bg_color;
+            Color active_color = hot_color;
+            UIBgColor(bg_color) {
+                UIHotColor(hot_color) {
+                    UIActiveColor(active_color) {
+                        UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
+                    }
+                }
+            }
         }
     }
 
