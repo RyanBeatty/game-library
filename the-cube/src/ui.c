@@ -251,6 +251,7 @@ static void UIBoxAddNeighbor(UIBox* box, UIBox* neighbor) {
     if (parent != NULL) {
         UIBoxAddChild(parent, neighbor);
     } else {
+        neighbor->neighbor_key = box->neighbor_key;
         box->neighbor_key = neighbor->key;
         neighbor->left_key = box->key;
         neighbor->parent_key = 0;
@@ -1268,6 +1269,7 @@ static void UIClearBoxBegin(char* label, int x, int y, int width, int height) {
 static void UIClearBoxEnd() {
     UIPopParent();
     UIPopBgColor();
+    breakpoint();
 }
 
 static UIBox* UIRowBegin(char* label) {
