@@ -243,7 +243,7 @@ static UIBox* GetUIBox(UIKey key) {
     return &res->value;
 }
 
-#define RemoveUIBox(key) (hmdel(State.boxes, key))
+#define UIBoxTestFlag(box, flag) (TestBitFlag(box->flags, flag))
 
 static void UIBoxAddChild(UIBox* parent, UIBox* child) {
     child->parent_key = parent->key;
@@ -328,6 +328,29 @@ static void UIBoxRemoveChild(UIBox* parent, UIKey child_key) {
     for (uint32_t i = len; i != 0; --i) {
         UIBoxAddChild(parent, children[i - 1]);
     }
+}
+
+static void RemoveUIBox(UIKey key) {
+    UIBox* box = GetUIBox(key);
+    Assert(box != NULL);
+    Assert(box->nchildren == 0);
+    if (box->left_key != 0) {
+        UIBox* left = GetUIBox(box->left_key);
+        Assert(left != NULL);
+        left->neighbor_key = box->neighbor_key;
+    }
+    if (box->neighbor_key != 0) {
+        UIBox* right = GetUIBox(box->neighbor_key);
+        Assert(right != NULL);
+        right->left_key = box->left_key;
+    }
+    if (box->parent_key != 0) {
+        UIBox* parent = GetUIBox(box->parent_key);
+        Assert(parent != NULL);
+        UIBoxRemoveChild(parent, box->key);
+    }
+
+    hmdel(State.boxes, key);
 }
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }
@@ -451,10 +474,17 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
     bool first_frame = idx == -1;
     if (first_frame) {
         UIBox box = {0};
+
         box.key = key;
         size_t len = strlen(label);
         char* str = (char*)calloc(len + 1, sizeof(char));
         box.key_str = strcat(str, label);
+        // Set semantic sizes only on creation to support things like resizeable windows. Don't want
+        // to have users maintain pointers to sizes and stuff. this might be the wrong approach and cause
+        // other issues down the line though.
+        box.semantic_size[AXIS_X] = semantic_width;
+        box.semantic_size[AXIS_Y] = semantic_height;
+
         hmput(State.boxes, key, box);
         idx = hmgeti(State.boxes, key);
         Assert(idx != -1);
@@ -470,8 +500,8 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
         UIBoxAddChild(parent, box);
     }
 
-    box->semantic_size[AXIS_X] = semantic_width;
-    box->semantic_size[AXIS_Y] = semantic_height;
+    // box->semantic_size[AXIS_X] = semantic_width;
+    // box->semantic_size[AXIS_Y] = semantic_height;
 
     // Set Stack-based atts.
     box->font_color = UIGetFontColor();
@@ -555,24 +585,26 @@ static void UIFrameStart(float delta_time) {
     }
 }
 
-static void PruneTree(UIBox* cur) {
-    if (cur == NULL) {
+static void PruneTree(UIKey cur_key) {
+    if (cur_key == 0) {
         return;
     }
 
-    UIBox* next = NULL;
+    UIBox* cur = GetUIBox(cur_key);
+    Assert(cur != NULL);
+
+    UIKey next_key = 0;
     UIBox* child = GetUIBox(cur->child_key);
-    while (child != NULL) {
-        next = GetUIBox(child->neighbor_key);
-        PruneTree(child);
-        child = next;
+    for (; child != NULL; child = GetUIBox(next_key)) {
+        next_key = child->neighbor_key;
+        PruneTree(child->key);
     }
 
+    // IMPORTANT: Pointers are unstable here because we might be resizing the underlying hash map do to deletions.
+    // refresh the pointer to cur to avoid segfault issues.
+    cur = GetUIBox(cur_key);
+    Assert(cur != NULL);
     if (cur->last_frame_touched != State.frame_count) {
-        Assert(cur->nchildren == 0);
-        UIBox* parent = GetUIBox(cur->parent_key);
-        Assert(parent != NULL);
-        UIBoxRemoveChild(parent, cur->key);
         RemoveUIBox(cur->key);
     }
 }
@@ -774,13 +806,15 @@ static void DrawUI(UIBox* parent) {
     DrawUI(parent->neighbor);
 }
 
-static void PruneTreeRoot(UIBox* root) {
-    PruneTree(root);
-    UIBox* neighbor = GetUIBox(root->neighbor_key);
-    UIBox* next = NULL;
-    for (; neighbor != NULL; neighbor = next) {
-        next = GetUIBox(neighbor->neighbor_key);
-        PruneTreeRoot(neighbor);
+static void PruneTreeRoot(UIKey root_key) {
+    UIBox* root = GetUIBox(root_key);
+    Assert(root != NULL);
+    UIKey neighbor_key = root->neighbor_key;
+    PruneTree(root->key);
+    UIBox* neighbor = GetUIBox(neighbor_key);
+    for (; neighbor != NULL; neighbor = GetUIBox(neighbor_key)) {
+        neighbor_key = neighbor->neighbor_key;
+        PruneTreeRoot(neighbor->key);
     }
 }
 
@@ -837,7 +871,9 @@ static void UIFrameEnd() {
     {
         UIBox* root = UIGetParent();
         Assert(root != NULL);
-        PruneTreeRoot(root);
+        PruneTreeRoot(root->key);
+        // Need to refresh pointer after potentially hash map resizing.
+        root = UIGetParent();
         BuildTreeRoot(root);
         for (UIAxis axis = 0; axis < AXIS_COUNT; ++axis) {
             CalculateFixedSizesRoot(root, axis);
@@ -1091,6 +1127,9 @@ static int RectToResizeX[RECT_COUNT] = {0, 1, 0, 0, 0, 1, 1, 0, 0, 1};
 static int RectToResizeY[RECT_COUNT] = {0, 1, 1, 0, 0, 0, 1, 0, 1, 0};
 static int RectToResizeW[RECT_COUNT] = {0, 0, 0, 0, 1, -1, -1, 1, 1, -1};
 static int RectToResizeH[RECT_COUNT] = {0, 0, -1, 1, 0, 0, -1, 1, -1, 1};
+static UIBoxFlag RectToUIBoxFlag[RECT_COUNT] = {
+    UI_FLAG_NONE,        UI_FLAG_DRAG,      UI_FLAG_RESIZE_NORTH, UI_FLAG_RESIZE_SOUTH, UI_FLAG_RESIZE_EAST,
+    UI_FLAG_RESIZE_WEST, UI_FLAG_RESIZE_NW, UI_FLAG_RESIZE_SE,    UI_FLAG_RESIZE_NE,    UI_FLAG_RESIZE_SW};
 
 static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
     static const int Padding = 20;  // 8;
@@ -1133,77 +1172,81 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
     }
 }
 
-// static bool UIBoxInteract(UIBox* box) {
-//     Assert(box != NULL);
+static bool UIBoxInteract(UIBox* box) {
+    Assert(box != NULL);
 
-//     Rectangle recs[RECT_COUNT] = {0};
-//     bool over[RECT_COUNT] = {0};
-//     for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
-//         Rectangle rec = GetUIWindowRect(box->x, box->y, box->width, box->height, i);
-//         recs[i] = rec;
-//         over[i] = UIBoxHasFlag(box, RectToUIBoxFlag[i]) && InRect(rec.x, rec.y, rec.width, rec.height);
-//     }
+    Rectangle recs[RECT_COUNT] = {0};
+    bool over[RECT_COUNT] = {0};
+    for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
+        Rectangle rec = GetUIWindowRect(box->x, box->y, box->width, box->height, i);
+        recs[i] = rec;
+        over[i] =
+            (UIBoxTestFlag(box, RectToUIBoxFlag[i]) || i == RECT_FULL) && InRect(rec.x, rec.y, rec.width, rec.height);
+    }
 
-//     if (UIShouldSetHot(recs[RECT_FULL].x, recs[RECT_FULL].y, recs[RECT_FULL].width, recs[RECT_FULL].height)) {
-//         UIStateSetHot(box->key);
-//     }
+    if (UIShouldSetHot(recs[RECT_FULL].x, recs[RECT_FULL].y, recs[RECT_FULL].width, recs[RECT_FULL].height)) {
+        UIStateSetHot(box->key);
+    }
 
-//     // Debug resize zones.
-//     if (false) {
-//         Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
-//         for (int i = RECT_NORTH, c = 0; i < RECT_COUNT; ++i, ++c) {
-//             DrawRectangleRec(recs[i], colors[c % (sizeof(colors) / sizeof(colors[0]))]);
-//         }
-//     }
+    // Debug resize zones.
+    if (false) {
+        Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
+        for (int i = RECT_NORTH, c = 0; i < RECT_COUNT; ++i, ++c) {
+            DrawRectangleRec(recs[i], colors[c % (sizeof(colors) / sizeof(colors[0]))]);
+        }
+    }
 
-//     if (UIKeyIsActive(box->key)) {
-//         TraceLog(LOG_DEBUG, "label %s is Active", box->key_str);
-//         if (State.left_up) {
-//             UIStateClearActive();
-//             return true;
-//         }
-//         box->x += State.resizex * State.dragx;
-//         box->y += State.resizey * State.dragy;
-//         box->width += State.resizew * State.dragx;
-//         box->height += State.resizeh * State.dragy;
-//         if (box->width < 0) {
-//             box->width = 0;
-//             box->x -= State.resizex * State.dragx;
-//         }
-//         if (box->height < 0) {
-//             box->height = 0;
-//             box->y -= State.resizey * State.dragy;
-//         }
-//     } else if (UIKeyIsHot(box->key)) {
-//         TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", box->key_str, box->key);
-//         int cursor = MOUSE_CURSOR_DEFAULT;
-//         int resizex = 0;
-//         int resizey = 0;
-//         int resizew = 0;
-//         int resizeh = 0;
-//         // NOTE: We rely on the ordering of the enum to make sure these settings are okay.
-//         // We expect multiple matches, so need to remember last match/writer wins.
-//         for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
-//             if (over[i]) {
-//                 cursor = RectToCursor[i];
-//                 resizex = RectToResizeX[i];
-//                 resizey = RectToResizeY[i];
-//                 resizew = RectToResizeW[i];
-//                 resizeh = RectToResizeH[i];
-//             }
-//         }
-//         SetMouseCursor(cursor);
+    if (UIKeyIsActive(box->key)) {
+        TraceLog(LOG_DEBUG, "label %s is Active", box->key_str);
+        if (State.left_up) {
+            UIStateClearActive();
+            return true;
+        }
+        box->x += State.resizex * State.dragx;
+        box->y += State.resizey * State.dragy;
 
-//         if (State.left_down) {
-//             UIStateSetActive(box->key);
-//             State.resizex = resizex;
-//             State.resizey = resizey;
-//             State.resizew = resizew;
-//             State.resizeh = resizeh;
-//         }
-//     }
-//     return false;
-// }
+        Assert(box->semantic_size[AXIS_X].kind == SIZE_KIND_PIXELS);
+        Assert(box->semantic_size[AXIS_Y].kind == SIZE_KIND_PIXELS);
+        box->semantic_size[AXIS_X].value += State.resizew * State.dragx;
+        box->semantic_size[AXIS_Y].value += State.resizeh * State.dragy;
+        // if (box->width < 0) {
+        //     box->width = 0;
+        //     box->x -= State.resizex * State.dragx;
+        // }
+        // if (box->height < 0) {
+        //     box->height = 0;
+        //     box->y -= State.resizey * State.dragy;
+        // }
+    } else if (UIKeyIsHot(box->key)) {
+        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", box->key_str, box->key);
+        int cursor = MOUSE_CURSOR_DEFAULT;
+        int resizex = 0;
+        int resizey = 0;
+        int resizew = 0;
+        int resizeh = 0;
+        // NOTE: We rely on the ordering of the enum to make sure these settings are okay.
+        // We expect multiple matches, so need to remember last match/writer wins.
+        for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
+            if (over[i]) {
+                cursor = RectToCursor[i];
+                resizex = RectToResizeX[i];
+                resizey = RectToResizeY[i];
+                resizew = RectToResizeW[i];
+                resizeh = RectToResizeH[i];
+            }
+        }
+        SetMouseCursor(cursor);
+
+        if (State.left_down) {
+            UIStateSetActive(box->key);
+            State.resizex = resizex;
+            State.resizey = resizey;
+            State.resizew = resizew;
+            State.resizeh = resizeh;
+        }
+    }
+    return false;
+}
 
 static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
     UIKey key = UIKeyFromCStr(label);
@@ -1290,7 +1333,7 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 //     // box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
 //     State.root = box->key;
 
-//     return UIWindowEx(label, x, y, width, height);
+//     return UIButtonInteract(label, x, y, width, height);
 // }
 
 // static void UIWindowPop() {
@@ -1306,24 +1349,29 @@ static bool UIWindowBegin(char* label, int* x, int* y, int* width, int* height) 
     UIPushBgColor(style->colors[STYLE_WINDOW]);
     UIPushHotColor(style->colors[STYLE_WINDOW_HOT]);
     UIPushActiveColor(style->colors[STYLE_WINDOW_ACTIVE]);
-    UIBox* box = MakeUIBox(label, UISizePx(*width, 0.0f), UISizePx(*height, 0.0f), UI_FLAG_NONE);
-    box->x = *x;
-    box->y = *y;
+    UIBox* box = MakeUIBox(label, UISizePx(*width, 0.0f), UISizePx(*height, 0.0f),
+                           UI_FLAG_NONE | UI_FLAG_DRAG | UI_FLAG_RESIZE_NORTH | UI_FLAG_RESIZE_SOUTH |
+                               UI_FLAG_RESIZE_EAST | UI_FLAG_RESIZE_WEST | UI_FLAG_RESIZE_NW | UI_FLAG_RESIZE_NE |
+                               UI_FLAG_RESIZE_SW | UI_FLAG_RESIZE_SE);
     if (box->nframes == 1) {
         UIBox* parent = UIGetParent();
         UIBoxChildPopRight(parent);
         if (parent != NULL) {
             UIBoxAddNeighbor(parent, box);
         }
+
+        box->x = *x;
+        box->y = *y;
     }
 
     UIPushParent(box);
 
-    UIPushBgColor(style->colors[STYLE_HEADER]);
-    Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
-    (void)MakeUIBox("blah", UISizePx(rec.width, 0.0f), UISizePx(rec.height, 0.0f), UI_FLAG_NONE);
-    UIPopBgColor();
-    return UIWindowEx(label, x, y, width, height);
+    // UIPushBgColor(style->colors[STYLE_HEADER]);
+    // Rectangle rec = GetUIWindowRect(box->x, box->y, box->, RECT_DRAG);
+    // (void)MakeUIBox("blah", UISizePx(rec.width, 0.0f), UISizePx(rec.height, 0.0f), UI_FLAG_NONE);
+    // UIPopBgColor();
+    bool result = UIBoxInteract(box);
+    return result;
 }
 static void UIWindowEnd() {
     UIPopParent();
