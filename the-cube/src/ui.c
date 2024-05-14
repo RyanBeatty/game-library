@@ -445,7 +445,7 @@ static Vector2 UIMeasureTextEx(char* text, int fontsize) {
     return MeasureTextEx(State.font, text, fontsize, fontsize / State.font.baseSize);
 }
 
-static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_height) {
+static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_height, UIBoxFlag flags) {
     UIKey key = UIKeyFromCStr(label);
     ptrdiff_t idx = hmgeti(State.boxes, key);
     bool first_frame = idx == -1;
@@ -460,6 +460,7 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
         Assert(idx != -1);
     }
     UIBox* box = &State.boxes[idx].value;
+    box->flags = flags;
 
     // Reset per frame tree links
     box->child = box->neighbor = box->parent = box->last_child = box->left = NULL;
@@ -544,7 +545,7 @@ static void UIFrameStart(float delta_time) {
     // // parent here.
     UIBgColor(((Color){255, 255, 255, 0})) {
         UIBox* box = MakeUIBox("__window", (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenWidth()},
-                               (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()});
+                               (UISize){.kind = SIZE_KIND_PIXELS, .value = GetScreenHeight()}, UI_FLAG_NONE);
         UIPushParent(box);
     }
 
@@ -874,13 +875,13 @@ static void UIFrameEnd() {
 static void UISpacer(char* label, UISize width, UISize height) {
     Color white = WHITE;
     white.a = 0;
-    UIBgColor(white) { MakeUIBox(label, width, height); }
+    UIBgColor(white) { MakeUIBox(label, width, height, UI_FLAG_NONE); }
 }
 
 static void UIText(char* label, char* display) {
     UIStyle* style = UIGetStyle();
     UIPushBgColor(style->colors[STYLE_WINDOW]);
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f), UI_FLAG_NONE);
     box->display = display;
     UIPopBgColor();
 }
@@ -911,7 +912,7 @@ static bool UIButton(char* label) {
     UIPushBgColor(style->colors[STYLE_BUTTON]);
     UIPushHotColor(style->colors[STYLE_BUTTON_HOT]);
     UIPushActiveColor(style->colors[STYLE_BUTTON_ACTIVE]);
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f), UI_FLAG_NONE);
     box->display = label;
     // if (UIKeyIsHot(box->key)) {
     //     box->bg_color = UIGetStyleColor(STYLE_BUTTON_HOT);
@@ -926,7 +927,7 @@ static bool UIClickableRegion(char* label, int x, int y, int width, int height) 
     char window_label[256] = {0};
     sprintf(window_label, "%s_window", label);
     UIRegionBegin(window_label, x, y, width, height);
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizePct(1.0f, 0.0f));
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizePct(1.0f, 0.0f), UI_FLAG_NONE);
     UIRegionEnd();
     return UIButtonEx(label, x, y, width, height);
 }
@@ -955,7 +956,7 @@ static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, i
 
 static bool UIRadioButton(char* label, bool* state) {
     UIStyle* style = UIGetStyle();
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f), UI_FLAG_NONE);
     box->display = label;
     box->bg_color = *state ? style->colors[STYLE_RADIO_BUTTON_ACTIVE] : style->colors[STYLE_RADIO_BUTTON];
     return UIRadioButtonEx(label, state, box->x, box->y, box->width, box->height);
@@ -1031,7 +1032,7 @@ static bool UIEditBoxEx(char* label, char* edit, int x, int y, int width, int he
 }
 
 static bool UIEditBox(char* label, char* edit) {
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f));
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeTxt(0.0f), UI_FLAG_NONE);
     bool res = UIEditBoxEx(label, edit, box->x, box->y, box->width, box->height);
 
     {
@@ -1305,7 +1306,7 @@ static bool UIWindowBegin(char* label, int* x, int* y, int* width, int* height) 
     UIPushBgColor(style->colors[STYLE_WINDOW]);
     UIPushHotColor(style->colors[STYLE_WINDOW_HOT]);
     UIPushActiveColor(style->colors[STYLE_WINDOW_ACTIVE]);
-    UIBox* box = MakeUIBox(label, UISizePx(*width, 0.0f), UISizePx(*height, 0.0f));
+    UIBox* box = MakeUIBox(label, UISizePx(*width, 0.0f), UISizePx(*height, 0.0f), UI_FLAG_NONE);
     box->x = *x;
     box->y = *y;
     if (box->nframes == 1) {
@@ -1320,7 +1321,7 @@ static bool UIWindowBegin(char* label, int* x, int* y, int* width, int* height) 
 
     UIPushBgColor(style->colors[STYLE_HEADER]);
     Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, RECT_DRAG);
-    (void)MakeUIBox("blah", UISizePx(rec.width, 0.0f), UISizePx(rec.height, 0.0f));
+    (void)MakeUIBox("blah", UISizePx(rec.width, 0.0f), UISizePx(rec.height, 0.0f), UI_FLAG_NONE);
     UIPopBgColor();
     return UIWindowEx(label, x, y, width, height);
 }
@@ -1334,7 +1335,7 @@ static void UIWindowEnd() {
 
 // TODO: Consolidate code with uiwindowbegin.
 static void UIRegionBegin(char* label, int x, int y, int width, int height) {
-    UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f));
+    UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f), UI_FLAG_NONE);
     box->x = x;
     box->y = y;
     if (box->nframes == 1) {
@@ -1351,7 +1352,7 @@ static void UIRegionEnd() { UIPopParent(); }
 
 static UIBox* UIRowBegin(char* label) {
     UIBox* box = NULL;
-    UILayoutAxis(AXIS_X) { box = MakeUIBox(label, UISizePct(1.0, 0.0), UISizeSum()); }
+    UILayoutAxis(AXIS_X) { box = MakeUIBox(label, UISizePct(1.0, 0.0), UISizeSum(), UI_FLAG_NONE); }
     UIPushParent(box);
     return box;
 }
@@ -1360,7 +1361,7 @@ static void UIRowEnd() { UIPopParent(); }
 #define UIRow(label) UIDeferLoop(UIRowBegin(label), UIRowEnd())
 
 static void UITableBegin(char* label, uint32_t nrows, uint32_t ncols) {
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeSum());
+    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizeSum(), UI_FLAG_NONE);
     box->nrows = nrows;
     box->ncols = ncols;
     UIPushParent(box);
