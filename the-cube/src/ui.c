@@ -229,7 +229,7 @@ typedef struct UIState {
 
 UIState State = {0};
 
-static bool UIWindowBegin(char*, int*, int*, int*, int*);
+static bool UIWindowBegin(char*, int, int, int, int);
 static void UIWindowEnd();
 static void UIRegionBegin(char*, int, int, int, int);
 static void UIRegionEnd();
@@ -1344,12 +1344,12 @@ static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
 //     // root->parent_key = parent->parent_key;
 //     State.root = parent->key;
 // }
-static bool UIWindowBegin(char* label, int* x, int* y, int* width, int* height) {
+static bool UIWindowBegin(char* label, int x, int y, int width, int height) {
     UIStyle* style = UIGetStyle();
     UIPushBgColor(style->colors[STYLE_WINDOW]);
     UIPushHotColor(style->colors[STYLE_WINDOW_HOT]);
     UIPushActiveColor(style->colors[STYLE_WINDOW_ACTIVE]);
-    UIBox* box = MakeUIBox(label, UISizePx(*width, 0.0f), UISizePx(*height, 0.0f),
+    UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f),
                            UI_FLAG_NONE | UI_FLAG_DRAG | UI_FLAG_RESIZE_NORTH | UI_FLAG_RESIZE_SOUTH |
                                UI_FLAG_RESIZE_EAST | UI_FLAG_RESIZE_WEST | UI_FLAG_RESIZE_NW | UI_FLAG_RESIZE_NE |
                                UI_FLAG_RESIZE_SW | UI_FLAG_RESIZE_SE);
@@ -1360,8 +1360,8 @@ static bool UIWindowBegin(char* label, int* x, int* y, int* width, int* height) 
             UIBoxAddNeighbor(parent, box);
         }
 
-        box->x = *x;
-        box->y = *y;
+        box->x = x;
+        box->y = y;
     }
 
     UIPushParent(box);

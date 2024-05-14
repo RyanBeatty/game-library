@@ -228,8 +228,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static char editor_buffer[256] = {0};
     assert(EditorEnabled);
 
-    static int x = 50, y = 50, width = 100, height = 300;
-    UIWindow("debug", &x, &y, &width, &height) {}
+    UIWindow("debug", 50, 50, 100, 300) {}
 
     LevelData *level = GetCurLevel();
 
