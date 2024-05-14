@@ -35,6 +35,8 @@ void __attribute__((noinline)) breakpoint() {}
 // Project files below
 
 //
+#include "flags.c"
+//
 #include "entity.c"
 //
 #include "level.c"

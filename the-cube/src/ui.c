@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "flags.c"
+
 #endif
 
 #include <time.h>
@@ -117,6 +119,21 @@ typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignme
 
 typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
 
+typedef enum UIBoxFlag {
+    UI_FLAG_NONE = 0,
+    UI_FLAG_DRAG,
+    UI_FLAG_RESIZE_NORTH,
+    UI_FLAG_RESIZE_SOUTH,
+    UI_FLAG_RESIZE_EAST,
+    UI_FLAG_RESIZE_WEST,
+    UI_FLAG_RESIZE_NW,
+    UI_FLAG_RESIZE_SE,
+    UI_FLAG_RESIZE_NE,
+    UI_FLAG_RESIZE_SW,
+
+    UI_FLAG_COUNT
+} UIBoxFlag;
+
 typedef struct UIBox {
     union {
         struct {
@@ -137,6 +154,8 @@ typedef struct UIBox {
     };
 
     UISize semantic_size[AXIS_COUNT];
+
+    Flag flags[U8ForFlag(UI_FLAG_COUNT)];
 
     UIKey key;
     const char* key_str;
@@ -1114,6 +1133,78 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
         }
     }
 }
+
+// static bool UIBoxInteract(UIBox* box) {
+//     Assert(box != NULL);
+
+//     Rectangle recs[RECT_COUNT] = {0};
+//     bool over[RECT_COUNT] = {0};
+//     for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
+//         Rectangle rec = GetUIWindowRect(box->x, box->y, box->width, box->height, i);
+//         recs[i] = rec;
+//         over[i] = UIBoxHasFlag(box, RectToUIBoxFlag[i]) && InRect(rec.x, rec.y, rec.width, rec.height);
+//     }
+
+//     if (UIShouldSetHot(recs[RECT_FULL].x, recs[RECT_FULL].y, recs[RECT_FULL].width, recs[RECT_FULL].height)) {
+//         UIStateSetHot(box->key);
+//     }
+
+//     // Debug resize zones.
+//     if (false) {
+//         Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
+//         for (int i = RECT_NORTH, c = 0; i < RECT_COUNT; ++i, ++c) {
+//             DrawRectangleRec(recs[i], colors[c % (sizeof(colors) / sizeof(colors[0]))]);
+//         }
+//     }
+
+//     if (UIKeyIsActive(box->key)) {
+//         TraceLog(LOG_DEBUG, "label %s is Active", box->key_str);
+//         if (State.left_up) {
+//             UIStateClearActive();
+//             return true;
+//         }
+//         box->x += State.resizex * State.dragx;
+//         box->y += State.resizey * State.dragy;
+//         box->width += State.resizew * State.dragx;
+//         box->height += State.resizeh * State.dragy;
+//         if (box->width < 0) {
+//             box->width = 0;
+//             box->x -= State.resizex * State.dragx;
+//         }
+//         if (box->height < 0) {
+//             box->height = 0;
+//             box->y -= State.resizey * State.dragy;
+//         }
+//     } else if (UIKeyIsHot(box->key)) {
+//         TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", box->key_str, box->key);
+//         int cursor = MOUSE_CURSOR_DEFAULT;
+//         int resizex = 0;
+//         int resizey = 0;
+//         int resizew = 0;
+//         int resizeh = 0;
+//         // NOTE: We rely on the ordering of the enum to make sure these settings are okay.
+//         // We expect multiple matches, so need to remember last match/writer wins.
+//         for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
+//             if (over[i]) {
+//                 cursor = RectToCursor[i];
+//                 resizex = RectToResizeX[i];
+//                 resizey = RectToResizeY[i];
+//                 resizew = RectToResizeW[i];
+//                 resizeh = RectToResizeH[i];
+//             }
+//         }
+//         SetMouseCursor(cursor);
+
+//         if (State.left_down) {
+//             UIStateSetActive(box->key);
+//             State.resizex = resizex;
+//             State.resizey = resizey;
+//             State.resizew = resizew;
+//             State.resizeh = resizeh;
+//         }
+//     }
+//     return false;
+// }
 
 static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
     UIKey key = UIKeyFromCStr(label);
