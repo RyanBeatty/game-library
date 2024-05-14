@@ -1042,7 +1042,6 @@ static bool UIEditBox(char* label, char* edit) {
 
 typedef enum UIWindowRect {
     RECT_FULL = 0,
-    RECT_VISIBLE,
     RECT_DRAG,
 
     // Resize rects.
@@ -1066,14 +1065,14 @@ typedef enum UIWindowRect {
     RECT_COUNT
 } UIWindowRect;
 
-static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DEFAULT,
-                                       MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_EW,
-                                       MOUSE_CURSOR_RESIZE_EW,   MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE,
-                                       MOUSE_CURSOR_RESIZE_NESW, MOUSE_CURSOR_RESIZE_NESW};
-static int RectToResizeX[RECT_COUNT] = {0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1};
-static int RectToResizeY[RECT_COUNT] = {0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0};
-static int RectToResizeW[RECT_COUNT] = {0, 0, 0, 0, 0, 1, -1, -1, 1, 1, -1};
-static int RectToResizeH[RECT_COUNT] = {0, 0, 0, -1, 1, 0, 0, -1, 1, -1, 1};
+static int RectToCursor[RECT_COUNT] = {MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_DEFAULT,     MOUSE_CURSOR_RESIZE_NS,
+                                       MOUSE_CURSOR_RESIZE_NS,   MOUSE_CURSOR_RESIZE_EW,   MOUSE_CURSOR_RESIZE_EW,
+                                       MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NWSE, MOUSE_CURSOR_RESIZE_NESW,
+                                       MOUSE_CURSOR_RESIZE_NESW};
+static int RectToResizeX[RECT_COUNT] = {0, 1, 0, 0, 0, 1, 1, 0, 0, 1};
+static int RectToResizeY[RECT_COUNT] = {0, 1, 1, 0, 0, 0, 1, 0, 1, 0};
+static int RectToResizeW[RECT_COUNT] = {0, 0, 0, 0, 1, -1, -1, 1, 1, -1};
+static int RectToResizeH[RECT_COUNT] = {0, 0, -1, 1, 0, 0, -1, 1, -1, 1};
 
 static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRect kind) {
     static const int Padding = 20;  // 8;
@@ -1083,11 +1082,8 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
             return (Rectangle){
                 .x = x - Padding, .y = y - Padding, .width = width + (Padding * 2), .height = height + (Padding * 2)};
         }
-        case RECT_VISIBLE: {
-            return (Rectangle){.x = x, .y = y, .width = width, .height = height};
-        }
         case RECT_DRAG: {
-            return (Rectangle){.x = x, .y = y, .width = width, .height = 20};
+            return (Rectangle){.x = x, .y = y, .width = width, .height = height};
         }
         case RECT_NORTH: {
             return (Rectangle){.x = x, .y = y - Padding, .width = width, .height = Padding};
