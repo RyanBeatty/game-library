@@ -500,9 +500,6 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
         UIBoxAddChild(parent, box);
     }
 
-    // box->semantic_size[AXIS_X] = semantic_width;
-    // box->semantic_size[AXIS_Y] = semantic_height;
-
     // Set Stack-based atts.
     box->font_color = UIGetFontColor();
     box->fontsize = UIGetFontSize();
@@ -510,7 +507,6 @@ static UIBox* MakeUIBox(char* label, UISize semantic_width, UISize semantic_heig
 
     Color bg_color = UIGetBgColor();
     if (UIKeyIsHot(box->key)) {
-        // color = UIGetHotColor();
         bg_color = UIGetHotColor();
     } else if (UIKeyIsActive(box->key)) {
         bg_color = UIGetActiveColor();
