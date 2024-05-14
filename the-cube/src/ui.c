@@ -120,18 +120,16 @@ typedef enum UIAlignment { ALIGN_CENTER = 0, ALIGN_LEFT, ALIGN_COUNT } UIAlignme
 typedef enum UIFill { FILL_WIDTH = 0, FILL_NONE, FILL_COUNT } UIFill;
 
 typedef enum UIBoxFlag {
-    UI_FLAG_NONE = 0,
-    UI_FLAG_DRAG,
-    UI_FLAG_RESIZE_NORTH,
-    UI_FLAG_RESIZE_SOUTH,
-    UI_FLAG_RESIZE_EAST,
-    UI_FLAG_RESIZE_WEST,
-    UI_FLAG_RESIZE_NW,
-    UI_FLAG_RESIZE_SE,
-    UI_FLAG_RESIZE_NE,
-    UI_FLAG_RESIZE_SW,
-
-    UI_FLAG_COUNT
+    UI_FLAG_NONE = BitField(0),
+    UI_FLAG_DRAG = BitField(1),
+    UI_FLAG_RESIZE_NORTH = BitField(2),
+    UI_FLAG_RESIZE_SOUTH = BitField(3),
+    UI_FLAG_RESIZE_EAST = BitField(4),
+    UI_FLAG_RESIZE_WEST = BitField(5),
+    UI_FLAG_RESIZE_NW = BitField(6),
+    UI_FLAG_RESIZE_SE = BitField(7),
+    UI_FLAG_RESIZE_NE = BitField(8),
+    UI_FLAG_RESIZE_SW = BitField(9),
 } UIBoxFlag;
 
 typedef struct UIBox {
@@ -155,7 +153,7 @@ typedef struct UIBox {
 
     UISize semantic_size[AXIS_COUNT];
 
-    Flag flags[U8ForFlag(UI_FLAG_COUNT)];
+    UIBoxFlag flags;
 
     UIKey key;
     const char* key_str;
