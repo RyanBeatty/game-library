@@ -1205,6 +1205,7 @@ static bool UIBoxInteract(UIBox* box) {
         Assert(box->semantic_size[AXIS_Y].kind == SIZE_KIND_PIXELS);
         box->semantic_size[AXIS_X].value += State.resizew * State.dragx;
         box->semantic_size[AXIS_Y].value += State.resizeh * State.dragy;
+        // TODO: Convert this to work on semantic size.
         // if (box->width < 0) {
         //     box->width = 0;
         //     box->x -= State.resizex * State.dragx;
@@ -1244,102 +1245,6 @@ static bool UIBoxInteract(UIBox* box) {
     return false;
 }
 
-static bool UIWindowEx(char* label, int* x, int* y, int* width, int* height) {
-    UIKey key = UIKeyFromCStr(label);
-
-    Rectangle recs[RECT_COUNT] = {0};
-    bool over[RECT_COUNT] = {0};
-    for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
-        Rectangle rec = GetUIWindowRect(*x, *y, *width, *height, i);
-        recs[i] = rec;
-        over[i] = InRect(rec.x, rec.y, rec.width, rec.height);
-    }
-
-    if (UIShouldSetHot(recs[RECT_FULL].x, recs[RECT_FULL].y, recs[RECT_FULL].width, recs[RECT_FULL].height)) {
-        UIStateSetHot(key);
-    }
-
-    // Debug resize zones.
-    if (false) {
-        Color colors[5] = {RED, PURPLE, GREEN, YELLOW, PINK};
-        for (int i = RECT_NORTH, c = 0; i < RECT_COUNT; ++i, ++c) {
-            DrawRectangleRec(recs[i], colors[c % (sizeof(colors) / sizeof(colors[0]))]);
-        }
-    }
-
-    if (UIKeyIsActive(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Active", label);
-        if (State.left_up) {
-            UIStateClearActive();
-            return true;
-        }
-        *x += State.resizex * State.dragx;
-        *y += State.resizey * State.dragy;
-        *width += State.resizew * State.dragx;
-        *height += State.resizeh * State.dragy;
-        if (*width < 0) {
-            *width = 0;
-            *x -= State.resizex * State.dragx;
-        }
-        if (*height < 0) {
-            *height = 0;
-            *y -= State.resizey * State.dragy;
-        }
-    } else if (UIKeyIsHot(key)) {
-        TraceLog(LOG_DEBUG, "label %s is Hot. key %zu", label, key);
-        int cursor = MOUSE_CURSOR_DEFAULT;
-        int resizex = 0;
-        int resizey = 0;
-        int resizew = 0;
-        int resizeh = 0;
-        // NOTE: We rely on the ordering of the enum to make sure these settings are okay.
-        // We expect multiple matches, so need to remember last match/writer wins.
-        for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
-            if (over[i]) {
-                cursor = RectToCursor[i];
-                resizex = RectToResizeX[i];
-                resizey = RectToResizeY[i];
-                resizew = RectToResizeW[i];
-                resizeh = RectToResizeH[i];
-            }
-        }
-        SetMouseCursor(cursor);
-
-        if (State.left_down) {
-            UIStateSetActive(key);
-            State.resizex = resizex;
-            State.resizey = resizey;
-            State.resizew = resizew;
-            State.resizeh = resizeh;
-        }
-    }
-    return false;
-}
-
-// static bool UIWindowPush(char* label, int* x, int* y, int* width, int* height) {
-//     UIBox* box = MakeUIBox(label, (UISize){SIZE_KIND_PIXELS, *width}, (UISize){SIZE_KIND_PIXELS, *height});
-//     box->x = *x;
-//     box->y = *y;
-
-//     // UIBox* parent = GetUIBox(box->parent_key);
-//     // Assert(parent != NULL);
-//     // parent->child_key = box->neighbor_key;
-//     // box->neighbor_key = parent->neighbor_key;
-//     // parent->neighbor_key = box->key;
-//     // box->parent_key = parent->key;  // This will get modified once popped to point to parent->parent_key.
-//     State.root = box->key;
-
-//     return UIButtonInteract(label, x, y, width, height);
-// }
-
-// static void UIWindowPop() {
-//     UIBox* root = GetUIBox(State.root);
-//     Assert(root != NULL);
-//     UIBox* parent = GetUIBox(root->parent_key);
-//     Assert(parent != NULL);
-//     // root->parent_key = parent->parent_key;
-//     State.root = parent->key;
-// }
 static bool UIWindowBegin(char* label, int x, int y, int width, int height) {
     UIStyle* style = UIGetStyle();
     UIPushBgColor(style->colors[STYLE_WINDOW]);
