@@ -350,7 +350,7 @@ static void RemoveUIBox(UIKey key) {
         UIBoxRemoveChild(parent, box->key);
     }
 
-    hmdel(State.boxes, key);
+    (void)hmdel(State.boxes, key);
 }
 
 static void UIPushLayoutAxis(UIAxis axis) { arrput(State.layout_axis_stack, axis); }

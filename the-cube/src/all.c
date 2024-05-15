@@ -31,6 +31,8 @@ void __attribute__((noinline)) breakpoint() {}
 
 #define GLSL_VERSION 330
 
+#define ArrLen(arr) sizeof(arr) / sizeof(arr[0])
+
 ///////////////////////////////////////////////
 // Project files below
 
