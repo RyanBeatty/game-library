@@ -334,20 +334,24 @@ static void RemoveUIBox(UIKey key) {
     UIBox* box = GetUIBox(key);
     Assert(box != NULL);
     Assert(box->nchildren == 0);
-    if (box->left_key != 0) {
-        UIBox* left = GetUIBox(box->left_key);
-        Assert(left != NULL);
-        left->neighbor_key = box->neighbor_key;
-    }
-    if (box->neighbor_key != 0) {
-        UIBox* right = GetUIBox(box->neighbor_key);
-        Assert(right != NULL);
-        right->left_key = box->left_key;
-    }
+
+    // If we have parent, remove child deals with everything. Should change this function to
+    // be defactor removing function.
     if (box->parent_key != 0) {
         UIBox* parent = GetUIBox(box->parent_key);
         Assert(parent != NULL);
         UIBoxRemoveChild(parent, box->key);
+    } else {
+        if (box->left_key != 0) {
+            UIBox* left = GetUIBox(box->left_key);
+            Assert(left != NULL);
+            left->neighbor_key = box->neighbor_key;
+        }
+        if (box->neighbor_key != 0) {
+            UIBox* right = GetUIBox(box->neighbor_key);
+            Assert(right != NULL);
+            right->left_key = box->left_key;
+        }
     }
 
     (void)hmdel(State.boxes, key);
