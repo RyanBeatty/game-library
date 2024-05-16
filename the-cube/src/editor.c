@@ -133,6 +133,7 @@ static void FocusRemove(Focus *focus, uint32_t idx) {
 typedef enum EditorMode {
     SAVING = 0,
     LOADING,
+    ENTITY_EDIT,
     DRAG_X,
     DRAG_Y,
 
@@ -235,39 +236,48 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     sprintf(editor_buffer, "Editing: %s", level->name);
     UIText("Editor greeting", editor_buffer);
 
-    Focus *focus = EditorGetFocus(editor);
-    assert(focus != NULL);
-    if (!FocusOn(focus)) {
+    // entity editing.
+    {
+        Entity *clicked_entity = NULL;
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             Vector2 mouse_position = GetMousePosition();
             Ray mouse_click = GetMouseRay(mouse_position, level->camera);
 
             RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, level);
             if (collision.collision.hit) {
-                Entity *entity = LevelDataGetEntity(level, collision.entity_idx);
-                EditorSetFocus(editor, entity);
-                color_idx = 0;
+                clicked_entity = LevelDataGetEntity(level, collision.entity_idx);
             }
         }
-    } else {
-        Vector3 focus_pos_world = FocusGetPosition(focus);
-        Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, level->camera);
+        if (clicked_entity != NULL && IsEditorModeHot(editor, ENTITY_EDIT)) {
+            if (!editor->modes[ENTITY_EDIT]) {
+                editor->modes[ENTITY_EDIT] = true;
+                EditorSetFocus(editor, clicked_entity);
+            }
+        }
 
-        // Draw arrows.
-        char labels[2][256] = {"x box", "y box"};
-        Color colors[3] = {BLUE, GREEN, RED};
-        Rectangle recs[2] = {{0, 0, 100, 10}, {-5, -100, 10, 100}};
-        Vector3 arrows[3] = {(Vector3){1, 0, 0}, (Vector3){0, 1, 0}, (Vector3){0, 0, 1}};
-        for (uint32_t i = 0; i < 2; ++i) {
-            Vector2 pos = Vector2Add(focus_pos_screen, (Vector2){recs[i].x, recs[i].y});
-            // DrawRectangle(pos.x, pos.y, recs[i].width, recs[i].height, colors[i]);
-            Color bg_color = colors[i];
-            Color hot_color = bg_color;
-            Color active_color = hot_color;
-            UIBgColor(bg_color) {
-                UIHotColor(hot_color) {
-                    UIActiveColor(active_color) {
-                        UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
+        if (editor->modes[ENTITY_EDIT]) {
+            Focus *focus = EditorGetFocus(editor);
+            Assert(focus != NULL);
+
+            Vector3 focus_pos_world = FocusGetPosition(focus);
+            Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, level->camera);
+
+            // Draw arrows.
+            char labels[2][256] = {"x box", "y box"};
+            Color colors[3] = {BLUE, GREEN, RED};
+            Rectangle recs[2] = {{0, 0, 100, 10}, {-5, -100, 10, 100}};
+            Vector3 arrows[3] = {(Vector3){1, 0, 0}, (Vector3){0, 1, 0}, (Vector3){0, 0, 1}};
+            for (uint32_t i = 0; i < 2; ++i) {
+                Vector2 pos = Vector2Add(focus_pos_screen, (Vector2){recs[i].x, recs[i].y});
+                // DrawRectangle(pos.x, pos.y, recs[i].width, recs[i].height, colors[i]);
+                Color bg_color = colors[i];
+                Color hot_color = bg_color;
+                Color active_color = hot_color;
+                UIBgColor(bg_color) {
+                    UIHotColor(hot_color) {
+                        UIActiveColor(active_color) {
+                            UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
+                        }
                     }
                 }
             }
@@ -331,6 +341,23 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             }
         } else {
             memset(loading_buffer, 0, sizeof(loading_buffer) * sizeof(loading_buffer[0]));
+        }
+    }
+
+    // UpdateEntities.
+    {
+        Focus *focus = EditorGetFocus(editor);
+        Vector3 focus_position = FocusGetPosition(focus);
+        Quaternion focus_orientation = FocusGetOrientation(focus);
+        for (uint32_t i = 0; i < 3; ++i) {
+            Entity *entity = &editor->entities[i];
+            entity->position = focus_position;
+            entity->orientation = focus_orientation;
+        }
+
+        for (uint32_t i = 0; i < EditorNumEntities; ++i) {
+            Entity *entity = &editor->entities[i];
+            EntityUpdateTransform(entity);
         }
     }
 
@@ -486,20 +513,6 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     //         exit(EXIT_FAILURE);
     //     }
     // }
-
-    // UpdateEntities.
-    Vector3 focus_position = FocusGetPosition(focus);
-    Quaternion focus_orientation = FocusGetOrientation(focus);
-    for (uint32_t i = 0; i < 3; ++i) {
-        Entity *entity = &editor->entities[i];
-        entity->position = focus_position;
-        entity->orientation = focus_orientation;
-    }
-
-    for (uint32_t i = 0; i < EditorNumEntities; ++i) {
-        Entity *entity = &editor->entities[i];
-        EntityUpdateTransform(entity);
-    }
 }
 
 static void EditorUpdate(float delta_time) { EditorUpdateEx(&Editor, delta_time); }
