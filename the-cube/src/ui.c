@@ -581,6 +581,9 @@ static void UIFrameStart(float delta_time) {
     }
 }
 
+// TODO: Instead of dealing with all this pointer invalidation BS, refactor boxes to be stored in static global array
+// with a fixed size. use hash map to index mapping. boxes can have active flag, deletion is removing active flag.
+// this should keep pointers stable.
 static void PruneTree(UIKey cur_key) {
     if (cur_key == 0) {
         return;
