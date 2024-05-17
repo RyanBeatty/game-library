@@ -229,7 +229,11 @@ typedef struct UIState {
 
 UIState State = {0};
 
-static bool UIWindowBegin(char*, int, int, int, int);
+#define GetUIDragX() (State.resizex) * (State.dragx)
+#define GetUIDragY() (State.resizey) * (State.dragy)
+#define GetUIDrag() ((Vector2){.x = GetUIDragX(), .y = GetUIDragY()})
+
+static bool UIWindowBeginEx(char*, int, int, int, int, UIBoxFlag);
 static void UIWindowEnd();
 static void UIRegionBegin(char*, int, int, int, int);
 static void UIRegionEnd();
@@ -965,10 +969,9 @@ static bool UIButton(char* label) {
 static bool UIClickableRegion(char* label, int x, int y, int width, int height) {
     char window_label[256] = {0};
     sprintf(window_label, "%s_window", label);
-    UIRegionBegin(window_label, x, y, width, height);
-    UIBox* box = MakeUIBox(label, UISizePct(1.0f, 0.0f), UISizePct(1.0f, 0.0f), UI_FLAG_NONE);
+    bool result = UIWindowBeginEx(window_label, x, y, width, height, UI_FLAG_DRAG);
     UIRegionEnd();
-    return UIButtonEx(label, x, y, width, height);
+    return result;
 }
 
 static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
@@ -1180,15 +1183,14 @@ static bool UIBoxInteract(UIBox* box) {
 
     Rectangle recs[RECT_COUNT] = {0};
     bool over[RECT_COUNT] = {0};
-    for (int i = RECT_FULL; i < RECT_COUNT; ++i) {
+    for (int i = RECT_DRAG; i < RECT_COUNT; ++i) {
         Rectangle rec = GetUIWindowRect(box->x, box->y, box->width, box->height, i);
         recs[i] = rec;
         over[i] =
             (UIBoxTestFlag(box, RectToUIBoxFlag[i]) || i == RECT_FULL) && InRect(rec.x, rec.y, rec.width, rec.height);
-    }
-
-    if (UIShouldSetHot(recs[RECT_FULL].x, recs[RECT_FULL].y, recs[RECT_FULL].width, recs[RECT_FULL].height)) {
-        UIStateSetHot(box->key);
+        if (over[i] && !UIIsActive()) {
+            UIStateSetHot(box->key);
+        }
     }
 
     // Debug resize zones.
@@ -1205,8 +1207,11 @@ static bool UIBoxInteract(UIBox* box) {
             UIStateClearActive();
             return true;
         }
-        box->x += State.resizex * State.dragx;
-        box->y += State.resizey * State.dragy;
+        if (UIBoxTestFlag(box, UI_FLAG_DRAG)) {
+            return true;
+        }
+        // box->x += State.resizex * State.dragx;
+        // box->y += State.resizey * State.dragy;
 
         Assert(box->semantic_size[AXIS_X].kind == SIZE_KIND_PIXELS);
         Assert(box->semantic_size[AXIS_Y].kind == SIZE_KIND_PIXELS);
@@ -1252,15 +1257,12 @@ static bool UIBoxInteract(UIBox* box) {
     return false;
 }
 
-static bool UIWindowBegin(char* label, int x, int y, int width, int height) {
+static bool UIWindowBeginEx(char* label, int x, int y, int width, int height, UIBoxFlag flags) {
     UIStyle* style = UIGetStyle();
     UIPushBgColor(style->colors[STYLE_WINDOW]);
     UIPushHotColor(style->colors[STYLE_WINDOW_HOT]);
     UIPushActiveColor(style->colors[STYLE_WINDOW_ACTIVE]);
-    UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f),
-                           UI_FLAG_NONE | UI_FLAG_DRAG | UI_FLAG_RESIZE_NORTH | UI_FLAG_RESIZE_SOUTH |
-                               UI_FLAG_RESIZE_EAST | UI_FLAG_RESIZE_WEST | UI_FLAG_RESIZE_NW | UI_FLAG_RESIZE_NE |
-                               UI_FLAG_RESIZE_SW | UI_FLAG_RESIZE_SE);
+    UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f), flags);
     if (box->nframes == 1) {
         UIBox* parent = UIGetParent();
         UIBoxChildPopRight(parent);
@@ -1280,6 +1282,13 @@ static bool UIWindowBegin(char* label, int x, int y, int width, int height) {
     // UIPopBgColor();
     bool result = UIBoxInteract(box);
     return result;
+}
+
+static bool UIWindowBegin(char* label, int x, int y, int width, int height) {
+    return UIWindowBeginEx(label, x, y, width, height,
+                           UI_FLAG_NONE | UI_FLAG_DRAG | UI_FLAG_RESIZE_NORTH | UI_FLAG_RESIZE_SOUTH |
+                               UI_FLAG_RESIZE_EAST | UI_FLAG_RESIZE_WEST | UI_FLAG_RESIZE_NW | UI_FLAG_RESIZE_NE |
+                               UI_FLAG_RESIZE_SW | UI_FLAG_RESIZE_SE);
 }
 static void UIWindowEnd() {
     UIPopParent();

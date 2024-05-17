@@ -64,11 +64,11 @@ static void FocusDelete(Focus *focus) {
     focus->entity_idxs = NULL;
 }
 
-static void FocusMove(Focus *focus, Vector3 direction) {
+static void FocusMove(Focus *focus, Vector3 move) {
     LevelData *level_data = GetCurLevel();
     for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
         Entity *entity = LevelDataGetEntity(level_data, focus->entity_idxs[i]);
-        entity->position = Vector3Add(entity->position, direction);
+        entity->position = Vector3Add(entity->position, move);
     }
 }
 
@@ -276,7 +276,11 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                 UIBgColor(bg_color) {
                     UIHotColor(hot_color) {
                         UIActiveColor(active_color) {
-                            UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
+                            if (UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height)) {
+                                TraceLog(LOG_INFO, "movinggggg %s", labels[i]);
+                                Vector2 drag = GetUIDrag();
+                                FocusMove(focus, (Vector3){drag.x, drag.y, 0});
+                            }
                         }
                     }
                 }
