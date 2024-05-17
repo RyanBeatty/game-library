@@ -186,6 +186,14 @@ typedef struct UIBox {
     char* display;
 } UIBox;
 
+typedef struct UISignal {
+    bool active;
+    bool start;
+    bool end;
+
+    Vector2 drag;
+} UISignal;
+
 typedef struct UIBoxEntry {
     UIKey key;
     UIBox value;
@@ -233,7 +241,7 @@ UIState State = {0};
 #define GetUIDragY() (State.resizey) * (State.dragy)
 #define GetUIDrag() ((Vector2){.x = GetUIDragX(), .y = GetUIDragY()})
 
-static bool UIWindowBeginEx(char*, int, int, int, int, UIBoxFlag);
+static UISignal UIWindowBeginEx(char*, int, int, int, int, UIBoxFlag);
 static void UIWindowEnd();
 static void UIRegionBegin(char*, int, int, int, int);
 static void UIRegionEnd();
@@ -966,12 +974,12 @@ static bool UIButton(char* label) {
     return UIButtonEx(label, box->x, box->y, box->width, box->height);
 }
 
-static bool UIClickableRegion(char* label, int x, int y, int width, int height) {
+static UISignal UIClickableRegion(char* label, int x, int y, int width, int height) {
     char window_label[256] = {0};
     sprintf(window_label, "%s_window", label);
-    bool result = UIWindowBeginEx(window_label, x, y, width, height, UI_FLAG_DRAG);
+    UISignal signal = UIWindowBeginEx(window_label, x, y, width, height, UI_FLAG_DRAG);
     UIRegionEnd();
-    return result;
+    return signal;
 }
 
 static bool UIRadioButtonEx(char* label, bool* state, int x, int y, int width, int height) {
@@ -1178,7 +1186,8 @@ static Rectangle GetUIWindowRect(int x, int y, int width, int height, UIWindowRe
     }
 }
 
-static bool UIBoxInteract(UIBox* box) {
+static UISignal UIBoxInteract(UIBox* box) {
+    UISignal signal = {0};
     Assert(box != NULL);
 
     Rectangle recs[RECT_COUNT] = {0};
@@ -1203,20 +1212,21 @@ static bool UIBoxInteract(UIBox* box) {
 
     if (UIKeyIsActive(box->key)) {
         TraceLog(LOG_DEBUG, "label %s is Active", box->key_str);
+        signal.active = true;
+        signal.drag.x = State.resizex * State.dragx;
+        signal.drag.y = State.resizey * State.dragy;
+        if (signal.drag.x != 0) {
+            breakpoint();
+        }
+
         if (State.left_up) {
             UIStateClearActive();
-            return true;
+            signal.end = true;
         }
-        if (UIBoxTestFlag(box, UI_FLAG_DRAG)) {
-            return true;
-        }
-        // box->x += State.resizex * State.dragx;
-        // box->y += State.resizey * State.dragy;
-
-        Assert(box->semantic_size[AXIS_X].kind == SIZE_KIND_PIXELS);
-        Assert(box->semantic_size[AXIS_Y].kind == SIZE_KIND_PIXELS);
-        box->semantic_size[AXIS_X].value += State.resizew * State.dragx;
-        box->semantic_size[AXIS_Y].value += State.resizeh * State.dragy;
+        // Assert(box->semantic_size[AXIS_X].kind == SIZE_KIND_PIXELS);
+        // Assert(box->semantic_size[AXIS_Y].kind == SIZE_KIND_PIXELS);
+        // box->semantic_size[AXIS_X].value += State.resizew * State.dragx;
+        // box->semantic_size[AXIS_Y].value += State.resizeh * State.dragy;
         // TODO: Convert this to work on semantic size.
         // if (box->width < 0) {
         //     box->width = 0;
@@ -1248,16 +1258,17 @@ static bool UIBoxInteract(UIBox* box) {
 
         if (State.left_down) {
             UIStateSetActive(box->key);
+            signal.start = true;
             State.resizex = resizex;
             State.resizey = resizey;
             State.resizew = resizew;
             State.resizeh = resizeh;
         }
     }
-    return false;
+    return signal;
 }
 
-static bool UIWindowBeginEx(char* label, int x, int y, int width, int height, UIBoxFlag flags) {
+static UISignal UIWindowBeginEx(char* label, int x, int y, int width, int height, UIBoxFlag flags) {
     UIStyle* style = UIGetStyle();
     UIPushBgColor(style->colors[STYLE_WINDOW]);
     UIPushHotColor(style->colors[STYLE_WINDOW_HOT]);
@@ -1280,11 +1291,11 @@ static bool UIWindowBeginEx(char* label, int x, int y, int width, int height, UI
     // Rectangle rec = GetUIWindowRect(box->x, box->y, box->, RECT_DRAG);
     // (void)MakeUIBox("blah", UISizePx(rec.width, 0.0f), UISizePx(rec.height, 0.0f), UI_FLAG_NONE);
     // UIPopBgColor();
-    bool result = UIBoxInteract(box);
-    return result;
+    UISignal signal = UIBoxInteract(box);
+    return signal;
 }
 
-static bool UIWindowBegin(char* label, int x, int y, int width, int height) {
+static UISignal UIWindowBegin(char* label, int x, int y, int width, int height) {
     return UIWindowBeginEx(label, x, y, width, height,
                            UI_FLAG_NONE | UI_FLAG_DRAG | UI_FLAG_RESIZE_NORTH | UI_FLAG_RESIZE_SOUTH |
                                UI_FLAG_RESIZE_EAST | UI_FLAG_RESIZE_WEST | UI_FLAG_RESIZE_NW | UI_FLAG_RESIZE_NE |
