@@ -276,7 +276,8 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                 UIBgColor(bg_color) {
                     UIHotColor(hot_color) {
                         UIActiveColor(active_color) {
-                            if (UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height)) {
+                            UISignal signal = UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
+                            if (signal.active) {
                                 TraceLog(LOG_INFO, "movinggggg %s", labels[i]);
                                 Vector2 drag = GetUIDrag();
                                 FocusMove(focus, (Vector3){drag.x, drag.y, 0});
