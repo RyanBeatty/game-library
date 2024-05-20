@@ -5,6 +5,7 @@
 #include "entity.c"
 #include "level.c"
 #include "raylib.h"
+#include "rlgl.h"
 
 #endif
 
@@ -69,6 +70,7 @@ static void FocusMove(Focus *focus, Vector3 move) {
     for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
         Entity *entity = LevelDataGetEntity(level_data, focus->entity_idxs[i]);
         entity->position = Vector3Add(entity->position, move);
+        TraceLog(LOG_INFO, "entity pos %f %f %f", entity->position.x, entity->position.y, entity->position.z);
     }
 }
 
@@ -222,6 +224,23 @@ static void EditorModeToggle(EditorState *editor, EditorMode editor_mode) {
     editor->modes[editor_mode] = !editor->modes[editor_mode];
 }
 
+static Vector3 ScreentoWorldRef(Vector2 pos, Matrix view, Matrix projection, int width, int height, Vector3 reference) {
+    Matrix iview = MatrixInvert(view);
+    Matrix iprojection = MatrixInvert(projection);
+
+    Quaternion ref_clip = {reference.x, reference.y, reference.z, 1.0f};
+    ref_clip = QuaternionTransform(ref_clip, view);
+    ref_clip = QuaternionTransform(ref_clip, projection);
+
+    float z = ref_clip.z / ref_clip.w;
+
+    Vector4 clip = {((pos.x / width) - 0.5f) * 2.0f, ((pos.y / height) - 0.5f) * 2.0f, -z, 1.0f};
+    clip = QuaternionTransform(clip, iprojection);
+    clip = QuaternionTransform(clip, iview);
+    Vector3 world = {clip.x, clip.y, clip.z};
+    return world;
+}
+
 static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static uint32_t color_idx = 0;
     static char saving_buffer[256] = {0};
@@ -269,7 +288,6 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             Vector3 arrows[3] = {(Vector3){1, 0, 0}, (Vector3){0, 1, 0}, (Vector3){0, 0, 1}};
             for (uint32_t i = 0; i < 2; ++i) {
                 Vector2 pos = Vector2Add(focus_pos_screen, (Vector2){recs[i].x, recs[i].y});
-                // DrawRectangle(pos.x, pos.y, recs[i].width, recs[i].height, colors[i]);
                 Color bg_color = colors[i];
                 Color hot_color = bg_color;
                 Color active_color = hot_color;
@@ -278,9 +296,45 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                         UIActiveColor(active_color) {
                             UISignal signal = UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
                             if (signal.active) {
-                                TraceLog(LOG_INFO, "movinggggg %s", labels[i]);
-                                Vector2 drag = GetUIDrag();
-                                FocusMove(focus, (Vector3){drag.x, drag.y, 0});
+                                if (!Vector2Equals(signal.drag, Vector2Zero())) {
+                                    // Vector2 focus_pos_screen_new = Vector2Add(focus_pos_screen, signal.drag);
+
+                                    Camera3D camera = level->camera;
+                                    Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
+                                    Matrix projection = MatrixIdentity();
+                                    double aspect = (double)GetScreenWidth() / (double)GetScreenHeight();
+                                    double top = camera.fovy / 2.0;
+                                    double right = top * aspect;
+
+                                    // Calculate projection matrix from orthographic
+                                    projection = MatrixOrtho(-right, right, -top, top, RL_CULL_DISTANCE_NEAR,
+                                                             RL_CULL_DISTANCE_FAR);
+                                    Vector3 diff =
+                                        ScreentoWorldRef(focus_pos_screen, view, projection, GetScreenWidth(),
+                                                         GetScreenHeight(), focus_pos_world);
+
+                                    // Vector2 new_focus_pos_screen = Vector2Add(focus_pos_screen, signal.drag);
+                                    // new_focus_pos_screen = focus_pos_screen;
+                                    // Vector2 new_focus_pos_ndc = {
+                                    //     (((new_focus_pos_screen.x / GetScreenWidth()) - 0.5f) * 2.0f),
+                                    //     (((new_focus_pos_screen.y / GetScreenHeight()) - 0.5f) * 2.0f)};
+
+                                    // Matrix matProj = MatrixPerspective(
+                                    //     (double)(level->camera.fovy * DEG2RAD),
+                                    //     (double)GetScreenWidth() / (double)GetScreenHeight(), 0.01, 1000.0);
+                                    // Matrix matView =
+                                    //     MatrixLookAt(level->camera.position, level->camera.target, level->camera.up);
+                                    // Vector3 new_focus_pos_world = Vector3Unproject(
+                                    //     (Vector3){new_focus_pos_screen.x, new_focus_pos_screen.y}, matProj, matView);
+                                    // Vector3 diff = Vector3Subtract(new_focus_pos_world, focus_pos_world);
+                                    // breakpoint();
+                                    // // FocusMove(focus, diff);
+                                    // FocusMove(focus, (Vector3){CubeSideLength, 0, 0});
+                                    // TraceLog(LOG_INFO, "movinggggg %s %f %f %f", labels[i], diff.x, diff.y, diff.z);
+                                    breakpoint();
+                                }
+
+                                // FocusMove(focus, (Vector3){drag.x, drag.y, 0});
                             }
                         }
                     }

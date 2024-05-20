@@ -1215,9 +1215,6 @@ static UISignal UIBoxInteract(UIBox* box) {
         signal.active = true;
         signal.drag.x = State.resizex * State.dragx;
         signal.drag.y = State.resizey * State.dragy;
-        if (signal.drag.x != 0) {
-            breakpoint();
-        }
 
         if (State.left_up) {
             UIStateClearActive();
