@@ -297,7 +297,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                             UISignal signal = UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
                             if (signal.active) {
                                 if (!Vector2Equals(signal.drag, Vector2Zero())) {
-                                    // Vector2 focus_pos_screen_new = Vector2Add(focus_pos_screen, signal.drag);
+                                    Vector2 new_focus_pos_screen = Vector2Add(focus_pos_screen, signal.drag);
 
                                     Camera3D camera = level->camera;
                                     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
@@ -309,27 +309,12 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                                     // Calculate projection matrix from orthographic
                                     projection = MatrixOrtho(-right, right, -top, top, RL_CULL_DISTANCE_NEAR,
                                                              RL_CULL_DISTANCE_FAR);
-                                    Vector3 diff =
-                                        ScreentoWorldRef(focus_pos_screen, view, projection, GetScreenWidth(),
+                                    Vector3 new_focus_pos_world =
+                                        ScreentoWorldRef(new_focus_pos_screen, view, projection, GetScreenWidth(),
                                                          GetScreenHeight(), focus_pos_world);
+                                    Vector3 move = Vector3Subtract(new_focus_pos_world, focus_pos_world);
 
-                                    // Vector2 new_focus_pos_screen = Vector2Add(focus_pos_screen, signal.drag);
-                                    // new_focus_pos_screen = focus_pos_screen;
-                                    // Vector2 new_focus_pos_ndc = {
-                                    //     (((new_focus_pos_screen.x / GetScreenWidth()) - 0.5f) * 2.0f),
-                                    //     (((new_focus_pos_screen.y / GetScreenHeight()) - 0.5f) * 2.0f)};
-
-                                    // Matrix matProj = MatrixPerspective(
-                                    //     (double)(level->camera.fovy * DEG2RAD),
-                                    //     (double)GetScreenWidth() / (double)GetScreenHeight(), 0.01, 1000.0);
-                                    // Matrix matView =
-                                    //     MatrixLookAt(level->camera.position, level->camera.target, level->camera.up);
-                                    // Vector3 new_focus_pos_world = Vector3Unproject(
-                                    //     (Vector3){new_focus_pos_screen.x, new_focus_pos_screen.y}, matProj, matView);
-                                    // Vector3 diff = Vector3Subtract(new_focus_pos_world, focus_pos_world);
-                                    // breakpoint();
-                                    // // FocusMove(focus, diff);
-                                    // FocusMove(focus, (Vector3){CubeSideLength, 0, 0});
+                                    FocusMove(focus, move);
                                     // TraceLog(LOG_INFO, "movinggggg %s %f %f %f", labels[i], diff.x, diff.y, diff.z);
                                     breakpoint();
                                 }
