@@ -277,9 +277,28 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         if (editor->modes[ENTITY_EDIT]) {
             Focus *focus = EditorGetFocus(editor);
             Assert(focus != NULL);
+            Camera3D camera = level->camera;
 
             Vector3 focus_pos_world = FocusGetPosition(focus);
-            Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, level->camera);
+            Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, camera);
+
+            int width = GetScreenWidth();
+            int height = GetScreenHeight();
+            Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
+            double aspect = (double)width / (double)height;
+            double top = camera.fovy / 2.0;
+            double right = top * aspect;
+            Matrix projection = MatrixOrtho(-right, right, -top, top, RL_CULL_DISTANCE_NEAR, RL_CULL_DISTANCE_FAR);
+
+            Matrix iview = MatrixInvert(view);
+            // Matrix iprojection = MatrixInvert(projection);
+
+            // Quaternion ref_clip = {focus_pos_world.x, focus_pos_world.y, focus_pos_world.z, 1.0f};
+            // ref_clip = QuaternionTransform(ref_clip, view);
+            // ref_clip = QuaternionTransform(ref_clip, projection);
+
+            // // float z = ref_clip.z / ref_clip.w;
+            // float z = focus_pos_world.z;
 
             // Draw arrows.
             char labels[2][256] = {"x box", "y box"};
@@ -297,26 +316,43 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                             UISignal signal = UIClickableRegion(labels[i], pos.x, pos.y, recs[i].width, recs[i].height);
                             if (signal.active) {
                                 if (!Vector2Equals(signal.drag, Vector2Zero())) {
-                                    Vector2 new_focus_pos_screen = Vector2Add(focus_pos_screen, signal.drag);
+                                    // TODO: figure out how to translate mouse drag into 3d plane movement. the math
+                                    // just aint mathing for me.
+                                    // Vector2 new_focus_pos_screen = Vector2Add(focus_pos_screen, signal.drag);
 
-                                    Camera3D camera = level->camera;
-                                    Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
-                                    Matrix projection = MatrixIdentity();
-                                    double aspect = (double)GetScreenWidth() / (double)GetScreenHeight();
-                                    double top = camera.fovy / 2.0;
-                                    double right = top * aspect;
+                                    // Ray new_focus_pos_ray = GetMouseRay(new_focus_pos_screen, camera);
 
-                                    // Calculate projection matrix from orthographic
-                                    projection = MatrixOrtho(-right, right, -top, top, RL_CULL_DISTANCE_NEAR,
-                                                             RL_CULL_DISTANCE_FAR);
-                                    Vector3 new_focus_pos_world =
-                                        ScreentoWorldRef(new_focus_pos_screen, view, projection, GetScreenWidth(),
-                                                         GetScreenHeight(), focus_pos_world);
-                                    Vector3 move = Vector3Subtract(new_focus_pos_world, focus_pos_world);
+                                    // // Vector3 top_left = Vector3Unproject((Vector3){0, 0, z}, projection, view);
+                                    // // Vector3 top_right = Vector3Unproject((Vector3){width, 0, z}, projection,
+                                    // view);
+                                    // // Vector3 bottom_left = Vector3Unproject((Vector3){0, height, z}, projection,
+                                    // // view); Vector3 bottom_right =
+                                    // //     Vector3Unproject((Vector3){width, height, z}, projection, view);
+                                    // // RayCollision collision = GetRayCollisionQuad(new_focus_pos_ray, top_left,
+                                    // // top_right,
+                                    // //                                              bottom_left, bottom_right);
+                                    // // RayCollision collision = GetRayCollisionQuad(
+                                    // //     new_focus_pos_ray, (Vector3){-1000, 1000, z}, (Vector3){1000, 1000, z},
+                                    // //     (Vector3){-1000, -1000, z}, (Vector3){1000, -1000, z});
+                                    // // RayCollision collision = GetRayCollisionQuad(
+                                    // //     new_focus_pos_ray, (Vector3){-1000, 1000, z}, (Vector3){1000, 1000, z},
+                                    // //     (Vector3){-1000, -1000, z}, (Vector3){1000, -1000, z});
+                                    // RayCollision collision = GetRayCollisionBox(
+                                    //     new_focus_pos_ray,
+                                    //     (BoundingBox){(Vector3){-1000, 1000, z}, (Vector3){1000, -1000, z}});
+                                    // breakpoint();
 
-                                    FocusMove(focus, move);
-                                    // TraceLog(LOG_INFO, "movinggggg %s %f %f %f", labels[i], diff.x, diff.y, diff.z);
-                                    breakpoint();
+                                    // // Calculate projection matrix from orthographic
+                                    // projection = MatrixOrtho(-right, right, -top, top, RL_CULL_DISTANCE_NEAR,
+                                    //                          RL_CULL_DISTANCE_FAR);
+                                    // Vector3 new_focus_pos_world =
+                                    //     ScreentoWorldRef(new_focus_pos_screen, view, projection, GetScreenWidth(),
+                                    //                      GetScreenHeight(), focus_pos_world);
+                                    // Vector3 move = Vector3Subtract(new_focus_pos_world, focus_pos_world);
+
+                                    // FocusMove(focus, move);
+                                    // // TraceLog(LOG_INFO, "movinggggg %s %f %f %f", labels[i], diff.x, diff.y,
+                                    // diff.z); breakpoint();
                                 }
 
                                 // FocusMove(focus, (Vector3){drag.x, drag.y, 0});
@@ -325,6 +361,21 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                     }
                 }
             }
+
+            // Keyboard movement.
+            // right, left, down, up
+            Vector3 dirs_camera[4] = {{1, 0, 0}, {-1, 0, 0}, {0, -1, 0}, {0, 1, 0}};
+            Vector3 final_dir = {0, 0, 0};
+            for (int i = KEY_RIGHT; i <= KEY_UP; ++i) {
+                if (IsKeyPressed(i)) {
+                    Vector3 dir_camera = dirs_camera[i - KEY_RIGHT];
+                    Vector3 dir_world = Vector3Transform(dir_camera, iview);
+                    dir_world = Vector3Subtract(dir_world, camera.position);
+                    dir_world = Vector3Scale(dir_world, CubeSideLength);
+                    final_dir = Vector3Add(final_dir, dir_world);
+                }
+            }
+            FocusMove(focus, final_dir);
         }
     }
 
