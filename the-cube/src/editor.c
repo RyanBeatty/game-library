@@ -263,14 +263,20 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             Ray mouse_click = GetMouseRay(mouse_position, level->camera);
 
             RayCollisionLevelData collision = GetRayCollisionLevelData(mouse_click, level);
-            if (collision.collision.hit) {
+            if (collision.collision.hit && !editor->modes[ENTITY_EDIT]) {
                 clicked_entity = LevelDataGetEntity(level, collision.entity_idx);
             }
         }
-        if (clicked_entity != NULL && IsEditorModeHot(editor, ENTITY_EDIT)) {
+        bool enter = IsKeyPressed(KEY_ENTER);
+        if ((clicked_entity != NULL || enter) && IsEditorModeHot(editor, ENTITY_EDIT)) {
             if (!editor->modes[ENTITY_EDIT]) {
                 editor->modes[ENTITY_EDIT] = true;
                 EditorSetFocus(editor, clicked_entity);
+            } else {
+                editor->modes[ENTITY_EDIT] = false;
+                Focus *focus = EditorGetFocus(editor);
+                Assert(focus != NULL);
+                FocusDeInit(focus);
             }
         }
 
@@ -368,6 +374,8 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
             Vector3 final_dir = {0, 0, 0};
             for (int i = KEY_RIGHT; i <= KEY_UP; ++i) {
                 if (IsKeyPressed(i)) {
+                    // Layout movement in camera space and then convert to world space and then subtract
+                    // camera position to get the correct movement vector.
                     Vector3 dir_camera = dirs_camera[i - KEY_RIGHT];
                     Vector3 dir_world = Vector3Transform(dir_camera, iview);
                     dir_world = Vector3Subtract(dir_world, camera.position);
