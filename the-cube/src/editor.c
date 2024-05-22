@@ -256,8 +256,10 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
 
     LevelData *level = GetCurLevel();
 
-    sprintf(editor_buffer, "Editing: %s", level->name);
-    UIText("Editor greeting", editor_buffer);
+    UIWindow("editor info", 0, 0, 200, 100) {
+        sprintf(editor_buffer, "Editing: %s", level->name);
+        UIText("editor info header", editor_buffer);
+    }
 
     // entity editing.
     {
@@ -383,7 +385,14 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                 }
             }
 
-            UIWindow("entity info", 0, 0, 100, GetScreenHeight()) {}
+            UIWindow("entity info", 0, 0, 100, GetScreenHeight()) {
+                Entity *entity = LevelDataGetEntity(level, focus->entity_idxs[0]);
+
+                UIText("entity info", "entity info");
+                char id[256] = {0};
+                sprintf(id, "id: %d", entity->idx);
+                UIText("id", id);
+            }
 
             // Keyboard movement.
             // right, left, down, up
@@ -415,18 +424,20 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         }
 
         if (editor->modes[SAVING]) {
-            UIRow("saving row") {
-                bool button = UIButton("Save Level");
-                bool edit_box = UIEditBox("saving text edit", saving_buffer);
-                bool enter = IsKeyDown(KEY_ENTER);
-                if (button || edit_box || enter) {
-                    int len = strlen(level->name);
-                    assert(len != 0);
-                    memset(level->name, 0, len * sizeof(level->name[0]));
-                    strcat(level->name, saving_buffer);
-                    TraceLog(LOG_INFO, "Saving Level: %s", level->name);
-                    SaveLevel(level);
-                    editor->modes[SAVING] = false;
+            UIParentCStr("editor info") {
+                UIRow("saving row") {
+                    bool button = UIButton("Save Level");
+                    bool edit_box = UIEditBox("saving text edit", saving_buffer);
+                    bool enter = IsKeyDown(KEY_ENTER);
+                    if (button || edit_box || enter) {
+                        int len = strlen(level->name);
+                        assert(len != 0);
+                        memset(level->name, 0, len * sizeof(level->name[0]));
+                        strcat(level->name, saving_buffer);
+                        TraceLog(LOG_INFO, "Saving Level: %s", level->name);
+                        SaveLevel(level);
+                        editor->modes[SAVING] = false;
+                    }
                 }
             }
         } else {
@@ -445,18 +456,20 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
         }
 
         if (editor->modes[LOADING]) {
-            UIRow("loading row") {
-                bool button = UIButton("Load Level");
-                bool edit_box = UIEditBox("loading text edit", loading_buffer);
-                bool enter = IsKeyDown(KEY_ENTER);
-                if (button || edit_box || enter) {
-                    int len = strlen(level->name);
-                    assert(len != 0);
-                    memset(level->name, 0, len * sizeof(level->name[0]));
-                    strcat(level->name, loading_buffer);
-                    TraceLog(LOG_INFO, "loading Level: %s", level->name);
-                    SaveLevel(level);
-                    editor->modes[LOADING] = false;
+            UIParentCStr("editor info") {
+                UIRow("loading row") {
+                    bool button = UIButton("Load Level");
+                    bool edit_box = UIEditBox("loading text edit", loading_buffer);
+                    bool enter = IsKeyDown(KEY_ENTER);
+                    if (button || edit_box || enter) {
+                        int len = strlen(level->name);
+                        assert(len != 0);
+                        memset(level->name, 0, len * sizeof(level->name[0]));
+                        strcat(level->name, loading_buffer);
+                        TraceLog(LOG_INFO, "loading Level: %s", level->name);
+                        SaveLevel(level);
+                        editor->modes[LOADING] = false;
+                    }
                 }
             }
         } else {

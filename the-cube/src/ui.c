@@ -462,6 +462,14 @@ static UIBox* UIGetParent() {
     return &hmgetp(State.boxes, State.root_stack[len - 1])->value;
 }
 
+static void UIPushParentCStr(char* label) {
+    UIKey key = UIKeyFromCStr(label);
+    UIBox* box = GetUIBox(key);
+    Assert(box != NULL);
+    UIPushParent(box);
+}
+#define UIParentCStr(label) UIDeferLoop(UIPushParentCStr(label), UIPopParent())
+
 static bool InRect(int x, int y, int width, int height) {
     return (x <= State.mx && State.mx <= x + width) && (y <= State.my && State.my <= y + height);
 }
