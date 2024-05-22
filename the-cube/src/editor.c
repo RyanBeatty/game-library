@@ -70,7 +70,8 @@ static void FocusMove(Focus *focus, Vector3 move) {
     for (uint32_t i = 0; i < arrlenu(focus->entity_idxs); ++i) {
         Entity *entity = LevelDataGetEntity(level_data, focus->entity_idxs[i]);
         entity->position = Vector3Add(entity->position, move);
-        TraceLog(LOG_INFO, "entity pos %f %f %f", entity->position.x, entity->position.y, entity->position.z);
+        // TODO: Maybe don't check this in.
+        // EntityUpdateTransform(entity);
     }
 }
 
@@ -287,6 +288,8 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
 
             Vector3 focus_pos_world = FocusGetPosition(focus);
             Vector2 focus_pos_screen = GetWorldToScreen(focus_pos_world, camera);
+            // TraceLog(LOG_INFO, "%f %f %f", focus_pos_world.x, focus_pos_world.y, focus_pos_world.z);
+            TraceLog(LOG_INFO, "%f %f", focus_pos_screen.x, focus_pos_screen.y);
 
             int width = GetScreenWidth();
             int height = GetScreenHeight();

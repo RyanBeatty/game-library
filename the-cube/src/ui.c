@@ -1271,15 +1271,14 @@ static UISignal UIWindowBeginEx(char* label, int x, int y, int width, int height
     UIPushHotColor(style->colors[STYLE_WINDOW_HOT]);
     UIPushActiveColor(style->colors[STYLE_WINDOW_ACTIVE]);
     UIBox* box = MakeUIBox(label, UISizePx(width, 0.0f), UISizePx(height, 0.0f), flags);
+    box->x = x;
+    box->y = y;
     if (box->nframes == 1) {
         UIBox* parent = UIGetParent();
         UIBoxChildPopRight(parent);
         if (parent != NULL) {
             UIBoxAddNeighbor(parent, box);
         }
-
-        box->x = x;
-        box->y = y;
     }
 
     UIPushParent(box);
