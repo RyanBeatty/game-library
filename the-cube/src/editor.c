@@ -418,7 +418,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
 
     // Level loading.
     {
-        bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L);
+        bool loading_toggled = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_O);
         if (loading_toggled && IsEditorModeHot(editor, LOADING)) {
             EditorModeToggle(editor, LOADING);
             if (editor->modes[LOADING]) {
