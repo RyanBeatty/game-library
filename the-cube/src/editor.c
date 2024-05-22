@@ -254,8 +254,6 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static char editor_buffer[256] = {0};
     assert(EditorEnabled);
 
-    UIWindow("debug", 50, 50, 100, 300) {}
-
     LevelData *level = GetCurLevel();
 
     sprintf(editor_buffer, "Editing: %s", level->name);
@@ -384,6 +382,8 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                     }
                 }
             }
+
+            UIWindow("entity info", 0, 0, 100, GetScreenHeight()) {}
 
             // Keyboard movement.
             // right, left, down, up
