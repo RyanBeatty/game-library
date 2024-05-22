@@ -385,7 +385,7 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                 }
             }
 
-            UIWindow("entity info", 0, 0, 100, GetScreenHeight()) {
+            UIWindow("entity info", GetScreenWidth() - 100, 0, 100, GetScreenHeight()) {
                 Entity *entity = LevelDataGetEntity(level, focus->entity_idxs[0]);
 
                 UIText("entity info", "entity info");
