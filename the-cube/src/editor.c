@@ -240,6 +240,13 @@ static Vector3 ScreentoWorldRef(Vector2 pos, Matrix view, Matrix projection, int
     return world;
 }
 
+static void EditorFocusOff(EditorState *editor) {
+    editor->modes[ENTITY_EDIT] = false;
+    Focus *focus = EditorGetFocus(editor);
+    Assert(focus != NULL);
+    FocusDeInit(focus);
+}
+
 static void EditorUpdateEx(EditorState *editor, float delta_time) {
     static uint32_t color_idx = 0;
     static char saving_buffer[256] = {0};
@@ -277,6 +284,17 @@ static void EditorUpdateEx(EditorState *editor, float delta_time) {
                 Assert(focus != NULL);
                 FocusDeInit(focus);
             }
+        }
+
+        if (IsKeyPressed(KEY_ENTER) && IsEditorModeHot(editor, ENTITY_EDIT) && editor->modes[ENTITY_EDIT]) {
+            EditorFocusOff(editor);
+        }
+        if (IsKeyPressed(KEY_BACKSPACE) && IsEditorModeHot(editor, ENTITY_EDIT) && editor->modes[ENTITY_EDIT]) {
+            TraceLog(LOG_INFO, "delete");
+            Focus *focus = EditorGetFocus(editor);
+            Assert(focus != NULL);
+            FocusDelete(focus);
+            EditorFocusOff(editor);
         }
 
         if (editor->modes[ENTITY_EDIT]) {
