@@ -811,7 +811,8 @@ static void DrawUIBox(UIBox* cur) {
             }
         }
 
-        DrawText(cur->display, cur->x + x_offset, cur->y + y_offset, cur->fontsize, cur->font_color);
+        DrawTextEx(State.font, cur->display, (Vector2){cur->x + x_offset, cur->y + y_offset}, cur->fontsize, 2.5f,
+                   cur->font_color);
     }
 
     EndScissorMode();
