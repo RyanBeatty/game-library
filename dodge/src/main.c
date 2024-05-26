@@ -131,7 +131,20 @@ static void SimpleScene(GameState* state) {
         int width = GetScreenWidth();
         int height = y * 2.0f;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
-        entity->rec = (Rectangle){0, y, width, height};
+        entity->rec = (Rectangle){0, 0, width, height};
+        arrpush(state->entity_ids, entity->id);
+    }
+
+    {
+        Entity* ground = GetEntity(1);
+        Assert(ground != NULL);
+        Entity* entity = MakeEntity(2);
+        int width = 28;
+        int height = 40;
+        float y = ground->p.y - height;
+        entity->p = (Vector3){GetScreenWidth() * 0.5, y, 0};
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
+        entity->rec = (Rectangle){0, 0, width, height};
         arrpush(state->entity_ids, entity->id);
     }
 }
