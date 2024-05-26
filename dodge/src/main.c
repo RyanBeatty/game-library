@@ -74,7 +74,6 @@ typedef struct Entity {
     Vector3 p;
     Quaternion rot;
 
-    Color tint;
     Texture texture;
     // Rectangle source;
 } Entity;
@@ -127,8 +126,9 @@ static GameState GState;
 static void SimpleScene(GameState* state) {
     {
         Entity* entity = MakeEntity(1);
-        entity->p = (Vector3){0, 0, 0};
-        entity->texture = LoadTextureFromImage(GenImageColor(100, 100, GRAY));
+        float y = GetScreenHeight() * 0.65;
+        entity->p = (Vector3){0, y, 0};
+        entity->texture = LoadTextureFromImage(GenImageColor(GetScreenWidth(), y * 2.0f, GRAY));
         arrpush(state->entity_ids, entity->id);
     }
 }
@@ -148,7 +148,6 @@ static void GameStateDraw(GameState* state) {
 
     for (uint32_t i = 0; i < arrlenu(state->entity_ids); ++i) {
         Entity* entity = GetEntity(state->entity_ids[i]);
-        breakpoint();
         DrawTexture(entity->texture, entity->p.x, entity->p.y, WHITE);
     }
 
