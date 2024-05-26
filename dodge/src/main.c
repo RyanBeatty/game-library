@@ -75,7 +75,7 @@ typedef struct Entity {
     Quaternion rot;
 
     Texture texture;
-    // Rectangle source;
+    Rectangle rec;
 } Entity;
 
 typedef struct EntityEntry {
@@ -128,7 +128,10 @@ static void SimpleScene(GameState* state) {
         Entity* entity = MakeEntity(1);
         float y = GetScreenHeight() * 0.65;
         entity->p = (Vector3){0, y, 0};
-        entity->texture = LoadTextureFromImage(GenImageColor(GetScreenWidth(), y * 2.0f, GRAY));
+        int width = GetScreenWidth();
+        int height = y * 2.0f;
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
+        entity->rec = (Rectangle){0, y, width, height};
         arrpush(state->entity_ids, entity->id);
     }
 }
@@ -148,7 +151,7 @@ static void GameStateDraw(GameState* state) {
 
     for (uint32_t i = 0; i < arrlenu(state->entity_ids); ++i) {
         Entity* entity = GetEntity(state->entity_ids[i]);
-        DrawTexture(entity->texture, entity->p.x, entity->p.y, WHITE);
+        DrawTextureRec(entity->texture, entity->rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
     }
 
     EndDrawing();
