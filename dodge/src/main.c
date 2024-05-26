@@ -113,6 +113,12 @@ static Entity* GetEntity(EntityId id) {
     return &entry->value;
 }
 
+static void EntityUpdate(Entity* entity, float delta) {}
+
+static void EntityDraw(Entity* entity) {
+    DrawTextureRec(entity->texture, entity->rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
+}
+
 ////////////////////////////////////////////////////////////
 
 typedef struct GameState {
@@ -125,7 +131,7 @@ static GameState GState;
 
 static void SimpleScene(GameState* state) {
     {
-        Entity* entity = MakeEntity(1);
+        Entity* entity = MakeEntity(EntityIdFromU32(1));
         float y = GetScreenHeight() * 0.65;
         entity->p = (Vector3){0, y, 0};
         int width = GetScreenWidth();
@@ -136,9 +142,9 @@ static void SimpleScene(GameState* state) {
     }
 
     {
-        Entity* ground = GetEntity(1);
+        Entity* ground = GetEntity(EntityIdFromU32(1));
         Assert(ground != NULL);
-        Entity* entity = MakeEntity(2);
+        Entity* entity = MakeEntity(EntityIdFromU32(2));
         int width = 28;
         int height = 40;
         float y = ground->p.y - height;
@@ -153,6 +159,7 @@ static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
     InitWindow(ScreenWidth, ScreenHeight, "Game");
     SetTargetFPS(60);
+    EntitySystemInit();
 
     SimpleScene(state);
 }
@@ -164,13 +171,18 @@ static void GameStateDraw(GameState* state) {
 
     for (uint32_t i = 0; i < arrlenu(state->entity_ids); ++i) {
         Entity* entity = GetEntity(state->entity_ids[i]);
-        DrawTextureRec(entity->texture, entity->rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
+        EntityDraw(entity);
     }
 
     EndDrawing();
 }
 
-static void GameStateUpdate(GameState* state, float delta_time) {}
+static void GameStateUpdate(GameState* state, float delta) {
+    for (uint32_t i = 0; i < arrlenu(state->entity_ids); ++i) {
+        Entity* entity = GetEntity(state->entity_ids[i]);
+        EntityUpdate(entity, delta);
+    }
+}
 
 ////////////////////////////////////////////////////////////
 
