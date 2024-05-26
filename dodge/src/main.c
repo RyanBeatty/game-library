@@ -30,6 +30,37 @@ static size_t GetSeed() {
 }
 
 ////////////////////////////////////////////////////////////
+
+// typedef size_t TextureId;
+
+// #define TextureIdFromU32(str) stbds_hash_string(str, GetSeed())
+
+// typedef struct TextureEntry {
+//     TextureId key;
+//     Texture value;
+// }
+
+// typedef struct TextureCache {
+//     TextureEntry* textures;
+// } TextureCache;
+
+// static TextureCache TextureC;
+
+// static Texture GetTexture(const char* name) {
+//     TextureId id = TextureIdFromU32(name);
+//     ptrdiff_t idx = hmgeti(EntityC.textures, id);
+//     bool first_frame = idx == -1;
+//     if (first_frame) {
+//         Texture texture = LoadTexture(name);
+//         hmput(TextureC.textures, id, texture);
+//         idx = hmgeti(TextureC.texture, id);
+//         Assert(idx != -1);
+//     }
+//     Entity* entity = &TextureC.textures[idx].value;
+//     return entity;
+// }
+
+////////////////////////////////////////////////////////////
 typedef uint32_t EntityId;
 
 static EntityId EntityIdFromU32(uint32_t id) {
@@ -43,6 +74,9 @@ typedef struct Entity {
     Vector3 p;
     Quaternion rot;
 
+    Color tint;
+    Texture texture;
+    // Rectangle source;
 } Entity;
 
 typedef struct EntityEntry {
@@ -81,6 +115,7 @@ static Entity* GetEntity(EntityId id) {
 }
 
 ////////////////////////////////////////////////////////////
+
 typedef struct GameState {
     Camera camera;
 
@@ -89,10 +124,21 @@ typedef struct GameState {
 
 static GameState GState;
 
+static void SimpleScene(GameState* state) {
+    {
+        Entity* entity = MakeEntity(1);
+        entity->p = (Vector3){0, 0, 0};
+        entity->texture = LoadTextureFromImage(GenImageColor(100, 100, GRAY));
+        arrpush(state->entity_ids, entity->id);
+    }
+}
+
 static void GameStateInit(GameState* state) {
-    memset(state, 0, sizeof(state));
+    memset(state, 0, sizeof(GameState));
     InitWindow(ScreenWidth, ScreenHeight, "Game");
     SetTargetFPS(60);
+
+    SimpleScene(state);
 }
 
 static void GameStateDraw(GameState* state) {
@@ -102,6 +148,8 @@ static void GameStateDraw(GameState* state) {
 
     for (uint32_t i = 0; i < arrlenu(state->entity_ids); ++i) {
         Entity* entity = GetEntity(state->entity_ids[i]);
+        breakpoint();
+        DrawTexture(entity->texture, entity->p.x, entity->p.y, WHITE);
     }
 
     EndDrawing();
