@@ -61,7 +61,7 @@ static size_t GetSeed() {
 // }
 
 ////////////////////////////////////////////////////////////
-typedef enum EntityFlag { EFLAG_NONE = 0, EFALG_PLAYER_CONTROLLED = 1 << 0 } EntityFlag;
+typedef enum EntityFlag { EFLAG_NONE = 0, EFLAG_PLAYER_CONTROLLED = 1 << 0 } EntityFlag;
 
 typedef uint32_t EntityId;
 
@@ -119,7 +119,7 @@ static Entity* GetEntity(EntityId id) {
 }
 
 static void EntityUpdate(Entity* entity, float delta) {
-    if (EntityTestFlags(entity, EFALG_PLAYER_CONTROLLED)) {
+    if (EntityTestFlags(entity, EFLAG_PLAYER_CONTROLLED)) {
         Vector3 direction = Vector3Zero();
         if (IsKeyDown(KEY_RIGHT)) {
             direction = Vector3Add(direction, (Vector3){1, 0, 0});
@@ -163,7 +163,7 @@ static void SimpleScene(GameState* state) {
         Entity* ground = GetEntity(EntityIdFromU32(1));
         Assert(ground != NULL);
         Entity* entity = MakeEntity(EntityIdFromU32(2));
-        entity->flags = EFALG_PLAYER_CONTROLLED;
+        entity->flags = EFLAG_PLAYER_CONTROLLED;
         int width = 28;
         int height = 40;
         float y = ground->p.y - height;
