@@ -61,6 +61,8 @@ static size_t GetSeed() {
 // }
 
 ////////////////////////////////////////////////////////////
+typedef enum EntityFlag { EFLAG_NONE = 0, EFALG_PLAYER_CONTROLLED = 1 << 0 } EntityFlag;
+
 typedef uint32_t EntityId;
 
 static EntityId EntityIdFromU32(uint32_t id) {
@@ -73,6 +75,7 @@ typedef struct Entity {
     EntityId id;
     Vector3 p;
     Quaternion rot;
+    EntityFlag flags;
 
     Texture texture;
     Rectangle rec;
@@ -88,6 +91,8 @@ typedef struct EntityManager {
 } EntityManager;
 
 static EntityManager EntityM = {0};
+
+static bool EntityTestFlags(Entity* entity, EntityFlag flags) { return (entity->flags & flags) == flags; }
 
 static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
 
@@ -113,7 +118,20 @@ static Entity* GetEntity(EntityId id) {
     return &entry->value;
 }
 
-static void EntityUpdate(Entity* entity, float delta) {}
+static void EntityUpdate(Entity* entity, float delta) {
+    if (EntityTestFlags(entity, EFALG_PLAYER_CONTROLLED)) {
+        Vector3 direction = Vector3Zero();
+        if (IsKeyDown(KEY_RIGHT)) {
+            direction = Vector3Add(direction, (Vector3){1, 0, 0});
+        }
+        if (IsKeyDown(KEY_LEFT)) {
+            direction = Vector3Add(direction, (Vector3){-1, 0, 0});
+        }
+
+        float speed = 2.0f;
+        entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
+    }
+}
 
 static void EntityDraw(Entity* entity) {
     DrawTextureRec(entity->texture, entity->rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
@@ -145,6 +163,7 @@ static void SimpleScene(GameState* state) {
         Entity* ground = GetEntity(EntityIdFromU32(1));
         Assert(ground != NULL);
         Entity* entity = MakeEntity(EntityIdFromU32(2));
+        entity->flags = EFALG_PLAYER_CONTROLLED;
         int width = 28;
         int height = 40;
         float y = ground->p.y - height;

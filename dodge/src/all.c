@@ -3,6 +3,7 @@
 ///////////////////////////////////////////////
 // External libs below
 #include "raylib.h"
+#include "raymath.h"
 
 // Only define once.
 #define STB_DS_IMPLEMENTATION
