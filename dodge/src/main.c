@@ -61,7 +61,7 @@ static size_t GetSeed() {
 // }
 
 ////////////////////////////////////////////////////////////
-typedef enum EntityFlag { EFLAG_NONE = 0, EFLAG_PLAYER_CONTROLLED = 1 << 0 } EntityFlag;
+typedef enum EntityFlag { EFLAG_NONE = 0, EFLAG_PLAYER_CONTROLLED = 1 << 0, EFLAG_MOVE_RANDOM = 2 << 0 } EntityFlag;
 
 typedef uint32_t EntityId;
 
@@ -78,7 +78,7 @@ typedef struct Entity {
     EntityFlag flags;
 
     Texture texture;
-    Rectangle rec;
+    Rectangle bitmap_rec;
 } Entity;
 
 typedef struct EntityEntry {
@@ -131,10 +131,24 @@ static void EntityUpdate(Entity* entity, float delta) {
         float speed = 2.0f;
         entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
     }
+
+    if (EntityTestFlags(entity, EFLAG_MOVE_RANDOM)) {
+        static float cooldown = 0.0f;
+        static const float time = 5.0f;
+        cooldown += delta;
+        if (cooldown >= time) {
+            float min = 0.0f;
+            float max = GetScreenWidth();
+            float choice = GetRandomValue(min, max);
+            entity->p.x = choice;
+
+            cooldown = 0.0f;
+        }
+    }
 }
 
 static void EntityDraw(Entity* entity) {
-    DrawTextureRec(entity->texture, entity->rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
+    DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
 }
 
 ////////////////////////////////////////////////////////////
@@ -147,29 +161,49 @@ typedef struct GameState {
 
 static GameState GState;
 
+typedef enum EntityLabel {
+    E_LABEL_NONE = 0,
+    E_LABEL_GROUND,
+    E_LABEL_PLAYER,
+    E_LABEL_SPAWNER,
+    E_LABEL_COUNT
+} EntitLabel;
+
 static void SimpleScene(GameState* state) {
     {
-        Entity* entity = MakeEntity(EntityIdFromU32(1));
+        Entity* entity = MakeEntity(EntityIdFromU32(E_LABEL_GROUND));
         float y = GetScreenHeight() * 0.65;
         entity->p = (Vector3){0, y, 0};
         int width = GetScreenWidth();
         int height = y * 2.0f;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
-        entity->rec = (Rectangle){0, 0, width, height};
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
         arrpush(state->entity_ids, entity->id);
     }
 
     {
-        Entity* ground = GetEntity(EntityIdFromU32(1));
+        Entity* ground = GetEntity(EntityIdFromU32(E_LABEL_GROUND));
         Assert(ground != NULL);
-        Entity* entity = MakeEntity(EntityIdFromU32(2));
+        Entity* entity = MakeEntity(EntityIdFromU32(E_LABEL_PLAYER));
         entity->flags = EFLAG_PLAYER_CONTROLLED;
         int width = 28;
         int height = 40;
         float y = ground->p.y - height;
         entity->p = (Vector3){GetScreenWidth() * 0.5, y, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
-        entity->rec = (Rectangle){0, 0, width, height};
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        arrpush(state->entity_ids, entity->id);
+    }
+
+    {
+        Entity* entity = MakeEntity(EntityIdFromU32(E_LABEL_SPAWNER));
+        entity->flags = EFLAG_MOVE_RANDOM;
+        float y = GetScreenHeight() * 0.10;
+        entity->p = (Vector3){0, y, 0};
+        int width = 50;
+        int height = 25;
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
         arrpush(state->entity_ids, entity->id);
     }
 }
