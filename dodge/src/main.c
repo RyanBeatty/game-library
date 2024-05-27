@@ -95,11 +95,14 @@ typedef struct EntityEntry {
 
 typedef struct EntityManager {
     EntityEntry* entities;
+    EntityId* entity_ids;
 } EntityManager;
 
 static EntityManager EntityM = {0};
 
-static bool EntityTestFlags(Entity* entity, EntityFlag flags) { return (entity->flags & flags) == flags; }
+#define GetEntityManager() &EntityM
+
+static bool EntityTestFlag(Entity* entity, EntityFlag flag) { return entity->flags & flag; }
 
 static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
 
@@ -111,6 +114,7 @@ static Entity* AllocateEntity() {
         Entity entity = {0};
         entity.id = id;
         hmput(EntityM.entities, id, entity);
+        arrput(EntityM.entity_ids, id);
         idx = hmgeti(EntityM.entities, id);
         Assert(idx != -1);
     }
@@ -127,7 +131,7 @@ static Entity* GetEntity(EntityId id) {
 }
 
 static void EntityUpdate(Entity* entity, float delta) {
-    if (EntityTestFlags(entity, EFLAG_PLAYER_CONTROLLED)) {
+    if (EntityTestFlag(entity, EFLAG_PLAYER_CONTROLLED)) {
         Vector3 direction = Vector3Zero();
         if (IsKeyDown(KEY_RIGHT)) {
             direction = Vector3Add(direction, (Vector3){1, 0, 0});
@@ -140,7 +144,7 @@ static void EntityUpdate(Entity* entity, float delta) {
         entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
     }
 
-    if (EntityTestFlags(entity, EFLAG_MOVE_RANDOM)) {
+    if (EntityTestFlag(entity, EFLAG_MOVE_RANDOM)) {
         static float cooldown = 0.0f;
         static const float time = 5.0f;
         cooldown += delta;
@@ -163,8 +167,6 @@ static void EntityDraw(Entity* entity) {
 
 typedef struct GameState {
     Camera camera;
-
-    EntityId* entity_ids;
 } GameState;
 
 static GameState GState;
@@ -181,7 +183,6 @@ static void SimpleScene(GameState* state) {
         int height = y * 2.0f;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        arrpush(state->entity_ids, entity->id);
     }
 
     {
@@ -195,7 +196,6 @@ static void SimpleScene(GameState* state) {
         entity->p = (Vector3){GetScreenWidth() * 0.5, y, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        arrpush(state->entity_ids, entity->id);
     }
 
     {
@@ -207,7 +207,6 @@ static void SimpleScene(GameState* state) {
         int height = 25;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        arrpush(state->entity_ids, entity->id);
     }
 }
 
@@ -220,24 +219,26 @@ static void GameStateInit(GameState* state) {
     SimpleScene(state);
 }
 
+static void GameStateUpdate(GameState* state, float delta) {
+    EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < arrlenu(em->entity_ids); ++i) {
+        Entity* entity = GetEntity(em->entity_ids[i]);
+        EntityUpdate(entity, delta);
+    }
+}
+
 static void GameStateDraw(GameState* state) {
     BeginDrawing();
 
     ClearBackground(RAYWHITE);
 
-    for (uint32_t i = 0; i < arrlenu(state->entity_ids); ++i) {
-        Entity* entity = GetEntity(state->entity_ids[i]);
+    EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < arrlenu(em->entity_ids); ++i) {
+        Entity* entity = GetEntity(em->entity_ids[i]);
         EntityDraw(entity);
     }
 
     EndDrawing();
-}
-
-static void GameStateUpdate(GameState* state, float delta) {
-    for (uint32_t i = 0; i < arrlenu(state->entity_ids); ++i) {
-        Entity* entity = GetEntity(state->entity_ids[i]);
-        EntityUpdate(entity, delta);
-    }
 }
 
 ////////////////////////////////////////////////////////////
