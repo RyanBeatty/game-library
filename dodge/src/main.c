@@ -71,6 +71,13 @@ static EntityId EntityIdFromU32(uint32_t id) {
     return key;
 }
 
+static EntityId NextEntityId() {
+    static uint32_t id = 0;
+    EntityId eid = EntityIdFromU32(id);
+    ++id;
+    return eid;
+}
+
 typedef struct Entity {
     EntityId id;
     Vector3 p;
@@ -96,7 +103,8 @@ static bool EntityTestFlags(Entity* entity, EntityFlag flags) { return (entity->
 
 static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
 
-static Entity* MakeEntity(EntityId id) {
+static Entity* AllocateEntity() {
+    EntityId id = NextEntityId();
     ptrdiff_t idx = hmgeti(EntityM.entities, id);
     bool first_frame = idx == -1;
     if (first_frame) {
@@ -161,17 +169,12 @@ typedef struct GameState {
 
 static GameState GState;
 
-typedef enum EntityLabel {
-    E_LABEL_NONE = 0,
-    E_LABEL_GROUND,
-    E_LABEL_PLAYER,
-    E_LABEL_SPAWNER,
-    E_LABEL_COUNT
-} EntitLabel;
+static EntityId GroundId;
 
 static void SimpleScene(GameState* state) {
     {
-        Entity* entity = MakeEntity(EntityIdFromU32(E_LABEL_GROUND));
+        Entity* entity = AllocateEntity();
+        GroundId = entity->id;
         float y = GetScreenHeight() * 0.65;
         entity->p = (Vector3){0, y, 0};
         int width = GetScreenWidth();
@@ -182,9 +185,9 @@ static void SimpleScene(GameState* state) {
     }
 
     {
-        Entity* ground = GetEntity(EntityIdFromU32(E_LABEL_GROUND));
+        Entity* ground = GetEntity(GroundId);
         Assert(ground != NULL);
-        Entity* entity = MakeEntity(EntityIdFromU32(E_LABEL_PLAYER));
+        Entity* entity = AllocateEntity();
         entity->flags = EFLAG_PLAYER_CONTROLLED;
         int width = 28;
         int height = 40;
@@ -196,7 +199,7 @@ static void SimpleScene(GameState* state) {
     }
 
     {
-        Entity* entity = MakeEntity(EntityIdFromU32(E_LABEL_SPAWNER));
+        Entity* entity = AllocateEntity();
         entity->flags = EFLAG_MOVE_RANDOM;
         float y = GetScreenHeight() * 0.10;
         entity->p = (Vector3){0, y, 0};
