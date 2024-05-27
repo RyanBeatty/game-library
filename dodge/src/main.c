@@ -171,13 +171,13 @@ typedef struct GameState {
 
 static GameState GState;
 
-static EntityId GroundId;
-
 static void SimpleScene(GameState* state) {
+    float ground_y = 0.0f;
+
     {
         Entity* entity = AllocateEntity();
-        GroundId = entity->id;
         float y = GetScreenHeight() * 0.65;
+        ground_y = y;
         entity->p = (Vector3){0, y, 0};
         int width = GetScreenWidth();
         int height = y * 2.0f;
@@ -186,13 +186,11 @@ static void SimpleScene(GameState* state) {
     }
 
     {
-        Entity* ground = GetEntity(GroundId);
-        Assert(ground != NULL);
         Entity* entity = AllocateEntity();
         entity->flags = EFLAG_PLAYER_CONTROLLED;
         int width = 28;
         int height = 40;
-        float y = ground->p.y - height;
+        float y = ground_y - height;
         entity->p = (Vector3){GetScreenWidth() * 0.5, y, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
