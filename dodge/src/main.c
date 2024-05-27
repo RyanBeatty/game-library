@@ -61,7 +61,7 @@ static size_t GetSeed() {
 // }
 
 ////////////////////////////////////////////////////////////
-typedef enum EntityFlag { EFLAG_NONE = 0, EFLAG_PLAYER_CONTROLLED = 1 << 0, EFLAG_MOVE_RANDOM = 2 << 0 } EntityFlag;
+typedef enum EntityFlag { EFLAG_NONE = 0, EFLAG_PLAYER_CONTROLLED = 1 << 0, EFLAG_SPAWN_BOMB = 2 << 0 } EntityFlag;
 
 typedef uint32_t EntityId;
 
@@ -144,15 +144,28 @@ static void EntityUpdate(Entity* entity, float delta) {
         entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
     }
 
-    if (EntityTestFlag(entity, EFLAG_MOVE_RANDOM)) {
+    if (EntityTestFlag(entity, EFLAG_SPAWN_BOMB)) {
         static float cooldown = 0.0f;
         static const float time = 5.0f;
         cooldown += delta;
         if (cooldown >= time) {
-            float min = 0.0f;
-            float max = GetScreenWidth();
-            float choice = GetRandomValue(min, max);
-            entity->p.x = choice;
+            // Move randomly.
+            {
+                float min = 0.0f;
+                float max = GetScreenWidth();
+                float choice = GetRandomValue(min, max);
+                entity->p.x = choice;
+            }
+
+            // Spawn bomb.
+            {
+                Entity* bomb = AllocateEntity();
+                bomb->p = entity->p;
+                int width = 8;
+                int height = 15;
+                bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
+                bomb->bitmap_rec = (Rectangle){0, 0, width, height};
+            }
 
             cooldown = 0.0f;
         }
@@ -198,7 +211,7 @@ static void SimpleScene(GameState* state) {
 
     {
         Entity* entity = AllocateEntity();
-        entity->flags = EFLAG_MOVE_RANDOM;
+        entity->flags = EFLAG_SPAWN_BOMB;
         float y = GetScreenHeight() * 0.10;
         entity->p = (Vector3){0, y, 0};
         int width = 50;
