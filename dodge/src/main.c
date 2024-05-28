@@ -11,25 +11,6 @@ const int ScreenWidth = 800;
 const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
-static size_t GenerateRandomSeed() {
-    // Get current time in seconds since Epoch
-    time_t currentTime = time(NULL);
-
-    // Generate a random seed using current time and clock ticks
-    size_t seed = (size_t)(currentTime * 1000) + (size_t)clock();
-
-    return seed;
-}
-
-static size_t GetSeed() {
-    static size_t Seed = 0;
-    while (Seed == 0) {
-        Seed = GenerateRandomSeed();
-    }
-    return Seed;
-}
-
-////////////////////////////////////////////////////////////
 
 // typedef size_t TextureId;
 
@@ -61,22 +42,14 @@ static size_t GetSeed() {
 // }
 
 ////////////////////////////////////////////////////////////
-typedef enum EntityFlag { EFLAG_NONE = 0, EFLAG_PLAYER_CONTROLLED = 1 << 0, EFLAG_SPAWN_BOMB = 2 << 0 } EntityFlag;
+typedef enum EntityFlag {
+    EFLAG_NONE = 0,
+    EFLAG_ACTIVE = 1 << 0,
+    EFLAG_PLAYER_CONTROLLED = 1 << 2,
+    EFLAG_SPAWN_BOMB = 1 << 3
+} EntityFlag;
 
 typedef uint32_t EntityId;
-
-static EntityId EntityIdFromU32(uint32_t id) {
-    size_t key = stbds_hash_bytes(&id, sizeof(id), GetSeed());
-    Assert(key != 0);
-    return key;
-}
-
-static EntityId NextEntityId() {
-    static uint32_t id = 0;
-    EntityId eid = EntityIdFromU32(id);
-    ++id;
-    return eid;
-}
 
 typedef struct Entity {
     EntityId id;
@@ -93,9 +66,10 @@ typedef struct EntityEntry {
     Entity value;
 } EntityEntry;
 
+#define ENTITY_CAP 256
+
 typedef struct EntityManager {
-    EntityEntry* entities;
-    EntityId* entity_ids;
+    Entity entities[ENTITY_CAP];
 } EntityManager;
 
 static EntityManager EntityM = {0};
@@ -106,28 +80,32 @@ static bool EntityTestFlag(Entity* entity, EntityFlag flag) { return entity->fla
 
 static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
 
-static Entity* AllocateEntity() {
-    EntityId id = NextEntityId();
-    ptrdiff_t idx = hmgeti(EntityM.entities, id);
-    bool first_frame = idx == -1;
-    if (first_frame) {
-        Entity entity = {0};
-        entity.id = id;
-        hmput(EntityM.entities, id, entity);
-        arrput(EntityM.entity_ids, id);
-        idx = hmgeti(EntityM.entities, id);
-        Assert(idx != -1);
-    }
-    Entity* entity = &EntityM.entities[idx].value;
+static Entity* GetEntity(EntityId id) {
+    EntityManager* em = GetEntityManager();
+    Entity* entity = &em->entities[id];
     return entity;
 }
 
-static Entity* GetEntity(EntityId id) {
-    EntityEntry* entry = hmgetp_null(EntityM.entities, id);
-    if (entry == NULL) {
-        return NULL;
+static EntityId NextEntityId() {
+    EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = &em->entities[i];
+        if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
+            return i;
+        }
     }
-    return &entry->value;
+    Assert(false);
+    return 0;
+}
+
+static Entity* AllocateEntity() {
+    EntityId id = NextEntityId();
+    Entity* entity = GetEntity(id);
+    Assert(entity != NULL);
+    memset(entity, 0, sizeof(*entity));
+    entity->id = id;
+    entity->flags = EFLAG_ACTIVE;
+    return entity;
 }
 
 static void EntityUpdate(Entity* entity, float delta) {
@@ -157,15 +135,15 @@ static void EntityUpdate(Entity* entity, float delta) {
                 entity->p.x = choice;
             }
 
-            // Spawn bomb.
-            {
-                Entity* bomb = AllocateEntity();
-                bomb->p = entity->p;
-                int width = 8;
-                int height = 15;
-                bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
-                bomb->bitmap_rec = (Rectangle){0, 0, width, height};
-            }
+            // // Spawn bomb.
+            // {
+            //     Entity* bomb = AllocateEntity();
+            //     bomb->p = entity->p;
+            //     int width = 8;
+            //     int height = 15;
+            //     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
+            //     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
+            // }
 
             cooldown = 0.0f;
         }
@@ -200,7 +178,7 @@ static void SimpleScene(GameState* state) {
 
     {
         Entity* entity = AllocateEntity();
-        entity->flags = EFLAG_PLAYER_CONTROLLED;
+        entity->flags |= EFLAG_PLAYER_CONTROLLED;
         int width = 28;
         int height = 40;
         float y = ground_y - height;
@@ -211,7 +189,7 @@ static void SimpleScene(GameState* state) {
 
     {
         Entity* entity = AllocateEntity();
-        entity->flags = EFLAG_SPAWN_BOMB;
+        entity->flags |= EFLAG_SPAWN_BOMB;
         float y = GetScreenHeight() * 0.10;
         entity->p = (Vector3){0, y, 0};
         int width = 50;
@@ -232,8 +210,11 @@ static void GameStateInit(GameState* state) {
 
 static void GameStateUpdate(GameState* state, float delta) {
     EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < arrlenu(em->entity_ids); ++i) {
-        Entity* entity = GetEntity(em->entity_ids[i]);
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = GetEntity(i);
+        if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
+            continue;
+        }
         EntityUpdate(entity, delta);
     }
 }
@@ -244,8 +225,11 @@ static void GameStateDraw(GameState* state) {
     ClearBackground(RAYWHITE);
 
     EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < arrlenu(em->entity_ids); ++i) {
-        Entity* entity = GetEntity(em->entity_ids[i]);
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = GetEntity(i);
+        if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
+            continue;
+        }
         EntityDraw(entity);
     }
 

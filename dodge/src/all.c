@@ -22,6 +22,8 @@
 
 void __attribute__((noinline)) breakpoint() {}
 
+#define ArraySizeOf(x) (sizeof(x) / sizeof(x[0]))
+
 ///////////////////////////////////////////////
 // Project files below
 #include "main.c"
