@@ -11,43 +11,13 @@ const int ScreenWidth = 800;
 const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
-
-// typedef size_t TextureId;
-
-// #define TextureIdFromU32(str) stbds_hash_string(str, GetSeed())
-
-// typedef struct TextureEntry {
-//     TextureId key;
-//     Texture value;
-// }
-
-// typedef struct TextureCache {
-//     TextureEntry* textures;
-// } TextureCache;
-
-// static TextureCache TextureC;
-
-// static Texture GetTexture(const char* name) {
-//     TextureId id = TextureIdFromU32(name);
-//     ptrdiff_t idx = hmgeti(EntityC.textures, id);
-//     bool first_frame = idx == -1;
-//     if (first_frame) {
-//         Texture texture = LoadTexture(name);
-//         hmput(TextureC.textures, id, texture);
-//         idx = hmgeti(TextureC.texture, id);
-//         Assert(idx != -1);
-//     }
-//     Entity* entity = &TextureC.textures[idx].value;
-//     return entity;
-// }
-
-////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_SPAWN_BOMB = 1 << 3,
-    EFLAG_BOMB = 1 << 4
+    EFLAG_BOMB = 1 << 4,
+    EFLAG_WALL = 1 << 5
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -130,6 +100,7 @@ static void SimpleScene(GameState* state) {
 
     {
         Entity* entity = AllocateEntity();
+        entity->flags |= EFLAG_WALL;
         float y = GetScreenHeight() * 0.65;
         ground_y = y;
         entity->p = (Vector3){0, y, 0};
@@ -224,7 +195,28 @@ static void GameStateUpdate(GameState* state, float delta) {
             // TODO: Once camera is set up, start in camera space and convert to screen space.
             Vector3 dir = {0, 1, 0};
             Vector3 movement = Vector3Scale(dir, 1);
+            Vector3 prev_p = entity->p;
             entity->p = Vector3Add(entity->p, movement);
+
+            EntityManager* em = GetEntityManager();
+            bool hit = false;
+            for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+                Entity* e = GetEntity(i);
+                if (!EntityTestFlag(e, EFLAG_ACTIVE) || !EntityTestFlag(e, EFLAG_WALL) || e->id == entity->id) {
+                    continue;
+                }
+
+                Rectangle rec = {entity->p.x, entity->p.y, entity->bitmap_rec.width, entity->bitmap_rec.height};
+                Rectangle rec2 = {e->p.x, e->p.y, e->bitmap_rec.width, e->bitmap_rec.height};
+                if (CheckCollisionRecs(rec, rec2)) {
+                    hit = true;
+                    break;
+                }
+            }
+
+            if (hit) {
+                entity->p = prev_p;
+            }
         }
     }
 }
