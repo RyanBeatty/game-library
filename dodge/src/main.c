@@ -46,7 +46,8 @@ typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
-    EFLAG_SPAWN_BOMB = 1 << 3
+    EFLAG_SPAWN_BOMB = 1 << 3,
+    EFLAG_BOMB = 1 << 4
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -108,47 +109,7 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
-static void EntityUpdate(Entity* entity, float delta) {
-    if (EntityTestFlag(entity, EFLAG_PLAYER_CONTROLLED)) {
-        Vector3 direction = Vector3Zero();
-        if (IsKeyDown(KEY_RIGHT)) {
-            direction = Vector3Add(direction, (Vector3){1, 0, 0});
-        }
-        if (IsKeyDown(KEY_LEFT)) {
-            direction = Vector3Add(direction, (Vector3){-1, 0, 0});
-        }
-
-        float speed = 2.0f;
-        entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
-    }
-
-    if (EntityTestFlag(entity, EFLAG_SPAWN_BOMB)) {
-        static float cooldown = 0.0f;
-        static const float time = 5.0f;
-        cooldown += delta;
-        if (cooldown >= time) {
-            // Move randomly.
-            {
-                float min = 0.0f;
-                float max = GetScreenWidth();
-                float choice = GetRandomValue(min, max);
-                entity->p.x = choice;
-            }
-
-            // // Spawn bomb.
-            // {
-            //     Entity* bomb = AllocateEntity();
-            //     bomb->p = entity->p;
-            //     int width = 8;
-            //     int height = 15;
-            //     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
-            //     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
-            // }
-
-            cooldown = 0.0f;
-        }
-    }
-}
+// static void EntityUpdate(Entity* entity, float delta) {}
 
 static void EntityDraw(Entity* entity) {
     DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
@@ -161,6 +122,8 @@ typedef struct GameState {
 } GameState;
 
 static GameState GState;
+
+#define GetGameState() (&GState)
 
 static void SimpleScene(GameState* state) {
     float ground_y = 0.0f;
@@ -215,7 +178,54 @@ static void GameStateUpdate(GameState* state, float delta) {
         if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
             continue;
         }
-        EntityUpdate(entity, delta);
+
+        if (EntityTestFlag(entity, EFLAG_PLAYER_CONTROLLED)) {
+            Vector3 direction = Vector3Zero();
+            if (IsKeyDown(KEY_RIGHT)) {
+                direction = Vector3Add(direction, (Vector3){1, 0, 0});
+            }
+            if (IsKeyDown(KEY_LEFT)) {
+                direction = Vector3Add(direction, (Vector3){-1, 0, 0});
+            }
+
+            float speed = 2.0f;
+            entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
+        }
+
+        if (EntityTestFlag(entity, EFLAG_SPAWN_BOMB)) {
+            static float cooldown = 0.0f;
+            static const float time = 2.5f;
+            cooldown += delta;
+            if (cooldown >= time) {
+                // Move randomly.
+                {
+                    float min = 0.0f;
+                    float max = GetScreenWidth();
+                    float choice = GetRandomValue(min, max);
+                    entity->p.x = choice;
+                }
+
+                // Spawn bomb.
+                {
+                    Entity* bomb = AllocateEntity();
+                    bomb->flags |= EFLAG_BOMB;
+                    bomb->p = entity->p;
+                    int width = 8;
+                    int height = 15;
+                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
+                    bomb->bitmap_rec = (Rectangle){0, 0, width, height};
+                }
+
+                cooldown = 0.0f;
+            }
+        }
+
+        if (EntityTestFlag(entity, EFLAG_BOMB)) {
+            // Vector3 dir_camera = {0, -1, 0};
+            // Matrix view = GetCameraMatrix2D(GetGameState()->camera);
+            // Vector3 movement = Vector3Scale(dir, 1);
+            // entity->p = Vector3Add(entity->p, movement);
+        }
     }
 }
 
