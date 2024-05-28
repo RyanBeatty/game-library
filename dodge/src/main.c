@@ -221,10 +221,10 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (EntityTestFlag(entity, EFLAG_BOMB)) {
-            // Vector3 dir_camera = {0, -1, 0};
-            // Matrix view = GetCameraMatrix2D(GetGameState()->camera);
-            // Vector3 movement = Vector3Scale(dir, 1);
-            // entity->p = Vector3Add(entity->p, movement);
+            // TODO: Once camera is set up, start in camera space and convert to screen space.
+            Vector3 dir = {0, 1, 0};
+            Vector3 movement = Vector3Scale(dir, 1);
+            entity->p = Vector3Add(entity->p, movement);
         }
     }
 }
