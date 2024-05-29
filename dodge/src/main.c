@@ -93,6 +93,8 @@ static void EntityDraw(Entity* entity) {
 
 typedef struct GameState {
     Camera camera;
+
+    bool debug;
 } GameState;
 
 static GameState GState;
@@ -281,6 +283,11 @@ static void GameStateUpdate(GameState* state, float delta) {
 
 static void GameStateDraw(GameState* state) {
     BeginDrawing();
+
+    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
+    if (state->debug) {
+        DrawFPS(5, 5);
+    }
 
     ClearBackground(RAYWHITE);
 
