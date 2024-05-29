@@ -17,7 +17,8 @@ typedef enum EntityFlag {
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_SPAWN_BOMB = 1 << 3,
     EFLAG_BOMB = 1 << 4,
-    EFLAG_WALL = 1 << 5
+    EFLAG_WALL = 1 << 5,
+    EFLAG_EXPLOSION = 1 << 6
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -30,6 +31,8 @@ typedef struct Entity {
 
     Texture texture;
     Rectangle bitmap_rec;
+
+    float bomb_timer;
 } Entity;
 
 typedef struct EntityEntry {
@@ -192,12 +195,35 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (EntityTestFlag(entity, EFLAG_BOMB)) {
+            entity->bomb_timer += delta;
+            if (entity->bomb_timer >= 4.0f) {
+                // Spawn explosion.
+                {
+                    Entity* explosion = AllocateEntity();
+                    explosion->flags |= EFLAG_EXPLOSION;
+                    explosion->p = entity->p;
+                    int width = 100;
+                    int height = 100;
+                    Image image = GenImageColor(width, height, BLANK);
+                    Color color = YELLOW;
+                    color.a = 125;
+                    ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
+                    explosion->texture = LoadTextureFromImage(image);
+                    explosion->bitmap_rec = (Rectangle){0, 0, width, height};
+                    explosion->p.x -= width * 0.5;
+                    explosion->p.y -= height * 0.5;
+                }
+                entity->flags &= ~EFLAG_ACTIVE;  // disable bomb entity.
+                continue;
+            }
+
             // TODO: Once camera is set up, start in camera space and convert to screen space.
             Vector3 dir = {0, 1, 0};
             Vector3 movement = Vector3Scale(dir, 1);
             Vector3 prev_p = entity->p;
             entity->p = Vector3Add(entity->p, movement);
 
+            // TODO: Refactor all of this.
             EntityManager* em = GetEntityManager();
             bool hit = false;
             for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
