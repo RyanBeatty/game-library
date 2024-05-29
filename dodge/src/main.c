@@ -165,6 +165,29 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             float speed = 2.0f;
             entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
+
+            // TODO: Refactor all of this.
+            EntityManager* em = GetEntityManager();
+            bool hit = false;
+            for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+                Entity* e = GetEntity(i);
+                if (!EntityTestFlag(e, EFLAG_ACTIVE) || !EntityTestFlag(e, EFLAG_EXPLOSION) || e->id == entity->id) {
+                    continue;
+                }
+
+                Rectangle rec = {entity->p.x, entity->p.y, entity->bitmap_rec.width, entity->bitmap_rec.height};
+                Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
+                float radius = e->bitmap_rec.width * 0.5f;
+                if (CheckCollisionCircleRec(center, radius, rec)) {
+                    hit = true;
+                    break;
+                }
+            }
+
+            if (hit) {
+                entity->flags &= ~EFLAG_ACTIVE;
+                continue;
+            }
         }
 
         if (EntityTestFlag(entity, EFLAG_SPAWN_BOMB)) {
