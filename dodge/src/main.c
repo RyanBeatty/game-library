@@ -33,6 +33,7 @@ typedef struct Entity {
     Rectangle bitmap_rec;
 
     float bomb_timer;
+    float explosion_timer;
 } Entity;
 
 typedef struct EntityEntry {
@@ -242,6 +243,14 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             if (hit) {
                 entity->p = prev_p;
+            }
+        }
+
+        if (EntityTestFlag(entity, EFLAG_EXPLOSION)) {
+            entity->explosion_timer += delta;
+            if (entity->explosion_timer >= 1.0f) {
+                entity->flags &= ~EFLAG_ACTIVE;
+                continue;
             }
         }
     }
