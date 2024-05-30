@@ -96,6 +96,40 @@ static void EntityDraw(Entity* entity) {
 }
 
 ////////////////////////////////////////////////////////////
+// Collision.
+
+typedef struct CollisionInfo {
+    bool dead;
+    bool stopped;
+} CollisionInfo;
+
+static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
+    Rectangle rec = {entity->p.x, entity->p.y, entity->bitmap_rec.width, entity->bitmap_rec.height};
+    EntityManager* em = GetEntityManager();
+    CollisionInfo info = {0};
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* e = GetEntity(i);
+        if (!EntityTestFlag(e, EFLAG_ACTIVE) || e->id == entity->id) {
+            continue;
+        }
+        if (EntityTestFlag(e, EFLAG_EXPLOSION)) {
+            Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
+            float radius = e->bitmap_rec.width * 0.5f;
+            if (CheckCollisionCircleRec(center, radius, rec)) {
+                info.dead = true;
+            }
+        }
+        if (EntityTestFlag(e, EFLAG_WALL)) {
+            Rectangle rec2 = {e->p.x, e->p.y, e->bitmap_rec.width, e->bitmap_rec.height};
+            if (CheckCollisionRecs(rec, rec2)) {
+                info.stopped = true;
+            }
+        }
+    }
+    return info;
+}
+
+////////////////////////////////////////////////////////////
 
 typedef struct GameState {
     Camera camera;
@@ -201,29 +235,16 @@ static void GameStateUpdate(GameState* state, float delta) {
                     entity->last_key = keys[i];
                 }
             }
+            Vector3 prev_p = entity->p;
             entity->p = Vector3Add(entity->p, Vector3Scale(Vector3Scale(direction, speed), delta));
 
-            // TODO: Refactor all of this.
-            EntityManager* em = GetEntityManager();
-            bool dead = false;
-            for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-                Entity* e = GetEntity(i);
-                if (!EntityTestFlag(e, EFLAG_ACTIVE) || !EntityTestFlag(e, EFLAG_EXPLOSION) || e->id == entity->id) {
-                    continue;
-                }
-
-                Rectangle rec = {entity->p.x, entity->p.y, entity->bitmap_rec.width, entity->bitmap_rec.height};
-                Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
-                float radius = e->bitmap_rec.width * 0.5f;
-                if (CheckCollisionCircleRec(center, radius, rec)) {
-                    dead = true;
-                    break;
-                }
-            }
-
-            if (dead) {
+            CollisionInfo info = CheckEntityCollisionScene(entity);
+            if (info.dead) {
                 entity->flags &= ~EFLAG_ACTIVE;
                 continue;
+            }
+            if (info.stopped) {
+                entity->p = prev_p;
             }
         }
 
