@@ -110,6 +110,7 @@ static GameState GState;
 static void SimpleScene(GameState* state) {
     float ground_y = 0.0f;
 
+    // Ground.
     {
         Entity* entity = AllocateEntity();
         entity->flags |= EFLAG_WALL;
@@ -122,6 +123,18 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
     }
 
+    // Left wall.
+    {
+        Entity* entity = AllocateEntity();
+        entity->flags |= EFLAG_WALL;
+        int width = 100;
+        int height = GetScreenHeight();
+        entity->p = (Vector3){-width, 0, 0};
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+    }
+
+    // Player.
     {
         Entity* entity = AllocateEntity();
         entity->flags |= EFLAG_PLAYER_CONTROLLED;
@@ -133,6 +146,7 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
     }
 
+    // Spawner.
     {
         Entity* entity = AllocateEntity();
         entity->flags |= EFLAG_SPAWN_BOMB;
@@ -191,7 +205,7 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             // TODO: Refactor all of this.
             EntityManager* em = GetEntityManager();
-            bool hit = false;
+            bool dead = false;
             for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
                 Entity* e = GetEntity(i);
                 if (!EntityTestFlag(e, EFLAG_ACTIVE) || !EntityTestFlag(e, EFLAG_EXPLOSION) || e->id == entity->id) {
@@ -202,12 +216,12 @@ static void GameStateUpdate(GameState* state, float delta) {
                 Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
                 float radius = e->bitmap_rec.width * 0.5f;
                 if (CheckCollisionCircleRec(center, radius, rec)) {
-                    hit = true;
+                    dead = true;
                     break;
                 }
             }
 
-            if (hit) {
+            if (dead) {
                 entity->flags &= ~EFLAG_ACTIVE;
                 continue;
             }
