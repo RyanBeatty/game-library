@@ -305,24 +305,8 @@ static void GameStateUpdate(GameState* state, float delta) {
             Vector3 prev_p = entity->p;
             entity->p = Vector3Add(entity->p, movement);
 
-            // TODO: Refactor all of this.
-            EntityManager* em = GetEntityManager();
-            bool hit = false;
-            for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-                Entity* e = GetEntity(i);
-                if (!EntityTestFlag(e, EFLAG_ACTIVE) || !EntityTestFlag(e, EFLAG_WALL) || e->id == entity->id) {
-                    continue;
-                }
-
-                Rectangle rec = {entity->p.x, entity->p.y, entity->bitmap_rec.width, entity->bitmap_rec.height};
-                Rectangle rec2 = {e->p.x, e->p.y, e->bitmap_rec.width, e->bitmap_rec.height};
-                if (CheckCollisionRecs(rec, rec2)) {
-                    hit = true;
-                    break;
-                }
-            }
-
-            if (hit) {
+            CollisionInfo info = CheckEntityCollisionScene(entity);
+            if (info.stopped) {
                 entity->p = prev_p;
             }
         }
