@@ -282,6 +282,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 continue;
             }
 
+            // Explosion shading.
             Color tint = {Lerp(BLACK.r, WHITE.r, entity->explosion_timer / TIME),
                           Lerp(BLACK.g, WHITE.g, entity->explosion_timer / TIME),
                           Lerp(BLACK.b, WHITE.b, entity->explosion_timer / TIME), 255};
