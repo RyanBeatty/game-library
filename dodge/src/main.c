@@ -275,11 +275,17 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (EntityTestFlag(entity, EFLAG_EXPLOSION)) {
+            static const float TIME = 1.0f;
             entity->explosion_timer += delta;
-            if (entity->explosion_timer >= 1.0f) {
+            if (entity->explosion_timer >= TIME) {
                 entity->flags &= ~EFLAG_ACTIVE;
                 continue;
             }
+
+            Color tint = {Lerp(BLACK.r, WHITE.r, entity->explosion_timer / TIME),
+                          Lerp(BLACK.g, WHITE.g, entity->explosion_timer / TIME),
+                          Lerp(BLACK.b, WHITE.b, entity->explosion_timer / TIME), 255};
+            entity->tint = tint;
         }
     }
 }
