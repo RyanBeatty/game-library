@@ -142,6 +142,7 @@ static void SimpleScene(GameState* state) {
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
     InitWindow(ScreenWidth, ScreenHeight, "Game");
+    SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
 
@@ -165,8 +166,8 @@ static void GameStateUpdate(GameState* state, float delta) {
                 direction = Vector3Add(direction, (Vector3){-1, 0, 0});
             }
 
-            float speed = 2.0f;
-            entity->p = Vector3Add(entity->p, Vector3Scale(direction, speed));
+            float speed = 200.0f;
+            entity->p = Vector3Add(entity->p, Vector3Scale(Vector3Scale(direction, speed), delta));
 
             // TODO: Refactor all of this.
             EntityManager* em = GetEntityManager();
@@ -245,7 +246,7 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             // TODO: Once camera is set up, start in camera space and convert to screen space.
             Vector3 dir = {0, 1, 0};
-            Vector3 movement = Vector3Scale(dir, 1);
+            Vector3 movement = Vector3Scale(dir, 100 * delta);
             Vector3 prev_p = entity->p;
             entity->p = Vector3Add(entity->p, movement);
 
