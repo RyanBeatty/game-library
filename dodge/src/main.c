@@ -168,6 +168,17 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
     }
 
+    // Right wall.
+    {
+        Entity* entity = AllocateEntity();
+        entity->flags |= EFLAG_WALL;
+        int width = 100;
+        int height = GetScreenHeight();
+        entity->p = (Vector3){GetScreenWidth(), 0, 0};
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+    }
+
     // Player.
     {
         Entity* entity = AllocateEntity();
