@@ -31,6 +31,7 @@ typedef struct Entity {
 
     Texture texture;
     Rectangle bitmap_rec;
+    Color tint;
 
     float bomb_timer;
     float explosion_timer;
@@ -80,13 +81,14 @@ static Entity* AllocateEntity() {
     memset(entity, 0, sizeof(*entity));
     entity->id = id;
     entity->flags = EFLAG_ACTIVE;
+    entity->tint = WHITE;
     return entity;
 }
 
 // static void EntityUpdate(Entity* entity, float delta) {}
 
 static void EntityDraw(Entity* entity) {
-    DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, WHITE);
+    DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, entity->tint);
 }
 
 ////////////////////////////////////////////////////////////
