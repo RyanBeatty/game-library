@@ -143,6 +143,8 @@ static GameState GState;
 #define GetGameState() (&GState)
 
 static void SimpleScene(GameState* state) {
+    EntitySystemInit();
+
     float ground_y = 0.0f;
 
     // Ground.
@@ -379,6 +381,12 @@ static void GameStateDraw(GameState* state) {
             fontsize = 18.0f;
             size = MeasureTextEx(font, RETRY_TEXT, fontsize, fontsize / font.baseSize);
             DrawText(RETRY_TEXT, (GetScreenWidth() - size.x) * 0.5f, y, fontsize, WHITE);
+
+            if (IsKeyDown(KEY_ENTER)) {
+                state->game_over = false;
+                // TODO: Should probably move this somewhere else.
+                SimpleScene(state);
+            }
         }
     }
 
