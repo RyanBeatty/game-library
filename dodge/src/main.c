@@ -135,6 +135,7 @@ typedef struct GameState {
     Camera camera;
 
     bool debug;
+    bool game_over;
 } GameState;
 
 static GameState GState;
@@ -251,6 +252,7 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
             if (info.dead) {
+                state->game_over = true;
                 entity->flags &= ~EFLAG_ACTIVE;
                 continue;
             }
@@ -323,7 +325,7 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (EntityTestFlag(entity, EFLAG_EXPLOSION)) {
-            static const float TIME = 1.0f;
+            static const float TIME = 0.2f;
             entity->explosion_timer += delta;
             if (entity->explosion_timer >= TIME) {
                 entity->flags &= ~EFLAG_ACTIVE;
@@ -356,6 +358,28 @@ static void GameStateDraw(GameState* state) {
             continue;
         }
         EntityDraw(entity);
+    }
+
+    // Draw UI.
+    {
+        if (state->game_over) {
+            static const char* GAME_OVER_TEXT = "Game Over";
+            static const char* RETRY_TEXT = "Press Enter to Retry";
+
+            Color c = BLACK;
+            c.a *= 0.40f;
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), c);
+
+            Font font = GetFontDefault();
+            float fontsize = 24.0f;
+            Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, fontsize / font.baseSize);
+            float y = (GetScreenHeight() - size.y) * 0.5f;
+            DrawText(GAME_OVER_TEXT, (GetScreenWidth() - size.x) * 0.5f, y, fontsize, WHITE);
+            y += size.y + 5.0f;
+            fontsize = 18.0f;
+            size = MeasureTextEx(font, RETRY_TEXT, fontsize, fontsize / font.baseSize);
+            DrawText(RETRY_TEXT, (GetScreenWidth() - size.x) * 0.5f, y, fontsize, WHITE);
+        }
     }
 
     EndDrawing();
