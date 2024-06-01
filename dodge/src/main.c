@@ -178,8 +178,6 @@ static void EntityDraw(Entity* entity) {
 // Collision.
 
 typedef struct CollisionInfo {
-    // bool dead;
-    // bool stopped;
     Entity* entities[ENTITY_CAP];
     uint32_t len;
 } CollisionInfo;
