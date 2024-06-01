@@ -10,6 +10,7 @@
 #include "stb_ds.h"
 // Comment to prevent autolinting
 #include <stdint.h>
+#include <stdio.h>
 #include <time.h>
 
 #define Assert(expr)        \

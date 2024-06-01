@@ -1,4 +1,5 @@
 #ifndef UNITY_BUILD
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -209,6 +210,8 @@ typedef struct GameState {
 
     bool debug;
     bool game_over;
+
+    uint32_t score;
 } GameState;
 
 static GameState GState;
@@ -357,6 +360,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 }
                 if (TestFlag(e->flags, EFLAG_COIN)) {
                     FlagOff(e->flags, EFLAG_ACTIVE);
+                    ++state->score;
                 }
             }
         }
@@ -476,6 +480,15 @@ static void GameStateDraw(GameState* state) {
 
     // Draw UI.
     {
+        {
+            char score_text[256] = {0};
+            sprintf(score_text, "%d", state->score);
+            float fontsize = 24.0f;
+            float x = GetScreenWidth() - 100.0f;
+            float y = 20.0f;
+            DrawText(score_text, x, y, fontsize, BLACK);
+        }
+
         if (state->game_over) {
             static const char* GAME_OVER_TEXT = "Game Over";
             static const char* RETRY_TEXT = "Press Enter to Retry";
