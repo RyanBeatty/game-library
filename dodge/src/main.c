@@ -168,8 +168,6 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
-// static void EntityUpdate(Entity* entity, float delta) {}
-
 static void EntityDraw(Entity* entity) {
     DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, entity->tint);
 }
