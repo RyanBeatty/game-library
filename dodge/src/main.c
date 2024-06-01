@@ -91,7 +91,8 @@ typedef enum EntityFlag {
     EFLAG_BOMB = 1 << 4,
     EFLAG_WALL = 1 << 5,
     EFLAG_EXPLOSION = 1 << 6,
-    EFLAG_COIN = 1 << 7
+    EFLAG_COIN = 1 << 7,
+    EFLAG_DRAW = 1 << 8
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -165,6 +166,7 @@ static Entity* AllocateEntity() {
     entity->id = id;
     entity->flags = EFLAG_ACTIVE;
     entity->tint = WHITE;
+    SetFlag(entity->flags, EFLAG_DRAW);
     return entity;
 }
 
@@ -279,6 +281,7 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 2.5f;
         SetFlag(entity->spawn_flags, SFLAG_BOMB);
+        FlagOff(entity->flags, EFLAG_DRAW);
     }
 
     // Coin spawner.
@@ -293,6 +296,7 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 3.5f;
         SetFlag(entity->spawn_flags, SFLAG_COIN);
+        FlagOff(entity->flags, EFLAG_DRAW);
     }
 }
 
@@ -465,7 +469,7 @@ static void GameStateDraw(GameState* state) {
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
-        if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
+        if (!EntityTestFlag(entity, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
             continue;
         }
         DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, entity->tint);
