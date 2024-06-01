@@ -158,7 +158,7 @@ static void SimpleScene(GameState* state) {
     // Ground.
     {
         Entity* entity = AllocateEntity();
-        entity->flags |= EFLAG_WALL;
+        SetFlag(entity->flags, EFLAG_WALL);
         float y = GetScreenHeight() * 0.65;
         ground_y = y;
         entity->p = (Vector3){0, y, 0};
@@ -171,7 +171,7 @@ static void SimpleScene(GameState* state) {
     // Left wall.
     {
         Entity* entity = AllocateEntity();
-        entity->flags |= EFLAG_WALL;
+        SetFlag(entity->flags, EFLAG_WALL);
         int width = 100;
         int height = GetScreenHeight();
         entity->p = (Vector3){-width, 0, 0};
@@ -182,7 +182,7 @@ static void SimpleScene(GameState* state) {
     // Right wall.
     {
         Entity* entity = AllocateEntity();
-        entity->flags |= EFLAG_WALL;
+        SetFlag(entity->flags, EFLAG_WALL);
         int width = 100;
         int height = GetScreenHeight();
         entity->p = (Vector3){GetScreenWidth(), 0, 0};
@@ -193,7 +193,7 @@ static void SimpleScene(GameState* state) {
     // Player.
     {
         Entity* entity = AllocateEntity();
-        entity->flags |= EFLAG_PLAYER_CONTROLLED;
+        SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
         int width = 28;
         int height = 40;
         float y = ground_y - height;
@@ -205,7 +205,7 @@ static void SimpleScene(GameState* state) {
     // Spawner.
     {
         Entity* entity = AllocateEntity();
-        entity->flags |= EFLAG_SPAWN_BOMB;
+        SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
         float y = GetScreenHeight() * 0.10;
         entity->p = (Vector3){0, y, 0};
         int width = 50;
@@ -288,7 +288,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 // Spawn bomb.
                 if (TestFlag(entity->spawn_flags, SFLAG_BOMB)) {
                     Entity* bomb = AllocateEntity();
-                    bomb->flags |= EFLAG_BOMB;
+                    SetFlag(bomb->flags, EFLAG_BOMB);
                     bomb->p = entity->p;
                     int width = 8;
                     int height = 15;
@@ -304,7 +304,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 // Spawn explosion.
                 {
                     Entity* explosion = AllocateEntity();
-                    explosion->flags |= EFLAG_EXPLOSION;
+                    SetFlag(explosion->flags, EFLAG_EXPLOSION);
                     explosion->p = entity->p;
                     int width = 100;
                     int height = 100;
