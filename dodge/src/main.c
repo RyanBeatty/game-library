@@ -220,6 +220,7 @@ static GameState GState;
 
 static void SimpleScene(GameState* state) {
     EntitySystemInit();
+    state->score = 0.0f;
 
     float ground_y = 0.0f;
 
