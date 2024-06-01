@@ -419,7 +419,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     explosion->p.y -= height * 0.5;
                     explosion->shape = (Shape){.kind = SHAPE_CIRCLE, .radius = width * 0.5f};
                 }
-                entity->flags &= ~EFLAG_ACTIVE;  // disable bomb entity.
+                FlagOff(entity->flags, EFLAG_ACTIVE);
                 continue;
             }
 
@@ -442,7 +442,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             static const float TIME = 0.2f;
             entity->explosion_timer += delta;
             if (entity->explosion_timer >= TIME) {
-                entity->flags &= ~EFLAG_ACTIVE;
+                FlagOff(entity->flags, EFLAG_ACTIVE);
                 continue;
             }
 
