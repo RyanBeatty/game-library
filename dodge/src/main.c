@@ -136,8 +136,6 @@ static EntityManager EntityM = {0};
 
 #define GetEntityManager() &EntityM
 
-static bool EntityTestFlag(Entity* entity, EntityFlag flag) { return entity->flags & flag; }
-
 static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
 
 static Entity* GetEntity(EntityId id) {
@@ -150,7 +148,7 @@ static EntityId NextEntityId() {
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = &em->entities[i];
-        if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             return i;
         }
     }
@@ -184,7 +182,7 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
     CollisionInfo info = {0};
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* e = GetEntity(i);
-        if (!EntityTestFlag(e, EFLAG_ACTIVE) || e->id == entity->id) {
+        if (!TestFlag(e->flags, EFLAG_ACTIVE) || e->id == entity->id) {
             continue;
         }
         bool hit = Collides(e1p, entity->shape, (Vector2){e->p.x, e->p.y}, e->shape);
@@ -314,11 +312,11 @@ static void GameStateUpdate(GameState* state, float delta) {
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
-        if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             continue;
         }
 
-        if (EntityTestFlag(entity, EFLAG_PLAYER_CONTROLLED)) {
+        if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             static const float DASH_WINDOW = 0.2f;
 
             Vector3 direction = Vector3Zero();
@@ -362,7 +360,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
         }
 
-        if (EntityTestFlag(entity, EFLAG_SPAWN_BOMB)) {
+        if (TestFlag(entity->flags, EFLAG_SPAWN_BOMB)) {
             entity->spawn_move_timer += delta;
             if (entity->spawn_move_timer >= entity->spawn_move_time) {
                 entity->spawn_move_timer = 0.0f;
@@ -400,7 +398,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
         }
 
-        if (EntityTestFlag(entity, EFLAG_BOMB)) {
+        if (TestFlag(entity->flags, EFLAG_BOMB)) {
             entity->bomb_timer += delta;
             if (entity->bomb_timer >= 4.0f) {
                 // Spawn explosion.
@@ -439,7 +437,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
         }
 
-        if (EntityTestFlag(entity, EFLAG_EXPLOSION)) {
+        if (TestFlag(entity->flags, EFLAG_EXPLOSION)) {
             static const float TIME = 0.2f;
             entity->explosion_timer += delta;
             if (entity->explosion_timer >= TIME) {
@@ -469,7 +467,7 @@ static void GameStateDraw(GameState* state) {
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
-        if (!EntityTestFlag(entity, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
             continue;
         }
         DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, entity->tint);
