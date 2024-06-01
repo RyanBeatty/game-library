@@ -12,6 +12,70 @@ const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
 
+typedef enum ShapeKind { SHAPE_NONE = 0, SHAPE_RECT, SHAPE_CIRCLE, SHAPE_COUNT } ShapeKind;
+
+typedef struct Shape {
+    ShapeKind kind;
+
+    union {
+        float width;
+        float height;
+
+        float radius;
+    };
+} Shape;
+
+#define Shape2Rec(c, s) ((Rectangle){(c).x, (c).y, (s).width, (s).height})
+
+static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
+    if (s2.kind < s1.kind) {
+        Shape temp = s1;
+        s1 = s2;
+        s2 = temp;
+        Vector2 ctemp = c1;
+        c1 = c2;
+        c2 = ctemp;
+    }
+
+    switch (s1.kind) {
+        case SHAPE_NONE: {
+            return false;
+        }
+        case SHAPE_RECT: {
+            switch (s2.kind) {
+                case SHAPE_RECT: {
+                    return CheckCollisionRecs(Shape2Rec(c1, s1), Shape2Rec(c2, s2));
+                }
+                case SHAPE_CIRCLE: {
+                    return CheckCollisionCircleRec(c2, s2.radius, Shape2Rec(c1, s1));
+                }
+                default: {
+                    Assert(false);
+                }
+            }
+        }
+        case SHAPE_CIRCLE: {
+            switch (s2.kind) {
+                case SHAPE_RECT: {
+                    return CheckCollisionCircleRec(c1, s1.radius, Shape2Rec(c2, s2));
+                }
+                case SHAPE_CIRCLE: {
+                    return CheckCollisionCircles(c1, s1.radius, c2, s2.radius);
+                }
+                default: {
+                    Assert(false);
+                }
+            }
+        }
+        default: {
+            Assert(false);
+        }
+    }
+    return false;
+}
+
+////////////////////////////////////////////////////////////
+
 typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 1 } SpawnFlag;
 
 ////////////////////////////////////////////////////////////
@@ -47,6 +111,8 @@ typedef struct Entity {
     // TODO: Consider cooldown?
     float dash_timer;
     int last_key;
+
+    Shape shape;
 } Entity;
 
 typedef struct EntityEntry {
@@ -109,6 +175,7 @@ static void EntityDraw(Entity* entity) {
 typedef struct CollisionInfo {
     bool dead;
     bool stopped;
+    // Entity* entities[ENTITY_CAP];
 } CollisionInfo;
 
 static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
@@ -120,6 +187,15 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
         if (!EntityTestFlag(e, EFLAG_ACTIVE) || e->id == entity->id) {
             continue;
         }
+
+        if (EntityTestFlag(e, EFLAG_EXPLOSION)) {
+            Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
+            float radius = e->bitmap_rec.width * 0.5f;
+            if (CheckCollisionCircleRec(center, radius, rec)) {
+                info.dead = true;
+            }
+        }
+
         if (EntityTestFlag(e, EFLAG_EXPLOSION)) {
             Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
             float radius = e->bitmap_rec.width * 0.5f;
