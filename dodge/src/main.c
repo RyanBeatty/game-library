@@ -36,6 +36,9 @@ typedef struct Entity {
     float bomb_timer;
     float explosion_timer;
 
+    float spawn_move_timer;
+    float spawn_move_time;
+
     // TODO: Consider cooldown?
     float dash_timer;
     int last_key;
@@ -204,6 +207,7 @@ static void SimpleScene(GameState* state) {
         int height = 25;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->spawn_move_time = 2.5f;
     }
 }
 
@@ -264,10 +268,9 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (EntityTestFlag(entity, EFLAG_SPAWN_BOMB)) {
-            static float cooldown = 0.0f;
-            static const float time = 2.5f;
-            cooldown += delta;
-            if (cooldown >= time) {
+            entity->spawn_move_timer += delta;
+            if (entity->spawn_move_timer >= entity->spawn_move_time) {
+                entity->spawn_move_timer = 0.0f;
                 // Move randomly.
                 {
                     float min = 0.0f;
@@ -286,8 +289,6 @@ static void GameStateUpdate(GameState* state, float delta) {
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                 }
-
-                cooldown = 0.0f;
             }
         }
 
