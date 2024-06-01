@@ -393,7 +393,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     bomb->p = entity->p;
                     int width = 20;
                     int height = 20;
-                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, YELLOW));
+                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, PINK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
