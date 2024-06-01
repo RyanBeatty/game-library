@@ -168,10 +168,6 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
-static void EntityDraw(Entity* entity) {
-    DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, entity->tint);
-}
-
 ////////////////////////////////////////////////////////////
 // Collision.
 
@@ -472,7 +468,7 @@ static void GameStateDraw(GameState* state) {
         if (!EntityTestFlag(entity, EFLAG_ACTIVE)) {
             continue;
         }
-        EntityDraw(entity);
+        DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, entity->tint);
     }
 
     // Draw UI.
