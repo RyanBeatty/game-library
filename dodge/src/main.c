@@ -11,6 +11,10 @@ const int ScreenWidth = 800;
 const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
+
+typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0 } SpawnFlag;
+
+////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
@@ -38,6 +42,7 @@ typedef struct Entity {
 
     float spawn_move_timer;
     float spawn_move_time;
+    SpawnFlag spawn_flags;
 
     // TODO: Consider cooldown?
     float dash_timer;
@@ -208,6 +213,7 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 2.5f;
+        SetFlag(entity->spawn_flags, SFLAG_BOMB);
     }
 }
 
@@ -280,7 +286,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 }
 
                 // Spawn bomb.
-                {
+                if (TestFlag(entity->spawn_flags, SFLAG_BOMB)) {
                     Entity* bomb = AllocateEntity();
                     bomb->flags |= EFLAG_BOMB;
                     bomb->p = entity->p;
