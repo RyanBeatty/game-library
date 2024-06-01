@@ -12,7 +12,7 @@ const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
 
-typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0 } SpawnFlag;
+typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 1 } SpawnFlag;
 
 ////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
@@ -202,7 +202,7 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
     }
 
-    // Spawner.
+    // Bomb spawner.
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
@@ -214,6 +214,20 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 2.5f;
         SetFlag(entity->spawn_flags, SFLAG_BOMB);
+    }
+
+    // Coin spawner.
+    {
+        Entity* entity = AllocateEntity();
+        SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
+        int width = 50;
+        int height = 25;
+        float y = ground_y - height - 10.0f;
+        entity->p = (Vector3){0, y, 0};
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->spawn_move_time = 3.5f;
+        SetFlag(entity->spawn_flags, SFLAG_COIN);
     }
 }
 
