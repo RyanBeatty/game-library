@@ -18,8 +18,10 @@ typedef struct Shape {
     ShapeKind kind;
 
     union {
-        float width;
-        float height;
+        struct {
+            float width;
+            float height;
+        };
 
         float radius;
     };
@@ -28,6 +30,10 @@ typedef struct Shape {
 #define Shape2Rec(c, s) ((Rectangle){(c).x, (c).y, (s).width, (s).height})
 
 static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
+    if (s1.kind == SHAPE_NONE || s2.kind == SHAPE_NONE) {
+        return false;
+    }
+
     if (s2.kind < s1.kind) {
         Shape temp = s1;
         s1 = s2;
@@ -38,9 +44,6 @@ static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
     }
 
     switch (s1.kind) {
-        case SHAPE_NONE: {
-            return false;
-        }
         case SHAPE_RECT: {
             switch (s2.kind) {
                 case SHAPE_RECT: {
@@ -173,13 +176,14 @@ static void EntityDraw(Entity* entity) {
 // Collision.
 
 typedef struct CollisionInfo {
-    bool dead;
-    bool stopped;
-    // Entity* entities[ENTITY_CAP];
+    // bool dead;
+    // bool stopped;
+    Entity* entities[ENTITY_CAP];
+    uint32_t len;
 } CollisionInfo;
 
 static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
-    Rectangle rec = {entity->p.x, entity->p.y, entity->bitmap_rec.width, entity->bitmap_rec.height};
+    Vector2 e1p = {entity->p.x, entity->p.y};
     EntityManager* em = GetEntityManager();
     CollisionInfo info = {0};
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
@@ -187,27 +191,11 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
         if (!EntityTestFlag(e, EFLAG_ACTIVE) || e->id == entity->id) {
             continue;
         }
-
-        if (EntityTestFlag(e, EFLAG_EXPLOSION)) {
-            Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
-            float radius = e->bitmap_rec.width * 0.5f;
-            if (CheckCollisionCircleRec(center, radius, rec)) {
-                info.dead = true;
-            }
-        }
-
-        if (EntityTestFlag(e, EFLAG_EXPLOSION)) {
-            Vector2 center = {e->p.x + (e->bitmap_rec.width * 0.5f), e->p.y + (e->bitmap_rec.height * 0.5f)};
-            float radius = e->bitmap_rec.width * 0.5f;
-            if (CheckCollisionCircleRec(center, radius, rec)) {
-                info.dead = true;
-            }
-        }
-        if (EntityTestFlag(e, EFLAG_WALL)) {
-            Rectangle rec2 = {e->p.x, e->p.y, e->bitmap_rec.width, e->bitmap_rec.height};
-            if (CheckCollisionRecs(rec, rec2)) {
-                info.stopped = true;
-            }
+        bool hit = Collides(e1p, entity->shape, (Vector2){e->p.x, e->p.y}, e->shape);
+        if (hit) {
+            Assert(info.len < ENTITY_CAP);
+            info.entities[info.len] = e;
+            ++info.len;
         }
     }
     return info;
@@ -242,6 +230,7 @@ static void SimpleScene(GameState* state) {
         int height = y * 2.0f;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
     }
 
     // Left wall.
@@ -253,6 +242,7 @@ static void SimpleScene(GameState* state) {
         entity->p = (Vector3){-width, 0, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
     }
 
     // Right wall.
@@ -264,6 +254,7 @@ static void SimpleScene(GameState* state) {
         entity->p = (Vector3){GetScreenWidth(), 0, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
     }
 
     // Player.
@@ -276,6 +267,7 @@ static void SimpleScene(GameState* state) {
         entity->p = (Vector3){GetScreenWidth() * 0.5, y, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
     }
 
     // Bomb spawner.
@@ -353,13 +345,15 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->p = Vector3Add(entity->p, Vector3Scale(Vector3Scale(direction, speed), delta));
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
-            if (info.dead) {
-                state->game_over = true;
-                entity->flags &= ~EFLAG_ACTIVE;
-                continue;
-            }
-            if (info.stopped) {
-                entity->p = prev_p;
+            for (uint32_t i = 0; i < info.len; ++i) {
+                Entity* e = info.entities[i];
+                if (TestFlag(e->flags, EFLAG_EXPLOSION)) {
+                    state->game_over = true;
+                    entity->flags &= ~EFLAG_ACTIVE;
+                }
+                if (TestFlag(e->flags, EFLAG_WALL)) {
+                    entity->p = prev_p;
+                }
             }
         }
 
@@ -384,6 +378,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     int height = 15;
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
+                    bomb->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
                 }
             }
         }
@@ -406,6 +401,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     explosion->bitmap_rec = (Rectangle){0, 0, width, height};
                     explosion->p.x -= width * 0.5;
                     explosion->p.y -= height * 0.5;
+                    explosion->shape = (Shape){.kind = SHAPE_CIRCLE, .radius = width * 0.5f};
                 }
                 entity->flags &= ~EFLAG_ACTIVE;  // disable bomb entity.
                 continue;
@@ -418,8 +414,11 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->p = Vector3Add(entity->p, movement);
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
-            if (info.stopped) {
-                entity->p = prev_p;
+            for (uint32_t i = 0; i < info.len; ++i) {
+                Entity* e = info.entities[i];
+                if (TestFlag(e->flags, EFLAG_WALL)) {
+                    entity->p = prev_p;
+                }
             }
         }
 
