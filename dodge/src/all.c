@@ -26,6 +26,7 @@ void __attribute__((noinline)) breakpoint() {}
 
 #define TestFlag(flags, flag) ((flags) & (flag))
 #define SetFlag(flags, flag) ((flags) |= flag)
+#define FlagOff(flags, flag) ((flags) &= ~(flag))
 
 ///////////////////////////////////////////////
 // Project files below

@@ -12,7 +12,7 @@ const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
 
-typedef enum ShapeKind { SHAPE_NONE = 0, SHAPE_RECT, SHAPE_CIRCLE, SHAPE_COUNT } ShapeKind;
+typedef enum ShapeKind { SHAPE_NONE = 0, SHAPE_REC, SHAPE_CIRCLE, SHAPE_COUNT } ShapeKind;
 
 typedef struct Shape {
     ShapeKind kind;
@@ -44,9 +44,9 @@ static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
     }
 
     switch (s1.kind) {
-        case SHAPE_RECT: {
+        case SHAPE_REC: {
             switch (s2.kind) {
-                case SHAPE_RECT: {
+                case SHAPE_REC: {
                     return CheckCollisionRecs(Shape2Rec(c1, s1), Shape2Rec(c2, s2));
                 }
                 case SHAPE_CIRCLE: {
@@ -59,7 +59,7 @@ static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
         }
         case SHAPE_CIRCLE: {
             switch (s2.kind) {
-                case SHAPE_RECT: {
+                case SHAPE_REC: {
                     return CheckCollisionCircleRec(c1, s1.radius, Shape2Rec(c2, s2));
                 }
                 case SHAPE_CIRCLE: {
@@ -89,7 +89,8 @@ typedef enum EntityFlag {
     EFLAG_SPAWN_BOMB = 1 << 3,
     EFLAG_BOMB = 1 << 4,
     EFLAG_WALL = 1 << 5,
-    EFLAG_EXPLOSION = 1 << 6
+    EFLAG_EXPLOSION = 1 << 6,
+    EFLAG_COIN = 1 << 7
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -230,7 +231,7 @@ static void SimpleScene(GameState* state) {
         int height = y * 2.0f;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     }
 
     // Left wall.
@@ -242,7 +243,7 @@ static void SimpleScene(GameState* state) {
         entity->p = (Vector3){-width, 0, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     }
 
     // Right wall.
@@ -254,7 +255,7 @@ static void SimpleScene(GameState* state) {
         entity->p = (Vector3){GetScreenWidth(), 0, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     }
 
     // Player.
@@ -267,7 +268,7 @@ static void SimpleScene(GameState* state) {
         entity->p = (Vector3){GetScreenWidth() * 0.5, y, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     }
 
     // Bomb spawner.
@@ -349,10 +350,13 @@ static void GameStateUpdate(GameState* state, float delta) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_EXPLOSION)) {
                     state->game_over = true;
-                    entity->flags &= ~EFLAG_ACTIVE;
+                    FlagOff(entity->flags, EFLAG_ACTIVE);
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
                     entity->p = prev_p;
+                }
+                if (TestFlag(e->flags, EFLAG_COIN)) {
+                    FlagOff(e->flags, EFLAG_ACTIVE);
                 }
             }
         }
@@ -378,7 +382,19 @@ static void GameStateUpdate(GameState* state, float delta) {
                     int height = 15;
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
-                    bomb->shape = (Shape){.kind = SHAPE_RECT, .width = width, .height = height};
+                    bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+                }
+
+                // Spawn Coin.
+                if (TestFlag(entity->spawn_flags, SFLAG_COIN)) {
+                    Entity* bomb = AllocateEntity();
+                    SetFlag(bomb->flags, EFLAG_COIN);
+                    bomb->p = entity->p;
+                    int width = 20;
+                    int height = 20;
+                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, YELLOW));
+                    bomb->bitmap_rec = (Rectangle){0, 0, width, height};
+                    bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
             }
         }
