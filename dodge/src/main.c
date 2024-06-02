@@ -114,9 +114,7 @@ typedef struct Entity {
     float spawn_move_time;
     SpawnFlag spawn_flags;
 
-    // TODO: Consider cooldown?
     float dash_timer;
-    int last_key;
 
     Shape shape;
 } Entity;
@@ -317,8 +315,6 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            static const float DASH_WINDOW = 0.2f;
-
             Vector3 direction = Vector3Zero();
             if (IsKeyDown(KEY_RIGHT)) {
                 direction = Vector3Add(direction, (Vector3){1, 0, 0});
@@ -329,16 +325,9 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             float speed = 200.0f;
             entity->dash_timer += delta;
-            int keys[2] = {KEY_LEFT, KEY_RIGHT};
-            for (uint32_t i = 0; i < ArraySizeOf(keys); ++i) {
-                int key = keys[i];
-                if (IsKeyPressed(key)) {
-                    if (entity->last_key == key && entity->dash_timer <= DASH_WINDOW) {
-                        speed *= 30.0f;
-                    }
-                    entity->dash_timer = 0.0f;
-                    entity->last_key = keys[i];
-                }
+            if (IsKeyPressed(KEY_SPACE)) {
+                entity->dash_timer = 0.0f;
+                speed *= 30.0f;
             }
             Vector3 prev_p = entity->p;
             entity->p = Vector3Add(entity->p, Vector3Scale(Vector3Scale(direction, speed), delta));
