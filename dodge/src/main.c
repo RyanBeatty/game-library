@@ -28,7 +28,7 @@ typedef struct Shape {
     };
 } Shape;
 
-#define Shape2Rec(c, s) ((Rectangle){(c).x, (c).y, (s).width, (s).height})
+#define Shape2Rec(c, s) ((Rectangle){(c).x - ((s).width * 0.5f), (c).y - ((s).height * 0.5f), (s).width, (s).height})
 
 static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
     if (s1.kind == SHAPE_NONE || s2.kind == SHAPE_NONE) {
@@ -222,9 +222,9 @@ static void SimpleScene(GameState* state) {
         SetFlag(entity->flags, EFLAG_WALL);
         float y = GetScreenHeight() * 0.65;
         ground_y = y;
-        entity->p = (Vector3){0, y, 0};
         int width = GetScreenWidth();
         int height = y * 2.0f;
+        entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -236,7 +236,7 @@ static void SimpleScene(GameState* state) {
         SetFlag(entity->flags, EFLAG_WALL);
         int width = 100;
         int height = GetScreenHeight();
-        entity->p = (Vector3){-width, 0, 0};
+        entity->p = (Vector3){-width + (width * 0.5f), height * 0.5f, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -248,7 +248,7 @@ static void SimpleScene(GameState* state) {
         SetFlag(entity->flags, EFLAG_WALL);
         int width = 100;
         int height = GetScreenHeight();
-        entity->p = (Vector3){GetScreenWidth(), 0, 0};
+        entity->p = (Vector3){GetScreenWidth() + (width * 0.5f), height * 0.5f, 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -261,7 +261,7 @@ static void SimpleScene(GameState* state) {
         int width = 28;
         int height = 40;
         float y = ground_y - height;
-        entity->p = (Vector3){GetScreenWidth() * 0.5, y, 0};
+        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f), 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -272,9 +272,9 @@ static void SimpleScene(GameState* state) {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
         float y = GetScreenHeight() * 0.10;
-        entity->p = (Vector3){0, y, 0};
         int width = 50;
         int height = 25;
+        entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 2.5f;
@@ -289,7 +289,7 @@ static void SimpleScene(GameState* state) {
         int width = 50;
         int height = 25;
         float y = ground_y - height - 10.0f;
-        entity->p = (Vector3){0, y, 0};
+        entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 3.5f;
@@ -376,9 +376,9 @@ static void GameStateUpdate(GameState* state, float delta) {
                 if (TestFlag(entity->spawn_flags, SFLAG_BOMB)) {
                     Entity* bomb = AllocateEntity();
                     SetFlag(bomb->flags, EFLAG_BOMB);
-                    bomb->p = entity->p;
                     int width = 8;
                     int height = 15;
+                    bomb->p = entity->p;
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -414,8 +414,6 @@ static void GameStateUpdate(GameState* state, float delta) {
                     ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
                     explosion->texture = LoadTextureFromImage(image);
                     explosion->bitmap_rec = (Rectangle){0, 0, width, height};
-                    explosion->p.x -= width * 0.5;
-                    explosion->p.y -= height * 0.5;
                     explosion->shape = (Shape){.kind = SHAPE_CIRCLE, .radius = width * 0.5f};
                 }
                 FlagOff(entity->flags, EFLAG_ACTIVE);
@@ -470,7 +468,10 @@ static void GameStateDraw(GameState* state) {
         if (!TestFlag(entity->flags, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
             continue;
         }
-        DrawTextureRec(entity->texture, entity->bitmap_rec, (Vector2){entity->p.x, entity->p.y}, entity->tint);
+        float half_width = entity->bitmap_rec.width * 0.5f;
+        float half_height = entity->bitmap_rec.height * 0.5f;
+        DrawTextureRec(entity->texture, entity->bitmap_rec,
+                       (Vector2){entity->p.x - half_width, entity->p.y - half_height}, entity->tint);
     }
 
     // Draw UI.
