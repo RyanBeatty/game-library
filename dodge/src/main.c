@@ -13,7 +13,14 @@ const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
 
-typedef enum SoundId { SOUND_NONE = 0, SOUND_BOMB_EXPLOSION, SOUND_PICKUP_COIN, SOUND_COUNT } SoundId;
+typedef enum SoundId {
+    SOUND_NONE = 0,
+    SOUND_BOMB_EXPLOSION,
+    SOUND_PICKUP_COIN,
+    SOUND_FOOTSTEP_LEFT,
+    SOUND_FOOTSTEP_RIGHT,
+    SOUND_COUNT
+} SoundId;
 
 Sound Sounds[SOUND_COUNT];
 
@@ -27,6 +34,12 @@ static void AudioSystemInit() {
 
     Sounds[SOUND_PICKUP_COIN] = LoadSound("assets/sound/pickup_coin.wav");
     Assert(IsSoundReady(Sounds[SOUND_PICKUP_COIN]));
+
+    Sounds[SOUND_FOOTSTEP_LEFT] = LoadSound("assets/sound/footstep_left.wav");
+    Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_LEFT]));
+
+    Sounds[SOUND_FOOTSTEP_RIGHT] = LoadSound("assets/sound/footstep_right.wav");
+    Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_RIGHT]));
 }
 
 #define GetSound(id) (Sounds[(id)])
