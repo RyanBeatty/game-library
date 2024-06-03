@@ -13,7 +13,7 @@ const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
 
-typedef enum SoundId { SOUND_NONE = 0, SOUND_BOMB_EXPLOSION, SOUND_COUNT } SoundId;
+typedef enum SoundId { SOUND_NONE = 0, SOUND_BOMB_EXPLOSION, SOUND_PICKUP_COIN, SOUND_COUNT } SoundId;
 
 Sound Sounds[SOUND_COUNT];
 
@@ -22,12 +22,20 @@ static void AudioSystemInit() {
 
     InitAudioDevice();
 
-    Sound bomb_sound = LoadSound("assets/sound/bomb_explosion.wav");
-    Assert(IsSoundReady(bomb_sound));
-    Sounds[SOUND_BOMB_EXPLOSION] = bomb_sound;
+    Sounds[SOUND_BOMB_EXPLOSION] = LoadSound("assets/sound/bomb_explosion.wav");
+    Assert(IsSoundReady(Sounds[SOUND_BOMB_EXPLOSION]));
+
+    Sounds[SOUND_PICKUP_COIN] = LoadSound("assets/sound/pickup_coin.wav");
+    Assert(IsSoundReady(Sounds[SOUND_PICKUP_COIN]));
 }
 
 #define GetSound(id) (Sounds[(id)])
+
+static void AudioPlaySound(SoundId id) {
+    if (!IsSoundPlaying(GetSound(id))) {
+        PlaySound(GetSound(id));
+    }
+}
 
 ////////////////////////////////////////////////////////////
 
@@ -364,6 +372,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 if (TestFlag(e->flags, EFLAG_COIN)) {
                     FlagOff(e->flags, EFLAG_ACTIVE);
                     ++state->score;
+                    AudioPlaySound(SOUND_PICKUP_COIN);
                 }
             }
         }
@@ -457,9 +466,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                           Lerp(BLACK.b, WHITE.b, entity->explosion_timer / TIME), 255};
             entity->tint = tint;
 
-            if (!IsSoundPlaying(GetSound(SOUND_BOMB_EXPLOSION))) {
-                PlaySound(GetSound(SOUND_BOMB_EXPLOSION));
-            }
+            AudioPlaySound(SOUND_BOMB_EXPLOSION);
         }
     }
 }
