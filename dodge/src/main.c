@@ -19,6 +19,7 @@ typedef enum SoundId {
     SOUND_PICKUP_COIN,
     SOUND_FOOTSTEP_LEFT,
     SOUND_FOOTSTEP_RIGHT,
+    SOUND_GAME_OVER,
     SOUND_COUNT
 } SoundId;
 
@@ -48,11 +49,14 @@ static void AudioSystemInit() {
         Sounds[SOUND_FOOTSTEP_RIGHT] = LoadSoundFromWave(wave);
         Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_RIGHT]));
     }
+
+    Sounds[SOUND_GAME_OVER] = LoadSound("assets/sound/game_over.wav");
+    Assert(IsSoundReady(Sounds[SOUND_GAME_OVER]));
 }
 
 #define GetSound(id) (Sounds[(id)])
 
-static void AudioPlaySound(SoundId id) {
+static void PlaySoundIfNotPlaying(SoundId id) {
     if (!IsSoundPlaying(GetSound(id))) {
         PlaySound(GetSound(id));
     }
@@ -389,6 +393,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     state->game_over = true;
                     FlagOff(entity->flags, EFLAG_ACTIVE);
                     walking = false;
+                    PlaySoundIfNotPlaying(SOUND_GAME_OVER);
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
                     entity->p = prev_p;
@@ -397,7 +402,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 if (TestFlag(e->flags, EFLAG_COIN)) {
                     FlagOff(e->flags, EFLAG_ACTIVE);
                     ++state->score;
-                    AudioPlaySound(SOUND_PICKUP_COIN);
+                    PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
                 }
             }
 
@@ -502,7 +507,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                           Lerp(BLACK.b, WHITE.b, entity->explosion_timer / TIME), 255};
             entity->tint = tint;
 
-            AudioPlaySound(SOUND_BOMB_EXPLOSION);
+            PlaySoundIfNotPlaying(SOUND_BOMB_EXPLOSION);
         }
     }
 }
