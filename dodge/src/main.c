@@ -35,11 +35,19 @@ static void AudioSystemInit() {
     Sounds[SOUND_PICKUP_COIN] = LoadSound("assets/sound/pickup_coin.wav");
     Assert(IsSoundReady(Sounds[SOUND_PICKUP_COIN]));
 
-    Sounds[SOUND_FOOTSTEP_LEFT] = LoadSound("assets/sound/footstep_left.wav");
-    Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_LEFT]));
+    {
+        Wave wave = LoadWave("assets/sound/footstep_left.wav");
+        wave.sampleRate *= 2.7;
+        Sounds[SOUND_FOOTSTEP_LEFT] = LoadSoundFromWave(wave);
+        Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_LEFT]));
+    }
 
-    Sounds[SOUND_FOOTSTEP_RIGHT] = LoadSound("assets/sound/footstep_right.wav");
-    Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_RIGHT]));
+    {
+        Wave wave = LoadWave("assets/sound/footstep_right.wav");
+        wave.sampleRate *= 2.7;
+        Sounds[SOUND_FOOTSTEP_RIGHT] = LoadSoundFromWave(wave);
+        Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_RIGHT]));
+    }
 }
 
 #define GetSound(id) (Sounds[(id)])
