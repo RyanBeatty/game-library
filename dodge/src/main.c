@@ -370,22 +370,37 @@ static void GameStateUpdate(GameState* state, float delta) {
                 speed *= 30.0f;
             }
             Vector3 prev_p = entity->p;
-            entity->p = Vector3Add(entity->p, Vector3Scale(Vector3Scale(direction, speed), delta));
+            Vector3 movement = Vector3Scale(Vector3Scale(direction, speed), delta);
+            entity->p = Vector3Add(entity->p, movement);
 
+            bool walking = !Vector3Equals(movement, Vector3Zero());
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_EXPLOSION)) {
                     state->game_over = true;
                     FlagOff(entity->flags, EFLAG_ACTIVE);
+                    walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
                     entity->p = prev_p;
+                    walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_COIN)) {
                     FlagOff(e->flags, EFLAG_ACTIVE);
                     ++state->score;
                     AudioPlaySound(SOUND_PICKUP_COIN);
+                }
+            }
+
+            if (walking) {
+                static const SoundId sounds[2] = {SOUND_FOOTSTEP_LEFT, SOUND_FOOTSTEP_RIGHT};
+                static uint16_t sound_idx = 0;
+
+                Sound walk_sound = GetSound(sounds[sound_idx]);
+                if (!IsSoundPlaying(walk_sound)) {
+                    sound_idx = (sound_idx + 1) % ArraySizeOf(sounds);
+                    PlaySound(GetSound(sounds[sound_idx]));
                 }
             }
         }
