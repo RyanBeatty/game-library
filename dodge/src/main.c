@@ -13,6 +13,24 @@ const int ScreenHeight = 450;
 
 ////////////////////////////////////////////////////////////
 
+typedef enum SoundId { SOUND_NONE = 0, SOUND_BOMB_EXPLOSION, SOUND_COUNT } SoundId;
+
+Sound Sounds[SOUND_COUNT];
+
+static void AudioSystemInit() {
+    memset(&Sounds, 0, ArraySizeOf(Sounds) * sizeof(Sound));
+
+    InitAudioDevice();
+
+    Sound bomb_sound = LoadSound("assets/sound/bomb_explosion.wav");
+    Assert(IsSoundReady(bomb_sound));
+    Sounds[SOUND_BOMB_EXPLOSION] = bomb_sound;
+}
+
+#define GetSound(id) (Sounds[(id)])
+
+////////////////////////////////////////////////////////////
+
 typedef enum ShapeKind { SHAPE_NONE = 0, SHAPE_REC, SHAPE_CIRCLE, SHAPE_COUNT } ShapeKind;
 
 typedef struct Shape {
@@ -302,6 +320,7 @@ static void GameStateInit(GameState* state) {
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
+    AudioSystemInit();
 
     SimpleScene(state);
 }
@@ -437,6 +456,10 @@ static void GameStateUpdate(GameState* state, float delta) {
                           Lerp(BLACK.g, WHITE.g, entity->explosion_timer / TIME),
                           Lerp(BLACK.b, WHITE.b, entity->explosion_timer / TIME), 255};
             entity->tint = tint;
+
+            if (!IsSoundPlaying(GetSound(SOUND_BOMB_EXPLOSION))) {
+                PlaySound(GetSound(SOUND_BOMB_EXPLOSION));
+            }
         }
     }
 }
