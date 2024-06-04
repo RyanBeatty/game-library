@@ -169,6 +169,9 @@ typedef struct Entity {
     float spawn_move_time;
     SpawnFlag spawn_flags;
 
+    float damage_timer;
+    float damage_cooldown;
+
     float dash_timer;
 
     Shape shape;
@@ -320,6 +323,8 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+        entity->damage_cooldown = 0.4f;
+        entity->damage_timer = 0.0f;
     }
 
     // Bomb spawner.
@@ -381,10 +386,7 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            static const float DAMAGE_COOLDOWN = 0.4f;
-            static float DAMAGE_TIMER = 0.0f;
-
-            DAMAGE_TIMER += delta;
+            entity->damage_timer += delta;
 
             if (state->health == 0) {
                 state->game_over = true;
@@ -415,8 +417,8 @@ static void GameStateUpdate(GameState* state, float delta) {
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
-                if (TestFlag(e->flags, EFLAG_EXPLOSION) && DAMAGE_TIMER >= DAMAGE_COOLDOWN) {
-                    DAMAGE_TIMER = 0.0f;
+                if (TestFlag(e->flags, EFLAG_EXPLOSION) && entity->damage_timer >= entity->damage_cooldown) {
+                    entity->damage_timer = 0.0f;
                     if (state->health > 0) {
                         --state->health;
                     }
