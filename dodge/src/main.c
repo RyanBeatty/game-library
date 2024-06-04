@@ -253,6 +253,8 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
 typedef struct GameState {
     Camera camera;
 
+    uint16_t health;
+
     bool debug;
     bool game_over;
 
@@ -350,6 +352,8 @@ static void SimpleScene(GameState* state) {
         FlagOff(entity->flags, EFLAG_DRAW);
     }
 
+    state->health = 3;
+
     PlaySoundIfNotPlaying(SOUND_GAME_START);
 }
 
@@ -377,6 +381,18 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            static const float DAMAGE_COOLDOWN = 0.4f;
+            static float DAMAGE_TIMER = 0.0f;
+
+            DAMAGE_TIMER += delta;
+
+            if (state->health == 0) {
+                state->game_over = true;
+                FlagOff(entity->flags, EFLAG_ACTIVE);
+                PlaySoundIfNotPlaying(SOUND_GAME_OVER);
+                continue;
+            }
+
             Vector3 direction = Vector3Zero();
             if (IsKeyDown(KEY_RIGHT)) {
                 direction = Vector3Add(direction, (Vector3){1, 0, 0});
@@ -399,11 +415,12 @@ static void GameStateUpdate(GameState* state, float delta) {
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
-                if (TestFlag(e->flags, EFLAG_EXPLOSION)) {
-                    state->game_over = true;
-                    FlagOff(entity->flags, EFLAG_ACTIVE);
+                if (TestFlag(e->flags, EFLAG_EXPLOSION) && DAMAGE_TIMER >= DAMAGE_COOLDOWN) {
+                    DAMAGE_TIMER = 0.0f;
+                    if (state->health > 0) {
+                        --state->health;
+                    }
                     walking = false;
-                    PlaySoundIfNotPlaying(SOUND_GAME_OVER);
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
                     entity->p = prev_p;
@@ -546,6 +563,15 @@ static void GameStateDraw(GameState* state) {
 
     // Draw UI.
     {
+        {
+            char health_text[256] = {0};
+            memset(health_text, '*', sizeof(char) * state->health);
+            float fontsize = 24.0f;
+            float x = 100.0f;
+            float y = 20.0f;
+            DrawText(health_text, x, y, fontsize, BLACK);
+        }
+
         {
             char score_text[256] = {0};
             sprintf(score_text, "%d", state->score);
