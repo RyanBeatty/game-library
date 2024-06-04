@@ -20,6 +20,7 @@ typedef enum SoundId {
     SOUND_FOOTSTEP_LEFT,
     SOUND_FOOTSTEP_RIGHT,
     SOUND_GAME_OVER,
+    SOUND_GAME_START,
     SOUND_COUNT
 } SoundId;
 
@@ -52,6 +53,9 @@ static void AudioSystemInit() {
 
     Sounds[SOUND_GAME_OVER] = LoadSound("assets/sound/game_over.wav");
     Assert(IsSoundReady(Sounds[SOUND_GAME_OVER]));
+
+    Sounds[SOUND_GAME_START] = LoadSound("assets/sound/game_start.wav");
+    Assert(IsSoundReady(Sounds[SOUND_GAME_START]));
 }
 
 #define GetSound(id) (Sounds[(id)])
@@ -345,6 +349,8 @@ static void SimpleScene(GameState* state) {
         SetFlag(entity->spawn_flags, SFLAG_COIN);
         FlagOff(entity->flags, EFLAG_DRAW);
     }
+
+    PlaySoundIfNotPlaying(SOUND_GAME_START);
 }
 
 static void GameStateInit(GameState* state) {
@@ -359,6 +365,10 @@ static void GameStateInit(GameState* state) {
 }
 
 static void GameStateUpdate(GameState* state, float delta) {
+    if (IsSoundPlaying(GetSound(SOUND_GAME_START))) {
+        return;
+    }
+
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
