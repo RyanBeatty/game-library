@@ -262,6 +262,8 @@ typedef struct GameState {
     bool game_over;
 
     uint32_t score;
+
+    float timer;
 } GameState;
 
 static GameState GState;
@@ -374,6 +376,8 @@ static void GameStateInit(GameState* state) {
 }
 
 static void GameStateUpdate(GameState* state, float delta) {
+    state->timer += delta;
+
     if (IsSoundPlaying(GetSound(SOUND_GAME_START))) {
         return;
     }
@@ -541,7 +545,7 @@ static void GameStateUpdate(GameState* state, float delta) {
     }
 }
 
-static void GameStateDraw(GameState* state) {
+static void GameStateDraw(GameState* state, float delta) {
     BeginDrawing();
 
     state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
@@ -557,10 +561,15 @@ static void GameStateDraw(GameState* state) {
         if (!TestFlag(entity->flags, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
             continue;
         }
+        Color tint = entity->tint;
+        if (entity->damage_timer < entity->damage_cooldown) {
+            tint.a = Lerp(tint.a, 0, sin(state->timer * 100.0f));
+        }
+
         float half_width = entity->bitmap_rec.width * 0.5f;
         float half_height = entity->bitmap_rec.height * 0.5f;
         DrawTextureRec(entity->texture, entity->bitmap_rec,
-                       (Vector2){entity->p.x - half_width, entity->p.y - half_height}, entity->tint);
+                       (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
     }
 
     // Draw UI.
@@ -619,9 +628,9 @@ int main(void) {
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
-        float delta_time = GetFrameTime();
-        GameStateUpdate(&GState, delta_time);
-        GameStateDraw(&GState);
+        float delta = GetFrameTime();
+        GameStateUpdate(&GState, delta);
+        GameStateDraw(&GState, delta);
     }
 
     CloseWindow();
