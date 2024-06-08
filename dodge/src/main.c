@@ -155,6 +155,9 @@ typedef uint32_t EntityId;
 typedef struct Entity {
     EntityId id;
     Vector3 p;
+    Vector3 v;
+    Vector3 a;
+    float m;
     Quaternion rot;
     EntityFlag flags;
 
@@ -473,6 +476,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+                    bomb->m = 3.0f;
                 }
 
                 // Spawn Coin.
@@ -512,16 +516,21 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
 
             // TODO: Once camera is set up, start in camera space and convert to screen space.
-            Vector3 dir = {0, 1, 0};
-            Vector3 movement = Vector3Scale(dir, 100 * delta);
+            Vector3 dir = {0, -1, 0};
+            const Vector3 g = {0, -9.8 * 10.0f, 0};
+            Vector3 force = Vector3Scale(g, entity->m);
+            entity->a = Vector3Scale(force, 1.0f / entity->m);
+            entity->v = Vector3Add(entity->v, Vector3Scale(entity->a, delta));
             Vector3 prev_p = entity->p;
-            entity->p = Vector3Add(entity->p, movement);
+            entity->p = Vector3Add(entity->p, Vector3Scale(Vector3Multiply(entity->v, dir), delta));
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_WALL)) {
                     entity->p = prev_p;
+                    entity->v = Vector3Zero();
+                    entity->a = Vector3Zero();
                 }
             }
         }
