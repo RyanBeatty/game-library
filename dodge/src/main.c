@@ -466,6 +466,11 @@ static void GameStateUpdate(GameState* state, float delta) {
                     entity->p.x = choice;
                 }
 
+                // Calculate random initial velocity.
+                Vector2 v = Vector2Rotate((Vector2){1, 0}, GetRandomValue(0, 180) * DEG2RAD);
+                v = Vector2Scale(v, GetRandomValue(1, 10));
+                Vector3 v3 = {v.x, v.y, 0};
+
                 // Spawn bomb.
                 if (TestFlag(entity->spawn_flags, SFLAG_BOMB)) {
                     Entity* bomb = AllocateEntity();
@@ -477,6 +482,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                     bomb->m = 3.0f;
+                    bomb->v = v3;
                 }
 
                 // Spawn Coin.
