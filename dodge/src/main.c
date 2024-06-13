@@ -528,7 +528,8 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->a = Vector3Scale(force, 1.0f / entity->m);
             entity->v = Vector3Add(entity->v, Vector3Scale(entity->a, delta));
             Vector3 prev_p = entity->p;
-            entity->p = Vector3Add(entity->p, Vector3Scale(Vector3Multiply(entity->v, dir), delta));
+            Vector3 displacement = Vector3Scale(entity->v, delta);
+            entity->p = Vector3Add(entity->p, Vector3Multiply(displacement, dir));
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
