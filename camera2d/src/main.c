@@ -16,7 +16,7 @@ int main(void) {
     // camera.zoom = 1.0f;
 
     // Define a rectangle in world space
-    Rectangle worldRectangle = {100.0f, 100.0f, 100.0f, 100.0f};
+    Rectangle worldRectangle = {(screenWidth - 200.0f) * 0.5, (screenHeight - 200.0f) * 0.5f, 200.0f, 200.0f};
 
     SetTargetFPS(60);
 
@@ -39,9 +39,19 @@ int main(void) {
         // BeginMode2D(camera);
 
         // Apply the vertical flip transformation
-        rlMatrixMode(RL_PROJECTION);
-        rlLoadIdentity();
-        rlOrtho(0, screenWidth, screenHeight, 0, 1, -1);
+        // rlMatrixMode(RL_PROJECTION);
+        // rlLoadIdentity();
+        // rlOrtho(screenWidth, 0, screenHeight, 0, -1, 1);
+        // rlTranslatef(-50, 0, 0);
+        // rlMatrixMode(RL_MODELVIEW);
+
+        DrawRectangle(0, 0, 100, 100, BLUE);
+        DrawRectangle(screenWidth - 100, 0, 100, 100, GREEN);
+        DrawRectangle(screenWidth - 100, screenHeight - 100, 100, 100, PURPLE);
+        DrawRectangle(0, screenHeight - 100, 100, 100, BLACK);
+
+        // DrawRectangle(0, 0, 30, 30, BLUE);
+
         // rlLoadIdentity();
         // rlPushMatrix();
         // rlTranslatef(0, screenHeight, 0);  // Move origin to the bottom-left corner
