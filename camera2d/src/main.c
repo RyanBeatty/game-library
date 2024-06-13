@@ -39,9 +39,9 @@ int main(void) {
         // BeginMode2D(camera);
 
         // Apply the vertical flip transformation
-        // rlMatrixMode(RL_PROJECTION);
-        // rlLoadIdentity();
-        // rlOrtho(0, screenWidth, screenHeight, 0, 1, -1);
+        rlMatrixMode(RL_PROJECTION);
+        rlLoadIdentity();
+        rlOrtho(0, screenWidth, screenHeight, 0, 1, -1);
         // rlLoadIdentity();
         // rlPushMatrix();
         // rlTranslatef(0, screenHeight, 0);  // Move origin to the bottom-left corner
