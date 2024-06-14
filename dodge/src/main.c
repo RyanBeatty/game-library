@@ -489,7 +489,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     // bomb->p = entity->p;
                     bomb->p = (Vector3){50, 50, 0};
                     Vector3 displacement = Vector3Scale((Vector3){100, 0, 0}, delta);
-                    bomb->pp = Vector3Subtract(bomb->p, Vector3Multiply(DOWN, displacement));
+                    bomb->pp = Vector3Subtract(bomb->p, displacement);
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -534,17 +534,18 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
 
             // TODO: Once camera is set up, start in camera space and convert to screen space.
-            const Vector3 g = {0, -9.8 * 1000.0f, 0};
+            const Vector3 g = {0, 9.8 * 1000.0f, 0};
             Vector3 force = Vector3Scale(g, entity->m);
             entity->a = Vector3Scale(force, 1.0f / entity->m);
             Vector3 displacement =
                 Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(entity->a, delta * delta));
-            next_p = Vector3Add(entity->p, Vector3Multiply(DOWN, displacement));
+            next_p = Vector3Add(entity->p, displacement);
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_WALL)) {
+                    entity->p = entity->pp;
                     next_p = entity->pp;
                     entity->a = Vector3Zero();
                 }
