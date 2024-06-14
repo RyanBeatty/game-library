@@ -290,6 +290,7 @@ static void SimpleScene(GameState* state) {
         int width = GetScreenWidth();
         int height = y * 2.0f;
         entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
+        entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -302,6 +303,7 @@ static void SimpleScene(GameState* state) {
         int width = 100;
         int height = GetScreenHeight();
         entity->p = (Vector3){-width + (width * 0.5f), height * 0.5f, 0};
+        entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -314,6 +316,7 @@ static void SimpleScene(GameState* state) {
         int width = 100;
         int height = GetScreenHeight();
         entity->p = (Vector3){GetScreenWidth() + (width * 0.5f), height * 0.5f, 0};
+        entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -327,6 +330,7 @@ static void SimpleScene(GameState* state) {
         int height = 40;
         float y = ground_y - height;
         entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f), 0};
+        entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -342,6 +346,7 @@ static void SimpleScene(GameState* state) {
         int width = 50;
         int height = 25;
         entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
+        entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 2.5f;
@@ -357,6 +362,7 @@ static void SimpleScene(GameState* state) {
         int height = 25;
         float y = ground_y - height - 10.0f;
         entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
+        entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 3.5f;
@@ -394,7 +400,6 @@ static void GameStateUpdate(GameState* state, float delta) {
             continue;
         }
 
-        entity->pp = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             entity->damage_timer += delta;
 
@@ -481,6 +486,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     int width = 8;
                     int height = 15;
                     bomb->p = entity->p;
+                    bomb->pp = Vector3Subtract(entity->p, Vector3Multiply(DOWN, (Vector3){20, 0, 0}));
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -509,6 +515,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Entity* explosion = AllocateEntity();
                     SetFlag(explosion->flags, EFLAG_EXPLOSION);
                     explosion->p = entity->p;
+                    explosion->pp = explosion->p;
                     int width = 100;
                     int height = 100;
                     Image image = GenImageColor(width, height, BLANK);
@@ -557,6 +564,8 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             PlaySoundIfNotPlaying(SOUND_BOMB_EXPLOSION);
         }
+
+        entity->pp = entity->p;
     }
 }
 
