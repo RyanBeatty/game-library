@@ -158,7 +158,6 @@ typedef struct Entity {
     EntityId id;
     Vector3 p;
     Vector3 pp;
-    Vector3 v0;
     Vector3 a;
     float m;
     Quaternion rot;
@@ -401,7 +400,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             continue;
         }
 
-        entity->pp = entity->p;
+        Vector3 next_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             entity->damage_timer += delta;
 
@@ -428,7 +427,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
             Vector3 prev_p = entity->p;
             Vector3 movement = Vector3Scale(Vector3Scale(direction, speed), delta);
-            entity->p = Vector3Add(entity->p, movement);
+            next_p = Vector3Add(entity->p, movement);
 
             bool walking = !Vector3Equals(movement, Vector3Zero());
             CollisionInfo info = CheckEntityCollisionScene(entity);
@@ -442,7 +441,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
-                    entity->p = prev_p;
+                    next_p = prev_p;
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_COIN)) {
@@ -487,8 +486,10 @@ static void GameStateUpdate(GameState* state, float delta) {
                     SetFlag(bomb->flags, EFLAG_BOMB);
                     int width = 8;
                     int height = 15;
-                    bomb->p = entity->p;
-                    bomb->v0 = (Vector3){3, 0, 0};
+                    // bomb->p = entity->p;
+                    bomb->p = (Vector3){50, 50, 0};
+                    Vector3 displacement = Vector3Scale((Vector3){100, 0, 0}, delta);
+                    bomb->pp = Vector3Subtract(bomb->p, Vector3Multiply(DOWN, displacement));
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -536,15 +537,15 @@ static void GameStateUpdate(GameState* state, float delta) {
             const Vector3 g = {0, -9.8 * 1000.0f, 0};
             Vector3 force = Vector3Scale(g, entity->m);
             entity->a = Vector3Scale(force, 1.0f / entity->m);
-            Vector3 displacement = Vector3Add(
-                entity->v0, Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(entity->a, delta * delta)));
-            entity->p = Vector3Add(entity->p, Vector3Multiply(DOWN, displacement));
+            Vector3 displacement =
+                Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(entity->a, delta * delta));
+            next_p = Vector3Add(entity->p, Vector3Multiply(DOWN, displacement));
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_WALL)) {
-                    entity->p = entity->pp;
+                    next_p = entity->pp;
                     entity->a = Vector3Zero();
                 }
             }
@@ -566,6 +567,9 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             PlaySoundIfNotPlaying(SOUND_BOMB_EXPLOSION);
         }
+
+        entity->pp = entity->p;
+        entity->p = next_p;
     }
 }
 
