@@ -487,8 +487,8 @@ static void GameStateUpdate(GameState* state, float delta) {
                     int width = 8;
                     int height = 15;
                     // bomb->p = entity->p;
-                    bomb->p = (Vector3){50, 50, 0};
-                    Vector3 displacement = Vector3Scale((Vector3){100, 0, 0}, delta);
+                    bomb->p = (Vector3){200, 200, 0};
+                    Vector3 displacement = Vector3Scale((Vector3){100, -1600, 0}, delta);
                     bomb->pp = Vector3Subtract(bomb->p, displacement);
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
