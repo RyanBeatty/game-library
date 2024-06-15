@@ -553,7 +553,6 @@ static void GameStateUpdate(GameState* state, float delta) {
 
                     Vector3 direction = {0.0f, -1.0f, 0.0f};
                     Vector3 displacement = Vector3Multiply(direction, penetration);
-                    breakpoint();
                     entity->p = Vector3Add(entity->p, displacement);
                     cur_p = entity->p;
                     entity->a = Vector3Zero();
