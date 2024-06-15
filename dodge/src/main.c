@@ -478,17 +478,21 @@ static void GameStateUpdate(GameState* state, float delta) {
                 // Calculate random initial velocity.
                 Vector2 v = Vector2Rotate((Vector2){1, 0}, GetRandomValue(0, 180) * DEG2RAD);
                 v = Vector2Scale(v, GetRandomValue(10, 100));
-                Vector3 v3 = {v.x, v.y, 0};
 
                 // Spawn bomb.
                 if (TestFlag(entity->spawn_flags, SFLAG_BOMB)) {
+                    static bool RIGHT = true;
+
                     Entity* bomb = AllocateEntity();
                     SetFlag(bomb->flags, EFLAG_BOMB);
                     int width = 8;
                     int height = 15;
                     // bomb->p = entity->p;
                     bomb->p = (Vector3){200, 200, 0};
-                    Vector3 displacement = Vector3Scale((Vector3){100, -1600, 0}, delta);
+                    float x_displacement = GetRandomValue(200, 400);
+                    x_displacement *= RIGHT ? 1.0f : -1.0f;
+                    RIGHT = !RIGHT;
+                    Vector3 displacement = Vector3Scale((Vector3){x_displacement, -1600, 0}, delta);
                     bomb->pp = Vector3Subtract(bomb->p, displacement);
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
