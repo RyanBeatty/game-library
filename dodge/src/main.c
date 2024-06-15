@@ -172,6 +172,10 @@ typedef struct Entity {
 
     float spawn_move_timer;
     float spawn_move_time;
+    float spawn_timer;
+    float spawn_time;
+    float spawn_count;
+    float spawn_total;
     SpawnFlag spawn_flags;
 
     float damage_timer;
@@ -350,6 +354,8 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 2.5f;
+        entity->spawn_time = 0.3f;
+        entity->spawn_total = 3;
         SetFlag(entity->spawn_flags, SFLAG_BOMB);
         FlagOff(entity->flags, EFLAG_DRAW);
     }
@@ -366,6 +372,7 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->spawn_move_time = 3.5f;
+        entity->spawn_total = 1;
         SetFlag(entity->spawn_flags, SFLAG_COIN);
         FlagOff(entity->flags, EFLAG_DRAW);
     }
@@ -465,16 +472,11 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         if (TestFlag(entity->flags, EFLAG_SPAWN_BOMB)) {
             entity->spawn_move_timer += delta;
-            if (entity->spawn_move_timer >= entity->spawn_move_time) {
-                entity->spawn_move_timer = 0.0f;
-                // Move randomly.
-                {
-                    float min = 0.0f;
-                    float max = GetScreenWidth();
-                    float choice = GetRandomValue(min, max);
-                    entity->p.x = choice;
-                }
+            entity->spawn_timer += delta;
 
+            if ((entity->spawn_timer >= entity->spawn_time) && entity->spawn_count > 0) {
+                --entity->spawn_count;
+                entity->spawn_timer = 0.0f;
                 // Calculate random initial velocity.
                 Vector2 v = Vector2Rotate((Vector2){1, 0}, GetRandomValue(0, 180) * DEG2RAD);
                 v = Vector2Scale(v, GetRandomValue(10, 100));
@@ -510,6 +512,18 @@ static void GameStateUpdate(GameState* state, float delta) {
                     bomb->texture = LoadTextureFromImage(GenImageColor(width, height, PINK));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+                }
+            }
+
+            if (entity->spawn_move_timer >= entity->spawn_move_time) {
+                entity->spawn_move_timer = 0.0f;
+                entity->spawn_count = entity->spawn_total;
+                // Move randomly.
+                {
+                    float min = 0.0f;
+                    float max = GetScreenWidth();
+                    float choice = GetRandomValue(min, max);
+                    entity->p.x = choice;
                 }
             }
         }
