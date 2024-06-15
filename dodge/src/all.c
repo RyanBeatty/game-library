@@ -9,6 +9,7 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 // Comment to prevent autolinting
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>

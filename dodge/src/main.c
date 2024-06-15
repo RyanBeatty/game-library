@@ -400,7 +400,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             continue;
         }
 
-        Vector3 next_p = entity->p;
+        Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             entity->damage_timer += delta;
 
@@ -427,7 +427,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
             Vector3 prev_p = entity->p;
             Vector3 movement = Vector3Scale(Vector3Scale(direction, speed), delta);
-            next_p = Vector3Add(entity->p, movement);
+            entity->p = Vector3Add(entity->p, movement);
 
             bool walking = !Vector3Equals(movement, Vector3Zero());
             CollisionInfo info = CheckEntityCollisionScene(entity);
@@ -441,7 +441,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
-                    next_p = prev_p;
+                    entity->p = prev_p;
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_COIN)) {
@@ -539,14 +539,23 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->a = Vector3Scale(force, 1.0f / entity->m);
             Vector3 displacement =
                 Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(entity->a, delta * delta));
-            next_p = Vector3Add(entity->p, displacement);
+            entity->p = Vector3Add(entity->p, displacement);
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_WALL)) {
-                    entity->p = entity->pp;
-                    next_p = entity->pp;
+                    TraceLog(LOG_INFO, "fabs: %f", fabs(entity->p.x - e->p.x));
+                    Vector3 distance = Vector3Subtract(entity->p, e->p);
+                    float pen_y = (0.5f * (entity->shape.height + e->shape.height)) - fabs(distance.y);
+                    Assert(pen_y > 0.0f);
+                    Vector3 penetration = {0.0f, pen_y, 0.0f};
+
+                    Vector3 direction = {0.0f, -1.0f, 0.0f};
+                    Vector3 displacement = Vector3Multiply(direction, penetration);
+                    breakpoint();
+                    entity->p = Vector3Add(entity->p, displacement);
+                    cur_p = entity->p;
                     entity->a = Vector3Zero();
                 }
             }
@@ -569,8 +578,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             PlaySoundIfNotPlaying(SOUND_BOMB_EXPLOSION);
         }
 
-        entity->pp = entity->p;
-        entity->p = next_p;
+        entity->pp = cur_p;
     }
 }
 
