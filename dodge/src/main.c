@@ -8,8 +8,8 @@
 
 #endif
 
-const int ScreenWidth = 800;
-const int ScreenHeight = 450;
+const float ScreenWidth = 800 * 1.5;
+const float ScreenHeight = 450 * 1.5;
 
 static const Vector3 DOWN = {1, -1, 1};
 
@@ -489,8 +489,8 @@ static void GameStateUpdate(GameState* state, float delta) {
                     SetFlag(bomb->flags, EFLAG_BOMB);
                     int width = 8;
                     int height = 15;
-                    // bomb->p = entity->p;
                     bomb->p = (Vector3){200, 200, 0};
+                    // bomb->p = entity->p;
                     float x_displacement = GetRandomValue(200, 400);
                     x_displacement *= RIGHT ? 1.0f : -1.0f;
                     RIGHT = !RIGHT;
