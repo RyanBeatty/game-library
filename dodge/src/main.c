@@ -545,7 +545,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_WALL)) {
-                    TraceLog(LOG_INFO, "fabs: %f", fabs(entity->p.x - e->p.x));
+                    // TODO: It only handles if an object falls top to bottom. but by god it finally works!.
                     Vector3 distance = Vector3Subtract(entity->p, e->p);
                     float pen_y = (0.5f * (entity->shape.height + e->shape.height)) - fabs(distance.y);
                     Assert(pen_y > 0.0f);
@@ -556,6 +556,8 @@ static void GameStateUpdate(GameState* state, float delta) {
                     entity->p = Vector3Add(entity->p, displacement);
                     cur_p = entity->p;
                     entity->a = Vector3Zero();
+                    Assert(fabs(entity->p.x - e->p.x) >= (0.5f * (entity->shape.width + e->shape.width)) ||
+                           fabs(entity->p.y - e->p.y) >= (0.5f * (entity->shape.height + e->shape.height)));
                 }
             }
         }
