@@ -564,6 +564,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 Entity* e = info.entities[i];
                 if (TestFlag(e->flags, EFLAG_WALL)) {
                     // TODO: It only handles if an object falls top to bottom. but by god it finally works!.
+                    Vector3 velocity = Vector3Subtract(entity->p, entity->pp);
                     Vector3 distance = Vector3Subtract(entity->p, e->p);
                     float pen_y = (0.5f * (entity->shape.height + e->shape.height)) - fabs(distance.y);
                     Assert(pen_y > 0.0f);
@@ -572,7 +573,8 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Vector3 direction = {0.0f, -1.0f, 0.0f};
                     Vector3 displacement = Vector3Multiply(direction, penetration);
                     entity->p = Vector3Add(entity->p, displacement);
-                    cur_p = entity->p;
+
+                    cur_p = Vector3Subtract(entity->p, (Vector3){0.2f * velocity.x, -0.2f * velocity.y, velocity.z});
                     entity->a = Vector3Zero();
                     Assert(fabs(entity->p.x - e->p.x) >= (0.5f * (entity->shape.width + e->shape.width)) ||
                            fabs(entity->p.y - e->p.y) >= (0.5f * (entity->shape.height + e->shape.height)));
