@@ -300,7 +300,7 @@ static void SimpleScene(GameState* state) {
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     }
 
-    // Ground.
+    // Ceiling.
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_WALL);
@@ -308,7 +308,7 @@ static void SimpleScene(GameState* state) {
         ground_y = y;
         int width = GetScreenWidth();
         int height = 120;
-        entity->p = (Vector3){200, 50, 0};
+        entity->p = (Vector3){200, 30, 0};
         // entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
         entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
