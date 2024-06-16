@@ -300,6 +300,22 @@ static void SimpleScene(GameState* state) {
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     }
 
+    // Ground.
+    {
+        Entity* entity = AllocateEntity();
+        SetFlag(entity->flags, EFLAG_WALL);
+        float y = GetScreenHeight() * 0.65;
+        ground_y = y;
+        int width = GetScreenWidth();
+        int height = 120;
+        entity->p = (Vector3){200, 50, 0};
+        // entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
+        entity->pp = entity->p;
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+    }
+
     // Left wall.
     {
         Entity* entity = AllocateEntity();
@@ -570,8 +586,10 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Assert(pen_y > 0.0f);
                     Vector3 penetration = {0.0f, pen_y, 0.0f};
 
-                    Vector3 direction = {0.0f, -1.0f, 0.0f};
+                    // Get the direction of the displacement, by normalizing the y direction.
+                    Vector3 direction = Vector3Multiply(distance, (Vector3){0.0f, 1.0f / fabs(distance.y), 0.0f});
                     Vector3 displacement = Vector3Multiply(direction, penetration);
+                    Vector3 foo = entity->p;
                     entity->p = Vector3Add(entity->p, displacement);
 
                     cur_p = Vector3Subtract(entity->p, (Vector3){0.2f * velocity.x, -0.2f * velocity.y, velocity.z});
