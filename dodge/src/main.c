@@ -586,10 +586,13 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Assert(pen_x >= 0.0f);
                     float pen_y = (0.5f * (entity->shape.height + e->shape.height)) - fabs(distance.y);
                     Assert(pen_y >= 0.0f);
+                    Vector3 bounce_and_friction = {0.0f};
                     if (pen_x <= pen_y) {
                         pen_y = 0.0f;
+                        bounce_and_friction = (Vector3){-0.2f, 0.2f, 1.0f};
                     } else {
                         pen_x = 0.0f;
+                        bounce_and_friction = (Vector3){0.2f, -0.2f, 1.0f};
                     }
                     Vector3 penetration = {pen_x, pen_y, 0.0f};
 
@@ -600,7 +603,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Vector3 foo = entity->p;
                     entity->p = Vector3Add(entity->p, displacement);
 
-                    cur_p = Vector3Subtract(entity->p, (Vector3){0.2f * velocity.x, -0.2f * velocity.y, velocity.z});
+                    cur_p = Vector3Subtract(entity->p, Vector3Multiply(bounce_and_friction, velocity));
                     entity->a = Vector3Zero();
                     Assert(fabs(entity->p.x - e->p.x) >= (0.5f * (entity->shape.width + e->shape.width)) ||
                            fabs(entity->p.y - e->p.y) >= (0.5f * (entity->shape.height + e->shape.height)));
