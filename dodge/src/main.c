@@ -505,7 +505,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     SetFlag(bomb->flags, EFLAG_BOMB);
                     int width = 8;
                     int height = 15;
-                    bomb->p = (Vector3){200, 200, 0};
+                    bomb->p = (Vector3){50, 200, 0};
                     // bomb->p = entity->p;
                     float x_displacement = GetRandomValue(200, 400);
                     x_displacement *= RIGHT ? 1.0f : -1.0f;
@@ -582,12 +582,20 @@ static void GameStateUpdate(GameState* state, float delta) {
                     // TODO: It only handles if an object falls top to bottom. but by god it finally works!.
                     Vector3 velocity = Vector3Subtract(entity->p, entity->pp);
                     Vector3 distance = Vector3Subtract(entity->p, e->p);
+                    float pen_x = (0.5f * (entity->shape.width + e->shape.width)) - fabs(distance.x);
+                    Assert(pen_x >= 0.0f);
                     float pen_y = (0.5f * (entity->shape.height + e->shape.height)) - fabs(distance.y);
-                    Assert(pen_y > 0.0f);
-                    Vector3 penetration = {0.0f, pen_y, 0.0f};
+                    Assert(pen_y >= 0.0f);
+                    if (pen_x <= pen_y) {
+                        pen_y = 0.0f;
+                    } else {
+                        pen_x = 0.0f;
+                    }
+                    Vector3 penetration = {pen_x, pen_y, 0.0f};
 
                     // Get the direction of the displacement, by normalizing the y direction.
-                    Vector3 direction = Vector3Multiply(distance, (Vector3){0.0f, 1.0f / fabs(distance.y), 0.0f});
+                    Vector3 direction =
+                        Vector3Multiply(distance, (Vector3){1.0f / fabs(distance.x), 1.0f / fabs(distance.y), 0.0f});
                     Vector3 displacement = Vector3Multiply(direction, penetration);
                     Vector3 foo = entity->p;
                     entity->p = Vector3Add(entity->p, displacement);
