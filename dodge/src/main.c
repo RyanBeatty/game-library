@@ -450,7 +450,9 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
             Vector3 a = Vector3Scale(direction, speed);
             Vector3 displacement = Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(a, delta * delta));
-            displacement = Vector3Scale(displacement, 0.9f);
+            if (Vector3Equals(direction, Vector3Zero())) {
+                displacement = Vector3Scale(displacement, 0.8f);
+            }
             entity->p = Vector3Add(entity->p, displacement);
 
             bool walking = !Vector3Equals(displacement, Vector3Zero());
