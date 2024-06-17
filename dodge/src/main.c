@@ -442,17 +442,22 @@ static void GameStateUpdate(GameState* state, float delta) {
                 direction = Vector3Add(direction, (Vector3){-1, 0, 0});
             }
 
-            float speed = 200.0f;
+            float speed = 2000.0f;
             entity->dash_timer += delta;
             if (IsKeyPressed(KEY_SPACE)) {
                 entity->dash_timer = 0.0f;
                 speed *= 30.0f;
             }
+            Vector3 a = Vector3Scale(direction, speed);
+            Vector3 displacement = Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(a, delta * delta));
+            displacement = Vector3Scale(displacement, 0.9f);
             Vector3 prev_p = entity->p;
-            Vector3 movement = Vector3Scale(Vector3Scale(direction, speed), delta);
-            entity->p = Vector3Add(entity->p, movement);
+            entity->p = Vector3Add(entity->p, displacement);
 
-            bool walking = !Vector3Equals(movement, Vector3Zero());
+            // Vector3 movement = Vector3Scale(Vector3Scale(direction, speed), delta);
+            // entity->p = Vector3Add(entity->p, movement);
+
+            bool walking = !Vector3Equals(displacement, Vector3Zero());
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
@@ -506,7 +511,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     int width = 8;
                     int height = 15;
                     bomb->p = (Vector3){50, 200, 0};
-                    // bomb->p = entity->p;
+                    bomb->p = entity->p;
                     float x_displacement = GetRandomValue(200, 400);
                     x_displacement *= RIGHT ? 1.0f : -1.0f;
                     RIGHT = !RIGHT;
