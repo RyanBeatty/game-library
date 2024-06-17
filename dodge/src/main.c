@@ -451,11 +451,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             Vector3 a = Vector3Scale(direction, speed);
             Vector3 displacement = Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(a, delta * delta));
             displacement = Vector3Scale(displacement, 0.9f);
-            Vector3 prev_p = entity->p;
             entity->p = Vector3Add(entity->p, displacement);
-
-            // Vector3 movement = Vector3Scale(Vector3Scale(direction, speed), delta);
-            // entity->p = Vector3Add(entity->p, movement);
 
             bool walking = !Vector3Equals(displacement, Vector3Zero());
             CollisionInfo info = CheckEntityCollisionScene(entity);
@@ -469,7 +465,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
-                    entity->p = prev_p;
+                    entity->p = cur_p;
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_COIN)) {
@@ -605,7 +601,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Vector3 direction =
                         Vector3Multiply(distance, (Vector3){1.0f / fabs(distance.x), 1.0f / fabs(distance.y), 0.0f});
                     Vector3 displacement = Vector3Multiply(direction, penetration);
-                    Vector3 foo = entity->p;
+                    // Vector3 foo = entity->p;
                     entity->p = Vector3Add(entity->p, displacement);
 
                     cur_p = Vector3Subtract(entity->p, Vector3Multiply(bounce_and_friction, velocity));
