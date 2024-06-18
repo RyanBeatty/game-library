@@ -434,12 +434,15 @@ static void GameStateUpdate(GameState* state, float delta) {
                 continue;
             }
 
+            bool moved = false;
             Vector3 direction = Vector3Zero();
             if (IsKeyDown(KEY_RIGHT)) {
                 direction = Vector3Add(direction, (Vector3){1, 0, 0});
+                moved = true;
             }
             if (IsKeyDown(KEY_LEFT)) {
                 direction = Vector3Add(direction, (Vector3){-1, 0, 0});
+                moved = true;
             }
 
             float speed = 2000.0f;
@@ -449,10 +452,16 @@ static void GameStateUpdate(GameState* state, float delta) {
                 speed *= 30.0f;
             }
             Vector3 a = Vector3Scale(direction, speed);
-            Vector3 displacement = Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(a, delta * delta));
-            if (Vector3Equals(direction, Vector3Zero())) {
-                displacement = Vector3Scale(displacement, 0.8f);
+            Vector3 v = Vector3Subtract(entity->p, entity->pp);
+            if (fabs(v.x) > 10.0f) {
+                v.x = (v.x < 0.0f ? -1.0f : 1.0f) * 10.0f;
             }
+            Vector3 displacement = Vector3Add(v, Vector3Scale(a, delta * delta));
+            if (!moved) {
+                displacement = Vector3Scale(displacement, 0.3f);
+            }
+            TraceLog(LOG_INFO, "x dis: %f", displacement.x);
+
             entity->p = Vector3Add(entity->p, displacement);
 
             bool walking = !Vector3Equals(displacement, Vector3Zero());
