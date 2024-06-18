@@ -458,7 +458,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
             Vector3 displacement = Vector3Add(v, Vector3Scale(a, delta * delta));
             if (!moved) {
-                displacement = Vector3Scale(displacement, 0.3f);
+                displacement = Vector3Scale(displacement, 0.6f);
             }
             TraceLog(LOG_INFO, "x dis: %f", displacement.x);
 
@@ -476,7 +476,14 @@ static void GameStateUpdate(GameState* state, float delta) {
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_WALL)) {
-                    entity->p = cur_p;
+                    // Project out in x dir.
+                    float dist_x = entity->p.x - e->p.x;
+                    float delta_x = (0.5f * (entity->shape.width + e->shape.width)) - fabs(dist_x);
+                    Assert(delta_x >= 0.0f);
+                    float dir_x = dist_x / fabs(dist_x);
+                    float disp_x = dir_x * delta_x;
+                    entity->p.x += disp_x;
+                    cur_p = entity->p;
                     walking = false;
                 }
                 if (TestFlag(e->flags, EFLAG_COIN)) {
