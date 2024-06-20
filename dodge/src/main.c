@@ -15,6 +15,28 @@ static const Vector3 DOWN = {1, -1, 1};
 
 ////////////////////////////////////////////////////////////
 
+typedef enum TextureId { TEXTURE_NONE = 0, TEXTURE_TILEMAP_CHARACTERS, TEXTURE_COUNT } TextureId;
+
+Texture Textures[TEXTURE_COUNT];
+
+static void TextureCacheInit() {
+    memset(&Textures, 0, ArraySizeOf(Textures) * sizeof(Textures[0]));
+
+    Textures[TEXTURE_TILEMAP_CHARACTERS] = LoadTexture("assets/art/tilemap-characters.png");
+    Assert(IsTextureReady(Textures[TEXTURE_TILEMAP_CHARACTERS]));
+}
+
+#define GetTexture(id) (Textures[(id)])
+
+static Rectangle TextureGetTile(Texture texture, int32_t tile_w, int32_t tile_h, uint32_t idx) {
+    return (Rectangle){.x = (tile_w * idx) % texture.width,
+                       .y = tile_h * ((tile_w * idx) / texture.width),
+                       .width = tile_w,
+                       .height = tile_h};
+}
+
+////////////////////////////////////////////////////////////
+
 typedef enum SoundId {
     SOUND_NONE = 0,
     SOUND_BOMB_EXPLOSION,
@@ -262,6 +284,8 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
 
 ////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////
+
 typedef struct GameState {
     Camera camera;
 
@@ -346,13 +370,14 @@ static void SimpleScene(GameState* state) {
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 28;
-        int height = 40;
+        int width = 24;
+        int height = 24;
         float y = ground_y - height;
         entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f), 0};
         entity->pp = entity->p;
-        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
+        entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
+        entity->bitmap_rec = TextureGetTile(entity->texture, 25, 25, 1);
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
@@ -405,6 +430,7 @@ static void GameStateInit(GameState* state) {
     SetTargetFPS(60);
     EntitySystemInit();
     AudioSystemInit();
+    TextureCacheInit();
 
     SimpleScene(state);
 }
