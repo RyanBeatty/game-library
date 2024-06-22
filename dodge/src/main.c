@@ -8,14 +8,19 @@
 
 #endif
 
-const float ScreenWidth = 800 * 1.5;
-const float ScreenHeight = 450 * 1.5;
+const float ScreenWidth = 320 * 2;   // 800 * 1.5;
+const float ScreenHeight = 180 * 2;  // 450 * 1.5;
 
 static const Vector3 DOWN = {1, -1, 1};
 
 ////////////////////////////////////////////////////////////
 
-typedef enum TextureId { TEXTURE_NONE = 0, TEXTURE_TILEMAP_CHARACTERS, TEXTURE_COUNT } TextureId;
+typedef enum TextureId {
+    TEXTURE_NONE = 0,
+    TEXTURE_TILEMAP_CHARACTERS,
+    TEXTURE_TILEMAP_BACKGROUND,
+    TEXTURE_COUNT
+} TextureId;
 
 Texture Textures[TEXTURE_COUNT];
 
@@ -24,15 +29,20 @@ static void TextureCacheInit() {
 
     Textures[TEXTURE_TILEMAP_CHARACTERS] = LoadTexture("assets/art/tilemap-characters.png");
     Assert(IsTextureReady(Textures[TEXTURE_TILEMAP_CHARACTERS]));
+
+    Textures[TEXTURE_TILEMAP_BACKGROUND] = LoadTexture("assets/art/tilemap-background.png");
+    Assert(IsTextureReady(Textures[TEXTURE_TILEMAP_BACKGROUND]));
 }
 
 #define GetTexture(id) (Textures[(id)])
 
-static Rectangle TextureGetTile(Texture texture, int32_t tile_w, int32_t tile_h, uint32_t idx) {
-    return (Rectangle){.x = (tile_w * idx) % texture.width,
-                       .y = tile_h * ((tile_w * idx) / texture.width),
-                       .width = tile_w,
-                       .height = tile_h};
+static Rectangle TextureGetTile(Texture texture, int32_t tile_w, int32_t tile_h, int32_t spacing_x, int32_t spacing_y,
+                                uint32_t idx) {
+    uint32_t ncols = (texture.width + spacing_x) / (tile_w + spacing_x);
+    uint32_t row = idx / ncols;
+    uint32_t col = idx % ncols;
+    return (Rectangle){
+        .x = (tile_w + spacing_x) * col, .y = (tile_h + spacing_y) * row, .width = tile_w, .height = tile_h};
 }
 
 ////////////////////////////////////////////////////////////
@@ -377,7 +387,7 @@ static void SimpleScene(GameState* state) {
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
-        entity->bitmap_rec = TextureGetTile(entity->texture, 25, 25, 1);
+        entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 1, 1, 1);
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
@@ -565,14 +575,14 @@ static void GameStateUpdate(GameState* state, float delta) {
 
                 // Spawn Coin.
                 if (TestFlag(entity->spawn_flags, SFLAG_COIN)) {
-                    Entity* bomb = AllocateEntity();
-                    SetFlag(bomb->flags, EFLAG_COIN);
-                    bomb->p = entity->p;
-                    int width = 20;
-                    int height = 20;
-                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, PINK));
-                    bomb->bitmap_rec = (Rectangle){0, 0, width, height};
-                    bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+                    Entity* coin = AllocateEntity();
+                    SetFlag(coin->flags, EFLAG_COIN);
+                    coin->p = entity->p;
+                    int width = 18;
+                    int height = 18;
+                    coin->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
+                    coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 1, 1, 151);
+                    coin->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
             }
 
