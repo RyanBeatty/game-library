@@ -330,8 +330,9 @@ static void LoadLevel() {
     const cJSON* tileset = NULL;
     cJSON_ArrayForEach(tileset, tilesets) {
         Assert(tileset != NULL);
-        const cJSON* uid = cJSON_GetObjectItemCaseSensitive(tileset, "uid");
-        Assert(uid != NULL && cJSON_IsNumber(uid));
+        const cJSON* uid_js = cJSON_GetObjectItemCaseSensitive(tileset, "uid");
+        Assert(uid_js != NULL && cJSON_IsNumber(uid_js));
+        int uid = uid_js->valueint;
 
         const cJSON* path = cJSON_GetObjectItemCaseSensitive(tileset, "relPath");
         Assert(path != NULL && cJSON_IsString(path));
@@ -343,6 +344,7 @@ static void LoadLevel() {
         Texture* texture = AllocateTexture();
         *texture = LoadTexture(tileset_path);
         Assert(IsTextureReady(*texture));
+        textures[uid] = texture;
     }
     UnloadFileText(data);
 }
