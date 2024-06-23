@@ -15,12 +15,12 @@ static const Vector3 DOWN = {1, -1, 1};
 
 ////////////////////////////////////////////////////////////
 
-typedef enum TextureId {
+typedef enum TextureLabel {
     TEXTURE_NONE = 0,
     TEXTURE_TILEMAP_CHARACTERS,
     TEXTURE_TILEMAP_BACKGROUND,
     TEXTURE_COUNT
-} TextureId;
+} TextureLabel;
 
 Texture Textures[TEXTURE_COUNT];
 
@@ -40,7 +40,20 @@ static void TextureCacheInit() {
     }
 }
 
-#define GetTexture(id) (Textures[(id)])
+#define GetTexture(idx) (Textures[(idx)])
+
+static Texture* AllocateTexture() {
+    Texture* texture = NULL;
+    for (uint32_t i = 0; i < ArraySizeOf(Textures); ++i) {
+        Texture* texture = &GetTexture(i);
+        if (texture->id != 0) {
+            break;
+        }
+    }
+    Assert(texture != NULL);
+    memset(texture, 0, sizeof(*texture));
+    return texture;
+}
 
 static Rectangle TextureGetTile(Texture texture, int32_t tile_w, int32_t tile_h, int32_t spacing_x, int32_t spacing_y,
                                 uint32_t idx) {
@@ -320,7 +333,6 @@ static GameState GState;
 #define GetGameState() (&GState)
 
 static void SimpleScene(GameState* state) {
-    EntitySystemInit();
     state->score = 0.0f;
 
     float ground_y = 0.0f;
