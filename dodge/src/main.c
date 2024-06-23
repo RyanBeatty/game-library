@@ -313,6 +313,26 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
 
 ////////////////////////////////////////////////////////////
 
+static void LoadLevel() {
+    char* data = LoadFileText("assets/level/level.ldtk");
+    Assert(data != NULL);
+    cJSON* level = cJSON_Parse(data);
+    Assert(level != NULL);
+    const cJSON* defs = cJSON_GetObjectItemCaseSensitive(level, "defs");
+    Assert(defs != NULL);
+    const cJSON* tilesets = cJSON_GetObjectItemCaseSensitive(defs, "tilesets");
+    Assert(tilesets != NULL);
+
+    Texture* textures[256] = {0};
+    const cJSON* tileset = NULL;
+    cJSON_ArrayForEach(tileset, tilesets) {
+        Assert(tileset != NULL);
+        const cJSON* uid = cJSON_GetObjectItemCaseSensitive(tileset, "uid");
+        Assert(uid != NULL && cJSON_IsNumber(uid));
+    }
+    UnloadFileText(data);
+}
+
 ////////////////////////////////////////////////////////////
 
 typedef struct GameState {
@@ -333,6 +353,8 @@ static GameState GState;
 #define GetGameState() (&GState)
 
 static void SimpleScene(GameState* state) {
+    LoadLevel();
+
     state->score = 0.0f;
 
     float ground_y = 0.0f;
@@ -514,7 +536,6 @@ static void GameStateUpdate(GameState* state, float delta) {
             if (!moved) {
                 displacement = Vector3Scale(displacement, 0.6f);
             }
-            TraceLog(LOG_INFO, "x dis: %f", displacement.x);
 
             entity->p = Vector3Add(entity->p, displacement);
 

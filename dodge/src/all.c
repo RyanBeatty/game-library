@@ -8,6 +8,8 @@
 // Only define once.
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
+//
+#include "../external/cJSON/cJSON.h"
 // Comment to prevent autolinting
 #include <math.h>
 #include <stdint.h>
