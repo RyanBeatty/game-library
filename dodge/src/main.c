@@ -22,7 +22,9 @@ typedef enum TextureLabel {
     TEXTURE_COUNT
 } TextureLabel;
 
-Texture Textures[TEXTURE_COUNT];
+#define TEXTURE_CAP (TEXTURE_COUNT + 32)
+
+Texture Textures[TEXTURE_CAP] = {0};
 
 static void TextureCacheInit() {
     memset(&Textures, 0, ArraySizeOf(Textures) * sizeof(Textures[0]));
@@ -45,8 +47,9 @@ static void TextureCacheInit() {
 static Texture* AllocateTexture() {
     Texture* texture = NULL;
     for (uint32_t i = 0; i < ArraySizeOf(Textures); ++i) {
-        Texture* texture = &GetTexture(i);
-        if (texture->id != 0) {
+        Texture* t = &GetTexture(i);
+        if (t->id == 0) {
+            texture = t;
             break;
         }
     }
@@ -329,6 +332,17 @@ static void LoadLevel() {
         Assert(tileset != NULL);
         const cJSON* uid = cJSON_GetObjectItemCaseSensitive(tileset, "uid");
         Assert(uid != NULL && cJSON_IsNumber(uid));
+
+        const cJSON* path = cJSON_GetObjectItemCaseSensitive(tileset, "relPath");
+        Assert(path != NULL && cJSON_IsString(path));
+
+        char tileset_path[256] = {0};
+        strcat(tileset_path, "assets/");
+        strcat(tileset_path, &path->valuestring[3]);
+
+        Texture* texture = AllocateTexture();
+        *texture = LoadTexture(tileset_path);
+        Assert(IsTextureReady(*texture));
     }
     UnloadFileText(data);
 }
