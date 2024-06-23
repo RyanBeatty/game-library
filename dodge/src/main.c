@@ -27,11 +27,17 @@ Texture Textures[TEXTURE_COUNT];
 static void TextureCacheInit() {
     memset(&Textures, 0, ArraySizeOf(Textures) * sizeof(Textures[0]));
 
-    Textures[TEXTURE_TILEMAP_CHARACTERS] = LoadTexture("assets/art/tilemap-characters.png");
-    Assert(IsTextureReady(Textures[TEXTURE_TILEMAP_CHARACTERS]));
+    {
+        Texture texture = LoadTexture("assets/art/tilemap-characters.png");
+        Assert(IsTextureReady(texture));
+        Textures[TEXTURE_TILEMAP_CHARACTERS] = texture;
+    }
 
-    Textures[TEXTURE_TILEMAP_BACKGROUND] = LoadTexture("assets/art/tilemap-background.png");
-    Assert(IsTextureReady(Textures[TEXTURE_TILEMAP_BACKGROUND]));
+    {
+        Texture texture = LoadTexture("assets/art/tilemap-background.png");
+        Assert(IsTextureReady(texture));
+        Textures[TEXTURE_TILEMAP_BACKGROUND] = texture;
+    }
 }
 
 #define GetTexture(id) (Textures[(id)])
