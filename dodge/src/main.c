@@ -346,6 +346,30 @@ static void LoadLevel() {
         Assert(IsTextureReady(*texture));
         textures[uid] = texture;
     }
+
+    const cJSON* levels = cJSON_GetObjectItemCaseSensitive(level, "levels");
+    Assert(levels != NULL);
+    const cJSON* cur_level = NULL;
+    cJSON_ArrayForEach(cur_level, levels) {
+        const cJSON* layers = cJSON_GetObjectItemCaseSensitive(cur_level, "layerInstances");
+        Assert(layers != NULL);
+        const cJSON* layer = NULL;
+        cJSON_ArrayForEach(layer, layers) {
+            const cJSON* type = cJSON_GetObjectItemCaseSensitive(layer, "__type");
+            Assert(type != NULL);
+            if (strcmp(type->valuestring, "Tiles") == 0) {
+                // const cJSON* grid_tiles = cJSON_GetObjectItemCaseSensitive(layer, "gridTiles");
+                // Assert(grid_tiles != NULL);
+                // const cJSON* grid_tile = NULL;
+                // cJSON_ArrayForEach(grid_tile, grid_tiles) {
+
+                // }
+            } else {
+                Assert(false);
+            }
+        }
+    }
+
     UnloadFileText(data);
 }
 
