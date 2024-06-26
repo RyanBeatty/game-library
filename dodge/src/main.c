@@ -358,6 +358,9 @@ static void LoadLevel() {
             const cJSON* type = cJSON_GetObjectItemCaseSensitive(layer, "__type");
             Assert(type != NULL);
             if (strcmp(type->valuestring, "Tiles") == 0) {
+                const cJSON* tileset_id = cJSON_GetObjectItemCaseSensitive(layer, "__tilesetDefUid");
+                Assert(tileset_id != NULL);
+                Texture* texture = textures[tileset_id->valueint];
                 // const cJSON* grid_tiles = cJSON_GetObjectItemCaseSensitive(layer, "gridTiles");
                 // Assert(grid_tiles != NULL);
                 // const cJSON* grid_tile = NULL;
