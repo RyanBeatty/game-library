@@ -361,12 +361,28 @@ static void LoadLevel() {
                 const cJSON* tileset_id = cJSON_GetObjectItemCaseSensitive(layer, "__tilesetDefUid");
                 Assert(tileset_id != NULL);
                 Texture* texture = textures[tileset_id->valueint];
-                // const cJSON* grid_tiles = cJSON_GetObjectItemCaseSensitive(layer, "gridTiles");
-                // Assert(grid_tiles != NULL);
-                // const cJSON* grid_tile = NULL;
-                // cJSON_ArrayForEach(grid_tile, grid_tiles) {
 
-                // }
+                const cJSON* grid_size_js = cJSON_GetObjectItemCaseSensitive(layer, "__gridSize");
+                Assert(grid_size_js != NULL);
+                int grid_size = grid_size_js->valueint;
+
+                const cJSON* grid_tiles = cJSON_GetObjectItemCaseSensitive(layer, "gridTiles");
+                Assert(grid_tiles != NULL);
+                const cJSON* grid_tile = NULL;
+                cJSON_ArrayForEach(grid_tile, grid_tiles) {
+                    const cJSON* px_js = cJSON_GetObjectItemCaseSensitive(grid_tile, "px");
+                    Assert(px_js != NULL);
+                    const cJSON* src_js = cJSON_GetObjectItemCaseSensitive(grid_tile, "src");
+                    Assert(src_js != NULL);
+
+                    Entity* entity = AllocateEntity();
+                    SetFlag(entity->flags, EFLAG_WALL);
+                    entity->p = (Vector3){px_js->child->valueint, px_js->child->next->valueint, 0};
+                    entity->texture = *texture;
+                    entity->bitmap_rec =
+                        (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
+                    entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
+                }
             } else {
                 Assert(false);
             }
