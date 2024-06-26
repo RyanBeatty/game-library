@@ -430,7 +430,7 @@ static void SimpleScene(GameState* state) {
         int height = y * 2.0f;
         entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
         entity->pp = entity->p;
-        entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
+        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     }
