@@ -245,7 +245,7 @@ typedef struct EntityEntry {
     Entity value;
 } EntityEntry;
 
-#define ENTITY_CAP 256
+#define ENTITY_CAP 512
 
 typedef struct EntityManager {
     Entity entities[ENTITY_CAP];
@@ -376,12 +376,14 @@ static void LoadLevel() {
                     Assert(src_js != NULL);
 
                     Entity* entity = AllocateEntity();
-                    SetFlag(entity->flags, EFLAG_WALL);
+                    // TODO: Parse flags from json.
+                    // SetFlag(entity->flags, EFLAG_WALL);
                     entity->p = (Vector3){px_js->child->valueint, px_js->child->next->valueint, 0};
                     entity->texture = *texture;
                     entity->bitmap_rec =
                         (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
-                    entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
+                    // TODO: Parse collision info from json.
+                    // entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
                 }
             } else {
                 Assert(false);
