@@ -245,7 +245,7 @@ typedef struct EntityEntry {
     Entity value;
 } EntityEntry;
 
-#define ENTITY_CAP 512
+#define ENTITY_CAP 1024
 
 typedef struct EntityManager {
     Entity entities[ENTITY_CAP];
@@ -396,9 +396,27 @@ static void LoadLevel() {
                 }
             } else if (strcmp(type->valuestring, "IntGrid") == 0) {
                 const cJSON* grid = NULL;
+
+                int i = 0;
+                int j = 0;
                 const cJSON* grids = cJSON_GetObjectItemCaseSensitive(layer, "intGridCsv");
                 Assert(grids != NULL);
-                cJSON_ArrayForEach(grid, grids) { int val = grid->valueint; }
+                cJSON_ArrayForEach(grid, grids) {
+                    Assert(j <= width && i <= height);
+                    int val = grid->valueint;
+                    Assert(val == 0 || val == 1);
+                    Entity* entity = AllocateEntity();
+                    // TODO: Parse flags from json.
+                    SetFlag(entity->flags, EFLAG_WALL);
+                    entity->p = (Vector3){i * grid_size, j * grid_size, 0};
+                    FlagOff(entity->flags, EFLAG_DRAW);
+                    // TODO: Parse collision info from json.
+                    entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
+
+                    ++j;
+                    i += !(j % width);
+                    j %= width;
+                }
 
             } else {
                 Assert(false);
