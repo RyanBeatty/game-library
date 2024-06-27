@@ -357,14 +357,23 @@ static void LoadLevel() {
         cJSON_ArrayForEach(layer, layers) {
             const cJSON* type = cJSON_GetObjectItemCaseSensitive(layer, "__type");
             Assert(type != NULL);
+
+            const cJSON* width_js = cJSON_GetObjectItemCaseSensitive(layer, "__cWid");
+            Assert(width_js != NULL);
+            const cJSON* height_js = cJSON_GetObjectItemCaseSensitive(layer, "__cHei");
+            Assert(height_js != NULL);
+
+            int width = width_js->valueint;
+            int height = height_js->valueint;
+
+            const cJSON* grid_size_js = cJSON_GetObjectItemCaseSensitive(layer, "__gridSize");
+            Assert(grid_size_js != NULL);
+            int grid_size = grid_size_js->valueint;
+
             if (strcmp(type->valuestring, "Tiles") == 0) {
                 const cJSON* tileset_id = cJSON_GetObjectItemCaseSensitive(layer, "__tilesetDefUid");
                 Assert(tileset_id != NULL);
                 Texture* texture = textures[tileset_id->valueint];
-
-                const cJSON* grid_size_js = cJSON_GetObjectItemCaseSensitive(layer, "__gridSize");
-                Assert(grid_size_js != NULL);
-                int grid_size = grid_size_js->valueint;
 
                 const cJSON* grid_tiles = cJSON_GetObjectItemCaseSensitive(layer, "gridTiles");
                 Assert(grid_tiles != NULL);
@@ -385,6 +394,12 @@ static void LoadLevel() {
                     // TODO: Parse collision info from json.
                     // entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
                 }
+            } else if (strcmp(type->valuestring, "IntGrid") == 0) {
+                const cJSON* grid = NULL;
+                const cJSON* grids = cJSON_GetObjectItemCaseSensitive(layer, "intGridCsv");
+                Assert(grids != NULL);
+                cJSON_ArrayForEach(grid, grids) { int val = grid->valueint; }
+
             } else {
                 Assert(false);
             }
