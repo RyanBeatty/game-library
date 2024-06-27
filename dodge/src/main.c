@@ -362,9 +362,15 @@ static void LoadLevel() {
             Assert(width_js != NULL);
             const cJSON* height_js = cJSON_GetObjectItemCaseSensitive(layer, "__cHei");
             Assert(height_js != NULL);
-
             int width = width_js->valueint;
             int height = height_js->valueint;
+
+            const cJSON* x_offset_js = cJSON_GetObjectItemCaseSensitive(layer, "__pxTotalOffsetX");
+            Assert(x_offset_js != NULL && cJSON_IsNumber(x_offset_js));
+            const cJSON* y_offset_js = cJSON_GetObjectItemCaseSensitive(layer, "__pxTotalOffsetY");
+            Assert(y_offset_js != NULL && cJSON_IsNumber(y_offset_js));
+            int x_offset = x_offset_js->valueint;
+            int y_offset = y_offset_js->valueint;
 
             const cJSON* grid_size_js = cJSON_GetObjectItemCaseSensitive(layer, "__gridSize");
             Assert(grid_size_js != NULL);
@@ -404,13 +410,16 @@ static void LoadLevel() {
                     if (val == 1) {
                         Assert(val == 0 || val == 1);
                         Entity* entity = AllocateEntity();
-                        FlagOff(entity->flags, EFLAG_DRAW);
+                        // FlagOff(entity->flags, EFLAG_DRAW);
                         SetFlag(entity->flags, EFLAG_WALL);
-                        entity->p = (Vector3){j * grid_size, i * grid_size, 0};
+                        breakpoint();
+                        entity->p = (Vector3){(j * grid_size) + x_offset, (i * grid_size) + y_offset, 0};
                         entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
 
-                        // entity->texture = LoadTextureFromImage(GenImageColor(grid_size, grid_size, BLACK));
-                        // entity->bitmap_rec = (Rectangle){0, 0, grid_size, grid_size};
+                        if (TestFlag(entity->flags, EFLAG_DRAW)) {
+                            entity->texture = LoadTextureFromImage(GenImageColor(grid_size, grid_size, BLACK));
+                            entity->bitmap_rec = (Rectangle){0, 0, grid_size, grid_size};
+                        }
                     }
 
                     ++j;
@@ -517,7 +526,7 @@ static void SimpleScene(GameState* state) {
         int width = 24;
         int height = 24;
         float y = ground_y - height;
-        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f) - 10.0f, 0};
+        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f) - 30.0f, 0};
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
