@@ -385,14 +385,11 @@ static void LoadLevel() {
                     Assert(src_js != NULL);
 
                     Entity* entity = AllocateEntity();
-                    // TODO: Parse flags from json.
-                    // SetFlag(entity->flags, EFLAG_WALL);
                     entity->p = (Vector3){px_js->child->valueint, px_js->child->next->valueint, 0};
                     entity->texture = *texture;
                     entity->bitmap_rec =
                         (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
-                    // TODO: Parse collision info from json.
-                    // entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
+                    // FlagOff(entity->flags, EFLAG_DRAW);
                 }
             } else if (strcmp(type->valuestring, "IntGrid") == 0) {
                 const cJSON* grid = NULL;
@@ -404,14 +401,17 @@ static void LoadLevel() {
                 cJSON_ArrayForEach(grid, grids) {
                     Assert(j <= width && i <= height);
                     int val = grid->valueint;
-                    Assert(val == 0 || val == 1);
-                    Entity* entity = AllocateEntity();
-                    // TODO: Parse flags from json.
-                    SetFlag(entity->flags, EFLAG_WALL);
-                    entity->p = (Vector3){i * grid_size, j * grid_size, 0};
-                    FlagOff(entity->flags, EFLAG_DRAW);
-                    // TODO: Parse collision info from json.
-                    entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
+                    if (val == 1) {
+                        Assert(val == 0 || val == 1);
+                        Entity* entity = AllocateEntity();
+                        FlagOff(entity->flags, EFLAG_DRAW);
+                        SetFlag(entity->flags, EFLAG_WALL);
+                        entity->p = (Vector3){j * grid_size, i * grid_size, 0};
+                        entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
+
+                        // entity->texture = LoadTextureFromImage(GenImageColor(grid_size, grid_size, BLACK));
+                        // entity->bitmap_rec = (Rectangle){0, 0, grid_size, grid_size};
+                    }
 
                     ++j;
                     i += !(j % width);
@@ -517,7 +517,7 @@ static void SimpleScene(GameState* state) {
         int width = 24;
         int height = 24;
         float y = ground_y - height;
-        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f), 0};
+        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f) - 10.0f, 0};
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
