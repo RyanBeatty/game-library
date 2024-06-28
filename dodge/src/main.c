@@ -8,8 +8,8 @@
 
 #endif
 
-const float ScreenWidth = 320 * 2;   // 800 * 1.5;
-const float ScreenHeight = 180 * 2;  // 450 * 1.5;
+const float ScreenWidth = 640;   // 800 * 1.5;
+const float ScreenHeight = 360;  // 450 * 1.5;
 
 static const Vector3 DOWN = {1, -1, 1};
 
@@ -375,6 +375,7 @@ static void LoadLevel() {
             const cJSON* grid_size_js = cJSON_GetObjectItemCaseSensitive(layer, "__gridSize");
             Assert(grid_size_js != NULL);
             int grid_size = grid_size_js->valueint;
+            float half_grid_size = grid_size * 0.5f;
 
             if (strcmp(type->valuestring, "Tiles") == 0) {
                 const cJSON* tileset_id = cJSON_GetObjectItemCaseSensitive(layer, "__tilesetDefUid");
@@ -391,7 +392,8 @@ static void LoadLevel() {
                     Assert(src_js != NULL);
 
                     Entity* entity = AllocateEntity();
-                    entity->p = (Vector3){px_js->child->valueint, px_js->child->next->valueint, 0};
+                    entity->p = (Vector3){px_js->child->valueint + half_grid_size,
+                                          px_js->child->next->valueint + half_grid_size, 0};
                     entity->texture = *texture;
                     entity->bitmap_rec =
                         (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
@@ -410,10 +412,10 @@ static void LoadLevel() {
                     if (val == 1) {
                         Assert(val == 0 || val == 1);
                         Entity* entity = AllocateEntity();
-                        // FlagOff(entity->flags, EFLAG_DRAW);
+                        FlagOff(entity->flags, EFLAG_DRAW);
                         SetFlag(entity->flags, EFLAG_WALL);
-                        breakpoint();
-                        entity->p = (Vector3){(j * grid_size) + x_offset, (i * grid_size) + y_offset, 0};
+                        entity->p = (Vector3){(j * grid_size) + x_offset + half_grid_size,
+                                              (i * grid_size) + y_offset + half_grid_size, 0};
                         entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
 
                         if (TestFlag(entity->flags, EFLAG_DRAW)) {
