@@ -8,8 +8,8 @@
 
 #endif
 
-const float ScreenWidth = 320;   // 800 * 1.5;
-const float ScreenHeight = 180;  // 450 * 1.5;
+const float RenderWidth = 320;   // 800 * 1.5;
+const float RenderHeight = 180;  // 450 * 1.5;
 
 static const Vector3 DOWN = {1, -1, 1};
 
@@ -451,6 +451,8 @@ typedef struct GameState {
     uint32_t score;
 
     float timer;
+
+    RenderTexture2D target;
 } GameState;
 
 static GameState GState;
@@ -580,12 +582,15 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(ScreenWidth, ScreenHeight, "Game");
+    InitWindow(RenderWidth * 2, RenderHeight * 2, "Game");
+    SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
     AudioSystemInit();
     TextureCacheInit();
+
+    state->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
     SimpleScene(state);
 }
@@ -735,6 +740,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 entity->spawn_count = entity->spawn_total;
                 // Move randomly.
                 {
+                    // TODO: Do something about this.
                     // float min = 0.0f;
                     // float max = GetScreenWidth();
                     // float choice = GetRandomValue(min, max);
@@ -845,7 +851,7 @@ static void GameStateUpdate(GameState* state, float delta) {
 }
 
 static void GameStateDraw(GameState* state, float delta) {
-    BeginDrawing();
+    BeginTextureMode(state->target);
 
     state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
     if (state->debug) {
@@ -917,13 +923,20 @@ static void GameStateDraw(GameState* state, float delta) {
         }
     }
 
+    EndTextureMode();
+
+    // Draw render target to screen and optionally upscale.
+    BeginDrawing();
+    ClearBackground(WHITE);
+    Texture texture = state->target.texture;
+    DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
+                   (Rectangle){0, 0, RenderWidth, RenderHeight}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
     EndDrawing();
 }
 
 ////////////////////////////////////////////////////////////
 
 int main(void) {
-    InitWindow(ScreenWidth, ScreenHeight, "Game");
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
