@@ -883,13 +883,14 @@ static void GameStateDraw(GameState* state, float delta) {
 
     // Draw UI.
     {
+        Color color = WHITE;
         {
             char health_text[256] = {0};
             memset(health_text, '*', sizeof(char) * state->health);
             float fontsize = 24.0f;
             float x = 100.0f;
             float y = 20.0f;
-            DrawText(health_text, x, y, fontsize, BLACK);
+            DrawText(health_text, x, y, fontsize, color);
         }
 
         {
@@ -898,7 +899,7 @@ static void GameStateDraw(GameState* state, float delta) {
             float fontsize = 24.0f;
             float x = RenderWidth(state) - 100.0f;
             float y = 20.0f;
-            DrawText(score_text, x, y, fontsize, BLACK);
+            DrawText(score_text, x, y, fontsize, color);
         }
 
         if (state->game_over) {
