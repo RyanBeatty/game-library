@@ -585,7 +585,7 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth, RenderHeight, "Game");
+    InitWindow(RenderWidth * 2, RenderHeight * 2, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
@@ -929,11 +929,14 @@ static void GameStateDraw(GameState* state, float delta) {
     EndTextureMode();
 
     // Draw render target to screen and optionally upscale.
+    float scale =
+        fmin(((float)GetScreenWidth()) / RenderWidth(state), ((float)GetScreenHeight()) / RenderHeight(state));
     BeginDrawing();
     ClearBackground(WHITE);
     Texture texture = state->target.texture;
     DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
-                   (Rectangle){0, 0, RenderWidth, RenderHeight}, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+                   (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
+                   WHITE);
     EndDrawing();
 }
 
