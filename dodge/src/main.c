@@ -585,8 +585,9 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth * 2, RenderHeight * 2, "Game");
+    InitWindow(RenderWidth * 4, RenderHeight * 4, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
+    // ToggleFullscreen();
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
