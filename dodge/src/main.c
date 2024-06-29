@@ -528,7 +528,7 @@ static void SimpleScene(GameState* state) {
         int width = 24;
         int height = 24;
         float y = ground_y - height;
-        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f) - 30.0f, 0};
+        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f) - 90.0f, 0};
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
@@ -777,8 +777,21 @@ static void GameStateUpdate(GameState* state, float delta) {
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
-                if (TestFlag(e->flags, EFLAG_WALL)) {
-                    // TODO: It only handles if an object falls top to bottom. but by god it finally works!.
+                bool still_hit =
+                    Collides((Vector2){entity->p.x, entity->p.y}, entity->shape, (Vector2){e->p.x, e->p.y}, e->shape);
+                if (TestFlag(e->flags, EFLAG_WALL) && still_hit) {
+                    // TODO: IMPROVEMENTS:
+                    // * Run the constraint solve multiple times to resolve multiple constraints. the
+                    // bombs sometimes will stay a frame below collisions before teloporting back up. This
+                    // is because of the still_hits check. The bomb can fall below first level collision boxes
+                    // then get pushed up by second layer and then next frame gets pushed up again.
+                    // * Need to deal with bombs falling down getting pushed right instead of up. They will just
+                    // oscillate infinitely back and forth. Idea 1) Subdivide the delta time and run phsyics sim
+                    // at higher Hz than render Hz (maybe like double) - this will decrease the amount of distance
+                    // entities will travel each physics frame. Idea 2) Have special logic something along the lines of
+                    // if the difference between pen_up and pen_left is "close enough" project along the direction the
+                    // closest to the incoming impact (does this even make sense what if the bomb hits a corner
+                    // perfectly)?
                     Vector3 velocity = Vector3Subtract(entity->p, entity->pp);
                     Vector3 distance = Vector3Subtract(entity->p, e->p);
                     float pen_x = (0.5f * (entity->shape.width + e->shape.width)) - fabs(distance.x);
