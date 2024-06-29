@@ -582,7 +582,7 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth * 2, RenderHeight * 2, "Game");
+    InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
