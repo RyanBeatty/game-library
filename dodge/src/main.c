@@ -542,10 +542,10 @@ static void SimpleScene(GameState* state) {
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
-        float y = GetScreenHeight() * 0.10;
-        int width = 50;
-        int height = 25;
-        entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
+        float y = GetScreenHeight() * 0.20;
+        int width = 12;
+        int height = 12;
+        entity->p = (Vector3){(GetScreenWidth()) * 0.5f, y + (height * 0.5f), 0};
         entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
@@ -553,7 +553,7 @@ static void SimpleScene(GameState* state) {
         entity->spawn_time = 0.3f;
         entity->spawn_total = 3;
         SetFlag(entity->spawn_flags, SFLAG_BOMB);
-        FlagOff(entity->flags, EFLAG_DRAW);
+        // FlagOff(entity->flags, EFLAG_DRAW);
     }
 
     // Coin spawner.
@@ -702,8 +702,8 @@ static void GameStateUpdate(GameState* state, float delta) {
 
                     Entity* bomb = AllocateEntity();
                     SetFlag(bomb->flags, EFLAG_BOMB);
-                    int width = 8;
-                    int height = 12;
+                    int width = 4;
+                    int height = 6;
                     bomb->p = (Vector3){50, 200, 0};
                     bomb->p = entity->p;
                     float x_displacement = GetRandomValue(200, 400);
@@ -735,10 +735,10 @@ static void GameStateUpdate(GameState* state, float delta) {
                 entity->spawn_count = entity->spawn_total;
                 // Move randomly.
                 {
-                    float min = 0.0f;
-                    float max = GetScreenWidth();
-                    float choice = GetRandomValue(min, max);
-                    entity->p.x = choice;
+                    // float min = 0.0f;
+                    // float max = GetScreenWidth();
+                    // float choice = GetRandomValue(min, max);
+                    // entity->p.x = choice;
                 }
             }
         }
