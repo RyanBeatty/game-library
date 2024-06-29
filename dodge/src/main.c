@@ -36,7 +36,7 @@ static void TextureCacheInit() {
     }
 
     {
-        Texture texture = LoadTexture("assets/art/tilemap-background.png");
+        Texture texture = LoadTexture("assets/art/8bit.png");
         Assert(IsTextureReady(texture));
         Textures[TEXTURE_TILEMAP_BACKGROUND] = texture;
     }
@@ -568,7 +568,7 @@ static void SimpleScene(GameState* state) {
         int width = 50;
         int height = 25;
         float y = ground_y - height - 10.0f;
-        entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
+        entity->p = (Vector3){(int)(width * 0.5f), (int)(y + (height * 0.5f)), 0};
         entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
@@ -585,7 +585,7 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth * 4, RenderHeight * 4, "Game");
+    InitWindow(RenderWidth * 2, RenderHeight * 2, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     // ToggleFullscreen();
     SetConfigFlags(FLAG_VSYNC_HINT);
@@ -731,10 +731,10 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Entity* coin = AllocateEntity();
                     SetFlag(coin->flags, EFLAG_COIN);
                     coin->p = entity->p;
-                    int width = 18;
-                    int height = 18;
+                    int width = 12;
+                    int height = 12;
                     coin->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
-                    coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 1, 1, 151);
+                    coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 0, 0, 45);
                     coin->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
             }
@@ -857,12 +857,12 @@ static void GameStateUpdate(GameState* state, float delta) {
 static void GameStateDraw(GameState* state, float delta) {
     BeginTextureMode(state->target);
 
+    ClearBackground(WHITE);
+
     state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
     if (state->debug) {
         DrawFPS(5, 5);
     }
-
-    ClearBackground(RAYWHITE);
 
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
