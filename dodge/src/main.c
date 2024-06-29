@@ -198,7 +198,7 @@ typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
-    EFLAG_SPAWN_BOMB = 1 << 3,
+    EFLAG_SPAWNER = 1 << 3,
     EFLAG_BOMB = 1 << 4,
     EFLAG_WALL = 1 << 5,
     EFLAG_EXPLOSION = 1 << 6,
@@ -546,7 +546,7 @@ static void SimpleScene(GameState* state) {
     // Bomb spawner.
     {
         Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
+        SetFlag(entity->flags, EFLAG_SPAWNER);
         float y = RenderHeight(state) * 0.20;
         int width = 12;
         int height = 12;
@@ -564,7 +564,7 @@ static void SimpleScene(GameState* state) {
     // Coin spawner.
     {
         Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
+        SetFlag(entity->flags, EFLAG_SPAWNER);
         int width = 50;
         int height = 25;
         float y = ground_y - height - 10.0f;
@@ -694,7 +694,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
         }
 
-        if (TestFlag(entity->flags, EFLAG_SPAWN_BOMB)) {
+        if (TestFlag(entity->flags, EFLAG_SPAWNER)) {
             entity->spawn_move_timer += delta;
             entity->spawn_timer += delta;
 
@@ -744,11 +744,10 @@ static void GameStateUpdate(GameState* state, float delta) {
                 entity->spawn_count = entity->spawn_total;
                 // Move randomly.
                 {
-                    // TODO: Do something about this.
-                    // float min = 0.0f;
-                    // float max = RenderWidth(state);
-                    // float choice = GetRandomValue(min, max);
-                    // entity->p.x = choice;
+                    float min = 0.0f;
+                    float max = RenderWidth(state);
+                    float choice = GetRandomValue(min, max);
+                    entity->p.x = choice;
                 }
             }
         }
