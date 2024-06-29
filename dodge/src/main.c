@@ -8,8 +8,8 @@
 
 #endif
 
-const float ScreenWidth = 640;   // 800 * 1.5;
-const float ScreenHeight = 360;  // 450 * 1.5;
+const float ScreenWidth = 320;   // 800 * 1.5;
+const float ScreenHeight = 180;  // 450 * 1.5;
 
 static const Vector3 DOWN = {1, -1, 1};
 
@@ -317,7 +317,7 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
 ////////////////////////////////////////////////////////////
 
 static void LoadLevel() {
-    char* data = LoadFileText("assets/level/level.ldtk");
+    char* data = LoadFileText("assets/level/level2.ldtk");
     Assert(data != NULL);
     cJSON* level = cJSON_Parse(data);
     Assert(level != NULL);
@@ -703,7 +703,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     Entity* bomb = AllocateEntity();
                     SetFlag(bomb->flags, EFLAG_BOMB);
                     int width = 8;
-                    int height = 15;
+                    int height = 12;
                     bomb->p = (Vector3){50, 200, 0};
                     bomb->p = entity->p;
                     float x_displacement = GetRandomValue(200, 400);
@@ -711,7 +711,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     RIGHT = !RIGHT;
                     Vector3 displacement = Vector3Scale((Vector3){x_displacement, -1600, 0}, delta);
                     bomb->pp = Vector3Subtract(bomb->p, displacement);
-                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
+                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, WHITE));
                     bomb->bitmap_rec = (Rectangle){0, 0, width, height};
                     bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                     bomb->m = 3.0f;
