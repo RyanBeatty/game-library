@@ -455,6 +455,9 @@ typedef struct GameState {
     RenderTexture2D target;
 } GameState;
 
+#define RenderWidth(state) ((state)->target.texture.width)
+#define RenderHeight(state) ((state)->target.texture.height)
+
 static GameState GState;
 
 #define GetGameState() (&GState)
@@ -470,9 +473,9 @@ static void SimpleScene(GameState* state) {
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_WALL);
-        float y = GetScreenHeight() * 0.65;
+        float y = RenderHeight(state) * 0.65;
         ground_y = y;
-        int width = GetScreenWidth();
+        int width = RenderWidth(state);
         int height = y * 2.0f;
         entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
         entity->pp = entity->p;
@@ -485,9 +488,9 @@ static void SimpleScene(GameState* state) {
     // {
     //     Entity* entity = AllocateEntity();
     //     SetFlag(entity->flags, EFLAG_WALL);
-    //     float y = GetScreenHeight() * 0.65;
+    //     float y = RenderHeight(state) * 0.65;
     //     ground_y = y;
-    //     int width = GetScreenWidth();
+    //     int width = RenderWidth(state);
     //     int height = 120;
     //     entity->p = (Vector3){200, 30, 0};
     //     // entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
@@ -502,7 +505,7 @@ static void SimpleScene(GameState* state) {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_WALL);
         int width = 100;
-        int height = GetScreenHeight();
+        int height = RenderHeight(state);
         entity->p = (Vector3){-width + (width * 0.5f), height * 0.5f, 0};
         entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
@@ -515,8 +518,8 @@ static void SimpleScene(GameState* state) {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_WALL);
         int width = 100;
-        int height = GetScreenHeight();
-        entity->p = (Vector3){GetScreenWidth() + (width * 0.5f), height * 0.5f, 0};
+        int height = RenderHeight(state);
+        entity->p = (Vector3){RenderWidth(state) + (width * 0.5f), height * 0.5f, 0};
         entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
@@ -530,7 +533,7 @@ static void SimpleScene(GameState* state) {
         int width = 24;
         int height = 24;
         float y = ground_y - height;
-        entity->p = (Vector3){GetScreenWidth() * 0.5 + (width * 0.5f), y + (height * 0.5f) - 90.0f, 0};
+        entity->p = (Vector3){RenderWidth(state) * 0.5 + (width * 0.5f), y + (height * 0.5f) - 90.0f, 0};
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
@@ -544,10 +547,10 @@ static void SimpleScene(GameState* state) {
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_SPAWN_BOMB);
-        float y = GetScreenHeight() * 0.20;
+        float y = RenderHeight(state) * 0.20;
         int width = 12;
         int height = 12;
-        entity->p = (Vector3){(GetScreenWidth()) * 0.5f, y + (height * 0.5f), 0};
+        entity->p = (Vector3){(RenderWidth(state)) * 0.5f, y + (height * 0.5f), 0};
         entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
@@ -742,7 +745,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 {
                     // TODO: Do something about this.
                     // float min = 0.0f;
-                    // float max = GetScreenWidth();
+                    // float max = RenderWidth(state);
                     // float choice = GetRandomValue(min, max);
                     // entity->p.x = choice;
                 }
@@ -892,7 +895,7 @@ static void GameStateDraw(GameState* state, float delta) {
             char score_text[256] = {0};
             sprintf(score_text, "%d", state->score);
             float fontsize = 24.0f;
-            float x = GetScreenWidth() - 100.0f;
+            float x = RenderWidth(state) - 100.0f;
             float y = 20.0f;
             DrawText(score_text, x, y, fontsize, BLACK);
         }
@@ -903,17 +906,17 @@ static void GameStateDraw(GameState* state, float delta) {
 
             Color c = BLACK;
             c.a *= 0.40f;
-            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), c);
+            DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), c);
 
             Font font = GetFontDefault();
             float fontsize = 24.0f;
             Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, fontsize / font.baseSize);
-            float y = (GetScreenHeight() - size.y) * 0.5f;
-            DrawText(GAME_OVER_TEXT, (GetScreenWidth() - size.x) * 0.5f, y, fontsize, WHITE);
+            float y = (RenderHeight(state) - size.y) * 0.5f;
+            DrawText(GAME_OVER_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, WHITE);
             y += size.y + 5.0f;
             fontsize = 18.0f;
             size = MeasureTextEx(font, RETRY_TEXT, fontsize, fontsize / font.baseSize);
-            DrawText(RETRY_TEXT, (GetScreenWidth() - size.x) * 0.5f, y, fontsize, WHITE);
+            DrawText(RETRY_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, WHITE);
 
             if (IsKeyDown(KEY_ENTER)) {
                 state->game_over = false;
