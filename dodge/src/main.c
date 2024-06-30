@@ -535,7 +535,7 @@ static void SimpleScene(GameState* state) {
         int width = 24;
         int height = 24;
         float y = ground_y - height;
-        entity->p = (Vector3){RenderWidth(state) * 0.5 + (width * 0.5f), y + (height * 0.5f) - 90.0f, 0};
+        entity->p = (Vector3){RenderWidth(state) * 0.5 + (width * 0.5f), y + (height * 0.5f) - 90.0f, 0.0f};
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
@@ -856,6 +856,31 @@ static void GameStateUpdate(GameState* state, float delta) {
 }
 
 static void GameStateDraw(GameState* state, float delta) {
+    Entity* entities[ENTITY_CAP] = {0};
+    uint32_t size = 0;
+    EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = GetEntity(i);
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
+            continue;
+        }
+        entities[size] = entity;
+        ++size;
+    }
+
+    // TODO: Should we do something smarter here than a bubble sort?
+    for (uint32_t i = 0; i < size; ++i) {
+        Entity* e1 = entities[i];
+        for (uint32_t j = i + 1; j < size; ++j) {
+            Entity* e2 = entities[j];
+            if (e2->p.z > e1->p.z) {
+                entities[i] = entities[j];
+                entities[j] = e1;
+                e1 = e2;
+            }
+        }
+    }
+
     BeginTextureMode(state->target);
 
     ClearBackground(WHITE);
@@ -865,12 +890,8 @@ static void GameStateDraw(GameState* state, float delta) {
         DrawFPS(5, 5);
     }
 
-    EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = GetEntity(i);
-        if (!TestFlag(entity->flags, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
-            continue;
-        }
+    for (uint32_t i = 0; i < size; ++i) {
+        Entity* entity = entities[i];
         Color tint = entity->tint;
         if (entity->damage_timer < entity->damage_cooldown) {
             tint.a = Lerp(tint.a, 0, sin(state->timer * 100.0f));
