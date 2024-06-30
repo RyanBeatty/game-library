@@ -877,18 +877,18 @@ static void GameStateDraw(GameState* state, float delta) {
             float spacing = fontsize / font.baseSize;
             Color color = WHITE;
 
-            Vector2 pos = {0.0f};
-            pos.x = RenderWidth(state) * 0.92;
+            float x = RenderWidth(state) * 0.92;
+            float y = 0.0f;
 
             // Health text.
             {
                 char text[256] = {0};
                 memset(text, '*', sizeof(char) * state->health);
                 Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                pos.y += 5.0f;
-                Vector2 p = {pos.x - size.x, pos.y};
-                DrawTextEx(font, text, p, fontsize, spacing, color);
-                pos.y += size.y;
+                y += 5.0f;
+                Vector2 pos = {x - size.x, y};
+                DrawTextEx(font, text, pos, fontsize, spacing, color);
+                y += size.y;
             }
 
             // Score text.
@@ -896,9 +896,9 @@ static void GameStateDraw(GameState* state, float delta) {
                 char text[256] = {0};
                 sprintf(text, "%d", state->score);
                 Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                pos.y += 2.0f;
-                Vector2 p = {pos.x - size.x, pos.y};
-                DrawTextEx(font, text, p, fontsize, spacing, color);
+                y += 2.0f;
+                Vector2 pos = {x - size.x, y};
+                DrawTextEx(font, text, pos, fontsize, spacing, color);
             }
         }
 
