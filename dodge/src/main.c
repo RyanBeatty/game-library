@@ -545,7 +545,7 @@ static void SimpleScene(GameState* state) {
         FlagOff(entity->flags, EFLAG_DRAW);
     }
 
-    state->health = 3;
+    state->health = 0;
 
     PlaySoundIfNotPlaying(SOUND_GAME_START);
 }
@@ -906,9 +906,8 @@ static void GameStateDraw(GameState* state, float delta) {
             static const char* GAME_OVER_TEXT = "Game Over";
             static const char* RETRY_TEXT = "Press Enter to Retry";
 
-            Color c = BLACK;
-            c.a *= 0.40f;
-            DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), c);
+            Color bg_color = {BLACK.r, BLACK.g, BLACK.b, BLACK.a * 0.4f};
+            DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
 
             Font font = GetFontDefault();
             float fontsize = 24.0f;
