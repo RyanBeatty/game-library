@@ -915,13 +915,15 @@ static void GameStateDraw(GameState* state, float delta) {
             {
                 DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
 
+                float x = RenderWidth(state) * 0.5f;
+
                 Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
                 float y = (RenderHeight(state) - size.y) * 0.5f;
-                DrawText(GAME_OVER_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, text_color);
+                DrawText(GAME_OVER_TEXT, x - (size.x * 0.5f), y, fontsize, text_color);
                 y += size.y + 5.0f;
                 fontsize = 18.0f;
                 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
-                DrawText(RETRY_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, text_color);
+                DrawText(RETRY_TEXT, x - (size.x * 0.5f), y, fontsize, text_color);
             }
 
             if (IsKeyDown(KEY_ENTER)) {
