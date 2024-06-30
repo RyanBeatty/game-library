@@ -209,6 +209,8 @@ typedef enum EntityFlag {
 typedef uint32_t EntityId;
 
 typedef struct Entity {
+    /////////////////////////////////////////////////////////////////
+    // Core field.
     EntityId id;
     Vector3 p;
     Vector3 pp;
@@ -217,10 +219,16 @@ typedef struct Entity {
     Quaternion rot;
     EntityFlag flags;
 
+    // Animation.
     Texture texture;
     Rectangle bitmap_rec;
     Color tint;
 
+    // Collision.
+    Shape shape;
+
+    /////////////////////////////////////////////////////////////////
+    // Gameplay fields.
     float bomb_timer;
     float explosion_timer;
 
@@ -236,8 +244,6 @@ typedef struct Entity {
     float damage_cooldown;
 
     float dash_timer;
-
-    Shape shape;
 } Entity;
 
 typedef struct EntityEntry {
