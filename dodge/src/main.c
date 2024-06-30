@@ -922,12 +922,14 @@ static void GameStateDraw(GameState* state, float delta) {
                     Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
                     Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
                     DrawText(GAME_OVER_TEXT, pos.x, pos.y, fontsize, text_color);
-                    y += size.y + 5.0f;
+                    y += size.y;
                 }
                 {
                     Vector2 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
+                    y += 5.0f;
                     Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
                     DrawText(RETRY_TEXT, pos.x, pos.y, fontsize, text_color);
+                    y += size.y;
                 }
             }
 
