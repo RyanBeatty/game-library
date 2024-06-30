@@ -469,14 +469,13 @@ static void SimpleScene(GameState* state) {
 
     state->score = 0.0f;
 
-    float ground_y = 0.0f;
+    float ground_y = 108;
 
     // Ground.
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_WALL);
         float y = RenderHeight(state) * 0.65;
-        ground_y = y;
         int width = RenderWidth(state);
         int height = y * 2.0f;
         entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
@@ -535,7 +534,7 @@ static void SimpleScene(GameState* state) {
         int width = 24;
         int height = 24;
         float y = ground_y - height;
-        entity->p = (Vector3){RenderWidth(state) * 0.5 + (width * 0.5f), y + (height * 0.5f) - 90.0f, 0.0f};
+        entity->p = (Vector3){RenderWidth(state) * 0.5 + (width * 0.5f), y + (height * 0.5f), 0.0f};
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
@@ -587,7 +586,7 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth * 2, RenderHeight * 2, "Game");
+    InitWindow(RenderWidth * 4, RenderHeight * 4, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     // ToggleFullscreen();
     SetConfigFlags(FLAG_VSYNC_HINT);
