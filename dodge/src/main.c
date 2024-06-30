@@ -502,31 +502,31 @@ static void SimpleScene(GameState* state) {
     //     entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
     // }
 
-    // Left wall.
-    {
-        Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_WALL);
-        int width = 100;
-        int height = RenderHeight(state);
-        entity->p = (Vector3){-width + (width * 0.5f), height * 0.5f, 0};
-        entity->pp = entity->p;
-        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-    }
+    // // Left wall.
+    // {
+    //     Entity* entity = AllocateEntity();
+    //     SetFlag(entity->flags, EFLAG_WALL);
+    //     int width = 100;
+    //     int height = RenderHeight(state);
+    //     entity->p = (Vector3){-width + (width * 0.5f), height * 0.5f, 0};
+    //     entity->pp = entity->p;
+    //     entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
+    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
+    //     entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+    // }
 
-    // Right wall.
-    {
-        Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_WALL);
-        int width = 100;
-        int height = RenderHeight(state);
-        entity->p = (Vector3){RenderWidth(state) + (width * 0.5f), height * 0.5f, 0};
-        entity->pp = entity->p;
-        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-    }
+    // // Right wall.
+    // {
+    //     Entity* entity = AllocateEntity();
+    //     SetFlag(entity->flags, EFLAG_WALL);
+    //     int width = 100;
+    //     int height = RenderHeight(state);
+    //     entity->p = (Vector3){RenderWidth(state) + (width * 0.5f), height * 0.5f, 0};
+    //     entity->pp = entity->p;
+    //     entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLANK));
+    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
+    //     entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+    // }
 
     // Player.
     {
