@@ -918,12 +918,17 @@ static void GameStateDraw(GameState* state, float delta) {
                 float x = RenderWidth(state) * 0.5f;
                 float y = RenderHeight(state) * 0.5f;
 
-                Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
-                DrawText(GAME_OVER_TEXT, x - (size.x * 0.5f), y - (size.y * 0.5f), fontsize, text_color);
-                y += size.y + 5.0f;
-                fontsize = 18.0f;
-                size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
-                DrawText(RETRY_TEXT, x - (size.x * 0.5f), y - (size.y * 0.5f), fontsize, text_color);
+                {
+                    Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
+                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
+                    DrawText(GAME_OVER_TEXT, pos.x, pos.y, fontsize, text_color);
+                    y += size.y + 5.0f;
+                }
+                {
+                    Vector2 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
+                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
+                    DrawText(RETRY_TEXT, pos.x, pos.y, fontsize, text_color);
+                }
             }
 
             if (IsKeyDown(KEY_ENTER)) {
