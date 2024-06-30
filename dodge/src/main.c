@@ -545,7 +545,7 @@ static void SimpleScene(GameState* state) {
         FlagOff(entity->flags, EFLAG_DRAW);
     }
 
-    state->health = 0;
+    state->health = 3;
 
     PlaySoundIfNotPlaying(SOUND_GAME_START);
 }
