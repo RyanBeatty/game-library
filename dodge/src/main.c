@@ -916,7 +916,7 @@ static void GameStateDraw(GameState* state, float delta) {
                 DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
 
                 float x = RenderWidth(state) * 0.5f;
-                float y = RenderHeight(state) * 0.5f;
+                float y = RenderHeight(state) * 0.3f;
 
                 {
                     Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
