@@ -906,7 +906,7 @@ static void GameStateDraw(GameState* state, float delta) {
             static const char* GAME_OVER_TEXT = "Game Over";
             static const char* RETRY_TEXT = "Press Enter to Retry";
 
-            Color bg_color = {BLACK.r, BLACK.g, BLACK.b, BLACK.a * 0.4f};
+            Color bg_color = {GRAY.r, GRAY.g, GRAY.b, GRAY.a * 0.4f};
 
             Font font = GetFontDefault();
             float fontsize = 24.0f;
