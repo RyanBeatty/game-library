@@ -870,23 +870,32 @@ static void GameStateDraw(GameState* state, float delta) {
 
     // Draw UI.
     {
-        Color color = WHITE;
+        // Play UI.
         {
-            char health_text[256] = {0};
-            memset(health_text, '*', sizeof(char) * state->health);
-            float fontsize = 24.0f;
-            float x = 100.0f;
-            float y = 20.0f;
-            DrawText(health_text, x, y, fontsize, color);
-        }
+            Font font = GetFontDefault();
+            float fontsize = 12.0f;
+            float spacing = fontsize / font.baseSize;
+            Color color = WHITE;
 
-        {
-            char score_text[256] = {0};
-            sprintf(score_text, "%d", state->score);
-            float fontsize = 24.0f;
-            float x = RenderWidth(state) - 100.0f;
-            float y = 20.0f;
-            DrawText(score_text, x, y, fontsize, color);
+            float y = 0.0f;
+            Vector2 pos = {0.0f};
+            {
+                char health_text[256] = {0};
+                memset(health_text, '*', sizeof(char) * state->health);
+                Vector2 size = MeasureTextEx(font, health_text, fontsize, fontsize / font.baseSize);
+                float x = 100.0f;
+                y += 5.0f;
+                DrawText(health_text, x, y, fontsize, color);
+                y += size.y;
+            }
+
+            {
+                char score_text[256] = {0};
+                sprintf(score_text, "%d", state->score);
+                float x = 100.0f;
+                y += 2.0f;
+                DrawText(score_text, x, y, fontsize, color);
+            }
         }
 
         if (state->game_over) {
