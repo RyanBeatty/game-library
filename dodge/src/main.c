@@ -194,6 +194,10 @@ static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
 typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 1 } SpawnFlag;
 
 ////////////////////////////////////////////////////////////
+
+#define ANIMATION_FRAME_CAP (4)
+
+////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
@@ -222,6 +226,10 @@ typedef struct Entity {
     // Animation.
     Texture texture;
     Rectangle bitmap_rec;
+    uint32_t animation_frame_count;
+    float animation_frame_time;
+    float animation_timer;
+
     Color tint;
 
     // Collision.
@@ -701,7 +709,9 @@ static void GameStateUpdate(GameState* state, float delta) {
                     int width = 12;
                     int height = 12;
                     coin->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
-                    coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 0, 0, 45);
+                    coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 0, 0, 40);
+                    coin->animation_frame_count = 6;
+                    coin->animation_frame_time = 0.2f;
                     coin->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
             }
@@ -817,6 +827,10 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         entity->pp = cur_p;
+
+        // Animation system update.
+        entity->animation_timer += delta;
+        // (entity->animation_timer + delta) % (entity->animation_frame_time * entity->animatoin_frame_count);
     }
 }
 
@@ -864,8 +878,17 @@ static void GameStateDraw(GameState* state, float delta) {
 
         float half_width = entity->bitmap_rec.width * 0.5f;
         float half_height = entity->bitmap_rec.height * 0.5f;
-        DrawTextureRec(entity->texture, entity->bitmap_rec,
-                       (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
+        // Compute animation rec.
+        uint32_t animation_frame_idx =
+            entity->animation_timer / (entity->animation_frame_count * entity->animation_frame_time);
+        Rectangle src = {
+            entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
+            entity->bitmap_rec.y,
+            entity->bitmap_rec.width,
+            entity->bitmap_rec.height,
+
+        };
+        DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
     }
 
     // Draw UI.
