@@ -907,17 +907,22 @@ static void GameStateDraw(GameState* state, float delta) {
             static const char* RETRY_TEXT = "Press Enter to Retry";
 
             Color bg_color = {BLACK.r, BLACK.g, BLACK.b, BLACK.a * 0.4f};
-            DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
 
             Font font = GetFontDefault();
             float fontsize = 24.0f;
-            Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, fontsize / font.baseSize);
-            float y = (RenderHeight(state) - size.y) * 0.5f;
-            DrawText(GAME_OVER_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, WHITE);
-            y += size.y + 5.0f;
-            fontsize = 18.0f;
-            size = MeasureTextEx(font, RETRY_TEXT, fontsize, fontsize / font.baseSize);
-            DrawText(RETRY_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, WHITE);
+            float spacing = fontsize / font.baseSize;
+            Color text_color = WHITE;
+            {
+                DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
+
+                Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
+                float y = (RenderHeight(state) - size.y) * 0.5f;
+                DrawText(GAME_OVER_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, text_color);
+                y += size.y + 5.0f;
+                fontsize = 18.0f;
+                size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
+                DrawText(RETRY_TEXT, (RenderWidth(state) - size.x) * 0.5f, y, fontsize, text_color);
+            }
 
             if (IsKeyDown(KEY_ENTER)) {
                 state->game_over = false;
