@@ -8,8 +8,8 @@
 
 #endif
 
-const float RenderWidth = 320;   // 800 * 1.5;
-const float RenderHeight = 180;  // 450 * 1.5;
+const float RenderWidth = 320;
+const float RenderHeight = 180;
 
 static const Vector3 DOWN = {1, -1, 1};
 
@@ -354,6 +354,7 @@ static void LoadLevel() {
         const cJSON* layers = cJSON_GetObjectItemCaseSensitive(cur_level, "layerInstances");
         Assert(layers != NULL);
         const cJSON* layer = NULL;
+        uint32_t depth = 0;
         cJSON_ArrayForEach(layer, layers) {
             const cJSON* type = cJSON_GetObjectItemCaseSensitive(layer, "__type");
             Assert(type != NULL);
@@ -393,7 +394,7 @@ static void LoadLevel() {
 
                     Entity* entity = AllocateEntity();
                     entity->p = (Vector3){px_js->child->valueint + half_grid_size,
-                                          px_js->child->next->valueint + half_grid_size, 0};
+                                          px_js->child->next->valueint + half_grid_size, depth};
                     entity->texture = *texture;
                     entity->bitmap_rec =
                         (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
@@ -415,7 +416,7 @@ static void LoadLevel() {
                         FlagOff(entity->flags, EFLAG_DRAW);
                         SetFlag(entity->flags, EFLAG_WALL);
                         entity->p = (Vector3){(j * grid_size) + x_offset + half_grid_size,
-                                              (i * grid_size) + y_offset + half_grid_size, 0};
+                                              (i * grid_size) + y_offset + half_grid_size, depth};
                         entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
 
                         if (TestFlag(entity->flags, EFLAG_DRAW)) {
@@ -432,6 +433,7 @@ static void LoadLevel() {
             } else {
                 Assert(false);
             }
+            ++depth;
         }
     }
 
