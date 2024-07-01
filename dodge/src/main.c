@@ -514,7 +514,9 @@ static void SimpleScene(GameState* state) {
         entity->pp = entity->p;
         // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
-        entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 1, 1, 1);
+        entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 1, 1, 0);
+        entity->animation_frame_count = 2;
+        entity->animation_frame_time = 0.2f;
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
