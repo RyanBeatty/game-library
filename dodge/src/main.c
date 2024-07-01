@@ -298,7 +298,8 @@ static Entity* AllocateEntity() {
     entity->id = id;
     entity->flags = EFLAG_ACTIVE;
     entity->tint = WHITE;
-    entity->animation_frame_count = 1;  // Avoid division by zero in animation system.
+    entity->animation_frame_count = 1;    // Avoid division by zero in animation system.
+    entity->animation_frame_time = 1.0f;  // Avoid division by zero in animation system.
     SetFlag(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -516,7 +517,6 @@ static void SimpleScene(GameState* state) {
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
         entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 1, 1, 0);
         entity->animation_frame_count = 2;
-        entity->animation_frame_time = 1.0f;
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
