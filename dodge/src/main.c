@@ -516,7 +516,7 @@ static void SimpleScene(GameState* state) {
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
         entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 1, 1, 0);
         entity->animation_frame_count = 2;
-        entity->animation_frame_time = 0.2f;
+        entity->animation_frame_time = 1.0f;
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
@@ -620,16 +620,21 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
             Vector3 a = Vector3Scale(direction, speed);
             Vector3 v = Vector3Subtract(entity->p, entity->pp);
-            if (fabs(v.x) > 10.0f) {
-                v.x = (v.x < 0.0f ? -1.0f : 1.0f) * 10.0f;
-            }
+            // Clamp max speed.
+            v.x = Clamp(v.x, -10.0f, 10.0f);
             Vector3 displacement = Vector3Add(v, Vector3Scale(a, delta * delta));
             if (!moved) {
-                displacement = Vector3Scale(displacement, 0.6f);
+                // Make sure we fully stop if not moving for a bit.
+                if (displacement.x < 0.0005f) {
+                    displacement = Vector3Zero();
+                } else {
+                    displacement = Vector3Scale(displacement, 0.6f);
+                }
             }
 
             if (!Vector3Equals(displacement, Vector3Zero())) {
-                entity->animation_timer += delta;
+                float len = Vector3Length(displacement);
+                entity->animation_timer += len / 10.0f;
             }
 
             entity->p = Vector3Add(entity->p, displacement);
