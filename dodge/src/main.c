@@ -513,7 +513,6 @@ static void SimpleScene(GameState* state) {
         float y = ground_y - height;
         entity->p = (Vector3){RenderWidth(state) * 0.5 + (width * 0.5f), y + (height * 0.5f), 0.0f};
         entity->pp = entity->p;
-        // entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLUE));
         entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
         entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 1, 1, 0);
         entity->animation_frame_count = 2;
