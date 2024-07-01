@@ -298,6 +298,7 @@ static Entity* AllocateEntity() {
     entity->id = id;
     entity->flags = EFLAG_ACTIVE;
     entity->tint = WHITE;
+    entity->animation_frame_count = 1;  // Avoid division by zero in animation system.
     SetFlag(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -627,6 +628,10 @@ static void GameStateUpdate(GameState* state, float delta) {
                 displacement = Vector3Scale(displacement, 0.6f);
             }
 
+            if (!Vector3Equals(displacement, Vector3Zero())) {
+                entity->animation_timer += delta;
+            }
+
             entity->p = Vector3Add(entity->p, displacement);
 
             bool walking = !Vector3Equals(displacement, Vector3Zero());
@@ -881,7 +886,10 @@ static void GameStateDraw(GameState* state, float delta) {
         float half_height = entity->bitmap_rec.height * 0.5f;
         // Compute animation rec.
         float animation_time = entity->animation_frame_count * entity->animation_frame_time;
-        uint32_t animation_frame_idx = (fmod(entity->animation_timer, animation_time)) / entity->animation_frame_time;
+        uint32_t animation_frame_idx =
+            entity->animation_frame_count != 1
+                ? (fmod(entity->animation_timer, animation_time)) / entity->animation_frame_time
+                : 0;
         Rectangle src = {
             entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
             entity->bitmap_rec.y,
