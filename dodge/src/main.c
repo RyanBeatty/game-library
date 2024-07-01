@@ -547,7 +547,7 @@ static void SimpleScene(GameState* state) {
         SetFlag(entity->flags, EFLAG_SPAWNER);
         int width = 50;
         int height = 25;
-        float y = ground_y - height - 10.0f;
+        float y = ground_y - (height * 0.5f) - 10.0f;
         entity->p = (Vector3){(int)(width * 0.5f), (int)(y + (height * 0.5f)), 0};
         entity->pp = entity->p;
         entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
