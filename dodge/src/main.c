@@ -711,7 +711,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     coin->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
                     coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 0, 0, 40);
                     coin->animation_frame_count = 6;
-                    coin->animation_frame_time = 0.2f;
+                    coin->animation_frame_time = 0.09f;
                     coin->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
             }
@@ -879,8 +879,8 @@ static void GameStateDraw(GameState* state, float delta) {
         float half_width = entity->bitmap_rec.width * 0.5f;
         float half_height = entity->bitmap_rec.height * 0.5f;
         // Compute animation rec.
-        uint32_t animation_frame_idx =
-            entity->animation_timer / (entity->animation_frame_count * entity->animation_frame_time);
+        float animation_time = entity->animation_frame_count * entity->animation_frame_time;
+        uint32_t animation_frame_idx = (fmod(entity->animation_timer, animation_time)) / entity->animation_frame_time;
         Rectangle src = {
             entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
             entity->bitmap_rec.y,
