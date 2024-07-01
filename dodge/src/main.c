@@ -229,6 +229,7 @@ typedef struct Entity {
     uint32_t animation_frame_count;
     float animation_frame_time;
     float animation_timer;
+    bool animation_loops;
 
     Color tint;
 
@@ -712,6 +713,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 0, 0, 40);
                     coin->animation_frame_count = 6;
                     coin->animation_frame_time = 0.09f;
+                    coin->animation_loops = true;
                     coin->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
             }
@@ -828,9 +830,8 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         entity->pp = cur_p;
 
-        // Animation system update.
-        entity->animation_timer += delta;
-        // (entity->animation_timer + delta) % (entity->animation_frame_time * entity->animatoin_frame_count);
+        // Update animation timer if it is a looping animation.
+        entity->animation_timer += delta * entity->animation_loops;
     }
 }
 
