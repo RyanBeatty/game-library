@@ -484,6 +484,7 @@ static void SimpleScene(GameState* state) {
     LoadLevel();
 
     state->score = 0.0f;
+    state->health = 3;
 
     float ground_y = 108;
 
@@ -556,8 +557,6 @@ static void SimpleScene(GameState* state) {
         SetFlag(entity->spawn_flags, SFLAG_COIN);
         FlagOff(entity->flags, EFLAG_DRAW);
     }
-
-    state->health = 3;
 
     PlaySoundIfNotPlaying(SOUND_GAME_START);
 }
