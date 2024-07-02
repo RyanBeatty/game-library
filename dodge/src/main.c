@@ -889,10 +889,8 @@ static void GameStateDraw(GameState* state, float delta) {
         float half_height = entity->bitmap_rec.height * 0.5f;
         // Compute animation rec.
         float animation_time = entity->animation_frame_count * entity->animation_frame_time;
-        uint32_t animation_frame_idx =
-            entity->animation_frame_count != 1
-                ? (fmod(entity->animation_timer, animation_time)) / entity->animation_frame_time
-                : 0;
+        uint32_t animation_frame_idx = fmod(entity->animation_timer, animation_time) / entity->animation_frame_time;
+        Assert(entity->animation_frame_time != 0.0f);
         Rectangle src = {
             entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
             entity->bitmap_rec.y,
