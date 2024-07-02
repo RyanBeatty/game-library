@@ -449,6 +449,48 @@ static void LoadLevel() {
                     j %= width;
                 }
 
+            } else if (strcmp(type->valuestring, "Entities") == 0) {
+                const cJSON* entities = cJSON_GetObjectItemCaseSensitive(layer, "entityInstances");
+                Assert(entities != NULL);
+                const cJSON* entity = NULL;
+                cJSON_ArrayForEach(entity, entities) {
+                    // TODO: Implement entity loading later. Seems a bit too much work for what could be done
+                    // with harcoding.
+                    // const cJSON* identifier_js = cJSON_GetObjectItemCaseSensitive(entity, "__identifier");
+                    // Assert(identifier_js != NULL);
+
+                    // // Position.
+                    // const cJSON* x_world_js = cJSON_GetObjectItemCaseSensitive(entity, "__worldX");
+                    // Assert(x_world_js != NULL && cJSON_IsNumber(x_world_js));
+                    // const cJSON* y_world_js = cJSON_GetObjectItemCaseSensitive(entity, "__worldY");
+                    // Assert(y_world_js != NULL && cJSON_IsNumber(y_world_js));
+                    // int x_world = x_world_js->valueint;
+                    // int y_world = y_world_js->valueint;
+
+                    // // Size.
+                    // const cJSON* entity_width_js = cJSON_GetObjectItemCaseSensitive(entity, "width");
+                    // Assert(entity_width_js != NULL && cJSON_IsNumber(entity_width_js));
+                    // const cJSON* entity_height_js = cJSON_GetObjectItemCaseSensitive(entity, "height");
+                    // Assert(entity_height_js != NULL && cJSON_IsNumber(entity_height_js));
+                    // int entity_width = entity_width_js->valueint;
+                    // int entity_height = entity_height_js->valueint;
+
+                    // // Sprite.
+                    // const cJSON* tile = cJSON_GetObjectItemCaseSensitive(entity, "__tile");
+                    // Assert(tile != NULL);
+                    // const cJSON* tile_id = cJSON_GetObjectItemCaseSensitive(tile, "tilesetUid");
+                    // Assert(tile_id != NULL);
+                    // const cJSON* tile_x = cJSON_GetObjectItemCaseSensitive(tile, "x");
+                    // Assert(tile_x != NULL);
+                    // const cJSON* tile_y = cJSON_GetObjectItemCaseSensitive(tile, "y");
+                    // Assert(tile_y != NULL);
+                    // const cJSON* tile_w = cJSON_GetObjectItemCaseSensitive(tile, "w");
+                    // Assert(tile_w != NULL);
+                    // const cJSON* tile_h = cJSON_GetObjectItemCaseSensitive(tile, "h");
+                    // Assert(tile_h != NULL);
+
+                    // Entity* entity = AllocateEntity();
+                }
             } else {
                 Assert(false);
             }
