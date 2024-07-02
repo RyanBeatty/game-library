@@ -222,6 +222,8 @@ typedef struct Entity {
     float m;
     Quaternion rot;
     EntityFlag flags;
+    // TODO: Definitely reconsider this vs a better approach for orientation.
+    bool right;
 
     // Animation.
     Texture texture;
@@ -606,10 +608,12 @@ static void GameStateUpdate(GameState* state, float delta) {
             if (IsKeyDown(KEY_RIGHT)) {
                 direction = Vector3Add(direction, (Vector3){1, 0, 0});
                 moved = true;
+                entity->right = true;
             }
             if (IsKeyDown(KEY_LEFT)) {
                 direction = Vector3Add(direction, (Vector3){-1, 0, 0});
                 moved = true;
+                entity->right = false;
             }
 
             float speed = 2000.0f;
@@ -894,7 +898,7 @@ static void GameStateDraw(GameState* state, float delta) {
         Rectangle src = {
             entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
             entity->bitmap_rec.y,
-            entity->bitmap_rec.width,
+            entity->bitmap_rec.width * (entity->right ? -1.0f : 1.0f),
             entity->bitmap_rec.height,
 
         };
