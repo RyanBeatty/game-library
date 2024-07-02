@@ -638,6 +638,10 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             // Update animation time.
             entity->animation_timer += Vector3Length(displacement) / 10.0f;
+            if (fabs(displacement.x) <= 0.1) {
+                entity->animation_timer = 0.0f;
+                displacement = Vector3Zero();
+            }
 
             entity->p = Vector3Add(entity->p, displacement);
 
