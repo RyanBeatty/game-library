@@ -519,6 +519,7 @@ typedef struct GameState {
 
     char text[TEXT_CAP];
     int32_t text_size;
+    int32_t text_idx;
 
     RenderTexture2D target;
 } GameState;
@@ -605,6 +606,10 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            int key = GetCharPressed();
+            if (key == state->text[state->text_idx]) {
+                ++state->text_idx;
+            }
         }
 
         if (TestFlag(entity->flags, EFLAG_SPAWNER)) {
@@ -717,7 +722,7 @@ static void GameStateDraw(GameState* state, float delta) {
                 // Game text.
                 {
                     char text[TEXT_CAP] = {0};
-                    memcpy(text, state->text, state->text_size);
+                    memcpy(text, state->text + state->text_idx, state->text_size);
                     Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                     y += 5.0f;
                     Vector2 pos = {x - size.x, y};
