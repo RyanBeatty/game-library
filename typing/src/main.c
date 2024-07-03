@@ -765,11 +765,23 @@ static void GameStateDraw(GameState* state, float delta) {
                 // Game text.
                 {
                     char text[1024] = {0};
-                    memcpy(text, state->text + state->text_idx, state->text_size);
+                    memcpy(text, state->text, state->text_size);
+
                     Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                     y += 5.0f;
-                    Vector2 pos = {x - size.x, y};
-                    DrawTextEx(font, text, pos, fontsize, spacing, color);
+                    float xx = 0.0f;
+                    for (uint32_t i = 0; i < state->text_size; ++i) {
+                        char buffer[256] = {0};
+                        buffer[0] = text[i];
+                        Vector2 pos = {x - (size.x - xx), y};
+                        Color c = i < state->text_idx ? GREEN : WHITE;
+                        DrawTextEx(font, buffer, pos, fontsize, spacing, c);
+                        Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                        // TODO: FIX THIS.
+                        xx += ss.x + 2;
+                    }
+                    // Vector2 pos = {x - size.x, y};
+                    // DrawTextEx(font, text, pos, fontsize, spacing, color);
                     y += size.y;
                 }
             }
