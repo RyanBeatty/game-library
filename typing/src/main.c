@@ -195,6 +195,46 @@ typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 
 
 ////////////////////////////////////////////////////////////
 
+#define WORDS_CAP (5)
+static char* Words[WORDS_CAP] = {0};
+
+static void InitWords() {
+    {
+        uint32_t i = 0;
+        char text[256] = "hello";
+        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+        strcat(Words[i], text);
+    }
+    {
+        uint32_t i = 1;
+        char text[256] = "foo";
+        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+        strcat(Words[i], text);
+    }
+    {
+        uint32_t i = 2;
+        char text[256] = "aaaa";
+        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+        strcat(Words[i], text);
+    }
+    {
+        uint32_t i = 3;
+        char text[256] = "but";
+        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+        strcat(Words[i], text);
+    }
+    {
+        uint32_t i = 4;
+        char text[256] = "lil dog";
+        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+        strcat(Words[i], text);
+    }
+}
+
+static char* GetWord() { return Words[GetRandomValue(0, WORDS_CAP - 1)]; }
+
+////////////////////////////////////////////////////////////
+
 #define ANIMATION_FRAME_CAP (4)
 
 ////////////////////////////////////////////////////////////
@@ -503,8 +543,6 @@ static void LoadLevel() {
 
 ////////////////////////////////////////////////////////////
 
-#define TEXT_CAP (1024)
-
 typedef struct GameState {
     Camera camera;
 
@@ -517,7 +555,7 @@ typedef struct GameState {
 
     float timer;
 
-    char text[TEXT_CAP];
+    char* text;
     int32_t text_size;
     int32_t text_idx;
 
@@ -534,13 +572,12 @@ static GameState GState;
 static void SimpleScene(GameState* state) {
     LoadLevel();
 
+    InitWords();
+
     state->score = 0.0f;
     state->health = 3;
 
     float ground_y = 108;
-
-    strcat(state->text, "hello");
-    state->text_size += strlen("hello");
 
     // Player.
     {
@@ -607,7 +644,7 @@ static void GameStateUpdate(GameState* state, float delta) {
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             int key = GetCharPressed();
-            if (key == state->text[state->text_idx]) {
+            if (state->text_size != 0 && key == state->text[state->text_idx]) {
                 ++state->text_idx;
             }
         }
@@ -650,7 +687,11 @@ static void GameStateUpdate(GameState* state, float delta) {
         entity->animation_timer += delta * entity->animation_loops;
     }
 
-    state->text_idx %= state->text_size;
+    if (state->text_idx == state->text_size) {
+        state->text = GetWord();
+        state->text_size = strlen(state->text) + 1;
+        state->text_idx = 0;
+    }
 }
 
 static void GameStateDraw(GameState* state, float delta) {
@@ -723,7 +764,7 @@ static void GameStateDraw(GameState* state, float delta) {
 
                 // Game text.
                 {
-                    char text[TEXT_CAP] = {0};
+                    char text[1024] = {0};
                     memcpy(text, state->text + state->text_idx, state->text_size);
                     Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                     y += 5.0f;
