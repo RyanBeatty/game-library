@@ -533,22 +533,6 @@ static void SimpleScene(GameState* state) {
 
     float ground_y = 108;
 
-    // // Ceiling.
-    // {
-    //     Entity* entity = AllocateEntity();
-    //     SetFlag(entity->flags, EFLAG_WALL);
-    //     float y = RenderHeight(state) * 0.65;
-    //     ground_y = y;
-    //     int width = RenderWidth(state);
-    //     int height = 120;
-    //     entity->p = (Vector3){200, 30, 0};
-    //     // entity->p = (Vector3){width * 0.5f, y + (height * 0.5f), 0};
-    //     entity->pp = entity->p;
-    //     entity->texture = LoadTextureFromImage(GenImageColor(width, height, GRAY));
-    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
-    //     entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-    // }
-
     // Player.
     {
         Entity* entity = AllocateEntity();
@@ -566,42 +550,23 @@ static void SimpleScene(GameState* state) {
         entity->damage_timer = 0.0f;
     }
 
-    // Bomb spawner.
-    {
-        Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_SPAWNER);
-        float y = RenderHeight(state) * 0.20;
-        int width = 12;
-        int height = 12;
-        entity->p = (Vector3){(RenderWidth(state)) * 0.5f, y + (height * 0.5f), 0};
-        entity->pp = entity->p;
-        entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->spawn_move_time = 2.5f;
-        entity->spawn_time = 0.3f;
-        entity->spawn_total = 3;
-        SetFlag(entity->spawn_flags, SFLAG_BOMB);
-        // FlagOff(entity->flags, EFLAG_DRAW);
-    }
-
-    // Coin spawner.
-    {
-        Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_SPAWNER);
-        int width = 50;
-        int height = 25;
-        float y = ground_y - (height * 0.5f) - 10.0f;
-        entity->p = (Vector3){(int)(width * 0.5f), (int)(y + (height * 0.5f)), 0};
-        entity->pp = entity->p;
-        entity->texture = LoadTextureFromImage(GenImageColor(width, height, BLACK));
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->spawn_move_time = 3.5f;
-        entity->spawn_total = 1;
-        SetFlag(entity->spawn_flags, SFLAG_COIN);
-        FlagOff(entity->flags, EFLAG_DRAW);
-    }
-
-    PlaySoundIfNotPlaying(SOUND_GAME_START);
+    // // Bomb spawner.
+    // {
+    //     Entity* entity = AllocateEntity();
+    //     SetFlag(entity->flags, EFLAG_SPAWNER);
+    //     float y = RenderHeight(state) * 0.20;
+    //     int width = 12;
+    //     int height = 12;
+    //     entity->p = (Vector3){(RenderWidth(state)) * 0.5f, y + (height * 0.5f), 0};
+    //     entity->pp = entity->p;
+    //     entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
+    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
+    //     entity->spawn_move_time = 2.5f;
+    //     entity->spawn_time = 0.3f;
+    //     entity->spawn_total = 3;
+    //     SetFlag(entity->spawn_flags, SFLAG_BOMB);
+    //     // FlagOff(entity->flags, EFLAG_DRAW);
+    // }
 }
 
 static void GameStateInit(GameState* state) {
@@ -623,10 +588,6 @@ static void GameStateInit(GameState* state) {
 static void GameStateUpdate(GameState* state, float delta) {
     state->timer += delta;
 
-    if (IsSoundPlaying(GetSound(SOUND_GAME_START))) {
-        return;
-    }
-
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
@@ -636,97 +597,6 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            entity->damage_timer += delta;
-
-            if (state->health == 0) {
-                state->game_over = true;
-                FlagOff(entity->flags, EFLAG_ACTIVE);
-                PlaySoundIfNotPlaying(SOUND_GAME_OVER);
-                continue;
-            }
-
-            bool moved = false;
-            Vector3 direction = Vector3Zero();
-            if (IsKeyDown(KEY_RIGHT)) {
-                direction = Vector3Add(direction, (Vector3){1, 0, 0});
-                moved = true;
-                entity->right = true;
-            }
-            if (IsKeyDown(KEY_LEFT)) {
-                direction = Vector3Add(direction, (Vector3){-1, 0, 0});
-                moved = true;
-                entity->right = false;
-            }
-
-            float speed = 2000.0f;
-            entity->dash_timer += delta;
-            if (IsKeyPressed(KEY_SPACE)) {
-                entity->dash_timer = 0.0f;
-                speed *= 30.0f;
-            }
-            Vector3 a = Vector3Scale(direction, speed);
-            Vector3 v = Vector3Subtract(entity->p, entity->pp);
-            // Clamp max speed.
-            v.x = Clamp(v.x, -10.0f, 10.0f);
-            Vector3 displacement = Vector3Add(v, Vector3Scale(a, delta * delta));
-            if (!moved) {
-                // Make sure we fully stop if not moving for a bit.
-                if (displacement.x < 0.0005f) {
-                    displacement = Vector3Zero();
-                } else {
-                    displacement = Vector3Scale(displacement, 0.6f);
-                }
-            }
-
-            // Update animation time.
-            entity->animation_timer += Vector3Length(displacement) / 10.0f;
-            // If we are slow enough, clamp to 0.
-            if (fabs(displacement.x) <= 0.1) {
-                entity->animation_timer = 0.0f;
-                displacement = Vector3Zero();
-            }
-
-            entity->p = Vector3Add(entity->p, displacement);
-
-            bool walking = !Vector3Equals(displacement, Vector3Zero());
-            CollisionInfo info = CheckEntityCollisionScene(entity);
-            for (uint32_t i = 0; i < info.len; ++i) {
-                Entity* e = info.entities[i];
-                if (TestFlag(e->flags, EFLAG_EXPLOSION) && entity->damage_timer >= entity->damage_cooldown) {
-                    entity->damage_timer = 0.0f;
-                    if (state->health > 0) {
-                        --state->health;
-                    }
-                    walking = false;
-                }
-                if (TestFlag(e->flags, EFLAG_WALL)) {
-                    // Project out in x dir.
-                    float dist_x = entity->p.x - e->p.x;
-                    float delta_x = (0.5f * (entity->shape.width + e->shape.width)) - fabs(dist_x);
-                    Assert(delta_x >= 0.0f);
-                    float dir_x = dist_x / fabs(dist_x);
-                    float disp_x = dir_x * delta_x;
-                    entity->p.x += disp_x;
-                    cur_p = entity->p;
-                    walking = false;
-                }
-                if (TestFlag(e->flags, EFLAG_COIN)) {
-                    FlagOff(e->flags, EFLAG_ACTIVE);
-                    ++state->score;
-                    PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-                }
-            }
-
-            if (walking) {
-                static const SoundId sounds[2] = {SOUND_FOOTSTEP_LEFT, SOUND_FOOTSTEP_RIGHT};
-                static uint16_t sound_idx = 0;
-
-                Sound walk_sound = GetSound(sounds[sound_idx]);
-                if (!IsSoundPlaying(walk_sound)) {
-                    sound_idx = (sound_idx + 1) % ArraySizeOf(sounds);
-                    PlaySound(GetSound(sounds[sound_idx]));
-                }
-            }
         }
 
         if (TestFlag(entity->flags, EFLAG_SPAWNER)) {
@@ -742,38 +612,6 @@ static void GameStateUpdate(GameState* state, float delta) {
 
                 // Spawn bomb.
                 if (TestFlag(entity->spawn_flags, SFLAG_BOMB)) {
-                    static bool RIGHT = true;
-
-                    Entity* bomb = AllocateEntity();
-                    SetFlag(bomb->flags, EFLAG_BOMB);
-                    int width = 4;
-                    int height = 6;
-                    bomb->p = (Vector3){50, 200, 0};
-                    bomb->p = entity->p;
-                    float x_displacement = GetRandomValue(200, 400);
-                    x_displacement *= RIGHT ? 1.0f : -1.0f;
-                    RIGHT = !RIGHT;
-                    Vector3 displacement = Vector3Scale((Vector3){x_displacement, -1600, 0}, delta);
-                    bomb->pp = Vector3Subtract(bomb->p, displacement);
-                    bomb->texture = LoadTextureFromImage(GenImageColor(width, height, WHITE));
-                    bomb->bitmap_rec = (Rectangle){0, 0, width, height};
-                    bomb->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-                    bomb->m = 3.0f;
-                }
-
-                // Spawn Coin.
-                if (TestFlag(entity->spawn_flags, SFLAG_COIN)) {
-                    Entity* coin = AllocateEntity();
-                    SetFlag(coin->flags, EFLAG_COIN);
-                    coin->p = entity->p;
-                    int width = 12;
-                    int height = 12;
-                    coin->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
-                    coin->bitmap_rec = TextureGetTile(coin->texture, width, height, 0, 0, 40);
-                    coin->animation_frame_count = 6;
-                    coin->animation_frame_time = 0.09f;
-                    coin->animation_loops = true;
-                    coin->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
                 }
             }
 
@@ -791,100 +629,6 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (TestFlag(entity->flags, EFLAG_BOMB)) {
-            entity->bomb_timer += delta;
-            if (entity->bomb_timer >= 4.0f) {
-                // Spawn explosion.
-                {
-                    Entity* explosion = AllocateEntity();
-                    SetFlag(explosion->flags, EFLAG_EXPLOSION);
-                    explosion->p = entity->p;
-                    explosion->pp = explosion->p;
-                    int width = 100;
-                    int height = 100;
-                    Image image = GenImageColor(width, height, BLANK);
-                    Color color = YELLOW;
-                    color.a = 125;
-                    ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
-                    explosion->texture = LoadTextureFromImage(image);
-                    explosion->bitmap_rec = (Rectangle){0, 0, width, height};
-                    explosion->shape = (Shape){.kind = SHAPE_CIRCLE, .radius = width * 0.5f};
-                }
-                FlagOff(entity->flags, EFLAG_ACTIVE);
-                continue;
-            }
-
-            // TODO: Once camera is set up, start in camera space and convert to screen space.
-            const Vector3 g = {0, 9.8 * 1000.0f, 0};
-            Vector3 force = Vector3Scale(g, entity->m);
-            entity->a = Vector3Scale(force, 1.0f / entity->m);
-            Vector3 displacement =
-                Vector3Add(Vector3Subtract(entity->p, entity->pp), Vector3Scale(entity->a, delta * delta));
-            entity->p = Vector3Add(entity->p, displacement);
-
-            CollisionInfo info = CheckEntityCollisionScene(entity);
-            for (uint32_t i = 0; i < info.len; ++i) {
-                Entity* e = info.entities[i];
-                bool still_hit =
-                    Collides((Vector2){entity->p.x, entity->p.y}, entity->shape, (Vector2){e->p.x, e->p.y}, e->shape);
-                if (TestFlag(e->flags, EFLAG_WALL) && still_hit) {
-                    // TODO: IMPROVEMENTS:
-                    // * Run the constraint solve multiple times to resolve multiple constraints. the
-                    // bombs sometimes will stay a frame below collisions before teloporting back up. This
-                    // is because of the still_hits check. The bomb can fall below first level collision boxes
-                    // then get pushed up by second layer and then next frame gets pushed up again.
-                    // * Need to deal with bombs falling down getting pushed right instead of up. They will just
-                    // oscillate infinitely back and forth. Idea 1) Subdivide the delta time and run phsyics sim
-                    // at higher Hz than render Hz (maybe like double) - this will decrease the amount of distance
-                    // entities will travel each physics frame. Idea 2) Have special logic something along the lines of
-                    // if the difference between pen_up and pen_left is "close enough" project along the direction the
-                    // closest to the incoming impact (does this even make sense what if the bomb hits a corner
-                    // perfectly)?
-                    Vector3 velocity = Vector3Subtract(entity->p, entity->pp);
-                    Vector3 distance = Vector3Subtract(entity->p, e->p);
-                    float pen_x = (0.5f * (entity->shape.width + e->shape.width)) - fabs(distance.x);
-                    Assert(pen_x >= 0.0f);
-                    float pen_y = (0.5f * (entity->shape.height + e->shape.height)) - fabs(distance.y);
-                    Assert(pen_y >= 0.0f);
-                    Vector3 bounce_and_friction = {0.0f};
-                    if (pen_x <= pen_y) {
-                        pen_y = 0.0f;
-                        bounce_and_friction = (Vector3){-0.2f, 0.2f, 1.0f};
-                    } else {
-                        pen_x = 0.0f;
-                        bounce_and_friction = (Vector3){0.2f, -0.2f, 1.0f};
-                    }
-                    Vector3 penetration = {pen_x, pen_y, 0.0f};
-
-                    // Get the direction of the displacement, by normalizing the y direction.
-                    Vector3 direction =
-                        Vector3Multiply(distance, (Vector3){1.0f / fabs(distance.x), 1.0f / fabs(distance.y), 0.0f});
-                    Vector3 displacement = Vector3Multiply(direction, penetration);
-                    // Vector3 foo = entity->p;
-                    entity->p = Vector3Add(entity->p, displacement);
-
-                    cur_p = Vector3Subtract(entity->p, Vector3Multiply(bounce_and_friction, velocity));
-                    entity->a = Vector3Zero();
-                    Assert(fabs(entity->p.x - e->p.x) >= (0.5f * (entity->shape.width + e->shape.width)) ||
-                           fabs(entity->p.y - e->p.y) >= (0.5f * (entity->shape.height + e->shape.height)));
-                }
-            }
-        }
-
-        if (TestFlag(entity->flags, EFLAG_EXPLOSION)) {
-            static const float TIME = 0.2f;
-            entity->explosion_timer += delta;
-            if (entity->explosion_timer >= TIME) {
-                FlagOff(entity->flags, EFLAG_ACTIVE);
-                continue;
-            }
-
-            // Explosion shading.
-            Color tint = {Lerp(BLACK.r, WHITE.r, entity->explosion_timer / TIME),
-                          Lerp(BLACK.g, WHITE.g, entity->explosion_timer / TIME),
-                          Lerp(BLACK.b, WHITE.b, entity->explosion_timer / TIME), 255};
-            entity->tint = tint;
-
-            PlaySoundIfNotPlaying(SOUND_BOMB_EXPLOSION);
         }
 
         entity->pp = cur_p;
@@ -932,9 +676,6 @@ static void GameStateDraw(GameState* state, float delta) {
     for (uint32_t i = 0; i < size; ++i) {
         Entity* entity = entities[i];
         Color tint = entity->tint;
-        if (entity->damage_timer < entity->damage_cooldown) {
-            tint.a = Lerp(tint.a, 0, sin(state->timer * 100.0f));
-        }
 
         float half_width = entity->bitmap_rec.width * 0.5f;
         float half_height = entity->bitmap_rec.height * 0.5f;
