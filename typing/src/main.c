@@ -503,6 +503,8 @@ static void LoadLevel() {
 
 ////////////////////////////////////////////////////////////
 
+#define TEXT_CAP (1024)
+
 typedef struct GameState {
     Camera camera;
 
@@ -514,6 +516,9 @@ typedef struct GameState {
     uint32_t score;
 
     float timer;
+
+    char text[TEXT_CAP];
+    int32_t text_size;
 
     RenderTexture2D target;
 } GameState;
@@ -532,6 +537,9 @@ static void SimpleScene(GameState* state) {
     state->health = 3;
 
     float ground_y = 108;
+
+    strcat(state->text, "hello");
+    state->text_size += strlen("hello");
 
     // Player.
     {
@@ -702,28 +710,46 @@ static void GameStateDraw(GameState* state, float delta) {
             float spacing = fontsize / font.baseSize;
             Color color = WHITE;
 
-            float x = RenderWidth(state) * 0.92;
-            float y = 0.0f;
-
-            // Health text.
             {
-                char text[256] = {0};
-                memset(text, '*', sizeof(char) * state->health);
-                Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                y += 5.0f;
-                Vector2 pos = {x - size.x, y};
-                DrawTextEx(font, text, pos, fontsize, spacing, color);
-                y += size.y;
+                float x = RenderWidth(state) * 0.5f;
+                float y = 0.0f;
+
+                // Game text.
+                {
+                    char text[TEXT_CAP] = {0};
+                    memcpy(text, state->text, state->text_size);
+                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                    y += 5.0f;
+                    Vector2 pos = {x - size.x, y};
+                    DrawTextEx(font, text, pos, fontsize, spacing, color);
+                    y += size.y;
+                }
             }
 
-            // Score text.
             {
-                char text[256] = {0};
-                sprintf(text, "%d", state->score);
-                Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                y += 2.0f;
-                Vector2 pos = {x - size.x, y};
-                DrawTextEx(font, text, pos, fontsize, spacing, color);
+                float x = RenderWidth(state) * 0.92;
+                float y = 0.0f;
+
+                // Health text.
+                {
+                    char text[256] = {0};
+                    memset(text, '*', sizeof(char) * state->health);
+                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                    y += 5.0f;
+                    Vector2 pos = {x - size.x, y};
+                    DrawTextEx(font, text, pos, fontsize, spacing, color);
+                    y += size.y;
+                }
+
+                // Score text.
+                {
+                    char text[256] = {0};
+                    sprintf(text, "%d", state->score);
+                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                    y += 2.0f;
+                    Vector2 pos = {x - size.x, y};
+                    DrawTextEx(font, text, pos, fontsize, spacing, color);
+                }
             }
         }
 
