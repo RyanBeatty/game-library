@@ -649,6 +649,8 @@ static void GameStateUpdate(GameState* state, float delta) {
         // Update animation timer if it is a looping animation.
         entity->animation_timer += delta * entity->animation_loops;
     }
+
+    state->text_idx %= state->text_size;
 }
 
 static void GameStateDraw(GameState* state, float delta) {
