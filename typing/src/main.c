@@ -780,8 +780,6 @@ static void GameStateDraw(GameState* state, float delta) {
                         // TODO: FIX THIS.
                         xx += ss.x + 2;
                     }
-                    // Vector2 pos = {x - size.x, y};
-                    // DrawTextEx(font, text, pos, fontsize, spacing, color);
                     y += size.y;
                 }
             }
