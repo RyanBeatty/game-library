@@ -547,6 +547,7 @@ typedef struct GameState {
     char* text;
     int32_t text_size;
     int32_t text_idx;
+    int32_t error_count;
 
     RenderTexture2D target;
 } GameState;
@@ -633,8 +634,12 @@ static void GameStateUpdate(GameState* state, float delta) {
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             int key = GetCharPressed();
-            if (state->text_size != 0 && key == state->text[state->text_idx]) {
-                ++state->text_idx;
+            if (state->text_size != 0 && key != 0) {
+                if (state->error_count == 0 && key == state->text[state->text_idx]) {
+                    ++state->text_idx;
+                } else if (state->error_count + state->text_idx < state->text_size) {
+                    ++state->error_count;
+                }
             }
         }
 
