@@ -765,12 +765,30 @@ static void GameStateDraw(GameState* state, float delta) {
                     Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                     y += 5.0f;
                     float xx = 0.0f;
-                    for (uint32_t i = 0; i < state->text_size; ++i) {
+                    uint32_t i = 0;
+                    for (; i < state->text_idx; ++i) {
                         char buffer[256] = {0};
                         buffer[0] = text[i];
                         Vector2 pos = {x - (size.x - xx), y};
-                        Color c = i < state->text_idx ? GREEN : WHITE;
-                        DrawTextEx(font, buffer, pos, fontsize, spacing, c);
+                        DrawTextEx(font, buffer, pos, fontsize, spacing, GREEN);
+                        Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                        // TODO: FIX THIS.
+                        xx += ss.x + 2;
+                    }
+                    for (; i < state->text_idx + state->error_count; ++i) {
+                        char buffer[256] = {0};
+                        buffer[0] = text[i];
+                        Vector2 pos = {x - (size.x - xx), y};
+                        DrawTextEx(font, buffer, pos, fontsize, spacing, RED);
+                        Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                        // TODO: FIX THIS.
+                        xx += ss.x + 2;
+                    }
+                    for (; i < state->text_size; ++i) {
+                        char buffer[256] = {0};
+                        buffer[0] = text[i];
+                        Vector2 pos = {x - (size.x - xx), y};
+                        DrawTextEx(font, buffer, pos, fontsize, spacing, WHITE);
                         Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
                         // TODO: FIX THIS.
                         xx += ss.x + 2;
