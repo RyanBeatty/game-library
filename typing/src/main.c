@@ -198,52 +198,24 @@ typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 
 static char** Words = {0};
 
 static void InitWords() {
-    // {
-    //     uint32_t i = 0;
-    //     char text[256] = "hello";
-    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-    //     strcat(Words[i], text);
-    // }
-    // {
-    //     uint32_t i = 1;
-    //     char text[256] = "foo";
-    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-    //     strcat(Words[i], text);
-    // }
-    // {
-    //     uint32_t i = 2;
-    //     char text[256] = "aaaa";
-    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-    //     strcat(Words[i], text);
-    // }
-    // {
-    //     uint32_t i = 3;
-    //     char text[256] = "but";
-    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-    //     strcat(Words[i], text);
-    // }
-    // {
-    //     uint32_t i = 4;
-    //     char text[256] = "lil dog";
-    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-    //     strcat(Words[i], text);
-    // }
-
     Words = NULL;
     char* word = NULL;
 
-    size_t len = 0;
-    char* buffer = LoadFileData("assets/words/1000.words", &len);
-    breakpoint();
-    for (uint32_t i = 0; i < len; ++i) {
-        if (buffer[i] == '\n') {
-            arrput(word, '\0');
-            arrput(Words, word);
-            word = NULL;
-            for (; i + 1 < len && buffer[i + 1] == '\n'; ++i) {
+    unsigned int len = 0;
+    unsigned char* buffer = LoadFileData("assets/words/1000.words", &len);
+    uint32_t i = 0;
+    while (i < len) {
+        for (; i < len; ++i) {
+            if (buffer[i] == '\r' || buffer[i] == '\n') {
+                break;
             }
-        } else {
             arrput(word, buffer[i]);
+        }
+        arrput(word, '\0');
+        arrput(Words, word);
+        word = NULL;
+
+        for (; i < len && (buffer[i] == '\r' || buffer[i] == '\n'); ++i) {
         }
     }
 }
@@ -783,6 +755,7 @@ static void GameStateDraw(GameState* state, float delta) {
                 {
                     char text[1024] = {0};
                     memcpy(text, state->text, state->text_size);
+                    breakpoint();
 
                     Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                     y += 5.0f;
