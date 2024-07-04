@@ -195,43 +195,60 @@ typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 
 
 ////////////////////////////////////////////////////////////
 
-#define WORDS_CAP (5)
-static char* Words[WORDS_CAP] = {0};
+static char** Words = {0};
 
 static void InitWords() {
-    {
-        uint32_t i = 0;
-        char text[256] = "hello";
-        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-        strcat(Words[i], text);
-    }
-    {
-        uint32_t i = 1;
-        char text[256] = "foo";
-        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-        strcat(Words[i], text);
-    }
-    {
-        uint32_t i = 2;
-        char text[256] = "aaaa";
-        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-        strcat(Words[i], text);
-    }
-    {
-        uint32_t i = 3;
-        char text[256] = "but";
-        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-        strcat(Words[i], text);
-    }
-    {
-        uint32_t i = 4;
-        char text[256] = "lil dog";
-        Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
-        strcat(Words[i], text);
+    // {
+    //     uint32_t i = 0;
+    //     char text[256] = "hello";
+    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+    //     strcat(Words[i], text);
+    // }
+    // {
+    //     uint32_t i = 1;
+    //     char text[256] = "foo";
+    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+    //     strcat(Words[i], text);
+    // }
+    // {
+    //     uint32_t i = 2;
+    //     char text[256] = "aaaa";
+    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+    //     strcat(Words[i], text);
+    // }
+    // {
+    //     uint32_t i = 3;
+    //     char text[256] = "but";
+    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+    //     strcat(Words[i], text);
+    // }
+    // {
+    //     uint32_t i = 4;
+    //     char text[256] = "lil dog";
+    //     Words[i] = (char*)calloc(strlen(text) + 1, sizeof(Words[0]));
+    //     strcat(Words[i], text);
+    // }
+
+    Words = NULL;
+    char* word = NULL;
+
+    size_t len = 0;
+    char* buffer = LoadFileData("assets/words/1000.words", &len);
+    breakpoint();
+    for (uint32_t i = 0; i < len; ++i) {
+        if (buffer[i] == '\n') {
+            arrput(word, '\0');
+            arrput(Words, word);
+            word = NULL;
+            for (; i + 1 < len && buffer[i + 1] == '\n'; ++i) {
+            }
+        } else {
+            arrput(word, buffer[i]);
+        }
     }
 }
 
-static char* GetWord() { return Words[GetRandomValue(0, WORDS_CAP - 1)]; }
+static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
 
 ////////////////////////////////////////////////////////////
 
