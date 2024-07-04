@@ -687,7 +687,7 @@ static void GameStateUpdate(GameState* state, float delta) {
 
     if (state->text_idx == state->text_size) {
         state->text = GetWord();
-        state->text_size = strlen(state->text) + 1;
+        state->text_size = strlen(state->text);
         state->text_idx = 0;
     }
 }
@@ -764,7 +764,6 @@ static void GameStateDraw(GameState* state, float delta) {
                 {
                     char text[1024] = {0};
                     memcpy(text, state->text, state->text_size);
-                    breakpoint();
 
                     Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                     y += 5.0f;
