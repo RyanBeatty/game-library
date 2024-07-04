@@ -633,6 +633,10 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            if (IsKeyPressed(KEY_BACKSPACE) && state->error_count > 0) {
+                --state->error_count;
+            }
+
             int key = GetCharPressed();
             if (state->text_size != 0 && key != 0) {
                 if (state->error_count == 0 && key == state->text[state->text_idx]) {
