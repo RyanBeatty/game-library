@@ -79,6 +79,7 @@ typedef enum SoundId {
     SOUND_GAME_START,
     SOUND_TYPING_GOOD,
     SOUND_TYPING_BAD,
+    SOUND_TYPING_DELETE,
     SOUND_COUNT
 } SoundId;
 
@@ -120,6 +121,9 @@ static void AudioSystemInit() {
 
     Sounds[SOUND_TYPING_BAD] = LoadSound("assets/sound/typing_bad.wav");
     Assert(IsSoundReady(Sounds[SOUND_TYPING_BAD]));
+
+    Sounds[SOUND_TYPING_DELETE] = LoadSound("assets/sound/typing_delete.wav");
+    Assert(IsSoundReady(Sounds[SOUND_TYPING_DELETE]));
 }
 
 #define GetSound(id) (Sounds[(id)])
@@ -651,6 +655,7 @@ static void GameStateUpdate(GameState* state, float delta) {
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             if (IsKeyPressed(KEY_BACKSPACE) && state->error_count > 0) {
                 --state->error_count;
+                PlaySound(GetSound(SOUND_TYPING_DELETE));
             }
 
             int key = GetCharPressed();
