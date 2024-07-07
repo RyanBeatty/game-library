@@ -696,6 +696,7 @@ static void GameStateUpdate(GameState* state, float delta) {
     if (state->text_idx == state->text_size) {
         GameStateUpdateWord(state);
         state->score += 15.0f;
+        PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
     }
 }
 
