@@ -78,6 +78,7 @@ typedef enum SoundId {
     SOUND_GAME_OVER,
     SOUND_GAME_START,
     SOUND_TYPING_GOOD,
+    SOUND_TYPING_BAD,
     SOUND_COUNT
 } SoundId;
 
@@ -116,6 +117,9 @@ static void AudioSystemInit() {
 
     Sounds[SOUND_TYPING_GOOD] = LoadSound("assets/sound/typing_good.wav");
     Assert(IsSoundReady(Sounds[SOUND_TYPING_GOOD]));
+
+    Sounds[SOUND_TYPING_BAD] = LoadSound("assets/sound/typing_bad.wav");
+    Assert(IsSoundReady(Sounds[SOUND_TYPING_BAD]));
 }
 
 #define GetSound(id) (Sounds[(id)])
@@ -654,8 +658,11 @@ static void GameStateUpdate(GameState* state, float delta) {
                 if (state->error_count == 0 && key == state->text[state->text_idx]) {
                     ++state->text_idx;
                     PlaySound(GetSound(SOUND_TYPING_GOOD));
-                } else if (state->error_count + state->text_idx < state->text_size) {
-                    ++state->error_count;
+                } else {
+                    if (state->error_count + state->text_idx < state->text_size) {
+                        ++state->error_count;
+                    }
+                    PlaySound(GetSound(SOUND_TYPING_BAD));
                 }
             }
         }
