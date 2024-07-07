@@ -559,10 +559,18 @@ static GameState GState;
 
 #define GetGameState() (&GState)
 
+static void GameStateUpdateWord(GameState* state) {
+    state->text = GetWord();
+    state->text_size = strlen(state->text);
+    state->text_idx = 0;
+}
+
 static void SimpleScene(GameState* state) {
     LoadLevel();
 
     InitWords();
+
+    GameStateUpdateWord(state);
 
     state->score = 0.0f;
     state->health = 3;
@@ -686,9 +694,8 @@ static void GameStateUpdate(GameState* state, float delta) {
     }
 
     if (state->text_idx == state->text_size) {
-        state->text = GetWord();
-        state->text_size = strlen(state->text);
-        state->text_idx = 0;
+        GameStateUpdateWord(state);
+        state->score += 15.0f;
     }
 }
 
