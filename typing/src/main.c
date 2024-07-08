@@ -245,10 +245,7 @@ typedef enum EntityFlag {
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_SPAWNER = 1 << 3,
-    EFLAG_BOMB = 1 << 4,
-    EFLAG_WALL = 1 << 5,
-    EFLAG_EXPLOSION = 1 << 6,
-    EFLAG_COIN = 1 << 7,
+    EFLAG_WALL = 1 << 4,
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -699,9 +696,6 @@ static void GameStateUpdate(GameState* state, float delta) {
                     entity->p.x = choice;
                 }
             }
-        }
-
-        if (TestFlag(entity->flags, EFLAG_BOMB)) {
         }
 
         entity->pp = cur_p;
