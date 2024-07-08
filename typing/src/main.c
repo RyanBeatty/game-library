@@ -246,6 +246,8 @@ typedef enum EntityFlag {
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_SPAWNER = 1 << 3,
     EFLAG_WALL = 1 << 4,
+    EFLAG_MONSTER = 1 << 5,
+    EFLAG_UNSPAWNED = 1 << 6,
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -708,6 +710,22 @@ static void GameStateUpdate(GameState* state, float delta) {
         GameStateUpdateWord(state);
         state->score += 15.0f;
         PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
+
+        // Monster.
+        {
+            Entity* entity = AllocateEntity();
+            SetFlag(entity->flags, EFLAG_MONSTER);
+            int width = 12;
+            int height = 12;
+            float y = 0.5f * RenderHeight(state);
+            entity->p = (Vector3){RenderWidth(state) * 0.2 + (width * 0.5f), y + (height * 0.5f), 0.0f};
+            entity->pp = entity->p;
+            entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
+            entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
+            entity->animation_frame_count = 5;
+            entity->animation_frame_time = 0.2f;
+            entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+        }
     }
 }
 
