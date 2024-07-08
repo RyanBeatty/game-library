@@ -700,6 +700,10 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
         }
 
+        if (TestFlag(entity->flags, EFLAG_MONSTER)) {
+            entity->animation_timer += delta;
+        }
+
         entity->pp = cur_p;
 
         // Update animation timer if it is a looping animation.
@@ -722,7 +726,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->pp = entity->p;
             entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
             entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
-            entity->animation_frame_count = 5;
+            entity->animation_frame_count = 4;
             entity->animation_frame_time = 0.2f;
             entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         }
