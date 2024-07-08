@@ -242,13 +242,13 @@ static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
+    EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_SPAWNER = 1 << 3,
     EFLAG_BOMB = 1 << 4,
     EFLAG_WALL = 1 << 5,
     EFLAG_EXPLOSION = 1 << 6,
     EFLAG_COIN = 1 << 7,
-    EFLAG_DRAW = 1 << 8
 } EntityFlag;
 
 typedef uint32_t EntityId;
