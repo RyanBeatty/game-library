@@ -703,7 +703,8 @@ static void GameStateUpdate(GameState* state, float delta) {
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
             entity->animation_timer += delta;
 
-            entity->p.x += 10.0f * delta;
+            entity->p.x -= 10.0f * delta;
+            entity->right = false;
         }
 
         entity->pp = cur_p;
@@ -724,7 +725,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             int width = 12;
             int height = 12;
             float y = 0.5f * RenderHeight(state);
-            entity->p = (Vector3){RenderWidth(state) * 0.2 + (width * 0.5f), y + (height * 0.5f), 0.0f};
+            entity->p = (Vector3){RenderWidth(state) * 0.8 + (width * 0.5f), y + (height * 0.5f), 0.0f};
             entity->pp = entity->p;
             entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
             entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
@@ -783,7 +784,7 @@ static void GameStateDraw(GameState* state, float delta) {
         Rectangle src = {
             entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
             entity->bitmap_rec.y,
-            entity->bitmap_rec.width * (entity->right ? -1.0f : 1.0f),
+            entity->bitmap_rec.width * (entity->right ? 1.0f : -1.0f),
             entity->bitmap_rec.height,
 
         };
