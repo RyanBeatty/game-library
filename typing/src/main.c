@@ -544,6 +544,8 @@ static void LoadLevel() {
 ////////////////////////////////////////////////////////////
 
 typedef struct GameState {
+    /////////////////////////////////////////
+    // Core fields
     Camera camera;
 
     uint16_t health;
@@ -555,12 +557,14 @@ typedef struct GameState {
 
     float timer;
 
+    RenderTexture2D target;
+
+    /////////////////////////////////////////
+    // Gameplay fields
     char* text;
     int32_t text_size;
     int32_t text_idx;
     int32_t error_count;
-
-    RenderTexture2D target;
 } GameState;
 
 #define RenderWidth(state) ((state)->target.texture.width)
