@@ -702,6 +702,8 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
             entity->animation_timer += delta;
+
+            entity->p.x += 10.0f * delta;
         }
 
         entity->pp = cur_p;
