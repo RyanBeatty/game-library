@@ -565,6 +565,8 @@ typedef struct GameState {
     int32_t text_size;
     int32_t text_idx;
     int32_t error_count;
+
+    Entity* focus;
 } GameState;
 
 #define RenderWidth(state) ((state)->target.texture.width)
@@ -736,6 +738,8 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->animation_frame_count = 4;
             entity->animation_frame_time = 0.2f;
             entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+
+            state->focus = entity;
         }
     }
 }
@@ -778,6 +782,11 @@ static void GameStateDraw(GameState* state, float delta) {
     for (uint32_t i = 0; i < size; ++i) {
         Entity* entity = entities[i];
         Color tint = entity->tint;
+
+        if (entity == state->focus) {
+            tint = YELLOW;
+            // tint.a = 0.4f;
+        }
 
         float half_width = entity->bitmap_rec.width * 0.5f;
         float half_height = entity->bitmap_rec.height * 0.5f;
