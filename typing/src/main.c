@@ -678,21 +678,20 @@ static void GameStateUpdate(GameState* state, float delta) {
                 }
             }
 
-            // int32_t dir = 0;
-            // if (IsKeyPressed(KEY_RIGHT)) {
-            //     dir = 1;
-            // } else if (IsKeyPressed(KEY_LEFT)) {
-            //     dir = -1;
-            // }
+            int32_t dir = 0;
+            if (IsKeyPressed(KEY_RIGHT)) {
+                dir = 1;
+            } else if (IsKeyPressed(KEY_LEFT)) {
+                dir = -1;
+            }
 
-            // for (uint32_t j = 0; j < state->monsters_size; ++j) {
-            //     Entity* monster = state->monsters[j];
-            //     Assert(TestFlag(monster->flags, EFLAG_ACTIVE));
-            //     if (monster != entity) {
-            //         state->focus = monster;
-            //         break;
-            //     }
-            // }
+            if (dir != 0 && state->focus != NULL) {
+                int32_t next_idx = (state->focus - state->monsters) + dir;
+
+                if (next_idx >= 0 && next_idx < state->monsters_size) {
+                    state->focus = &state->monsters[next_idx];
+                }
+            }
         }
 
         if (TestFlag(entity->flags, EFLAG_SPAWNER)) {
