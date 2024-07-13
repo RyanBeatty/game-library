@@ -295,6 +295,11 @@ typedef struct Entity {
     float damage_cooldown;
 
     float dash_timer;
+
+    char* text;
+    int32_t text_size;
+    int32_t text_idx;
+    int32_t error_count;
 } Entity;
 
 typedef struct EntityEntry {
@@ -584,6 +589,12 @@ static void GameStateUpdateWord(GameState* state) {
     state->text_idx = 0;
 }
 
+static void EntitySetWord(Entity* entity) {
+    entity->text = GetWord();
+    entity->text_size = strlen(entity->text);
+    entity->text_idx = 0;
+}
+
 static void SimpleScene(GameState* state) {
     LoadLevel();
 
@@ -755,6 +766,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->animation_frame_count = 4;
             entity->animation_frame_time = 0.2f;
             entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+            EntitySetWord(entity);
 
             // Monsters list + focus.
             uint32_t idx = state->monsters_size;
