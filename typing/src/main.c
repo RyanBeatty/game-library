@@ -566,7 +566,9 @@ typedef struct GameState {
     int32_t text_idx;
     int32_t error_count;
 
-    Entity* focus;
+    Entity* monsters[ENTITY_CAP];
+    uint32_t monsters_size;
+    Entity** focus;
 } GameState;
 
 #define RenderWidth(state) ((state)->target.texture.width)
@@ -675,6 +677,22 @@ static void GameStateUpdate(GameState* state, float delta) {
                     PlaySound(GetSound(SOUND_TYPING_BAD));
                 }
             }
+
+            // int32_t dir = 0;
+            // if (IsKeyPressed(KEY_RIGHT)) {
+            //     dir = 1;
+            // } else if (IsKeyPressed(KEY_LEFT)) {
+            //     dir = -1;
+            // }
+
+            // for (uint32_t j = 0; j < state->monsters_size; ++j) {
+            //     Entity* monster = state->monsters[j];
+            //     Assert(TestFlag(monster->flags, EFLAG_ACTIVE));
+            //     if (monster != entity) {
+            //         state->focus = monster;
+            //         break;
+            //     }
+            // }
         }
 
         if (TestFlag(entity->flags, EFLAG_SPAWNER)) {
@@ -739,7 +757,14 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->animation_frame_time = 0.2f;
             entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
 
-            state->focus = entity;
+            // Monsters list + focus.
+            uint32_t idx = state->monsters_size;
+            state->monsters[idx] = entity;
+            ++state->monsters_size;
+
+            if (state->focus == NULL) {
+                state->focus = &state->monsters[idx];
+            }
         }
     }
 }
@@ -783,7 +808,7 @@ static void GameStateDraw(GameState* state, float delta) {
         Entity* entity = entities[i];
         Color tint = entity->tint;
 
-        if (entity == state->focus) {
+        if (state->focus != NULL && entity == *state->focus) {
             tint = YELLOW;
             // tint.a = 0.4f;
         }
