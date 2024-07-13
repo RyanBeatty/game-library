@@ -595,12 +595,41 @@ static void EntitySetWord(Entity* entity) {
     entity->text_idx = 0;
 }
 
+static void SpawnMonster(GameState* state) {
+    // Monster.
+    {
+        Entity* entity = AllocateEntity();
+        SetFlag(entity->flags, EFLAG_MONSTER);
+        int width = 12;
+        int height = 12;
+        float y = 0.5f * RenderHeight(state);
+        entity->p = (Vector3){RenderWidth(state) * 0.8 + (width * 0.5f), y + (height * 0.5f), 0.0f};
+        entity->pp = entity->p;
+        entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
+        entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
+        entity->animation_frame_count = 4;
+        entity->animation_frame_time = 0.2f;
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+        EntitySetWord(entity);
+
+        // Monsters list + focus.
+        uint32_t idx = state->monsters_size;
+        state->monsters[idx] = entity;
+        ++state->monsters_size;
+
+        if (state->focus == NULL) {
+            state->focus = &state->monsters[idx];
+        }
+    }
+}
+
 static void SimpleScene(GameState* state) {
     LoadLevel();
 
     InitWords();
 
     GameStateUpdateWord(state);
+    SpawnMonster(state);
 
     state->score = 0.0f;
     state->health = 3;
@@ -671,36 +700,40 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            if (IsKeyPressed(KEY_BACKSPACE) && state->error_count > 0) {
-                --state->error_count;
-                PlaySound(GetSound(SOUND_TYPING_DELETE));
-            }
+            if (state->focus != NULL) {
+                Entity* focus = *state->focus;
 
-            int key = GetCharPressed();
-            if (state->text_size != 0 && key != 0) {
-                if (state->error_count == 0 && key == state->text[state->text_idx]) {
-                    ++state->text_idx;
-                    PlaySound(GetSound(SOUND_TYPING_GOOD));
-                } else {
-                    if (state->error_count + state->text_idx < state->text_size) {
-                        ++state->error_count;
-                    }
-                    PlaySound(GetSound(SOUND_TYPING_BAD));
+                if (IsKeyPressed(KEY_BACKSPACE) && focus->error_count > 0) {
+                    --focus->error_count;
+                    PlaySound(GetSound(SOUND_TYPING_DELETE));
                 }
-            }
 
-            int32_t dir = 0;
-            if (IsKeyPressed(KEY_RIGHT)) {
-                dir = 1;
-            } else if (IsKeyPressed(KEY_LEFT)) {
-                dir = -1;
-            }
+                int key = GetCharPressed();
+                if (focus->text_size != 0 && key != 0) {
+                    if (focus->error_count == 0 && key == focus->text[focus->text_idx]) {
+                        ++focus->text_idx;
+                        PlaySound(GetSound(SOUND_TYPING_GOOD));
+                    } else {
+                        if (focus->error_count + focus->text_idx < focus->text_size) {
+                            ++focus->error_count;
+                        }
+                        PlaySound(GetSound(SOUND_TYPING_BAD));
+                    }
+                }
 
-            if (dir != 0 && state->focus != NULL) {
-                int32_t next_idx = (state->focus - state->monsters) + dir;
+                int32_t dir = 0;
+                if (IsKeyPressed(KEY_RIGHT)) {
+                    dir = 1;
+                } else if (IsKeyPressed(KEY_LEFT)) {
+                    dir = -1;
+                }
 
-                if (next_idx >= 0 && next_idx < state->monsters_size) {
-                    state->focus = &state->monsters[next_idx];
+                if (dir != 0) {
+                    int32_t next_idx = (state->focus - state->monsters) + dir;
+
+                    if (next_idx >= 0 && next_idx < state->monsters_size) {
+                        state->focus = &state->monsters[next_idx];
+                    }
                 }
             }
         }
@@ -751,32 +784,7 @@ static void GameStateUpdate(GameState* state, float delta) {
         GameStateUpdateWord(state);
         state->score += 15.0f;
         PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-
-        // Monster.
-        {
-            Entity* entity = AllocateEntity();
-            SetFlag(entity->flags, EFLAG_MONSTER);
-            int width = 12;
-            int height = 12;
-            float y = 0.5f * RenderHeight(state);
-            entity->p = (Vector3){RenderWidth(state) * 0.8 + (width * 0.5f), y + (height * 0.5f), 0.0f};
-            entity->pp = entity->p;
-            entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
-            entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
-            entity->animation_frame_count = 4;
-            entity->animation_frame_time = 0.2f;
-            entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-            EntitySetWord(entity);
-
-            // Monsters list + focus.
-            uint32_t idx = state->monsters_size;
-            state->monsters[idx] = entity;
-            ++state->monsters_size;
-
-            if (state->focus == NULL) {
-                state->focus = &state->monsters[idx];
-            }
-        }
+        SpawnMonster(state);
     }
 }
 
@@ -855,41 +863,45 @@ static void GameStateDraw(GameState* state, float delta) {
 
                 // Game text.
                 {
-                    char text[1024] = {0};
-                    memcpy(text, state->text, state->text_size);
+                    if (state->focus != NULL) {
+                        Entity* focus = *state->focus;
 
-                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                    y += 5.0f;
-                    float xx = 0.0f;
-                    uint32_t i = 0;
-                    for (; i < state->text_idx; ++i) {
-                        char buffer[256] = {0};
-                        buffer[0] = text[i];
-                        Vector2 pos = {x - (size.x - xx), y};
-                        DrawTextEx(font, buffer, pos, fontsize, spacing, GREEN);
-                        Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                        // TODO: FIX THIS.
-                        xx += ss.x + 2;
+                        char text[1024] = {0};
+                        memcpy(text, focus->text, focus->text_size);
+
+                        Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                        y += 5.0f;
+                        float xx = 0.0f;
+                        uint32_t i = 0;
+                        for (; i < focus->text_idx; ++i) {
+                            char buffer[256] = {0};
+                            buffer[0] = text[i];
+                            Vector2 pos = {x - (size.x - xx), y};
+                            DrawTextEx(font, buffer, pos, fontsize, spacing, GREEN);
+                            Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                            // TODO: FIX THIS.
+                            xx += ss.x + 2;
+                        }
+                        for (; i < focus->text_idx + focus->error_count; ++i) {
+                            char buffer[256] = {0};
+                            buffer[0] = text[i];
+                            Vector2 pos = {x - (size.x - xx), y};
+                            DrawTextEx(font, buffer, pos, fontsize, spacing, RED);
+                            Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                            // TODO: FIX THIS.
+                            xx += ss.x + 2;
+                        }
+                        for (; i < focus->text_size; ++i) {
+                            char buffer[256] = {0};
+                            buffer[0] = text[i];
+                            Vector2 pos = {x - (size.x - xx), y};
+                            DrawTextEx(font, buffer, pos, fontsize, spacing, WHITE);
+                            Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                            // TODO: FIX THIS.
+                            xx += ss.x + 2;
+                        }
+                        y += size.y;
                     }
-                    for (; i < state->text_idx + state->error_count; ++i) {
-                        char buffer[256] = {0};
-                        buffer[0] = text[i];
-                        Vector2 pos = {x - (size.x - xx), y};
-                        DrawTextEx(font, buffer, pos, fontsize, spacing, RED);
-                        Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                        // TODO: FIX THIS.
-                        xx += ss.x + 2;
-                    }
-                    for (; i < state->text_size; ++i) {
-                        char buffer[256] = {0};
-                        buffer[0] = text[i];
-                        Vector2 pos = {x - (size.x - xx), y};
-                        DrawTextEx(font, buffer, pos, fontsize, spacing, WHITE);
-                        Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                        // TODO: FIX THIS.
-                        xx += ss.x + 2;
-                    }
-                    y += size.y;
                 }
             }
 
