@@ -726,6 +726,12 @@ static void GameStateUpdate(GameState* state, float delta) {
 
                 if (dir != 0) {
                     int32_t next_idx = (state->focus - state->monsters) + dir;
+                    if (next_idx < 0) {
+                        next_idx = state->monsters_size - 1;
+                    }
+                    if (next_idx >= state->monsters_size) {
+                        next_idx = 0;
+                    }
 
                     if (next_idx >= 0 && next_idx < state->monsters_size) {
                         TraceLog(LOG_INFO, "next %d", next_idx);
