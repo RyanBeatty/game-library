@@ -300,6 +300,7 @@ typedef struct Entity {
     int32_t text_size;
     int32_t text_idx;
     int32_t error_count;
+    bool dead;
 } Entity;
 
 typedef struct EntityEntry {
@@ -728,6 +729,14 @@ static void GameStateUpdate(GameState* state, float delta) {
                     dir = -1;
                 }
 
+                if (focus->text_idx == focus->text_size) {
+                    FlagOff(focus->flags, EFLAG_ACTIVE);
+                    GameStateUpdateWord(state);
+                    state->score += 15.0f;
+                    PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
+                    SpawnMonster(state);
+                }
+
                 if (dir != 0) {
                     int32_t next_idx = (state->focus - state->monsters) + dir;
 
@@ -780,12 +789,12 @@ static void GameStateUpdate(GameState* state, float delta) {
         entity->animation_timer += delta * entity->animation_loops;
     }
 
-    if (state->text_idx == state->text_size) {
-        GameStateUpdateWord(state);
-        state->score += 15.0f;
-        PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-        SpawnMonster(state);
-    }
+    // if (state->text_idx == state->text_size) {
+    //     GameStateUpdateWord(state);
+    //     state->score += 15.0f;
+    //     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
+    //     SpawnMonster(state);
+    // }
 }
 
 static void GameStateDraw(GameState* state, float delta) {
