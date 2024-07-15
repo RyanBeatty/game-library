@@ -567,11 +567,6 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Gameplay fields
-    char* text;
-    int32_t text_size;
-    int32_t text_idx;
-    int32_t error_count;
-
     Entity* monsters[ENTITY_CAP];
     uint32_t monsters_size;
     Entity** focus;
@@ -583,12 +578,6 @@ typedef struct GameState {
 static GameState GState;
 
 #define GetGameState() (&GState)
-
-static void GameStateUpdateWord(GameState* state) {
-    state->text = GetWord();
-    state->text_size = strlen(state->text);
-    state->text_idx = 0;
-}
 
 static void EntitySetWord(Entity* entity) {
     entity->text = GetWord();
@@ -629,7 +618,6 @@ static void SimpleScene(GameState* state) {
 
     InitWords();
 
-    GameStateUpdateWord(state);
     SpawnMonster(state);
 
     state->score = 0.0f;
@@ -731,7 +719,6 @@ static void GameStateUpdate(GameState* state, float delta) {
 
                 if (focus->text_idx == focus->text_size) {
                     FlagOff(focus->flags, EFLAG_ACTIVE);
-                    GameStateUpdateWord(state);
                     state->score += 15.0f;
                     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
                     SpawnMonster(state);
