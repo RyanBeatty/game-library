@@ -735,7 +735,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     FlagOff(entity->flags, EFLAG_ACTIVE);
                     state->score += 15.0f;
                     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-                    uint32_t size_to_spawn = state->monsters_size;
+                    uint32_t size_to_spawn = state->monsters_size * 2;
                     for (uint32_t j = 0; j < size_to_spawn; ++j) {
                         SpawnMonster(state);
                     }
