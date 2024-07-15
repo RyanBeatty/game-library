@@ -719,6 +719,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 int32_t dir = 0;
                 if (IsKeyPressed(KEY_RIGHT)) {
                     dir = 1;
+                    breakpoint();
                 } else if (IsKeyPressed(KEY_LEFT)) {
                     dir = -1;
                 }
@@ -727,6 +728,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                     int32_t next_idx = (state->focus - state->monsters) + dir;
 
                     if (next_idx >= 0 && next_idx < state->monsters_size) {
+                        TraceLog(LOG_INFO, "next %d", next_idx);
                         state->focus = &state->monsters[next_idx];
                     }
                 }
