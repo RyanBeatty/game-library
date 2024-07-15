@@ -567,9 +567,7 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Gameplay fields
-    Entity* monsters[ENTITY_CAP];
-    uint32_t monsters_size;
-    Entity** focus;
+    Entity* focus;
 } GameState;
 
 #define RenderWidth(state) ((state)->target.texture.width)
@@ -602,13 +600,8 @@ static void SpawnMonster(GameState* state) {
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         EntitySetWord(entity);
 
-        // Monsters list + focus.
-        uint32_t idx = state->monsters_size;
-        state->monsters[idx] = entity;
-        ++state->monsters_size;
-
         if (state->focus == NULL) {
-            state->focus = &state->monsters[idx];
+            state->focus = entity;
         }
     }
 }
@@ -697,7 +690,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->p.x -= 10.0f * delta;
             entity->right = false;
 
-            if (state->focus != NULL && *state->focus == entity) {
+            if (state->focus != NULL && state->focus == entity) {
                 if (IsKeyPressed(KEY_BACKSPACE) && entity->error_count > 0) {
                     --entity->error_count;
                     PlaySound(GetSound(SOUND_TYPING_DELETE));
@@ -719,31 +712,31 @@ static void GameStateUpdate(GameState* state, float delta) {
                 int32_t dir = 0;
                 if (IsKeyPressed(KEY_RIGHT)) {
                     dir = 1;
-                    breakpoint();
                 } else if (IsKeyPressed(KEY_LEFT)) {
                     dir = -1;
                 }
 
-                if (dir != 0) {
-                    int32_t next_idx = (state->focus - state->monsters) + dir;
-                    if (next_idx < 0) {
-                        next_idx = state->monsters_size - 1;
-                    }
-                    if (next_idx >= state->monsters_size) {
-                        next_idx = 0;
-                    }
-
-                    if (next_idx >= 0 && next_idx < state->monsters_size) {
-                        TraceLog(LOG_INFO, "next %d", next_idx);
-                        state->focus = &state->monsters[next_idx];
-                    }
-                }
+                // for (uint32_t j = i + dir; j != i; j += dir) {
+                //     if (j < 0) {
+                //         j = ENTITY_CAP - 1;
+                //         continue;
+                //     } else if (j >= ENTITY_CAP) {
+                //         j = 0;
+                //         continue;
+                //     }
+                //     Entity* next = GetEntity(j);
+                //     if (TestFlag(next->flags, EFLAG_ACTIVE) && TestFlag(next->flags, EFLAG_MONSTER)) {
+                //         state->focus = next;
+                //         break;
+                //     }
+                // }
 
                 if (entity->text_idx == entity->text_size) {
                     FlagOff(entity->flags, EFLAG_ACTIVE);
+                    state->focus = NULL;
                     state->score += 15.0f;
                     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-                    uint32_t size_to_spawn = state->monsters_size * 2;
+                    uint32_t size_to_spawn = 2;
                     for (uint32_t j = 0; j < size_to_spawn; ++j) {
                         SpawnMonster(state);
                     }
@@ -833,7 +826,7 @@ static void GameStateDraw(GameState* state, float delta) {
         Entity* entity = entities[i];
         Color tint = entity->tint;
 
-        if (state->focus != NULL && entity == *state->focus) {
+        if (state->focus != NULL && entity == state->focus) {
             tint = YELLOW;
             // tint.a = 0.4f;
         }
@@ -870,7 +863,7 @@ static void GameStateDraw(GameState* state, float delta) {
                 // Game text.
                 {
                     if (state->focus != NULL) {
-                        Entity* focus = *state->focus;
+                        Entity* focus = state->focus;
 
                         char text[1024] = {0};
                         memcpy(text, focus->text, focus->text_size);
