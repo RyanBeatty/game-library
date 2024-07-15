@@ -689,22 +689,28 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            if (state->focus != NULL) {
-                Entity* focus = *state->focus;
+        }
 
-                if (IsKeyPressed(KEY_BACKSPACE) && focus->error_count > 0) {
-                    --focus->error_count;
+        if (TestFlag(entity->flags, EFLAG_MONSTER)) {
+            entity->animation_timer += delta;
+
+            entity->p.x -= 10.0f * delta;
+            entity->right = false;
+
+            if (state->focus != NULL && *state->focus == entity) {
+                if (IsKeyPressed(KEY_BACKSPACE) && entity->error_count > 0) {
+                    --entity->error_count;
                     PlaySound(GetSound(SOUND_TYPING_DELETE));
                 }
 
                 int key = GetCharPressed();
-                if (focus->text_size != 0 && key != 0) {
-                    if (focus->error_count == 0 && key == focus->text[focus->text_idx]) {
-                        ++focus->text_idx;
+                if (entity->text_size != 0 && key != 0) {
+                    if (entity->error_count == 0 && key == entity->text[entity->text_idx]) {
+                        ++entity->text_idx;
                         PlaySound(GetSound(SOUND_TYPING_GOOD));
                     } else {
-                        if (focus->error_count + focus->text_idx < focus->text_size) {
-                            ++focus->error_count;
+                        if (entity->error_count + entity->text_idx < entity->text_size) {
+                            ++entity->error_count;
                         }
                         PlaySound(GetSound(SOUND_TYPING_BAD));
                     }
@@ -717,8 +723,8 @@ static void GameStateUpdate(GameState* state, float delta) {
                     dir = -1;
                 }
 
-                if (focus->text_idx == focus->text_size) {
-                    FlagOff(focus->flags, EFLAG_ACTIVE);
+                if (entity->text_idx == entity->text_size) {
+                    FlagOff(entity->flags, EFLAG_ACTIVE);
                     state->score += 15.0f;
                     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
                     SpawnMonster(state);
@@ -761,13 +767,6 @@ static void GameStateUpdate(GameState* state, float delta) {
                     entity->p.x = choice;
                 }
             }
-        }
-
-        if (TestFlag(entity->flags, EFLAG_MONSTER)) {
-            entity->animation_timer += delta;
-
-            entity->p.x -= 10.0f * delta;
-            entity->right = false;
         }
 
         entity->pp = cur_p;
