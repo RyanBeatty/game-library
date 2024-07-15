@@ -592,7 +592,7 @@ static void SpawnMonster(GameState* state) {
         SetFlag(entity->flags, EFLAG_MONSTER);
         int width = 12;
         int height = 12;
-        float y = 0.5f * RenderHeight(state);
+        float y = (0.5f * RenderHeight(state)) + GetRandomValue(-10, 10);
         entity->p = (Vector3){RenderWidth(state) * 0.8 + (width * 0.5f), y + (height * 0.5f), 0.0f};
         entity->pp = entity->p;
         entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
@@ -723,18 +723,21 @@ static void GameStateUpdate(GameState* state, float delta) {
                     dir = -1;
                 }
 
-                if (entity->text_idx == entity->text_size) {
-                    FlagOff(entity->flags, EFLAG_ACTIVE);
-                    state->score += 15.0f;
-                    PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-                    SpawnMonster(state);
-                }
-
                 if (dir != 0) {
                     int32_t next_idx = (state->focus - state->monsters) + dir;
 
                     if (next_idx >= 0 && next_idx < state->monsters_size) {
                         state->focus = &state->monsters[next_idx];
+                    }
+                }
+
+                if (entity->text_idx == entity->text_size) {
+                    FlagOff(entity->flags, EFLAG_ACTIVE);
+                    state->score += 15.0f;
+                    PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
+                    uint32_t size_to_spawn = state->monsters_size;
+                    for (uint32_t j = 0; j < size_to_spawn; ++j) {
+                        SpawnMonster(state);
                     }
                 }
             }
