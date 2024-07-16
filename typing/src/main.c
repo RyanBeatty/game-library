@@ -745,7 +745,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                 if (entity->text_idx == entity->text_size) {
                     FlagOff(entity->flags, EFLAG_ACTIVE);
 
-                    // Monster links.
+                    // Monster links + focus.
                     {
                         if (entity->monster_link.prev != NULL) {
                             entity->monster_link.prev->monster_link.next = entity->monster_link.next;
@@ -753,6 +753,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                         if (entity->monster_link.next != NULL) {
                             entity->monster_link.next->monster_link.prev = entity->monster_link.prev;
                         }
+
                         if (state->monsters.head == entity) {
                             state->monsters.head = entity->monster_link.next;
                         }
@@ -761,7 +762,6 @@ static void GameStateUpdate(GameState* state, float delta) {
                         }
                     }
 
-                    state->focus = NULL;
                     state->score += 15.0f;
                     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
                     uint32_t size_to_spawn = 2;
