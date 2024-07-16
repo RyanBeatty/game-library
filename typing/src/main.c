@@ -14,11 +14,6 @@ const float RenderHeight = 180;
 static const Vector3 DOWN = {1, -1, 1};
 ////////////////////////////////////////////////////////////
 
-#define LHead(x) ((x)->head)
-#define LTail(x) ((x)->tail)
-
-////////////////////////////////////////////////////////////
-
 typedef enum TextureLabel {
     TEXTURE_NONE = 0,
     TEXTURE_TILEMAP_CHARACTERS,
@@ -621,7 +616,7 @@ static void SpawnMonster(GameState* state) {
 
         if (state->monsters.head == NULL) {
             state->monsters.head = entity;
-            state->monsters.tail = state->monsters.head;
+            state->monsters.tail = entity;
         } else {
             state->monsters.tail->monster_link.next = entity;
             entity->monster_link.prev = state->monsters.tail;
@@ -697,6 +692,20 @@ static void GameStateInit(GameState* state) {
 static void GameStateUpdate(GameState* state, float delta) {
     state->timer += delta;
 
+    Entity* focus_to_be = state->focus;
+    if (IsKeyPressed(KEY_RIGHT)) {
+        focus_to_be = focus_to_be->monster_link.next;
+        if (focus_to_be == NULL) {
+            focus_to_be = state->monsters.head;
+        }
+    } else if (IsKeyPressed(KEY_LEFT)) {
+        focus_to_be = focus_to_be->monster_link.prev;
+        if (focus_to_be == NULL) {
+            focus_to_be = state->monsters.tail;
+        }
+    }
+    state->focus = focus_to_be;
+
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
@@ -733,24 +742,25 @@ static void GameStateUpdate(GameState* state, float delta) {
                     }
                 }
 
-                // int32_t dir = 0;
-                // if (IsKeyPressed(KEY_RIGHT)) {
-                //     dir = 1;
-                //     Entity* focus_to_be = NULL;
-                //     for (uint32_t j = 0; j < ENTITY_CAP; ++j) {
-                //         if (j == i) {
-                //             continue;
-                //         }
-                //         Entity* next = GetEntity(j);
-                //         if (TestFlag(next->flags, EFLAG_ACTIVE) && TestFlag(next->flags, EFLAG_MONSTER)) {
-                //                                 }
-                //     }
-                // } else if (IsKeyPressed(KEY_LEFT)) {
-                //     dir = -1;
-                // }
-
                 if (entity->text_idx == entity->text_size) {
                     FlagOff(entity->flags, EFLAG_ACTIVE);
+
+                    // Monster links.
+                    {
+                        if (entity->monster_link.prev != NULL) {
+                            entity->monster_link.prev->monster_link.next = entity->monster_link.next;
+                        }
+                        if (entity->monster_link.next != NULL) {
+                            entity->monster_link.next->monster_link.prev = entity->monster_link.prev;
+                        }
+                        if (state->monsters.head == entity) {
+                            state->monsters.head = entity->monster_link.next;
+                        }
+                        if (state->monsters.tail == entity) {
+                            state->monsters.tail = entity->monster_link.prev;
+                        }
+                    }
+
                     state->focus = NULL;
                     state->score += 15.0f;
                     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
