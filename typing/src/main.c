@@ -12,6 +12,10 @@ const float RenderWidth = 320;
 const float RenderHeight = 180;
 
 static const Vector3 DOWN = {1, -1, 1};
+////////////////////////////////////////////////////////////
+
+#define LHead(x) ((x)->head)
+#define LTail(x) ((x)->tail)
 
 ////////////////////////////////////////////////////////////
 
@@ -301,6 +305,12 @@ typedef struct Entity {
     int32_t text_idx;
     int32_t error_count;
     bool dead;
+
+    struct {
+        struct Entity* prev;
+        struct Entity* next;
+    } monster_link;
+
 } Entity;
 
 typedef struct EntityEntry {
@@ -568,6 +578,11 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Gameplay fields
     Entity* focus;
+
+    struct {
+        Entity* head;
+        Entity* tail;
+    } monsters;
 } GameState;
 
 #define RenderWidth(state) ((state)->target.texture.width)
@@ -602,6 +617,15 @@ static void SpawnMonster(GameState* state) {
 
         if (state->focus == NULL) {
             state->focus = entity;
+        }
+
+        if (state->monsters.head == NULL) {
+            state->monsters.head = entity;
+            state->monsters.tail = state->monsters.head;
+        } else {
+            state->monsters.tail->monster_link.next = entity;
+            entity->monster_link.prev = state->monsters.tail;
+            state->monsters.tail = entity;
         }
     }
 }
@@ -709,26 +733,20 @@ static void GameStateUpdate(GameState* state, float delta) {
                     }
                 }
 
-                int32_t dir = 0;
-                if (IsKeyPressed(KEY_RIGHT)) {
-                    dir = 1;
-                } else if (IsKeyPressed(KEY_LEFT)) {
-                    dir = -1;
-                }
-
-                // for (uint32_t j = i + dir; j != i; j += dir) {
-                //     if (j < 0) {
-                //         j = ENTITY_CAP - 1;
-                //         continue;
-                //     } else if (j >= ENTITY_CAP) {
-                //         j = 0;
-                //         continue;
+                // int32_t dir = 0;
+                // if (IsKeyPressed(KEY_RIGHT)) {
+                //     dir = 1;
+                //     Entity* focus_to_be = NULL;
+                //     for (uint32_t j = 0; j < ENTITY_CAP; ++j) {
+                //         if (j == i) {
+                //             continue;
+                //         }
+                //         Entity* next = GetEntity(j);
+                //         if (TestFlag(next->flags, EFLAG_ACTIVE) && TestFlag(next->flags, EFLAG_MONSTER)) {
+                //                                 }
                 //     }
-                //     Entity* next = GetEntity(j);
-                //     if (TestFlag(next->flags, EFLAG_ACTIVE) && TestFlag(next->flags, EFLAG_MONSTER)) {
-                //         state->focus = next;
-                //         break;
-                //     }
+                // } else if (IsKeyPressed(KEY_LEFT)) {
+                //     dir = -1;
                 // }
 
                 if (entity->text_idx == entity->text_size) {
