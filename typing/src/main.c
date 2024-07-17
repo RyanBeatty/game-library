@@ -936,50 +936,55 @@ static void GameStateDraw(GameState* state, float delta) {
             float spacing = fontsize / font.baseSize;
             Color color = WHITE;
 
+            // Word Game.
             {
                 float x = RenderWidth(state) * 0.5f;
                 float y = 0.0f;
+                if (state->focus != NULL) {
+                    Entity* focus = state->focus;
 
-                // Game text.
-                {
-                    if (state->focus != NULL) {
-                        Entity* focus = state->focus;
+                    switch (focus->game.kind) {
+                        case KIND_WORD: {
+                            char text[1024] = {0};
+                            memcpy(text, focus->game.text, focus->game.text_size);
 
-                        char text[1024] = {0};
-                        memcpy(text, focus->game.text, focus->game.text_size);
-
-                        Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                        y += 5.0f;
-                        float xx = 0.0f;
-                        uint32_t i = 0;
-                        for (; i < focus->game.text_idx; ++i) {
-                            char buffer[256] = {0};
-                            buffer[0] = text[i];
-                            Vector2 pos = {x - (size.x - xx), y};
-                            DrawTextEx(font, buffer, pos, fontsize, spacing, GREEN);
-                            Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                            // TODO: FIX THIS.
-                            xx += ss.x + 2;
+                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                            y += 5.0f;
+                            float xx = 0.0f;
+                            uint32_t i = 0;
+                            for (; i < focus->game.text_idx; ++i) {
+                                char buffer[256] = {0};
+                                buffer[0] = text[i];
+                                Vector2 pos = {x - (size.x - xx), y};
+                                DrawTextEx(font, buffer, pos, fontsize, spacing, GREEN);
+                                Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                                // TODO: FIX THIS.
+                                xx += ss.x + 2;
+                            }
+                            for (; i < focus->game.text_idx + focus->game.error_count; ++i) {
+                                char buffer[256] = {0};
+                                buffer[0] = text[i];
+                                Vector2 pos = {x - (size.x - xx), y};
+                                DrawTextEx(font, buffer, pos, fontsize, spacing, RED);
+                                Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                                // TODO: FIX THIS.
+                                xx += ss.x + 2;
+                            }
+                            for (; i < focus->game.text_size; ++i) {
+                                char buffer[256] = {0};
+                                buffer[0] = text[i];
+                                Vector2 pos = {x - (size.x - xx), y};
+                                DrawTextEx(font, buffer, pos, fontsize, spacing, WHITE);
+                                Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
+                                // TODO: FIX THIS.
+                                xx += ss.x + 2;
+                            }
+                            y += size.y;
+                            break;
                         }
-                        for (; i < focus->game.text_idx + focus->game.error_count; ++i) {
-                            char buffer[256] = {0};
-                            buffer[0] = text[i];
-                            Vector2 pos = {x - (size.x - xx), y};
-                            DrawTextEx(font, buffer, pos, fontsize, spacing, RED);
-                            Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                            // TODO: FIX THIS.
-                            xx += ss.x + 2;
+                        default: {
+                            Assert(!KIND_NONE);
                         }
-                        for (; i < focus->game.text_size; ++i) {
-                            char buffer[256] = {0};
-                            buffer[0] = text[i];
-                            Vector2 pos = {x - (size.x - xx), y};
-                            DrawTextEx(font, buffer, pos, fontsize, spacing, WHITE);
-                            Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                            // TODO: FIX THIS.
-                            xx += ss.x + 2;
-                        }
-                        y += size.y;
                     }
                 }
             }
