@@ -739,36 +739,44 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
+            bool dead = false;
+
             entity->animation_timer += delta;
 
             entity->p.x -= 10.0f * delta;
             entity->right = false;
-
             if (state->focus != NULL && state->focus == entity) {
-                if (IsKeyPressed(KEY_BACKSPACE) && entity->game.error_count > 0) {
-                    --entity->game.error_count;
-                    PlaySound(GetSound(SOUND_TYPING_DELETE));
-                }
-
-                int key = GetCharPressed();
-                if (entity->game.text_size != 0 && key != 0) {
-                    if (entity->game.error_count == 0 && key == entity->game.text[entity->game.text_idx]) {
-                        ++entity->game.text_idx;
-                        PlaySound(GetSound(SOUND_TYPING_GOOD));
-                    } else {
-                        if (entity->game.error_count + entity->game.text_idx < entity->game.text_size) {
-                            ++entity->game.error_count;
+                switch (entity->game.kind) {
+                    case KIND_WORD: {
+                        if (IsKeyPressed(KEY_BACKSPACE) && entity->game.error_count > 0) {
+                            --entity->game.error_count;
+                            PlaySound(GetSound(SOUND_TYPING_DELETE));
                         }
-                        PlaySound(GetSound(SOUND_TYPING_BAD));
+
+                        int key = GetCharPressed();
+                        if (entity->game.text_size != 0 && key != 0) {
+                            if (entity->game.error_count == 0 && key == entity->game.text[entity->game.text_idx]) {
+                                ++entity->game.text_idx;
+                                PlaySound(GetSound(SOUND_TYPING_GOOD));
+                            } else {
+                                if (entity->game.error_count + entity->game.text_idx < entity->game.text_size) {
+                                    ++entity->game.error_count;
+                                }
+                                PlaySound(GetSound(SOUND_TYPING_BAD));
+                            }
+                        }
+
+                        if (entity->game.text_idx == entity->game.text_size) {
+                            dead = true;
+                            state->score += 15.0f;
+                            PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
+                        }
+                        break;
+                    }
+                    default: {
+                        Assert(KIND_NONE != KIND_NONE);
                     }
                 }
-            }
-
-            bool dead = false;
-            if (entity->game.text_idx == entity->game.text_size) {
-                dead = true;
-                state->score += 15.0f;
-                PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
             }
 
             CollisionInfo info = CheckEntityCollisionScene(entity);
