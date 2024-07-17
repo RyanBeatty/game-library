@@ -238,6 +238,24 @@ static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
 #define ANIMATION_FRAME_CAP (4)
 
 ////////////////////////////////////////////////////////////
+
+typedef enum WordGameKind { KIND_NONE = 0, KIND_WORD, KIND_COUNT } WordGameKind;
+
+typedef struct WordGame {
+    WordGameKind kind;
+
+    union {
+        struct {
+            char* text;
+            int32_t text_size;
+            int32_t text_idx;
+            int32_t error_count;
+        } word;
+    };
+
+} WordGame;
+
+////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
@@ -295,10 +313,7 @@ typedef struct Entity {
 
     float dash_timer;
 
-    char* text;
-    int32_t text_size;
-    int32_t text_idx;
-    int32_t error_count;
+    WordGame game;
     bool dead;
 
     struct {
@@ -588,9 +603,9 @@ static GameState GState;
 #define GetGameState() (&GState)
 
 static void EntitySetWord(Entity* entity) {
-    entity->text = GetWord();
-    entity->text_size = strlen(entity->text);
-    entity->text_idx = 0;
+    entity->game.word.text = GetWord();
+    entity->game.word.text_size = strlen(entity->game.word.text);
+    entity->game.word.text_idx = 0;
 }
 
 static void SpawnMonster(GameState* state) {
@@ -724,19 +739,20 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->right = false;
 
             if (state->focus != NULL && state->focus == entity) {
-                if (IsKeyPressed(KEY_BACKSPACE) && entity->error_count > 0) {
-                    --entity->error_count;
+                if (IsKeyPressed(KEY_BACKSPACE) && entity->game.word.error_count > 0) {
+                    --entity->game.word.error_count;
                     PlaySound(GetSound(SOUND_TYPING_DELETE));
                 }
 
                 int key = GetCharPressed();
-                if (entity->text_size != 0 && key != 0) {
-                    if (entity->error_count == 0 && key == entity->text[entity->text_idx]) {
-                        ++entity->text_idx;
+                if (entity->game.word.text_size != 0 && key != 0) {
+                    if (entity->game.word.error_count == 0 &&
+                        key == entity->game.word.text[entity->game.word.text_idx]) {
+                        ++entity->game.word.text_idx;
                         PlaySound(GetSound(SOUND_TYPING_GOOD));
                     } else {
-                        if (entity->error_count + entity->text_idx < entity->text_size) {
-                            ++entity->error_count;
+                        if (entity->game.word.error_count + entity->game.word.text_idx < entity->game.word.text_size) {
+                            ++entity->game.word.error_count;
                         }
                         PlaySound(GetSound(SOUND_TYPING_BAD));
                     }
@@ -744,7 +760,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             }
 
             bool dead = false;
-            if (entity->text_idx == entity->text_size) {
+            if (entity->game.word.text_idx == entity->game.word.text_size) {
                 dead = true;
                 state->score += 15.0f;
                 PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
@@ -911,13 +927,13 @@ static void GameStateDraw(GameState* state, float delta) {
                         Entity* focus = state->focus;
 
                         char text[1024] = {0};
-                        memcpy(text, focus->text, focus->text_size);
+                        memcpy(text, focus->game.word.text, focus->game.word.text_size);
 
                         Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                         y += 5.0f;
                         float xx = 0.0f;
                         uint32_t i = 0;
-                        for (; i < focus->text_idx; ++i) {
+                        for (; i < focus->game.word.text_idx; ++i) {
                             char buffer[256] = {0};
                             buffer[0] = text[i];
                             Vector2 pos = {x - (size.x - xx), y};
@@ -926,7 +942,7 @@ static void GameStateDraw(GameState* state, float delta) {
                             // TODO: FIX THIS.
                             xx += ss.x + 2;
                         }
-                        for (; i < focus->text_idx + focus->error_count; ++i) {
+                        for (; i < focus->game.word.text_idx + focus->game.word.error_count; ++i) {
                             char buffer[256] = {0};
                             buffer[0] = text[i];
                             Vector2 pos = {x - (size.x - xx), y};
@@ -935,7 +951,7 @@ static void GameStateDraw(GameState* state, float delta) {
                             // TODO: FIX THIS.
                             xx += ss.x + 2;
                         }
-                        for (; i < focus->text_size; ++i) {
+                        for (; i < focus->game.word.text_size; ++i) {
                             char buffer[256] = {0};
                             buffer[0] = text[i];
                             Vector2 pos = {x - (size.x - xx), y};
