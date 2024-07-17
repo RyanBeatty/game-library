@@ -601,17 +601,23 @@ static void WordGameSetGame(WordGame* game) {
     WordGameKind kind = KIND_WORD;
     switch (kind) {
         case KIND_WORD: {
-            game->kind = KIND_WORD;
             game->text = GetWord();
             game->text_size = strlen(game->text);
             game->text_idx = 0;
             break;
+        }
+        case KIND_GUESS: {
+            game->text = GetWord();
+            game->text_size = strlen(game->text);
+            game->text_idx = 0;
         }
         default: {
             Assert(KIND_NONE != KIND_NONE);
             break;
         }
     }
+
+    game->kind = kind;
 }
 
 static void SpawnMonster(GameState* state) {
