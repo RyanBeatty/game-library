@@ -602,10 +602,11 @@ static GameState GState;
 
 #define GetGameState() (&GState)
 
-static void EntitySetWord(Entity* entity) {
-    entity->game.word.text = GetWord();
-    entity->game.word.text_size = strlen(entity->game.word.text);
-    entity->game.word.text_idx = 0;
+static void WordGameSetGameWord(WordGame* game) {
+    game->kind = KIND_WORD;
+    game->word.text = GetWord();
+    game->word.text_size = strlen(game->word.text);
+    game->word.text_idx = 0;
 }
 
 static void SpawnMonster(GameState* state) {
@@ -623,7 +624,7 @@ static void SpawnMonster(GameState* state) {
         entity->animation_frame_count = 4;
         entity->animation_frame_time = 0.2f;
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-        EntitySetWord(entity);
+        WordGameSetGameWord(&entity->game);
 
         if (state->focus == NULL) {
             state->focus = entity;
