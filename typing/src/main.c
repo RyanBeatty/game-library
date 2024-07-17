@@ -635,20 +635,20 @@ static void SimpleScene(GameState* state) {
     state->score = 0.0f;
     state->health = 3;
 
-    float ground_y = 108;
-
     // Player.
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24;
-        int height = 24;
-        float y = ground_y - height;
-        entity->p = (Vector3){RenderWidth(state) * 0.5 + (width * 0.5f), y + (height * 0.5f), 0.0f};
+        int width = 24 * 2;
+        int height = 24 * 2;
+        entity->p = (Vector3){RenderWidth(state) * 0.5f, RenderHeight(state) * 0.5f, 0.0f};
         entity->pp = entity->p;
-        entity->texture = GetTexture(TEXTURE_TILEMAP_CHARACTERS);
-        entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 1, 1, 0);
-        entity->animation_frame_count = 2;
+
+        Image image = GenImageColor(width, height, BLANK);
+        Color color = RED;
+        ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
@@ -873,6 +873,7 @@ static void GameStateDraw(GameState* state, float delta) {
 
         };
         DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
+        // DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
     }
 
     // Draw UI.
