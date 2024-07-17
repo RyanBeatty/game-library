@@ -639,9 +639,9 @@ static void SimpleScene(GameState* state) {
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24 * 2;
-        int height = 24 * 2;
-        entity->p = (Vector3){RenderWidth(state) * 0.5f, RenderHeight(state) * 0.5f, 0.0f};
+        int width = 24 * 3;
+        int height = 24 * 3;
+        entity->p = (Vector3){RenderWidth(state) * 0.2f, RenderHeight(state) * 0.5f, 0.0f};
         entity->pp = entity->p;
 
         Image image = GenImageColor(width, height, BLANK);
@@ -741,33 +741,49 @@ static void GameStateUpdate(GameState* state, float delta) {
                         PlaySound(GetSound(SOUND_TYPING_BAD));
                     }
                 }
+            }
 
-                if (entity->text_idx == entity->text_size) {
-                    FlagOff(entity->flags, EFLAG_ACTIVE);
+            bool dead = false;
+            if (entity->text_idx == entity->text_size) {
+                dead = true;
+                state->score += 15.0f;
+                PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
+            }
 
-                    // Monster links + focus.
-                    {
-                        if (entity->monster_link.prev != NULL) {
-                            entity->monster_link.prev->monster_link.next = entity->monster_link.next;
-                        }
-                        if (entity->monster_link.next != NULL) {
-                            entity->monster_link.next->monster_link.prev = entity->monster_link.prev;
-                        }
+            CollisionInfo info = CheckEntityCollisionScene(entity);
+            for (uint32_t j = 0; j < info.len; ++j) {
+                Entity* e = info.entities[j];
+                bool still_hit =
+                    Collides((Vector2){entity->p.x, entity->p.y}, entity->shape, (Vector2){e->p.x, e->p.y}, e->shape);
+                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED) && still_hit) {
+                    dead = true;
+                    --state->health;
+                }
+            }
 
-                        if (state->monsters.head == entity) {
-                            state->monsters.head = entity->monster_link.next;
-                        }
-                        if (state->monsters.tail == entity) {
-                            state->monsters.tail = entity->monster_link.prev;
-                        }
+            if (dead) {
+                FlagOff(entity->flags, EFLAG_ACTIVE);
+
+                // Monster links + focus.
+                {
+                    if (entity->monster_link.prev != NULL) {
+                        entity->monster_link.prev->monster_link.next = entity->monster_link.next;
+                    }
+                    if (entity->monster_link.next != NULL) {
+                        entity->monster_link.next->monster_link.prev = entity->monster_link.prev;
                     }
 
-                    state->score += 15.0f;
-                    PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-                    uint32_t size_to_spawn = 2;
-                    for (uint32_t j = 0; j < size_to_spawn; ++j) {
-                        SpawnMonster(state);
+                    if (state->monsters.head == entity) {
+                        state->monsters.head = entity->monster_link.next;
                     }
+                    if (state->monsters.tail == entity) {
+                        state->monsters.tail = entity->monster_link.prev;
+                    }
+                }
+
+                uint32_t size_to_spawn = 2;
+                for (uint32_t j = 0; j < size_to_spawn; ++j) {
+                    SpawnMonster(state);
                 }
             }
         }
