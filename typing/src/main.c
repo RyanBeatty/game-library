@@ -598,7 +598,7 @@ static GameState GState;
 #define GetGameState() (&GState)
 
 static void WordGameSetGame(WordGame* game) {
-    WordGameKind kind = GAME_WORD;
+    WordGameKind kind = GAME_GUESS;
     switch (kind) {
         case GAME_WORD: {
             game->text = GetWord();
@@ -607,9 +607,16 @@ static void WordGameSetGame(WordGame* game) {
             break;
         }
         case GAME_GUESS: {
-            game->text = GetWord();
-            game->text_size = strlen(game->text);
+            char* word = GetWord();
+            uint32_t len = strlen(word);
+            while (len != 5) {
+                word = GetWord();
+                len = strlen(word);
+            }
+            game->text = word;
+            game->text_size = len;
             game->text_idx = 0;
+            break;
         }
         default: {
             Assert(GAME_NONE != GAME_NONE);
@@ -777,6 +784,9 @@ static void GameStateUpdate(GameState* state, float delta) {
                             state->score += 15.0f;
                             PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
                         }
+                        break;
+                    }
+                    case GAME_GUESS: {
                         break;
                     }
                     default: {
@@ -980,6 +990,25 @@ static void GameStateDraw(GameState* state, float delta) {
                                 xx += ss.x + 2;
                             }
                             y += size.y;
+                            break;
+                        }
+                        case GAME_GUESS: {
+                            char text[1024] = {0};
+                            memcpy(text, focus->game.text, focus->game.text_size);
+
+                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                            float width = 10.0f;
+                            float height = 10.0f;
+                            float spacing = 1.0f;
+                            y += 5.0f;
+                            for (uint32_t row = 0; row < 6; ++row) {
+                                float xx = 0.0f;
+                                for (uint32_t col = 0; col < 5; ++col) {
+                                    DrawRectangle(x + xx, y, width, height, WHITE);
+                                    xx += width + spacing;
+                                }
+                                y += height + spacing;
+                            }
                             break;
                         }
                         default: {
