@@ -1012,15 +1012,22 @@ static void GameStateDraw(GameState* state, float delta) {
                             Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
                             float width = 10.0f;
                             float height = 10.0f;
-                            float spacing = 1.0f;
+                            float rec_spacing = 1.0f;
                             y += 5.0f;
                             for (uint32_t row = 0; row < 6; ++row) {
                                 float xx = 0.0f;
+                                Guess* guess = focus->game.guesses;
                                 for (uint32_t col = 0; col < 5; ++col) {
                                     DrawRectangle(x + xx, y, width, height, WHITE);
-                                    xx += width + spacing;
+                                    if (!guess->guessed) {
+                                        char letter[2] = {0};
+                                        letter[0] = guess->guess[col];
+                                        Vector2 letter_size = MeasureTextEx(font, text, fontsize, spacing);
+                                        DrawTextEx(font, letter, (Vector2){x + xx, y}, fontsize, spacing, BLACK);
+                                    }
+                                    xx += width + rec_spacing;
                                 }
-                                y += height + spacing;
+                                y += height + rec_spacing;
                             }
                             break;
                         }
