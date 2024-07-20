@@ -813,9 +813,30 @@ static void GameStateUpdate(GameState* state, float delta) {
                             guess->guess[guess->idx] = '\0';
                             PlaySound(GetSound(SOUND_TYPING_DELETE));
                         } else if (IsKeyPressed(KEY_ENTER) && guess->idx >= 5) {
+                            // Calculated guess results.
                             for (uint32_t idx = 0; idx < GUESS_SIZE; ++idx) {
-                                guess->results[idx] =
-                                    guess->guess[idx] == entity->game.text[idx] ? GUESS_RIGHT : GUESS_WRONG;
+                                GuessResult result = GUESS_WRONG;
+                                if (guess->guess[idx] == entity->game.text[idx]) {
+                                    result = GUESS_RIGHT;
+                                } else {
+                                    int32_t count = 0;
+                                    for (uint32_t idx2 = 0; idx2 < GUESS_SIZE; ++idx2) {
+                                        if (guess->guess[idx] == entity->game.text[idx2]) {
+                                            ++count;
+                                        }
+                                    }
+                                    int32_t guessed = 0;
+                                    for (uint32_t idx2 = 0; idx2 < idx; ++idx2) {
+                                        if (guess->guess[idx] == guess->guess[idx2]) {
+                                            ++guessed;
+                                        }
+                                    }
+
+                                    if ((count - guessed) > 0) {
+                                        result = GUESS_CLOSE;
+                                    }
+                                }
+                                guess->results[idx] = result;
                             }
 
                             if (strcmp(guess->guess, entity->game.text) == 0) {
