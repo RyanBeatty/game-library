@@ -818,14 +818,20 @@ static void GameStateUpdate(GameState* state, float delta) {
                                     guess->guess[idx] == entity->game.text[idx] ? GUESS_RIGHT : GUESS_WRONG;
                             }
 
-                            ++entity->game.guess_idx;
-
-                            if (entity->game.guess_idx >= NUM_GUESSES) {
+                            if (strcmp(guess->guess, entity->game.text) == 0) {
                                 dead = true;
-                                --state->health;
-                                PlaySoundIfNotPlaying(SOUND_TYPING_BAD);
-                            } else {
+                                state->score += 30.0f;
                                 PlaySound(GetSound(SOUND_PICKUP_COIN));
+                            } else {
+                                ++entity->game.guess_idx;
+
+                                if (entity->game.guess_idx >= NUM_GUESSES) {
+                                    dead = true;
+                                    --state->health;
+                                    PlaySoundIfNotPlaying(SOUND_TYPING_BAD);
+                                } else {
+                                    PlaySound(GetSound(SOUND_PICKUP_COIN));
+                                }
                             }
                         } else if (guess->idx < 5 && key != 0) {
                             guess->guess[guess->idx] = (char)key;
