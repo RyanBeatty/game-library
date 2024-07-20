@@ -239,7 +239,7 @@ static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
 
 ////////////////////////////////////////////////////////////
 
-typedef enum WordGameKind { KIND_NONE = 0, KIND_WORD, KIND_GUESS, KIND_COUNT } WordGameKind;
+typedef enum WordGameKind { GAME_NONE = 0, GAME_WORD, GAME_GUESS, GAME_COUNT } WordGameKind;
 
 typedef struct WordGame {
     WordGameKind kind;
@@ -598,21 +598,21 @@ static GameState GState;
 #define GetGameState() (&GState)
 
 static void WordGameSetGame(WordGame* game) {
-    WordGameKind kind = KIND_WORD;
+    WordGameKind kind = GAME_WORD;
     switch (kind) {
-        case KIND_WORD: {
+        case GAME_WORD: {
             game->text = GetWord();
             game->text_size = strlen(game->text);
             game->text_idx = 0;
             break;
         }
-        case KIND_GUESS: {
+        case GAME_GUESS: {
             game->text = GetWord();
             game->text_size = strlen(game->text);
             game->text_idx = 0;
         }
         default: {
-            Assert(KIND_NONE != KIND_NONE);
+            Assert(GAME_NONE != GAME_NONE);
             break;
         }
     }
@@ -753,7 +753,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             entity->right = false;
             if (state->focus != NULL && state->focus == entity) {
                 switch (entity->game.kind) {
-                    case KIND_WORD: {
+                    case GAME_WORD: {
                         if (IsKeyPressed(KEY_BACKSPACE) && entity->game.error_count > 0) {
                             --entity->game.error_count;
                             PlaySound(GetSound(SOUND_TYPING_DELETE));
@@ -780,7 +780,7 @@ static void GameStateUpdate(GameState* state, float delta) {
                         break;
                     }
                     default: {
-                        Assert(KIND_NONE != KIND_NONE);
+                        Assert(GAME_NONE != GAME_NONE);
                     }
                 }
             }
@@ -944,7 +944,7 @@ static void GameStateDraw(GameState* state, float delta) {
                     Entity* focus = state->focus;
 
                     switch (focus->game.kind) {
-                        case KIND_WORD: {
+                        case GAME_WORD: {
                             char text[1024] = {0};
                             memcpy(text, focus->game.text, focus->game.text_size);
 
@@ -983,7 +983,7 @@ static void GameStateDraw(GameState* state, float delta) {
                             break;
                         }
                         default: {
-                            Assert(!KIND_NONE);
+                            Assert(!GAME_NONE);
                         }
                     }
                 }
