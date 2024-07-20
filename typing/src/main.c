@@ -280,7 +280,7 @@ static void WordGameSetGame(WordGame* game) {
             }
             game->text = word;
             game->text_size = len;
-            memset(game->guesses, 0, sizeof(game->guesses) * sizeof(game->guesses[0]));
+            memset(game->guesses, 0, sizeof(game->guesses));
             game->guess_idx = 0;
             break;
         }
@@ -812,17 +812,19 @@ static void GameStateUpdate(GameState* state, float delta) {
                             PlaySound(GetSound(SOUND_TYPING_DELETE));
                         } else if (IsKeyPressed(KEY_ENTER) && guess->idx >= 5) {
                             ++entity->game.guess_idx;
+
+                            if (entity->game.guess_idx >= NUM_GUESSES) {
+                                dead = true;
+                                --state->health;
+                                PlaySoundIfNotPlaying(SOUND_TYPING_BAD);
+                            } else {
+                                PlaySound(GetSound(SOUND_PICKUP_COIN));
+                            }
                         } else if (guess->idx < 5 && key != 0) {
                             guess->guess[guess->idx] = (char)key;
                             ++guess->idx;
                             PlaySound(GetSound(SOUND_TYPING_GOOD));
                         }
-
-                        // if (entity->game.text_idx == entity->game.text_size) {
-                        //     dead = true;
-                        //     state->score += 15.0f;
-                        //     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-                        // }
                         break;
                     }
                     default: {
@@ -831,14 +833,16 @@ static void GameStateUpdate(GameState* state, float delta) {
                 }
             }
 
-            CollisionInfo info = CheckEntityCollisionScene(entity);
-            for (uint32_t j = 0; j < info.len; ++j) {
-                Entity* e = info.entities[j];
-                bool still_hit =
-                    Collides((Vector2){entity->p.x, entity->p.y}, entity->shape, (Vector2){e->p.x, e->p.y}, e->shape);
-                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED) && still_hit) {
-                    dead = true;
-                    --state->health;
+            if (!dead) {
+                CollisionInfo info = CheckEntityCollisionScene(entity);
+                for (uint32_t j = 0; j < info.len; ++j) {
+                    Entity* e = info.entities[j];
+                    bool still_hit = Collides((Vector2){entity->p.x, entity->p.y}, entity->shape,
+                                              (Vector2){e->p.x, e->p.y}, e->shape);
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED) && still_hit) {
+                        dead = true;
+                        --state->health;
+                    }
                 }
             }
 
@@ -941,11 +945,6 @@ static void GameStateDraw(GameState* state, float delta) {
     BeginTextureMode(state->target);
 
     ClearBackground(WHITE);
-
-    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
-    if (state->debug) {
-        DrawFPS(5, 5);
-    }
 
     for (uint32_t i = 0; i < size; ++i) {
         Entity* entity = entities[i];
@@ -1138,6 +1137,11 @@ static void GameStateDraw(GameState* state, float delta) {
     DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
                    (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
                    WHITE);
+
+    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
+    if (state->debug) {
+        DrawFPS(5, 5);
+    }
     EndDrawing();
 }
 
