@@ -1088,18 +1088,10 @@ static void GameStateDraw(GameState* state, float delta) {
                                 Guess* guess = &focus->game.guesses[row];
                                 for (uint32_t col = 0; col < 5; ++col) {
                                     Color rec_color = guess_result_to_rec_color[guess->results[col]];
-                                    Color text_color = BLACK;
                                     DrawRectangle(x + xx, y, width, height, rec_color);
                                     char letter[2] = {0};
                                     letter[0] = guess->guess[col];
-                                    Vector2 letter_size = MeasureTextEx(font, text, fontsize, spacing);
                                     DrawTextEx(font, letter, (Vector2){x + xx, y}, fontsize, spacing, BLACK);
-                                    // if (!guess->guessed) {
-                                    //     char letter[2] = {0};
-                                    //     letter[0] = guess->guess[col];
-                                    //     Vector2 letter_size = MeasureTextEx(font, text, fontsize, spacing);
-                                    //     DrawTextEx(font, letter, (Vector2){x + xx, y}, fontsize, spacing, BLACK);
-                                    // }
                                     xx += width + rec_spacing;
                                 }
                                 y += height + rec_spacing;
