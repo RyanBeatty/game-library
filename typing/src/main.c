@@ -241,6 +241,14 @@ static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
 
 typedef enum WordGameKind { GAME_NONE = 0, GAME_WORD, GAME_GUESS, GAME_COUNT } WordGameKind;
 
+#define NUM_GUESSES (6)
+
+typedef struct Guess {
+    bool guessed;
+    char guess[6];
+    uint32_t idx;
+} Guess;
+
 typedef struct WordGame {
     WordGameKind kind;
 
@@ -248,6 +256,10 @@ typedef struct WordGame {
     int32_t text_size;
     int32_t text_idx;
     int32_t error_count;
+
+    Guess guesses[NUM_GUESSES];
+    uint32_t guess_idx;
+
 } WordGame;
 
 static void WordGameSetGame(WordGame* game) {
@@ -268,7 +280,8 @@ static void WordGameSetGame(WordGame* game) {
             }
             game->text = word;
             game->text_size = len;
-            game->text_idx = 0;
+            memset(game->guesses, 0, sizeof(game->guesses) * sizeof(game->guesses[0]));
+            game->guess_idx = 0;
             break;
         }
         default: {
