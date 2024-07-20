@@ -800,6 +800,37 @@ static void GameStateUpdate(GameState* state, float delta) {
                         break;
                     }
                     case GAME_GUESS: {
+                        Assert(entity->game.guess_idx < NUM_GUESSES);
+                        Guess* guess = &entity->game.guesses[entity->game.guess_idx];
+                        Assert(!guess->guessed);
+
+                        if (IsKeyPressed(KEY_BACKSPACE) && guess->idx > 0) {
+                            --guess->idx;
+                            guess->guess[guess->idx] = '\0';
+                            PlaySound(GetSound(SOUND_TYPING_DELETE));
+                        }
+
+                        int key = GetCharPressed();
+                        if (guess->idx < 5 && key != 0) {
+                            guess->guess[guess->idx] = (char)key;
+                            ++guess->idx;
+                            PlaySound(GetSound(SOUND_TYPING_GOOD));
+                            // if (entity->game.error_count == 0 && key == entity->game.text[entity->game.text_idx]) {
+                            //     ++entity->game.text_idx;
+                            //     PlaySound(GetSound(SOUND_TYPING_GOOD));
+                            // } else {
+                            //     if (entity->game.error_count + entity->game.text_idx < entity->game.text_size) {
+                            //         ++entity->game.error_count;
+                            //     }
+                            //     PlaySound(GetSound(SOUND_TYPING_BAD));
+                            // }
+                        }
+
+                        // if (entity->game.text_idx == entity->game.text_size) {
+                        //     dead = true;
+                        //     state->score += 15.0f;
+                        //     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
+                        // }
                         break;
                     }
                     default: {
@@ -1016,7 +1047,7 @@ static void GameStateDraw(GameState* state, float delta) {
                             y += 5.0f;
                             for (uint32_t row = 0; row < 6; ++row) {
                                 float xx = 0.0f;
-                                Guess* guess = focus->game.guesses;
+                                Guess* guess = &focus->game.guesses[row];
                                 for (uint32_t col = 0; col < 5; ++col) {
                                     DrawRectangle(x + xx, y, width, height, WHITE);
                                     if (!guess->guessed) {
