@@ -804,26 +804,18 @@ static void GameStateUpdate(GameState* state, float delta) {
                         Guess* guess = &entity->game.guesses[entity->game.guess_idx];
                         Assert(!guess->guessed);
 
+                        int key = GetCharPressed();
+
                         if (IsKeyPressed(KEY_BACKSPACE) && guess->idx > 0) {
                             --guess->idx;
                             guess->guess[guess->idx] = '\0';
                             PlaySound(GetSound(SOUND_TYPING_DELETE));
-                        }
-
-                        int key = GetCharPressed();
-                        if (guess->idx < 5 && key != 0) {
+                        } else if (IsKeyPressed(KEY_ENTER) && guess->idx >= 5) {
+                            ++entity->game.guess_idx;
+                        } else if (guess->idx < 5 && key != 0) {
                             guess->guess[guess->idx] = (char)key;
                             ++guess->idx;
                             PlaySound(GetSound(SOUND_TYPING_GOOD));
-                            // if (entity->game.error_count == 0 && key == entity->game.text[entity->game.text_idx]) {
-                            //     ++entity->game.text_idx;
-                            //     PlaySound(GetSound(SOUND_TYPING_GOOD));
-                            // } else {
-                            //     if (entity->game.error_count + entity->game.text_idx < entity->game.text_size) {
-                            //         ++entity->game.error_count;
-                            //     }
-                            //     PlaySound(GetSound(SOUND_TYPING_BAD));
-                            // }
                         }
 
                         // if (entity->game.text_idx == entity->game.text_size) {
