@@ -1050,6 +1050,12 @@ static void GameStateDraw(GameState* state, float delta) {
                             float height = 10.0f;
                             float rec_spacing = 1.0f;
                             y += 5.0f;
+
+                            if (state->debug) {
+                                float xx = x - (size.x + 10.0f);
+                                DrawTextEx(font, text, (Vector2){xx, y}, fontsize, spacing, WHITE);
+                            }
+
                             for (uint32_t row = 0; row < 6; ++row) {
                                 float xx = 0.0f;
                                 Guess* guess = &focus->game.guesses[row];
