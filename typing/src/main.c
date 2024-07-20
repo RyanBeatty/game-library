@@ -241,11 +241,14 @@ static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
 
 typedef enum WordGameKind { GAME_NONE = 0, GAME_WORD, GAME_GUESS, GAME_COUNT } WordGameKind;
 
+typedef enum GuessResult { GUESS_NONE = 0, GUESS_WRONG, GUESS_RIGHT, GUESS_CLOSE, GUESS_COUNT } GuessResult;
+
+#define GUESS_SIZE (5)
 #define NUM_GUESSES (6)
 
 typedef struct Guess {
-    bool guessed;
-    char guess[6];
+    char guess[GUESS_SIZE + 1];
+    GuessResult results[GUESS_SIZE];
     uint32_t idx;
 } Guess;
 
@@ -802,7 +805,6 @@ static void GameStateUpdate(GameState* state, float delta) {
                     case GAME_GUESS: {
                         Assert(entity->game.guess_idx < NUM_GUESSES);
                         Guess* guess = &entity->game.guesses[entity->game.guess_idx];
-                        Assert(!guess->guessed);
 
                         int key = GetCharPressed();
 
@@ -811,6 +813,11 @@ static void GameStateUpdate(GameState* state, float delta) {
                             guess->guess[guess->idx] = '\0';
                             PlaySound(GetSound(SOUND_TYPING_DELETE));
                         } else if (IsKeyPressed(KEY_ENTER) && guess->idx >= 5) {
+                            for (uint32_t idx = 0; idx < GUESS_SIZE; ++idx) {
+                                guess->results[idx] =
+                                    guess->guess[idx] == entity->game.text[idx] ? GUESS_RIGHT : GUESS_WRONG;
+                            }
+
                             ++entity->game.guess_idx;
 
                             if (entity->game.guess_idx >= NUM_GUESSES) {
@@ -1028,6 +1035,13 @@ static void GameStateDraw(GameState* state, float delta) {
                             break;
                         }
                         case GAME_GUESS: {
+                            static Color guess_result_to_rec_color[GUESS_COUNT] = {
+                                WHITE,
+                                GRAY,
+                                GREEN,
+                                ORANGE,
+                            };
+
                             char text[1024] = {0};
                             memcpy(text, focus->game.text, focus->game.text_size);
 
@@ -1040,13 +1054,19 @@ static void GameStateDraw(GameState* state, float delta) {
                                 float xx = 0.0f;
                                 Guess* guess = &focus->game.guesses[row];
                                 for (uint32_t col = 0; col < 5; ++col) {
-                                    DrawRectangle(x + xx, y, width, height, WHITE);
-                                    if (!guess->guessed) {
-                                        char letter[2] = {0};
-                                        letter[0] = guess->guess[col];
-                                        Vector2 letter_size = MeasureTextEx(font, text, fontsize, spacing);
-                                        DrawTextEx(font, letter, (Vector2){x + xx, y}, fontsize, spacing, BLACK);
-                                    }
+                                    Color rec_color = guess_result_to_rec_color[guess->results[col]];
+                                    Color text_color = BLACK;
+                                    DrawRectangle(x + xx, y, width, height, rec_color);
+                                    char letter[2] = {0};
+                                    letter[0] = guess->guess[col];
+                                    Vector2 letter_size = MeasureTextEx(font, text, fontsize, spacing);
+                                    DrawTextEx(font, letter, (Vector2){x + xx, y}, fontsize, spacing, BLACK);
+                                    // if (!guess->guessed) {
+                                    //     char letter[2] = {0};
+                                    //     letter[0] = guess->guess[col];
+                                    //     Vector2 letter_size = MeasureTextEx(font, text, fontsize, spacing);
+                                    //     DrawTextEx(font, letter, (Vector2){x + xx, y}, fontsize, spacing, BLACK);
+                                    // }
                                     xx += width + rec_spacing;
                                 }
                                 y += height + rec_spacing;
