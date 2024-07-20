@@ -250,6 +250,36 @@ typedef struct WordGame {
     int32_t error_count;
 } WordGame;
 
+static void WordGameSetGame(WordGame* game) {
+    WordGameKind kind = GAME_GUESS;
+    switch (kind) {
+        case GAME_WORD: {
+            game->text = GetWord();
+            game->text_size = strlen(game->text);
+            game->text_idx = 0;
+            break;
+        }
+        case GAME_GUESS: {
+            char* word = GetWord();
+            uint32_t len = strlen(word);
+            while (len != 5) {
+                word = GetWord();
+                len = strlen(word);
+            }
+            game->text = word;
+            game->text_size = len;
+            game->text_idx = 0;
+            break;
+        }
+        default: {
+            Assert(GAME_NONE != GAME_NONE);
+            break;
+        }
+    }
+
+    game->kind = kind;
+}
+
 ////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
@@ -596,36 +626,6 @@ typedef struct GameState {
 static GameState GState;
 
 #define GetGameState() (&GState)
-
-static void WordGameSetGame(WordGame* game) {
-    WordGameKind kind = GAME_GUESS;
-    switch (kind) {
-        case GAME_WORD: {
-            game->text = GetWord();
-            game->text_size = strlen(game->text);
-            game->text_idx = 0;
-            break;
-        }
-        case GAME_GUESS: {
-            char* word = GetWord();
-            uint32_t len = strlen(word);
-            while (len != 5) {
-                word = GetWord();
-                len = strlen(word);
-            }
-            game->text = word;
-            game->text_size = len;
-            game->text_idx = 0;
-            break;
-        }
-        default: {
-            Assert(GAME_NONE != GAME_NONE);
-            break;
-        }
-    }
-
-    game->kind = kind;
-}
 
 static void SpawnMonster(GameState* state) {
     // Monster.
