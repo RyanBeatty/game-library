@@ -762,7 +762,20 @@ static void GameStateUpdate(GameState* state, float delta) {
     }
     state->focus = focus_to_be;
 
+    Vector3 player_pos = Vector3Zero();
     EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = GetEntity(i);
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
+            continue;
+        }
+        if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            player_pos = entity->p;
+            break;
+        }
+    }
+    Assert(!Vector3Equals(player_pos, Vector3Zero()));
+
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
@@ -778,7 +791,12 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             entity->animation_timer += delta;
 
-            entity->p.x -= 10.0f * delta;
+            entity->game.timer += delta;
+            // Since we are interpolating, we need to make sure the previous position is the start pos
+            // of the monster so we can interpolate correctly.
+            cur_p = entity->pp;
+            entity->p = Vector3Lerp(cur_p, player_pos, entity->game.timer / entity->game.time_limit);
+
             entity->right = false;
             if (state->focus != NULL && state->focus == entity) {
                 switch (entity->game.kind) {
