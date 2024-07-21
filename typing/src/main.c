@@ -263,15 +263,20 @@ typedef struct WordGame {
     Guess guesses[NUM_GUESSES];
     uint32_t guess_idx;
 
+    float timer;
+    float time_limit;
 } WordGame;
 
 static void WordGameSetGame(WordGame* game) {
+    memset(game, 0, sizeof(WordGame));
+
     WordGameKind kind = GAME_GUESS;
     switch (kind) {
         case GAME_WORD: {
             game->text = GetWord();
             game->text_size = strlen(game->text);
             game->text_idx = 0;
+            game->time_limit = 5.0f;
             break;
         }
         case GAME_GUESS: {
@@ -285,6 +290,7 @@ static void WordGameSetGame(WordGame* game) {
             game->text_size = len;
             memset(game->guesses, 0, sizeof(game->guesses));
             game->guess_idx = 0;
+            game->time_limit = 20.0f;
             break;
         }
         default: {
