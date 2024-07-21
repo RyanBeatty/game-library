@@ -1007,7 +1007,9 @@ static void GameStateDraw(GameState* state, float delta) {
 
         };
         DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
-        // DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
+        if (false) {
+            DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
+        }
     }
 
     // Draw UI.
