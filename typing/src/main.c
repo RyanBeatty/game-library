@@ -290,7 +290,7 @@ static void WordGameSetGame(WordGame* game) {
             game->text_size = len;
             memset(game->guesses, 0, sizeof(game->guesses));
             game->guess_idx = 0;
-            game->time_limit = 20.0f;
+            game->time_limit = 45.0f;
             break;
         }
         default: {
