@@ -709,24 +709,6 @@ static void SimpleScene(GameState* state) {
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
     }
-
-    // // Bomb spawner.
-    // {
-    //     Entity* entity = AllocateEntity();
-    //     SetFlag(entity->flags, EFLAG_SPAWNER);
-    //     float y = RenderHeight(state) * 0.20;
-    //     int width = 12;
-    //     int height = 12;
-    //     entity->p = (Vector3){(RenderWidth(state)) * 0.5f, y + (height * 0.5f), 0};
-    //     entity->pp = entity->p;
-    //     entity->texture = LoadTextureFromImage(GenImageColor(width, height, RED));
-    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
-    //     entity->spawn_move_time = 2.5f;
-    //     entity->spawn_time = 0.3f;
-    //     entity->spawn_total = 3;
-    //     SetFlag(entity->spawn_flags, SFLAG_BOMB);
-    //     // FlagOff(entity->flags, EFLAG_DRAW);
-    // }
 }
 
 static void GameStateInit(GameState* state) {
@@ -970,13 +952,6 @@ static void GameStateUpdate(GameState* state, float delta) {
         // Update animation timer if it is a looping animation.
         entity->animation_timer += delta * entity->animation_loops;
     }
-
-    // if (state->text_idx == state->text_size) {
-    //     GameStateUpdateWord(state);
-    //     state->score += 15.0f;
-    //     PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-    //     SpawnMonster(state);
-    // }
 }
 
 static void GameStateDraw(GameState* state, float delta) {
