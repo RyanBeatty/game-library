@@ -238,71 +238,6 @@ static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
 #define ANIMATION_FRAME_CAP (4)
 
 ////////////////////////////////////////////////////////////
-
-typedef enum WordGameKind { GAME_NONE = 0, GAME_WORD, GAME_GUESS, GAME_COUNT } WordGameKind;
-
-typedef enum GuessResult { GUESS_NONE = 0, GUESS_WRONG, GUESS_RIGHT, GUESS_CLOSE, GUESS_COUNT } GuessResult;
-
-#define GUESS_SIZE (5)
-#define NUM_GUESSES (6)
-
-typedef struct Guess {
-    char guess[GUESS_SIZE + 1];
-    GuessResult results[GUESS_SIZE];
-    uint32_t idx;
-} Guess;
-
-typedef struct WordGame {
-    WordGameKind kind;
-
-    char* text;
-    int32_t text_size;
-    int32_t text_idx;
-    int32_t error_count;
-
-    Guess guesses[NUM_GUESSES];
-    uint32_t guess_idx;
-
-    float timer;
-    float time_limit;
-} WordGame;
-
-static void WordGameSetGame(WordGame* game) {
-    memset(game, 0, sizeof(WordGame));
-
-    WordGameKind kind = GAME_GUESS;
-    switch (kind) {
-        case GAME_WORD: {
-            game->text = GetWord();
-            game->text_size = strlen(game->text);
-            game->text_idx = 0;
-            game->time_limit = 5.0f;
-            break;
-        }
-        case GAME_GUESS: {
-            char* word = GetWord();
-            uint32_t len = strlen(word);
-            while (len != 5) {
-                word = GetWord();
-                len = strlen(word);
-            }
-            game->text = word;
-            game->text_size = len;
-            memset(game->guesses, 0, sizeof(game->guesses));
-            game->guess_idx = 0;
-            game->time_limit = 45.0f;
-            break;
-        }
-        default: {
-            Assert(GAME_NONE != GAME_NONE);
-            break;
-        }
-    }
-
-    game->kind = kind;
-}
-
-////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
@@ -360,7 +295,6 @@ typedef struct Entity {
 
     float dash_timer;
 
-    WordGame game;
     bool dead;
 
     struct {
@@ -664,7 +598,6 @@ static void SpawnMonster(GameState* state) {
         entity->animation_frame_count = 4;
         entity->animation_frame_time = 0.2f;
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-        WordGameSetGame(&entity->game);
 
         if (state->focus == NULL) {
             state->focus = entity;
@@ -773,109 +706,8 @@ static void GameStateUpdate(GameState* state, float delta) {
 
             entity->animation_timer += delta;
 
-            // Monster movement.
-            // TODO: Interpolation will fail if we start adding in slow modifiers. The monster will speed
-            // back up greatly once leaving the slow zone.
-            {
-                entity->game.timer += delta;
-                // Since we are interpolating, we need to make sure the previous position is the start pos
-                // of the monster so we can interpolate correctly.
-                cur_p = entity->pp;
-                entity->p = Vector3Lerp(cur_p, player_pos, entity->game.timer / entity->game.time_limit);
-            }
-
             entity->right = false;
             if (state->focus != NULL && state->focus == entity) {
-                switch (entity->game.kind) {
-                    case GAME_WORD: {
-                        if (IsKeyPressed(KEY_BACKSPACE) && entity->game.error_count > 0) {
-                            --entity->game.error_count;
-                            PlaySound(GetSound(SOUND_TYPING_DELETE));
-                        }
-
-                        int key = GetCharPressed();
-                        if (entity->game.text_size != 0 && key != 0) {
-                            if (entity->game.error_count == 0 && key == entity->game.text[entity->game.text_idx]) {
-                                ++entity->game.text_idx;
-                                PlaySound(GetSound(SOUND_TYPING_GOOD));
-                            } else {
-                                if (entity->game.error_count + entity->game.text_idx < entity->game.text_size) {
-                                    ++entity->game.error_count;
-                                }
-                                PlaySound(GetSound(SOUND_TYPING_BAD));
-                            }
-                        }
-
-                        if (entity->game.text_idx == entity->game.text_size) {
-                            dead = true;
-                            state->score += 15.0f;
-                            PlaySoundIfNotPlaying(SOUND_PICKUP_COIN);
-                        }
-                        break;
-                    }
-                    case GAME_GUESS: {
-                        Assert(entity->game.guess_idx < NUM_GUESSES);
-                        Guess* guess = &entity->game.guesses[entity->game.guess_idx];
-
-                        int key = GetCharPressed();
-
-                        if (IsKeyPressed(KEY_BACKSPACE) && guess->idx > 0) {
-                            --guess->idx;
-                            guess->guess[guess->idx] = '\0';
-                            PlaySound(GetSound(SOUND_TYPING_DELETE));
-                        } else if (IsKeyPressed(KEY_ENTER) && guess->idx >= 5) {
-                            // Calculated guess results.
-                            for (uint32_t idx = 0; idx < GUESS_SIZE; ++idx) {
-                                GuessResult result = GUESS_WRONG;
-                                if (guess->guess[idx] == entity->game.text[idx]) {
-                                    result = GUESS_RIGHT;
-                                } else {
-                                    int32_t count = 0;
-                                    for (uint32_t idx2 = 0; idx2 < GUESS_SIZE; ++idx2) {
-                                        if (guess->guess[idx] == entity->game.text[idx2]) {
-                                            ++count;
-                                        }
-                                    }
-                                    int32_t guessed = 0;
-                                    for (uint32_t idx2 = 0; idx2 < idx; ++idx2) {
-                                        if (guess->guess[idx] == guess->guess[idx2]) {
-                                            ++guessed;
-                                        }
-                                    }
-
-                                    if ((count - guessed) > 0) {
-                                        result = GUESS_CLOSE;
-                                    }
-                                }
-                                guess->results[idx] = result;
-                            }
-
-                            if (strcmp(guess->guess, entity->game.text) == 0) {
-                                dead = true;
-                                state->score += 30.0f;
-                                PlaySound(GetSound(SOUND_PICKUP_COIN));
-                            } else {
-                                ++entity->game.guess_idx;
-
-                                if (entity->game.guess_idx >= NUM_GUESSES) {
-                                    dead = true;
-                                    --state->health;
-                                    PlaySoundIfNotPlaying(SOUND_TYPING_BAD);
-                                } else {
-                                    PlaySound(GetSound(SOUND_PICKUP_COIN));
-                                }
-                            }
-                        } else if (guess->idx < 5 && key != 0) {
-                            guess->guess[guess->idx] = (char)key;
-                            ++guess->idx;
-                            PlaySound(GetSound(SOUND_TYPING_GOOD));
-                        }
-                        break;
-                    }
-                    default: {
-                        Assert(GAME_NONE != GAME_NONE);
-                    }
-                }
             }
 
             if (!dead) {
@@ -1020,96 +852,6 @@ static void GameStateDraw(GameState* state, float delta) {
             float fontsize = 12.0f;
             float spacing = fontsize / font.baseSize;
             Color color = WHITE;
-
-            // Word Game.
-            {
-                float x = RenderWidth(state) * 0.5f;
-                float y = 0.0f;
-                if (state->focus != NULL) {
-                    Entity* focus = state->focus;
-
-                    switch (focus->game.kind) {
-                        case GAME_WORD: {
-                            char text[1024] = {0};
-                            memcpy(text, focus->game.text, focus->game.text_size);
-
-                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                            y += 5.0f;
-                            float xx = 0.0f;
-                            uint32_t i = 0;
-                            for (; i < focus->game.text_idx; ++i) {
-                                char buffer[256] = {0};
-                                buffer[0] = text[i];
-                                Vector2 pos = {x - (size.x - xx), y};
-                                DrawTextEx(font, buffer, pos, fontsize, spacing, GREEN);
-                                Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                                // TODO: FIX THIS.
-                                xx += ss.x + 2;
-                            }
-                            for (; i < focus->game.text_idx + focus->game.error_count; ++i) {
-                                char buffer[256] = {0};
-                                buffer[0] = text[i];
-                                Vector2 pos = {x - (size.x - xx), y};
-                                DrawTextEx(font, buffer, pos, fontsize, spacing, RED);
-                                Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                                // TODO: FIX THIS.
-                                xx += ss.x + 2;
-                            }
-                            for (; i < focus->game.text_size; ++i) {
-                                char buffer[256] = {0};
-                                buffer[0] = text[i];
-                                Vector2 pos = {x - (size.x - xx), y};
-                                DrawTextEx(font, buffer, pos, fontsize, spacing, WHITE);
-                                Vector2 ss = MeasureTextEx(font, buffer, fontsize, spacing);
-                                // TODO: FIX THIS.
-                                xx += ss.x + 2;
-                            }
-                            y += size.y;
-                            break;
-                        }
-                        case GAME_GUESS: {
-                            static Color guess_result_to_rec_color[GUESS_COUNT] = {
-                                WHITE,
-                                GRAY,
-                                GREEN,
-                                ORANGE,
-                            };
-
-                            char text[1024] = {0};
-                            memcpy(text, focus->game.text, focus->game.text_size);
-
-                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                            float width = 10.0f;
-                            float height = 10.0f;
-                            float rec_spacing = 1.0f;
-                            y += 5.0f;
-
-                            if (state->debug) {
-                                float xx = x - (size.x + 10.0f);
-                                DrawTextEx(font, text, (Vector2){xx, y}, fontsize, spacing, WHITE);
-                            }
-
-                            for (uint32_t row = 0; row < 6; ++row) {
-                                float xx = 0.0f;
-                                Guess* guess = &focus->game.guesses[row];
-                                for (uint32_t col = 0; col < 5; ++col) {
-                                    Color rec_color = guess_result_to_rec_color[guess->results[col]];
-                                    DrawRectangle(x + xx, y, width, height, rec_color);
-                                    char letter[2] = {0};
-                                    letter[0] = guess->guess[col];
-                                    DrawTextEx(font, letter, (Vector2){x + xx, y}, fontsize, spacing, BLACK);
-                                    xx += width + rec_spacing;
-                                }
-                                y += height + rec_spacing;
-                            }
-                            break;
-                        }
-                        default: {
-                            Assert(!GAME_NONE);
-                        }
-                    }
-                }
-            }
 
             {
                 float x = RenderWidth(state) * 0.92;
