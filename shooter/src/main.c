@@ -638,6 +638,22 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            Vector3 dir = Vector3Zero();
+            if (IsKeyDown(KEY_W)) {
+                dir = Vector3Add(dir, (Vector3){0, -1, 0});
+            }
+            if (IsKeyDown(KEY_D)) {
+                dir = Vector3Add(dir, (Vector3){1, 0, 0});
+            }
+            if (IsKeyDown(KEY_S)) {
+                dir = Vector3Add(dir, (Vector3){0, 1, 0});
+            }
+            if (IsKeyDown(KEY_A)) {
+                dir = Vector3Add(dir, (Vector3){-1, 0, 0});
+            }
+            dir = Vector3Normalize(dir);
+            Vector3 dx = Vector3Scale(dir, 30.0f * delta);
+            entity->p = Vector3Add(entity->p, dx);
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
