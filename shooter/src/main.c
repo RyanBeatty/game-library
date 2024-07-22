@@ -583,7 +583,7 @@ static void SpawnMonster(GameState* state) {
 }
 
 static void SimpleScene(GameState* state) {
-    LoadLevel();
+    // LoadLevel();
 
     SpawnMonster(state);
 
@@ -628,20 +628,6 @@ static void GameStateInit(GameState* state) {
 
 static void GameStateUpdate(GameState* state, float delta) {
     state->timer += delta;
-
-    Entity* focus_to_be = state->focus;
-    if (IsKeyPressed(KEY_RIGHT)) {
-        focus_to_be = focus_to_be->monster_link.next;
-        if (focus_to_be == NULL) {
-            focus_to_be = state->monsters.head;
-        }
-    } else if (IsKeyPressed(KEY_LEFT)) {
-        focus_to_be = focus_to_be->monster_link.prev;
-        if (focus_to_be == NULL) {
-            focus_to_be = state->monsters.tail;
-        }
-    }
-    state->focus = focus_to_be;
 
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
