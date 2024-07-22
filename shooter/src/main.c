@@ -594,8 +594,8 @@ static void SimpleScene(GameState* state) {
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24 * 3;
-        int height = 24 * 3;
+        int width = 24;
+        int height = 24;
         entity->p = (Vector3){RenderWidth(state) * 0.2f, RenderHeight(state) * 0.5f, 0.0f};
         entity->pp = entity->p;
 
