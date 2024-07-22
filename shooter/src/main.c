@@ -643,20 +643,7 @@ static void GameStateUpdate(GameState* state, float delta) {
     }
     state->focus = focus_to_be;
 
-    Vector3 player_pos = Vector3Zero();
     EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = GetEntity(i);
-        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
-            continue;
-        }
-        if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            player_pos = entity->p;
-            break;
-        }
-    }
-    Assert(!Vector3Equals(player_pos, Vector3Zero()));
-
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
