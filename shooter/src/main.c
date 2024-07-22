@@ -206,35 +206,6 @@ typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 
 
 ////////////////////////////////////////////////////////////
 
-static char** Words = {0};
-
-static void InitWords() {
-    Words = NULL;
-    char* word = NULL;
-
-    unsigned int len = 0;
-    unsigned char* buffer = LoadFileData("assets/words/1000.words", &len);
-    uint32_t i = 0;
-    while (i < len) {
-        for (; i < len; ++i) {
-            if (buffer[i] == '\r' || buffer[i] == '\n') {
-                break;
-            }
-            arrput(word, buffer[i]);
-        }
-        arrput(word, '\0');
-        arrput(Words, word);
-        word = NULL;
-
-        for (; i < len && (buffer[i] == '\r' || buffer[i] == '\n'); ++i) {
-        }
-    }
-}
-
-static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
-
-////////////////////////////////////////////////////////////
-
 #define ANIMATION_FRAME_CAP (4)
 
 ////////////////////////////////////////////////////////////
@@ -279,9 +250,6 @@ typedef struct Entity {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    float bomb_timer;
-    float explosion_timer;
-
     float spawn_move_timer;
     float spawn_move_time;
     float spawn_timer;
@@ -616,8 +584,6 @@ static void SpawnMonster(GameState* state) {
 
 static void SimpleScene(GameState* state) {
     LoadLevel();
-
-    InitWords();
 
     SpawnMonster(state);
 
