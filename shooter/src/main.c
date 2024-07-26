@@ -18,6 +18,8 @@ typedef enum TextureLabel {
     TEXTURE_NONE = 0,
     TEXTURE_TILEMAP_CHARACTERS,
     TEXTURE_TILEMAP_BACKGROUND,
+    TEXTURE_TILEMAP_SQUARE,
+    TEXTURE_TILEMAP_SQUARE_DOUBLE,
     TEXTURE_COUNT
 } TextureLabel;
 
@@ -38,6 +40,18 @@ static void TextureCacheInit() {
         Texture texture = LoadTexture("assets/art/8bit.png");
         Assert(IsTextureReady(texture));
         Textures[TEXTURE_TILEMAP_BACKGROUND] = texture;
+    }
+
+    {
+        Texture texture = LoadTexture("assets/art/red_body_square.png");
+        Assert(IsTextureReady(texture));
+        Textures[TEXTURE_TILEMAP_SQUARE] = texture;
+    }
+
+    {
+        Texture texture = LoadTexture("assets/art/red_body_square_double.png");
+        Assert(IsTextureReady(texture));
+        Textures[TEXTURE_TILEMAP_SQUARE_DOUBLE] = texture;
     }
 }
 
@@ -602,8 +616,8 @@ static void SimpleScene(GameState* state) {
         Image image = GenImageColor(width, height, BLANK);
         Color color = RED;
         ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
-        entity->texture = LoadTextureFromImage(image);
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->texture = GetTexture(TEXTURE_TILEMAP_SQUARE);
+        entity->bitmap_rec = (Rectangle){0, 0, entity->texture.width, entity->texture.height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
@@ -651,7 +665,7 @@ static void GameStateUpdate(GameState* state, float delta) {
             if (IsKeyDown(KEY_A)) {
                 dir = Vector3Add(dir, (Vector3){-1, 0, 0});
             }
-            dir = Vector3Normalize(dir);
+            // dir = Vector3Normalize(dir);
             Vector3 dx = Vector3Scale(dir, 30.0f * delta);
             entity->p = Vector3Add(entity->p, dx);
         }
