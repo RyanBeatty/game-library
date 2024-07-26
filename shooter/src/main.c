@@ -252,6 +252,7 @@ typedef struct Entity {
     // Animation.
     Texture texture;
     Rectangle bitmap_rec;
+    Rectangle bitmap_rec_dst;
     uint32_t animation_frame_count;
     float animation_frame_time;
     float animation_timer;
@@ -446,6 +447,7 @@ static void LoadLevel() {
                     entity->texture = *texture;
                     entity->bitmap_rec =
                         (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
+                    entity->bitmap_rec_dst = entity->bitmap_rec;
                     // FlagOff(entity->flags, EFLAG_DRAW);
                 }
             } else if (strcmp(type->valuestring, "IntGrid") == 0) {
@@ -470,6 +472,7 @@ static void LoadLevel() {
                         if (TestFlag(entity->flags, EFLAG_DRAW)) {
                             entity->texture = LoadTextureFromImage(GenImageColor(grid_size, grid_size, BLACK));
                             entity->bitmap_rec = (Rectangle){0, 0, grid_size, grid_size};
+                            entity->bitmap_rec_dst = entity->bitmap_rec;
                         }
                     }
 
@@ -577,6 +580,7 @@ static void SpawnMonster(GameState* state) {
         entity->pp = entity->p;
         entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
         entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
+        entity->bitmap_rec_dst = entity->bitmap_rec;
         entity->animation_frame_count = 4;
         entity->animation_frame_time = 0.2f;
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -617,7 +621,9 @@ static void SimpleScene(GameState* state) {
         Color color = RED;
         ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
         entity->texture = GetTexture(TEXTURE_TILEMAP_SQUARE);
+        SetTextureFilter(entity->texture, TEXTURE_FILTER_BILINEAR);
         entity->bitmap_rec = (Rectangle){0, 0, entity->texture.width, entity->texture.height};
+        entity->bitmap_rec_dst = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
@@ -794,8 +800,11 @@ static void GameStateDraw(GameState* state, float delta) {
             // tint.a = 0.4f;
         }
 
-        float half_width = entity->bitmap_rec.width * 0.5f;
-        float half_height = entity->bitmap_rec.height * 0.5f;
+        float half_width = entity->bitmap_rec_dst.width * 0.5f;
+        float half_height = entity->bitmap_rec_dst.height * 0.5f;
+        entity->bitmap_rec_dst.x = entity->p.x - half_width;
+        entity->bitmap_rec_dst.y = entity->p.y - half_height;
+
         // Compute animation rec.
         float animation_time = entity->animation_frame_count * entity->animation_frame_time;
         uint32_t animation_frame_idx = fmod(entity->animation_timer, animation_time) / entity->animation_frame_time;
@@ -807,7 +816,8 @@ static void GameStateDraw(GameState* state, float delta) {
             entity->bitmap_rec.height,
 
         };
-        DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
+        // DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
+        DrawTexturePro(entity->texture, src, entity->bitmap_rec_dst, Vector2Zero(), 0, tint);
         if (false) {
             DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
         }
