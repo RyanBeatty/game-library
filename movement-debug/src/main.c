@@ -3,8 +3,8 @@
 #include "raylib.h"
 #include "raymath.h"
 
-const int ScreenWidth = 800;
-const int ScreenHeight = 450;
+const int ScreenWidth = 1280;
+const int ScreenHeight = 720;
 
 static void RunGame(float delta_time) {
     static Vector3 pos = {10, 10, 10};
