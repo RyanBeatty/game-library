@@ -6,6 +6,17 @@
 const int ScreenWidth = 1280;
 const int ScreenHeight = 720;
 
+static Shader GetShader() {
+    static bool init = false;
+    static Shader shader = {0};
+
+    if (!init) {
+        shader = LoadShader(NULL, NULL);
+        init = true;
+    }
+    return shader;
+}
+
 static void RunGame(float delta_time) {
     static Vector3 pos = {10, 10, 10};
     static Vector2 size = {100, 100};
@@ -28,9 +39,13 @@ static void RunGame(float delta_time) {
 
     BeginDrawing();
 
+    BeginShaderMode(GetShader());
+
     ClearBackground(RAYWHITE);
 
-    DrawRectangleV((Vector2){pos.x, pos.y}, size, RED);
+    DrawRectangleV((Vector2){pos.x, pos.y}, size, BLUE);
+
+    EndShaderMode();
 
     EndDrawing();
 }
