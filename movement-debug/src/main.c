@@ -11,7 +11,7 @@ static Shader GetShader() {
     static Shader shader = {0};
 
     if (!init) {
-        shader = LoadShader(NULL, "shader.fs");
+        shader = LoadShader("shader.vs", "shader.fs");
         init = true;
     }
     return shader;
@@ -38,10 +38,9 @@ static void RunGame(float delta_time) {
     pos = Vector3Add(pos, dir);
 
     BeginDrawing();
+    ClearBackground(RAYWHITE);
 
     BeginShaderMode(GetShader());
-
-    ClearBackground(RAYWHITE);
 
     DrawRectangleV((Vector2){pos.x, pos.y}, size, BLUE);
 
