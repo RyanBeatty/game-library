@@ -11,7 +11,7 @@ static Shader GetShader() {
     static Shader shader = {0};
 
     if (!init) {
-        shader = LoadShader(NULL, NULL);
+        shader = LoadShader(NULL, "shader.fs");
         init = true;
     }
     return shader;
