@@ -8,8 +8,8 @@
 
 #endif
 
-const float RenderWidth = 320;
-const float RenderHeight = 180;
+const float RenderWidth = 1280;
+const float RenderHeight = 720;
 
 static const Vector3 DOWN = {1, -1, 1};
 ////////////////////////////////////////////////////////////
@@ -632,7 +632,7 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth * 4, RenderHeight * 4, "Game");
+    InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     // ToggleFullscreen();
     SetConfigFlags(FLAG_VSYNC_HINT);
