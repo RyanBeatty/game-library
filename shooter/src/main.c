@@ -623,7 +623,7 @@ static void SimpleScene(GameState* state) {
         entity->texture = GetTexture(TEXTURE_TILEMAP_SQUARE);
         SetTextureFilter(entity->texture, TEXTURE_FILTER_BILINEAR);
         entity->bitmap_rec = (Rectangle){0, 0, entity->texture.width, entity->texture.height};
-        entity->bitmap_rec_dst = (Rectangle){0, 0, width, height};
+        entity->bitmap_rec_dst = (Rectangle){0, 0, entity->texture.width, entity->texture.height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
