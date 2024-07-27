@@ -2,6 +2,7 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include "rlgl.h"
 
 const int ScreenWidth = 1280;
 const int ScreenHeight = 720;
@@ -38,6 +39,9 @@ static void RunGame(float delta_time) {
     pos = Vector3Add(pos, dir);
 
     BeginDrawing();
+    Matrix view = MatrixTranslate(200, 0, 0);
+    rlSetMatrixModelview(view);
+
     ClearBackground(RAYWHITE);
 
     BeginShaderMode(GetShader());
