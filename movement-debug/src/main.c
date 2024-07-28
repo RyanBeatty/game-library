@@ -57,7 +57,23 @@ static void RunGame(float delta_time) {
     // rlLoadIdentity();
     // rlScalef(0.0f, -1.0f, 0.0f);
 
-    // rlSetMatrixProjection(MatrixOrtho(0, GetScreenWidth(), 0, GetScreenHeight(), -1.0f, 1.0f));
+    // Ortho
+    {
+        // rlSetMatrixProj only.
+        // TraceLog(LOG_INFO, "height %d", GetScreenHeight());
+        // { rlSetMatrixProjection(MatrixOrtho(0, GetScreenWidth(), GetScreenHeight() - 400, 400, -1.0f, 1.0f)); }
+
+        // matrix mode.
+        {
+            rlMatrixMode(RL_PROJECTION);
+            rlLoadIdentity();
+            rlOrtho(0.0, GetScreenWidth(), 0.0, GetScreenHeight(), 0.0, 1.0);
+
+            // Switch back to modelview matrix
+            rlMatrixMode(RL_MODELVIEW);
+            rlLoadIdentity();
+        }
+    }
 
     breakpoint();
 
