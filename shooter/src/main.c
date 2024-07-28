@@ -8,10 +8,19 @@
 
 #endif
 
+#define UIDeferLoop(begin, end) for (int _i_ = ((begin), 0); !_i_; _i_ += 1, (end))
+
 const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
 static const Vector3 DOWN = {1, -1, 1};
+////////////////////////////////////////////////////////////
+// Draw utils
+
+#define DoDrawing() UIDeferLoop(BeginDrawing(), EndDrawing())
+#define DoMode2D(camera) UIDeferLoop(BeginMode2D(camera), EndMode2D())
+#define DoTextureMode(target) UIDeferLoop(BeginTextureMode(target), EndTextureMode())
+
 ////////////////////////////////////////////////////////////
 
 typedef enum TextureLabel {
@@ -912,18 +921,18 @@ static void GameStateDraw(GameState* state, float delta) {
     // Draw render target to screen and optionally upscale.
     float scale =
         fmin(((float)GetScreenWidth()) / RenderWidth(state), ((float)GetScreenHeight()) / RenderHeight(state));
-    BeginDrawing();
-    ClearBackground(WHITE);
-    Texture texture = state->target.texture;
-    DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
-                   (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
-                   WHITE);
+    DoDrawing() {
+        ClearBackground(WHITE);
+        Texture texture = state->target.texture;
+        DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
+                       (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
+                       WHITE);
 
-    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
-    if (state->debug) {
-        DrawFPS(5, 5);
+        state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
+        if (state->debug) {
+            DrawFPS(5, 5);
+        }
     }
-    EndDrawing();
 }
 
 ////////////////////////////////////////////////////////////
