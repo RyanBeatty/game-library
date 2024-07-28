@@ -7,6 +7,8 @@
 const int ScreenWidth = 1280;
 const int ScreenHeight = 720;
 
+static Camera2D GameCamera = {0};
+
 static Shader GetShader() {
     static bool init = false;
     static Shader shader = {0};
@@ -39,22 +41,33 @@ static void RunGame(float delta_time) {
     pos = Vector3Add(pos, dir);
 
     BeginDrawing();
+    breakpoint();
+
+    // Need to set this every draw batch I guess.
     Matrix view = MatrixTranslate(200, 0, 0);
     rlSetMatrixModelview(view);
+    BeginMode2D(GameCamera);
 
     ClearBackground(RAYWHITE);
 
-    BeginShaderMode(GetShader());
+    // BeginShaderMode(GetShader());
 
+    breakpoint();
     DrawRectangleV((Vector2){pos.x, pos.y}, size, BLUE);
 
-    EndShaderMode();
+    // EndShaderMode();
+    EndMode2D();
 
     EndDrawing();
 }
 
 int main(void) {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
+
+    GameCamera.target = (Vector2){0.0f, 0.0f};
+    GameCamera.offset = (Vector2){20.0f, 0.0f};
+    GameCamera.rotation = 0.0f;
+    GameCamera.zoom = 1.0f;
 
     SetTargetFPS(60);
 
