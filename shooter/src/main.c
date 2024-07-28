@@ -538,7 +538,7 @@ static void LoadLevel() {
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
-    Camera camera;
+    Camera2D camera;
 
     uint16_t health;
 
@@ -644,6 +644,13 @@ static void GameStateInit(GameState* state) {
     state->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
     SimpleScene(state);
+
+    {
+        state->camera.target = (Vector2){0.0f, 0.0f};
+        state->camera.offset = (Vector2){0.0f, 0.0f};
+        state->camera.rotation = 0.0f;
+        state->camera.zoom = 1.0f;
+    }
 }
 
 static void GameStateUpdate(GameState* state, float delta) {
@@ -788,6 +795,7 @@ static void GameStateDraw(GameState* state, float delta) {
     }
 
     BeginTextureMode(state->target);
+    BeginMode2D(state->camera);
 
     ClearBackground(WHITE);
 
@@ -898,6 +906,7 @@ static void GameStateDraw(GameState* state, float delta) {
         }
     }
 
+    EndMode2D();
     EndTextureMode();
 
     // Draw render target to screen and optionally upscale.
