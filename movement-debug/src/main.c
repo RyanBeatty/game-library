@@ -21,7 +21,7 @@ static Shader GetShader() {
 }
 
 static void RunGame(float delta_time) {
-    static Vector3 pos = {10, 10, 10};
+    static Vector3 pos = {200, 200, 0};
     static Vector2 size = {100, 100};
 
     Vector3 dir = Vector3Zero();
@@ -43,16 +43,31 @@ static void RunGame(float delta_time) {
     BeginDrawing();
     breakpoint();
 
-    // Need to set this every draw batch I guess.
-    Matrix view = MatrixTranslate(200, 0, 0);
-    rlSetMatrixModelview(view);
-    BeginMode2D(GameCamera);
+    // // Need to set this every draw batch I guess.
+    // Matrix view = MatrixTranslate(200, 0, 0);
+    // rlSetMatrixModelview(view);
+    // BeginMode2D(GameCamera);
 
     ClearBackground(RAYWHITE);
 
     // BeginShaderMode(GetShader());
+    // rlMatrixMode(RL_PROJECTION);
+    // rlLoadIdentity();
+    // rlOrtho(0, GetScreenWidth(), GetScreenHeight(), 0, 0.0f, 1.0f);
+    // rlLoadIdentity();
+    // rlScalef(0.0f, -1.0f, 0.0f);
+
+    // rlSetMatrixProjection(MatrixOrtho(0, GetScreenWidth(), 0, GetScreenHeight(), -1.0f, 1.0f));
 
     breakpoint();
+
+    Vector2 size2 = {GetScreenWidth(), GetScreenHeight()};
+    Vector2 half_size = Vector2Scale(size2, 0.5f);
+    DrawRectangleV((Vector2){0 - half_size.x, 0 - half_size.y}, size2, RED);
+    DrawRectangleV((Vector2){GetScreenWidth() - half_size.x, 0 - half_size.y}, size2, BLUE);
+    DrawRectangleV((Vector2){0 - half_size.x, GetScreenHeight() - half_size.y}, size2, GREEN);
+    DrawRectangleV((Vector2){GetScreenWidth() - half_size.x, GetScreenHeight() - half_size.y}, size2, YELLOW);
+
     DrawRectangleV((Vector2){pos.x, pos.y}, size, BLUE);
 
     // EndShaderMode();

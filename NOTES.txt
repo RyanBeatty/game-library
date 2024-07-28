@@ -1,0 +1,10 @@
+raylib rendering:
+* BeginMode2D - resets modelview then applies camera view matrix
+* InitWindow
+    * calls rlglinit which resets a bunch of matrix state.
+    * setupviewport (which inits ortho proj matrix)
+* setupviewport 
+    * calls rlviewport
+    * sets proj matrix to be ortho (with height as the bottom plane!)
+* BeginTextureMode
+    * sets proj matrix to be orth (with height as bottom plane!)
