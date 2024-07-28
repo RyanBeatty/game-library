@@ -41,7 +41,7 @@ static void RunGame(float delta_time) {
     pos = Vector3Add(pos, dir);
 
     BeginDrawing();
-    breakpoint();
+    // breakpoint();
 
     // // Need to set this every draw batch I guess.
     // Matrix view = MatrixTranslate(200, 0, 0);
@@ -58,33 +58,40 @@ static void RunGame(float delta_time) {
     // rlScalef(0.0f, -1.0f, 0.0f);
 
     // Ortho
+    Matrix m1 = MatrixIdentity();
+    Matrix m2 = MatrixIdentity();
     {
         // rlSetMatrixProj only.
         // TraceLog(LOG_INFO, "height %d", GetScreenHeight());
-        // { rlSetMatrixProjection(MatrixOrtho(0, GetScreenWidth(), GetScreenHeight() - 400, 400, -1.0f, 1.0f)); }
+        {
+            m1 = MatrixOrtho(0.0f, (float)GetScreenWidth(), (float)GetScreenHeight(), 0.0f, -1.0f, 1.0f);
+            m2 = MatrixOrtho(0.0f, (float)GetScreenWidth(), 0.0f, (float)GetScreenHeight(), -1.0f, 1.0f);
+
+            // rlSetMatrixProjection(m1);
+        }
 
         // matrix mode.
-        {
-            rlMatrixMode(RL_PROJECTION);
-            rlLoadIdentity();
-            rlOrtho(0.0, GetScreenWidth(), 0.0, GetScreenHeight(), 0.0, 1.0);
+        // {
+        //     rlMatrixMode(RL_PROJECTION);
+        //     rlLoadIdentity();
+        //     rlOrtho(0.0, GetScreenWidth(), 0.0, GetScreenHeight(), 0.0, 1.0);
 
-            // Switch back to modelview matrix
-            rlMatrixMode(RL_MODELVIEW);
-            rlLoadIdentity();
-        }
+        //     // Switch back to modelview matrix
+        //     rlMatrixMode(RL_MODELVIEW);
+        //     rlLoadIdentity();
+        // }
     }
 
     breakpoint();
 
     Vector2 size2 = {GetScreenWidth(), GetScreenHeight()};
     Vector2 half_size = Vector2Scale(size2, 0.5f);
-    DrawRectangleV((Vector2){0 - half_size.x, 0 - half_size.y}, size2, RED);
-    DrawRectangleV((Vector2){GetScreenWidth() - half_size.x, 0 - half_size.y}, size2, BLUE);
-    DrawRectangleV((Vector2){0 - half_size.x, GetScreenHeight() - half_size.y}, size2, GREEN);
-    DrawRectangleV((Vector2){GetScreenWidth() - half_size.x, GetScreenHeight() - half_size.y}, size2, YELLOW);
+    // DrawRectangleV((Vector2){0 - half_size.x, 0 - half_size.y}, size2, RED);
+    // DrawRectangleV((Vector2){GetScreenWidth() - half_size.x, 0 - half_size.y}, size2, BLUE);
+    // DrawRectangleV((Vector2){0 - half_size.x, GetScreenHeight() - half_size.y}, size2, GREEN);
+    // DrawRectangleV((Vector2){GetScreenWidth() - half_size.x, GetScreenHeight() - half_size.y}, size2, YELLOW);
 
-    DrawRectangleV((Vector2){pos.x, pos.y}, size, BLUE);
+    // DrawRectangleV((Vector2){pos.x, pos.y}, size, BLUE);
 
     // EndShaderMode();
     EndMode2D();
@@ -95,10 +102,18 @@ static void RunGame(float delta_time) {
 int main(void) {
     InitWindow(ScreenWidth, ScreenHeight, "Game");
 
+    int version = rlGetVersion();
+    // const char* glRenderer = (const char*)glGetString(GL_RENDERER);
+    // const char* glVendor = (const char*)glGetString(GL_VENDOR);
+    // const char* glShadingLanguageVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    TraceLog(LOG_INFO, "verion %d %d", version, RL_OPENGL_33);
+
     GameCamera.target = (Vector2){0.0f, 0.0f};
     GameCamera.offset = (Vector2){20.0f, 0.0f};
     GameCamera.rotation = 0.0f;
     GameCamera.zoom = 1.0f;
+
+    rlViewport(0, 0, GetScreenWidth(), GetScreenHeight());
 
     SetTargetFPS(60);
 
