@@ -803,121 +803,120 @@ static void GameStateDraw(GameState* state, float delta) {
         }
     }
 
-    BeginTextureMode(state->target);
-    BeginMode2D(state->camera);
+    DoTextureMode(state->target) {
+        DoMode2D(state->camera) {
+            ClearBackground(WHITE);
 
-    ClearBackground(WHITE);
+            for (uint32_t i = 0; i < size; ++i) {
+                Entity* entity = entities[i];
+                Color tint = entity->tint;
 
-    for (uint32_t i = 0; i < size; ++i) {
-        Entity* entity = entities[i];
-        Color tint = entity->tint;
+                if (state->focus != NULL && entity == state->focus) {
+                    tint = YELLOW;
+                    // tint.a = 0.4f;
+                }
 
-        if (state->focus != NULL && entity == state->focus) {
-            tint = YELLOW;
-            // tint.a = 0.4f;
-        }
+                float half_width = entity->bitmap_rec_dst.width * 0.5f;
+                float half_height = entity->bitmap_rec_dst.height * 0.5f;
+                entity->bitmap_rec_dst.x = entity->p.x - half_width;
+                entity->bitmap_rec_dst.y = entity->p.y - half_height;
 
-        float half_width = entity->bitmap_rec_dst.width * 0.5f;
-        float half_height = entity->bitmap_rec_dst.height * 0.5f;
-        entity->bitmap_rec_dst.x = entity->p.x - half_width;
-        entity->bitmap_rec_dst.y = entity->p.y - half_height;
+                // Compute animation rec.
+                float animation_time = entity->animation_frame_count * entity->animation_frame_time;
+                uint32_t animation_frame_idx =
+                    fmod(entity->animation_timer, animation_time) / entity->animation_frame_time;
+                Assert(entity->animation_frame_time != 0.0f);
+                Rectangle src = {
+                    entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
+                    entity->bitmap_rec.y,
+                    entity->bitmap_rec.width * (entity->right ? 1.0f : -1.0f),
+                    entity->bitmap_rec.height,
 
-        // Compute animation rec.
-        float animation_time = entity->animation_frame_count * entity->animation_frame_time;
-        uint32_t animation_frame_idx = fmod(entity->animation_timer, animation_time) / entity->animation_frame_time;
-        Assert(entity->animation_frame_time != 0.0f);
-        Rectangle src = {
-            entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
-            entity->bitmap_rec.y,
-            entity->bitmap_rec.width * (entity->right ? 1.0f : -1.0f),
-            entity->bitmap_rec.height,
+                };
+                // DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height},
+                // tint);
+                DrawTexturePro(entity->texture, src, entity->bitmap_rec_dst, Vector2Zero(), 0, tint);
+                if (false) {
+                    DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
+                }
+            }
 
-        };
-        // DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
-        DrawTexturePro(entity->texture, src, entity->bitmap_rec_dst, Vector2Zero(), 0, tint);
-        if (false) {
-            DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
+            // Draw UI.
+            {
+                // Play UI.
+                {
+                    Font font = GetFontDefault();
+                    float fontsize = 12.0f;
+                    float spacing = fontsize / font.baseSize;
+                    Color color = WHITE;
+
+                    {
+                        float x = RenderWidth(state) * 0.92;
+                        float y = 0.0f;
+
+                        // Health text.
+                        {
+                            char text[256] = {0};
+                            memset(text, '*', sizeof(char) * state->health);
+                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                            y += 5.0f;
+                            Vector2 pos = {x - size.x, y};
+                            DrawTextEx(font, text, pos, fontsize, spacing, color);
+                            y += size.y;
+                        }
+
+                        // Score text.
+                        {
+                            char text[256] = {0};
+                            sprintf(text, "%d", state->score);
+                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                            y += 2.0f;
+                            Vector2 pos = {x - size.x, y};
+                            DrawTextEx(font, text, pos, fontsize, spacing, color);
+                        }
+                    }
+                }
+
+                if (state->game_over) {
+                    static const char* GAME_OVER_TEXT = "Game Over";
+                    static const char* RETRY_TEXT = "Press Enter to Retry";
+
+                    Color bg_color = {GRAY.r, GRAY.g, GRAY.b, GRAY.a * 0.4f};
+
+                    Font font = GetFontDefault();
+                    float fontsize = 24.0f;
+                    float spacing = fontsize / font.baseSize;
+                    Color text_color = WHITE;
+                    {
+                        DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
+
+                        float x = RenderWidth(state) * 0.5f;
+                        float y = RenderHeight(state) * 0.3f;
+
+                        {
+                            Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
+                            Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
+                            DrawText(GAME_OVER_TEXT, pos.x, pos.y, fontsize, text_color);
+                            y += size.y;
+                        }
+                        {
+                            Vector2 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
+                            y += 5.0f;
+                            Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
+                            DrawText(RETRY_TEXT, pos.x, pos.y, fontsize, text_color);
+                            y += size.y;
+                        }
+                    }
+
+                    if (IsKeyDown(KEY_ENTER)) {
+                        state->game_over = false;
+                        // TODO: Should probably move this somewhere else.
+                        SimpleScene(state);
+                    }
+                }
+            }
         }
     }
-
-    // Draw UI.
-    {
-        // Play UI.
-        {
-            Font font = GetFontDefault();
-            float fontsize = 12.0f;
-            float spacing = fontsize / font.baseSize;
-            Color color = WHITE;
-
-            {
-                float x = RenderWidth(state) * 0.92;
-                float y = 0.0f;
-
-                // Health text.
-                {
-                    char text[256] = {0};
-                    memset(text, '*', sizeof(char) * state->health);
-                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                    y += 5.0f;
-                    Vector2 pos = {x - size.x, y};
-                    DrawTextEx(font, text, pos, fontsize, spacing, color);
-                    y += size.y;
-                }
-
-                // Score text.
-                {
-                    char text[256] = {0};
-                    sprintf(text, "%d", state->score);
-                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                    y += 2.0f;
-                    Vector2 pos = {x - size.x, y};
-                    DrawTextEx(font, text, pos, fontsize, spacing, color);
-                }
-            }
-        }
-
-        if (state->game_over) {
-            static const char* GAME_OVER_TEXT = "Game Over";
-            static const char* RETRY_TEXT = "Press Enter to Retry";
-
-            Color bg_color = {GRAY.r, GRAY.g, GRAY.b, GRAY.a * 0.4f};
-
-            Font font = GetFontDefault();
-            float fontsize = 24.0f;
-            float spacing = fontsize / font.baseSize;
-            Color text_color = WHITE;
-            {
-                DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
-
-                float x = RenderWidth(state) * 0.5f;
-                float y = RenderHeight(state) * 0.3f;
-
-                {
-                    Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
-                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
-                    DrawText(GAME_OVER_TEXT, pos.x, pos.y, fontsize, text_color);
-                    y += size.y;
-                }
-                {
-                    Vector2 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
-                    y += 5.0f;
-                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
-                    DrawText(RETRY_TEXT, pos.x, pos.y, fontsize, text_color);
-                    y += size.y;
-                }
-            }
-
-            if (IsKeyDown(KEY_ENTER)) {
-                state->game_over = false;
-                // TODO: Should probably move this somewhere else.
-                SimpleScene(state);
-            }
-        }
-    }
-
-    EndMode2D();
-    EndTextureMode();
-
     // Draw render target to screen and optionally upscale.
     float scale =
         fmin(((float)GetScreenWidth()) / RenderWidth(state), ((float)GetScreenHeight()) / RenderHeight(state));
