@@ -611,8 +611,8 @@ static void GameStateInit(GameState* state) {
     SimpleScene(state);
 }
 
-static void GameStateUpdate(GameState* state, float delta) {
-    state->timer += delta;
+static void GameStateUpdate(GameState* state, float dt) {
+    state->timer += dt;
 
     Vector3 player_pos = Vector3Zero();
     EntityManager* em = GetEntityManager();
@@ -649,6 +649,9 @@ static void GameStateUpdate(GameState* state, float delta) {
             if (IsKeyDown(KEY_LEFT)) {
                 dir = Vector3Add(dir, (Vector3){-1.0f, 0.0f, 0.0f});
             }
+
+            Vector3 dx = Vector3Scale(dir, 30.0f * dt);
+            entity->p = Vector3Add(entity->p, dx);
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
@@ -657,7 +660,7 @@ static void GameStateUpdate(GameState* state, float delta) {
         entity->pp = cur_p;
 
         // Update animation timer if it is a looping animation.
-        entity->animation_timer += delta * entity->animation_loops;
+        entity->animation_timer += dt * entity->animation_loops;
     }
 }
 
