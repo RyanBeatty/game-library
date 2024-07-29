@@ -645,20 +645,6 @@ static void GameStateInit(GameState* state) {
 static void GameStateUpdate(GameState* state, float delta) {
     state->timer += delta;
 
-    Entity* focus_to_be = state->focus;
-    if (IsKeyPressed(KEY_RIGHT)) {
-        focus_to_be = focus_to_be->monster_link.next;
-        if (focus_to_be == NULL) {
-            focus_to_be = state->monsters.head;
-        }
-    } else if (IsKeyPressed(KEY_LEFT)) {
-        focus_to_be = focus_to_be->monster_link.prev;
-        if (focus_to_be == NULL) {
-            focus_to_be = state->monsters.tail;
-        }
-    }
-    state->focus = focus_to_be;
-
     Vector3 player_pos = Vector3Zero();
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
@@ -684,52 +670,6 @@ static void GameStateUpdate(GameState* state, float delta) {
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
-            bool dead = false;
-
-            entity->animation_timer += delta;
-
-            entity->right = false;
-            if (state->focus != NULL && state->focus == entity) {
-            }
-
-            if (!dead) {
-                CollisionInfo info = CheckEntityCollisionScene(entity);
-                for (uint32_t j = 0; j < info.len; ++j) {
-                    Entity* e = info.entities[j];
-                    bool still_hit = Collides((Vector2){entity->p.x, entity->p.y}, entity->shape,
-                                              (Vector2){e->p.x, e->p.y}, e->shape);
-                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED) && still_hit) {
-                        dead = true;
-                        --state->health;
-                    }
-                }
-            }
-
-            if (dead) {
-                FlagOff(entity->flags, EFLAG_ACTIVE);
-
-                // Monster links + focus.
-                {
-                    if (entity->monster_link.prev != NULL) {
-                        entity->monster_link.prev->monster_link.next = entity->monster_link.next;
-                    }
-                    if (entity->monster_link.next != NULL) {
-                        entity->monster_link.next->monster_link.prev = entity->monster_link.prev;
-                    }
-
-                    if (state->monsters.head == entity) {
-                        state->monsters.head = entity->monster_link.next;
-                    }
-                    if (state->monsters.tail == entity) {
-                        state->monsters.tail = entity->monster_link.prev;
-                    }
-                }
-
-                uint32_t size_to_spawn = 2;
-                for (uint32_t j = 0; j < size_to_spawn; ++j) {
-                    SpawnMonster(state);
-                }
-            }
         }
 
         entity->pp = cur_p;
