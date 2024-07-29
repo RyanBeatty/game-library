@@ -8,8 +8,8 @@
 
 #endif
 
-const float RenderWidth = 320;
-const float RenderHeight = 180;
+const float RenderWidth = 1280;
+const float RenderHeight = 720;
 
 static const Vector3 DOWN = {1, -1, 1};
 ////////////////////////////////////////////////////////////
@@ -570,7 +570,7 @@ static void SpawnMonster(GameState* state) {
 }
 
 static void SimpleScene(GameState* state) {
-    LoadLevel();
+    // LoadLevel();
 
     SpawnMonster(state);
 
@@ -597,7 +597,7 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth * 4, RenderHeight * 4, "Game");
+    InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     // ToggleFullscreen();
     SetConfigFlags(FLAG_VSYNC_HINT);
@@ -613,7 +613,7 @@ static void GameStateInit(GameState* state) {
     {
         state->camera.target = (Vector2){0.0f, 0.0f};
         state->camera.offset = (Vector2){0.0f, 0.0f};
-        state->camera.rotation = 0.0f;
+        state->camera.rotation = 180.0f * DEG2RAD;
         state->camera.zoom = 1.0f;
     }
 }
@@ -657,6 +657,15 @@ static void GameStateUpdate(GameState* state, float dt) {
                 dir = Vector3Add(dir, (Vector3){-1.0f, 0.0f, 0.0f});
             }
 
+            // Matrix view_m = GetCameraMatrix2D(state->camera);
+            // Matrix i_view_m = MatrixInvert(view_m);
+            // Matrix proj_m = MatrixOrtho(0.0f, GetScreenWidth(), GetScreenHeight(), 0.0f, -1.0f, 1.0f);
+            // Matrix i_proj_m = MatrixInvert(proj_m);
+
+            // if (!Vector3Equals(dir, Vector3Zero())) {
+            //     breakpoint();
+            // }
+
             Vector3 dx = Vector3Scale(dir, 30.0f * dt);
             entity->p = Vector3Add(entity->p, dx);
         }
@@ -697,8 +706,9 @@ static void GameStateDraw(GameState* state, float delta) {
         }
     }
 
-    BeginTextureMode(state->target);
-    BeginMode2D(state->camera);
+    // BeginTextureMode(state->target);
+    BeginDrawing();
+    // BeginMode2D(state->camera);
 
     ClearBackground(WHITE);
 
@@ -805,24 +815,25 @@ static void GameStateDraw(GameState* state, float delta) {
         }
     }
 
-    EndMode2D();
-    EndTextureMode();
-
-    // Draw render target to screen and optionally upscale.
-    float scale =
-        fmin(((float)GetScreenWidth()) / RenderWidth(state), ((float)GetScreenHeight()) / RenderHeight(state));
-    BeginDrawing();
-    ClearBackground(WHITE);
-    Texture texture = state->target.texture;
-    DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
-                   (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
-                   WHITE);
-
-    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
-    if (state->debug) {
-        DrawFPS(5, 5);
-    }
+    // EndMode2D();
     EndDrawing();
+    // EndTextureMode();
+
+    // // Draw render target to screen and optionally upscale.
+    // float scale =
+    //     fmin(((float)GetScreenWidth()) / RenderWidth(state), ((float)GetScreenHeight()) / RenderHeight(state));
+    // BeginDrawing();
+    // ClearBackground(WHITE);
+    // Texture texture = state->target.texture;
+    // DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
+    //                (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
+    //                WHITE);
+
+    // state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
+    // if (state->debug) {
+    //     DrawFPS(5, 5);
+    // }
+    // EndDrawing();
 }
 
 ////////////////////////////////////////////////////////////
