@@ -8,27 +8,16 @@
 
 #endif
 
-#define UIDeferLoop(begin, end) for (int _i_ = ((begin), 0); !_i_; _i_ += 1, (end))
-
-const float RenderWidth = 1280;
-const float RenderHeight = 720;
+const float RenderWidth = 320;
+const float RenderHeight = 180;
 
 static const Vector3 DOWN = {1, -1, 1};
-////////////////////////////////////////////////////////////
-// Draw utils
-
-#define DoDrawing() UIDeferLoop(BeginDrawing(), EndDrawing())
-#define DoMode2D(camera) UIDeferLoop(BeginMode2D(camera), EndMode2D())
-#define DoTextureMode(target) UIDeferLoop(BeginTextureMode(target), EndTextureMode())
-
 ////////////////////////////////////////////////////////////
 
 typedef enum TextureLabel {
     TEXTURE_NONE = 0,
     TEXTURE_TILEMAP_CHARACTERS,
     TEXTURE_TILEMAP_BACKGROUND,
-    TEXTURE_TILEMAP_SQUARE,
-    TEXTURE_TILEMAP_SQUARE_DOUBLE,
     TEXTURE_COUNT
 } TextureLabel;
 
@@ -49,18 +38,6 @@ static void TextureCacheInit() {
         Texture texture = LoadTexture("assets/art/8bit.png");
         Assert(IsTextureReady(texture));
         Textures[TEXTURE_TILEMAP_BACKGROUND] = texture;
-    }
-
-    {
-        Texture texture = LoadTexture("assets/art/red_body_square.png");
-        Assert(IsTextureReady(texture));
-        Textures[TEXTURE_TILEMAP_SQUARE] = texture;
-    }
-
-    {
-        Texture texture = LoadTexture("assets/art/red_body_square_double.png");
-        Assert(IsTextureReady(texture));
-        Textures[TEXTURE_TILEMAP_SQUARE_DOUBLE] = texture;
     }
 }
 
@@ -229,6 +206,35 @@ typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 
 
 ////////////////////////////////////////////////////////////
 
+static char** Words = {0};
+
+static void InitWords() {
+    Words = NULL;
+    char* word = NULL;
+
+    unsigned int len = 0;
+    unsigned char* buffer = LoadFileData("assets/words/1000.words", &len);
+    uint32_t i = 0;
+    while (i < len) {
+        for (; i < len; ++i) {
+            if (buffer[i] == '\r' || buffer[i] == '\n') {
+                break;
+            }
+            arrput(word, buffer[i]);
+        }
+        arrput(word, '\0');
+        arrput(Words, word);
+        word = NULL;
+
+        for (; i < len && (buffer[i] == '\r' || buffer[i] == '\n'); ++i) {
+        }
+    }
+}
+
+static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
+
+////////////////////////////////////////////////////////////
+
 #define ANIMATION_FRAME_CAP (4)
 
 ////////////////////////////////////////////////////////////
@@ -261,7 +267,6 @@ typedef struct Entity {
     // Animation.
     Texture texture;
     Rectangle bitmap_rec;
-    Rectangle bitmap_rec_dst;
     uint32_t animation_frame_count;
     float animation_frame_time;
     float animation_timer;
@@ -274,6 +279,9 @@ typedef struct Entity {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
+    float bomb_timer;
+    float explosion_timer;
+
     float spawn_move_timer;
     float spawn_move_time;
     float spawn_timer;
@@ -456,7 +464,6 @@ static void LoadLevel() {
                     entity->texture = *texture;
                     entity->bitmap_rec =
                         (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
-                    entity->bitmap_rec_dst = entity->bitmap_rec;
                     // FlagOff(entity->flags, EFLAG_DRAW);
                 }
             } else if (strcmp(type->valuestring, "IntGrid") == 0) {
@@ -481,7 +488,6 @@ static void LoadLevel() {
                         if (TestFlag(entity->flags, EFLAG_DRAW)) {
                             entity->texture = LoadTextureFromImage(GenImageColor(grid_size, grid_size, BLACK));
                             entity->bitmap_rec = (Rectangle){0, 0, grid_size, grid_size};
-                            entity->bitmap_rec_dst = entity->bitmap_rec;
                         }
                     }
 
@@ -547,7 +553,7 @@ static void LoadLevel() {
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
-    Camera2D camera;
+    Camera camera;
 
     uint16_t health;
 
@@ -589,7 +595,6 @@ static void SpawnMonster(GameState* state) {
         entity->pp = entity->p;
         entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
         entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
-        entity->bitmap_rec_dst = entity->bitmap_rec;
         entity->animation_frame_count = 4;
         entity->animation_frame_time = 0.2f;
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -610,7 +615,9 @@ static void SpawnMonster(GameState* state) {
 }
 
 static void SimpleScene(GameState* state) {
-    // LoadLevel();
+    LoadLevel();
+
+    InitWords();
 
     SpawnMonster(state);
 
@@ -621,18 +628,16 @@ static void SimpleScene(GameState* state) {
     {
         Entity* entity = AllocateEntity();
         SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24;
-        int height = 24;
+        int width = 24 * 3;
+        int height = 24 * 3;
         entity->p = (Vector3){RenderWidth(state) * 0.2f, RenderHeight(state) * 0.5f, 0.0f};
         entity->pp = entity->p;
 
         Image image = GenImageColor(width, height, BLANK);
         Color color = RED;
         ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
-        entity->texture = GetTexture(TEXTURE_TILEMAP_SQUARE);
-        SetTextureFilter(entity->texture, TEXTURE_FILTER_BILINEAR);
-        entity->bitmap_rec = (Rectangle){0, 0, entity->texture.width, entity->texture.height};
-        entity->bitmap_rec_dst = (Rectangle){0, 0, entity->texture.width, entity->texture.height};
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
         entity->damage_cooldown = 0.4f;
         entity->damage_timer = 0.0f;
@@ -641,7 +646,7 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
-    InitWindow(RenderWidth, RenderHeight, "Game");
+    InitWindow(RenderWidth * 4, RenderHeight * 4, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     // ToggleFullscreen();
     SetConfigFlags(FLAG_VSYNC_HINT);
@@ -653,19 +658,39 @@ static void GameStateInit(GameState* state) {
     state->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
     SimpleScene(state);
-
-    {
-        state->camera.target = (Vector2){0.0f, 0.0f};
-        state->camera.offset = (Vector2){0.0f, 0.0f};
-        state->camera.rotation = 0.0f;
-        state->camera.zoom = 1.0f;
-    }
 }
 
 static void GameStateUpdate(GameState* state, float delta) {
     state->timer += delta;
 
+    Entity* focus_to_be = state->focus;
+    if (IsKeyPressed(KEY_RIGHT)) {
+        focus_to_be = focus_to_be->monster_link.next;
+        if (focus_to_be == NULL) {
+            focus_to_be = state->monsters.head;
+        }
+    } else if (IsKeyPressed(KEY_LEFT)) {
+        focus_to_be = focus_to_be->monster_link.prev;
+        if (focus_to_be == NULL) {
+            focus_to_be = state->monsters.tail;
+        }
+    }
+    state->focus = focus_to_be;
+
+    Vector3 player_pos = Vector3Zero();
     EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = GetEntity(i);
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
+            continue;
+        }
+        if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            player_pos = entity->p;
+            break;
+        }
+    }
+    Assert(!Vector3Equals(player_pos, Vector3Zero()));
+
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
@@ -674,22 +699,6 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            Vector3 dir = Vector3Zero();
-            if (IsKeyDown(KEY_W)) {
-                dir = Vector3Add(dir, (Vector3){0, -1, 0});
-            }
-            if (IsKeyDown(KEY_D)) {
-                dir = Vector3Add(dir, (Vector3){1, 0, 0});
-            }
-            if (IsKeyDown(KEY_S)) {
-                dir = Vector3Add(dir, (Vector3){0, 1, 0});
-            }
-            if (IsKeyDown(KEY_A)) {
-                dir = Vector3Add(dir, (Vector3){-1, 0, 0});
-            }
-            // dir = Vector3Normalize(dir);
-            Vector3 dx = Vector3Scale(dir, 30.0f * delta);
-            entity->p = Vector3Add(entity->p, dx);
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
@@ -803,135 +812,130 @@ static void GameStateDraw(GameState* state, float delta) {
         }
     }
 
-    DoTextureMode(state->target) {
-        DoMode2D(state->camera) {
-            ClearBackground(WHITE);
+    BeginTextureMode(state->target);
 
-            for (uint32_t i = 0; i < size; ++i) {
-                Entity* entity = entities[i];
-                Color tint = entity->tint;
+    ClearBackground(WHITE);
 
-                if (state->focus != NULL && entity == state->focus) {
-                    tint = YELLOW;
-                    // tint.a = 0.4f;
-                }
+    for (uint32_t i = 0; i < size; ++i) {
+        Entity* entity = entities[i];
+        Color tint = entity->tint;
 
-                float half_width = entity->bitmap_rec_dst.width * 0.5f;
-                float half_height = entity->bitmap_rec_dst.height * 0.5f;
-                entity->bitmap_rec_dst.x = entity->p.x - half_width;
-                entity->bitmap_rec_dst.y = entity->p.y - half_height;
+        if (state->focus != NULL && entity == state->focus) {
+            tint = YELLOW;
+            // tint.a = 0.4f;
+        }
 
-                // Compute animation rec.
-                float animation_time = entity->animation_frame_count * entity->animation_frame_time;
-                uint32_t animation_frame_idx =
-                    fmod(entity->animation_timer, animation_time) / entity->animation_frame_time;
-                Assert(entity->animation_frame_time != 0.0f);
-                Rectangle src = {
-                    entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
-                    entity->bitmap_rec.y,
-                    entity->bitmap_rec.width * (entity->right ? 1.0f : -1.0f),
-                    entity->bitmap_rec.height,
+        float half_width = entity->bitmap_rec.width * 0.5f;
+        float half_height = entity->bitmap_rec.height * 0.5f;
+        // Compute animation rec.
+        float animation_time = entity->animation_frame_count * entity->animation_frame_time;
+        uint32_t animation_frame_idx = fmod(entity->animation_timer, animation_time) / entity->animation_frame_time;
+        Assert(entity->animation_frame_time != 0.0f);
+        Rectangle src = {
+            entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
+            entity->bitmap_rec.y,
+            entity->bitmap_rec.width * (entity->right ? 1.0f : -1.0f),
+            entity->bitmap_rec.height,
 
-                };
-                // DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height},
-                // tint);
-                DrawTexturePro(entity->texture, src, entity->bitmap_rec_dst, Vector2Zero(), 0, tint);
-                if (false) {
-                    DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
-                }
-            }
+        };
+        DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
+        if (false) {
+            DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
+        }
+    }
 
-            // Draw UI.
+    // Draw UI.
+    {
+        // Play UI.
+        {
+            Font font = GetFontDefault();
+            float fontsize = 12.0f;
+            float spacing = fontsize / font.baseSize;
+            Color color = WHITE;
+
             {
-                // Play UI.
+                float x = RenderWidth(state) * 0.92;
+                float y = 0.0f;
+
+                // Health text.
                 {
-                    Font font = GetFontDefault();
-                    float fontsize = 12.0f;
-                    float spacing = fontsize / font.baseSize;
-                    Color color = WHITE;
-
-                    {
-                        float x = RenderWidth(state) * 0.92;
-                        float y = 0.0f;
-
-                        // Health text.
-                        {
-                            char text[256] = {0};
-                            memset(text, '*', sizeof(char) * state->health);
-                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                            y += 5.0f;
-                            Vector2 pos = {x - size.x, y};
-                            DrawTextEx(font, text, pos, fontsize, spacing, color);
-                            y += size.y;
-                        }
-
-                        // Score text.
-                        {
-                            char text[256] = {0};
-                            sprintf(text, "%d", state->score);
-                            Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                            y += 2.0f;
-                            Vector2 pos = {x - size.x, y};
-                            DrawTextEx(font, text, pos, fontsize, spacing, color);
-                        }
-                    }
+                    char text[256] = {0};
+                    memset(text, '*', sizeof(char) * state->health);
+                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                    y += 5.0f;
+                    Vector2 pos = {x - size.x, y};
+                    DrawTextEx(font, text, pos, fontsize, spacing, color);
+                    y += size.y;
                 }
 
-                if (state->game_over) {
-                    static const char* GAME_OVER_TEXT = "Game Over";
-                    static const char* RETRY_TEXT = "Press Enter to Retry";
-
-                    Color bg_color = {GRAY.r, GRAY.g, GRAY.b, GRAY.a * 0.4f};
-
-                    Font font = GetFontDefault();
-                    float fontsize = 24.0f;
-                    float spacing = fontsize / font.baseSize;
-                    Color text_color = WHITE;
-                    {
-                        DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
-
-                        float x = RenderWidth(state) * 0.5f;
-                        float y = RenderHeight(state) * 0.3f;
-
-                        {
-                            Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
-                            Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
-                            DrawText(GAME_OVER_TEXT, pos.x, pos.y, fontsize, text_color);
-                            y += size.y;
-                        }
-                        {
-                            Vector2 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
-                            y += 5.0f;
-                            Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
-                            DrawText(RETRY_TEXT, pos.x, pos.y, fontsize, text_color);
-                            y += size.y;
-                        }
-                    }
-
-                    if (IsKeyDown(KEY_ENTER)) {
-                        state->game_over = false;
-                        // TODO: Should probably move this somewhere else.
-                        SimpleScene(state);
-                    }
+                // Score text.
+                {
+                    char text[256] = {0};
+                    sprintf(text, "%d", state->score);
+                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
+                    y += 2.0f;
+                    Vector2 pos = {x - size.x, y};
+                    DrawTextEx(font, text, pos, fontsize, spacing, color);
                 }
             }
         }
+
+        if (state->game_over) {
+            static const char* GAME_OVER_TEXT = "Game Over";
+            static const char* RETRY_TEXT = "Press Enter to Retry";
+
+            Color bg_color = {GRAY.r, GRAY.g, GRAY.b, GRAY.a * 0.4f};
+
+            Font font = GetFontDefault();
+            float fontsize = 24.0f;
+            float spacing = fontsize / font.baseSize;
+            Color text_color = WHITE;
+            {
+                DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
+
+                float x = RenderWidth(state) * 0.5f;
+                float y = RenderHeight(state) * 0.3f;
+
+                {
+                    Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
+                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
+                    DrawText(GAME_OVER_TEXT, pos.x, pos.y, fontsize, text_color);
+                    y += size.y;
+                }
+                {
+                    Vector2 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
+                    y += 5.0f;
+                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
+                    DrawText(RETRY_TEXT, pos.x, pos.y, fontsize, text_color);
+                    y += size.y;
+                }
+            }
+
+            if (IsKeyDown(KEY_ENTER)) {
+                state->game_over = false;
+                // TODO: Should probably move this somewhere else.
+                SimpleScene(state);
+            }
+        }
     }
+
+    EndTextureMode();
+
     // Draw render target to screen and optionally upscale.
     float scale =
         fmin(((float)GetScreenWidth()) / RenderWidth(state), ((float)GetScreenHeight()) / RenderHeight(state));
-    DoDrawing() {
-        ClearBackground(WHITE);
-        Texture texture = state->target.texture;
-        DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
-                       (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
-                       WHITE);
+    BeginDrawing();
+    ClearBackground(WHITE);
+    Texture texture = state->target.texture;
+    DrawTexturePro(texture, (Rectangle){0, 0, texture.width, -texture.height},
+                   (Rectangle){0, 0, texture.width * scale, texture.height * scale}, (Vector2){0.0f, 0.0f}, 0.0f,
+                   WHITE);
 
-        state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
-        if (state->debug) {
-            DrawFPS(5, 5);
-        }
+    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_D));
+    if (state->debug) {
+        DrawFPS(5, 5);
     }
+    EndDrawing();
 }
 
 ////////////////////////////////////////////////////////////
