@@ -11,7 +11,7 @@
 const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
-static const Vector3 DOWN = {1, -1, 1};
+static const Vector3 FLIP_Y = {1, -1, 1};
 
 static const Vector3 ORIGIN = {0.0f, 0.0f, 0.0f};
 static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
@@ -645,16 +645,8 @@ static void GameStateUpdate(GameState* state, float dt) {
                 dir = Vector3Add(dir, (Vector3){-1.0f, 0.0f, 0.0f});
             }
 
-            // Matrix view_m = GetCameraMatrix2D(state->camera);
-            // Matrix i_view_m = MatrixInvert(view_m);
-            // Matrix proj_m = MatrixOrtho(0.0f, GetScreenWidth(), GetScreenHeight(), 0.0f, -1.0f, 1.0f);
-            // Matrix i_proj_m = MatrixInvert(proj_m);
-
-            // if (!Vector3Equals(dir, Vector3Zero())) {
-            //     breakpoint();
-            // }
-
-            Vector3 dx = Vector3Scale(dir, 30.0f * dt);
+            dir = Vector3Multiply(dir, FLIP_Y);
+            Vector3 dx = Vector3Scale(dir, 300.0f * dt);
             entity->p = Vector3Add(entity->p, dx);
         }
 
