@@ -206,35 +206,6 @@ typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 
 
 ////////////////////////////////////////////////////////////
 
-static char** Words = {0};
-
-static void InitWords() {
-    Words = NULL;
-    char* word = NULL;
-
-    unsigned int len = 0;
-    unsigned char* buffer = LoadFileData("assets/words/1000.words", &len);
-    uint32_t i = 0;
-    while (i < len) {
-        for (; i < len; ++i) {
-            if (buffer[i] == '\r' || buffer[i] == '\n') {
-                break;
-            }
-            arrput(word, buffer[i]);
-        }
-        arrput(word, '\0');
-        arrput(Words, word);
-        word = NULL;
-
-        for (; i < len && (buffer[i] == '\r' || buffer[i] == '\n'); ++i) {
-        }
-    }
-}
-
-static char* GetWord() { return Words[GetRandomValue(0, arrlen(Words) - 1)]; }
-
-////////////////////////////////////////////////////////////
-
 #define ANIMATION_FRAME_CAP (4)
 
 ////////////////////////////////////////////////////////////
@@ -601,8 +572,6 @@ static void SpawnMonster(GameState* state) {
 static void SimpleScene(GameState* state) {
     LoadLevel();
 
-    InitWords();
-
     SpawnMonster(state);
 
     state->score = 0.0f;
@@ -667,6 +636,19 @@ static void GameStateUpdate(GameState* state, float delta) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            Vector3 dir = Vector3Zero();
+            if (IsKeyDown(KEY_UP)) {
+                dir = Vector3Add(dir, (Vector3){0.0f, 1.0f, 0.0f});
+            }
+            if (IsKeyDown(KEY_RIGHT)) {
+                dir = Vector3Add(dir, (Vector3){1.0f, 0.0f, 0.0f});
+            }
+            if (IsKeyDown(KEY_DOWN)) {
+                dir = Vector3Add(dir, (Vector3){0.0f, -1.0f, 0.0f});
+            }
+            if (IsKeyDown(KEY_LEFT)) {
+                dir = Vector3Add(dir, (Vector3){-1.0f, 0.0f, 0.0f});
+            }
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
