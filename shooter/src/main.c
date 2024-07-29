@@ -279,22 +279,6 @@ typedef struct Entity {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    float bomb_timer;
-    float explosion_timer;
-
-    float spawn_move_timer;
-    float spawn_move_time;
-    float spawn_timer;
-    float spawn_time;
-    float spawn_count;
-    float spawn_total;
-    SpawnFlag spawn_flags;
-
-    float damage_timer;
-    float damage_cooldown;
-
-    float dash_timer;
-
     bool dead;
 
     struct {
@@ -639,8 +623,6 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-        entity->damage_cooldown = 0.4f;
-        entity->damage_timer = 0.0f;
     }
 }
 
@@ -746,35 +728,6 @@ static void GameStateUpdate(GameState* state, float delta) {
                 uint32_t size_to_spawn = 2;
                 for (uint32_t j = 0; j < size_to_spawn; ++j) {
                     SpawnMonster(state);
-                }
-            }
-        }
-
-        if (TestFlag(entity->flags, EFLAG_SPAWNER)) {
-            entity->spawn_move_timer += delta;
-            entity->spawn_timer += delta;
-
-            if ((entity->spawn_timer >= entity->spawn_time) && entity->spawn_count > 0) {
-                --entity->spawn_count;
-                entity->spawn_timer = 0.0f;
-                // Calculate random initial velocity.
-                Vector2 v = Vector2Rotate((Vector2){1, 0}, GetRandomValue(0, 180) * DEG2RAD);
-                v = Vector2Scale(v, GetRandomValue(10, 100));
-
-                // Spawn bomb.
-                if (TestFlag(entity->spawn_flags, SFLAG_BOMB)) {
-                }
-            }
-
-            if (entity->spawn_move_timer >= entity->spawn_move_time) {
-                entity->spawn_move_timer = 0.0f;
-                entity->spawn_count = entity->spawn_total;
-                // Move randomly.
-                {
-                    float min = 0.0f;
-                    float max = RenderWidth(state);
-                    float choice = GetRandomValue(min, max);
-                    entity->p.x = choice;
                 }
             }
         }
