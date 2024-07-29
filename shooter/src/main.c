@@ -12,6 +12,9 @@ const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
 static const Vector3 DOWN = {1, -1, 1};
+
+static const Vector3 ORIGIN = {0.0f, 0.0f, 0.0f};
+static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
 ////////////////////////////////////////////////////////////
 
 typedef enum TextureLabel {
@@ -583,12 +586,10 @@ static void SimpleScene(GameState* state) {
         SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
         int width = 24 * 3;
         int height = 24 * 3;
-        entity->p = (Vector3){RenderWidth(state) * 0.2f, RenderHeight(state) * 0.5f, 0.0f};
+        entity->p = ORIGIN;
         entity->pp = entity->p;
 
-        Image image = GenImageColor(width, height, BLANK);
-        Color color = RED;
-        ImageDrawCircle(&image, width * 0.5f, height * 0.5f, width * 0.5f, color);
+        Image image = GenImageColor(width, height, RED);
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
@@ -611,9 +612,9 @@ static void GameStateInit(GameState* state) {
     SimpleScene(state);
 
     {
-        state->camera.target = (Vector2){0.0f, 0.0f};
-        state->camera.offset = (Vector2){0.0f, 0.0f};
-        state->camera.rotation = 180.0f * DEG2RAD;
+        state->camera.target = ORIGIN2D;
+        state->camera.offset = (Vector2){GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
+        state->camera.rotation = 0.0f;  // in deg
         state->camera.zoom = 1.0f;
     }
 }
@@ -621,20 +622,7 @@ static void GameStateInit(GameState* state) {
 static void GameStateUpdate(GameState* state, float dt) {
     state->timer += dt;
 
-    Vector3 player_pos = Vector3Zero();
     EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = GetEntity(i);
-        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
-            continue;
-        }
-        if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            player_pos = entity->p;
-            break;
-        }
-    }
-    Assert(!Vector3Equals(player_pos, Vector3Zero()));
-
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
@@ -708,9 +696,9 @@ static void GameStateDraw(GameState* state, float delta) {
 
     // BeginTextureMode(state->target);
     BeginDrawing();
-    // BeginMode2D(state->camera);
 
     ClearBackground(WHITE);
+    BeginMode2D(state->camera);
 
     for (uint32_t i = 0; i < size; ++i) {
         Entity* entity = entities[i];
@@ -739,6 +727,8 @@ static void GameStateDraw(GameState* state, float delta) {
             DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
         }
     }
+
+    EndMode2D();
 
     // Draw UI.
     {
@@ -815,7 +805,6 @@ static void GameStateDraw(GameState* state, float delta) {
         }
     }
 
-    // EndMode2D();
     EndDrawing();
     // EndTextureMode();
 
