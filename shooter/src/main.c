@@ -648,7 +648,8 @@ static void GameStateUpdate(GameState* state, float dt) {
 
             dir = Vector3Multiply(dir, FLIP_Y);
 
-            entity->v = Vector3Scale(entity->v, 0.99f);  // Drag.
+            // TODO: Handle friction force correctly. I'm not doing so here.
+            entity->v = Vector3Scale(entity->v, 0.99);  // Drag.
             Vector3 wishspeed = Vector3Scale(dir, 3.0f);
             entity->v = Vector3Add(entity->v, wishspeed);
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
