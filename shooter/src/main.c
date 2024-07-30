@@ -647,8 +647,11 @@ static void GameStateUpdate(GameState* state, float dt) {
             }
 
             dir = Vector3Multiply(dir, FLIP_Y);
-            Vector3 dx = Vector3Scale(dir, 300.0f * dt);
-            entity->p = Vector3Add(entity->p, dx);
+
+            entity->v = Vector3Scale(entity->v, 0.99f);  // Drag.
+            Vector3 wishspeed = Vector3Scale(dir, 3.0f);
+            entity->v = Vector3Add(entity->v, wishspeed);
+            entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
