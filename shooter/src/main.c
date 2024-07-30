@@ -231,6 +231,7 @@ typedef struct Entity {
     EntityId id;
     Vector3 p;
     Vector3 pp;
+    Vector3 v;
     Vector3 a;
     float m;
     Quaternion rot;
