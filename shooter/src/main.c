@@ -632,6 +632,8 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            static const float VELOCITY = 10.0f;
+
             Vector3 dir = Vector3Zero();
             if (IsKeyDown(KEY_UP)) {
                 dir = Vector3Add(dir, (Vector3){0.0f, 1.0f, 0.0f});
@@ -649,9 +651,22 @@ static void GameStateUpdate(GameState* state, float dt) {
             dir = Vector3Multiply(dir, FLIP_Y);
 
             // TODO: Handle friction force correctly. I'm not doing so here.
-            entity->v = Vector3Scale(entity->v, 0.99);  // Drag.
-            Vector3 wishspeed = Vector3Scale(dir, 3.0f);
-            entity->v = Vector3Add(entity->v, wishspeed);
+            // entity->v = Vector3Scale(entity->v, 0.99);  // Drag.
+            Vector3 addspeed = Vector3Scale(dir, VELOCITY);
+            entity->v = Vector3Add(entity->v, addspeed);
+
+            // Friction.
+            {
+                float speed = Vector3Length(entity->v);
+                float new_speed = speed - (VELOCITY * 0.4f);
+                if (new_speed < 1.0f) {
+                    entity->v = Vector3Zero();
+                } else {
+                    float scale = new_speed / speed;
+                    entity->v = Vector3Scale(entity->v, scale);
+                }
+            }
+
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
         }
 
