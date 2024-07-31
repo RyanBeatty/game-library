@@ -632,40 +632,55 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            static const float VELOCITY = 10.0f;
+            static const float ACCELERATION = 100.0f;
 
-            Vector3 dir = Vector3Zero();
+            Vector3 wish_dir = Vector3Zero();
+            bool moved = false;
             if (IsKeyDown(KEY_UP)) {
-                dir = Vector3Add(dir, (Vector3){0.0f, 1.0f, 0.0f});
+                moved = true;
+                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f}));
             }
             if (IsKeyDown(KEY_RIGHT)) {
-                dir = Vector3Add(dir, (Vector3){1.0f, 0.0f, 0.0f});
+                moved = true;
+                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){1.0f, 0.0f, 0.0f}));
             }
             if (IsKeyDown(KEY_DOWN)) {
-                dir = Vector3Add(dir, (Vector3){0.0f, -1.0f, 0.0f});
+                moved = true;
+                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, -1.0f, 0.0f}));
             }
             if (IsKeyDown(KEY_LEFT)) {
-                dir = Vector3Add(dir, (Vector3){-1.0f, 0.0f, 0.0f});
+                moved = true;
+                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){-1.0f, 0.0f, 0.0f}));
+            }
+            wish_dir = Vector3Normalize(wish_dir);
+
+            Vector3 new_dir = Vector3Normalize(entity->v);
+            float new_speed = Vector3Length(entity->v);
+            if (moved) {
+                new_dir = wish_dir;
+                new_speed += ACCELERATION * dt;
             }
 
-            dir = Vector3Multiply(dir, FLIP_Y);
+            new_speed = Clamp(new_speed, 0.0f, 1000.0f);
+            entity->v = Vector3Scale(new_dir, new_speed);
+            TraceLog(LOG_INFO, "v %f", Vector3Length(entity->v));
 
-            // TODO: Handle friction force correctly. I'm not doing so here.
-            // entity->v = Vector3Scale(entity->v, 0.99);  // Drag.
-            Vector3 addspeed = Vector3Scale(dir, VELOCITY);
-            entity->v = Vector3Add(entity->v, addspeed);
+            // // TODO: Handle friction force correctly. I'm not doing so here.
+            // // entity->v = Vector3Scale(entity->v, 0.99);  // Drag.
+            // Vector3 addspeed = Vector3Scale(dir, ACCELERATION);
+            // entity->v = Vector3Add(entity->v, addspeed);
 
             // Friction.
-            {
-                float speed = Vector3Length(entity->v);
-                float new_speed = speed - (VELOCITY * 0.4f);
-                if (new_speed < 1.0f) {
-                    entity->v = Vector3Zero();
-                } else {
-                    float scale = new_speed / speed;
-                    entity->v = Vector3Scale(entity->v, scale);
-                }
-            }
+            // {
+            //     float speed = Vector3Length(entity->v);
+            //     float new_speed = speed - (ACCELERATION * 0.4f);
+            //     if (new_speed < 1.0f) {
+            //         entity->v = Vector3Zero();
+            //     } else {
+            //         float scale = new_speed / speed;
+            //         entity->v = Vector3Scale(entity->v, scale);
+            //     }
+            // }
 
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
         }
