@@ -686,23 +686,6 @@ static void GameStateUpdate(GameState* state, float dt) {
                 entity->v = Vector3Scale(new_dir, new_speed);
                 TraceLog(LOG_INFO, "v %f", Vector3Length(entity->v));
 
-                // // TODO: Handle friction force correctly. I'm not doing so here.
-                // // entity->v = Vector3Scale(entity->v, 0.99);  // Drag.
-                // Vector3 addspeed = Vector3Scale(dir, ACCELERATION);
-                // entity->v = Vector3Add(entity->v, addspeed);
-
-                // Friction.
-                // {
-                //     float speed = Vector3Length(entity->v);
-                //     float new_speed = speed - (ACCELERATION * 0.4f);
-                //     if (new_speed < 1.0f) {
-                //         entity->v = Vector3Zero();
-                //     } else {
-                //         float scale = new_speed / speed;
-                //         entity->v = Vector3Scale(entity->v, scale);
-                //     }
-                // }
-
                 entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
             }
         }
