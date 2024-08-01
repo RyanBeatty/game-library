@@ -632,7 +632,8 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            static const float ACCELERATION = 100.0f;
+            static const float MAX_SPEED = 1000.0f;
+            static const float ACCELERATION = MAX_SPEED * 2.0f;
 
             Vector3 wish_dir = Vector3Zero();
             bool moved = false;
@@ -658,7 +659,11 @@ static void GameStateUpdate(GameState* state, float dt) {
             {
                 float speed = Vector3Length(entity->v);
                 if (speed > 0.0f) {
-                    float drop = ACCELERATION * 0.4f * dt;
+                    float friction = 1.0f;
+                    if (!moved) {
+                        friction *= 200.0f;
+                    }
+                    float drop = (ACCELERATION * 0.1f) * friction * dt;
                     float new_speed = speed - drop;
                     if (new_speed < 0.0f) {
                         new_speed = 0.0f;
@@ -677,7 +682,7 @@ static void GameStateUpdate(GameState* state, float dt) {
                     new_speed += ACCELERATION * dt;
                 }
 
-                new_speed = Clamp(new_speed, 0.0f, 1000.0f);
+                new_speed = Clamp(new_speed, 0.0f, MAX_SPEED);
                 entity->v = Vector3Scale(new_dir, new_speed);
                 TraceLog(LOG_INFO, "v %f", Vector3Length(entity->v));
 
