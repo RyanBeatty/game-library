@@ -634,34 +634,41 @@ static void GameStateUpdate(GameState* state, float dt) {
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             static const float MAX_SPEED = 1000.0f;
             static const float ACCELERATION = MAX_SPEED * 2.0f;
+            static float ENABLE_FRICTION_TIMER = 0.0f;
+            static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
 
             Vector3 wish_dir = Vector3Zero();
             bool moved = false;
             if (IsKeyDown(KEY_UP)) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f}));
+            } else if (IsKeyDown(KEY_DOWN)) {
+                moved = true;
+                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, -1.0f, 0.0f}));
             }
             if (IsKeyDown(KEY_RIGHT)) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){1.0f, 0.0f, 0.0f}));
-            }
-            if (IsKeyDown(KEY_DOWN)) {
-                moved = true;
-                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, -1.0f, 0.0f}));
-            }
-            if (IsKeyDown(KEY_LEFT)) {
+            } else if (IsKeyDown(KEY_LEFT)) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){-1.0f, 0.0f, 0.0f}));
             }
             wish_dir = Vector3Normalize(wish_dir);
 
+            if (moved) {
+                ENABLE_FRICTION_TIMER = 0.0f;
+            } else {
+                ENABLE_FRICTION_TIMER += dt;
+            }
+
             // friction.
             {
                 float speed = Vector3Length(entity->v);
-                if (speed > 0.0f) {
+                if (speed > 0.0f && ENABLE_FRICTION_TIMER > ENABLE_FRICTION_TIME_LIMIT) {
+                    TraceLog(LOG_INFO, "friction");
                     float friction = 1.0f;
                     if (!moved) {
-                        friction *= 200.0f;
+                        friction *= 40.0f;
                     }
                     float drop = (ACCELERATION * 0.1f) * friction * dt;
                     float new_speed = speed - drop;
@@ -678,13 +685,16 @@ static void GameStateUpdate(GameState* state, float dt) {
                 Vector3 new_dir = Vector3Normalize(entity->v);
                 float new_speed = Vector3Length(entity->v);
                 if (moved) {
+                    // static const float TURN_SPEED = 20.0f;
+                    // Vector3 dir_angle = Vector3Angle(new_dir, wish_dir);
+
                     new_dir = wish_dir;
                     new_speed += ACCELERATION * dt;
                 }
 
                 new_speed = Clamp(new_speed, 0.0f, MAX_SPEED);
                 entity->v = Vector3Scale(new_dir, new_speed);
-                TraceLog(LOG_INFO, "v %f", Vector3Length(entity->v));
+                // TraceLog(LOG_INFO, "v %f", Vector3Length(entity->v));
 
                 entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
             }
