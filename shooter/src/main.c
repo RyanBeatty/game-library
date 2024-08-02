@@ -636,20 +636,91 @@ static void GameStateUpdate(GameState* state, float dt) {
             static const float ACCELERATION = MAX_SPEED * 2.0f;
             static float ENABLE_FRICTION_TIMER = 0.0f;
             static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
+            static bool DIR_SIGNALS[KEY_UP - KEY_RIGHT + 1] = {0};
+            static bool KEY_WAS_DOWN[KEY_UP - KEY_RIGHT + 1] = {0};
+
+            // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
+            // should then move right instead of stop.)
+            {
+                {
+                    int key = KEY_UP;
+                    int key_opposite = KEY_DOWN;
+                    int key_offset = KEY_UP - key;
+                    if (IsKeyDown(key)) {
+                        if (!KEY_WAS_DOWN[key_offset]) {
+                            KEY_WAS_DOWN[key_offset] = true;
+                            DIR_SIGNALS[key_offset] = true;
+                            DIR_SIGNALS[KEY_UP - key_opposite] = false;
+                        }
+                    } else {
+                        KEY_WAS_DOWN[key_offset] = false;
+                        DIR_SIGNALS[key_offset] = false;
+                    }
+                }
+
+                {
+                    int key = KEY_DOWN;
+                    int key_opposite = KEY_UP;
+                    int key_offset = KEY_UP - key;
+                    if (IsKeyDown(key)) {
+                        if (!KEY_WAS_DOWN[key_offset]) {
+                            KEY_WAS_DOWN[key_offset] = true;
+                            DIR_SIGNALS[key_offset] = true;
+                            DIR_SIGNALS[KEY_UP - key_opposite] = false;
+                        }
+                    } else {
+                        KEY_WAS_DOWN[key_offset] = false;
+                        DIR_SIGNALS[key_offset] = false;
+                    }
+                }
+
+                {
+                    int key = KEY_LEFT;
+                    int key_opposite = KEY_RIGHT;
+                    int key_offset = KEY_UP - key;
+                    if (IsKeyDown(key)) {
+                        if (!KEY_WAS_DOWN[key_offset]) {
+                            KEY_WAS_DOWN[key_offset] = true;
+                            DIR_SIGNALS[key_offset] = true;
+                            DIR_SIGNALS[KEY_UP - key_opposite] = false;
+                        }
+                    } else {
+                        KEY_WAS_DOWN[key_offset] = false;
+                        DIR_SIGNALS[key_offset] = false;
+                    }
+                }
+
+                {
+                    int key = KEY_RIGHT;
+                    int key_opposite = KEY_LEFT;
+                    int key_offset = KEY_UP - key;
+                    if (IsKeyDown(key)) {
+                        if (!KEY_WAS_DOWN[key_offset]) {
+                            KEY_WAS_DOWN[key_offset] = true;
+                            DIR_SIGNALS[key_offset] = true;
+                            DIR_SIGNALS[KEY_UP - key_opposite] = false;
+                        }
+                    } else {
+                        KEY_WAS_DOWN[key_offset] = false;
+                        DIR_SIGNALS[key_offset] = false;
+                    }
+                }
+            }
 
             Vector3 wish_dir = Vector3Zero();
             bool moved = false;
-            if (IsKeyDown(KEY_UP)) {
+            if (DIR_SIGNALS[KEY_UP - KEY_UP]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f}));
-            } else if (IsKeyDown(KEY_DOWN)) {
+            } else if (DIR_SIGNALS[KEY_UP - KEY_DOWN]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, -1.0f, 0.0f}));
             }
-            if (IsKeyDown(KEY_RIGHT)) {
+
+            if (DIR_SIGNALS[KEY_UP - KEY_RIGHT]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){1.0f, 0.0f, 0.0f}));
-            } else if (IsKeyDown(KEY_LEFT)) {
+            } else if (DIR_SIGNALS[KEY_UP - KEY_LEFT]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){-1.0f, 0.0f, 0.0f}));
             }
