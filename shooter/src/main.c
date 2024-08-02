@@ -636,9 +636,9 @@ static void GameStateUpdate(GameState* state, float dt) {
             static const float ACCELERATION = MAX_SPEED * 2.0f;
             static float ENABLE_FRICTION_TIMER = 0.0f;
             static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
-            static bool DIR_SIGNALS[KEY_UP - KEY_RIGHT + 1] = {0};
             static bool KEY_WAS_DOWN[KEY_UP - KEY_RIGHT + 1] = {0};
             static int KEY_OPPOSITE[KEY_UP - KEY_RIGHT + 1] = {KEY_DOWN, KEY_UP, KEY_RIGHT, KEY_LEFT};
+            static bool DIR_SIGNALS[KEY_UP - KEY_RIGHT + 1] = {0};
 
             // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
             // should then move right instead of stop.)
