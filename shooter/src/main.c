@@ -736,12 +736,16 @@ static void GameStateUpdate(GameState* state, float dt) {
             // Shooting code.
             {
                 static const int SHOOT_DIR_TO_KEY[DIR_COUNT] = {0, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
+                static const Vector3 SHOOT_DIR_TO_DIRECTION[DIR_COUNT] = {
+                    {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0, 0.0}};
 
                 Vector3 wish_dir = Vector3Zero();
                 bool shoot = false;
-                if (IsKeyPressed(SHOOT_DIR_TO_KEY[DIR_UP])) {
-                    shoot = true;
-                    wish_dir = Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f});
+                for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
+                    if (IsKeyPressed(SHOOT_DIR_TO_KEY[dir])) {
+                        shoot = true;
+                        wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, SHOOT_DIR_TO_DIRECTION[dir]));
+                    }
                 }
 
                 if (shoot) {
