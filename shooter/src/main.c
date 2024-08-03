@@ -650,7 +650,7 @@ static void GameStateUpdate(GameState* state, float dt) {
             static float ENABLE_FRICTION_TIMER = 0.0f;
             static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
 
-            static const int DIR_TO_KEY[DIR_COUNT] = {0, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
+            static const int DIR_TO_KEY[DIR_COUNT] = {0, KEY_W, KEY_S, KEY_A, KEY_D};
             static bool DIR_WAS_DOWN[DIR_COUNT] = {0};
             static InputDir DIR_TO_OPPOSITE[DIR_COUNT] = {DIR_NONE, DIR_DOWN, DIR_UP, DIR_RIGHT, DIR_LEFT};
             static bool DIR_SIGNALS[DIR_COUNT] = {0};
@@ -688,7 +688,7 @@ static void GameStateUpdate(GameState* state, float dt) {
 
             // friction.
             {
-                ENABLE_FRICTION_TIMER += moved ? 0.0f : dt;
+                ENABLE_FRICTION_TIMER = moved ? 0.0f : ENABLE_FRICTION_TIMER + dt;
 
                 float speed = Vector3Length(entity->v);
                 if (speed > 0.0f && ENABLE_FRICTION_TIMER > ENABLE_FRICTION_TIME_LIMIT) {
