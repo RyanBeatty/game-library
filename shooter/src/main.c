@@ -221,6 +221,7 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 4,
     EFLAG_MONSTER = 1 << 5,
     EFLAG_UNSPAWNED = 1 << 6,
+    EFLAG_PROJECTILE = 1 << 7,
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -644,86 +645,121 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            static const float MAX_SPEED = 620.0f;
-            static const float ACCELERATION = MAX_SPEED * 2.0f;
-
-            static float ENABLE_FRICTION_TIMER = 0.0f;
-            static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
-
-            static const int DIR_TO_KEY[DIR_COUNT] = {0, KEY_W, KEY_S, KEY_A, KEY_D};
-            static bool DIR_WAS_DOWN[DIR_COUNT] = {0};
-            static InputDir DIR_TO_OPPOSITE[DIR_COUNT] = {DIR_NONE, DIR_DOWN, DIR_UP, DIR_RIGHT, DIR_LEFT};
-            static bool DIR_SIGNALS[DIR_COUNT] = {0};
-            static const Vector3 DIR_TO_DIRECTION[DIR_COUNT] = {
-                {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}};
-
-            // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
-            // should then move right instead of stop.)
-            for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
-                int key = DIR_TO_KEY[dir];
-                InputDir dir_opposite = DIR_TO_OPPOSITE[dir];
-                if (IsKeyDown(key)) {
-                    if (!DIR_WAS_DOWN[dir]) {
-                        DIR_WAS_DOWN[dir] = true;
-                        DIR_SIGNALS[dir] = true;
-                        DIR_SIGNALS[dir_opposite] = false;
-                    }
-                } else {
-                    DIR_WAS_DOWN[dir] = false;
-                    DIR_SIGNALS[dir] = false;
-                    // If we were holding down the opposite direction, move that way now.
-                    DIR_SIGNALS[dir_opposite] = DIR_WAS_DOWN[dir_opposite];
-                }
-            }
-
-            Vector3 wish_dir = Vector3Zero();
-            bool moved = false;
-            for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
-                if (DIR_SIGNALS[dir]) {
-                    moved = true;
-                    wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, DIR_TO_DIRECTION[dir]));
-                }
-            }
-            wish_dir = Vector3Normalize(wish_dir);
-
-            // friction.
+            // Movement code.
             {
-                ENABLE_FRICTION_TIMER = moved ? 0.0f : ENABLE_FRICTION_TIMER + dt;
+                static const float MAX_SPEED = 620.0f;
+                static const float ACCELERATION = MAX_SPEED * 2.0f;
 
-                float speed = Vector3Length(entity->v);
-                if (speed > 0.0f && ENABLE_FRICTION_TIMER > ENABLE_FRICTION_TIME_LIMIT) {
-                    TraceLog(LOG_INFO, "friction");
-                    float friction = 1.0f;
-                    if (!moved) {
-                        friction *= 40.0f;
+                static float ENABLE_FRICTION_TIMER = 0.0f;
+                static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
+
+                static const int DIR_TO_KEY[DIR_COUNT] = {0, KEY_W, KEY_S, KEY_A, KEY_D};
+                static bool DIR_WAS_DOWN[DIR_COUNT] = {0};
+                static InputDir DIR_TO_OPPOSITE[DIR_COUNT] = {DIR_NONE, DIR_DOWN, DIR_UP, DIR_RIGHT, DIR_LEFT};
+                static bool DIR_SIGNALS[DIR_COUNT] = {0};
+                static const Vector3 DIR_TO_DIRECTION[DIR_COUNT] = {{0.0f, 0.0f, 0.0f},
+                                                                    {0.0f, 1.0f, 0.0f},
+                                                                    {0.0f, -1.0f, 0.0f},
+                                                                    {-1.0f, 0.0f, 0.0f},
+                                                                    {1.0f, 0.0f, 0.0f}};
+
+                // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
+                // should then move right instead of stop.)
+                for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
+                    int key = DIR_TO_KEY[dir];
+                    InputDir dir_opposite = DIR_TO_OPPOSITE[dir];
+                    if (IsKeyDown(key)) {
+                        if (!DIR_WAS_DOWN[dir]) {
+                            DIR_WAS_DOWN[dir] = true;
+                            DIR_SIGNALS[dir] = true;
+                            DIR_SIGNALS[dir_opposite] = false;
+                        }
+                    } else {
+                        DIR_WAS_DOWN[dir] = false;
+                        DIR_SIGNALS[dir] = false;
+                        // If we were holding down the opposite direction, move that way now.
+                        DIR_SIGNALS[dir_opposite] = DIR_WAS_DOWN[dir_opposite];
                     }
-                    float drop = (ACCELERATION * 0.1f) * friction * dt;
-                    float new_speed = speed - drop;
-                    if (new_speed < 0.0f) {
-                        new_speed = 0.0f;
+                }
+
+                Vector3 wish_dir = Vector3Zero();
+                bool moved = false;
+                for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
+                    if (DIR_SIGNALS[dir]) {
+                        moved = true;
+                        wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, DIR_TO_DIRECTION[dir]));
                     }
-                    new_speed /= speed;
-                    entity->v = Vector3Scale(entity->v, new_speed);
+                }
+                wish_dir = Vector3Normalize(wish_dir);
+
+                // friction.
+                {
+                    ENABLE_FRICTION_TIMER = moved ? 0.0f : ENABLE_FRICTION_TIMER + dt;
+
+                    float speed = Vector3Length(entity->v);
+                    if (speed > 0.0f && ENABLE_FRICTION_TIMER > ENABLE_FRICTION_TIME_LIMIT) {
+                        TraceLog(LOG_INFO, "friction");
+                        float friction = 1.0f;
+                        if (!moved) {
+                            friction *= 40.0f;
+                        }
+                        float drop = (ACCELERATION * 0.1f) * friction * dt;
+                        float new_speed = speed - drop;
+                        if (new_speed < 0.0f) {
+                            new_speed = 0.0f;
+                        }
+                        new_speed /= speed;
+                        entity->v = Vector3Scale(entity->v, new_speed);
+                    }
+                }
+
+                // move.
+                {
+                    Vector3 new_dir = Vector3Normalize(entity->v);
+                    float new_speed = Vector3Length(entity->v);
+                    if (moved) {
+                        // static const float TURN_SPEED = 20.0f;
+                        // Vector3 dir_angle = Vector3Angle(new_dir, wish_dir);
+
+                        new_dir = wish_dir;
+                        new_speed += ACCELERATION * dt;
+                    }
+
+                    new_speed = Clamp(new_speed, 0.0f, MAX_SPEED);
+                    entity->v = Vector3Scale(new_dir, new_speed);
+                    // TraceLog(LOG_INFO, "v %f", Vector3Length(entity->v));
+
+                    entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
                 }
             }
 
-            // move.
+            // Shooting code.
             {
-                Vector3 new_dir = Vector3Normalize(entity->v);
-                float new_speed = Vector3Length(entity->v);
-                if (moved) {
-                    // static const float TURN_SPEED = 20.0f;
-                    // Vector3 dir_angle = Vector3Angle(new_dir, wish_dir);
+                static const int SHOOT_DIR_TO_KEY[DIR_COUNT] = {0, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
 
-                    new_dir = wish_dir;
-                    new_speed += ACCELERATION * dt;
+                Vector3 wish_dir = Vector3Zero();
+                bool shoot = false;
+                if (IsKeyPressed(SHOOT_DIR_TO_KEY[DIR_UP])) {
+                    shoot = true;
+                    wish_dir = Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f});
                 }
 
-                new_speed = Clamp(new_speed, 0.0f, MAX_SPEED);
-                entity->v = Vector3Scale(new_dir, new_speed);
-                // TraceLog(LOG_INFO, "v %f", Vector3Length(entity->v));
+                if (shoot) {
+                    // Player.
+                    {
+                        Entity* projectile = AllocateEntity();
+                        SetFlag(projectile->flags, EFLAG_PROJECTILE);
+                        int width = 24;
+                        int height = 24;
+                        projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
+                        projectile->pp = projectile->p;
 
-                entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
+                        Image image = GenImageColor(width, height, BLACK);
+                        projectile->texture = LoadTextureFromImage(image);
+                        projectile->bitmap_rec = (Rectangle){0, 0, width, height};
+                        projectile->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+                    }
+                }
             }
         }
 
