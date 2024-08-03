@@ -646,14 +646,16 @@ static void GameStateUpdate(GameState* state, float dt) {
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             static const float MAX_SPEED = 620.0f;
             static const float ACCELERATION = MAX_SPEED * 2.0f;
+
             static float ENABLE_FRICTION_TIMER = 0.0f;
             static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
+
             static const int DIR_TO_KEY[DIR_COUNT] = {0, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
             static bool DIR_WAS_DOWN[DIR_COUNT] = {0};
-            // static bool KEY_WAS_DOWN[DIR_COUNT] = {0};
-            // static int KEY_OPPOSITE[DIR_COUNT] = {KEY_DOWN, KEY_UP, KEY_RIGHT, KEY_LEFT};
             static InputDir DIR_TO_OPPOSITE[DIR_COUNT] = {DIR_NONE, DIR_DOWN, DIR_UP, DIR_RIGHT, DIR_LEFT};
             static bool DIR_SIGNALS[DIR_COUNT] = {0};
+            static const Vector3 DIR_TO_DIRECTION[DIR_COUNT] = {
+                {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}};
 
             // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
             // should then move right instead of stop.)
@@ -676,20 +678,11 @@ static void GameStateUpdate(GameState* state, float dt) {
 
             Vector3 wish_dir = Vector3Zero();
             bool moved = false;
-            if (DIR_SIGNALS[DIR_UP]) {
-                moved = true;
-                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f}));
-            } else if (DIR_SIGNALS[DIR_DOWN]) {
-                moved = true;
-                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, -1.0f, 0.0f}));
-            }
-
-            if (DIR_SIGNALS[DIR_RIGHT]) {
-                moved = true;
-                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){1.0f, 0.0f, 0.0f}));
-            } else if (DIR_SIGNALS[DIR_LEFT]) {
-                moved = true;
-                wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){-1.0f, 0.0f, 0.0f}));
+            for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
+                if (DIR_SIGNALS[dir]) {
+                    moved = true;
+                    wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, DIR_TO_DIRECTION[dir]));
+                }
             }
             wish_dir = Vector3Normalize(wish_dir);
 
