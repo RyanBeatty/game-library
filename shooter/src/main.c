@@ -686,14 +686,10 @@ static void GameStateUpdate(GameState* state, float dt) {
             }
             wish_dir = Vector3Normalize(wish_dir);
 
-            if (moved) {
-                ENABLE_FRICTION_TIMER = 0.0f;
-            } else {
-                ENABLE_FRICTION_TIMER += dt;
-            }
-
             // friction.
             {
+                ENABLE_FRICTION_TIMER += moved ? 0.0f : dt;
+
                 float speed = Vector3Length(entity->v);
                 if (speed > 0.0f && ENABLE_FRICTION_TIMER > ENABLE_FRICTION_TIME_LIMIT) {
                     TraceLog(LOG_INFO, "friction");
