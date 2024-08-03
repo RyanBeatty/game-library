@@ -509,6 +509,18 @@ static void LoadLevel() {
 
 ////////////////////////////////////////////////////////////
 
+typedef enum InputDir {
+    DIR_NONE = 0,
+    DIR_UP,
+    DIR_DOWN,
+    DIR_LEFT,
+    DIR_RIGHT,
+
+    DIR_COUNT
+} InputDir;
+
+////////////////////////////////////////////////////////////
+
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
@@ -636,43 +648,46 @@ static void GameStateUpdate(GameState* state, float dt) {
             static const float ACCELERATION = MAX_SPEED * 2.0f;
             static float ENABLE_FRICTION_TIMER = 0.0f;
             static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
-            static bool KEY_WAS_DOWN[KEY_UP - KEY_RIGHT + 1] = {0};
-            static int KEY_OPPOSITE[KEY_UP - KEY_RIGHT + 1] = {KEY_DOWN, KEY_UP, KEY_RIGHT, KEY_LEFT};
-            static bool DIR_SIGNALS[KEY_UP - KEY_RIGHT + 1] = {0};
+            static const int DIR_TO_KEY[DIR_COUNT] = {0, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
+            static bool DIR_WAS_DOWN[DIR_COUNT] = {0};
+            // static bool KEY_WAS_DOWN[DIR_COUNT] = {0};
+            // static int KEY_OPPOSITE[DIR_COUNT] = {KEY_DOWN, KEY_UP, KEY_RIGHT, KEY_LEFT};
+            static InputDir DIR_TO_OPPOSITE[DIR_COUNT] = {DIR_NONE, DIR_DOWN, DIR_UP, DIR_RIGHT, DIR_LEFT};
+            static bool DIR_SIGNALS[DIR_COUNT] = {0};
 
             // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
             // should then move right instead of stop.)
-            for (int key = KEY_RIGHT; key <= KEY_UP; ++key) {
-                int key_offset = KEY_UP - key;
-                int key_opposite_offset = KEY_UP - KEY_OPPOSITE[key_offset];
+            for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
+                int key = DIR_TO_KEY[dir];
+                InputDir dir_opposite = DIR_TO_OPPOSITE[dir];
                 if (IsKeyDown(key)) {
-                    if (!KEY_WAS_DOWN[key_offset]) {
-                        KEY_WAS_DOWN[key_offset] = true;
-                        DIR_SIGNALS[key_offset] = true;
-                        DIR_SIGNALS[key_opposite_offset] = false;
+                    if (!DIR_WAS_DOWN[dir]) {
+                        DIR_WAS_DOWN[dir] = true;
+                        DIR_SIGNALS[dir] = true;
+                        DIR_SIGNALS[dir_opposite] = false;
                     }
                 } else {
-                    KEY_WAS_DOWN[key_offset] = false;
-                    DIR_SIGNALS[key_offset] = false;
+                    DIR_WAS_DOWN[dir] = false;
+                    DIR_SIGNALS[dir] = false;
                     // If we were holding down the opposite direction, move that way now.
-                    DIR_SIGNALS[key_opposite_offset] = KEY_WAS_DOWN[key_opposite_offset];
+                    DIR_SIGNALS[dir_opposite] = DIR_WAS_DOWN[dir_opposite];
                 }
             }
 
             Vector3 wish_dir = Vector3Zero();
             bool moved = false;
-            if (DIR_SIGNALS[KEY_UP - KEY_UP]) {
+            if (DIR_SIGNALS[DIR_UP]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f}));
-            } else if (DIR_SIGNALS[KEY_UP - KEY_DOWN]) {
+            } else if (DIR_SIGNALS[DIR_DOWN]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){0.0f, -1.0f, 0.0f}));
             }
 
-            if (DIR_SIGNALS[KEY_UP - KEY_RIGHT]) {
+            if (DIR_SIGNALS[DIR_RIGHT]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){1.0f, 0.0f, 0.0f}));
-            } else if (DIR_SIGNALS[KEY_UP - KEY_LEFT]) {
+            } else if (DIR_SIGNALS[DIR_LEFT]) {
                 moved = true;
                 wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, (Vector3){-1.0f, 0.0f, 0.0f}));
             }
