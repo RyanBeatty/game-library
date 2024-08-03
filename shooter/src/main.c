@@ -644,15 +644,18 @@ static void GameStateUpdate(GameState* state, float dt) {
             // should then move right instead of stop.)
             for (int key = KEY_RIGHT; key <= KEY_UP; ++key) {
                 int key_offset = KEY_UP - key;
+                int key_opposite_offset = KEY_UP - KEY_OPPOSITE[key_offset];
                 if (IsKeyDown(key)) {
                     if (!KEY_WAS_DOWN[key_offset]) {
                         KEY_WAS_DOWN[key_offset] = true;
                         DIR_SIGNALS[key_offset] = true;
-                        DIR_SIGNALS[KEY_UP - KEY_OPPOSITE[key_offset]] = false;
+                        DIR_SIGNALS[key_opposite_offset] = false;
                     }
                 } else {
                     KEY_WAS_DOWN[key_offset] = false;
                     DIR_SIGNALS[key_offset] = false;
+                    // If we were holding down the opposite direction, move that way now.
+                    DIR_SIGNALS[key_opposite_offset] = KEY_WAS_DOWN[key_opposite_offset];
                 }
             }
 
