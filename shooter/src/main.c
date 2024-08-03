@@ -753,6 +753,7 @@ static void GameStateUpdate(GameState* state, float dt) {
                         int height = 24;
                         projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
                         projectile->pp = projectile->p;
+                        projectile->v = Vector3Scale(wish_dir, 100.0f);
 
                         Image image = GenImageColor(width, height, BLACK);
                         projectile->texture = LoadTextureFromImage(image);
@@ -761,6 +762,10 @@ static void GameStateUpdate(GameState* state, float dt) {
                     }
                 }
             }
+        }
+
+        if (TestFlag(entity->flags, EFLAG_PROJECTILE)) {
+            entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
