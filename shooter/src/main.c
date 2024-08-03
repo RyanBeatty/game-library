@@ -632,7 +632,7 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            static const float MAX_SPEED = 1000.0f;
+            static const float MAX_SPEED = 620.0f;
             static const float ACCELERATION = MAX_SPEED * 2.0f;
             static float ENABLE_FRICTION_TIMER = 0.0f;
             static const float ENABLE_FRICTION_TIME_LIMIT = 0.08f;
