@@ -309,7 +309,7 @@ static Entity* AllocateEntity() {
     entity->tint = WHITE;
     entity->animation_frame_count = 1;    // Avoid division by zero in animation system.
     entity->animation_frame_time = 1.0f;  // Avoid division by zero in animation system.
-    SetFlag(entity->flags, EFLAG_DRAW);
+    FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
 
@@ -440,7 +440,7 @@ static void LoadLevel() {
                         Assert(val == 0 || val == 1);
                         Entity* entity = AllocateEntity();
                         FlagOff(entity->flags, EFLAG_DRAW);
-                        SetFlag(entity->flags, EFLAG_WALL);
+                        FlagOn(entity->flags, EFLAG_WALL);
                         entity->p = (Vector3){(j * grid_size) + x_offset + half_grid_size,
                                               (i * grid_size) + y_offset + half_grid_size, depth};
                         entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
@@ -559,7 +559,7 @@ static void SpawnMonster(GameState* state) {
     // Monster.
     {
         Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_MONSTER);
+        FlagOn(entity->flags, EFLAG_MONSTER);
         int width = 12;
         int height = 12;
         float y = (0.5f * RenderHeight(state)) + GetRandomValue(-10, 10);
@@ -597,7 +597,7 @@ static void SimpleScene(GameState* state) {
     // Player.
     {
         Entity* entity = AllocateEntity();
-        SetFlag(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
         int width = 24 * 3;
         int height = 24 * 3;
         entity->p = ORIGIN;
@@ -748,12 +748,12 @@ static void GameStateUpdate(GameState* state, float dt) {
                     // Player.
                     {
                         Entity* projectile = AllocateEntity();
-                        SetFlag(projectile->flags, EFLAG_PROJECTILE);
+                        FlagOn(projectile->flags, EFLAG_PROJECTILE);
                         int width = 24;
                         int height = 24;
                         projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
                         projectile->pp = projectile->p;
-                        projectile->v = Vector3Scale(wish_dir, 100.0f);
+                        projectile->v = Vector3Scale(wish_dir, 300.0f);
 
                         Image image = GenImageColor(width, height, BLACK);
                         projectile->texture = LoadTextureFromImage(image);
@@ -766,6 +766,12 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         if (TestFlag(entity->flags, EFLAG_PROJECTILE)) {
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
+
+            bool in_bounds =
+                entity->p.x > -3000.0f && entity->p.x < 3000.0f && entity->p.y > -3000.0f && entity->p.y < 3000.0f;
+            if (!in_bounds) {
+                FlagOff(entity->flags, EFLAG_ACTIVE);
+            }
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {

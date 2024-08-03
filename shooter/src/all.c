@@ -29,7 +29,7 @@ void __attribute__((noinline)) breakpoint() {}
 #define ArraySizeOf(x) (sizeof(x) / sizeof(x[0]))
 
 #define TestFlag(flags, flag) ((flags) & (flag))
-#define SetFlag(flags, flag) ((flags) |= flag)
+#define FlagOn(flags, flag) ((flags) |= flag)
 #define FlagOff(flags, flag) ((flags) &= ~(flag))
 
 ///////////////////////////////////////////////
