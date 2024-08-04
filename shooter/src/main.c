@@ -257,6 +257,8 @@ typedef struct Entity {
     // Gameplay fields.
     bool dead;
 
+    Vector3 shoot_dir;
+
     struct {
         struct Entity* prev;
         struct Entity* next;
@@ -607,6 +609,8 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+
+        entity->shoot_dir = Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f});
     }
 }
 
@@ -783,6 +787,8 @@ static void GameStateUpdate(GameState* state, float dt) {
                     if (SHOOT_COOLDOWN_TIMER >= SHOOT_COOLDOWN_TIME_LIMIT) {
                         SHOOT_COOLDOWN_TIMER = 0.0F;
 
+                        wish_dir = entity->shoot_dir;
+
                         // Player.
                         {
                             Entity* projectile = AllocateEntity();
@@ -823,6 +829,8 @@ static void GameStateUpdate(GameState* state, float dt) {
         // Update animation timer if it is a looping animation.
         entity->animation_timer += dt * entity->animation_loops;
     }
+
+    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
 }
 
 static void GameStateDraw(GameState* state, float delta) {
@@ -960,6 +968,10 @@ static void GameStateDraw(GameState* state, float delta) {
                 SimpleScene(state);
             }
         }
+    }
+
+    if (state->debug) {
+        DrawFPS(5, 5);
     }
 
     EndDrawing();
