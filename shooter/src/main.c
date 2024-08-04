@@ -772,15 +772,6 @@ static void GameStateUpdate(GameState* state, float dt) {
                 }
                 wish_dir = Vector3Normalize(wish_dir);
 
-                // Vector3 wish_dir = Vector3Zero();
-                // bool shoot = false;
-                // for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
-                //     if (IsKeyPressed(SHOOT_DIR_TO_KEY[dir])) {
-                //         shoot = true;
-                //         wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, SHOOT_DIR_TO_DIRECTION[dir]));
-                //     }
-                // }
-
                 if (shoot) {
                     // Player.
                     {
