@@ -743,6 +743,9 @@ static void GameStateUpdate(GameState* state, float dt) {
                 static const Vector3 SHOOT_DIR_TO_DIRECTION[DIR_COUNT] = {
                     {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0, 0.0}};
 
+                static float SHOOT_COOLDOWN_TIMER = 0.0f;
+                static const float SHOOT_COOLDOWN_TIME_LIMIT = 0.1f;
+
                 // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
                 // should then move right instead of stop.)
                 for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
@@ -772,22 +775,30 @@ static void GameStateUpdate(GameState* state, float dt) {
                 }
                 wish_dir = Vector3Normalize(wish_dir);
 
-                if (shoot) {
-                    // Player.
-                    {
-                        Entity* projectile = AllocateEntity();
-                        FlagOn(projectile->flags, EFLAG_PROJECTILE);
-                        int width = 24;
-                        int height = 24;
-                        projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
-                        projectile->pp = projectile->p;
-                        projectile->v = Vector3Scale(wish_dir, 300.0f);
+                SHOOT_COOLDOWN_TIMER += dt;
 
-                        Image image = GenImageColor(width, height, BLACK);
-                        projectile->texture = LoadTextureFromImage(image);
-                        projectile->bitmap_rec = (Rectangle){0, 0, width, height};
-                        projectile->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+                if (shoot) {
+                    if (SHOOT_COOLDOWN_TIMER >= SHOOT_COOLDOWN_TIME_LIMIT) {
+                        SHOOT_COOLDOWN_TIMER = 0.0F;
+
+                        // Player.
+                        {
+                            Entity* projectile = AllocateEntity();
+                            FlagOn(projectile->flags, EFLAG_PROJECTILE);
+                            int width = 24;
+                            int height = 24;
+                            projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
+                            projectile->pp = projectile->p;
+                            projectile->v = Vector3Scale(wish_dir, 300.0f);
+
+                            Image image = GenImageColor(width, height, BLACK);
+                            projectile->texture = LoadTextureFromImage(image);
+                            projectile->bitmap_rec = (Rectangle){0, 0, width, height};
+                            projectile->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+                        }
                     }
+                } else {
+                    SHOOT_COOLDOWN_TIMER = SHOOT_COOLDOWN_TIME_LIMIT;
                 }
             }
         }
