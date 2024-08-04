@@ -257,8 +257,6 @@ typedef struct Entity {
     // Gameplay fields.
     bool dead;
 
-    Vector3 shoot_dir;
-
     struct {
         struct Entity* prev;
         struct Entity* next;
@@ -609,8 +607,6 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-
-        entity->shoot_dir = Vector3Multiply(FLIP_Y, (Vector3){0.0f, 1.0f, 0.0f});
     }
 }
 
@@ -650,6 +646,10 @@ static void GameStateUpdate(GameState* state, float dt) {
         Vector3 cur_p = entity->p;
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
             // Movement code.
+            // TODO:
+            // * Implement drift towards new turn direction/rotations? i.e. if wish direciton differs from
+            // current direction, should we incrementally (but quickly) rotate towards the new direction?
+            // I think GW does this slightly and maybe makes movement feel a bit better on keyboard.
             {
                 static const float MAX_SPEED = 620.0f;
                 static const float ACCELERATION = MAX_SPEED * 2.0f;
@@ -738,6 +738,10 @@ static void GameStateUpdate(GameState* state, float dt) {
             }
 
             // Shooting code.
+            // TODO:
+            //  * Should I implement angular rotation for shooting direction? i.e. if you press up and left
+            // should the aim drift towards the new angle? GW does not appear to do this for keyboard, but I
+            // wonder if it would make keyboard play feel a bit better.
             {
                 static const int SHOOT_DIR_TO_KEY[DIR_COUNT] = {0, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
                 static const InputDir SHOOT_DIR_TO_OPPOSITE[DIR_COUNT] = {DIR_NONE, DIR_DOWN, DIR_UP, DIR_RIGHT,
@@ -787,8 +791,6 @@ static void GameStateUpdate(GameState* state, float dt) {
                     if (SHOOT_COOLDOWN_TIMER >= SHOOT_COOLDOWN_TIME_LIMIT) {
                         SHOOT_COOLDOWN_TIMER = 0.0F;
 
-                        wish_dir = entity->shoot_dir;
-
                         // Player.
                         {
                             Entity* projectile = AllocateEntity();
@@ -811,6 +813,8 @@ static void GameStateUpdate(GameState* state, float dt) {
             }
         }
 
+        // TODO:
+        // * Slight homing for projectiles when close to enemy?
         if (TestFlag(entity->flags, EFLAG_PROJECTILE)) {
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
 
