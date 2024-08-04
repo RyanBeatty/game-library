@@ -736,17 +736,50 @@ static void GameStateUpdate(GameState* state, float dt) {
             // Shooting code.
             {
                 static const int SHOOT_DIR_TO_KEY[DIR_COUNT] = {0, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT};
+                static const InputDir SHOOT_DIR_TO_OPPOSITE[DIR_COUNT] = {DIR_NONE, DIR_DOWN, DIR_UP, DIR_RIGHT,
+                                                                          DIR_LEFT};
+                static bool SHOOT_DIR_WAS_DOWN[DIR_COUNT] = {0};
+                static bool SHOOT_DIR_SIGNAL[DIR_COUNT] = {0};
                 static const Vector3 SHOOT_DIR_TO_DIRECTION[DIR_COUNT] = {
                     {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, -1.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0, 0.0}};
+
+                // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
+                // should then move right instead of stop.)
+                for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
+                    int key = SHOOT_DIR_TO_KEY[dir];
+                    InputDir dir_opposite = SHOOT_DIR_TO_OPPOSITE[dir];
+                    if (IsKeyDown(key)) {
+                        if (!SHOOT_DIR_WAS_DOWN[dir]) {
+                            SHOOT_DIR_WAS_DOWN[dir] = true;
+                            SHOOT_DIR_SIGNAL[dir] = true;
+                            SHOOT_DIR_SIGNAL[dir_opposite] = false;
+                        }
+                    } else {
+                        SHOOT_DIR_WAS_DOWN[dir] = false;
+                        SHOOT_DIR_SIGNAL[dir] = false;
+                        // If we were holding down the opposite direction, move that way now.
+                        SHOOT_DIR_SIGNAL[dir_opposite] = SHOOT_DIR_WAS_DOWN[dir_opposite];
+                    }
+                }
 
                 Vector3 wish_dir = Vector3Zero();
                 bool shoot = false;
                 for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
-                    if (IsKeyPressed(SHOOT_DIR_TO_KEY[dir])) {
+                    if (SHOOT_DIR_SIGNAL[dir]) {
                         shoot = true;
                         wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, SHOOT_DIR_TO_DIRECTION[dir]));
                     }
                 }
+                wish_dir = Vector3Normalize(wish_dir);
+
+                // Vector3 wish_dir = Vector3Zero();
+                // bool shoot = false;
+                // for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
+                //     if (IsKeyPressed(SHOOT_DIR_TO_KEY[dir])) {
+                //         shoot = true;
+                //         wish_dir = Vector3Add(wish_dir, Vector3Multiply(FLIP_Y, SHOOT_DIR_TO_DIRECTION[dir]));
+                //     }
+                // }
 
                 if (shoot) {
                     // Player.
