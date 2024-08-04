@@ -746,6 +746,8 @@ static void GameStateUpdate(GameState* state, float dt) {
                 static float SHOOT_COOLDOWN_TIMER = 0.0f;
                 static const float SHOOT_COOLDOWN_TIME_LIMIT = 0.1f;
 
+                static const float PROJECTILE_VELOCITY = 1500.0f;
+
                 // Determine move direction signal for keyboard. (i.e. if we press left and then press right, we
                 // should then move right instead of stop.)
                 for (InputDir dir = 1; dir < DIR_COUNT; ++dir) {
@@ -789,7 +791,7 @@ static void GameStateUpdate(GameState* state, float dt) {
                             int height = 24;
                             projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
                             projectile->pp = projectile->p;
-                            projectile->v = Vector3Scale(wish_dir, 1500.0f);
+                            projectile->v = Vector3Scale(wish_dir, PROJECTILE_VELOCITY);
 
                             Image image = GenImageColor(width, height, BLACK);
                             projectile->texture = LoadTextureFromImage(image);
