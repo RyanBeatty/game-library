@@ -637,6 +637,40 @@ static void GameStateUpdate(GameState* state, float dt) {
     state->timer += dt;
 
     EntityManager* em = GetEntityManager();
+
+    {
+        static uint32_t NUM_TO_SPAWN = 1;
+        static float SPAWN_TIMER = 0.0f;
+        static const float SPAWN_TIME_LIMIT = 2.0f;
+
+        SPAWN_TIMER += dt;
+        if (SPAWN_TIMER >= SPAWN_TIME_LIMIT) {
+            SPAWN_TIMER = 0.0f;
+            // Spawn Monsters.
+            for (uint32_t i = 0; i < NUM_TO_SPAWN; ++i) {
+                Entity* entity = AllocateEntity();
+                FlagOn(entity->flags, EFLAG_MONSTER);
+                int width = 12;
+                int height = 12;
+                entity->p = (Vector3){GetRandomValue(-500, 500), GetRandomValue(-500, 500), 0.0f};
+                entity->pp = entity->p;
+                Image image = GenImageColor(width, height, BLUE);
+                entity->texture = LoadTextureFromImage(image);
+                entity->bitmap_rec = (Rectangle){0, 0, width, height};
+                entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+
+                // if (state->monsters.head == NULL) {
+                //     state->monsters.head = entity;
+                //     state->monsters.tail = entity;
+                // } else {
+                //     state->monsters.tail->monster_link.next = entity;
+                //     entity->monster_link.prev = state->monsters.tail;
+                //     state->monsters.tail = entity;
+                // }
+            }
+        }
+    }
+
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
