@@ -542,6 +542,8 @@ typedef struct GameState {
     // Gameplay fields
     Entity* focus;
 
+    Entity* player;
+
     struct {
         Entity* head;
         Entity* tail;
@@ -555,41 +557,8 @@ static GameState GState;
 
 #define GetGameState() (&GState)
 
-static void SpawnMonster(GameState* state) {
-    // Monster.
-    {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_MONSTER);
-        int width = 12;
-        int height = 12;
-        float y = (0.5f * RenderHeight(state)) + GetRandomValue(-10, 10);
-        entity->p = (Vector3){RenderWidth(state) * 0.8 + (width * 0.5f), y + (height * 0.5f), 0.0f};
-        entity->pp = entity->p;
-        entity->texture = GetTexture(TEXTURE_TILEMAP_BACKGROUND);
-        entity->bitmap_rec = TextureGetTile(entity->texture, width, height, 0, 0, 3);
-        entity->animation_frame_count = 4;
-        entity->animation_frame_time = 0.2f;
-        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-
-        if (state->focus == NULL) {
-            state->focus = entity;
-        }
-
-        if (state->monsters.head == NULL) {
-            state->monsters.head = entity;
-            state->monsters.tail = entity;
-        } else {
-            state->monsters.tail->monster_link.next = entity;
-            entity->monster_link.prev = state->monsters.tail;
-            state->monsters.tail = entity;
-        }
-    }
-}
-
 static void SimpleScene(GameState* state) {
     // LoadLevel();
-
-    SpawnMonster(state);
 
     state->score = 0.0f;
     state->health = 3;
@@ -607,6 +576,8 @@ static void SimpleScene(GameState* state) {
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+
+        state->player = entity;
     }
 }
 
@@ -860,6 +831,8 @@ static void GameStateUpdate(GameState* state, float dt) {
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
+            Vector3 wish_dir = Vector3Normalize(Vector3Subtract(state->player->p, entity->p));
+            entity->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 200.0f * dt));
         }
 
         entity->pp = cur_p;
