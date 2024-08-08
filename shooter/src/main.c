@@ -843,6 +843,15 @@ static void GameStateUpdate(GameState* state, float dt) {
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
             Vector3 wish_dir = Vector3Normalize(Vector3Subtract(state->player->p, entity->p));
             entity->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 200.0f * dt));
+
+            CollisionInfo info = CheckEntityCollisionScene(entity);
+            for (uint32_t i = 0; i < info.len; ++i) {
+                Entity* e = info.entities[i];
+                if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                    FlagOff(e->flags, EFLAG_ACTIVE);
+                    FlagOff(entity->flags, EFLAG_ACTIVE);
+                }
+            }
         }
 
         entity->pp = cur_p;
