@@ -617,16 +617,18 @@ static void GameStateUpdate(GameState* state, float dt) {
         SPAWN_TIMER += dt;
         if (SPAWN_TIMER >= SPAWN_TIME_LIMIT) {
             SPAWN_TIMER = 0.0f;
+            int width = 12;
+            int height = 12;
+            Image image = GenImageColor(width, height, BLUE);
+            Texture texture = LoadTextureFromImage(image);
+
             // Spawn Monsters.
             for (uint32_t i = 0; i < NUM_TO_SPAWN; ++i) {
                 Entity* entity = AllocateEntity();
                 FlagOn(entity->flags, EFLAG_MONSTER);
-                int width = 12;
-                int height = 12;
                 entity->p = (Vector3){GetRandomValue(-500, 500), GetRandomValue(-500, 500), 0.0f};
                 entity->pp = entity->p;
-                Image image = GenImageColor(width, height, BLUE);
-                entity->texture = LoadTextureFromImage(image);
+                entity->texture = texture;
                 entity->bitmap_rec = (Rectangle){0, 0, width, height};
                 entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
 
@@ -639,6 +641,8 @@ static void GameStateUpdate(GameState* state, float dt) {
                 //     state->monsters.tail = entity;
                 // }
             }
+
+            NUM_TO_SPAWN *= 2;
         }
     }
 
