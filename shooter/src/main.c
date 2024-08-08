@@ -740,6 +740,16 @@ static void GameStateUpdate(GameState* state, float dt) {
 
                     entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
                 }
+
+                {
+                    CollisionInfo info = CheckEntityCollisionScene(entity);
+                    for (uint32_t i = 0; i < info.len; ++i) {
+                        Entity* e = info.entities[i];
+                        if (TestFlag(e->flags, EFLAG_MONSTER)) {
+                            FlagOff(e->flags, EFLAG_ACTIVE);
+                        }
+                    }
+                }
             }
 
             // Shooting code.
