@@ -230,7 +230,7 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 4,
     EFLAG_MONSTER = 1 << 5,
     EFLAG_UNSPAWNED = 1 << 6,
-    EFLAG_PROJECTILE = 1 << 7,
+    EFLAG_PARTICLE = 1 << 7,
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -822,7 +822,7 @@ static void GameStateUpdate(GameState* state, float dt) {
                         // Player.
                         {
                             Entity* projectile = AllocateEntity();
-                            FlagOn(projectile->flags, EFLAG_PROJECTILE);
+                            FlagOn(projectile->flags, EFLAG_PARTICLE);
                             int width = 24;
                             int height = 24;
                             projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
@@ -843,7 +843,7 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         // TODO:
         // * Slight homing for projectiles when close to enemy?
-        if (TestFlag(entity->flags, EFLAG_PROJECTILE)) {
+        if (TestFlag(entity->flags, EFLAG_PARTICLE)) {
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
 
             bool in_bounds =
@@ -860,7 +860,7 @@ static void GameStateUpdate(GameState* state, float dt) {
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
-                if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                if (TestFlag(e->flags, EFLAG_PARTICLE)) {
                     FlagOff(e->flags, EFLAG_ACTIVE);
                     FlagOff(entity->flags, EFLAG_ACTIVE);
                 }
