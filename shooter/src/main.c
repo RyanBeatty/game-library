@@ -230,7 +230,8 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 4,
     EFLAG_MONSTER = 1 << 5,
     EFLAG_UNSPAWNED = 1 << 6,
-    EFLAG_PARTICLE = 1 << 7,
+    EFLAG_PROJECTILE = 1 << 7,
+    EFLAG_PARTICLE = 1 << 8
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -243,7 +244,8 @@ typedef struct Entity {
     Vector3 pp;
     Vector3 v;
     Vector3 a;
-    float m;
+    f32 damping;
+    f32 m_inv;
     Quaternion rot;
     EntityFlag flags;
     // TODO: Definitely reconsider this vs a better approach for orientation.
@@ -588,6 +590,24 @@ static void SimpleScene(GameState* state) {
 
         state->player = entity;
     }
+
+    {
+        Entity* entity = AllocateEntity();
+        FlagOn(entity->flags, EFLAG_PARTICLE);
+        int width = 24 * 2;
+        int height = 24 * 2;
+        entity->p = ORIGIN;
+        entity->pp = entity->p;
+        entity->v = Vector3Multiply((Vector3){10.0f, 0.0f, 0.0f}, FLIP_Y);
+        entity->m_inv = 1.0f / 10.0f;
+
+        Image image = GenImageColor(width, height, BLACK);
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+
+        state->player = entity;
+    }
 }
 
 static void GameStateInit(GameState* state) {
@@ -822,7 +842,7 @@ static void GameStateUpdate(GameState* state, float dt) {
                         // Player.
                         {
                             Entity* projectile = AllocateEntity();
-                            FlagOn(projectile->flags, EFLAG_PARTICLE);
+                            FlagOn(projectile->flags, EFLAG_PROJECTILE);
                             int width = 24;
                             int height = 24;
                             projectile->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 50.0f));
@@ -843,7 +863,7 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         // TODO:
         // * Slight homing for projectiles when close to enemy?
-        if (TestFlag(entity->flags, EFLAG_PARTICLE)) {
+        if (TestFlag(entity->flags, EFLAG_PROJECTILE)) {
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
 
             bool in_bounds =
@@ -853,6 +873,17 @@ static void GameStateUpdate(GameState* state, float dt) {
             }
         }
 
+        if (TestFlag(entity->flags, EFLAG_PARTICLE)) {
+            static Vector3 G = {0.0f, -15.0f, 0.0f};
+            Assert(entity->m_inv > 0.0f);
+
+            entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
+
+            Vector3 acc = Vector3Multiply(G, FLIP_Y);
+            entity->v = Vector3Add(entity->v, Vector3Scale(acc, dt));
+            // entity->v = Vector3Scale(entity->v, powf(entity->damping, dt));
+        }
+
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
             Vector3 wish_dir = Vector3Normalize(Vector3Subtract(state->player->p, entity->p));
             entity->p = Vector3Add(entity->p, Vector3Scale(wish_dir, 200.0f * dt));
@@ -860,7 +891,7 @@ static void GameStateUpdate(GameState* state, float dt) {
             CollisionInfo info = CheckEntityCollisionScene(entity);
             for (uint32_t i = 0; i < info.len; ++i) {
                 Entity* e = info.entities[i];
-                if (TestFlag(e->flags, EFLAG_PARTICLE)) {
+                if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
                     FlagOff(e->flags, EFLAG_ACTIVE);
                     FlagOff(entity->flags, EFLAG_ACTIVE);
                 }
