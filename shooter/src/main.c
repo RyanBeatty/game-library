@@ -21,6 +21,7 @@ const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
 static const Vector3 FLIP_Y = {1, -1, 1};
+static Vector3 G = {0.0f, -15.0f, 0.0f};
 
 static const Vector3 ORIGIN = {0.0f, 0.0f, 0.0f};
 static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
@@ -244,6 +245,7 @@ typedef struct Entity {
     Vector3 pp;
     Vector3 v;
     Vector3 a;
+    Vector3 g;
     f32 damping;
     f32 m_inv;
     Quaternion rot;
@@ -322,6 +324,13 @@ static Entity* AllocateEntity() {
     entity->animation_frame_time = 1.0f;  // Avoid division by zero in animation system.
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
+}
+
+static void EntitySetVelocity(Entity* e, Vector3 v) { e->v = Vector3Multiply(v, FLIP_Y); }
+static void EntitySetGravity(Entity* e, Vector3 g) { e->g = Vector3Multiply(g, FLIP_Y); }
+static void EntitySetMass(Entity* e, float m) {
+    Assert(m != 0.0f);
+    e->m_inv = 1.0f / m;
 }
 
 ////////////////////////////////////////////////////////////
@@ -590,24 +599,6 @@ static void SimpleScene(GameState* state) {
 
         state->player = entity;
     }
-
-    {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_PARTICLE);
-        int width = 24 * 2;
-        int height = 24 * 2;
-        entity->p = ORIGIN;
-        entity->pp = entity->p;
-        entity->v = Vector3Multiply((Vector3){10.0f, 0.0f, 0.0f}, FLIP_Y);
-        entity->m_inv = 1.0f / 10.0f;
-
-        Image image = GenImageColor(width, height, BLACK);
-        entity->texture = LoadTextureFromImage(image);
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
-
-        state->player = entity;
-    }
 }
 
 static void GameStateInit(GameState* state) {
@@ -637,6 +628,25 @@ static void GameStateUpdate(GameState* state, float dt) {
     state->timer += dt;
 
     EntityManager* em = GetEntityManager();
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        Entity* entity = AllocateEntity();
+        FlagOn(entity->flags, EFLAG_PARTICLE);
+        int width = 24 * 2;
+        int height = 24 * 2;
+        entity->p = ORIGIN;
+        entity->pp = entity->p;
+        EntitySetVelocity(entity, (Vector3){100.0f, 0.0f, 0.0f});
+        EntitySetGravity(entity, Vector3Zero());
+        EntitySetMass(entity, 10.0f);
+
+        Image image = GenImageColor(width, height, BLACK);
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+
+        state->player = entity;
+    }
 
     {
         static uint32_t NUM_TO_SPAWN = 1;
@@ -874,12 +884,11 @@ static void GameStateUpdate(GameState* state, float dt) {
         }
 
         if (TestFlag(entity->flags, EFLAG_PARTICLE)) {
-            static Vector3 G = {0.0f, -15.0f, 0.0f};
             Assert(entity->m_inv > 0.0f);
 
             entity->p = Vector3Add(entity->p, Vector3Scale(entity->v, dt));
 
-            Vector3 acc = Vector3Multiply(G, FLIP_Y);
+            Vector3 acc = Vector3Multiply(entity->g, FLIP_Y);
             entity->v = Vector3Add(entity->v, Vector3Scale(acc, dt));
             // entity->v = Vector3Scale(entity->v, powf(entity->damping, dt));
         }
