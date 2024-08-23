@@ -328,7 +328,7 @@ static Entity* AllocateEntity() {
 
 static void EntitySetVelocity(Entity* e, Vector3 v) { e->v = Vector3Multiply(v, FLIP_Y); }
 static void EntitySetGravity(Entity* e, Vector3 g) { e->g = Vector3Multiply(g, FLIP_Y); }
-static void EntitySetMass(Entity* e, float m) {
+static void EntitySetMass(Entity* e, f32 m) {
     Assert(m != 0.0f);
     e->m_inv = 1.0f / m;
 }
@@ -639,6 +639,7 @@ static void GameStateUpdate(GameState* state, float dt) {
         EntitySetVelocity(entity, (Vector3){100.0f, 0.0f, 0.0f});
         EntitySetGravity(entity, Vector3Zero());
         EntitySetMass(entity, 10.0f);
+        entity->damping = 0.5f;
 
         Image image = GenImageColor(width, height, BLACK);
         entity->texture = LoadTextureFromImage(image);
@@ -890,7 +891,7 @@ static void GameStateUpdate(GameState* state, float dt) {
 
             Vector3 acc = Vector3Multiply(entity->g, FLIP_Y);
             entity->v = Vector3Add(entity->v, Vector3Scale(acc, dt));
-            // entity->v = Vector3Scale(entity->v, powf(entity->damping, dt));
+            entity->v = Vector3Scale(entity->v, powf(entity->damping, dt));
         }
 
         if (TestFlag(entity->flags, EFLAG_MONSTER)) {
