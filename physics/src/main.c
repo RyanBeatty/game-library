@@ -46,6 +46,25 @@ static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y)
 static f32 Vec2Len(Vec2 v) { return sqrtf32((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 
+typedef struct Vec3 {
+    f32 x;
+    f32 y;
+    f32 z;
+} Vec3;
+
+#define Vec3Lit(a, b, c) ((Vec3){.x = (a), .y = (b), .z = (c)})
+#define Vec3ToRVec3(v) ((Vector3){.x = (v).x, .y = (v).y, .z = (v.z)})
+
+static Vec3 Vec3Zero() {
+    static Vec3 v = Vec3Lit(0.0f, 0.0f, 0.0f);
+    return v;
+}
+
+static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
+static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
+static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
+static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
+
 ////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
@@ -148,7 +167,7 @@ typedef struct Entity {
     /////////////////////////////////////////////////////////////////
     // Core field.
     EntityId id;
-    Vector3 p;
+    Vec3 p;
     EntityFlag flags;
 
     // TODO: Definitely reconsider this vs a better approach for orientation.
@@ -315,7 +334,7 @@ static void SimpleScene(GameState* state) {
         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
         int width = 24 * 3;
         int height = 24 * 3;
-        entity->p = ORIGIN;
+        entity->p = Vec3Zero();
 
         Image image = GenImageColor(width, height, RED);
         entity->texture = LoadTextureFromImage(image);
@@ -418,9 +437,10 @@ static void GameStateDraw(GameState* state, float delta) {
             entity->bitmap_rec.height,
 
         };
-        DrawTextureRec(entity->texture, src, (Vector2){entity->p.x - half_width, entity->p.y - half_height}, tint);
+        Vector3 p = Vec3ToRVec3(entity->p);
+        DrawTextureRec(entity->texture, src, (Vector2){p.x - half_width, p.y - half_height}, tint);
         if (false) {
-            DrawCircle(entity->p.x, entity->p.y, 1, BLACK);
+            DrawCircle(p.x, p.y, 1, BLACK);
         }
     }
 
