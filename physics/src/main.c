@@ -9,6 +9,7 @@
 #endif
 
 ////////////////////////////////////////////////////////////
+// Core types.
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -22,6 +23,28 @@ typedef int64_t i64;
 
 typedef float f32;
 typedef double f64;
+
+////////////////////////////////////////////////////////////
+// Math
+
+#define sqrtf32 sqrtf
+
+typedef struct Vec2 {
+    f32 x;
+    f32 y;
+} Vec2;
+
+#define Vec2Lit(a, b) ((Vec2){.x = (a), .y = (b)})
+
+static Vec2 Vec2Zero() {
+    static Vec2 v = Vec2Lit(0.0f, 0.0f);
+    return v;
+}
+
+static Vec2 Vec2Add(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x + v2.x, v1.y + v2.y); }
+static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y); }
+static f32 Vec2Len(Vec2 v) { return sqrtf32((v.x * v.x) + (v.y * v.y)); }
+static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 
 ////////////////////////////////////////////////////////////
 
