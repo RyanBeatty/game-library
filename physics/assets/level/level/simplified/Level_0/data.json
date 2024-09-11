@@ -1,0 +1,15 @@
+{
+	"identifier": "Level_0",
+	"uniqueIdentifer": "f6482a20-25d0-11ef-a6d4-0faaecc98830",
+	"x": 0,
+	"y": 0,
+	"width": 640,
+	"height": 360,
+	"bgColor": "#696A79",
+	"neighbourLevels": [],
+	"customFields" : {},
+	"layers": [
+		"Walls.png"
+	],
+	"entities" : {}
+}

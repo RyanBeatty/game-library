@@ -1,0 +1,1 @@
+Blank project that is cloneable with basic boilerplate structure already set up.
