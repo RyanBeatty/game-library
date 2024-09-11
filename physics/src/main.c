@@ -56,126 +56,6 @@ static Vector3 G = {0.0f, -15.0f, 0.0f};
 
 static const Vector3 ORIGIN = {0.0f, 0.0f, 0.0f};
 static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
-////////////////////////////////////////////////////////////
-
-typedef enum TextureLabel {
-    TEXTURE_NONE = 0,
-    TEXTURE_TILEMAP_CHARACTERS,
-    TEXTURE_TILEMAP_BACKGROUND,
-    TEXTURE_COUNT
-} TextureLabel;
-
-#define TEXTURE_CAP (TEXTURE_COUNT + 32)
-
-Texture Textures[TEXTURE_CAP] = {0};
-
-static void TextureCacheInit() {
-    memset(&Textures, 0, ArraySizeOf(Textures) * sizeof(Textures[0]));
-
-    {
-        Texture texture = LoadTexture("assets/art/tilemap-characters.png");
-        Assert(IsTextureReady(texture));
-        Textures[TEXTURE_TILEMAP_CHARACTERS] = texture;
-    }
-
-    {
-        Texture texture = LoadTexture("assets/art/8bit.png");
-        Assert(IsTextureReady(texture));
-        Textures[TEXTURE_TILEMAP_BACKGROUND] = texture;
-    }
-}
-
-#define GetTexture(idx) (Textures[(idx)])
-
-static Texture* AllocateTexture() {
-    Texture* texture = NULL;
-    for (uint32_t i = 0; i < ArraySizeOf(Textures); ++i) {
-        Texture* t = &GetTexture(i);
-        if (t->id == 0) {
-            texture = t;
-            break;
-        }
-    }
-    Assert(texture != NULL);
-    memset(texture, 0, sizeof(*texture));
-    return texture;
-}
-
-static Rectangle TextureGetTile(Texture texture, int32_t tile_w, int32_t tile_h, int32_t spacing_x, int32_t spacing_y,
-                                uint32_t idx) {
-    uint32_t ncols = (texture.width + spacing_x) / (tile_w + spacing_x);
-    uint32_t row = idx / ncols;
-    uint32_t col = idx % ncols;
-    return (Rectangle){
-        .x = (tile_w + spacing_x) * col, .y = (tile_h + spacing_y) * row, .width = tile_w, .height = tile_h};
-}
-
-////////////////////////////////////////////////////////////
-
-typedef enum SoundId {
-    SOUND_NONE = 0,
-    SOUND_BOMB_EXPLOSION,
-    SOUND_PICKUP_COIN,
-    SOUND_FOOTSTEP_LEFT,
-    SOUND_FOOTSTEP_RIGHT,
-    SOUND_GAME_OVER,
-    SOUND_GAME_START,
-    SOUND_TYPING_GOOD,
-    SOUND_TYPING_BAD,
-    SOUND_TYPING_DELETE,
-    SOUND_COUNT
-} SoundId;
-
-Sound Sounds[SOUND_COUNT];
-
-static void AudioSystemInit() {
-    memset(&Sounds, 0, ArraySizeOf(Sounds) * sizeof(Sound));
-
-    InitAudioDevice();
-
-    Sounds[SOUND_BOMB_EXPLOSION] = LoadSound("assets/sound/bomb_explosion.wav");
-    Assert(IsSoundReady(Sounds[SOUND_BOMB_EXPLOSION]));
-
-    Sounds[SOUND_PICKUP_COIN] = LoadSound("assets/sound/pickup_coin.wav");
-    Assert(IsSoundReady(Sounds[SOUND_PICKUP_COIN]));
-
-    {
-        Wave wave = LoadWave("assets/sound/footstep_left.wav");
-        wave.sampleRate *= 2.7;
-        Sounds[SOUND_FOOTSTEP_LEFT] = LoadSoundFromWave(wave);
-        Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_LEFT]));
-    }
-
-    {
-        Wave wave = LoadWave("assets/sound/footstep_right.wav");
-        wave.sampleRate *= 2.7;
-        Sounds[SOUND_FOOTSTEP_RIGHT] = LoadSoundFromWave(wave);
-        Assert(IsSoundReady(Sounds[SOUND_FOOTSTEP_RIGHT]));
-    }
-
-    Sounds[SOUND_GAME_OVER] = LoadSound("assets/sound/game_over.wav");
-    Assert(IsSoundReady(Sounds[SOUND_GAME_OVER]));
-
-    Sounds[SOUND_GAME_START] = LoadSound("assets/sound/game_start.wav");
-    Assert(IsSoundReady(Sounds[SOUND_GAME_START]));
-
-    Sounds[SOUND_TYPING_GOOD] = LoadSound("assets/sound/typing_good.wav");
-    Assert(IsSoundReady(Sounds[SOUND_TYPING_GOOD]));
-
-    Sounds[SOUND_TYPING_BAD] = LoadSound("assets/sound/typing_bad.wav");
-    Assert(IsSoundReady(Sounds[SOUND_TYPING_BAD]));
-
-    Sounds[SOUND_TYPING_DELETE] = LoadSound("assets/sound/typing_delete.wav");
-    Assert(IsSoundReady(Sounds[SOUND_TYPING_DELETE]));
-}
-
-#define GetSound(id) (Sounds[(id)])
-
-static void PlaySoundIfNotPlaying(SoundId id) {
-    if (!IsSoundPlaying(GetSound(id))) {
-        PlaySound(GetSound(id));
-    }
-}
 
 ////////////////////////////////////////////////////////////
 
@@ -243,10 +123,6 @@ static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
     }
     return false;
 }
-
-////////////////////////////////////////////////////////////
-
-typedef enum SpawnFlag { SFLAG_NONE = 0, SFLAG_BOMB = 1 << 0, SFLAG_COIN = 1 << 1 } SpawnFlag;
 
 ////////////////////////////////////////////////////////////
 
@@ -357,13 +233,6 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
-static void EntitySetVelocity(Entity* e, Vector3 v) { e->v = Vector3Multiply(v, FLIP_Y); }
-static void EntitySetGravity(Entity* e, Vector3 g) { e->g = Vector3Multiply(g, FLIP_Y); }
-static void EntitySetMass(Entity* e, float m) {
-    Assert(m != 0.0f);
-    e->m_inv = 1.0f / m;
-}
-
 ////////////////////////////////////////////////////////////
 // Collision.
 
@@ -389,174 +258,6 @@ static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
         }
     }
     return info;
-}
-
-////////////////////////////////////////////////////////////
-
-static void LoadLevel() {
-    char* data = LoadFileText("assets/level/level2.ldtk");
-    Assert(data != NULL);
-    cJSON* level = cJSON_Parse(data);
-    Assert(level != NULL);
-    const cJSON* defs = cJSON_GetObjectItemCaseSensitive(level, "defs");
-    Assert(defs != NULL);
-    const cJSON* tilesets = cJSON_GetObjectItemCaseSensitive(defs, "tilesets");
-    Assert(tilesets != NULL);
-
-    Texture* textures[256] = {0};
-    const cJSON* tileset = NULL;
-    cJSON_ArrayForEach(tileset, tilesets) {
-        Assert(tileset != NULL);
-        const cJSON* uid_js = cJSON_GetObjectItemCaseSensitive(tileset, "uid");
-        Assert(uid_js != NULL && cJSON_IsNumber(uid_js));
-        int uid = uid_js->valueint;
-
-        const cJSON* path = cJSON_GetObjectItemCaseSensitive(tileset, "relPath");
-        Assert(path != NULL && cJSON_IsString(path));
-
-        char tileset_path[256] = {0};
-        strcat(tileset_path, "assets/");
-        strcat(tileset_path, &path->valuestring[3]);
-
-        Texture* texture = AllocateTexture();
-        *texture = LoadTexture(tileset_path);
-        Assert(IsTextureReady(*texture));
-        textures[uid] = texture;
-    }
-
-    const cJSON* levels = cJSON_GetObjectItemCaseSensitive(level, "levels");
-    Assert(levels != NULL);
-    const cJSON* cur_level = NULL;
-    cJSON_ArrayForEach(cur_level, levels) {
-        const cJSON* layers = cJSON_GetObjectItemCaseSensitive(cur_level, "layerInstances");
-        Assert(layers != NULL);
-        const cJSON* layer = NULL;
-        uint32_t depth = 0;
-        cJSON_ArrayForEach(layer, layers) {
-            const cJSON* type = cJSON_GetObjectItemCaseSensitive(layer, "__type");
-            Assert(type != NULL);
-
-            const cJSON* width_js = cJSON_GetObjectItemCaseSensitive(layer, "__cWid");
-            Assert(width_js != NULL);
-            const cJSON* height_js = cJSON_GetObjectItemCaseSensitive(layer, "__cHei");
-            Assert(height_js != NULL);
-            int width = width_js->valueint;
-            int height = height_js->valueint;
-
-            const cJSON* x_offset_js = cJSON_GetObjectItemCaseSensitive(layer, "__pxTotalOffsetX");
-            Assert(x_offset_js != NULL && cJSON_IsNumber(x_offset_js));
-            const cJSON* y_offset_js = cJSON_GetObjectItemCaseSensitive(layer, "__pxTotalOffsetY");
-            Assert(y_offset_js != NULL && cJSON_IsNumber(y_offset_js));
-            int x_offset = x_offset_js->valueint;
-            int y_offset = y_offset_js->valueint;
-
-            const cJSON* grid_size_js = cJSON_GetObjectItemCaseSensitive(layer, "__gridSize");
-            Assert(grid_size_js != NULL);
-            int grid_size = grid_size_js->valueint;
-            float half_grid_size = grid_size * 0.5f;
-
-            if (strcmp(type->valuestring, "Tiles") == 0) {
-                const cJSON* tileset_id = cJSON_GetObjectItemCaseSensitive(layer, "__tilesetDefUid");
-                Assert(tileset_id != NULL);
-                Texture* texture = textures[tileset_id->valueint];
-
-                const cJSON* grid_tiles = cJSON_GetObjectItemCaseSensitive(layer, "gridTiles");
-                Assert(grid_tiles != NULL);
-                const cJSON* grid_tile = NULL;
-                cJSON_ArrayForEach(grid_tile, grid_tiles) {
-                    const cJSON* px_js = cJSON_GetObjectItemCaseSensitive(grid_tile, "px");
-                    Assert(px_js != NULL);
-                    const cJSON* src_js = cJSON_GetObjectItemCaseSensitive(grid_tile, "src");
-                    Assert(src_js != NULL);
-
-                    Entity* entity = AllocateEntity();
-                    entity->p = (Vector3){px_js->child->valueint + half_grid_size,
-                                          px_js->child->next->valueint + half_grid_size, depth};
-                    entity->texture = *texture;
-                    entity->bitmap_rec =
-                        (Rectangle){src_js->child->valueint, src_js->child->next->valueint, grid_size, grid_size};
-                    // FlagOff(entity->flags, EFLAG_DRAW);
-                }
-            } else if (strcmp(type->valuestring, "IntGrid") == 0) {
-                const cJSON* grid = NULL;
-
-                int i = 0;
-                int j = 0;
-                const cJSON* grids = cJSON_GetObjectItemCaseSensitive(layer, "intGridCsv");
-                Assert(grids != NULL);
-                cJSON_ArrayForEach(grid, grids) {
-                    Assert(j <= width && i <= height);
-                    int val = grid->valueint;
-                    if (val == 1) {
-                        Assert(val == 0 || val == 1);
-                        Entity* entity = AllocateEntity();
-                        FlagOff(entity->flags, EFLAG_DRAW);
-                        FlagOn(entity->flags, EFLAG_WALL);
-                        entity->p = (Vector3){(j * grid_size) + x_offset + half_grid_size,
-                                              (i * grid_size) + y_offset + half_grid_size, depth};
-                        entity->shape = (Shape){.kind = SHAPE_REC, .width = grid_size, .height = grid_size};
-
-                        if (TestFlag(entity->flags, EFLAG_DRAW)) {
-                            entity->texture = LoadTextureFromImage(GenImageColor(grid_size, grid_size, BLACK));
-                            entity->bitmap_rec = (Rectangle){0, 0, grid_size, grid_size};
-                        }
-                    }
-
-                    ++j;
-                    i += !(j % width);
-                    j %= width;
-                }
-
-            } else if (strcmp(type->valuestring, "Entities") == 0) {
-                const cJSON* entities = cJSON_GetObjectItemCaseSensitive(layer, "entityInstances");
-                Assert(entities != NULL);
-                const cJSON* entity = NULL;
-                cJSON_ArrayForEach(entity, entities) {
-                    // TODO: Implement entity loading later. Seems a bit too much work for what could be done
-                    // with harcoding.
-                    // const cJSON* identifier_js = cJSON_GetObjectItemCaseSensitive(entity, "__identifier");
-                    // Assert(identifier_js != NULL);
-
-                    // // Position.
-                    // const cJSON* x_world_js = cJSON_GetObjectItemCaseSensitive(entity, "__worldX");
-                    // Assert(x_world_js != NULL && cJSON_IsNumber(x_world_js));
-                    // const cJSON* y_world_js = cJSON_GetObjectItemCaseSensitive(entity, "__worldY");
-                    // Assert(y_world_js != NULL && cJSON_IsNumber(y_world_js));
-                    // int x_world = x_world_js->valueint;
-                    // int y_world = y_world_js->valueint;
-
-                    // // Size.
-                    // const cJSON* entity_width_js = cJSON_GetObjectItemCaseSensitive(entity, "width");
-                    // Assert(entity_width_js != NULL && cJSON_IsNumber(entity_width_js));
-                    // const cJSON* entity_height_js = cJSON_GetObjectItemCaseSensitive(entity, "height");
-                    // Assert(entity_height_js != NULL && cJSON_IsNumber(entity_height_js));
-                    // int entity_width = entity_width_js->valueint;
-                    // int entity_height = entity_height_js->valueint;
-
-                    // // Sprite.
-                    // const cJSON* tile = cJSON_GetObjectItemCaseSensitive(entity, "__tile");
-                    // Assert(tile != NULL);
-                    // const cJSON* tile_id = cJSON_GetObjectItemCaseSensitive(tile, "tilesetUid");
-                    // Assert(tile_id != NULL);
-                    // const cJSON* tile_x = cJSON_GetObjectItemCaseSensitive(tile, "x");
-                    // Assert(tile_x != NULL);
-                    // const cJSON* tile_y = cJSON_GetObjectItemCaseSensitive(tile, "y");
-                    // Assert(tile_y != NULL);
-                    // const cJSON* tile_w = cJSON_GetObjectItemCaseSensitive(tile, "w");
-                    // Assert(tile_w != NULL);
-                    // const cJSON* tile_h = cJSON_GetObjectItemCaseSensitive(tile, "h");
-                    // Assert(tile_h != NULL);
-
-                    // Entity* entity = AllocateEntity();
-                }
-            } else {
-                Assert(false);
-            }
-            ++depth;
-        }
-    }
-
-    UnloadFileText(data);
 }
 
 ////////////////////////////////////////////////////////////
@@ -640,8 +341,6 @@ static void GameStateInit(GameState* state) {
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
-    AudioSystemInit();
-    TextureCacheInit();
 
     state->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
@@ -737,81 +436,6 @@ static void GameStateDraw(GameState* state, float delta) {
     }
 
     EndMode2D();
-
-    // Draw UI.
-    {
-        // Play UI.
-        {
-            Font font = GetFontDefault();
-            float fontsize = 12.0f;
-            float spacing = fontsize / font.baseSize;
-            Color color = WHITE;
-
-            {
-                float x = RenderWidth(state) * 0.92;
-                float y = 0.0f;
-
-                // Health text.
-                {
-                    char text[256] = {0};
-                    memset(text, '*', sizeof(char) * state->health);
-                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                    y += 5.0f;
-                    Vector2 pos = {x - size.x, y};
-                    DrawTextEx(font, text, pos, fontsize, spacing, color);
-                    y += size.y;
-                }
-
-                // Score text.
-                {
-                    char text[256] = {0};
-                    sprintf(text, "%d", state->score);
-                    Vector2 size = MeasureTextEx(font, text, fontsize, spacing);
-                    y += 2.0f;
-                    Vector2 pos = {x - size.x, y};
-                    DrawTextEx(font, text, pos, fontsize, spacing, color);
-                }
-            }
-        }
-
-        if (state->game_over) {
-            static const char* GAME_OVER_TEXT = "Game Over";
-            static const char* RETRY_TEXT = "Press Enter to Retry";
-
-            Color bg_color = {GRAY.r, GRAY.g, GRAY.b, GRAY.a * 0.4f};
-
-            Font font = GetFontDefault();
-            float fontsize = 24.0f;
-            float spacing = fontsize / font.baseSize;
-            Color text_color = WHITE;
-            {
-                DrawRectangle(0, 0, RenderWidth(state), RenderHeight(state), bg_color);
-
-                float x = RenderWidth(state) * 0.5f;
-                float y = RenderHeight(state) * 0.3f;
-
-                {
-                    Vector2 size = MeasureTextEx(font, GAME_OVER_TEXT, fontsize, spacing);
-                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
-                    DrawText(GAME_OVER_TEXT, pos.x, pos.y, fontsize, text_color);
-                    y += size.y;
-                }
-                {
-                    Vector2 size = MeasureTextEx(font, RETRY_TEXT, fontsize, spacing);
-                    y += 5.0f;
-                    Vector2 pos = {x - (size.x * 0.5f), y - (size.y * 0.5f)};
-                    DrawText(RETRY_TEXT, pos.x, pos.y, fontsize, text_color);
-                    y += size.y;
-                }
-            }
-
-            if (IsKeyDown(KEY_ENTER)) {
-                state->game_over = false;
-                // TODO: Should probably move this somewhere else.
-                SimpleScene(state);
-            }
-        }
-    }
 
     if (state->debug) {
         DrawFPS(5, 5);
