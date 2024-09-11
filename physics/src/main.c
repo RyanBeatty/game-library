@@ -149,14 +149,8 @@ typedef struct Entity {
     // Core field.
     EntityId id;
     Vector3 p;
-    Vector3 pp;
-    Vector3 v;
-    Vector3 a;
-    Vector3 g;
-    f32 damping;
-    f32 m_inv;
-    Quaternion rot;
     EntityFlag flags;
+
     // TODO: Definitely reconsider this vs a better approach for orientation.
     bool right;
 
@@ -322,7 +316,6 @@ static void SimpleScene(GameState* state) {
         int width = 24 * 3;
         int height = 24 * 3;
         entity->p = ORIGIN;
-        entity->pp = entity->p;
 
         Image image = GenImageColor(width, height, RED);
         entity->texture = LoadTextureFromImage(image);
@@ -363,10 +356,6 @@ static void GameStateUpdate(GameState* state, float dt) {
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             continue;
         }
-
-        Vector3 cur_p = entity->p;
-
-        entity->pp = cur_p;
 
         // Update animation timer if it is a looping animation.
         entity->animation_timer += dt * entity->animation_loops;
