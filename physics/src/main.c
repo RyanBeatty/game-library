@@ -66,6 +66,31 @@ static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 
 ////////////////////////////////////////////////////////////
+// Physics
+
+typedef struct Body {
+    bool active;
+    Vec2 pos;
+    Vec2 vel;
+} Body;
+
+#define NUM_BODIES 5
+typedef struct PhysicsState {
+    Body bodies[NUM_BODIES];
+} PhysicsState;
+
+static void PhysicsStateInit(PhysicsState* pstate) { memset(pstate, 0, sizeof(pstate)); }
+
+static void PhysicsStateUpdate(PhysicsState* pstate, f32 dt) {
+    for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
+        Body* body = &pstate->bodies[i];
+        if (!body->active) {
+            continue;
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
 const float RenderHeight = 720;
@@ -303,6 +328,8 @@ typedef struct GameState {
 
     RenderTexture2D target;
 
+    PhysicsState pstate;
+
     /////////////////////////////////////////
     // Gameplay fields
     Entity* focus;
@@ -347,6 +374,9 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
+
+    PhysicsStateInit(&state->pstate);
+
     InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     // ToggleFullscreen();
@@ -368,6 +398,8 @@ static void GameStateInit(GameState* state) {
 
 static void GameStateUpdate(GameState* state, float dt) {
     state->timer += dt;
+
+    PhysicsStateUpdate(&state->pstate, dt);
 
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
