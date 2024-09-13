@@ -44,6 +44,7 @@ static Vec2 Vec2Zero() {
 static Vec2 Vec2Add(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x + v2.x, v1.y + v2.y); }
 static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y); }
 static f32 Vec2Len(Vec2 v) { return sqrtf32((v.x * v.x) + (v.y * v.y)); }
+static Vec2 Vec2Scale(Vec2 v, f32 s) { return Vec2Lit(v.x * s, v.y * s); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 
 typedef struct Vec3 {
@@ -53,6 +54,8 @@ typedef struct Vec3 {
 } Vec3;
 
 #define Vec3Lit(a, b, c) ((Vec3){.x = (a), .y = (b), .z = (c)})
+#define Vec3ToVec2(v) (Vec2Lit((v).x, (v).y))
+#define Vec2ToVec3(v) (Vec3Lit((v).x, (v).y, 0.0f))
 #define Vec3ToRVec3(v) ((Vector3){.x = (v).x, .y = (v).y, .z = (v.z)})
 
 static Vec3 Vec3Zero() {
@@ -74,12 +77,32 @@ typedef struct Body {
     Vec2 vel;
 } Body;
 
+static void BodyInit(Body* body) { memset(body, 0, sizeof(body)); }
+
 #define NUM_BODIES 5
 typedef struct PhysicsState {
     Body bodies[NUM_BODIES];
+    Vec2 gravity;
 } PhysicsState;
 
-static void PhysicsStateInit(PhysicsState* pstate) { memset(pstate, 0, sizeof(pstate)); }
+static void PhysicsStateInit(PhysicsState* pstate) {
+    memset(pstate, 0, sizeof(pstate));
+    pstate->gravity = Vec2Lit(0.0f, -10.0f);
+}
+
+static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
+    for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
+        Body* body = &pstate->bodies[i];
+        if (!body->active) {
+            BodyInit(body);
+            body->active = true;
+            return body;
+        }
+    }
+
+    Assert(false);
+    return NULL;
+}
 
 static void PhysicsStateUpdate(PhysicsState* pstate, f32 dt) {
     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
@@ -87,6 +110,14 @@ static void PhysicsStateUpdate(PhysicsState* pstate, f32 dt) {
         if (!body->active) {
             continue;
         }
+
+        // Integrate forces.
+        body->vel = Vec2Add(body->vel, Vec2Scale(pstate->gravity, dt));
+
+        // Integrate velocity.
+        body->pos = Vec2Add(body->pos, Vec2Scale(body->vel, dt));
+
+        TraceLog(LOG_INFO, "vel %f %f   pos %f %f", body->vel.x, body->vel.y, body->pos.x, body->pos.y);
     }
 }
 
@@ -178,12 +209,7 @@ typedef enum EntityFlag {
     EFLAG_ACTIVE = 1 << 0,
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
-    EFLAG_SPAWNER = 1 << 3,
-    EFLAG_WALL = 1 << 4,
-    EFLAG_MONSTER = 1 << 5,
-    EFLAG_UNSPAWNED = 1 << 6,
-    EFLAG_PROJECTILE = 1 << 7,
-    EFLAG_PARTICLE = 1 << 8
+    EFLAG_PHYSICS_ON = 1 << 3
 } EntityFlag;
 
 typedef uint32_t EntityId;
@@ -210,6 +236,8 @@ typedef struct Entity {
 
     // Collision.
     Shape shape;
+
+    Body* body;
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
@@ -368,6 +396,10 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
         entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
 
+        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+        entity->body = PhysicsStateAllocateBody(&state->pstate);
+        entity->body->pos = Vec3ToVec2(entity->p);
+
         state->player = entity;
     }
 }
@@ -406,6 +438,10 @@ static void GameStateUpdate(GameState* state, float dt) {
         Entity* entity = GetEntity(i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             continue;
+        }
+
+        if (TestFlag(entity->flags, EFLAG_PHYSICS_ON)) {
+            entity->p = Vec2ToVec3(entity->body->pos);
         }
 
         // Update animation timer if it is a looping animation.
