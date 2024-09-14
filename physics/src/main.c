@@ -194,7 +194,7 @@ const float RenderHeight = 720;
 static const Vector3 FLIP_Y = {1, -1, 1};
 static Vector3 G = {0.0f, -15.0f, 0.0f};
 
-static const Vector3 ORIGIN = {0.0f, 0.0f, 0.0f};
+static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
 
 ////////////////////////////////////////////////////////////
@@ -351,46 +351,111 @@ static void SimpleScene(GameState* state) {
     state->score = 0.0f;
     state->health = 3;
 
-    Vec3 disp = Vec3Lit(100.0f, 0.0f, 0.0f);
-    // Entity 1.
+    // Entity 0.
     {
         Entity* entity = AllocateEntity();
         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
         int width = 24 * 3;
         int height = 24 * 3;
-        entity->p = Vec3Scale(disp, -1.0f);
+        entity->p = ORIGIN;
 
-        Image image = GenImageColor(width, height, RED);
+        Image image = GenImageColor(width, height, GRAY);
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
         entity->body = PhysicsStateAllocateBody(&state->pstate);
         entity->body->pos = Vec3ToVec2(entity->p);
-        entity->body->vel = Vec3ToVec2(disp);
         entity->body->width = width;
         entity->body->height = height;
     }
 
-    // Entity 2.
-    {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24 * 3;
-        int height = 24 * 3;
-        entity->p = disp;
+    f32 disp = 100.0f;
+    u32 i = 0;
+    Color colors[4] = {RED, BLUE, GREEN, PURPLE};
+    for (i32 dir = -1; dir < 2; dir += 2) {
+        {
+            Color color = colors[i++];
 
-        Image image = GenImageColor(width, height, BLUE);
-        entity->texture = LoadTextureFromImage(image);
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+            Entity* entity = AllocateEntity();
+            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+            int width = 24 * 3;
+            int height = 24 * 3;
+            entity->p = Vec3Lit(disp * dir, 0.0f, 0.0f);
 
-        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-        entity->body = PhysicsStateAllocateBody(&state->pstate);
-        entity->body->pos = Vec3ToVec2(entity->p);
-        entity->body->vel = Vec2Scale(Vec3ToVec2(disp), -1.0f);
-        entity->body->width = width;
-        entity->body->height = height;
+            Image image = GenImageColor(width, height, color);
+            entity->texture = LoadTextureFromImage(image);
+            entity->bitmap_rec = (Rectangle){0, 0, width, height};
+
+            FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+            entity->body = PhysicsStateAllocateBody(&state->pstate);
+            entity->body->pos = Vec3ToVec2(entity->p);
+            entity->body->vel = Vec2Lit(disp * (-1.0f * dir), 0.0f);
+            entity->body->width = width;
+            entity->body->height = height;
+        }
+
+        {
+            Color color = colors[i++];
+
+            Entity* entity = AllocateEntity();
+            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+            int width = 24 * 3;
+            int height = 24 * 3;
+            entity->p = Vec3Lit(0.0f, disp * dir, 0.0f);
+
+            Image image = GenImageColor(width, height, color);
+            entity->texture = LoadTextureFromImage(image);
+            entity->bitmap_rec = (Rectangle){0, 0, width, height};
+
+            FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+            entity->body = PhysicsStateAllocateBody(&state->pstate);
+            entity->body->pos = Vec3ToVec2(entity->p);
+            entity->body->vel = Vec2Lit(0.0f, disp * (-1.0f * dir));
+            entity->body->width = width;
+            entity->body->height = height;
+        }
     }
+
+    // // Entity 1.
+    // {
+    //     Entity* entity = AllocateEntity();
+    //     FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+    //     int width = 24 * 3;
+    //     int height = 24 * 3;
+    //     entity->p = Vec3Scale(disp, -1.0f);
+
+    //     Image image = GenImageColor(width, height, RED);
+    //     entity->texture = LoadTextureFromImage(image);
+    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
+
+    //     FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+    //     entity->body = PhysicsStateAllocateBody(&state->pstate);
+    //     entity->body->pos = Vec3ToVec2(entity->p);
+    //     entity->body->vel = Vec3ToVec2(disp);
+    //     entity->body->width = width;
+    //     entity->body->height = height;
+    // }
+
+    // // Entity 2.
+    // {
+    //     Entity* entity = AllocateEntity();
+    //     FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+    //     int width = 24 * 3;
+    //     int height = 24 * 3;
+    //     entity->p = disp;
+
+    //     Image image = GenImageColor(width, height, BLUE);
+    //     entity->texture = LoadTextureFromImage(image);
+    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
+
+    //     FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+    //     entity->body = PhysicsStateAllocateBody(&state->pstate);
+    //     entity->body->pos = Vec3ToVec2(entity->p);
+    //     entity->body->vel = Vec2Scale(Vec3ToVec2(disp), -1.0f);
+    //     entity->body->width = width;
+    //     entity->body->height = height;
+    // }
 }
 
 static void GameStateInit(GameState* state) {
