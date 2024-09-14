@@ -28,6 +28,7 @@ typedef double f64;
 // S:Math
 
 #define sqrtf32 sqrtf
+#define fhalf(x) ((x) * 0.5f)
 
 typedef struct Vec2 {
     f32 x;
@@ -102,9 +103,31 @@ typedef struct Collider {
     bool collision;
 } Collider;
 
-static void ColliderInit(Collider* collider, Body* body1, Body* bod2) {
+static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
     memset(collider, 0, sizeof(*collider));
-    bool collision = false;
+    bool collision = true;
+
+    // SAT
+    {
+        f32 body1_half_width = fhalf(body1->width);
+        f32 min_x_body1 = body1->pos.x - body1_half_width;
+        f32 max_x_body1 = body1->pos.x + body1_half_width;
+
+        f32 body2_half_width = fhalf(body2->width);
+        f32 min_x_body2 = body2->pos.x - body2_half_width;
+        f32 max_x_body2 = body2->pos.x + body2_half_width;
+        collision &= max_x_body1 >= min_x_body2 && max_x_body2 >= min_x_body1;
+
+        f32 body1_half_height = fhalf(body1->height);
+        f32 min_y_body1 = body1->pos.y - body1_half_height;
+        f32 max_y_body1 = body1->pos.y + body1_half_height;
+
+        f32 body2_half_height = fhalf(body2->height);
+        f32 min_y_body2 = body2->pos.y - body2_half_height;
+        f32 max_y_body2 = body2->pos.y + body2_half_height;
+        collision &= max_y_body1 >= min_y_body2 && max_y_body2 >= min_y_body1;
+    }
+
     collider->collision = collision;
 }
 
@@ -133,12 +156,21 @@ static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
 static void PhysicsStateCollisionBroadPhase(PhysicsState* pstate) {
     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
         Body* bodyi = &pstate->bodies[i];
+        if (!bodyi->active) {
+            continue;
+        }
+
         for (u32 j = i + 1; j < ArraySizeOf(pstate->bodies); ++j) {
             Body* bodyj = &pstate->bodies[j];
+            if (!bodyj->active) {
+                continue;
+            }
 
             Collider collider = {0};
             ColliderInit(&collider, bodyi, bodyj);
             if (collider.collision) {
+                bodyi->vel = Vec2Zero();
+                bodyj->vel = Vec2Zero();
             }
         }
     }
