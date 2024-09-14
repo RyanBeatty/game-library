@@ -65,8 +65,12 @@ static Vec3 Vec3Zero() {
 
 static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
 static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
+static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
 static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
+
+////////////////////////////////////////////////////////////
+// Collision
 
 ////////////////////////////////////////////////////////////
 // Physics
@@ -85,10 +89,7 @@ typedef struct PhysicsState {
     Vec2 gravity;
 } PhysicsState;
 
-static void PhysicsStateInit(PhysicsState* pstate) {
-    memset(pstate, 0, sizeof(pstate));
-    pstate->gravity = Vec2Lit(0.0f, -10.0f);
-}
+static void PhysicsStateInit(PhysicsState* pstate) { memset(pstate, 0, sizeof(pstate)); }
 
 static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
@@ -383,13 +384,14 @@ static void SimpleScene(GameState* state) {
     state->score = 0.0f;
     state->health = 3;
 
-    // Player.
+    Vec3 disp = Vec3Lit(100.0f, 0.0f, 0.0f);
+    // Entity 1.
     {
         Entity* entity = AllocateEntity();
         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
         int width = 24 * 3;
         int height = 24 * 3;
-        entity->p = Vec3Zero();
+        entity->p = Vec3Scale(disp, -1.0f);
 
         Image image = GenImageColor(width, height, RED);
         entity->texture = LoadTextureFromImage(image);
@@ -399,15 +401,36 @@ static void SimpleScene(GameState* state) {
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
         entity->body = PhysicsStateAllocateBody(&state->pstate);
         entity->body->pos = Vec3ToVec2(entity->p);
+        entity->body->vel = Vec3ToVec2(disp);
+    }
 
-        state->player = entity;
+    // Entity 2.
+    {
+        Entity* entity = AllocateEntity();
+        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        int width = 24 * 3;
+        int height = 24 * 3;
+        entity->p = disp;
+
+        Image image = GenImageColor(width, height, BLUE);
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
+
+        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+        entity->body = PhysicsStateAllocateBody(&state->pstate);
+        entity->body->pos = Vec3ToVec2(entity->p);
+        entity->body->vel = Vec2Scale(Vec3ToVec2(disp), -1.0f);
     }
 }
 
 static void GameStateInit(GameState* state) {
     memset(state, 0, sizeof(GameState));
 
-    PhysicsStateInit(&state->pstate);
+    PhysicsState* pstate = &state->pstate;
+    PhysicsStateInit(pstate);
+    // pstate->gravity = Vec2Lit(0.0f, -10.0f);
+    pstate->gravity = Vec2Zero();
 
     InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
