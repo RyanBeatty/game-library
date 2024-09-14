@@ -76,15 +76,6 @@ static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v
 typedef struct CollisionInfo {
 } CollisionInfo;
 
-// typedef struct AABB2 {
-//     Vec2 min;  // Bottom right.
-//     Vec2 max;  // Top Left.
-// } AABB2;
-
-// #define AABB2Lit(_min, _max) ((AABB2){.min = (_min), .max = (_max)})
-
-// static AABB2 AABB2Make(f32 )
-
 ////////////////////////////////////////////////////////////
 // S:Physics
 
