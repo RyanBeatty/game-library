@@ -25,7 +25,7 @@ typedef float f32;
 typedef double f64;
 
 ////////////////////////////////////////////////////////////
-// Math
+// S:Math
 
 #define sqrtf32 sqrtf
 
@@ -70,18 +70,43 @@ static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 
 ////////////////////////////////////////////////////////////
-// Collision
+// S:Collision
+
+typedef struct CollisionInfo {
+} CollisionInfo;
+
+// typedef struct AABB2 {
+//     Vec2 min;  // Bottom right.
+//     Vec2 max;  // Top Left.
+// } AABB2;
+
+// #define AABB2Lit(_min, _max) ((AABB2){.min = (_min), .max = (_max)})
+
+// static AABB2 AABB2Make(f32 )
 
 ////////////////////////////////////////////////////////////
-// Physics
+// S:Physics
 
 typedef struct Body {
     bool active;
     Vec2 pos;
     Vec2 vel;
+
+    f32 width;
+    f32 height;
 } Body;
 
-static void BodyInit(Body* body) { memset(body, 0, sizeof(body)); }
+static void BodyInit(Body* body) { memset(body, 0, sizeof(*body)); }
+
+typedef struct Collider {
+    bool collision;
+} Collider;
+
+static void ColliderInit(Collider* collider, Body* body1, Body* bod2) {
+    memset(collider, 0, sizeof(*collider));
+    bool collision = false;
+    collider->collision = collision;
+}
 
 #define NUM_BODIES 5
 typedef struct PhysicsState {
@@ -89,7 +114,7 @@ typedef struct PhysicsState {
     Vec2 gravity;
 } PhysicsState;
 
-static void PhysicsStateInit(PhysicsState* pstate) { memset(pstate, 0, sizeof(pstate)); }
+static void PhysicsStateInit(PhysicsState* pstate) { memset(pstate, 0, sizeof(*pstate)); }
 
 static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
@@ -105,7 +130,23 @@ static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
     return NULL;
 }
 
+static void PhysicsStateCollisionBroadPhase(PhysicsState* pstate) {
+    for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
+        Body* bodyi = &pstate->bodies[i];
+        for (u32 j = i + 1; j < ArraySizeOf(pstate->bodies); ++j) {
+            Body* bodyj = &pstate->bodies[j];
+
+            Collider collider = {0};
+            ColliderInit(&collider, bodyi, bodyj);
+            if (collider.collision) {
+            }
+        }
+    }
+}
+
 static void PhysicsStateUpdate(PhysicsState* pstate, f32 dt) {
+    PhysicsStateCollisionBroadPhase(pstate);
+
     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
         Body* body = &pstate->bodies[i];
         if (!body->active) {
@@ -132,73 +173,6 @@ static Vector3 G = {0.0f, -15.0f, 0.0f};
 
 static const Vector3 ORIGIN = {0.0f, 0.0f, 0.0f};
 static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
-
-////////////////////////////////////////////////////////////
-
-typedef enum ShapeKind { SHAPE_NONE = 0, SHAPE_REC, SHAPE_CIRCLE, SHAPE_COUNT } ShapeKind;
-
-typedef struct Shape {
-    ShapeKind kind;
-
-    union {
-        struct {
-            float width;
-            float height;
-        };
-
-        float radius;
-    };
-} Shape;
-
-#define Shape2Rec(c, s) ((Rectangle){(c).x - ((s).width * 0.5f), (c).y - ((s).height * 0.5f), (s).width, (s).height})
-
-static bool Collides(Vector2 c1, Shape s1, Vector2 c2, Shape s2) {
-    if (s1.kind == SHAPE_NONE || s2.kind == SHAPE_NONE) {
-        return false;
-    }
-
-    if (s2.kind < s1.kind) {
-        Shape temp = s1;
-        s1 = s2;
-        s2 = temp;
-        Vector2 ctemp = c1;
-        c1 = c2;
-        c2 = ctemp;
-    }
-
-    switch (s1.kind) {
-        case SHAPE_REC: {
-            switch (s2.kind) {
-                case SHAPE_REC: {
-                    return CheckCollisionRecs(Shape2Rec(c1, s1), Shape2Rec(c2, s2));
-                }
-                case SHAPE_CIRCLE: {
-                    return CheckCollisionCircleRec(c2, s2.radius, Shape2Rec(c1, s1));
-                }
-                default: {
-                    Assert(false);
-                }
-            }
-        }
-        case SHAPE_CIRCLE: {
-            switch (s2.kind) {
-                case SHAPE_REC: {
-                    return CheckCollisionCircleRec(c1, s1.radius, Shape2Rec(c2, s2));
-                }
-                case SHAPE_CIRCLE: {
-                    return CheckCollisionCircles(c1, s1.radius, c2, s2.radius);
-                }
-                default: {
-                    Assert(false);
-                }
-            }
-        }
-        default: {
-            Assert(false);
-        }
-    }
-    return false;
-}
 
 ////////////////////////////////////////////////////////////
 
@@ -234,9 +208,6 @@ typedef struct Entity {
     bool animation_loops;
 
     Color tint;
-
-    // Collision.
-    Shape shape;
 
     Body* body;
 
@@ -298,33 +269,6 @@ static Entity* AllocateEntity() {
     entity->animation_frame_time = 1.0f;  // Avoid division by zero in animation system.
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
-}
-
-////////////////////////////////////////////////////////////
-// Collision.
-
-typedef struct CollisionInfo {
-    Entity* entities[ENTITY_CAP];
-    uint32_t len;
-} CollisionInfo;
-
-static CollisionInfo CheckEntityCollisionScene(Entity* entity) {
-    Vector2 e1p = {entity->p.x, entity->p.y};
-    EntityManager* em = GetEntityManager();
-    CollisionInfo info = {0};
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* e = GetEntity(i);
-        if (!TestFlag(e->flags, EFLAG_ACTIVE) || e->id == entity->id) {
-            continue;
-        }
-        bool hit = Collides(e1p, entity->shape, (Vector2){e->p.x, e->p.y}, e->shape);
-        if (hit) {
-            Assert(info.len < ENTITY_CAP);
-            info.entities[info.len] = e;
-            ++info.len;
-        }
-    }
-    return info;
 }
 
 ////////////////////////////////////////////////////////////
@@ -396,12 +340,13 @@ static void SimpleScene(GameState* state) {
         Image image = GenImageColor(width, height, RED);
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
 
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
         entity->body = PhysicsStateAllocateBody(&state->pstate);
         entity->body->pos = Vec3ToVec2(entity->p);
         entity->body->vel = Vec3ToVec2(disp);
+        entity->body->width = width;
+        entity->body->height = height;
     }
 
     // Entity 2.
@@ -415,12 +360,13 @@ static void SimpleScene(GameState* state) {
         Image image = GenImageColor(width, height, BLUE);
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-        entity->shape = (Shape){.kind = SHAPE_REC, .width = width, .height = height};
 
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
         entity->body = PhysicsStateAllocateBody(&state->pstate);
         entity->body->pos = Vec3ToVec2(entity->p);
         entity->body->vel = Vec2Scale(Vec3ToVec2(disp), -1.0f);
+        entity->body->width = width;
+        entity->body->height = height;
     }
 }
 
