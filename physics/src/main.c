@@ -36,6 +36,7 @@ typedef struct Vec2 {
 } Vec2;
 
 #define Vec2Lit(a, b) ((Vec2){.x = (a), .y = (b)})
+#define Vec2ToRVector2(v) ((Vector2){.x = (v).x, .y = (v).y})
 
 static Vec2 Vec2Zero() {
     static Vec2 v = Vec2Lit(0.0f, 0.0f);
@@ -57,7 +58,7 @@ typedef struct Vec3 {
 #define Vec3Lit(a, b, c) ((Vec3){.x = (a), .y = (b), .z = (c)})
 #define Vec3ToVec2(v) (Vec2Lit((v).x, (v).y))
 #define Vec2ToVec3(v) (Vec3Lit((v).x, (v).y, 0.0f))
-#define Vec3ToRVec3(v) ((Vector3){.x = (v).x, .y = (v).y, .z = (v.z)})
+#define Vec3ToRVector3(v) ((Vector3){.x = (v).x, .y = (v).y, .z = (v.z)})
 
 static Vec3 Vec3Zero() {
     static Vec3 v = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -84,8 +85,7 @@ typedef struct Body {
     Vec2 pos;
     Vec2 vel;
 
-    f32 width;
-    f32 height;
+    f32 radius;
 } Body;
 
 static void BodyInit(Body* body) { memset(body, 0, sizeof(*body)); }
@@ -100,23 +100,29 @@ static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
 
     // SAT
     {
-        f32 body1_half_width = fhalf(body1->width);
-        f32 min_x_body1 = body1->pos.x - body1_half_width;
-        f32 max_x_body1 = body1->pos.x + body1_half_width;
+        // Circle
+        { collision = Vec2Len(Vec2Sub(body1->pos, body2->pos)) <= (body1->radius + body2->radius); }
 
-        f32 body2_half_width = fhalf(body2->width);
-        f32 min_x_body2 = body2->pos.x - body2_half_width;
-        f32 max_x_body2 = body2->pos.x + body2_half_width;
-        collision &= max_x_body1 >= min_x_body2 && max_x_body2 >= min_x_body1;
+        // // AABB Rect.
+        // {
+        //     f32 body1_half_width = fhalf(body1->width);
+        //     f32 min_x_body1 = body1->pos.x - body1_half_width;
+        //     f32 max_x_body1 = body1->pos.x + body1_half_width;
 
-        f32 body1_half_height = fhalf(body1->height);
-        f32 min_y_body1 = body1->pos.y - body1_half_height;
-        f32 max_y_body1 = body1->pos.y + body1_half_height;
+        //     f32 body2_half_width = fhalf(body2->width);
+        //     f32 min_x_body2 = body2->pos.x - body2_half_width;
+        //     f32 max_x_body2 = body2->pos.x + body2_half_width;
+        //     collision &= max_x_body1 >= min_x_body2 && max_x_body2 >= min_x_body1;
 
-        f32 body2_half_height = fhalf(body2->height);
-        f32 min_y_body2 = body2->pos.y - body2_half_height;
-        f32 max_y_body2 = body2->pos.y + body2_half_height;
-        collision &= max_y_body1 >= min_y_body2 && max_y_body2 >= min_y_body1;
+        //     f32 body1_half_height = fhalf(body1->height);
+        //     f32 min_y_body1 = body1->pos.y - body1_half_height;
+        //     f32 max_y_body1 = body1->pos.y + body1_half_height;
+
+        //     f32 body2_half_height = fhalf(body2->height);
+        //     f32 min_y_body2 = body2->pos.y - body2_half_height;
+        //     f32 max_y_body2 = body2->pos.y + body2_half_height;
+        //     collision &= max_y_body1 >= min_y_body2 && max_y_body2 >= min_y_body1;
+        // }
     }
 
     collider->collision = collision;
@@ -359,15 +365,17 @@ static void SimpleScene(GameState* state) {
         int height = 24 * 3;
         entity->p = ORIGIN;
 
-        Image image = GenImageColor(width, height, GRAY);
+        f32 radius = fhalf(width);
+        Vec2 center = Vec2Lit(radius, radius);
+        Image image = GenImageColor(width, height, BLANK);
+        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
         entity->texture = LoadTextureFromImage(image);
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
         entity->body = PhysicsStateAllocateBody(&state->pstate);
         entity->body->pos = Vec3ToVec2(entity->p);
-        entity->body->width = width;
-        entity->body->height = height;
+        entity->body->radius = fhalf(width);
     }
 
     f32 disp = 100.0f;
@@ -391,8 +399,7 @@ static void SimpleScene(GameState* state) {
             entity->body = PhysicsStateAllocateBody(&state->pstate);
             entity->body->pos = Vec3ToVec2(entity->p);
             entity->body->vel = Vec2Lit(disp * (-1.0f * dir), 0.0f);
-            entity->body->width = width;
-            entity->body->height = height;
+            entity->body->radius = fhalf(width);
         }
 
         {
@@ -412,8 +419,7 @@ static void SimpleScene(GameState* state) {
             entity->body = PhysicsStateAllocateBody(&state->pstate);
             entity->body->pos = Vec3ToVec2(entity->p);
             entity->body->vel = Vec2Lit(0.0f, disp * (-1.0f * dir));
-            entity->body->width = width;
-            entity->body->height = height;
+            entity->body->radius = fhalf(width);
         }
     }
 
@@ -562,7 +568,7 @@ static void GameStateDraw(GameState* state, float delta) {
             entity->bitmap_rec.height,
 
         };
-        Vector3 p = Vec3ToRVec3(entity->p);
+        Vector3 p = Vec3ToRVector3(entity->p);
         DrawTextureRec(entity->texture, src, (Vector2){p.x - half_width, p.y - half_height}, tint);
         if (false) {
             DrawCircle(p.x, p.y, 1, BLACK);
