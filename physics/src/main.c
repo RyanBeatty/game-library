@@ -391,7 +391,10 @@ static void SimpleScene(GameState* state) {
             int height = 24 * 3;
             entity->p = Vec3Lit(disp * dir, 0.0f, 0.0f);
 
-            Image image = GenImageColor(width, height, color);
+            f32 radius = fhalf(width);
+            Vec2 center = Vec2Lit(radius, radius);
+            Image image = GenImageColor(width, height, BLANK);
+            ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
             entity->texture = LoadTextureFromImage(image);
             entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
@@ -411,7 +414,10 @@ static void SimpleScene(GameState* state) {
             int height = 24 * 3;
             entity->p = Vec3Lit(0.0f, disp * dir, 0.0f);
 
-            Image image = GenImageColor(width, height, color);
+            f32 radius = fhalf(width);
+            Vec2 center = Vec2Lit(radius, radius);
+            Image image = GenImageColor(width, height, BLANK);
+            ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
             entity->texture = LoadTextureFromImage(image);
             entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
