@@ -27,6 +27,7 @@ typedef double f64;
 ////////////////////////////////////////////////////////////
 // S:Math
 
+#define f32abs fabs
 #define sqrtf32 sqrtf
 #define fhalf(x) ((x) * 0.5f)
 
@@ -92,16 +93,36 @@ static void BodyInit(Body* body) { memset(body, 0, sizeof(*body)); }
 
 typedef struct Collider {
     bool collision;
+
+    // TODO: Pull into contact point/collision point struct later.
+    // Unit vector in the direction of the collision normal for body1.
+    Vec2 normal;
+    f32 depth;
 } Collider;
 
 static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
     memset(collider, 0, sizeof(*collider));
-    bool collision = true;
+    collider->collision = true;
 
     // SAT
     {
         // Circle
-        { collision = Vec2Len(Vec2Sub(body1->pos, body2->pos)) <= (body1->radius + body2->radius); }
+        {
+            Vec2 relative_distance_dir = Vec2Sub(body1->pos, body2->pos);
+            f32 relative_distance = Vec2Len(relative_distance_dir);
+            f32 relative_distance_constraint = (body1->radius + body2->radius);
+            f32 depth = relative_distance - relative_distance_constraint;
+            if (depth >= 0.0f) {
+                collider->collision = false;
+                return;
+            }
+
+            collider->depth = f32abs(depth);
+            // Normalize relative position. This is the collision normal (there is only a single potential
+            // separating axis for circles).
+            collider->normal =
+                Vec2Lit(relative_distance_dir.x / relative_distance, relative_distance_dir.y / relative_distance);
+        }
 
         // // AABB Rect.
         // {
@@ -124,8 +145,6 @@ static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
         //     collision &= max_y_body1 >= min_y_body2 && max_y_body2 >= min_y_body1;
         // }
     }
-
-    collider->collision = collision;
 }
 
 #define NUM_BODIES 5
