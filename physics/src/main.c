@@ -28,6 +28,8 @@ typedef double f64;
 // S:Math
 
 #define f32abs fabs
+#define f32min fminf
+#define f32max fmaxf
 #define sqrtf32 sqrtf
 #define fhalf(x) ((x) * 0.5f)
 
@@ -46,8 +48,11 @@ static Vec2 Vec2Zero() {
 
 static Vec2 Vec2Add(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x + v2.x, v1.y + v2.y); }
 static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y); }
-static f32 Vec2Len(Vec2 v) { return sqrtf32((v.x * v.x) + (v.y * v.y)); }
 static Vec2 Vec2Scale(Vec2 v, f32 s) { return Vec2Lit(v.x * s, v.y * s); }
+static Vec2 Vec2Clamp(Vec2 v1, Vec2 min, Vec2 max) {
+    return Vec2Lit(f32max(min.x, f32min(v1.x, max.x)), f32max(min.y, f32min(v1.y, max.y)));
+}
+static f32 Vec2Len(Vec2 v) { return sqrtf32((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 
 typedef struct Vec3 {
@@ -187,13 +192,13 @@ static ParticleId PhysicsStateAddParticle(PhysicsState* pstate, Vec2 pos) {
 }
 
 static void PhysicsStateAccumulateForces(PhysicsState* pstate) {
-    for (u32 i = 0; i < MAX_PARTICLES; ++i) {
+    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
         pstate->force[i] = Vec2Scale(pstate->gravity, pstate->active[i]);
     }
 }
 static void PhysicsStateIntegrate(PhysicsState* pstate) {
     f32 dt_squared = pstate->fixed_dt * pstate->fixed_dt;
-    for (u32 i = 0; i < MAX_PARTICLES; ++i) {
+    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
         // x_new = 2x - x_old + force * dt^2
         Vec2 cur_x = pstate->pos[i];
         Vec2 dx = Vec2Add(Vec2Sub(cur_x, pstate->pos_old[i]), Vec2Scale(pstate->force[i], dt_squared));
@@ -201,7 +206,14 @@ static void PhysicsStateIntegrate(PhysicsState* pstate) {
         pstate->pos_old[i] = cur_x;
     }
 }
-static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {}
+static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
+    f32 d = 100.0f;
+    Vec2 minv = Vec2Lit(-d, -d);
+    Vec2 maxv = Vec2Lit(d, d);
+    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
+        pstate->pos[i] = Vec2Clamp(pstate->pos[i], minv, maxv);
+    }
+}
 
 static void PhysicsStateTick(PhysicsState* pstate) {
     PhysicsStateAccumulateForces(pstate);
@@ -535,7 +547,9 @@ static void GameStateUpdate(GameState* state, float dt) {
     state->timer += dt;
 
     // PhysicsStateUpdate(&state->pstate, dt);
-    PhysicsStateTick(&state->pstate);
+    if (!IsKeyDown(KEY_SPACE)) {
+        PhysicsStateTick(&state->pstate);
+    }
 
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
@@ -546,6 +560,7 @@ static void GameStateUpdate(GameState* state, float dt) {
 
         if (TestFlag(entity->flags, EFLAG_PHYSICS_ON)) {
             entity->p = Vec2ToVec3(ParticleGetPos(&state->pstate, entity->particle_id));
+            TraceLog(LOG_INFO, "%f %f %f", entity->p.x, entity->p.y, entity->p.z);
         }
 
         // Update animation timer if it is a looping animation.
@@ -610,11 +625,13 @@ static void GameStateDraw(GameState* state, float delta) {
 
         };
         Vector3 p = Vec3ToRVector3(entity->p);
-        DrawTextureRec(entity->texture, src, (Vector2){p.x - half_width, p.y - half_height}, tint);
-        if (false) {
-            DrawCircle(p.x, p.y, 1, BLACK);
+        // DrawTextureRec(entity->texture, src, (Vector2){p.x - half_width, p.y - half_height}, tint);
+        if (true) {
+            DrawCircle(p.x, p.y, 3, RED);
         }
     }
+
+    DrawRectangleLines(-100.0f, -100.0f, 200.0f, 200.0f, BLACK);
 
     EndMode2D();
 
