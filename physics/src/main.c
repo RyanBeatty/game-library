@@ -147,13 +147,67 @@ static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
     }
 }
 
+#define MAX_PARTICLES 5
+
+typedef u32 ParticleId;
+
 #define NUM_BODIES 5
 typedef struct PhysicsState {
-    Body bodies[NUM_BODIES];
+    f32 fixed_dt;
     Vec2 gravity;
+
+    bool active[MAX_PARTICLES];
+    Vec2 pos[MAX_PARTICLES];
+    Vec2 pos_old[MAX_PARTICLES];
+    Vec2 force[MAX_PARTICLES];
+
+    Body bodies[NUM_BODIES];
+
 } PhysicsState;
 
-static void PhysicsStateInit(PhysicsState* pstate) { memset(pstate, 0, sizeof(*pstate)); }
+#define ParticleGetPos(pstate, id) ((pstate)->pos[(id)])
+
+static void PhysicsStateInit(PhysicsState* pstate) {
+    memset(pstate, 0, sizeof(*pstate));
+    pstate->fixed_dt = 1.0f / 60.0f;
+}
+
+static ParticleId PhysicsStateAddParticle(PhysicsState* pstate, Vec2 pos) {
+    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
+        if (!pstate->active[i]) {
+            pstate->active[i] = true;
+            pstate->pos[i] = pos;
+            pstate->pos_old[i] = pos;
+            return i;
+        }
+    }
+
+    Assert(false);
+    return NULL;
+}
+
+static void PhysicsStateAccumulateForces(PhysicsState* pstate) {
+    for (u32 i = 0; i < MAX_PARTICLES; ++i) {
+        pstate->force[i] = Vec2Scale(pstate->gravity, pstate->active[i]);
+    }
+}
+static void PhysicsStateIntegrate(PhysicsState* pstate) {
+    f32 dt_squared = pstate->fixed_dt * pstate->fixed_dt;
+    for (u32 i = 0; i < MAX_PARTICLES; ++i) {
+        // x_new = 2x - x_old + force * dt^2
+        Vec2 temp_x = pstate->pos[i];
+        pstate->pos[i] = Vec2Add(Vec2Sub(Vec2Scale(pstate->pos[i], 2.0f), pstate->pos_old[i]),
+                                 Vec2Scale(pstate->force[i], dt_squared));
+        pstate->pos_old[i] = temp_x;
+    }
+}
+static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {}
+
+static void PhysicsStateTick(PhysicsState* pstate) {
+    PhysicsStateAccumulateForces(pstate);
+    PhysicsStateIntegrate(pstate);
+    PhysicsStateSatisfyConstraints(pstate);
+}
 
 static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
@@ -217,7 +271,6 @@ const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
 static const Vector3 FLIP_Y = {1, -1, 1};
-static Vector3 G = {0.0f, -15.0f, 0.0f};
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
@@ -258,6 +311,7 @@ typedef struct Entity {
     Color tint;
 
     Body* body;
+    ParticleId particle_id;
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
@@ -395,97 +449,58 @@ static void SimpleScene(GameState* state) {
         entity->body = PhysicsStateAllocateBody(&state->pstate);
         entity->body->pos = Vec3ToVec2(entity->p);
         entity->body->radius = fhalf(width);
+        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
     }
 
-    f32 disp = 100.0f;
-    u32 i = 0;
-    Color colors[4] = {RED, BLUE, GREEN, PURPLE};
-    for (i32 dir = -1; dir < 2; dir += 2) {
-        {
-            Color color = colors[i++];
+    // f32 disp = 100.0f;
+    // u32 i = 0;
+    // Color colors[4] = {RED, BLUE, GREEN, PURPLE};
+    // for (i32 dir = -1; dir < 2; dir += 2) {
+    //     {
+    //         Color color = colors[i++];
 
-            Entity* entity = AllocateEntity();
-            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-            int width = 24 * 3;
-            int height = 24 * 3;
-            entity->p = Vec3Lit(disp * dir, 0.0f, 0.0f);
+    //         Entity* entity = AllocateEntity();
+    //         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+    //         int width = 24 * 3;
+    //         int height = 24 * 3;
+    //         entity->p = Vec3Lit(disp * dir, 0.0f, 0.0f);
 
-            f32 radius = fhalf(width);
-            Vec2 center = Vec2Lit(radius, radius);
-            Image image = GenImageColor(width, height, BLANK);
-            ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
-            entity->texture = LoadTextureFromImage(image);
-            entity->bitmap_rec = (Rectangle){0, 0, width, height};
+    //         f32 radius = fhalf(width);
+    //         Vec2 center = Vec2Lit(radius, radius);
+    //         Image image = GenImageColor(width, height, BLANK);
+    //         ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
+    //         entity->texture = LoadTextureFromImage(image);
+    //         entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
-            FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-            entity->body = PhysicsStateAllocateBody(&state->pstate);
-            entity->body->pos = Vec3ToVec2(entity->p);
-            entity->body->vel = Vec2Lit(disp * (-1.0f * dir), 0.0f);
-            entity->body->radius = fhalf(width);
-        }
+    //         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+    //         entity->body = PhysicsStateAllocateBody(&state->pstate);
+    //         entity->body->pos = Vec3ToVec2(entity->p);
+    //         entity->body->vel = Vec2Lit(disp * (-1.0f * dir), 0.0f);
+    //         entity->body->radius = fhalf(width);
+    //     }
 
-        {
-            Color color = colors[i++];
+    //     {
+    //         Color color = colors[i++];
 
-            Entity* entity = AllocateEntity();
-            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-            int width = 24 * 3;
-            int height = 24 * 3;
-            entity->p = Vec3Lit(0.0f, disp * dir, 0.0f);
+    //         Entity* entity = AllocateEntity();
+    //         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+    //         int width = 24 * 3;
+    //         int height = 24 * 3;
+    //         entity->p = Vec3Lit(0.0f, disp * dir, 0.0f);
 
-            f32 radius = fhalf(width);
-            Vec2 center = Vec2Lit(radius, radius);
-            Image image = GenImageColor(width, height, BLANK);
-            ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
-            entity->texture = LoadTextureFromImage(image);
-            entity->bitmap_rec = (Rectangle){0, 0, width, height};
+    //         f32 radius = fhalf(width);
+    //         Vec2 center = Vec2Lit(radius, radius);
+    //         Image image = GenImageColor(width, height, BLANK);
+    //         ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
+    //         entity->texture = LoadTextureFromImage(image);
+    //         entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
-            FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-            entity->body = PhysicsStateAllocateBody(&state->pstate);
-            entity->body->pos = Vec3ToVec2(entity->p);
-            entity->body->vel = Vec2Lit(0.0f, disp * (-1.0f * dir));
-            entity->body->radius = fhalf(width);
-        }
-    }
-
-    // // Entity 1.
-    // {
-    //     Entity* entity = AllocateEntity();
-    //     FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-    //     int width = 24 * 3;
-    //     int height = 24 * 3;
-    //     entity->p = Vec3Scale(disp, -1.0f);
-
-    //     Image image = GenImageColor(width, height, RED);
-    //     entity->texture = LoadTextureFromImage(image);
-    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-    //     FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-    //     entity->body = PhysicsStateAllocateBody(&state->pstate);
-    //     entity->body->pos = Vec3ToVec2(entity->p);
-    //     entity->body->vel = Vec3ToVec2(disp);
-    //     entity->body->width = width;
-    //     entity->body->height = height;
-    // }
-
-    // // Entity 2.
-    // {
-    //     Entity* entity = AllocateEntity();
-    //     FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-    //     int width = 24 * 3;
-    //     int height = 24 * 3;
-    //     entity->p = disp;
-
-    //     Image image = GenImageColor(width, height, BLUE);
-    //     entity->texture = LoadTextureFromImage(image);
-    //     entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-    //     FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-    //     entity->body = PhysicsStateAllocateBody(&state->pstate);
-    //     entity->body->pos = Vec3ToVec2(entity->p);
-    //     entity->body->vel = Vec2Scale(Vec3ToVec2(disp), -1.0f);
-    //     entity->body->width = width;
-    //     entity->body->height = height;
+    //         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+    //         entity->body = PhysicsStateAllocateBody(&state->pstate);
+    //         entity->body->pos = Vec3ToVec2(entity->p);
+    //         entity->body->vel = Vec2Lit(0.0f, disp * (-1.0f * dir));
+    //         entity->body->radius = fhalf(width);
+    //     }
     // }
 }
 
@@ -494,8 +509,8 @@ static void GameStateInit(GameState* state) {
 
     PhysicsState* pstate = &state->pstate;
     PhysicsStateInit(pstate);
-    // pstate->gravity = Vec2Lit(0.0f, -10.0f);
-    pstate->gravity = Vec2Zero();
+    pstate->gravity = Vec2Lit(0.0f, -10.0f);
+    // pstate->gravity = Vec2Zero();
 
     InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
@@ -520,6 +535,7 @@ static void GameStateUpdate(GameState* state, float dt) {
     state->timer += dt;
 
     PhysicsStateUpdate(&state->pstate, dt);
+    PhysicsStateTick(&state->pstate);
 
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
@@ -529,7 +545,7 @@ static void GameStateUpdate(GameState* state, float dt) {
         }
 
         if (TestFlag(entity->flags, EFLAG_PHYSICS_ON)) {
-            entity->p = Vec2ToVec3(entity->body->pos);
+            entity->p = Vec2ToVec3(ParticleGetPos(&state->pstate, entity->particle_id));
         }
 
         // Update animation timer if it is a looping animation.
