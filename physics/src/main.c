@@ -183,7 +183,7 @@ static ParticleId PhysicsStateAddParticle(PhysicsState* pstate, Vec2 pos) {
     }
 
     Assert(false);
-    return NULL;
+    return 0;
 }
 
 static void PhysicsStateAccumulateForces(PhysicsState* pstate) {
@@ -195,10 +195,10 @@ static void PhysicsStateIntegrate(PhysicsState* pstate) {
     f32 dt_squared = pstate->fixed_dt * pstate->fixed_dt;
     for (u32 i = 0; i < MAX_PARTICLES; ++i) {
         // x_new = 2x - x_old + force * dt^2
-        Vec2 temp_x = pstate->pos[i];
-        pstate->pos[i] = Vec2Add(Vec2Sub(Vec2Scale(pstate->pos[i], 2.0f), pstate->pos_old[i]),
-                                 Vec2Scale(pstate->force[i], dt_squared));
-        pstate->pos_old[i] = temp_x;
+        Vec2 cur_x = pstate->pos[i];
+        Vec2 dx = Vec2Add(Vec2Sub(cur_x, pstate->pos_old[i]), Vec2Scale(pstate->force[i], dt_squared));
+        pstate->pos[i] = Vec2Add(cur_x, Vec2Scale(dx, pstate->active[i]));
+        pstate->pos_old[i] = cur_x;
     }
 }
 static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {}
@@ -209,61 +209,61 @@ static void PhysicsStateTick(PhysicsState* pstate) {
     PhysicsStateSatisfyConstraints(pstate);
 }
 
-static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
-    for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
-        Body* body = &pstate->bodies[i];
-        if (!body->active) {
-            BodyInit(body);
-            body->active = true;
-            return body;
-        }
-    }
+// static Body* PhysicsStateAllocateBody(PhysicsState* pstate) {
+//     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
+//         Body* body = &pstate->bodies[i];
+//         if (!body->active) {
+//             BodyInit(body);
+//             body->active = true;
+//             return body;
+//         }
+//     }
 
-    Assert(false);
-    return NULL;
-}
+//     Assert(false);
+//     return NULL;
+// }
 
-static void PhysicsStateCollisionBroadPhase(PhysicsState* pstate) {
-    for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
-        Body* bodyi = &pstate->bodies[i];
-        if (!bodyi->active) {
-            continue;
-        }
+// static void PhysicsStateCollisionBroadPhase(PhysicsState* pstate) {
+//     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
+//         Body* bodyi = &pstate->bodies[i];
+//         if (!bodyi->active) {
+//             continue;
+//         }
 
-        for (u32 j = i + 1; j < ArraySizeOf(pstate->bodies); ++j) {
-            Body* bodyj = &pstate->bodies[j];
-            if (!bodyj->active) {
-                continue;
-            }
+//         for (u32 j = i + 1; j < ArraySizeOf(pstate->bodies); ++j) {
+//             Body* bodyj = &pstate->bodies[j];
+//             if (!bodyj->active) {
+//                 continue;
+//             }
 
-            Collider collider = {0};
-            ColliderInit(&collider, bodyi, bodyj);
-            if (collider.collision) {
-                bodyi->vel = Vec2Zero();
-                bodyj->vel = Vec2Zero();
-            }
-        }
-    }
-}
+//             Collider collider = {0};
+//             ColliderInit(&collider, bodyi, bodyj);
+//             if (collider.collision) {
+//                 bodyi->vel = Vec2Zero();
+//                 bodyj->vel = Vec2Zero();
+//             }
+//         }
+//     }
+// }
 
-static void PhysicsStateUpdate(PhysicsState* pstate, f32 dt) {
-    PhysicsStateCollisionBroadPhase(pstate);
+// static void PhysicsStateUpdate(PhysicsState* pstate, f32 dt) {
+//     PhysicsStateCollisionBroadPhase(pstate);
 
-    for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
-        Body* body = &pstate->bodies[i];
-        if (!body->active) {
-            continue;
-        }
+//     for (u32 i = 0; i < ArraySizeOf(pstate->bodies); ++i) {
+//         Body* body = &pstate->bodies[i];
+//         if (!body->active) {
+//             continue;
+//         }
 
-        // Integrate forces.
-        body->vel = Vec2Add(body->vel, Vec2Scale(pstate->gravity, dt));
+//         // Integrate forces.
+//         body->vel = Vec2Add(body->vel, Vec2Scale(pstate->gravity, dt));
 
-        // Integrate velocity.
-        body->pos = Vec2Add(body->pos, Vec2Scale(body->vel, dt));
+//         // Integrate velocity.
+//         body->pos = Vec2Add(body->pos, Vec2Scale(body->vel, dt));
 
-        TraceLog(LOG_INFO, "vel %f %f   pos %f %f", body->vel.x, body->vel.y, body->pos.x, body->pos.y);
-    }
-}
+//         TraceLog(LOG_INFO, "vel %f %f   pos %f %f", body->vel.x, body->vel.y, body->pos.x, body->pos.y);
+//     }
+// }
 
 ////////////////////////////////////////////////////////////
 
@@ -446,10 +446,10 @@ static void SimpleScene(GameState* state) {
         entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-        entity->body = PhysicsStateAllocateBody(&state->pstate);
-        entity->body->pos = Vec3ToVec2(entity->p);
-        entity->body->radius = fhalf(width);
         entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
+        // entity->body = PhysicsStateAllocateBody(&state->pstate);
+        // entity->body->pos = Vec3ToVec2(entity->p);
+        // entity->body->radius = fhalf(width);
     }
 
     // f32 disp = 100.0f;
@@ -534,7 +534,7 @@ static void GameStateInit(GameState* state) {
 static void GameStateUpdate(GameState* state, float dt) {
     state->timer += dt;
 
-    PhysicsStateUpdate(&state->pstate, dt);
+    // PhysicsStateUpdate(&state->pstate, dt);
     PhysicsStateTick(&state->pstate);
 
     EntityManager* em = GetEntityManager();
