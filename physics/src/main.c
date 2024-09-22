@@ -539,65 +539,7 @@ static void SimpleScene(GameState* state) {
             c->pid_b = 2;
             c->rest_len = 56.5685424;
         }
-
-        // {
-        //     Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-        //     c->pid_a = 1;
-        //     c->pid_b = 3;
-        //     c->rest_len = 69.28;
-        // }
     }
-
-    // f32 disp = 100.0f;
-    // u32 i = 0;
-    // Color colors[4] = {RED, BLUE, GREEN, PURPLE};
-    // for (i32 dir = -1; dir < 2; dir += 2) {
-    //     {
-    //         Color color = colors[i++];
-
-    //         Entity* entity = AllocateEntity();
-    //         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-    //         int width = 24 * 3;
-    //         int height = 24 * 3;
-    //         entity->p = Vec3Lit(disp * dir, 0.0f, 0.0f);
-
-    //         f32 radius = fhalf(width);
-    //         Vec2 center = Vec2Lit(radius, radius);
-    //         Image image = GenImageColor(width, height, BLANK);
-    //         ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
-    //         entity->texture = LoadTextureFromImage(image);
-    //         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-    //         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-    //         entity->body = PhysicsStateAllocateBody(&state->pstate);
-    //         entity->body->pos = Vec3ToVec2(entity->p);
-    //         entity->body->vel = Vec2Lit(disp * (-1.0f * dir), 0.0f);
-    //         entity->body->radius = fhalf(width);
-    //     }
-
-    //     {
-    //         Color color = colors[i++];
-
-    //         Entity* entity = AllocateEntity();
-    //         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-    //         int width = 24 * 3;
-    //         int height = 24 * 3;
-    //         entity->p = Vec3Lit(0.0f, disp * dir, 0.0f);
-
-    //         f32 radius = fhalf(width);
-    //         Vec2 center = Vec2Lit(radius, radius);
-    //         Image image = GenImageColor(width, height, BLANK);
-    //         ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, color);
-    //         entity->texture = LoadTextureFromImage(image);
-    //         entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-    //         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-    //         entity->body = PhysicsStateAllocateBody(&state->pstate);
-    //         entity->body->pos = Vec3ToVec2(entity->p);
-    //         entity->body->vel = Vec2Lit(0.0f, disp * (-1.0f * dir));
-    //         entity->body->radius = fhalf(width);
-    //     }
-    // }
 }
 
 static void GameStateInit(GameState* state) {
