@@ -152,10 +152,18 @@ static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
     }
 }
 
-#define MAX_PARTICLES 5
-#define MAX_ITERATIONS 10
-
 typedef u32 ParticleId;
+
+typedef struct Constraint {
+    bool active;
+    ParticleId pid_a;
+    ParticleId pid_b;
+    f32 rest_len;
+} Constraint;
+
+#define MAX_PARTICLES 5
+#define MAX_CONSTRAINTS 5
+#define MAX_ITERATIONS 10
 
 typedef struct PhysicsState {
     f32 fixed_dt;
@@ -165,6 +173,7 @@ typedef struct PhysicsState {
     Vec2 pos[MAX_PARTICLES];
     Vec2 pos_old[MAX_PARTICLES];
     Vec2 force[MAX_PARTICLES];
+    Constraint constraints[MAX_CONSTRAINTS];
 
 } PhysicsState;
 
@@ -187,6 +196,21 @@ static ParticleId PhysicsStateAddParticle(PhysicsState* pstate, Vec2 pos) {
 
     Assert(false);
     return 0;
+}
+
+static Constraint* PhysicsStateAllocateConstraint(PhysicsState* pstate) {
+    for (u32 i = 0; i < MAX_CONSTRAINTS; ++i) {
+        if (!pstate->constraints[i].active) {
+            Constraint c = {0};
+            Constraint* cc = &pstate->constraints[i];
+            *cc = c;
+            cc->active = true;
+            return cc;
+        }
+    }
+
+    Assert(false);
+    return NULL;
 }
 
 static void PhysicsStateAccumulateForces(PhysicsState* pstate) {
@@ -213,13 +237,20 @@ static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
             pstate->pos[i] = Vec2Clamp(pstate->pos[i], minv, maxv);
         }
 
-        Vec2 x0 = pstate->pos[0];
-        Vec2 x1 = pstate->pos[1];
-        Vec2 delta = Vec2Sub(x0, x1);
-        f32 delta_len = Vec2Len(delta);
-        f32 diff = (delta_len - 40.0f) / delta_len;
-        pstate->pos[0] = Vec2Sub(x0, Vec2Scale(delta, 0.5f * diff));
-        pstate->pos[1] = Vec2Add(x1, Vec2Scale(delta, 0.5f * diff));
+        for (u32 k = 0; k < MAX_CONSTRAINTS; ++k) {
+            Constraint c = pstate->constraints[k];
+            if (!c.active) {
+                continue;
+            }
+
+            Vec2 x0 = pstate->pos[c.pid_a];
+            Vec2 x1 = pstate->pos[c.pid_b];
+            Vec2 delta = Vec2Sub(x0, x1);
+            f32 delta_len = Vec2Len(delta);
+            f32 diff = (delta_len - c.rest_len) / delta_len;
+            pstate->pos[c.pid_a] = Vec2Sub(x0, Vec2Scale(delta, 0.5f * diff));
+            pstate->pos[c.pid_b] = Vec2Add(x1, Vec2Scale(delta, 0.5f * diff));
+        }
     }
 }
 
@@ -383,6 +414,7 @@ typedef struct GameState {
 
 #define RenderWidth(state) ((state)->target.texture.width)
 #define RenderHeight(state) ((state)->target.texture.height)
+#define GetPhysicsState(gstate) (&(gstate)->pstate)
 
 static GameState GState;
 
@@ -430,6 +462,13 @@ static void SimpleScene(GameState* state) {
 
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
         entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
+    }
+
+    {
+        Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+        c->pid_a = 0;
+        c->pid_b = 1;
+        c->rest_len = 40.0f;
     }
 
     // f32 disp = 100.0f;
