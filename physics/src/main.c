@@ -459,9 +459,25 @@ static void SimpleScene(GameState* state) {
 
         FlagOn(entity->flags, EFLAG_PHYSICS_ON);
         entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
-        // entity->body = PhysicsStateAllocateBody(&state->pstate);
-        // entity->body->pos = Vec3ToVec2(entity->p);
-        // entity->body->radius = fhalf(width);
+    }
+
+    // Entity 1.
+    {
+        Entity* entity = AllocateEntity();
+        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        int width = 24 * 3;
+        int height = 24 * 3;
+        entity->p = Vec3Lit(20.0f, -20.0f, 0.0f);
+
+        f32 radius = fhalf(width);
+        Vec2 center = Vec2Lit(radius, radius);
+        Image image = GenImageColor(width, height, BLANK);
+        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+
+        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
     }
 
     // f32 disp = 100.0f;
