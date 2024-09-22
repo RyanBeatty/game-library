@@ -86,73 +86,65 @@ typedef struct CollisionInfo {
 ////////////////////////////////////////////////////////////
 // S:Physics
 
-typedef struct Body {
-    bool active;
-    Vec2 pos;
-    Vec2 vel;
+// typedef struct Collider {
+//     bool collision;
 
-    f32 radius;
-} Body;
+//     // TODO: Pull into contact point/collision point struct later.
+//     // Unit vector in the direction of the collision normal for body1.
+//     Vec2 normal;
+//     f32 depth;
+// } Collider;
 
-static void BodyInit(Body* body) { memset(body, 0, sizeof(*body)); }
+// static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
+//     memset(collider, 0, sizeof(*collider));
+//     collider->collision = true;
 
-typedef struct Collider {
-    bool collision;
+//     // SAT
+//     {
+//         // Circle
+//         {
+//             Vec2 relative_distance_dir = Vec2Sub(body1->pos, body2->pos);
+//             f32 relative_distance = Vec2Len(relative_distance_dir);
+//             f32 relative_distance_constraint = (body1->radius + body2->radius);
+//             f32 depth = relative_distance - relative_distance_constraint;
+//             if (depth >= 0.0f) {
+//                 collider->collision = false;
+//                 return;
+//             }
 
-    // TODO: Pull into contact point/collision point struct later.
-    // Unit vector in the direction of the collision normal for body1.
-    Vec2 normal;
-    f32 depth;
-} Collider;
+//             collider->depth = f32abs(depth);
+//             // Normalize relative position. This is the collision normal (there is only a single potential
+//             // separating axis for circles).
+//             collider->normal =
+//                 Vec2Lit(relative_distance_dir.x / relative_distance, relative_distance_dir.y / relative_distance);
+//         }
 
-static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
-    memset(collider, 0, sizeof(*collider));
-    collider->collision = true;
+//         // // AABB Rect.
+//         // {
+//         //     f32 body1_half_width = fhalf(body1->width);
+//         //     f32 min_x_body1 = body1->pos.x - body1_half_width;
+//         //     f32 max_x_body1 = body1->pos.x + body1_half_width;
 
-    // SAT
-    {
-        // Circle
-        {
-            Vec2 relative_distance_dir = Vec2Sub(body1->pos, body2->pos);
-            f32 relative_distance = Vec2Len(relative_distance_dir);
-            f32 relative_distance_constraint = (body1->radius + body2->radius);
-            f32 depth = relative_distance - relative_distance_constraint;
-            if (depth >= 0.0f) {
-                collider->collision = false;
-                return;
-            }
+//         //     f32 body2_half_width = fhalf(body2->width);
+//         //     f32 min_x_body2 = body2->pos.x - body2_half_width;
+//         //     f32 max_x_body2 = body2->pos.x + body2_half_width;
+//         //     collision &= max_x_body1 >= min_x_body2 && max_x_body2 >= min_x_body1;
 
-            collider->depth = f32abs(depth);
-            // Normalize relative position. This is the collision normal (there is only a single potential
-            // separating axis for circles).
-            collider->normal =
-                Vec2Lit(relative_distance_dir.x / relative_distance, relative_distance_dir.y / relative_distance);
-        }
+//         //     f32 body1_half_height = fhalf(body1->height);
+//         //     f32 min_y_body1 = body1->pos.y - body1_half_height;
+//         //     f32 max_y_body1 = body1->pos.y + body1_half_height;
 
-        // // AABB Rect.
-        // {
-        //     f32 body1_half_width = fhalf(body1->width);
-        //     f32 min_x_body1 = body1->pos.x - body1_half_width;
-        //     f32 max_x_body1 = body1->pos.x + body1_half_width;
-
-        //     f32 body2_half_width = fhalf(body2->width);
-        //     f32 min_x_body2 = body2->pos.x - body2_half_width;
-        //     f32 max_x_body2 = body2->pos.x + body2_half_width;
-        //     collision &= max_x_body1 >= min_x_body2 && max_x_body2 >= min_x_body1;
-
-        //     f32 body1_half_height = fhalf(body1->height);
-        //     f32 min_y_body1 = body1->pos.y - body1_half_height;
-        //     f32 max_y_body1 = body1->pos.y + body1_half_height;
-
-        //     f32 body2_half_height = fhalf(body2->height);
-        //     f32 min_y_body2 = body2->pos.y - body2_half_height;
-        //     f32 max_y_body2 = body2->pos.y + body2_half_height;
-        //     collision &= max_y_body1 >= min_y_body2 && max_y_body2 >= min_y_body1;
-        // }
-    }
-}
+//         //     f32 body2_half_height = fhalf(body2->height);
+//         //     f32 min_y_body2 = body2->pos.y - body2_half_height;
+//         //     f32 max_y_body2 = body2->pos.y + body2_half_height;
+//         //     collision &= max_y_body1 >= min_y_body2 && max_y_body2 >= min_y_body1;
+//         // }
+//     }
+// }
 
 typedef u32 ParticleId;
+
+typedef u32 ConstraintId;
 
 typedef struct Constraint {
     bool active;
@@ -161,9 +153,23 @@ typedef struct Constraint {
     f32 rest_len;
 } Constraint;
 
+typedef u32 BodyId;
+
+typedef struct Body {
+    bool active;
+
+    ConstraintId cid;
+} Body;
+
+static void BodyInit(Body* body) {
+    static Body ZERO = {0};
+    *body = ZERO;
+}
+
 #define MAX_PARTICLES 5
 #define MAX_CONSTRAINTS 10
 #define MAX_ITERATIONS 10
+#define MAX_BODIES 10
 
 typedef struct PhysicsState {
     f32 fixed_dt;
@@ -174,10 +180,13 @@ typedef struct PhysicsState {
     Vec2 pos_old[MAX_PARTICLES];
     Vec2 force[MAX_PARTICLES];
     Constraint constraints[MAX_CONSTRAINTS];
+    Body body[MAX_BODIES];
 
 } PhysicsState;
 
 #define ParticleGetPos(pstate, id) ((pstate)->pos[(id)])
+#define GetBody(pstate, bid) (&(pstate)->body[(bid)])
+#define GetConstraint(pstate, cid) (&(pstate)->constraints[(cid)])
 
 static void PhysicsStateInit(PhysicsState* pstate) {
     memset(pstate, 0, sizeof(*pstate));
@@ -261,6 +270,27 @@ static void PhysicsStateTick(PhysicsState* pstate) {
     PhysicsStateIntegrate(pstate);
     PhysicsStateSatisfyConstraints(pstate);
 }
+
+static void PhysicsStateDraw(PhysicsState* pstate) {
+    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
+        if (!pstate->active[i]) {
+            continue;
+        }
+
+        Vec2 p = ParticleGetPos(pstate, i);
+        DrawCircle(p.x, p.y, 3, RED);
+    }
+}
+
+// static void PhysicsStateDrawBody(PhysicsState* pstate, BodyId bid) {
+//     Body* body = GetBody(pstate, bid);
+//     if (!body->active) {
+//         return;
+//     }
+
+//     Constraint* c = GetConstraint(body->cid);
+//     DrawLineEx(ParticleGetPos(pstate, c->pid_a), ParticleGetPos(c->pid_b))
+// }
 
 ////////////////////////////////////////////////////////////
 
@@ -627,6 +657,8 @@ static void GameStateDraw(GameState* state, float delta) {
     ClearBackground(WHITE);
     BeginMode2D(state->camera);
 
+    PhysicsStateDraw(GetPhysicsState(state));
+
     for (uint32_t i = 0; i < size; ++i) {
         Entity* entity = entities[i];
         Color tint = entity->tint;
@@ -652,7 +684,7 @@ static void GameStateDraw(GameState* state, float delta) {
         Vector3 p = Vec3ToRVector3(entity->p);
         // DrawTextureRec(entity->texture, src, (Vector2){p.x - half_width, p.y - half_height}, tint);
         if (true) {
-            DrawCircle(p.x, p.y, 3, RED);
+            // DrawCircle(p.x, p.y, 3, RED);
         }
     }
 
