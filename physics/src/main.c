@@ -272,6 +272,16 @@ static void PhysicsStateTick(PhysicsState* pstate) {
 }
 
 static void PhysicsStateDraw(PhysicsState* pstate) {
+    for (ConstraintId cid = 0; cid < MAX_CONSTRAINTS; ++cid) {
+        Constraint* c = GetConstraint(pstate, cid);
+        if (!c->active) {
+            continue;
+        }
+        Vec2 pa = ParticleGetPos(pstate, c->pid_a);
+        Vec2 pb = ParticleGetPos(pstate, c->pid_b);
+        DrawLineEx(Vec2ToRVector2(pa), Vec2ToRVector2(pb), 2, BLACK);
+    }
+
     for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
         if (!pstate->active[i]) {
             continue;
