@@ -162,7 +162,7 @@ typedef struct Constraint {
 } Constraint;
 
 #define MAX_PARTICLES 5
-#define MAX_CONSTRAINTS 5
+#define MAX_CONSTRAINTS 10
 #define MAX_ITERATIONS 10
 
 typedef struct PhysicsState {
@@ -453,7 +453,45 @@ static void SimpleScene(GameState* state) {
         FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
         int width = 24 * 3;
         int height = 24 * 3;
-        entity->p = Vec3Lit(10.0f, -10.0f, 0.0f);
+        entity->p = Vec3Lit(40.0f, 0.0f, 0.0f);
+
+        f32 radius = fhalf(width);
+        Vec2 center = Vec2Lit(radius, radius);
+        Image image = GenImageColor(width, height, BLANK);
+        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+
+        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
+    }
+
+    // Entity 2
+    {
+        Entity* entity = AllocateEntity();
+        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        int width = 24 * 3;
+        int height = 24 * 3;
+        entity->p = Vec3Lit(40.0f, -40.0f, 0.0f);
+
+        f32 radius = fhalf(width);
+        Vec2 center = Vec2Lit(radius, radius);
+        Image image = GenImageColor(width, height, BLANK);
+        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
+        entity->texture = LoadTextureFromImage(image);
+        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+
+        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
+    }
+
+    // Entity 3.
+    {
+        Entity* entity = AllocateEntity();
+        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        int width = 24 * 3;
+        int height = 24 * 3;
+        entity->p = Vec3Lit(0.0f, -40.0f, 0.0f);
 
         f32 radius = fhalf(width);
         Vec2 center = Vec2Lit(radius, radius);
@@ -467,10 +505,47 @@ static void SimpleScene(GameState* state) {
     }
 
     {
-        Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-        c->pid_a = 0;
-        c->pid_b = 1;
-        c->rest_len = 40.0f;
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = 0;
+            c->pid_b = 1;
+            c->rest_len = 40.0f;
+        }
+
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = 1;
+            c->pid_b = 2;
+            c->rest_len = 40.0f;
+        }
+
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = 2;
+            c->pid_b = 3;
+            c->rest_len = 40.0f;
+        }
+
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = 3;
+            c->pid_b = 0;
+            c->rest_len = 40.0f;
+        }
+
+        // {
+        //     Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+        //     c->pid_a = 0;
+        //     c->pid_b = 2;
+        //     c->rest_len = 69.28;
+        // }
+
+        // {
+        //     Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+        //     c->pid_a = 1;
+        //     c->pid_b = 3;
+        //     c->rest_len = 69.28;
+        // }
     }
 
     // f32 disp = 100.0f;
