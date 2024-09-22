@@ -292,16 +292,6 @@ static void PhysicsStateDraw(PhysicsState* pstate) {
     }
 }
 
-// static void PhysicsStateDrawBody(PhysicsState* pstate, BodyId bid) {
-//     Body* body = GetBody(pstate, bid);
-//     if (!body->active) {
-//         return;
-//     }
-
-//     Constraint* c = GetConstraint(body->cid);
-//     DrawLineEx(ParticleGetPos(pstate, c->pid_a), ParticleGetPos(c->pid_b))
-// }
-
 ////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
