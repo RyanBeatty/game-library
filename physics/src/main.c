@@ -234,6 +234,7 @@ static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
     Vec2 maxv = Vec2Lit(d, d);
     for (u32 j = 0; j < MAX_ITERATIONS; ++j) {
         for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
+            // Cube constraint.
             pstate->pos[i] = Vec2Clamp(pstate->pos[i], minv, maxv);
         }
 
@@ -243,6 +244,7 @@ static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
                 continue;
             }
 
+            // Stick constraint.
             Vec2 x0 = pstate->pos[c.pid_a];
             Vec2 x1 = pstate->pos[c.pid_b];
             Vec2 delta = Vec2Sub(x0, x1);
