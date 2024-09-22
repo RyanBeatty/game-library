@@ -533,12 +533,12 @@ static void SimpleScene(GameState* state) {
             c->rest_len = 40.0f;
         }
 
-        // {
-        //     Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-        //     c->pid_a = 0;
-        //     c->pid_b = 2;
-        //     c->rest_len = 69.28;
-        // }
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = 0;
+            c->pid_b = 2;
+            c->rest_len = 56.5685424;
+        }
 
         // {
         //     Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
