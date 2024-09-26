@@ -49,9 +49,14 @@ static Vec2 Vec2Zero() {
 static Vec2 Vec2Add(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x + v2.x, v1.y + v2.y); }
 static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y); }
 static Vec2 Vec2Scale(Vec2 v, f32 s) { return Vec2Lit(v.x * s, v.y * s); }
+static Vec2 Vec2Normalize(Vec2 v) {
+    f32 len = sqrtf32((v.x * v.x) + (v.y * v.y));
+    return Vec2Lit(v.x / len, v.y / len);
+}
 static Vec2 Vec2Clamp(Vec2 v1, Vec2 min, Vec2 max) {
     return Vec2Lit(f32max(min.x, f32min(v1.x, max.x)), f32max(min.y, f32min(v1.y, max.y)));
 }
+static Vec2 Vec2Cross(Vec2 v) { return Vec2Lit(v.y, -v.x); }
 static f32 Vec2Len(Vec2 v) { return sqrtf32((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 
@@ -82,6 +87,42 @@ static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v
 
 typedef struct CollisionInfo {
 } CollisionInfo;
+
+// CCW winding.
+bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f) {
+    Vec2 edges[6] = {Vec2Sub(b, a), Vec2Sub(c, b), Vec2Sub(a, c), Vec2Sub(e, d), Vec2Sub(f, e), Vec2Sub(d, f)};
+
+    // SAT.
+    for (u8 i = 0; i < 6; ++i) {
+        Vec2 edge = edges[i];
+        Vec2 normal = Vec2Normalize(Vec2Cross(edge));
+        f32 proj_a = Vec2Dot(a, normal);
+        f32 proj_b = Vec2Dot(b, normal);
+        f32 proj_c = Vec2Dot(c, normal);
+
+        f32 proj_d = Vec2Dot(d, normal);
+        f32 proj_e = Vec2Dot(e, normal);
+        f32 proj_f = Vec2Dot(f, normal);
+
+        f32 max_abc = f32max(proj_a, f32max(proj_b, proj_c));
+        f32 min_def = f32min(proj_d, f32min(proj_e, proj_f));
+
+        if (max_abc < min_def) {
+            return false;
+        }
+
+        f32 min_abc = f32min(proj_a, f32min(proj_b, proj_c));
+        f32 max_def = f32max(proj_d, f32max(proj_e, proj_f));
+
+        if (min_abc > max_def) {
+            return false;
+        }
+
+        // TODO: Keep track of min penetration and axis later.
+    }
+
+    return true;
+}
 
 ////////////////////////////////////////////////////////////
 // S:Physics
@@ -158,7 +199,8 @@ typedef u32 BodyId;
 typedef struct Body {
     bool active;
 
-    ConstraintId cid;
+    // Only support triangles, CCW order.
+    ParticleId pids[3];
 } Body;
 
 static void BodyInit(Body* body) {
@@ -300,7 +342,7 @@ const float RenderHeight = 720;
 static const Vector3 FLIP_Y = {1, -1, 1};
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
-static const Vector2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
+static const Vec2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
 
 ////////////////////////////////////////////////////////////
 
@@ -460,114 +502,46 @@ static void SimpleScene(GameState* state) {
 
     // Entity 0.
     {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24 * 3;
-        int height = 24 * 3;
-        entity->p = ORIGIN;
+        // Entity* entity = AllocateEntity();
+        // FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        // int width = 24 * 3;
+        // int height = 24 * 3;
+        // entity->p = ORIGIN;
 
-        f32 radius = fhalf(width);
-        Vec2 center = Vec2Lit(radius, radius);
-        Image image = GenImageColor(width, height, BLANK);
-        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
-        entity->texture = LoadTextureFromImage(image);
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
+        // f32 radius = fhalf(width);
+        // Vec2 center = Vec2Lit(radius, radius);
+        // Image image = GenImageColor(width, height, BLANK);
+        // ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
+        // entity->texture = LoadTextureFromImage(image);
+        // entity->bitmap_rec = (Rectangle){0, 0, width, height};
 
-        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
+        // FlagOn(entity->flags, EFLAG_PHYSICS_ON);
     }
 
-    // Entity 1.
-    {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24 * 3;
-        int height = 24 * 3;
-        entity->p = Vec3Lit(40.0f, 0.0f, 0.0f);
-
-        f32 radius = fhalf(width);
-        Vec2 center = Vec2Lit(radius, radius);
-        Image image = GenImageColor(width, height, BLANK);
-        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
-        entity->texture = LoadTextureFromImage(image);
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
-    }
-
-    // Entity 2
-    {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24 * 3;
-        int height = 24 * 3;
-        entity->p = Vec3Lit(40.0f, -40.0f, 0.0f);
-
-        f32 radius = fhalf(width);
-        Vec2 center = Vec2Lit(radius, radius);
-        Image image = GenImageColor(width, height, BLANK);
-        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
-        entity->texture = LoadTextureFromImage(image);
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
-    }
-
-    // Entity 3.
-    {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        int width = 24 * 3;
-        int height = 24 * 3;
-        entity->p = Vec3Lit(0.0f, -40.0f, 0.0f);
-
-        f32 radius = fhalf(width);
-        Vec2 center = Vec2Lit(radius, radius);
-        Image image = GenImageColor(width, height, BLANK);
-        ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
-        entity->texture = LoadTextureFromImage(image);
-        entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-        FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-        entity->particle_id = PhysicsStateAddParticle(&state->pstate, Vec3ToVec2(entity->p));
-    }
+    ParticleId pid_a = PhysicsStateAddParticle(&state->pstate, ORIGIN2D);
+    ParticleId pid_b = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, 0.0f));
+    ParticleId pid_c = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, -40.0f));
 
     {
         {
             Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = 0;
-            c->pid_b = 1;
+            c->pid_a = pid_a;
+            c->pid_b = pid_b;
             c->rest_len = 40.0f;
         }
 
         {
             Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = 1;
-            c->pid_b = 2;
+            c->pid_a = pid_b;
+            c->pid_b = pid_c;
             c->rest_len = 40.0f;
         }
 
         {
             Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = 2;
-            c->pid_b = 3;
+            c->pid_a = pid_c;
+            c->pid_b = pid_a;
             c->rest_len = 40.0f;
-        }
-
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = 3;
-            c->pid_b = 0;
-            c->rest_len = 40.0f;
-        }
-
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = 0;
-            c->pid_b = 2;
-            c->rest_len = 56.5685424;
         }
     }
 }
@@ -592,7 +566,7 @@ static void GameStateInit(GameState* state) {
     SimpleScene(state);
 
     {
-        state->camera.target = ORIGIN2D;
+        state->camera.target = Vec2ToRVector2(ORIGIN2D);
         state->camera.offset = (Vector2){GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
         state->camera.rotation = 0.0f;  // in deg
         state->camera.zoom = 1.0f;
