@@ -304,6 +304,16 @@ static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
             pstate->pos[c.pid_a] = Vec2Sub(x0, Vec2Scale(delta, 0.5f * diff));
             pstate->pos[c.pid_b] = Vec2Add(x1, Vec2Scale(delta, 0.5f * diff));
         }
+
+        if (CollideTriangleTriangle(pstate->pos[0], pstate->pos[1], pstate->pos[2], pstate->pos[3], pstate->pos[4],
+                                    pstate->pos[5])) {
+            pstate->active[0] = false;
+            pstate->active[1] = false;
+            pstate->active[2] = false;
+            pstate->active[3] = false;
+            pstate->active[4] = false;
+            pstate->active[5] = false;
+        }
     }
 }
 
@@ -518,7 +528,7 @@ static void SimpleScene(GameState* state) {
         // FlagOn(entity->flags, EFLAG_PHYSICS_ON);
     }
 
-    ParticleId pid_a = PhysicsStateAddParticle(&state->pstate, ORIGIN2D);
+    ParticleId pid_a = PhysicsStateAddParticle(&state->pstate, Vec2Lit(0.0f, 0.0f));
     ParticleId pid_b = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, 0.0f));
     ParticleId pid_c = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, -40.0f));
 
