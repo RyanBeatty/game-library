@@ -208,7 +208,7 @@ static void BodyInit(Body* body) {
     *body = ZERO;
 }
 
-#define MAX_PARTICLES 5
+#define MAX_PARTICLES 10
 #define MAX_CONSTRAINTS 10
 #define MAX_ITERATIONS 10
 #define MAX_BODIES 10
@@ -541,6 +541,33 @@ static void SimpleScene(GameState* state) {
             Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
             c->pid_a = pid_c;
             c->pid_b = pid_a;
+            c->rest_len = 40.0f;
+        }
+    }
+
+    ParticleId pid_d = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, 40.0f));
+    ParticleId pid_e = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, 80.0f));
+    ParticleId pid_f = PhysicsStateAddParticle(&state->pstate, Vec2Lit(0.0f, 40.0f));
+
+    {
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = pid_d;
+            c->pid_b = pid_e;
+            c->rest_len = 40.0f;
+        }
+
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = pid_e;
+            c->pid_b = pid_f;
+            c->rest_len = 40.0f;
+        }
+
+        {
+            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
+            c->pid_a = pid_f;
+            c->pid_b = pid_d;
             c->rest_len = 40.0f;
         }
     }
