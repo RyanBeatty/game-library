@@ -11,6 +11,7 @@
 //
 #include "../external/cJSON/cJSON.h"
 // Comment to prevent autolinting
+#include <float.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>

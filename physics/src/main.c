@@ -24,6 +24,8 @@ typedef int64_t i64;
 typedef float f32;
 typedef double f64;
 
+#define F32_MAX FLT_MAX
+
 ////////////////////////////////////////////////////////////
 // S:Math
 
@@ -85,24 +87,24 @@ static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v
 ////////////////////////////////////////////////////////////
 // S:Collision
 
-typedef struct CollisionInfo {
-} CollisionInfo;
-
 // CCW winding.
-bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f) {
+// If collision, normal will point in direction of separating axis towards triangle ABC.
+bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f, Vec2* normal, f32* depth) {
     Vec2 edges[6] = {Vec2Sub(b, a), Vec2Sub(c, b), Vec2Sub(a, c), Vec2Sub(e, d), Vec2Sub(f, e), Vec2Sub(d, f)};
+
+    *depth = F32_MAX;
 
     // SAT.
     for (u8 i = 0; i < 6; ++i) {
         Vec2 edge = edges[i];
-        Vec2 normal = Vec2Normalize(Vec2Cross(edge));
-        f32 proj_a = Vec2Dot(a, normal);
-        f32 proj_b = Vec2Dot(b, normal);
-        f32 proj_c = Vec2Dot(c, normal);
+        Vec2 n = Vec2Normalize(Vec2Cross(edge));
+        f32 proj_a = Vec2Dot(a, n);
+        f32 proj_b = Vec2Dot(b, n);
+        f32 proj_c = Vec2Dot(c, n);
 
-        f32 proj_d = Vec2Dot(d, normal);
-        f32 proj_e = Vec2Dot(e, normal);
-        f32 proj_f = Vec2Dot(f, normal);
+        f32 proj_d = Vec2Dot(d, n);
+        f32 proj_e = Vec2Dot(e, n);
+        f32 proj_f = Vec2Dot(f, n);
 
         f32 max_abc = f32max(proj_a, f32max(proj_b, proj_c));
         f32 min_def = f32min(proj_d, f32min(proj_e, proj_f));
@@ -118,7 +120,11 @@ bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f) {
             return false;
         }
 
-        // TODO: Keep track of min penetration and axis later.
+        f32 d = f32abs((max_abc - min_abc) - (max_def - min_def));
+        if (d < *depth) {
+            *depth = d;
+            *normal = n;
+        }
     }
 
     return true;
@@ -305,14 +311,28 @@ static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
             pstate->pos[c.pid_b] = Vec2Add(x1, Vec2Scale(delta, 0.5f * diff));
         }
 
+        Vec2 normal = Vec2Zero();
+        f32 depth = 0.0f;
         if (CollideTriangleTriangle(pstate->pos[0], pstate->pos[1], pstate->pos[2], pstate->pos[3], pstate->pos[4],
-                                    pstate->pos[5])) {
-            pstate->active[0] = false;
-            pstate->active[1] = false;
-            pstate->active[2] = false;
-            pstate->active[3] = false;
-            pstate->active[4] = false;
-            pstate->active[5] = false;
+                                    pstate->pos[5], &normal, &depth)) {
+            // pstate->active[0] = false;
+            // pstate->active[1] = false;
+            // pstate->active[2] = false;
+            // pstate->active[3] = false;
+            // pstate->active[4] = false;
+            // pstate->active[5] = false;
+
+            Vec2 disp = Vec2Scale(normal, 0.5f * depth);
+            Vec2 neg_disp = Vec2Scale(disp, -1.0f);
+            pstate->pos[0] = Vec2Add(pstate->pos[0], disp);
+            pstate->pos[1] = Vec2Add(pstate->pos[1], disp);
+            pstate->pos[2] = Vec2Add(pstate->pos[2], disp);
+
+            pstate->pos[3] = Vec2Add(pstate->pos[3], neg_disp);
+            pstate->pos[4] = Vec2Add(pstate->pos[4], neg_disp);
+            pstate->pos[5] = Vec2Add(pstate->pos[5], neg_disp);
+
+            // breakpoint();
         }
     }
 }
