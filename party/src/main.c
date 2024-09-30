@@ -133,62 +133,6 @@ bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f, Vec
 ////////////////////////////////////////////////////////////
 // S:Physics
 
-// typedef struct Collider {
-//     bool collision;
-
-//     // TODO: Pull into contact point/collision point struct later.
-//     // Unit vector in the direction of the collision normal for body1.
-//     Vec2 normal;
-//     f32 depth;
-// } Collider;
-
-// static void ColliderInit(Collider* collider, Body* body1, Body* body2) {
-//     memset(collider, 0, sizeof(*collider));
-//     collider->collision = true;
-
-//     // SAT
-//     {
-//         // Circle
-//         {
-//             Vec2 relative_distance_dir = Vec2Sub(body1->pos, body2->pos);
-//             f32 relative_distance = Vec2Len(relative_distance_dir);
-//             f32 relative_distance_constraint = (body1->radius + body2->radius);
-//             f32 depth = relative_distance - relative_distance_constraint;
-//             if (depth >= 0.0f) {
-//                 collider->collision = false;
-//                 return;
-//             }
-
-//             collider->depth = f32abs(depth);
-//             // Normalize relative position. This is the collision normal (there is only a single potential
-//             // separating axis for circles).
-//             collider->normal =
-//                 Vec2Lit(relative_distance_dir.x / relative_distance, relative_distance_dir.y / relative_distance);
-//         }
-
-//         // // AABB Rect.
-//         // {
-//         //     f32 body1_half_width = fhalf(body1->width);
-//         //     f32 min_x_body1 = body1->pos.x - body1_half_width;
-//         //     f32 max_x_body1 = body1->pos.x + body1_half_width;
-
-//         //     f32 body2_half_width = fhalf(body2->width);
-//         //     f32 min_x_body2 = body2->pos.x - body2_half_width;
-//         //     f32 max_x_body2 = body2->pos.x + body2_half_width;
-//         //     collision &= max_x_body1 >= min_x_body2 && max_x_body2 >= min_x_body1;
-
-//         //     f32 body1_half_height = fhalf(body1->height);
-//         //     f32 min_y_body1 = body1->pos.y - body1_half_height;
-//         //     f32 max_y_body1 = body1->pos.y + body1_half_height;
-
-//         //     f32 body2_half_height = fhalf(body2->height);
-//         //     f32 min_y_body2 = body2->pos.y - body2_half_height;
-//         //     f32 max_y_body2 = body2->pos.y + body2_half_height;
-//         //     collision &= max_y_body1 >= min_y_body2 && max_y_body2 >= min_y_body1;
-//         // }
-//     }
-// }
-
 typedef u32 ParticleId;
 
 typedef u32 ConstraintId;
@@ -387,7 +331,7 @@ typedef enum EntityFlag {
     EFLAG_PHYSICS_ON = 1 << 3
 } EntityFlag;
 
-typedef uint32_t EntityId;
+typedef u32 EntityId;
 
 typedef struct Entity {
     /////////////////////////////////////////////////////////////////
@@ -396,25 +340,8 @@ typedef struct Entity {
     Vec3 p;
     EntityFlag flags;
 
-    // TODO: Definitely reconsider this vs a better approach for orientation.
-    bool right;
-
-    // Animation.
-    Texture texture;
-    Rectangle bitmap_rec;
-    uint32_t animation_frame_count;
-    float animation_frame_time;
-    float animation_timer;
-    bool animation_loops;
-
-    Color tint;
-
-    Body* body;
-    ParticleId particle_id;
-
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    bool dead;
 
     struct {
         struct Entity* prev;
@@ -465,9 +392,6 @@ static Entity* AllocateEntity() {
     memset(entity, 0, sizeof(*entity));
     entity->id = id;
     entity->flags = EFLAG_ACTIVE;
-    entity->tint = WHITE;
-    entity->animation_frame_count = 1;    // Avoid division by zero in animation system.
-    entity->animation_frame_time = 1.0f;  // Avoid division by zero in animation system.
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -491,12 +415,8 @@ typedef struct GameState {
     // Core fields
     Camera camera;
 
-    uint16_t health;
-
     bool debug;
     bool game_over;
-
-    uint32_t score;
 
     float timer;
 
@@ -506,9 +426,6 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Gameplay fields
-    Entity* focus;
-
-    Entity* player;
 
     struct {
         Entity* head;
@@ -526,9 +443,6 @@ static GameState GState;
 
 static void SimpleScene(GameState* state) {
     // LoadLevel();
-
-    state->score = 0.0f;
-    state->health = 3;
 
     // Entity 0.
     {
@@ -647,13 +561,6 @@ static void GameStateUpdate(GameState* gstate, float dt) {
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             continue;
         }
-
-        if (TestFlag(entity->flags, EFLAG_PHYSICS_ON)) {
-            entity->p = Vec2ToVec3(ParticleGetPos(&gstate->pstate, entity->particle_id));
-        }
-
-        // Update animation timer if it is a looping animation.
-        entity->animation_timer += dt * entity->animation_loops;
     }
 
     gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
