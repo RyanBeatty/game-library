@@ -52,8 +52,14 @@ static Vec2 Vec2Add(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x + v2.x, v1.y + v2.y)
 static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y); }
 static Vec2 Vec2Scale(Vec2 v, f32 s) { return Vec2Lit(v.x * s, v.y * s); }
 static Vec2 Vec2Normalize(Vec2 v) {
+    Vec2 result = Vec2Lit(v.x, v.y);
     f32 len = sqrtf32((v.x * v.x) + (v.y * v.y));
-    return Vec2Lit(v.x / len, v.y / len);
+    if (len > 0.0f) {
+        f32 inv_len = 1.0f / len;
+        result.x *= inv_len;
+        result.y *= inv_len;
+    }
+    return result;
 }
 static Vec2 Vec2Clamp(Vec2 v1, Vec2 min, Vec2 max) {
     return Vec2Lit(f32max(min.x, f32min(v1.x, max.x)), f32max(min.y, f32min(v1.y, max.y)));
