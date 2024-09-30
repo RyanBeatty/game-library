@@ -496,6 +496,17 @@ static void GameStateUpdate(GameState* gstate, float dt) {
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             continue;
         }
+
+        if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            static const u8 GAMEPAD_ID = 0;
+
+            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+            f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+
+            entity->pos = Vec3Add(entity->pos, Vec3Scale(Vec3Lit(x, y, 0.0f), 3.0f * dt));
+
+            TraceLog(LOG_INFO, "axis count %f %f", x, y);
+        }
     }
 
     gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
