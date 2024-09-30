@@ -473,7 +473,7 @@ static void GameStateInit(GameState* gstate) {
 
     {
         Camera camera = {0};
-        camera.position = Vec3ToRVector3(Vec3Lit(0.0f, 20.0f, -40.0f));
+        camera.position = Vec3ToRVector3(Vec3Lit(0.0f, 20.0f, 40.0f));
         camera.target = Vec3ToRVector3(ORIGIN);
         camera.up = Vec3ToRVector3(Vec3Lit(0.0f, 1.0f, 0.0f));
         camera.fovy = 60.0f;
@@ -503,9 +503,7 @@ static void GameStateUpdate(GameState* gstate, float dt) {
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
 
-            entity->pos = Vec3Add(entity->pos, Vec3Scale(Vec3Lit(x, y, 0.0f), 3.0f * dt));
-
-            TraceLog(LOG_INFO, "axis count %f %f", x, y);
+            entity->pos = Vec3Add(entity->pos, Vec3Scale(Vec3Lit(x, 0.0f, y), 3.0f * dt));
         }
     }
 
