@@ -489,7 +489,7 @@ typedef enum InputDir {
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
-    Camera2D camera;
+    Camera camera;
 
     uint16_t health;
 
@@ -623,10 +623,13 @@ static void GameStateInit(GameState* state) {
     SimpleScene(state);
 
     {
-        state->camera.target = Vec2ToRVector2(ORIGIN2D);
-        state->camera.offset = (Vector2){GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
-        state->camera.rotation = 0.0f;  // in deg
-        state->camera.zoom = 1.0f;
+        Camera camera = {0};
+        camera.position = Vec3ToRVector3(Vec3Lit(0.0f, 20.0f, -40.0f));
+        camera.target = Vec3ToRVector3(ORIGIN);
+        camera.up = Vec3ToRVector3(Vec3Lit(0.0f, 1.0f, 0.0f));
+        camera.fovy = 60.0f;
+        camera.projection = CAMERA_PERSPECTIVE;
+        state->camera = camera;
     }
 }
 
@@ -661,14 +664,7 @@ static void GameStateDraw(GameState* state, float delta) {
 
     ClearBackground(WHITE);
 
-    Camera camera = {0};
-    camera.position = Vec3ToRVector3(Vec3Lit(0.0f, 20.0f, -40.0f));
-    camera.target = Vec3ToRVector3(ORIGIN);
-    camera.up = Vec3ToRVector3(Vec3Lit(0.0f, 1.0f, 0.0f));
-    camera.fovy = 60.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
-
-    BeginMode3D(camera);
+    BeginMode3D(state->camera);
 
     Vec3 pos = ORIGIN;
     u16 len = 5;
