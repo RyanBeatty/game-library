@@ -337,7 +337,7 @@ typedef struct Entity {
     /////////////////////////////////////////////////////////////////
     // Core field.
     EntityId id;
-    Vec3 p;
+    Vec3 pos;
     EntityFlag flags;
 
     /////////////////////////////////////////////////////////////////
@@ -446,74 +446,9 @@ static void SimpleScene(GameState* state) {
 
     // Entity 0.
     {
-        // Entity* entity = AllocateEntity();
-        // FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        // int width = 24 * 3;
-        // int height = 24 * 3;
-        // entity->p = ORIGIN;
-
-        // f32 radius = fhalf(width);
-        // Vec2 center = Vec2Lit(radius, radius);
-        // Image image = GenImageColor(width, height, BLANK);
-        // ImageDrawCircleV(&image, Vec2ToRVector2(center), radius, GRAY);
-        // entity->texture = LoadTextureFromImage(image);
-        // entity->bitmap_rec = (Rectangle){0, 0, width, height};
-
-        // FlagOn(entity->flags, EFLAG_PHYSICS_ON);
-    }
-
-    ParticleId pid_a = PhysicsStateAddParticle(&state->pstate, Vec2Lit(0.0f, 0.0f));
-    ParticleId pid_b = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, 0.0f));
-    ParticleId pid_c = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, -40.0f));
-
-    {
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = pid_a;
-            c->pid_b = pid_b;
-            c->rest_len = 40.0f;
-        }
-
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = pid_b;
-            c->pid_b = pid_c;
-            c->rest_len = 40.0f;
-        }
-
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = pid_c;
-            c->pid_b = pid_a;
-            c->rest_len = 40.0f;
-        }
-    }
-
-    ParticleId pid_d = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, 40.0f));
-    ParticleId pid_e = PhysicsStateAddParticle(&state->pstate, Vec2Lit(40.0f, 80.0f));
-    ParticleId pid_f = PhysicsStateAddParticle(&state->pstate, Vec2Lit(0.0f, 40.0f));
-
-    {
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = pid_d;
-            c->pid_b = pid_e;
-            c->rest_len = 40.0f;
-        }
-
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = pid_e;
-            c->pid_b = pid_f;
-            c->rest_len = 40.0f;
-        }
-
-        {
-            Constraint* c = PhysicsStateAllocateConstraint(GetPhysicsState(state));
-            c->pid_a = pid_f;
-            c->pid_b = pid_d;
-            c->rest_len = 40.0f;
-        }
+        Entity* entity = AllocateEntity();
+        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        entity->pos = ORIGIN;
     }
 }
 
@@ -573,9 +508,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     BeginMode3D(gstate->camera);
 
-    Vec3 pos = ORIGIN;
-    u16 len = 5;
-    DrawCubeWires(Vec3ToRVector3(pos), len, len, len, RED);
+    EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = GetEntity(i);
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
+            continue;
+        }
+
+        u16 len = 5;
+        DrawCubeWires(Vec3ToRVector3(entity->pos), len, len, len, RED);
+    }
 
     EndMode3D();
 
