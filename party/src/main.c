@@ -503,6 +503,7 @@ static void GameStateUpdate(GameState* gstate, float dt) {
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
 
+            // TODO: auto align movement direction to camera position.
             entity->pos = Vec3Add(entity->pos, Vec3Scale(Vec3Lit(x, 0.0f, y), 3.0f * dt));
         }
     }
@@ -525,8 +526,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
         }
 
         u16 len = 5;
-        DrawCubeWires(Vec3ToRVector3(entity->pos), len, len, len, RED);
+        DrawSphereWires(Vec3ToRVector3(entity->pos), len, 10, 15, RED);
     }
+
+    DrawPlane(Vec3ToRVector3(ORIGIN), Vec2ToRVector2(Vec2Lit(100, 100)), GRAY);
 
     EndMode3D();
 
