@@ -81,6 +81,17 @@ static Vec3 Vec3Zero() {
 static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
 static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
 static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
+static Vec3 Vec3Normalize(Vec3 v) {
+    Vec3 result = Vec3Lit(v.x, v.y, v.z);
+    f32 len = sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+    if (len > 0.0f) {
+        f32 inv_len = 1.0f / len;
+        v.x *= inv_len;
+        v.y *= inv_len;
+        v.z *= inv_len;
+    }
+    return result;
+}
 static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 
@@ -504,7 +515,8 @@ static void GameStateUpdate(GameState* gstate, float dt) {
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
 
             // TODO: auto align movement direction to camera position.
-            entity->pos = Vec3Add(entity->pos, Vec3Scale(Vec3Lit(x, 0.0f, y), 3.0f * dt));
+            Vec3 dir = Vec3Normalize(Vec3Lit(x, 0.0f, y));
+            entity->pos = Vec3Add(entity->pos, Vec3Scale(dir, 30.0f * dt));
         }
     }
 
