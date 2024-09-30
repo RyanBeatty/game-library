@@ -657,71 +657,24 @@ static void GameStateUpdate(GameState* state, float dt) {
 }
 
 static void GameStateDraw(GameState* state, float delta) {
-    Entity* entities[ENTITY_CAP] = {0};
-    uint32_t size = 0;
-    EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = GetEntity(i);
-        if (!TestFlag(entity->flags, EFLAG_ACTIVE) || !TestFlag(entity->flags, EFLAG_DRAW)) {
-            continue;
-        }
-        entities[size] = entity;
-        ++size;
-    }
-
-    // TODO: Should we do something smarter here than a bubble sort?
-    for (uint32_t i = 0; i < size; ++i) {
-        Entity* e1 = entities[i];
-        for (uint32_t j = i + 1; j < size; ++j) {
-            Entity* e2 = entities[j];
-            if (e2->p.z > e1->p.z) {
-                entities[i] = entities[j];
-                entities[j] = e1;
-                e1 = e2;
-            }
-        }
-    }
-
-    // BeginTextureMode(state->target);
     BeginDrawing();
 
     ClearBackground(WHITE);
-    BeginMode2D(state->camera);
 
-    PhysicsStateDraw(GetPhysicsState(state));
+    Camera camera = {0};
+    camera.position = Vec3ToRVector3(Vec3Lit(0.0f, 20.0f, -40.0f));
+    camera.target = Vec3ToRVector3(ORIGIN);
+    camera.up = Vec3ToRVector3(Vec3Lit(0.0f, 1.0f, 0.0f));
+    camera.fovy = 60.0f;
+    camera.projection = CAMERA_PERSPECTIVE;
 
-    for (uint32_t i = 0; i < size; ++i) {
-        Entity* entity = entities[i];
-        Color tint = entity->tint;
+    BeginMode3D(camera);
 
-        if (state->focus != NULL && entity == state->focus) {
-            tint = YELLOW;
-            // tint.a = 0.4f;
-        }
+    Vec3 pos = ORIGIN;
+    u16 len = 5;
+    DrawCubeWires(Vec3ToRVector3(pos), len, len, len, RED);
 
-        float half_width = entity->bitmap_rec.width * 0.5f;
-        float half_height = entity->bitmap_rec.height * 0.5f;
-        // Compute animation rec.
-        float animation_time = entity->animation_frame_count * entity->animation_frame_time;
-        uint32_t animation_frame_idx = fmod(entity->animation_timer, animation_time) / entity->animation_frame_time;
-        Assert(entity->animation_frame_time != 0.0f);
-        Rectangle src = {
-            entity->bitmap_rec.x + (animation_frame_idx * entity->bitmap_rec.width),
-            entity->bitmap_rec.y,
-            entity->bitmap_rec.width * (entity->right ? 1.0f : -1.0f),
-            entity->bitmap_rec.height,
-
-        };
-        Vector3 p = Vec3ToRVector3(entity->p);
-        // DrawTextureRec(entity->texture, src, (Vector2){p.x - half_width, p.y - half_height}, tint);
-        if (true) {
-            // DrawCircle(p.x, p.y, 3, RED);
-        }
-    }
-
-    DrawRectangleLines(-100.0f, -100.0f, 200.0f, 200.0f, BLACK);
-
-    EndMode2D();
+    EndMode3D();
 
     if (state->debug) {
         DrawFPS(5, 5);
