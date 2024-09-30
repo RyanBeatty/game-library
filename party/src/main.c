@@ -603,10 +603,10 @@ static void SimpleScene(GameState* state) {
     }
 }
 
-static void GameStateInit(GameState* state) {
-    memset(state, 0, sizeof(GameState));
+static void GameStateInit(GameState* gstate) {
+    memset(gstate, 0, sizeof(GameState));
 
-    PhysicsState* pstate = &state->pstate;
+    PhysicsState* pstate = &gstate->pstate;
     PhysicsStateInit(pstate);
     pstate->gravity = Vec2Lit(0.0f, -10.0f);
     // pstate->gravity = Vec2Zero();
@@ -618,9 +618,9 @@ static void GameStateInit(GameState* state) {
     SetTargetFPS(60);
     EntitySystemInit();
 
-    state->target = LoadRenderTexture(RenderWidth, RenderHeight);
+    gstate->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
-    SimpleScene(state);
+    SimpleScene(gstate);
 
     {
         Camera camera = {0};
@@ -629,16 +629,16 @@ static void GameStateInit(GameState* state) {
         camera.up = Vec3ToRVector3(Vec3Lit(0.0f, 1.0f, 0.0f));
         camera.fovy = 60.0f;
         camera.projection = CAMERA_PERSPECTIVE;
-        state->camera = camera;
+        gstate->camera = camera;
     }
 }
 
-static void GameStateUpdate(GameState* state, float dt) {
-    state->timer += dt;
+static void GameStateUpdate(GameState* gstate, float dt) {
+    gstate->timer += dt;
 
     // PhysicsStateUpdate(&state->pstate, dt);
     if (!IsKeyDown(KEY_SPACE)) {
-        PhysicsStateTick(&state->pstate);
+        PhysicsStateTick(&gstate->pstate);
     }
 
     EntityManager* em = GetEntityManager();
@@ -649,22 +649,22 @@ static void GameStateUpdate(GameState* state, float dt) {
         }
 
         if (TestFlag(entity->flags, EFLAG_PHYSICS_ON)) {
-            entity->p = Vec2ToVec3(ParticleGetPos(&state->pstate, entity->particle_id));
+            entity->p = Vec2ToVec3(ParticleGetPos(&gstate->pstate, entity->particle_id));
         }
 
         // Update animation timer if it is a looping animation.
         entity->animation_timer += dt * entity->animation_loops;
     }
 
-    state->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
+    gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
 }
 
-static void GameStateDraw(GameState* state, float delta) {
+static void GameStateDraw(GameState* gstate, float delta) {
     BeginDrawing();
 
     ClearBackground(WHITE);
 
-    BeginMode3D(state->camera);
+    BeginMode3D(gstate->camera);
 
     Vec3 pos = ORIGIN;
     u16 len = 5;
@@ -672,7 +672,7 @@ static void GameStateDraw(GameState* state, float delta) {
 
     EndMode3D();
 
-    if (state->debug) {
+    if (gstate->debug) {
         DrawFPS(5, 5);
     }
 
