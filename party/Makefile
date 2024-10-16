@@ -34,10 +34,12 @@ DEPS := $(OBJS:.o=.d)
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
+# TODO: Figure out how to auto detect these.
+EXT_INC_FLAGS := -Iexternal/glad
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
-CPPFLAGS := $(INC_FLAGS) -MMD -MP -g3 -Wall -Iexternal/glad
+CPPFLAGS := $(INC_FLAGS) $(EXT_INC_FLAGS) -MMD -MP -g3 -Wall
 
 BTFLAGS := -D BT_INTERNAL=1 -DBT_SLOW=1 -DPLATFORM_DESKTOP=1 -DUNITY_BUILD=1 -DNK_INCLUDE_DEFAULT_ALLOCATOR=1
 
