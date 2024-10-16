@@ -10,6 +10,8 @@
 #include "stb_ds.h"
 //
 #include "../external/cJSON/cJSON.h"
+//
+#include "glad/glad.h"
 // Comment to prevent autolinting
 #include <float.h>
 #include <math.h>
