@@ -553,31 +553,43 @@ static void GameStateDraw(GameState* gstate, float delta) {
         "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
         "}\0";
 
-    u32 fshader;
-    fshader = glCreateShader(GL_FRAGMENT_SHADER);
+    u32 fshader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fshader, 1, &fshader_source, NULL);
     glCompileShader(fshader);
     glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
     Assert(success);
 
-    u32 shader_program;
-    shader_program = glCreateProgram();
+    u32 shader_program = glCreateProgram();
     glAttachShader(shader_program, vshader);
     glAttachShader(shader_program, fshader);
     glLinkProgram(shader_program);
     glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
     Assert(success);
 
-    u32 VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    u32 vao1 = 0;
+    glGenVertexArrays(1, &vao1);
+    glBindVertexArray(vao1);
 
-    f32 vertices[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
+    f32 vertices1[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
 
-    u32 vertex_buffer;
-    glGenBuffers(1, &vertex_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    u32 vb1 = 0;
+    glGenBuffers(1, &vb1);
+    glBindBuffer(GL_ARRAY_BUFFER, vb1);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    u32 vao2 = 0;
+    glGenVertexArrays(1, &vao2);
+    glBindVertexArray(vao2);
+
+    f32 vertices2[] = {-0.5f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
+
+    u32 vb2 = 0;
+    glGenBuffers(1, &vb2);
+    glBindBuffer(GL_ARRAY_BUFFER, vb2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -589,7 +601,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     BeginMode3D(gstate->camera);
 
     glUseProgram(shader_program);
-    glBindVertexArray(VAO);
+    glBindVertexArray(vao1);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(vao2);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     // EntityManager* em = GetEntityManager();
