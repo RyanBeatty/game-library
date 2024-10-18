@@ -530,38 +530,83 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 }
 
 static void GameStateDraw(GameState* gstate, float delta) {
+    i32 success = 0;
+
+    const char* vertex_shader_source =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "}\0";
+    u32 vshader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vshader, 1, &vertex_shader_source, NULL);
+    glCompileShader(vshader);
+    glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
+    Assert(success);
+
+    const char* fshader_source =
+        "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "}\0";
+
+    u32 fshader;
+    fshader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fshader, 1, &fshader_source, NULL);
+    glCompileShader(fshader);
+    glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
+    Assert(success);
+
+    u32 shader_program;
+    shader_program = glCreateProgram();
+    glAttachShader(shader_program, vshader);
+    glAttachShader(shader_program, fshader);
+    glLinkProgram(shader_program);
+    glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+    Assert(success);
+
     BeginDrawing();
 
     ClearBackground(WHITE);
 
     BeginMode3D(gstate->camera);
 
-    EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = GetEntity(i);
-        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
-            continue;
-        }
+    f32 vertices[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
 
-        u16 len = 5;
-        DrawSphereWires(Vec3ToRVector3(entity->pos), len, 10, 15, RED);
-    }
+    u32 vertex_buffer;
+    glGenBuffers(1, &vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    DrawPlane(Vec3ToRVector3(ORIGIN), Vec2ToRVector2(Vec2Lit(100, 100)), GRAY);
+    // EntityManager* em = GetEntityManager();
+    // for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+    //     Entity* entity = GetEntity(i);
+    //     if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
+    //         continue;
+    //     }
 
-    {
-        static bool init = false;
-        static Mesh mesh = {0};
-        if (!init) {
-            init = true;
-            f32 len = 5.0f;
-            mesh = GenMeshCube(len, len, 100.0f);
-        }
-        Model model = LoadModelFromMesh(mesh);
-        model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
-        DrawModelEx(model, Vec3ToRVector3(Vec3Lit(-20.0f, 0.0f, 0.0f)), (Vector3){0.0f, 0.0f, -1.0f}, 15.0f,
-                    Vector3One(), WHITE);
-    }
+    //     u16 len = 5;
+    //     DrawSphereWires(Vec3ToRVector3(entity->pos), len, 10, 15, RED);
+    // }
+
+    // DrawPlane(Vec3ToRVector3(ORIGIN), Vec2ToRVector2(Vec2Lit(100, 100)), GRAY);
+
+    // {
+    //     static bool init = false;
+    //     static Mesh mesh = {0};
+    //     if (!init) {
+    //         init = true;
+    //         f32 len = 5.0f;
+    //         mesh = GenMeshCube(len, len, 100.0f);
+    //     }
+    //     Model model = LoadModelFromMesh(mesh);
+    //     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
+    //     DrawModelEx(model, Vec3ToRVector3(Vec3Lit(-20.0f, 0.0f, 0.0f)), (Vector3){0.0f, 0.0f, -1.0f}, 15.0f,
+    //                 Vector3One(), WHITE);
+    // }
 
     EndMode3D();
 
