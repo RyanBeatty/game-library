@@ -535,10 +535,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     const char* vertex_shader_source =
         "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 0) in vec3 InPos;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "   gl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
         "}\0";
     u32 vshader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vshader, 1, &vertex_shader_source, NULL);
@@ -568,6 +568,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
     Assert(success);
 
+    i32 vpos_loc = glGetAttribLocation(shader_program, "InPos");
+
     f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
     i32 color_loc = glGetUniformLocation(shader_program, "UColor");
 
@@ -582,8 +584,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindBuffer(GL_ARRAY_BUFFER, vb1);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(vpos_loc);
 
     u32 vao2 = 0;
     glGenVertexArrays(1, &vao2);
@@ -596,8 +598,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindBuffer(GL_ARRAY_BUFFER, vb2);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(vpos_loc);
 
     BeginDrawing();
 
