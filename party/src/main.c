@@ -657,33 +657,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindVertexArray(vao2);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    // EntityManager* em = GetEntityManager();
-    // for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-    //     Entity* entity = GetEntity(i);
-    //     if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
-    //         continue;
-    //     }
-
-    //     u16 len = 5;
-    //     DrawSphereWires(Vec3ToRVector3(entity->pos), len, 10, 15, RED);
-    // }
-
-    // DrawPlane(Vec3ToRVector3(ORIGIN), Vec2ToRVector2(Vec2Lit(100, 100)), GRAY);
-
-    // {
-    //     static bool init = false;
-    //     static Mesh mesh = {0};
-    //     if (!init) {
-    //         init = true;
-    //         f32 len = 5.0f;
-    //         mesh = GenMeshCube(len, len, 100.0f);
-    //     }
-    //     Model model = LoadModelFromMesh(mesh);
-    //     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = BLACK;
-    //     DrawModelEx(model, Vec3ToRVector3(Vec3Lit(-20.0f, 0.0f, 0.0f)), (Vector3){0.0f, 0.0f, -1.0f}, 15.0f,
-    //                 Vector3One(), WHITE);
-    // }
-
     EndMode3D();
 
     if (gstate->debug) {
