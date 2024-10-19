@@ -608,9 +608,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindBuffer(GL_ARRAY_BUFFER, vb1);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
     glEnableVertexAttribArray(vpos_loc);
-    glVertexAttribPointer(vcolor_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(vcolor_loc);
 
     u32 vao2 = 0;
