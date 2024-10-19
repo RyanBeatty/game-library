@@ -34,6 +34,7 @@ typedef double f64;
 #define f32max fmaxf
 #define sqrtf32 sqrtf
 #define fhalf(x) ((x) * 0.5f)
+#define f32sin sin
 
 typedef struct Vec2 {
     f32 x;
@@ -548,9 +549,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
     const char* fshader_source =
         "#version 330 core\n"
         "out vec4 FragColor;\n"
+        "uniform vec4 UColor;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "    FragColor = UColor;\n"
         "}\0";
 
     u32 fshader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -565,6 +567,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glLinkProgram(shader_program);
     glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
     Assert(success);
+
+    f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
+    i32 color_loc = glGetUniformLocation(shader_program, "UColor");
 
     u32 vao1 = 0;
     glGenVertexArrays(1, &vao1);
@@ -601,6 +606,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     BeginMode3D(gstate->camera);
 
     glUseProgram(shader_program);
+    glUniform4f(color_loc, 0.0f, greenValue, 0.0f, 1.0f);
+
     glBindVertexArray(vao1);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(vao2);
