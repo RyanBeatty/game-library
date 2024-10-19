@@ -530,15 +530,35 @@ static void GameStateUpdate(GameState* gstate, float dt) {
     gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
 }
 
+typedef enum AttLoc {
+    LOC_POS_X = 0,
+    LOC_POS_Y,
+    LOC_POS_Z,
+
+    LOC_COLOR_R,
+    LOC_COLOR_G,
+    LOC_COLOR_B,
+
+    LOC_COUNT
+} AttLoc;
+
+typedef struct VAtt {
+    f32 atts[LOC_COUNT];
+} Vatt;
+
 static void GameStateDraw(GameState* gstate, float delta) {
     i32 success = 0;
 
     const char* vertex_shader_source =
         "#version 330 core\n"
         "layout (location = 0) in vec3 InPos;\n"
+        "layout (location = 1) in vec3 InColor;\n"
+        "\n"
+        "out vec4 VertColor;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
+        "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
         "}\0";
     u32 vshader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vshader, 1, &vertex_shader_source, NULL);
@@ -548,11 +568,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     const char* fshader_source =
         "#version 330 core\n"
+        "in vec4 VertColor;\n"
         "out vec4 FragColor;\n"
         "uniform vec4 UColor;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = UColor;\n"
+        "    FragColor = (0.5 * UColor) + (0.5 * VertColor);\n"
         "}\0";
 
     u32 fshader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -569,6 +590,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     Assert(success);
 
     i32 vpos_loc = glGetAttribLocation(shader_program, "InPos");
+    i32 vcolor_loc = glGetAttribLocation(shader_program, "InColor");
 
     f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
     i32 color_loc = glGetUniformLocation(shader_program, "UColor");
@@ -577,29 +599,49 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glGenVertexArrays(1, &vao1);
     glBindVertexArray(vao1);
 
-    f32 vertices1[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
+    f32 vertices1[] = {
+        //
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f,
+        //
+        0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f,
+        //
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f
+        //
+    };
 
     u32 vb1 = 0;
     glGenBuffers(1, &vb1);
     glBindBuffer(GL_ARRAY_BUFFER, vb1);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(vpos_loc);
+    glVertexAttribPointer(vcolor_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(vcolor_loc);
 
     u32 vao2 = 0;
     glGenVertexArrays(1, &vao2);
     glBindVertexArray(vao2);
 
-    f32 vertices2[] = {-0.5f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
+    f32 vertices2[] = {
+        //
+        -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+        //
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+        //
+        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+        //
+    };
 
     u32 vb2 = 0;
     glGenBuffers(1, &vb2);
     glBindBuffer(GL_ARRAY_BUFFER, vb2);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(vpos_loc);
+    glVertexAttribPointer(vcolor_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(vcolor_loc);
 
     BeginDrawing();
 
