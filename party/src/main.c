@@ -544,7 +544,7 @@ typedef enum AttLoc {
 
 typedef struct VAtt {
     f32 atts[LOC_COUNT];
-} Vatt;
+} VAtt;
 
 static void GameStateDraw(GameState* gstate, float delta) {
     i32 success = 0;
@@ -599,15 +599,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glGenVertexArrays(1, &vao1);
     glBindVertexArray(vao1);
 
-    f32 vertices1[] = {
-        //
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f,
-        //
-        0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f,
-        //
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f
-        //
-    };
+    VAtt vertices1[] = {{{-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f}},
+                        {{0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f}},
+                        {{0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f}}};
 
     u32 vb1 = 0;
     glGenBuffers(1, &vb1);
@@ -623,15 +617,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glGenVertexArrays(1, &vao2);
     glBindVertexArray(vao2);
 
-    f32 vertices2[] = {
-        //
-        -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-        //
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-        //
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f
-        //
-    };
+    VAtt vertices2[] = {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},
+                        {{0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f}},
+                        {{0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f}}};
 
     u32 vb2 = 0;
     glGenBuffers(1, &vb2);
