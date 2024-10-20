@@ -104,7 +104,27 @@ static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v
 
 // Col major order.
 typedef struct Mat4 {
-    f32 m[4 * 4];
+    union {
+        struct {
+            f32 m00;
+            f32 m10;
+            f32 m20;
+            f32 m30;
+            f32 m01;
+            f32 m11;
+            f32 m21;
+            f32 m31;
+            f32 m02;
+            f32 m12;
+            f32 m22;
+            f32 m32;
+            f32 m03;
+            f32 m13;
+            f32 m23;
+            f32 m33;
+        } mm;
+        f32 m[4 * 4];
+    };
 } Mat4;
 
 // Accept row major constructor.
@@ -113,10 +133,23 @@ typedef struct Mat4 {
              (m33)}})
 
 static Mat4 Mat4Identity() {
-    static Mat4 m =
-        Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+    static Mat4 m = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
+                            0.0f, 1.0f, 0.0f, 0.0f,  //
+                            0.0f, 0.0f, 1.0f, 0.0f,  //
+                            0.0f, 0.0f, 0.0f, 1.0f);
     return m;
 }
+
+static Mat4 Mat4Scale(f32 x, f32 y, f32 z) {
+    Mat4 m = Mat4Lit(x, 0.0f, 0.0f, 0.0f,  //
+                     0.0f, y, 0.0f, 0.0f,  //
+                     0.0f, 0.0f, z, 0.0f,  //
+                     0.0f, 0.0f, 0.0f, 1.0f);
+    return m;
+}
+
+// Apply the multiple right to left because of col major ordering.
+// static Mat4Multiply(Mat4 a, Mat4 b) { Mat4 m = Mat4Lit() }
 
 ////////////////////////////////////////////////////////////
 // S:Collision
