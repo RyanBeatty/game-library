@@ -102,7 +102,9 @@ static Vec3 Vec3Normalize(Vec3 v) {
 static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 
-// Col major order.
+// Col major order. Reminder this means that the notation is written in col major order (basis vectors run
+// down columns), but the columns are *STORED* in row major order.
+// For matrix mult notation wise we will compose from right to left. i.e. X = CBAv.
 typedef struct Mat4 {
     union {
         struct {
@@ -127,10 +129,9 @@ typedef struct Mat4 {
     };
 } Mat4;
 
-// Accept row major constructor.
-#define Mat4Lit(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33)                       \
-    ((Mat4){{(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), (m23), \
-             (m33)}})
+#define Mat4Lit(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33)                     \
+    ((Mat4){.m = {(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), \
+                  (m23), (m33)}})
 
 static Mat4 Mat4Identity() {
     static Mat4 m = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
@@ -148,8 +149,30 @@ static Mat4 Mat4Scale(f32 x, f32 y, f32 z) {
     return m;
 }
 
-// Apply the multiple right to left because of col major ordering.
-// static Mat4Multiply(Mat4 a, Mat4 b) { Mat4 m = Mat4Lit() }
+static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
+    return Mat4Lit(
+        // Row 0.
+        (a.mm.m00 * b.mm.m00) + (a.mm.m01 * b.mm.m10) + (a.mm.m02 * b.mm.m20) + (a.mm.m03 * b.mm.m30),  //
+        (a.mm.m00 * b.mm.m01) + (a.mm.m01 * b.mm.m11) + (a.mm.m02 * b.mm.m21) + (a.mm.m03 * b.mm.m31),  //
+        (a.mm.m00 * b.mm.m02) + (a.mm.m01 * b.mm.m12) + (a.mm.m02 * b.mm.m22) + (a.mm.m03 * b.mm.m32),  //
+        (a.mm.m00 * b.mm.m03) + (a.mm.m01 * b.mm.m13) + (a.mm.m02 * b.mm.m23) + (a.mm.m03 * b.mm.m33),  //
+        // Row 1.
+        (a.mm.m10 * b.mm.m00) + (a.mm.m11 * b.mm.m10) + (a.mm.m12 * b.mm.m20) + (a.mm.m13 * b.mm.m30),  //
+        (a.mm.m10 * b.mm.m01) + (a.mm.m11 * b.mm.m11) + (a.mm.m12 * b.mm.m21) + (a.mm.m13 * b.mm.m31),  //
+        (a.mm.m10 * b.mm.m02) + (a.mm.m11 * b.mm.m12) + (a.mm.m12 * b.mm.m22) + (a.mm.m13 * b.mm.m32),  //
+        (a.mm.m10 * b.mm.m03) + (a.mm.m11 * b.mm.m13) + (a.mm.m12 * b.mm.m23) + (a.mm.m13 * b.mm.m33),  //
+        // Row 2.
+        (a.mm.m20 * b.mm.m00) + (a.mm.m21 * b.mm.m10) + (a.mm.m22 * b.mm.m20) + (a.mm.m23 * b.mm.m30),  //
+        (a.mm.m20 * b.mm.m01) + (a.mm.m21 * b.mm.m11) + (a.mm.m22 * b.mm.m21) + (a.mm.m23 * b.mm.m31),  //
+        (a.mm.m20 * b.mm.m02) + (a.mm.m21 * b.mm.m12) + (a.mm.m22 * b.mm.m22) + (a.mm.m23 * b.mm.m32),  //
+        (a.mm.m20 * b.mm.m03) + (a.mm.m21 * b.mm.m13) + (a.mm.m22 * b.mm.m23) + (a.mm.m23 * b.mm.m33),  //
+        // Row 3.
+        (a.mm.m30 * b.mm.m00) + (a.mm.m31 * b.mm.m10) + (a.mm.m32 * b.mm.m20) + (a.mm.m33 * b.mm.m30),  //
+        (a.mm.m30 * b.mm.m01) + (a.mm.m31 * b.mm.m11) + (a.mm.m32 * b.mm.m21) + (a.mm.m33 * b.mm.m31),  //
+        (a.mm.m30 * b.mm.m02) + (a.mm.m31 * b.mm.m12) + (a.mm.m32 * b.mm.m22) + (a.mm.m33 * b.mm.m32),  //
+        (a.mm.m30 * b.mm.m03) + (a.mm.m31 * b.mm.m13) + (a.mm.m32 * b.mm.m23) + (a.mm.m33 * b.mm.m33)   //
+    );
+}
 
 ////////////////////////////////////////////////////////////
 // S:Collision
@@ -737,7 +760,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
         glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 1.0f);
 
-        Mat4 m = Mat4Identity();
+        Mat4 m = Mat4Multiply(Mat4Scale(0.5f, 0.5f, 0.5f), Mat4Identity());
         glUniformMatrix4fv(shader.xfrm_loc, 1, GL_FALSE, (const f32*)&m.m);
     }
 
