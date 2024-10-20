@@ -482,6 +482,39 @@ static void ElShaderInit(ElShader* shader, const char* vsrc, const char* fsrc) {
 #define ElShaderUse(ss) (glUseProgram((ss)->pid))
 #define ElShaderSetUColor(ss, r, g, b, a) (glUniform4f((ss)->ucolor_loc, (r), (g), (b), (a)))
 
+static ElShader GetShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 InPos;\n"
+        "layout (location = 1) in vec3 InColor;\n"
+        "\n"
+        "out vec4 VertColor;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
+        "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "in vec4 VertColor;\n"
+        "out vec4 FragColor;\n"
+        "uniform vec4 UColor;\n"
+        "void main()\n"
+        "{\n"
+        "    FragColor = (0.5 * UColor) + (0.5 * VertColor);\n"
+        "}\0";
+    static bool INIT = false;
+    static ElShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        ElShaderInit(&SHADER, VSRC, FSRC);
+    }
+
+    return SHADER;
+}
+
 ////////////////////////////////////////////////////////////
 
 typedef struct GameState {
@@ -603,30 +636,7 @@ typedef struct VAtt {
 } VAtt;
 
 static void GameStateDraw(GameState* gstate, float delta) {
-    const char* vertex_shader_source =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 InPos;\n"
-        "layout (location = 1) in vec3 InColor;\n"
-        "\n"
-        "out vec4 VertColor;\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
-        "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
-        "}\0";
-
-    const char* fshader_source =
-        "#version 330 core\n"
-        "in vec4 VertColor;\n"
-        "out vec4 FragColor;\n"
-        "uniform vec4 UColor;\n"
-        "void main()\n"
-        "{\n"
-        "    FragColor = (0.5 * UColor) + (0.5 * VertColor);\n"
-        "}\0";
-
-    ElShader shader = {0};
-    ElShaderInit(&shader, vertex_shader_source, fshader_source);
+    ElShader shader = GetShader();
 
     u32 vao1 = 0;
     glGenVertexArrays(1, &vao1);
