@@ -427,6 +427,62 @@ typedef enum InputDir {
 } InputDir;
 
 ////////////////////////////////////////////////////////////
+// S: Render
+
+typedef struct ElShader {
+    u32 pid;  // program id.
+    u32 vid;
+    u32 fid;
+
+    u32 pos_loc;
+    u32 color_loc;
+    u32 ucolor_loc;
+} ElShader;
+
+static void ElShaderInit(ElShader* shader, const char* vsrc, const char* fsrc) {
+    // vertex shader.
+    {
+        i32 success = 0;
+        shader->vid = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(shader->vid, 1, &vsrc, NULL);
+        glCompileShader(shader->vid);
+        glGetShaderiv(shader->vid, GL_COMPILE_STATUS, &success);
+        Assert(success);
+    }
+
+    // fragment shader.
+    {
+        i32 success = 0;
+        shader->fid = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(shader->fid, 1, &fsrc, NULL);
+        glCompileShader(shader->fid);
+        glGetShaderiv(shader->fid, GL_COMPILE_STATUS, &success);
+        Assert(success);
+    }
+
+    // linking.
+    {
+        i32 success = 0;
+        shader->pid = glCreateProgram();
+        glAttachShader(shader->pid, shader->vid);
+        glAttachShader(shader->pid, shader->fid);
+        glLinkProgram(shader->pid);
+        glGetProgramiv(shader->pid, GL_LINK_STATUS, &success);
+        Assert(success);
+    }
+
+    // Att lookup.
+    {
+        shader->pos_loc = glGetAttribLocation(shader->pid, "InPos");
+        shader->color_loc = glGetAttribLocation(shader->pid, "InColor");
+        shader->ucolor_loc = glGetUniformLocation(shader->pid, "UColor");
+    }
+}
+
+#define ElShaderUse(ss) (glUseProgram((ss)->pid))
+#define ElShaderSetUColor(ss, r, g, b, a) (glUniform4f((ss)->ucolor_loc, (r), (g), (b), (a)))
+
+////////////////////////////////////////////////////////////
 
 typedef struct GameState {
     /////////////////////////////////////////
@@ -547,8 +603,6 @@ typedef struct VAtt {
 } VAtt;
 
 static void GameStateDraw(GameState* gstate, float delta) {
-    i32 success = 0;
-
     const char* vertex_shader_source =
         "#version 330 core\n"
         "layout (location = 0) in vec3 InPos;\n"
@@ -560,11 +614,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
         "   gl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
         "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
         "}\0";
-    u32 vshader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vshader, 1, &vertex_shader_source, NULL);
-    glCompileShader(vshader);
-    glGetShaderiv(vshader, GL_COMPILE_STATUS, &success);
-    Assert(success);
 
     const char* fshader_source =
         "#version 330 core\n"
@@ -576,24 +625,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
         "    FragColor = (0.5 * UColor) + (0.5 * VertColor);\n"
         "}\0";
 
-    u32 fshader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fshader, 1, &fshader_source, NULL);
-    glCompileShader(fshader);
-    glGetShaderiv(fshader, GL_COMPILE_STATUS, &success);
-    Assert(success);
-
-    u32 shader_program = glCreateProgram();
-    glAttachShader(shader_program, vshader);
-    glAttachShader(shader_program, fshader);
-    glLinkProgram(shader_program);
-    glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
-    Assert(success);
-
-    i32 vpos_loc = glGetAttribLocation(shader_program, "InPos");
-    i32 vcolor_loc = glGetAttribLocation(shader_program, "InColor");
+    ElShader shader = {0};
+    ElShaderInit(&shader, vertex_shader_source, fshader_source);
 
     f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
-    i32 color_loc = glGetUniformLocation(shader_program, "UColor");
 
     u32 vao1 = 0;
     glGenVertexArrays(1, &vao1);
@@ -608,10 +643,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindBuffer(GL_ARRAY_BUFFER, vb1);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
-    glEnableVertexAttribArray(vpos_loc);
-    glVertexAttribPointer(vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(vcolor_loc);
+    glVertexAttribPointer(shader.pos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
+    glEnableVertexAttribArray(shader.pos_loc);
+    glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(shader.color_loc);
 
     u32 vao2 = 0;
     glGenVertexArrays(1, &vao2);
@@ -626,10 +661,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindBuffer(GL_ARRAY_BUFFER, vb2);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(vpos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(vpos_loc);
-    glVertexAttribPointer(vcolor_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(vcolor_loc);
+    glVertexAttribPointer(shader.pos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(shader.pos_loc);
+    glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(shader.color_loc);
 
     BeginDrawing();
 
@@ -637,8 +672,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     BeginMode3D(gstate->camera);
 
-    glUseProgram(shader_program);
-    glUniform4f(color_loc, 0.0f, greenValue, 0.0f, 1.0f);
+    ElShaderUse(&shader);
+    ElShaderSetUColor(&shader, 0.0f, greenValue, 0.0f, 1.0f);
 
     glBindVertexArray(vao1);
     glDrawArrays(GL_TRIANGLES, 0, 3);
