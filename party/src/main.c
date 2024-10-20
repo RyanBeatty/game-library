@@ -489,9 +489,6 @@ static void ElShaderInit(ElShader* shader, const char* vsrc, const char* fsrc) {
     }
 }
 
-#define ElShaderUse(ss) (glUseProgram((ss)->pid))
-#define ElShaderSetUColor(ss, r, g, b, a) (glUniform4f((ss)->ucolor_loc, (r), (g), (b), (a)))
-
 static ElShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
@@ -702,13 +699,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     // Begin Shader.
     {
-        ElShaderUse(&shader);
+        glUseProgram(shader.pid);
 
         f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
-        ElShaderSetUColor(&shader, 0.0f, greenValue, 0.0f, 1.0f);
+        glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 1.0f);
 
         Mat4 m = Mat4Identity();
-        glUniformMatrix4fv(shader.xfrm_loc, 1, GL_FALSE, &m.m);
+        glUniformMatrix4fv(shader.xfrm_loc, 1, GL_FALSE, (const f32*)&m.m);
     }
 
     glBindVertexArray(vao1);
