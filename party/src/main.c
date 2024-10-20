@@ -515,6 +515,22 @@ static ElShader GetShader() {
     return SHADER;
 }
 
+typedef enum AttLoc {
+    LOC_POS_X = 0,
+    LOC_POS_Y,
+    LOC_POS_Z,
+
+    LOC_COLOR_R,
+    LOC_COLOR_G,
+    LOC_COLOR_B,
+
+    LOC_COUNT
+} AttLoc;
+
+typedef struct VAtt {
+    f32 atts[LOC_COUNT];
+} VAtt;
+
 ////////////////////////////////////////////////////////////
 
 typedef struct GameState {
@@ -618,22 +634,6 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 
     gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
 }
-
-typedef enum AttLoc {
-    LOC_POS_X = 0,
-    LOC_POS_Y,
-    LOC_POS_Z,
-
-    LOC_COLOR_R,
-    LOC_COLOR_G,
-    LOC_COLOR_B,
-
-    LOC_COUNT
-} AttLoc;
-
-typedef struct VAtt {
-    f32 atts[LOC_COUNT];
-} VAtt;
 
 static void GameStateDraw(GameState* gstate, float delta) {
     ElShader shader = GetShader();
