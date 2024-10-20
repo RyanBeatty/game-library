@@ -102,6 +102,22 @@ static Vec3 Vec3Normalize(Vec3 v) {
 static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 
+// Col major order.
+typedef struct Mat4 {
+    f32 m[4 * 4];
+} Mat4;
+
+// Accept row major constructor.
+#define Mat4Lit(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33)                       \
+    ((Mat4){{(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), (m23), \
+             (m33)}})
+
+static Mat4 Mat4Identity() {
+    static Mat4 m =
+        Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+    return m;
+}
+
 ////////////////////////////////////////////////////////////
 // S:Collision
 
