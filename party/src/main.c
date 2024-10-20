@@ -453,6 +453,7 @@ typedef struct ElShader {
     u32 pos_loc;
     u32 color_loc;
     u32 ucolor_loc;
+    u32 xfrm_loc;
 } ElShader;
 
 static void ElShaderInit(ElShader* shader, const char* vsrc, const char* fsrc) {
@@ -486,13 +487,6 @@ static void ElShaderInit(ElShader* shader, const char* vsrc, const char* fsrc) {
         glGetProgramiv(shader->pid, GL_LINK_STATUS, &success);
         Assert(success);
     }
-
-    // Att lookup.
-    {
-        shader->pos_loc = glGetAttribLocation(shader->pid, "InPos");
-        shader->color_loc = glGetAttribLocation(shader->pid, "InColor");
-        shader->ucolor_loc = glGetUniformLocation(shader->pid, "UColor");
-    }
 }
 
 #define ElShaderUse(ss) (glUseProgram((ss)->pid))
@@ -504,10 +498,12 @@ static ElShader GetShader() {
         "layout (location = 0) in vec3 InPos;\n"
         "layout (location = 1) in vec3 InColor;\n"
         "\n"
+        "uniform mat4 Transform;\n"
+        "\n"
         "out vec4 VertColor;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
+        "   gl_Position = Transform * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
         "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
         "}\0";
 
@@ -526,6 +522,14 @@ static ElShader GetShader() {
     if (!INIT) {
         INIT = true;
         ElShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.pos_loc = glGetAttribLocation(SHADER.pid, "InPos");
+            SHADER.color_loc = glGetAttribLocation(SHADER.pid, "InColor");
+            SHADER.ucolor_loc = glGetUniformLocation(SHADER.pid, "UColor");
+            SHADER.xfrm_loc = glGetUniformLocation(SHADER.pid, "Transform");
+        }
     }
 
     return SHADER;
@@ -696,9 +700,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     BeginMode3D(gstate->camera);
 
-    ElShaderUse(&shader);
-    f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
-    ElShaderSetUColor(&shader, 0.0f, greenValue, 0.0f, 1.0f);
+    // Begin Shader.
+    {
+        ElShaderUse(&shader);
+
+        f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
+        ElShaderSetUColor(&shader, 0.0f, greenValue, 0.0f, 1.0f);
+
+        Mat4 m = Mat4Identity();
+        glUniformMatrix4fv(shader.xfrm_loc, 1, GL_FALSE, &m.m);
+    }
 
     glBindVertexArray(vao1);
     glDrawArrays(GL_TRIANGLES, 0, 3);
