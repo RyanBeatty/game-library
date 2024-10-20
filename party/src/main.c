@@ -628,8 +628,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
     ElShader shader = {0};
     ElShaderInit(&shader, vertex_shader_source, fshader_source);
 
-    f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
-
     u32 vao1 = 0;
     glGenVertexArrays(1, &vao1);
     glBindVertexArray(vao1);
@@ -673,6 +671,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     BeginMode3D(gstate->camera);
 
     ElShaderUse(&shader);
+    f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
     ElShaderSetUColor(&shader, 0.0f, greenValue, 0.0f, 1.0f);
 
     glBindVertexArray(vao1);
