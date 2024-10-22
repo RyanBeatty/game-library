@@ -26,6 +26,9 @@ typedef double f64;
 
 #define F32_MAX FLT_MAX
 
+typedef f32 rad;
+typedef f32 deg;
+
 ////////////////////////////////////////////////////////////
 // S:Math
 
@@ -35,6 +38,7 @@ typedef double f64;
 #define sqrtf32 sqrtf
 #define fhalf(x) ((x) * 0.5f)
 #define f32sin sin
+#define f32cos cos
 
 typedef struct Vec2 {
     f32 x;
@@ -142,11 +146,17 @@ static Mat4 Mat4Identity() {
 }
 
 static Mat4 Mat4Scale(f32 x, f32 y, f32 z) {
-    Mat4 m = Mat4Lit(x, 0.0f, 0.0f, 0.0f,  //
-                     0.0f, y, 0.0f, 0.0f,  //
-                     0.0f, 0.0f, z, 0.0f,  //
-                     0.0f, 0.0f, 0.0f, 1.0f);
-    return m;
+    return Mat4Lit(x, 0.0f, 0.0f, 0.0f,  //
+                   0.0f, y, 0.0f, 0.0f,  //
+                   0.0f, 0.0f, z, 0.0f,  //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+static Mat4 Mat4RotateZ(rad r) {
+    return Mat4Lit(f32cos(r), -f32sin(r), 0.0f, 0.0f,  //
+                   f32sin(r), f32cos(r), 0.0f, 0.0f,   //
+                   0.0f, 0.0f, 1.0f, 0.0f,             //
+                   0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
@@ -760,7 +770,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
         glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 1.0f);
 
-        Mat4 m = Mat4Multiply(Mat4Scale(0.5f, 0.5f, 0.5f), Mat4Identity());
+        Mat4 m = Mat4Multiply(Mat4Multiply(Mat4RotateZ(gstate->timer), Mat4Scale(0.5f, 0.5f, 0.5f)), Mat4Identity());
         glUniformMatrix4fv(shader.xfrm_loc, 1, GL_FALSE, (const f32*)&m.m);
     }
 
