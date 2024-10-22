@@ -152,6 +152,20 @@ static Mat4 Mat4Scale(f32 x, f32 y, f32 z) {
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+static Mat4 Mat4RotateX(rad r) {
+    return Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,             //
+                   0.0f, f32cos(r), -f32sin(r), 0.0f,  //
+                   0.0f, f32sin(r), f32cos(r), 0.0f,   //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+static Mat4 Mat4RotateY(rad r) {
+    return Mat4Lit(f32cos(r), 0.0f, f32sin(r), 0.0f,   //
+                   0.0f, 1.0f, 0.0f, 0.0f,             //
+                   -f32sin(r), 0.0f, f32cos(r), 0.0f,  //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
 static Mat4 Mat4RotateZ(rad r) {
     return Mat4Lit(f32cos(r), -f32sin(r), 0.0f, 0.0f,  //
                    f32sin(r), f32cos(r), 0.0f, 0.0f,   //
