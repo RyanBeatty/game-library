@@ -198,6 +198,29 @@ static Mat4 Mat4RotateZ(rad r) {
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+static Mat4 Mat4Rotate(rad t, Vec3 axis) {
+    f32 invl = 1.0f / sqrtf32((axis.x * axis.x) + (axis.y * axis.y) + (axis.z * axis.z));
+    axis.x *= invl;
+    axis.z *= invl;
+    axis.z *= invl;
+
+    f32 c = f32cos(t);
+    f32 s = f32sin(t);
+    f32 d = 1.0f - c;
+
+    f32 x = axis.x * d;
+    f32 y = axis.y * d;
+    f32 z = axis.z * d;
+    f32 axay = x * axis.y;
+    f32 axaz = x * axis.z;
+    f32 ayaz = y * axis.z;
+
+    return Mat4Lit(c + (x * axis.x), axay - (s * axis.z), axaz + (s * axis.y), 0.0f,  //
+                   axay + (s * axis.z), c + (y * axis.y), ayaz - (s * axis.x), 0.0f,  //
+                   axaz - (s * axis.y), ayaz + (s * axis.x), c + (z * axis.z), 0.0f,  //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
 static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
     f32 zoom = 1.0f / (f32)f32tan(fov * 0.5f);
     f32 depth = far - near;
@@ -866,10 +889,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
     // glEnableVertexAttribArray(shader.color_loc);
 
     BeginDrawing();
+    glEnable(GL_DEPTH_TEST);
 
-    ClearBackground(WHITE);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    BeginMode3D(gstate->camera);
+    // BeginMode3D(gstate->camera);
 
     // Begin shader.
     glUseProgram(shader.pid);
@@ -877,13 +902,15 @@ static void GameStateDraw(GameState* gstate, float delta) {
     f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
     glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 0.5f);
 
-    Mat4 view = Mat4Translate(0.0f, 0.0f, -3.0f);
+    Mat4 view = Mat4Translate(0.0f, 0.0f, -10.0f);
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
     glBindVertexArray(vao1);
 
-    Mat4 model = Mat4Identity();
+    Mat4 model = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+    breakpoint();
+    // Mat4 model = Mat4Identity();
     Mat4 mvp = Mat4Multiply(vp, model);
     glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
 
@@ -891,7 +918,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     // glBindVertexArray(vao2);
     // glDrawArrays(GL_TRIANGLES, 0, 3);
 
-    EndMode3D();
+    // EndMode3D();
 
     if (gstate->debug) {
         DrawFPS(5, 5);
