@@ -870,31 +870,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(shader.color_loc);
 
-    // u32 vao2 = 0;
-    // glGenVertexArrays(1, &vao2);
-    // glBindVertexArray(vao2);
-
-    // VAtt vertices2[] = {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},
-    //                     {{0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f}},
-    //                     {{0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f}}};
-
-    // u32 vb2 = 0;
-    // glGenBuffers(1, &vb2);
-    // glBindBuffer(GL_ARRAY_BUFFER, vb2);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
-
-    // glVertexAttribPointer(shader.pos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    // glEnableVertexAttribArray(shader.pos_loc);
-    // glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(shader.color_loc);
-
     BeginDrawing();
     glEnable(GL_DEPTH_TEST);
 
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // BeginMode3D(gstate->camera);
 
     // Begin shader.
     glUseProgram(shader.pid);
@@ -910,15 +890,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     Mat4 model = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
     breakpoint();
-    // Mat4 model = Mat4Identity();
     Mat4 mvp = Mat4Multiply(vp, model);
     glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    // glBindVertexArray(vao2);
-    // glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    // EndMode3D();
 
     if (gstate->debug) {
         DrawFPS(5, 5);
