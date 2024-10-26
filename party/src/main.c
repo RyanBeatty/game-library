@@ -197,7 +197,6 @@ static Mat4 Mat4RotateZ(rad r) {
 
 static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
     // TODO: for the moment rely on raymath. Derive this ourselves at some point.
-    breakpoint();
     Matrix m = MatrixPerspective(fov, aspect, near, far);
     return Mat4Lit(m.m0, m.m1, m.m2, m.m3,    //
                    m.m4, m.m5, m.m6, m.m7,    //
@@ -835,11 +834,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
         f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
         glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 1.0f);
 
-        Mat4 mmodel = Mat4Identity();  // Mat4Multiply(Mat4Translate(0.0f, 0.0f, 5.0f), Mat4Scale(2.0f, 2.0f, 2.0f));
-        Mat4 mview = Mat4Translate(0.0f, 0.0f, -3.0f);
-        Mat4 mproj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
-        Mat4 mvp = Mat4Multiply(mproj, Mat4Multiply(mview, mmodel));
-        breakpoint();
+        Mat4 model = Mat4Identity();
+        Mat4 view = Mat4Translate(0.0f, 0.0f, -3.0f);
+        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
+        Mat4 mvp = Mat4Multiply(proj, Mat4Multiply(view, model));
         glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
     }
 
