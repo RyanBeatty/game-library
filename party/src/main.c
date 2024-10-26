@@ -29,6 +29,10 @@ typedef double f64;
 typedef f32 rad;
 typedef f32 deg;
 
+#define LPI ((f32)3.1415926535)
+
+#define Deg2Rad(d) ((d) * ((2.0f * LPI) / 360))
+
 ////////////////////////////////////////////////////////////
 // S:Math
 
@@ -137,6 +141,16 @@ typedef struct Mat4 {
     ((Mat4){.m = {(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), \
                   (m23), (m33)}})
 
+static void PrintMat4(Mat4 m) {
+    printf(
+        "%f %f %f %f\n"
+        "%f %f %f %f\n"
+        "%f %f %f %f\n"
+        "%f %f %f %f\n",
+        m.mm.m00, m.mm.m01, m.mm.m02, m.mm.m03, m.mm.m10, m.mm.m11, m.mm.m12, m.mm.m13, m.mm.m20, m.mm.m21, m.mm.m22,
+        m.mm.m23, m.mm.m30, m.mm.m31, m.mm.m32, m.mm.m33);
+}
+
 static Mat4 Mat4Identity() {
     static Mat4 m = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
                             0.0f, 1.0f, 0.0f, 0.0f,  //
@@ -150,6 +164,14 @@ static Mat4 Mat4Scale(f32 x, f32 y, f32 z) {
                    0.0f, y, 0.0f, 0.0f,  //
                    0.0f, 0.0f, z, 0.0f,  //
                    0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+static Mat4 Mat4Translate(f32 x, f32 y, f32 z) {
+    return Mat4Lit(1.0f, 0.0f, 0.0f, x,    //
+                   0.0f, 1.0f, 0.0f, y,    //
+                   0.0f, 0.0f, 1.0f, z,    //
+                   0.0f, 0.0f, 0.0f, 1.0f  //
+    );
 }
 
 static Mat4 Mat4RotateX(rad r) {
@@ -171,6 +193,16 @@ static Mat4 Mat4RotateZ(rad r) {
                    f32sin(r), f32cos(r), 0.0f, 0.0f,   //
                    0.0f, 0.0f, 1.0f, 0.0f,             //
                    0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
+    // TODO: for the moment rely on raymath. Derive this ourselves at some point.
+    breakpoint();
+    Matrix m = MatrixPerspective(fov, aspect, near, far);
+    return Mat4Lit(m.m0, m.m1, m.m2, m.m3,    //
+                   m.m4, m.m5, m.m6, m.m7,    //
+                   m.m8, m.m9, m.m10, m.m14,  //
+                   m.m12, m.m13, m.m11, m.m15);
 }
 
 static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
@@ -195,6 +227,24 @@ static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
         (a.mm.m30 * b.mm.m01) + (a.mm.m31 * b.mm.m11) + (a.mm.m32 * b.mm.m21) + (a.mm.m33 * b.mm.m31),  //
         (a.mm.m30 * b.mm.m02) + (a.mm.m31 * b.mm.m12) + (a.mm.m32 * b.mm.m22) + (a.mm.m33 * b.mm.m32),  //
         (a.mm.m30 * b.mm.m03) + (a.mm.m31 * b.mm.m13) + (a.mm.m32 * b.mm.m23) + (a.mm.m33 * b.mm.m33)   //
+    );
+}
+
+typedef struct Vec4 {
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 w;
+} Vec4;
+
+#define Vec4Lit(x, y, z, w) ((Vec4){(x), (y), (z), (w)})
+
+static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
+    return Vec4Lit((x * m.mm.m00) + (x * m.mm.m01) + (x + m.mm.m02) + (x + m.mm.m03),  //
+                   (y * m.mm.m10) + (y * m.mm.m11) + (y + m.mm.m12) + (y + m.mm.m13),  //
+                   (z * m.mm.m20) + (z * m.mm.m21) + (z + m.mm.m22 + (z + m.mm.m23)),  //
+                   (w * m.mm.m30) + (w * m.mm.m31) + (w + m.mm.m32 + (w + m.mm.m33))   //
+
     );
 }
 
@@ -525,7 +575,7 @@ typedef enum InputDir {
 ////////////////////////////////////////////////////////////
 // S: Render
 
-typedef struct ElShader {
+typedef struct LShader {
     u32 pid;  // program id.
     u32 vid;
     u32 fid;
@@ -533,10 +583,10 @@ typedef struct ElShader {
     u32 pos_loc;
     u32 color_loc;
     u32 ucolor_loc;
-    u32 xfrm_loc;
-} ElShader;
+    u32 mmvp_loc;
+} LShader;
 
-static void ElShaderInit(ElShader* shader, const char* vsrc, const char* fsrc) {
+static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
     // vertex shader.
     {
         i32 success = 0;
@@ -569,18 +619,18 @@ static void ElShaderInit(ElShader* shader, const char* vsrc, const char* fsrc) {
     }
 }
 
-static ElShader GetShader() {
+static LShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 InPos;\n"
         "layout (location = 1) in vec3 InColor;\n"
         "\n"
-        "uniform mat4 Transform;\n"
+        "uniform mat4 MVP;\n"
         "\n"
         "out vec4 VertColor;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = Transform * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
+        "   gl_Position = MVP * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
         "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
         "}\0";
 
@@ -594,18 +644,19 @@ static ElShader GetShader() {
         "    FragColor = (0.5 * UColor) + (0.5 * VertColor);\n"
         "}\0";
     static bool INIT = false;
-    static ElShader SHADER = {0};
+    static LShader SHADER = {0};
 
     if (!INIT) {
         INIT = true;
-        ElShaderInit(&SHADER, VSRC, FSRC);
+        LShaderInit(&SHADER, VSRC, FSRC);
 
         // Att lookup.
         {
             SHADER.pos_loc = glGetAttribLocation(SHADER.pid, "InPos");
             SHADER.color_loc = glGetAttribLocation(SHADER.pid, "InColor");
+
             SHADER.ucolor_loc = glGetUniformLocation(SHADER.pid, "UColor");
-            SHADER.xfrm_loc = glGetUniformLocation(SHADER.pid, "Transform");
+            SHADER.mmvp_loc = glGetUniformLocation(SHADER.pid, "MVP");
         }
     }
 
@@ -733,7 +784,7 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 }
 
 static void GameStateDraw(GameState* gstate, float delta) {
-    ElShader shader = GetShader();
+    LShader shader = GetShader();
 
     u32 vao1 = 0;
     glGenVertexArrays(1, &vao1);
@@ -784,8 +835,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
         f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
         glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 1.0f);
 
-        Mat4 m = Mat4Multiply(Mat4Multiply(Mat4RotateZ(gstate->timer), Mat4Scale(0.5f, 0.5f, 0.5f)), Mat4Identity());
-        glUniformMatrix4fv(shader.xfrm_loc, 1, GL_FALSE, (const f32*)&m.m);
+        Mat4 mmodel = Mat4Identity();  // Mat4Multiply(Mat4Translate(0.0f, 0.0f, 5.0f), Mat4Scale(2.0f, 2.0f, 2.0f));
+        Mat4 mview = Mat4Translate(0.0f, 0.0f, -3.0f);
+        Mat4 mproj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
+        Mat4 mvp = Mat4Multiply(mproj, Mat4Multiply(mview, mmodel));
+        breakpoint();
+        glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
     }
 
     glBindVertexArray(vao1);
