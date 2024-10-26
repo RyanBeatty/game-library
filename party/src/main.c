@@ -793,37 +793,77 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glGenVertexArrays(1, &vao1);
     glBindVertexArray(vao1);
 
-    VAtt vertices1[] = {{{-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f}},
-                        {{0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f}},
-                        {{0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f}}};
+    VAtt vertices[] = {
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},  //
+
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+
+        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}}   //
+    };
 
     u32 vb1 = 0;
     glGenBuffers(1, &vb1);
     glBindBuffer(GL_ARRAY_BUFFER, vb1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(shader.pos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
     glEnableVertexAttribArray(shader.pos_loc);
     glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(shader.color_loc);
 
-    u32 vao2 = 0;
-    glGenVertexArrays(1, &vao2);
-    glBindVertexArray(vao2);
+    // u32 vao2 = 0;
+    // glGenVertexArrays(1, &vao2);
+    // glBindVertexArray(vao2);
 
-    VAtt vertices2[] = {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},
-                        {{0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f}},
-                        {{0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f}}};
+    // VAtt vertices2[] = {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},
+    //                     {{0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f}},
+    //                     {{0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f}}};
 
-    u32 vb2 = 0;
-    glGenBuffers(1, &vb2);
-    glBindBuffer(GL_ARRAY_BUFFER, vb2);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
+    // u32 vb2 = 0;
+    // glGenBuffers(1, &vb2);
+    // glBindBuffer(GL_ARRAY_BUFFER, vb2);
+    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(shader.pos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(shader.pos_loc);
-    glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(shader.color_loc);
+    // glVertexAttribPointer(shader.pos_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    // glEnableVertexAttribArray(shader.pos_loc);
+    // glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    // glEnableVertexAttribArray(shader.color_loc);
 
     BeginDrawing();
 
@@ -831,24 +871,25 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     BeginMode3D(gstate->camera);
 
-    // Begin Shader.
-    {
-        glUseProgram(shader.pid);
+    // Begin shader.
+    glUseProgram(shader.pid);
 
-        f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
-        glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 1.0f);
+    f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
+    glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 0.5f);
 
-        Mat4 model = Mat4Identity();
-        Mat4 view = Mat4Translate(0.0f, 0.0f, -3.0f);
-        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
-        Mat4 mvp = Mat4Multiply(proj, Mat4Multiply(view, model));
-        glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
-    }
+    Mat4 view = Mat4Translate(0.0f, 0.0f, -3.0f);
+    Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
+    Mat4 vp = Mat4Multiply(proj, view);
 
     glBindVertexArray(vao1);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindVertexArray(vao2);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    Mat4 model = Mat4Identity();
+    Mat4 mvp = Mat4Multiply(vp, model);
+    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // glBindVertexArray(vao2);
+    // glDrawArrays(GL_TRIANGLES, 0, 3);
 
     EndMode3D();
 
