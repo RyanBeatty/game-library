@@ -43,6 +43,7 @@ typedef f32 deg;
 #define fhalf(x) ((x) * 0.5f)
 #define f32sin sin
 #define f32cos cos
+#define f32tan tan
 
 typedef struct Vec2 {
     f32 x;
@@ -147,8 +148,10 @@ static void PrintMat4(Mat4 m) {
         "%f %f %f %f\n"
         "%f %f %f %f\n"
         "%f %f %f %f\n",
-        m.mm.m00, m.mm.m01, m.mm.m02, m.mm.m03, m.mm.m10, m.mm.m11, m.mm.m12, m.mm.m13, m.mm.m20, m.mm.m21, m.mm.m22,
-        m.mm.m23, m.mm.m30, m.mm.m31, m.mm.m32, m.mm.m33);
+        m.mm.m00, m.mm.m01, m.mm.m02, m.mm.m03,  //
+        m.mm.m10, m.mm.m11, m.mm.m12, m.mm.m13,  //
+        m.mm.m20, m.mm.m21, m.mm.m22, m.mm.m23,  //
+        m.mm.m30, m.mm.m31, m.mm.m32, m.mm.m33);
 }
 
 static Mat4 Mat4Identity() {
@@ -196,12 +199,12 @@ static Mat4 Mat4RotateZ(rad r) {
 }
 
 static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
-    // TODO: for the moment rely on raymath. Derive this ourselves at some point.
-    Matrix m = MatrixPerspective(fov, aspect, near, far);
-    return Mat4Lit(m.m0, m.m1, m.m2, m.m3,    //
-                   m.m4, m.m5, m.m6, m.m7,    //
-                   m.m8, m.m9, m.m10, m.m14,  //
-                   m.m12, m.m13, m.m11, m.m15);
+    f32 zoom = 1.0f / (f32)f32tan(fov * 0.5f);
+    f32 depth = far - near;
+    return Mat4Lit(zoom * (1.0f / aspect), 0.0f, 0.0f, 0.0f,                         //
+                   0.0f, zoom, 0.0f, 0.0f,                                           //
+                   0.0f, 0.0f, -(far + near) / depth, (-2.0f * far * near) / depth,  //
+                   0.0f, 0.0f, -1.0f, 0.0f);
 }
 
 static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
@@ -229,6 +232,7 @@ static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
     );
 }
 
+// Used for debug.
 typedef struct Vec4 {
     f32 x;
     f32 y;
