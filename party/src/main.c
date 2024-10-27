@@ -777,6 +777,8 @@ static void GameStateInit(GameState* gstate) {
         camera.projection = CAMERA_PERSPECTIVE;
         gstate->camera = camera;
     }
+
+    { glEnable(GL_DEPTH_TEST); }
 }
 
 static void GameStateUpdate(GameState* gstate, float dt) {
@@ -817,47 +819,47 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindVertexArray(vao1);
 
     VAtt vertices[] = {
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},    //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
 
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},  //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},    //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},  //
 
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
+        {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
 
-        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
+        {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
 
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
+        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
+        {{0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
+        {{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+        {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},   //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
 
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},  //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 0.0f}}   //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
+        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},    //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}}   //
     };
 
     u32 vb1 = 0;
@@ -871,7 +873,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glEnableVertexAttribArray(shader.color_loc);
 
     BeginDrawing();
-    glEnable(GL_DEPTH_TEST);
+
+    glDisable(GL_CULL_FACE);
 
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -879,20 +882,17 @@ static void GameStateDraw(GameState* gstate, float delta) {
     // Begin shader.
     glUseProgram(shader.pid);
 
-    f32 greenValue = (f32sin(gstate->timer) / 2.0f) + 0.5f;
-    glUniform4f(shader.ucolor_loc, 0.0f, greenValue, 0.0f, 0.5f);
+    glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
     Mat4 view = Mat4Translate(0.0f, 0.0f, -10.0f);
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
-    glBindVertexArray(vao1);
-
     Mat4 model = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-    breakpoint();
     Mat4 mvp = Mat4Multiply(vp, model);
-    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
 
+    glBindVertexArray(vao1);
+    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     if (gstate->debug) {
