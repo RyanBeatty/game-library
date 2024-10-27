@@ -874,6 +874,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     BeginDrawing();
 
+    // TODO: remove this.
     glDisable(GL_CULL_FACE);
 
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
