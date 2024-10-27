@@ -177,6 +177,14 @@ static Mat4 Mat4Translate(f32 x, f32 y, f32 z) {
     );
 }
 
+static Mat4 Mat4TranslateV(Vec3 v) {
+    return Mat4Lit(1.0f, 0.0f, 0.0f, v.x,  //
+                   0.0f, 1.0f, 0.0f, v.y,  //
+                   0.0f, 0.0f, 1.0f, v.z,  //
+                   0.0f, 0.0f, 0.0f, 1.0f  //
+    );
+}
+
 static Mat4 Mat4RotateX(rad r) {
     return Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,             //
                    0.0f, f32cos(r), -f32sin(r), 0.0f,  //
@@ -889,12 +897,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
-    Mat4 model = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-    Mat4 mvp = Mat4Multiply(vp, model);
+    Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, 3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f)};
 
     glBindVertexArray(vao1);
-    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+        Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+        Mat4 translate = Mat4TranslateV(positions[i]);
+        Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
+        glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
 
     if (gstate->debug) {
         DrawFPS(5, 5);
