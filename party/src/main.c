@@ -95,6 +95,7 @@ static Vec3 Vec3Zero() {
 }
 
 static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
+// Remember end - start gives you start -> end.
 static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
 static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
 static Vec3 Vec3Normalize(Vec3 v) {
@@ -107,6 +108,9 @@ static Vec3 Vec3Normalize(Vec3 v) {
         v.z *= inv_len;
     }
     return result;
+}
+static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
+    return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
 static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
@@ -142,7 +146,7 @@ typedef struct Mat4 {
     ((Mat4){.m = {(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), \
                   (m23), (m33)}})
 
-static void PrintMat4(Mat4 m) {
+static void Mat4Print(Mat4 m) {
     printf(
         "%f %f %f %f\n"
         "%f %f %f %f\n"
