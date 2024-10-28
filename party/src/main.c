@@ -473,8 +473,6 @@ static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
             pstate->pos[3] = Vec2Add(pstate->pos[3], neg_disp);
             pstate->pos[4] = Vec2Add(pstate->pos[4], neg_disp);
             pstate->pos[5] = Vec2Add(pstate->pos[5], neg_disp);
-
-            // breakpoint();
         }
     }
 }
@@ -827,47 +825,53 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glBindVertexArray(vao1);
 
     VAtt vertices[] = {
+        // Back.
+        {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},   //
         {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},    //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},    //
+        {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},    //
         {{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
+        {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},    //
+        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
 
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},  //
+        // Front.
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},  //
         {{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},    //
         {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},   //
         {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},  //
 
-        {{-0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
+        // Left.
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},   //
         {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
-        {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
+        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
 
-        {{0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
-        {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+        // Right.
+        {{0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},    //
+        {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},  //
+        {{0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},   //
+        {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},  //
+        {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},    //
 
-        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
-        {{0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
-        {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},  //
+        // Bottom.
+        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},  //
+        {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},   //
+        {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},    //
+        {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},    //
+        {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},   //
+        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},  //
 
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
-        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f}},    //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f}}   //
+        // Top.
+        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}},   //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}},  //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},    //
+        {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},   //
+        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},    //
+        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}}   //
     };
 
     u32 vb1 = 0;
@@ -880,13 +884,24 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(shader.color_loc);
 
-    BeginDrawing();
+    // Drawing begin.
+    {
+        BeginDrawing();
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 
-    // TODO: remove this.
-    glDisable(GL_CULL_FACE);
-
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Enable/Disable culling.
+    // TODO: Make this nicer at some point. Useful for debugging.
+    {
+        if (gstate->debug) {
+            glDisable(GL_CULL_FACE);
+        } else {
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            glFrontFace(GL_CCW);
+        }
+    }
 
     // Begin shader.
     glUseProgram(shader.pid);
@@ -897,7 +912,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
-    Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, 3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f)};
+    Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f)};
 
     glBindVertexArray(vao1);
     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
