@@ -242,6 +242,25 @@ static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
                    0.0f, 0.0f, -1.0f, 0.0f);
 }
 
+// Eye is world space pos of camera. Target is what it is looking at in worldspace.
+// Up just needs to be pointing somewhere along the plane between the +z and where you want the +y
+// axis to be.
+static Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
+    // We need target -> eye direction vec because we assueme +z is towards the viewer.
+    Vec3 z = Vec3Normalize(Vec3Sub(eye, target));
+
+    // Get the right camera axis by using the +z and a vector pointint up (but not necessarily
+    // the up axis)
+    Vec3 x = Vec3Normalize(Vec3Cross(up, z));
+
+    Vec3 y = Vec3Normalize(Vec3Cross(z, x));
+
+    return Mat4Lit(x.x, x.y, x.z, -Vec3Dot(x, eye),  //
+                   y.x, y.y, y.z, -Vec3Dot(y, eye),  //
+                   z.x, z.y, z.z, -Vec3Dot(z, eye),  //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
 static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
     return Mat4Lit(
         // Row 0.
@@ -913,6 +932,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
     Mat4 view = Mat4Translate(0.0f, 0.0f, -10.0f);
+    Mat4 view2 = Mat4LookAt(Vec3Lit(0.0f, 0.0f, 10.0f), Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f));
+    breakpoint();
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
