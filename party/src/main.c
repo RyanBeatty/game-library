@@ -40,7 +40,7 @@ typedef f32 deg;
 #define f32abs fabs
 #define f32min fminf
 #define f32max fmaxf
-#define sqrtf32 sqrtf
+#define f32sqrt sqrtf
 #define fhalf(x) ((x) * 0.5f)
 #define f32sin sin
 #define f32cos cos
@@ -64,7 +64,7 @@ static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y)
 static Vec2 Vec2Scale(Vec2 v, f32 s) { return Vec2Lit(v.x * s, v.y * s); }
 static Vec2 Vec2Normalize(Vec2 v) {
     Vec2 result = Vec2Lit(v.x, v.y);
-    f32 len = sqrtf32((v.x * v.x) + (v.y * v.y));
+    f32 len = f32sqrt((v.x * v.x) + (v.y * v.y));
     if (len > 0.0f) {
         f32 inv_len = 1.0f / len;
         result.x *= inv_len;
@@ -76,7 +76,7 @@ static Vec2 Vec2Clamp(Vec2 v1, Vec2 min, Vec2 max) {
     return Vec2Lit(f32max(min.x, f32min(v1.x, max.x)), f32max(min.y, f32min(v1.y, max.y)));
 }
 static Vec2 Vec2Cross(Vec2 v) { return Vec2Lit(v.y, -v.x); }
-static f32 Vec2Len(Vec2 v) { return sqrtf32((v.x * v.x) + (v.y * v.y)); }
+static f32 Vec2Len(Vec2 v) { return f32sqrt((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 
 typedef struct Vec3 {
@@ -100,7 +100,7 @@ static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y,
 static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
 static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
 static Vec3 Vec3Normalize(Vec3 v) {
-    f32 len = sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
+    f32 len = f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
     if (len > 0.0f) {
         f32 inv_len = 1.0f / len;
         v.x *= inv_len;
@@ -112,7 +112,7 @@ static Vec3 Vec3Normalize(Vec3 v) {
 static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
-static f32 Vec3Len(Vec3 v) { return sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
+static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
@@ -211,7 +211,7 @@ static Mat4 Mat4RotateZ(rad r) {
 }
 
 static Mat4 Mat4Rotate(rad t, Vec3 axis) {
-    f32 invl = 1.0f / sqrtf32((axis.x * axis.x) + (axis.y * axis.y) + (axis.z * axis.z));
+    f32 invl = 1.0f / f32sqrt((axis.x * axis.x) + (axis.y * axis.y) + (axis.z * axis.z));
     axis.x *= invl;
     axis.z *= invl;
     axis.z *= invl;
