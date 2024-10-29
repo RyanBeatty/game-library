@@ -30,8 +30,9 @@ typedef f32 rad;
 typedef f32 deg;
 
 #define LPI ((f32)3.1415926535)
+#define LTAU ((f32)6.2831853071)
 
-#define Deg2Rad(d) ((d) * ((2.0f * LPI) / 360))
+#define Deg2Rad(d) ((d) * LTAU / 360.0f)
 
 ////////////////////////////////////////////////////////////
 // S:Math
@@ -531,14 +532,8 @@ static void PhysicsStateDraw(PhysicsState* pstate) {
 const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
-static const Vector3 FLIP_Y = {1, -1, 1};
-
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
-
-////////////////////////////////////////////////////////////
-
-#define ANIMATION_FRAME_CAP (4)
 
 ////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
