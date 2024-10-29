@@ -99,7 +99,6 @@ static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y,
 static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
 static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
 static Vec3 Vec3Normalize(Vec3 v) {
-    Vec3 result = Vec3Lit(v.x, v.y, v.z);
     f32 len = sqrtf32((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
     if (len > 0.0f) {
         f32 inv_len = 1.0f / len;
@@ -107,7 +106,7 @@ static Vec3 Vec3Normalize(Vec3 v) {
         v.y *= inv_len;
         v.z *= inv_len;
     }
-    return result;
+    return v;
 }
 static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
@@ -931,9 +930,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
-    Mat4 view = Mat4Translate(0.0f, 0.0f, -10.0f);
-    Mat4 view2 = Mat4LookAt(Vec3Lit(0.0f, 0.0f, 10.0f), Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f));
-    breakpoint();
+    Mat4 view = Mat4LookAt(Vec3Lit(0.0f, 0.0f, 10.0f), Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
