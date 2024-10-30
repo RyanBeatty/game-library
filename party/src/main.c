@@ -297,12 +297,18 @@ typedef struct Vec4 {
 #define Vec4Lit(x, y, z, w) ((Vec4){(x), (y), (z), (w)})
 
 static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
-    return Vec4Lit((x * m.mm.m00) + (x * m.mm.m01) + (x + m.mm.m02) + (x + m.mm.m03),  //
-                   (y * m.mm.m10) + (y * m.mm.m11) + (y + m.mm.m12) + (y + m.mm.m13),  //
-                   (z * m.mm.m20) + (z * m.mm.m21) + (z + m.mm.m22 + (z + m.mm.m23)),  //
-                   (w * m.mm.m30) + (w * m.mm.m31) + (w + m.mm.m32 + (w + m.mm.m33))   //
+    return Vec4Lit((x * m.mm.m00) + (x * m.mm.m01) + (x + m.mm.m02) + (x * m.mm.m03),  //
+                   (y * m.mm.m10) + (y * m.mm.m11) + (y + m.mm.m12) + (y * m.mm.m13),  //
+                   (z * m.mm.m20) + (z * m.mm.m21) + (z + m.mm.m22 + (z * m.mm.m23)),  //
+                   (w * m.mm.m30) + (w * m.mm.m31) + (w + m.mm.m32 + (w * m.mm.m33))   //
 
     );
+}
+
+static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
+    return Vec3Lit((v.x * m.mm.m00) + (v.x * m.mm.m01) + (v.x * m.mm.m02),  //
+                   (v.y * m.mm.m10) + (v.y * m.mm.m11) + (v.y * m.mm.m12),  //
+                   (v.z * m.mm.m20) + (v.z * m.mm.m21) + (v.z * m.mm.m22));
 }
 
 ////////////////////////////////////////////////////////////
@@ -835,6 +841,24 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 }
 
 static void GameStateDraw(GameState* gstate, float delta) {
+    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 10.0f);
+    static Mat4 vieworient = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,   //
+                                     0.0f, 1.0f, 0.0f, 0.0f,   //
+                                     0.0f, 0.0f, -1.0f, 0.0f,  //
+                                     0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Camera movement.
+    {
+        static const u8 GAMEPAD_ID = 0;
+
+        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+        f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+        Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+        Vec3 dir_world = Vec3Transform(dir_model, vieworient);
+        Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
+        viewpos = Vec3Add(viewpos, mov_world);
+    }
+
     LShader shader = GetShader();
 
     u32 vao1 = 0;
@@ -925,7 +949,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
-    Mat4 view = Mat4LookAt(Vec3Lit(0.0f, 0.0f, 10.0f), Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f));
+    // TODO: Implement Mat4Invert.
+    Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, Vec3Lit(0.0f, 0.0f, -1.0f)), Vec3Lit(0.0f, 1.0f, 0.0f));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
