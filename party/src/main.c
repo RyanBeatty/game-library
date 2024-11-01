@@ -120,6 +120,8 @@ static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v
 // For matrix mult notation wise we will compose from right to left. i.e. X = CBAv.
 typedef struct Mat4 {
     union {
+        f32 m[4 * 4];
+
         struct {
             f32 m00;
             f32 m10;
@@ -138,7 +140,17 @@ typedef struct Mat4 {
             f32 m23;
             f32 m33;
         } mm;
-        f32 m[4 * 4];
+
+        struct {
+            Vec3 a;
+            f32 x;
+            Vec3 b;
+            f32 y;
+            Vec3 c;
+            f32 z;
+            Vec3 d;
+            f32 w;
+        } v;
     };
 } Mat4;
 
@@ -284,6 +296,35 @@ static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
         (a.mm.m30 * b.mm.m02) + (a.mm.m31 * b.mm.m12) + (a.mm.m32 * b.mm.m22) + (a.mm.m33 * b.mm.m32),  //
         (a.mm.m30 * b.mm.m03) + (a.mm.m31 * b.mm.m13) + (a.mm.m32 * b.mm.m23) + (a.mm.m33 * b.mm.m33)   //
     );
+}
+
+static Mat4 Mat4Invert(Mat4 m) {
+    Vec3 s = Vec3Cross(m.v.a, m.v.b);
+    Vec3 t = Vec3Cross(m.v.c, m.v.d);
+    // TODO: Something about this is giving the wrong sign. not sure. instead assume
+    // that bottom row will always be 0 0 0 1, so u = 0 and v = c.
+    // Vec3 u = Vec3Sub(Vec3Scale(m.v.a, m.v.y), Vec3Scale(m.v.b, m.v.x));
+    // Vec3 v = Vec3Sub(Vec3Scale(m.v.c, m.v.w), Vec3Scale(m.v.d, m.v.z));
+    Vec3 u = Vec3Zero();
+    Vec3 v = m.v.c;
+
+    f32 detinv = 1.0f / (Vec3Dot(s, v) + Vec3Dot(t, u));
+
+    s = Vec3Scale(s, detinv);
+    t = Vec3Scale(t, detinv);
+    u = Vec3Scale(u, detinv);
+    v = Vec3Scale(v, detinv);
+
+    Vec3 r0 = Vec3Add(Vec3Cross(m.v.b, v), Vec3Scale(t, m.v.y));
+    Vec3 r1 = Vec3Sub(Vec3Cross(v, m.v.a), Vec3Scale(t, m.v.x));
+    Vec3 r2 = Vec3Add(Vec3Cross(m.v.d, u), Vec3Scale(s, m.v.w));
+    Vec3 r3 = Vec3Sub(Vec3Cross(u, m.v.c), Vec3Scale(s, m.v.z));
+
+    Mat4 m2 = Mat4Lit(r0.x, r0.y, r0.z, -1.0f * Vec3Dot(m.v.b, t),  //
+                      r1.x, r1.y, r1.z, Vec3Dot(m.v.a, t),          //
+                      r2.x, r2.y, r2.z, -1.0f * Vec3Dot(m.v.d, s),  //
+                      r3.x, r3.y, r3.z, Vec3Dot(m.v.c, s));
+    return m2;
 }
 
 // Used for debug.
@@ -842,9 +883,9 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 
 static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 10.0f);
-    static Mat4 vieworient = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,   //
-                                     0.0f, 1.0f, 0.0f, 0.0f,   //
-                                     0.0f, 0.0f, -1.0f, 0.0f,  //
+    static Mat4 vieworient = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
+                                     0.0f, 1.0f, 0.0f, 0.0f,  //
+                                     0.0f, 0.0f, 1.0f, 0.0f,  //
                                      0.0f, 0.0f, 0.0f, 1.0f);
 
     // Camera movement.
@@ -852,7 +893,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         static const u8 GAMEPAD_ID = 0;
 
         f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-        f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+        f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
         Vec3 dir_model = Vec3Lit(x, 0.0f, y);
         Vec3 dir_world = Vec3Transform(dir_model, vieworient);
         Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
@@ -950,7 +991,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
     // TODO: Implement Mat4Invert.
-    Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, Vec3Lit(0.0f, 0.0f, -1.0f)), Vec3Lit(0.0f, 1.0f, 0.0f));
+    Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), vieworient));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
