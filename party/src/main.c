@@ -33,6 +33,7 @@ typedef f32 deg;
 #define LTAU ((f32)6.2831853071)
 
 #define Deg2Rad(d) ((d) * LTAU / 360.0f)
+#define Rad2Deg(r) ((r) * 360.0f / LTAU)
 
 ////////////////////////////////////////////////////////////
 // S:Math
@@ -45,6 +46,7 @@ typedef f32 deg;
 #define f32sin sin
 #define f32cos cos
 #define f32tan tan
+#define f32acos acos
 
 typedef struct Vec2 {
     f32 x;
@@ -114,6 +116,7 @@ static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
 }
 static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
+static f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
 
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
@@ -160,6 +163,7 @@ typedef struct Mat4 {
 
 static void Mat4Print(Mat4 m) {
     printf(
+        "mat4\n"
         "%f %f %f %f\n"
         "%f %f %f %f\n"
         "%f %f %f %f\n"
@@ -887,17 +891,49 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                      0.0f, 1.0f, 0.0f, 0.0f,  //
                                      0.0f, 0.0f, 1.0f, 0.0f,  //
                                      0.0f, 0.0f, 0.0f, 1.0f);
+    static Mat4 viewupright = Mat4Lit(-1.0f, 0.0f, 0.0f, 0.0f,  //
+                                      0.0f, 1.0f, 0.0f, 0.0f,   //
+                                      0.0f, 0.0f, -1.0f, 0.0f,  //
+                                      0.0f, 0.0f, 0.0f, 1.0f);
 
     // Camera movement.
     {
         static const u8 GAMEPAD_ID = 0;
 
-        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-        f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-        Vec3 dir_model = Vec3Lit(x, 0.0f, y);
-        Vec3 dir_world = Vec3Transform(dir_model, vieworient);
-        Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
-        viewpos = Vec3Add(viewpos, mov_world);
+        // Left stick movement.
+        {
+            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+            f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+            Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+            Mat4 orient = vieworient;
+            orient.mm.m21 = 0.0f;  // Zero out y of the z/forward axis since we only want to move on z and x plane.
+            orient.mm.m10 = 0.0f;
+            orient.mm.m11 = 1.0f;
+            orient.mm.m12 = 0.0f;
+            orient.mm.m13 = 0.0f;
+            // Vec3 dir_world = Vec3Transform(dir_model, orient);
+            Vec3 dir_world = Vec3Transform(Vec3Lit(1.0f, 0.0f, 0.0f), orient);
+            Mat4Print(orient);
+            TraceLog(LOG_INFO, "dir world: %f %f %f", dir_world.x, dir_world.y, dir_world.z);
+            Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
+            viewpos = Vec3Add(viewpos, mov_world);
+        }
+
+        // Right stick movement.
+        {
+            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+            if (x != 0.0f || y != 0.0f) {
+                // Find rotation axis in model space.
+                Vec3 dir = Vec3Lit(x, y, 0.0f);
+                Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
+                Vec3 axis = Vec3Cross(forward, dir);
+
+                f32 angularvel = Deg2Rad(45.0f) * Vec3Len(dir) * delta;
+                Mat4 rotation = Mat4Rotate(-1.0f * angularvel, axis);
+                vieworient = Mat4Multiply(rotation, vieworient);
+            }
+        }
     }
 
     LShader shader = GetShader();
@@ -990,7 +1026,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
-    // TODO: Implement Mat4Invert.
     Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), vieworient));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
