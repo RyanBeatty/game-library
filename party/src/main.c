@@ -915,10 +915,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
             orient.mm.m11 = 1.0f;
             orient.mm.m12 = 0.0f;
             orient.mm.m13 = 0.0f;
-            // Vec3 dir_world = Vec3Transform(dir_model, orient);
-            Vec3 dir_world = Vec3Transform(Vec3Lit(1.0f, 0.0f, 0.0f), orient);
+            Vec3 dir_world = Vec3Transform(dir_model, orient);
+            // Vec3 dir_world = Vec3Transform(Vec3Lit(1.0f, 0.0f, 0.0f), orient);
             Mat4Print(orient);
-            TraceLog(LOG_INFO, "dir world: %f %f %f", dir_world.x, dir_world.y, dir_world.z);
+            // TraceLog(LOG_INFO, "dir world: %f %f %f", dir_world.x, dir_world.y, dir_world.z);
             Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
             viewpos = Vec3Add(viewpos, mov_world);
         }
@@ -934,7 +934,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Vec3 axis = Vec3Cross(forward, dir);
 
                 f32 angularvel = Deg2Rad(45.0f) * Vec3Len(dir) * delta;
-                Mat4 rotation = Mat4Rotate(-1.0f * angularvel, axis);
+                Mat4 rotation = Mat4Rotate(angularvel, axis);
                 vieworient = Mat4Multiply(rotation, vieworient);
             }
         }
