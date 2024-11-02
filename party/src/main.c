@@ -83,9 +83,15 @@ static f32 Vec2Len(Vec2 v) { return f32sqrt((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 
 typedef struct Vec3 {
-    f32 x;
-    f32 y;
-    f32 z;
+    union {
+        struct {
+            f32 x;
+            f32 y;
+            f32 z;
+        };
+
+        f32 f[3];
+    };
 } Vec3;
 
 #define Vec3Lit(a, b, c) ((Vec3){.x = (a), .y = (b), .z = (c)})
@@ -917,7 +923,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             orient.mm.m13 = 0.0f;
             Vec3 dir_world = Vec3Transform(dir_model, orient);
             // Vec3 dir_world = Vec3Transform(Vec3Lit(1.0f, 0.0f, 0.0f), orient);
-            Mat4Print(orient);
+            // Mat4Print(orient);
             // TraceLog(LOG_INFO, "dir world: %f %f %f", dir_world.x, dir_world.y, dir_world.z);
             Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
             viewpos = Vec3Add(viewpos, mov_world);
@@ -929,12 +935,20 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
             if (x != 0.0f || y != 0.0f) {
                 // Find rotation axis in model space.
-                Vec3 dir = Vec3Lit(x, y, 0.0f);
+                // Vec3 dir = Vec3Lit(x, y, 0.0f);
+                Vec3 dir = Vec3Lit(-1.0f, 0.0f, 0.0f);
                 Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
                 Vec3 axis = Vec3Cross(forward, dir);
 
-                f32 angularvel = Deg2Rad(45.0f) * Vec3Len(dir) * delta;
+                f32 len = Vec3Len(dir);
+
+                f32 angularvel = Deg2Rad(45.0f) * len * delta;
+                angularvel = Deg2Rad(90.0f);
                 Mat4 rotation = Mat4Rotate(angularvel, axis);
+                if (len > 0.9f) {
+                    breakpoint();
+                }
+                Mat4Print(rotation);
                 vieworient = Mat4Multiply(rotation, vieworient);
             }
         }
@@ -1089,6 +1103,14 @@ static void TestMath() {
     {
         TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 1.0f), Vec3Lit(1.0f, 1.0f, 1.0f), 0.1f), "Vec3Eq");
         TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 0.98f), Vec3Lit(1.0f, 1.0f, 1.0f), 0.1f), "Vec3Eq approx");
+
+        TAssert(f32eq(Vec3Len(Vec3Lit(0.0f, 0.0f, 0.0f)), 0.0f, 0.001f), "Vec3Len 0");
+        char* msg[] = {"Vec3Len x", "Vec3Len y", "Vec3Len z"};
+        for (u32 i = 0; i < 3; ++i) {
+            Vec3 v = Vec3Zero();
+            v.f[i] = 1.0f;
+            TAssert(f32eq(Vec3Len(v), 1.0f, 0.001f), msg[i]);
+        }
     }
 }
 
