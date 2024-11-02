@@ -38,6 +38,8 @@ typedef f32 deg;
 ////////////////////////////////////////////////////////////
 // S:Math
 
+static f32 TOL = 0.001;
+
 #define f32abs fabs
 #define f32min fminf
 #define f32max fmaxf
@@ -47,7 +49,7 @@ typedef f32 deg;
 #define f32cos cos
 #define f32tan tan
 #define f32acos acos
-#define f32eq(x, y, tol) (f32abs((x) - (y)) < (tol))
+#define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
 
 typedef struct Vec2 {
     f32 x;
@@ -124,7 +126,10 @@ static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
 static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 static f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
-static bool Vec3Eq(Vec3 a, Vec3 b, f32 tol) {
+static bool Vec3Eq(Vec3 a, Vec3 b) {
+    return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL) && (f32abs(a.z - b.z) < TOL));
+}
+static bool Vec3EqPro(Vec3 a, Vec3 b, f32 tol) {
     return ((f32abs(a.x - b.x) < tol) && (f32abs(a.y - b.y) < tol) && (f32abs(a.z - b.z) < tol));
 }
 
@@ -1099,20 +1104,20 @@ static void TAssert(bool result, const char* msg) {
 }
 
 static void TestMath() {
-    f32 tol = 0.001;
-
     // Test Vec3.
     {
-        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 1.0f), Vec3Lit(1.0f, 1.0f, 1.0f), tol), "Vec3Eq");
-        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 0.9998f), Vec3Lit(1.0f, 1.0f, 1.0f), tol), "Vec3Eq approx");
+        TAssert(Vec3EqPro(Vec3Lit(1.0f, 1.0f, 1.0f), Vec3Lit(1.0f, 1.0f, 1.0f), 0.001), "Vec3EqPro");
+        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 0.9998f), Vec3Lit(1.0f, 1.0f, 1.0f)), "Vec3EqPro approx");
 
-        TAssert(f32eq(Vec3Len(Vec3Lit(0.0f, 0.0f, 0.0f)), 0.0f, tol), "Vec3Len 0");
+        TAssert(f32eq(Vec3Len(Vec3Lit(0.0f, 0.0f, 0.0f)), 0.0f), "Vec3Len 0");
         char* msg[] = {"Vec3Len x", "Vec3Len y", "Vec3Len z"};
         for (u32 i = 0; i < 3; ++i) {
             Vec3 v = Vec3Zero();
             v.f[i] = 1.0f;
-            TAssert(f32eq(Vec3Len(v), 1.0f, tol), msg[i]);
+            TAssert(f32eq(Vec3Len(v), 1.0f), msg[i]);
         }
+
+        TAssert(Vec3Eq(Vec3Normalize(Vec3Lit(0.0f, 0.0f, 0.0f)), Vec3Zero()), "Vec3Normalize 0");
     }
 }
 
