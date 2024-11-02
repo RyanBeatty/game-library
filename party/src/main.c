@@ -47,6 +47,7 @@ typedef f32 deg;
 #define f32cos cos
 #define f32tan tan
 #define f32acos acos
+#define f32eq(x, y, tol) (f32abs((x) - (y)) < (tol))
 
 typedef struct Vec2 {
     f32 x;
@@ -117,6 +118,9 @@ static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
 static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 static f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
+static bool Vec3Eq(Vec3 a, Vec3 b, f32 tol) {
+    return ((f32abs(a.x - b.x) < tol) && (f32abs(a.y - b.y) < tol) && (f32abs(a.z - b.z) < tol));
+}
 
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
@@ -1050,7 +1054,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
 ////////////////////////////////////////////////////////////
 
+static void TestL();
+
 int main(void) {
+    TestL();
+
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
@@ -1062,4 +1070,36 @@ int main(void) {
     CloseWindow();
 
     return 0;
+}
+
+////////////////////////////////////////////////////////////
+
+static bool TestFail = false;
+
+static void TAssert(bool result, const char* msg) {
+    if (!result) {
+        TraceLog(LOG_ERROR, "Failed: %s", msg);
+    }
+
+    TestFail |= !result;
+}
+
+static void TestMath() {
+    // Test Vec3.
+    {
+        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 1.0f), Vec3Lit(1.0f, 1.0f, 1.0f), 0.1f), "Vec3Eq");
+        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 0.98f), Vec3Lit(1.0f, 1.0f, 1.0f), 0.1f), "Vec3Eq approx");
+    }
+}
+
+static void TestL() {
+    TraceLog(LOG_INFO, "Running Tests");
+    TestMath();
+
+    if (TestFail) {
+        TraceLog(LOG_ERROR, "Failed tests!");
+        exit(1);
+    }
+
+    TraceLog(LOG_INFO, "Tests Pass");
 }
