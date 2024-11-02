@@ -1099,17 +1099,19 @@ static void TAssert(bool result, const char* msg) {
 }
 
 static void TestMath() {
+    f32 tol = 0.001;
+
     // Test Vec3.
     {
-        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 1.0f), Vec3Lit(1.0f, 1.0f, 1.0f), 0.1f), "Vec3Eq");
-        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 0.98f), Vec3Lit(1.0f, 1.0f, 1.0f), 0.1f), "Vec3Eq approx");
+        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 1.0f), Vec3Lit(1.0f, 1.0f, 1.0f), tol), "Vec3Eq");
+        TAssert(Vec3Eq(Vec3Lit(1.0f, 1.0f, 0.9998f), Vec3Lit(1.0f, 1.0f, 1.0f), tol), "Vec3Eq approx");
 
-        TAssert(f32eq(Vec3Len(Vec3Lit(0.0f, 0.0f, 0.0f)), 0.0f, 0.001f), "Vec3Len 0");
+        TAssert(f32eq(Vec3Len(Vec3Lit(0.0f, 0.0f, 0.0f)), 0.0f, tol), "Vec3Len 0");
         char* msg[] = {"Vec3Len x", "Vec3Len y", "Vec3Len z"};
         for (u32 i = 0; i < 3; ++i) {
             Vec3 v = Vec3Zero();
             v.f[i] = 1.0f;
-            TAssert(f32eq(Vec3Len(v), 1.0f, 0.001f), msg[i]);
+            TAssert(f32eq(Vec3Len(v), 1.0f, tol), msg[i]);
         }
     }
 }
