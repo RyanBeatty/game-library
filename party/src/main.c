@@ -963,20 +963,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
             if (x != 0.0f || y != 0.0f) {
                 // Find rotation axis in model space.
-                // Vec3 dir = Vec3Lit(x, y, 0.0f);
-                Vec3 dir = Vec3Lit(-1.0f, 0.0f, 0.0f);
+                Vec3 dir = Vec3Lit(x, y, 0.0f);
                 Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
                 Vec3 axis = Vec3Cross(forward, dir);
 
                 f32 len = Vec3Len(dir);
 
                 f32 angularvel = Deg2Rad(45.0f) * len * delta;
-                angularvel = Deg2Rad(90.0f);
                 Mat4 rotation = Mat4Rotate(angularvel, axis);
-                if (len > 0.9f) {
-                    breakpoint();
-                }
-                Mat4Print(rotation);
                 vieworient = Mat4Multiply(rotation, vieworient);
             }
         }
