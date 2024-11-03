@@ -176,6 +176,10 @@ typedef struct Mat4 {
     ((Mat4){.m = {(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), \
                   (m23), (m33)}})
 
+#define Mat4ToRMatrix(m)                                                                                      \
+    ((Matrix){(m).mm.m00, (m).mm.m10, (m).mm.m20, (m).mm.m30, (m).mm.m01, (m).mm.m11, (m).mm.m21, (m).mm.m31, \
+              (m).mm.m02, (m).mm.m12, (m).mm.m22, (m).mm.m32, (m).mm.m03, (m).mm.m13, (m).mm.m23, (m).mm.m33})
+
 static void Mat4Print(Mat4 m) {
     printf(
         "mat4\n"
@@ -220,6 +224,14 @@ static Mat4 Mat4TranslateV(Vec3 v) {
     );
 }
 
+static Mat4 Mat4Transpose(Mat4 m) {
+    return Mat4Lit(m.mm.m00, m.mm.m10, m.mm.m20, m.mm.m30,  //
+                   m.mm.m01, m.mm.m11, m.mm.m21, m.mm.m31,  //
+                   m.mm.m02, m.mm.m12, m.mm.m22, m.mm.m32,  //
+                   m.mm.m03, m.mm.m13, m.mm.m23, m.mm.m33   //
+    );
+}
+
 static Mat4 Mat4RotateX(rad r) {
     return Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,             //
                    0.0f, f32cos(r), -f32sin(r), 0.0f,  //
@@ -242,10 +254,7 @@ static Mat4 Mat4RotateZ(rad r) {
 }
 
 static Mat4 Mat4Rotate(rad t, Vec3 axis) {
-    f32 invl = 1.0f / f32sqrt((axis.x * axis.x) + (axis.y * axis.y) + (axis.z * axis.z));
-    axis.x *= invl;
-    axis.z *= invl;
-    axis.z *= invl;
+    axis = Vec3Normalize(axis);
 
     f32 c = f32cos(t);
     f32 s = f32sin(t);
@@ -347,8 +356,17 @@ static Mat4 Mat4Invert(Mat4 m) {
 }
 
 static bool Mat4Eq(Mat4 a, Mat4 b) {
-    return Vec3Eq(a.v.a, b.v.a) && Vec3Eq(a.v.b, b.v.b) && Vec3Eq(a.v.c, b.v.c) && Vec3Eq(a.v.d, b.v.d) &&
-           f32eq(a.v.x, b.v.x) && f32eq(a.v.y, b.v.y) && f32eq(a.v.z, b.v.z) && f32eq(a.v.w, b.v.w);
+    bool result = Vec3Eq(a.v.a, b.v.a) && Vec3Eq(a.v.b, b.v.b) && Vec3Eq(a.v.c, b.v.c) && Vec3Eq(a.v.d, b.v.d) &&
+                  f32eq(a.v.x, b.v.x) && f32eq(a.v.y, b.v.y) && f32eq(a.v.z, b.v.z) && f32eq(a.v.w, b.v.w);
+    // #ifdef L_TEST
+    if (!result) {
+        TraceLog(LOG_INFO, "expected Mat4 b:");
+        Mat4Print(b);
+        TraceLog(LOG_INFO, "got Mat4 a:");
+        Mat4Print(a);
+    }
+    // #endif
+    return result;
 }
 
 // Used for debug.
@@ -1238,6 +1256,95 @@ static void TestMath() {
             Mat4 expected33 = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.83867f, -0.54464f, 0.0f, 0.0f, 0.54464f, 0.83867f,
                                       0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
             TAssert(Mat4Eq(rotation33, expected33), "Mat4RotateX 33 degrees");
+        }
+
+        // Mat4RotateY
+        {
+            // Test 1: Rotate by 0 degrees (identity matrix)
+            Mat4 result0 = Mat4RotateY(0.0f);
+            Mat4 expected0 =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result0, expected0));
+
+            // Test 2: Rotate by 90 degrees around Y-axis
+            Mat4 result90 = Mat4RotateY(LPI / 2);
+            Mat4 expected90 = Mat4Lit(0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+                                      0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result90, expected90));
+
+            // Test 3: Rotate by 180 degrees around Y-axis
+            Mat4 result180 = Mat4RotateY(LPI);
+            Mat4 expected180 = Mat4Lit(-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+                                       0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result180, expected180));
+
+            // Test 4: Rotate by 33 degrees around Y-axis
+            float radians33 = 33.0f * (LPI / 180.0f);  // Convert degrees to radians
+            Mat4 result33 = Mat4RotateY(radians33);
+            Mat4 expected33 = Mat4Lit(0.83867f, 0.0f, 0.54464f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -0.54464f, 0.0f, 0.83867f,
+                                      0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result33, expected33));
+        }
+
+        // Mat4RotateZ
+        {
+            // Test 1: Rotate by 0 degrees (identity matrix)
+            Mat4 result0 = Mat4RotateZ(0.0f);
+            Mat4 expected0 =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result0, expected0));
+
+            // Test 2: Rotate by 90 degrees around Z-axis
+            Mat4 result90 = Mat4RotateZ(LPI / 2);
+            Mat4 expected90 = Mat4Lit(0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+                                      0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result90, expected90));
+
+            // Test 3: Rotate by 180 degrees around Z-axis
+            Mat4 result180 = Mat4RotateZ(LPI);
+            Mat4 expected180 = Mat4Lit(-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+                                       0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result180, expected180));
+
+            // Test 4: Rotate by 33 degrees around Z-axis
+            float radians33 = 33.0f * (LPI / 180.0f);  // Convert degrees to radians
+            Mat4 result33 = Mat4RotateZ(radians33);
+            Mat4 expected33 = Mat4Lit(0.83867f, -0.54464f, 0.0f, 0.0f, 0.54464f, 0.83867f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                      0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result33, expected33));
+        }
+
+        // Mat4RotateAxis
+        {
+            // Test 1: Rotate by 0 degrees around an arbitrary axis (should return the identity matrix)
+            Vec3 axis1 = {1.0f, 1.0f, 1.0f};
+            Mat4 result0 = Mat4Rotate(0.0f, axis1);
+            Mat4 expected0 =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result0, expected0));
+
+            // Test 2: Rotate by 90 degrees around the X-axis
+            Vec3 axis2 = {1.0f, 0.0f, 0.0f};
+            Mat4 result90 = Mat4Rotate(M_PI / 2, axis2);
+            Mat4 expected90 = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+                                      0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result90, expected90));
+
+            // Test 3: Rotate by 180 degrees around the Y-axis
+            Vec3 axis3 = {0.0f, 1.0f, 0.0f};
+            Mat4 result180 = Mat4Rotate(M_PI, axis3);
+            Mat4 expected180 = Mat4Lit(-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+                                       0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result180, expected180));
+
+            // Test 4: Rotate by 33 degrees around an arbitrary axis (1, 1, 1)
+            Vec3 axis4 = {1.0f, 1.0f, 1.0f};
+            float radians33 = 33.0f * (M_PI / 180.0f);  // Convert degrees to radians
+            Mat4 result33 = Mat4Rotate(radians33, axis4);
+            Mat4 expected33 =
+                Mat4Lit(0.89244705f, -0.26067102f, 0.36822397f, 0.0f, 0.36822397f, 0.89244705f, -0.26067102f, 0.0f,
+                        -0.26067102f, 0.36822397f, 0.89244705f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            assert(Mat4Eq(result33, expected33));
         }
     }
 }
