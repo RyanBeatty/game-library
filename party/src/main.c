@@ -346,6 +346,11 @@ static Mat4 Mat4Invert(Mat4 m) {
     return m2;
 }
 
+static bool Mat4Eq(Mat4 a, Mat4 b) {
+    return Vec3Eq(a.v.a, b.v.a) && Vec3Eq(a.v.b, b.v.b) && Vec3Eq(a.v.c, b.v.c) && Vec3Eq(a.v.d, b.v.d) &&
+           f32eq(a.v.x, b.v.x) && f32eq(a.v.y, b.v.y) && f32eq(a.v.z, b.v.z) && f32eq(a.v.w, b.v.w);
+}
+
 // Used for debug.
 typedef struct Vec4 {
     f32 x;
@@ -1147,6 +1152,92 @@ static void TestMath() {
             TAssert(
                 Vec3Eq(Vec3Cross(Vec3Lit(1.0f, 2.0f, 3.0f), Vec3Lit(4.0f, 5.0f, 6.0f)), Vec3Lit(-3.0f, 6.0f, -3.0f)),
                 "Vec3Cross Arbitrary");
+        }
+
+        // Mat4Scale
+        {
+            // Test uniform scaling.
+            Mat4 scaleUniform = Mat4Scale(2.0f, 2.0f, 2.0f);
+            Mat4 expectedUniform =
+                Mat4Lit(2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(scaleUniform, expectedUniform), "Mat4Scale Uniform");
+
+            // Test non-uniform scaling.
+            Mat4 scaleNonUniform = Mat4Scale(3.0f, 2.0f, 1.0f);
+            Mat4 expectedNonUniform =
+                Mat4Lit(3.0f, 0.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(scaleNonUniform, expectedNonUniform), "Mat4Scale Non-Uniform");
+
+            // Test identity scaling (scaling by 1 on all axes).
+            Mat4 scaleIdentity = Mat4Scale(1.0f, 1.0f, 1.0f);
+            Mat4 expectedIdentity =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(scaleIdentity, expectedIdentity), "Mat4Scale Identity");
+
+            // Test scaling with zero on one axis.
+            Mat4 scaleZeroX = Mat4Scale(0.0f, 1.0f, 1.0f);
+            Mat4 expectedZeroX =
+                Mat4Lit(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(scaleZeroX, expectedZeroX), "Mat4Scale Zero X");
+        }
+
+        // Test Mat4TranslateV
+        {
+            // Test translating by a positive vector.
+            Vec3 translatePos = {3.0f, 4.0f, 5.0f};
+            Mat4 translationMatrixPos = Mat4TranslateV(translatePos);
+            Mat4 expectedPos =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 3.0f, 0.0f, 1.0f, 0.0f, 4.0f, 0.0f, 0.0f, 1.0f, 5.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(translationMatrixPos, expectedPos), "Mat4TranslateV Positive Vector");
+
+            // Test translating by a negative vector.
+            Vec3 translateNeg = {-1.0f, -2.0f, -3.0f};
+            Mat4 translationMatrixNeg = Mat4TranslateV(translateNeg);
+            Mat4 expectedNeg = Mat4Lit(1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, -2.0f, 0.0f, 0.0f, 1.0f, -3.0f, 0.0f,
+                                       0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(translationMatrixNeg, expectedNeg), "Mat4TranslateV Negative Vector");
+
+            // Test translating by a zero vector (no translation).
+            Vec3 translateZero = {0.0f, 0.0f, 0.0f};
+            Mat4 translationMatrixZero = Mat4TranslateV(translateZero);
+            Mat4 expectedZero =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(translationMatrixZero, expectedZero), "Mat4TranslateV Zero Vector");
+
+            // Test translating by a large vector.
+            Vec3 translateLarge = {1000.0f, 2000.0f, 3000.0f};
+            Mat4 translationMatrixLarge = Mat4TranslateV(translateLarge);
+            Mat4 expectedLarge = Mat4Lit(1.0f, 0.0f, 0.0f, 1000.0f, 0.0f, 1.0f, 0.0f, 2000.0f, 0.0f, 0.0f, 1.0f,
+                                         3000.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(translationMatrixLarge, expectedLarge), "Mat4TranslateV Large Vector");
+        }
+
+        // Mat4RotateX
+        {
+            // 1. Test 90-degree rotation (π/2 radians) around the X-axis
+            Mat4 rotation90 = Mat4RotateX(LPI / 2.0f);
+            Mat4 expected90 = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+                                      0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(rotation90, expected90), "Mat4RotateX 90 degrees");
+
+            // 2. Test 180-degree rotation (π radians) around the X-axis
+            Mat4 rotation180 = Mat4RotateX(LPI);
+            Mat4 expected180 = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+                                       0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(rotation180, expected180), "Mat4RotateX 180 degrees");
+
+            // 3. Test 0-degree rotation (0 radians), should produce the identity matrix
+            Mat4 rotation0 = Mat4RotateX(0.0f);
+            Mat4 expected0 =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(rotation0, expected0), "Mat4RotateX 0 degrees");
+
+            // 4. Test 33-degree rotation (approx. 0.57596 radians) around the X-axis
+            f32 angle33 = 33.0f * (LPI / 180.0f);
+            Mat4 rotation33 = Mat4RotateX(angle33);
+            Mat4 expected33 = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.83867f, -0.54464f, 0.0f, 0.0f, 0.54464f, 0.83867f,
+                                      0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(rotation33, expected33), "Mat4RotateX 33 degrees");
         }
     }
 }
