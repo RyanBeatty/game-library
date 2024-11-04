@@ -1207,28 +1207,28 @@ static void TestMath() {
         // Test Mat4TranslateV
         {
             // Test translating by a positive vector.
-            Vec3 translatePos = {3.0f, 4.0f, 5.0f};
+            Vec3 translatePos = Vec3Lit(3.0f, 4.0f, 5.0f);
             Mat4 translationMatrixPos = Mat4TranslateV(translatePos);
             Mat4 expectedPos =
                 Mat4Lit(1.0f, 0.0f, 0.0f, 3.0f, 0.0f, 1.0f, 0.0f, 4.0f, 0.0f, 0.0f, 1.0f, 5.0f, 0.0f, 0.0f, 0.0f, 1.0f);
             TAssert(Mat4Eq(translationMatrixPos, expectedPos), "Mat4TranslateV Positive Vector");
 
             // Test translating by a negative vector.
-            Vec3 translateNeg = {-1.0f, -2.0f, -3.0f};
+            Vec3 translateNeg = Vec3Lit(-1.0f, -2.0f, -3.0f);
             Mat4 translationMatrixNeg = Mat4TranslateV(translateNeg);
             Mat4 expectedNeg = Mat4Lit(1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, -2.0f, 0.0f, 0.0f, 1.0f, -3.0f, 0.0f,
                                        0.0f, 0.0f, 1.0f);
             TAssert(Mat4Eq(translationMatrixNeg, expectedNeg), "Mat4TranslateV Negative Vector");
 
             // Test translating by a zero vector (no translation).
-            Vec3 translateZero = {0.0f, 0.0f, 0.0f};
+            Vec3 translateZero = Vec3Lit(0.0f, 0.0f, 0.0f);
             Mat4 translationMatrixZero = Mat4TranslateV(translateZero);
             Mat4 expectedZero =
                 Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
             TAssert(Mat4Eq(translationMatrixZero, expectedZero), "Mat4TranslateV Zero Vector");
 
             // Test translating by a large vector.
-            Vec3 translateLarge = {1000.0f, 2000.0f, 3000.0f};
+            Vec3 translateLarge = Vec3Lit(1000.0f, 2000.0f, 3000.0f);
             Mat4 translationMatrixLarge = Mat4TranslateV(translateLarge);
             Mat4 expectedLarge = Mat4Lit(1.0f, 0.0f, 0.0f, 1000.0f, 0.0f, 1.0f, 0.0f, 2000.0f, 0.0f, 0.0f, 1.0f,
                                          3000.0f, 0.0f, 0.0f, 0.0f, 1.0f);
@@ -1322,28 +1322,28 @@ static void TestMath() {
         // Mat4RotateAxis
         {
             // Test 1: Rotate by 0 degrees around an arbitrary axis (should return the identity matrix)
-            Vec3 axis1 = {1.0f, 1.0f, 1.0f};
+            Vec3 axis1 = Vec3Lit(1.0f, 1.0f, 1.0f);
             Mat4 result0 = Mat4Rotate(0.0f, axis1);
             Mat4 expected0 =
                 Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
             assert(Mat4Eq(result0, expected0));
 
             // Test 2: Rotate by 90 degrees around the X-axis
-            Vec3 axis2 = {1.0f, 0.0f, 0.0f};
+            Vec3 axis2 = Vec3Lit(1.0f, 0.0f, 0.0f);
             Mat4 result90 = Mat4Rotate(M_PI / 2, axis2);
             Mat4 expected90 = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
                                       0.0f, 0.0f, 1.0f);
             assert(Mat4Eq(result90, expected90));
 
             // Test 3: Rotate by 180 degrees around the Y-axis
-            Vec3 axis3 = {0.0f, 1.0f, 0.0f};
+            Vec3 axis3 = Vec3Lit(0.0f, 1.0f, 0.0f);
             Mat4 result180 = Mat4Rotate(M_PI, axis3);
             Mat4 expected180 = Mat4Lit(-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
                                        0.0f, 0.0f, 1.0f);
             assert(Mat4Eq(result180, expected180));
 
             // Test 4: Rotate by 33 degrees around an arbitrary axis (1, 1, 1)
-            Vec3 axis4 = {1.0f, 1.0f, 1.0f};
+            Vec3 axis4 = Vec3Lit(1.0f, 1.0f, 1.0f);
             float radians33 = 33.0f * (M_PI / 180.0f);  // Convert degrees to radians
             Mat4 result33 = Mat4Rotate(radians33, axis4);
             Mat4 expected33 =
@@ -1416,6 +1416,34 @@ static void TestMath() {
             breakpoint();
             TAssert(Mat4Eq(result4, expected4),
                     "Mat4Perspective - 30-degree FOV, 4:3 aspect ratio, small near/large far");
+        }
+
+        // Mat4LookAt
+        {
+            // Test Case 1: Simple Case - Looking down the -Z axis from the origin
+            Vec3 eye1 = Vec3Lit(0.0f, 0.0f, 0.0f);
+            Vec3 target1 = Vec3Lit(0.0f, 0.0f, -1.0f);
+            Vec3 up1 = Vec3Lit(0.0f, 1.0f, 0.0f);
+            Mat4 expected1 = Mat4Identity();
+            TAssert(Mat4Eq(Mat4LookAt(eye1, target1, up1), expected1), "Mat4LookAt look down -z from origin");
+
+            // Test Case 2: Offset Eye Position - Looking at the origin from (0, 0, 5)
+            Vec3 eye2 = Vec3Lit(0.0f, 0.0f, 5.0f);
+            Vec3 target2 = Vec3Lit(0.0f, 0.0f, 0.0f);
+            Vec3 up2 = Vec3Lit(0.0f, 1.0f, 0.0f);
+            Mat4 expected2 = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, -5.0f, 0.0f,
+                                     0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(Mat4LookAt(eye2, target2, up2), expected2),
+                    "Mat4LookAt Looking at the origin from (0, 0, 5)");
+
+            // Test Case 3: Tilted Up Vector - Looking at the origin from (5, 5, 5) with a tilted up vector
+            Vec3 eye3 = Vec3Lit(5.0f, 5.0f, 5.0f);
+            Vec3 target3 = Vec3Lit(0.0f, 0.0f, 0.0f);
+            Vec3 up3 = Vec3Lit(0.0f, 1.0f, 0.0f);
+            Mat4 expected3 = Mat4Lit(0.707107f, 0.0f, -0.707107f, 0.0f, -0.408248f, 0.816497f, -0.408248f, 0.0f,
+                                     0.57735f, 0.57735f, 0.57735f, -8.66025f, 0.0f, 0.0f, 0.0f, 1.0f);
+            TAssert(Mat4Eq(Mat4LookAt(eye3, target3, up3), expected3),
+                    "Mat4LookAt Looking at the origin from (5, 5, 5) with a tilted up vector");
         }
     }
 }
