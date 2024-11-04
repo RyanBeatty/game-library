@@ -180,6 +180,13 @@ typedef struct Mat4 {
     ((Matrix){(m).mm.m00, (m).mm.m10, (m).mm.m20, (m).mm.m30, (m).mm.m01, (m).mm.m11, (m).mm.m21, (m).mm.m31, \
               (m).mm.m02, (m).mm.m12, (m).mm.m22, (m).mm.m32, (m).mm.m03, (m).mm.m13, (m).mm.m23, (m).mm.m33})
 
+static Mat4 MatrixToMat4(Matrix mx) {
+    return Mat4Lit(mx.m0, mx.m1, mx.m2, mx.m3,    //
+                   mx.m4, mx.m5, mx.m6, mx.m7,    //
+                   mx.m8, mx.m9, mx.m10, mx.m11,  //
+                   mx.m12, mx.m13, mx.m14, mx.m15);
+}
+
 static void Mat4Print(Mat4 m) {
     printf(
         "mat4\n"
@@ -1166,6 +1173,10 @@ static void TestMath() {
                 "Vec3Cross Arbitrary");
         }
 
+        {
+            Mat4 m = Mat4Lit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+            TAssert(Mat4Eq(MatrixToMat4(Mat4ToRMatrix(m)), m), "Mat4 to Matrix");
+        }
         // Mat4Scale
         {
             // Test uniform scaling.
@@ -1339,6 +1350,42 @@ static void TestMath() {
                 Mat4Lit(0.89244705f, -0.26067102f, 0.36822397f, 0.0f, 0.36822397f, 0.89244705f, -0.26067102f, 0.0f,
                         -0.26067102f, 0.36822397f, 0.89244705f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
             assert(Mat4Eq(result33, expected33));
+        }
+
+        {
+            // Test case 1: Multiplying with identity matrix
+            Mat4 identity = Mat4Identity();
+            Mat4 matrix = Mat4Lit(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f, 13.0f,
+                                  14.0f, 15.0f, 16.0f);
+            Mat4 result1 = Mat4Multiply(matrix, identity);
+            TAssert(Mat4Eq(result1, matrix), "Mat4Multiply - Multiplying with identity should return the same matrix");
+
+            // Test case 2: Multiplying two arbitrary matrices
+            Mat4 a = Mat4Lit(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f, 10.0f, 11.0f, 12.0f, 13.0f, 14.0f,
+                             15.0f, 16.0f);
+            Mat4 b = Mat4Lit(16.0f, 15.0f, 14.0f, 13.0f, 12.0f, 11.0f, 10.0f, 9.0f, 8.0f, 7.0f, 6.0f, 5.0f, 4.0f, 3.0f,
+                             2.0f, 1.0f);
+            Mat4 expected2 = Mat4Lit(80.0f, 70.0f, 60.0f, 50.0f, 240.0f, 214.0f, 188.0f, 162.0f, 400.0f, 358.0f, 316.0f,
+                                     274.0f, 560.0f, 502.0f, 444.0f, 386.0f);
+            Mat4 result2 = Mat4Multiply(a, b);
+            TAssert(Mat4Eq(result2, expected2), "Mat4Multiply - Multiplying two arbitrary matrices");
+
+            // Test case 3: Multiplying by a scaling matrix
+            Mat4 scale = Mat4Scale(2.0f, 3.0f, 4.0f);
+            Mat4 expected3 = Mat4Lit(2.0f, 6.0f, 12.0f, 4.0f, 10.0f, 18.0f, 28.0f, 8.0f, 18.0f, 30.0f, 44.0f, 12.0f,
+                                     26.0f, 42.0f, 60.0f, 16.0f);
+            Mat4 result3 = Mat4Multiply(matrix, scale);
+            TAssert(Mat4Eq(result3, expected3), "Mat4Multiply - Multiplying by a scaling matrix");
+
+            // Test case 4: Multiplying by a rotation matrix (e.g., a 90-degree rotation around Z-axis)
+            Mat4 rotation = Mat4RotateZ(1.5708f);  // ~90 degrees in radians
+            Mat4 initial =
+                Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+            Mat4 expected4 = Mat4Lit(0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+                                     0.0f, 0.0f, 1.0f);
+            Mat4 result4 = Mat4Multiply(initial, rotation);
+            TAssert(Mat4Eq(result4, expected4),
+                    "Mat4Multiply - Multiplying by a 90-degree rotation matrix around Z-axis");
         }
     }
 }
