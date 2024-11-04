@@ -1413,7 +1413,6 @@ static void TestMath() {
             Mat4 result4 = Mat4Perspective(Deg2Rad(30.0f), 4.0f / 3.0f, 0.01f, 1000.0f);
             Mat4 expected4 = Mat4Lit(2.79904f, 0.0f, 0.0f, 0.0f, 0.0f, 3.73205f, 0.0f, 0.0f, 0.0f, 0.0f, -1.00002f,
                                      -0.0200002f, 0.0f, 0.0f, -1.0f, 0.0f);
-            breakpoint();
             TAssert(Mat4Eq(result4, expected4),
                     "Mat4Perspective - 30-degree FOV, 4:3 aspect ratio, small near/large far");
         }
@@ -1444,6 +1443,30 @@ static void TestMath() {
                                      0.57735f, 0.57735f, 0.57735f, -8.66025f, 0.0f, 0.0f, 0.0f, 1.0f);
             TAssert(Mat4Eq(Mat4LookAt(eye3, target3, up3), expected3),
                     "Mat4LookAt Looking at the origin from (5, 5, 5) with a tilted up vector");
+        }
+
+        // Mat4Rotate x Mat4Multiply
+        {
+            f32 target = Deg2Rad(90.0f);
+            Vec3 axis = Vec3Lit(0.0f, -1.0f, 0.0f);
+            Mat4 orient = Mat4Identity();
+            Mat4 expected = Mat4Lit(0.0f, 0.0f, -1.0f, 0.0f,  //
+                                    0.0f, 1.0f, 0.0f, 0.0f,   //
+                                    1.0f, 0.0f, 0.0f, 0.0f,   //
+                                    0.0f, 0.0f, 0.0f, 1.0f);
+            f32 step = target / 128.0f;
+            f32 rotation = 0.0f;
+            for (; rotation + step <= target; rotation += step) {
+                Mat4 r = Mat4Rotate(step, axis);
+                orient = Mat4Multiply(r, orient);
+            }
+
+            f32 rest = target - rotation;
+            if (rest > 0.0f) {
+                Mat4 r = Mat4Rotate(rest, axis);
+                orient = Mat4Multiply(r, orient);
+            }
+            TAssert(Mat4Eq(orient, expected), "Integration Turn Left");
         }
     }
 }
