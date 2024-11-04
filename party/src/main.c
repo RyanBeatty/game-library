@@ -283,7 +283,7 @@ static Mat4 Mat4Rotate(rad t, Vec3 axis) {
 static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
     f32 zoom = 1.0f / (f32)f32tan(fov * 0.5f);
     f32 depth = far - near;
-    return Mat4Lit(zoom * (1.0f / aspect), 0.0f, 0.0f, 0.0f,                         //
+    return Mat4Lit(zoom / aspect, 0.0f, 0.0f, 0.0f,                                  //
                    0.0f, zoom, 0.0f, 0.0f,                                           //
                    0.0f, 0.0f, -(far + near) / depth, (-2.0f * far * near) / depth,  //
                    0.0f, 0.0f, -1.0f, 0.0f);
@@ -1352,6 +1352,7 @@ static void TestMath() {
             assert(Mat4Eq(result33, expected33));
         }
 
+        // Mat4Multiply
         {
             // Test case 1: Multiplying with identity matrix
             Mat4 identity = Mat4Identity();
@@ -1386,6 +1387,35 @@ static void TestMath() {
             Mat4 result4 = Mat4Multiply(initial, rotation);
             TAssert(Mat4Eq(result4, expected4),
                     "Mat4Multiply - Multiplying by a 90-degree rotation matrix around Z-axis");
+        }
+
+        // Mat4Perspective
+        {
+            // Test case 1: Basic perspective matrix with 45-degree FOV and 16:9 aspect ratio
+            Mat4 result1 = Mat4Perspective(Deg2Rad(45.0f), 16.0f / 9.0f, 0.1f, 100.0f);
+            Mat4 expected1 = Mat4Lit(1.3579952f, 0.0f, 0.0f, 0.0f, 0.0f, 2.4142137f, 0.0f, 0.0f, 0.0f, 0.0f, -1.002002f,
+                                     -0.2002002f, 0.0f, 0.0f, -1.0f, 0.0f);
+            TAssert(Mat4Eq(result1, expected1), "Mat4Perspective - 45-degree FOV, 16:9 aspect ratio");
+
+            // Test case 2: Perspective matrix with square aspect ratio (45-degree FOV, 1:1 aspect ratio)
+            Mat4 result2 = Mat4Perspective(Deg2Rad(45.0f), 1.0f, 0.1f, 100.0f);
+            Mat4 expected2 = Mat4Lit(2.4142137f, 0.0f, 0.0f, 0.0f, 0.0f, 2.4142137f, 0.0f, 0.0f, 0.0f, 0.0f, -1.002002f,
+                                     -0.2002002f, 0.0f, 0.0f, -1.0f, 0.0f);
+            TAssert(Mat4Eq(result2, expected2), "Mat4Perspective - 45-degree FOV, 1:1 aspect ratio");
+
+            // Test case 3: Perspective matrix with wide aspect ratio (60-degree FOV, 21:9 aspect ratio)
+            Mat4 result3 = Mat4Perspective(Deg2Rad(60.0f), 21.0f / 9.0f, 0.1f, 100.0f);
+            Mat4 expected3 = Mat4Lit(0.7423, 0.0f, 0.0f, 0.0f, 0.0f, 1.73205f, 0.0f, 0.0f, 0.0f, 0.0f, -1.002002f,
+                                     -0.2002002f, 0.0f, 0.0f, -1.0f, 0.0f);
+            TAssert(Mat4Eq(result3, expected3), "Mat4Perspective - 60-degree FOV, 21:9 aspect ratio");
+
+            // Test case 4: Perspective matrix with small near and large far planes (30-degree FOV, 4:3 aspect ratio)
+            Mat4 result4 = Mat4Perspective(Deg2Rad(30.0f), 4.0f / 3.0f, 0.01f, 1000.0f);
+            Mat4 expected4 = Mat4Lit(2.79904f, 0.0f, 0.0f, 0.0f, 0.0f, 3.73205f, 0.0f, 0.0f, 0.0f, 0.0f, -1.00002f,
+                                     -0.0200002f, 0.0f, 0.0f, -1.0f, 0.0f);
+            breakpoint();
+            TAssert(Mat4Eq(result4, expected4),
+                    "Mat4Perspective - 30-degree FOV, 4:3 aspect ratio, small near/large far");
         }
     }
 }
