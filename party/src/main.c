@@ -172,6 +172,7 @@ typedef struct Mat4 {
     };
 } Mat4;
 
+// Take matrix notation as viewed on textbook page and convert to mat4
 #define Mat4Lit(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33)                     \
     ((Mat4){.m = {(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), \
                   (m23), (m33)}})
@@ -187,6 +188,7 @@ static Mat4 MatrixToMat4(Matrix mx) {
                    mx.m12, mx.m13, mx.m14, mx.m15);
 }
 
+// Print in col maj order.
 static void Mat4Print(Mat4 m) {
     printf(
         "mat4\n"
@@ -396,9 +398,9 @@ static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
 }
 
 static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
-    return Vec3Lit((v.x * m.mm.m00) + (v.x * m.mm.m01) + (v.x * m.mm.m02),  //
-                   (v.y * m.mm.m10) + (v.y * m.mm.m11) + (v.y * m.mm.m12),  //
-                   (v.z * m.mm.m20) + (v.z * m.mm.m21) + (v.z * m.mm.m22));
+    return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02),  //
+                   (v.x * m.mm.m10) + (v.y * m.mm.m11) + (v.z * m.mm.m12),  //
+                   (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22));
 }
 
 ////////////////////////////////////////////////////////////
@@ -931,7 +933,7 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 }
 
 static void GameStateDraw(GameState* gstate, float delta) {
-    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 10.0f);
+    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Mat4 vieworient = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
                                      0.0f, 1.0f, 0.0f, 0.0f,  //
                                      0.0f, 0.0f, 1.0f, 0.0f,  //
@@ -940,6 +942,23 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                       0.0f, 1.0f, 0.0f, 0.0f,   //
                                       0.0f, 0.0f, -1.0f, 0.0f,  //
                                       0.0f, 0.0f, 0.0f, 1.0f);
+
+    static u32 foo = 0;
+
+    if (foo < 1) {
+        foo++;
+        vieworient = Mat4RotateY(Deg2Rad(90.0f));
+        Mat4Print(vieworient);
+        Mat4Print(Mat4Invert(vieworient));
+        Mat4Print(Mat4LookAt(Vec3Lit(0, 0, 0), Vec3Lit(-0.1f, 0, 0), Vec3Lit(0, 1, 0)));
+        Mat4 orient = vieworient;
+        orient.mm.m21 = 0.0f;  // Zero out y of the z/forward axis since we only want to move on z and x plane.
+        orient.mm.m10 = 0.0f;
+        orient.mm.m11 = 1.0f;
+        orient.mm.m12 = 0.0f;
+        orient.mm.m13 = 0.0f;
+        Mat4Print(orient);
+    }
 
     // Camera movement.
     {
@@ -950,6 +969,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
             Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
             Mat4 orient = vieworient;
             orient.mm.m21 = 0.0f;  // Zero out y of the z/forward axis since we only want to move on z and x plane.
             orient.mm.m10 = 0.0f;
@@ -957,6 +977,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
             orient.mm.m12 = 0.0f;
             orient.mm.m13 = 0.0f;
             Vec3 dir_world = Vec3Transform(dir_model, orient);
+            if (f32abs(y) > 0.6f && foo < 2) {
+                ++foo;
+                Vec3 dir = Vec3Transform(Vec3Lit(0, 0, -1), orient);
+                breakpoint();
+                printf("vec %f %f %f\n", dir.x, dir.y, dir.z);
+            }
             // Vec3 dir_world = Vec3Transform(Vec3Lit(1.0f, 0.0f, 0.0f), orient);
             // Mat4Print(orient);
             // TraceLog(LOG_INFO, "dir world: %f %f %f", dir_world.x, dir_world.y, dir_world.z);
@@ -1077,7 +1103,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
-    Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f)};
+    Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
+                        Vec3Lit(-15.0f, 0.0f, 0.0f)};
 
     glBindVertexArray(vao1);
     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
