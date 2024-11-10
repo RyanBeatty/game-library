@@ -140,6 +140,7 @@ typedef struct Mat4 {
     union {
         f32 m[4 * 4];
 
+        // col major order.
         struct {
             f32 m00;
             f32 m10;
@@ -159,6 +160,7 @@ typedef struct Mat4 {
             f32 m33;
         } mm;
 
+        // a b c d are the basis vec3s
         struct {
             Vec3 a;
             f32 x;
@@ -938,26 +940,95 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                      0.0f, 1.0f, 0.0f, 0.0f,  //
                                      0.0f, 0.0f, 1.0f, 0.0f,  //
                                      0.0f, 0.0f, 0.0f, 1.0f);
-    static Mat4 viewupright = Mat4Lit(-1.0f, 0.0f, 0.0f, 0.0f,  //
-                                      0.0f, 1.0f, 0.0f, 0.0f,   //
-                                      0.0f, 0.0f, -1.0f, 0.0f,  //
-                                      0.0f, 0.0f, 0.0f, 1.0f);
+    static Mat4 viewbody = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
+                                   0.0f, 1.0f, 0.0f, 0.0f,  //
+                                   0.0f, 0.0f, 1.0f, 0.0f,  //
+                                   0.0f, 0.0f, 0.0f, 1.0f);
+
+    static bool INIT = false;
+    static LShader SHADER = {0};
+    static u32 VA1 = 0;
+
+    if (!INIT) {
+        INIT = true;
+
+        SHADER = GetShader();
+
+        {
+            glGenVertexArrays(1, &VA1);
+            glBindVertexArray(VA1);
+
+            VAtt vertices[] = {
+                // Back.
+                {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},   //
+                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
+                {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},    //
+                {{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},   //
+                {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},    //
+                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
+
+                // Front.
+                {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},  //
+                {{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},   //
+                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
+                {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},   //
+                {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},  //
+
+                // Left.
+                {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
+                {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},   //
+                {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
+                {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
+                {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
+                {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
+
+                // Right.
+                {{0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},   //
+                {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},    //
+                {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},  //
+                {{0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},   //
+                {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},  //
+                {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},    //
+
+                // Bottom.
+                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},  //
+                {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},   //
+                {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},    //
+                {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},    //
+                {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},   //
+                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},  //
+
+                // Top.
+                {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}},   //
+                {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}},  //
+                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},    //
+                {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},   //
+                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},    //
+                {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}}   //
+            };
+
+            u32 vb = 0;
+            glGenBuffers(1, &vb);
+            glBindBuffer(GL_ARRAY_BUFFER, vb);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+            glVertexAttribPointer(SHADER.pos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
+            glEnableVertexAttribArray(SHADER.pos_loc);
+            glVertexAttribPointer(SHADER.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(SHADER.color_loc);
+        }
+    }
 
     static u32 foo = 0;
 
     if (foo < 1) {
         foo++;
         vieworient = Mat4RotateY(Deg2Rad(90.0f));
+        viewbody = vieworient;
         Mat4Print(vieworient);
-        Mat4Print(Mat4Invert(vieworient));
-        Mat4Print(Mat4LookAt(Vec3Lit(0, 0, 0), Vec3Lit(-0.1f, 0, 0), Vec3Lit(0, 1, 0)));
-        Mat4 orient = vieworient;
-        orient.mm.m21 = 0.0f;  // Zero out y of the z/forward axis since we only want to move on z and x plane.
-        orient.mm.m10 = 0.0f;
-        orient.mm.m11 = 1.0f;
-        orient.mm.m12 = 0.0f;
-        orient.mm.m13 = 0.0f;
-        Mat4Print(orient);
+        // Mat4Print(Mat4Invert(vieworient));
+        // Mat4Print(Mat4LookAt(Vec3Lit(0, 0, 0), Vec3Lit(-0.1f, 0, 0), Vec3Lit(0, 1, 0)));
     }
 
     // Camera movement.
@@ -970,22 +1041,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
             Vec3 dir_model = Vec3Lit(x, 0.0f, y);
 
-            Mat4 orient = vieworient;
-            orient.mm.m21 = 0.0f;  // Zero out y of the z/forward axis since we only want to move on z and x plane.
-            orient.mm.m10 = 0.0f;
-            orient.mm.m11 = 1.0f;
-            orient.mm.m12 = 0.0f;
-            orient.mm.m13 = 0.0f;
-            Vec3 dir_world = Vec3Transform(dir_model, orient);
-            if (f32abs(y) > 0.6f && foo < 2) {
-                ++foo;
-                Vec3 dir = Vec3Transform(Vec3Lit(0, 0, -1), orient);
-                breakpoint();
-                printf("vec %f %f %f\n", dir.x, dir.y, dir.z);
-            }
-            // Vec3 dir_world = Vec3Transform(Vec3Lit(1.0f, 0.0f, 0.0f), orient);
-            // Mat4Print(orient);
-            // TraceLog(LOG_INFO, "dir world: %f %f %f", dir_world.x, dir_world.y, dir_world.z);
+            Vec3 dir_world = Vec3Transform(dir_model, viewbody);
+            // if (f32abs(y) > 0.6f && foo < 2) {
+            //     ++foo;
+            //     Vec3 dir = Vec3Transform(Vec3Lit(0, 0, -1), orient);
+            //     breakpoint();
+            //     printf("vec %f %f %f\n", dir.x, dir.y, dir.z);
+            // }
+            Mat4Print(viewbody);
             Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
             viewpos = Vec3Add(viewpos, mov_world);
         }
@@ -995,85 +1058,37 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
             if (x != 0.0f || y != 0.0f) {
-                // Find rotation axis in model space.
-                Vec3 dir = Vec3Lit(x, y, 0.0f);
-                Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
-                Vec3 axis = Vec3Cross(forward, dir);
+                // rotate orient.
+                {
+                    // Find rotation axis in model space.
+                    Vec3 dir = Vec3Lit(x, y, 0.0f);
+                    Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
+                    Vec3 axis = Vec3Cross(forward, dir);
 
-                f32 len = Vec3Len(dir);
+                    f32 len = Vec3Len(dir);
 
-                f32 angularvel = Deg2Rad(45.0f) * len * delta;
-                Mat4 rotation = Mat4Rotate(angularvel, axis);
-                vieworient = Mat4Multiply(rotation, vieworient);
+                    f32 angularvel = Deg2Rad(45.0f) * len * delta;
+                    Mat4 rotation = Mat4Rotate(angularvel, axis);
+                    vieworient = Mat4Multiply(rotation, vieworient);
+                }
+
+                // rotate body.
+                {
+                    // Find rotation axis in model space. only consider rotation around y axis
+                    // (which comes from moving stick left/right in x dir).
+                    Vec3 dir = Vec3Lit(x, 0.0f, 0.0f);
+                    Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
+                    Vec3 axis = Vec3Cross(forward, dir);
+
+                    f32 len = Vec3Len(dir);
+
+                    f32 angularvel = Deg2Rad(45.0f) * len * delta;
+                    Mat4 rotation = Mat4Rotate(angularvel, axis);
+                    viewbody = Mat4Multiply(rotation, viewbody);
+                }
             }
         }
     }
-
-    LShader shader = GetShader();
-
-    u32 vao1 = 0;
-    glGenVertexArrays(1, &vao1);
-    glBindVertexArray(vao1);
-
-    VAtt vertices[] = {
-        // Back.
-        {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
-        {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},   //
-        {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},    //
-        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f}},  //
-
-        // Front.
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},  //
-        {{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},    //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},   //
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f}},  //
-
-        // Left.
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
-        {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f}},  //
-        {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
-
-        // Right.
-        {{0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},    //
-        {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},  //
-        {{0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},   //
-        {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f}},  //
-        {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f}},    //
-
-        // Bottom.
-        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},  //
-        {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},   //
-        {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},    //
-        {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},    //
-        {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f}},   //
-        {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f}},  //
-
-        // Top.
-        {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}},   //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}},  //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},    //
-        {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},   //
-        {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},    //
-        {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}}   //
-    };
-
-    u32 vb1 = 0;
-    glGenBuffers(1, &vb1);
-    glBindBuffer(GL_ARRAY_BUFFER, vb1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(shader.pos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
-    glEnableVertexAttribArray(shader.pos_loc);
-    glVertexAttribPointer(shader.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(shader.color_loc);
 
     // Drawing begin.
     {
@@ -1095,9 +1110,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     }
 
     // Begin shader.
-    glUseProgram(shader.pid);
+    glUseProgram(SHADER.pid);
 
-    glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
+    glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
     Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), vieworient));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
@@ -1106,12 +1121,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
     Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
                         Vec3Lit(-15.0f, 0.0f, 0.0f)};
 
-    glBindVertexArray(vao1);
+    glBindVertexArray(VA1);
     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
         Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
         Mat4 translate = Mat4TranslateV(positions[i]);
         Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
-        glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+        glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
 
