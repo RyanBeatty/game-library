@@ -1025,12 +1025,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glBindVertexArray(VA2);
 
             VAtt vertices[] = {                                           //
-                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
-                               {{-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},  //
-                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
-                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
-                               {{0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},    //
-                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}}
+                               {{-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},   //
+                               {{-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},  //
+                               {{0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},   //
+                               {{0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},   //
+                               {{0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},    //
+                               {{-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f}}
 
             };
 
@@ -1044,17 +1044,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glVertexAttribPointer(SHADER.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
             glEnableVertexAttribArray(SHADER.color_loc);
         }
-    }
 
-    static u32 foo = 0;
-
-    if (foo < 1) {
-        foo++;
         vieworient = Mat4RotateY(Deg2Rad(90.0f));
         viewbody = vieworient;
-        Mat4Print(vieworient);
-        // Mat4Print(Mat4Invert(vieworient));
-        // Mat4Print(Mat4LookAt(Vec3Lit(0, 0, 0), Vec3Lit(-0.1f, 0, 0), Vec3Lit(0, 1, 0)));
     }
 
     // Camera movement.
@@ -1063,6 +1055,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // Left stick movement.
         {
+            static const f32 VEL = 20.0f;
+
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
             Vec3 dir_model = Vec3Lit(x, 0.0f, y);
@@ -1075,7 +1069,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             //     printf("vec %f %f %f\n", dir.x, dir.y, dir.z);
             // }
             Mat4Print(viewbody);
-            Vec3 mov_world = Vec3Scale(dir_world, 10.0f * delta);
+            Vec3 mov_world = Vec3Scale(dir_world, VEL * delta);
             viewpos = Vec3Add(viewpos, mov_world);
         }
 
@@ -1084,6 +1078,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
             if (x != 0.0f || y != 0.0f) {
+                static const rad VEL = Deg2Rad(90.0f);
+
                 // rotate orient.
                 {
                     // Find rotation axis in model space.
@@ -1093,9 +1089,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     f32 len = Vec3Len(dir);
 
-                    f32 angularvel = Deg2Rad(45.0f) * len * delta;
+                    f32 angularvel = VEL * len * delta;
                     Mat4 rotation = Mat4Rotate(angularvel, axis);
-                    vieworient = Mat4Multiply(rotation, vieworient);
+                    breakpoint();
+                    vieworient = Mat4Multiply(vieworient, rotation);
                 }
 
                 // rotate body.
@@ -1108,9 +1105,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     f32 len = Vec3Len(dir);
 
-                    f32 angularvel = Deg2Rad(45.0f) * len * delta;
+                    f32 angularvel = VEL * len * delta;
                     Mat4 rotation = Mat4Rotate(angularvel, axis);
-                    viewbody = Mat4Multiply(rotation, viewbody);
+                    viewbody = Mat4Multiply(viewbody, rotation);
                 }
             }
         }
