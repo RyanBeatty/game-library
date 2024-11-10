@@ -948,6 +948,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static bool INIT = false;
     static LShader SHADER = {0};
     static u32 VA1 = 0;
+    static u32 VA2 = 0;
 
     if (!INIT) {
         INIT = true;
@@ -1006,6 +1007,31 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},   //
                 {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f}},    //
                 {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f}}   //
+            };
+
+            u32 vb = 0;
+            glGenBuffers(1, &vb);
+            glBindBuffer(GL_ARRAY_BUFFER, vb);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+            glVertexAttribPointer(SHADER.pos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
+            glEnableVertexAttribArray(SHADER.pos_loc);
+            glVertexAttribPointer(SHADER.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(SHADER.color_loc);
+        }
+
+        {
+            glGenVertexArrays(1, &VA2);
+            glBindVertexArray(VA2);
+
+            VAtt vertices[] = {                                           //
+                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
+                               {{-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},  //
+                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
+                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
+                               {{0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}},    //
+                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f}}
+
             };
 
             u32 vb = 0;
@@ -1126,6 +1152,17 @@ static void GameStateDraw(GameState* gstate, float delta) {
         Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
         Mat4 translate = Mat4TranslateV(positions[i]);
         Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
+        glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
+    // Floor.
+    {
+        glBindVertexArray(VA2);
+        Mat4 scale = Mat4Scale(100.0f, 100.0f, 0.0f);
+        Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
+        Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
+        Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, Mat4Multiply(rotation, scale)));
         glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
