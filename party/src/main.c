@@ -741,6 +741,7 @@ typedef struct LShader {
     u32 pos_loc;
     u32 color_loc;
     u32 ucolor_loc;
+    u32 light_color_loc;
     u32 mmvp_loc;
 } LShader;
 
@@ -797,9 +798,10 @@ static LShader GetShader() {
         "in vec4 VertColor;\n"
         "out vec4 FragColor;\n"
         "uniform vec4 UColor;\n"
+        "uniform vec4 lightColor;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = (0.5 * UColor) + (0.5 * VertColor);\n"
+        "    FragColor = VertColor * lightColor;\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
@@ -814,6 +816,7 @@ static LShader GetShader() {
             SHADER.color_loc = glGetAttribLocation(SHADER.pid, "InColor");
 
             SHADER.ucolor_loc = glGetUniformLocation(SHADER.pid, "UColor");
+            SHADER.light_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
             SHADER.mmvp_loc = glGetUniformLocation(SHADER.pid, "MVP");
         }
     }
@@ -1073,12 +1076,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glBindVertexArray(VA2);
 
             VAtt vertices[] = {                                           //
-                               {{-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},   //
-                               {{-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},  //
-                               {{0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},   //
-                               {{0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},   //
-                               {{0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f}},    //
-                               {{-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f}}
+                               {{-0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.5f}},   //
+                               {{-0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.5f}},  //
+                               {{0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.5f}},   //
+                               {{0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.5f}},   //
+                               {{0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.5f}},    //
+                               {{-0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.5f}}
 
             };
 
@@ -1210,38 +1213,41 @@ static void GameStateDraw(GameState* gstate, float delta) {
             }
         }
 
-        // Begin shader.
-        glUseProgram(SHADER.pid);
-        glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
-
-        // Draw cubes.
         {
-            Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
-                                Vec3Lit(-15.0f, 0.0f, 0.0f)};
+            LShader shader = SHADER;
+            glUseProgram(shader.pid);
+            glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
+            glUniform4f(shader.light_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
 
-            glBindVertexArray(VA1);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                Mat4 translate = Mat4TranslateV(positions[i]);
-                Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
-                glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+            // Draw cubes.
+            {
+                Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f),
+                                    Vec3Lit(15.0f, 3.0f, -50.0f), Vec3Lit(-15.0f, 0.0f, 0.0f)};
+
+                glBindVertexArray(VA1);
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                    Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                    Mat4 translate = Mat4TranslateV(positions[i]);
+                    Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
+                    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
             }
-        }
 
-        // Draw floor.
-        {
-            glBindVertexArray(VA2);
-            Mat4 scale = Mat4Scale(100.0f, 100.0f, 0.0f);
-            Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
-            Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
-            Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, Mat4Multiply(rotation, scale)));
-            glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-        }
+            // Draw floor.
+            {
+                glBindVertexArray(VA2);
+                Mat4 scale = Mat4Scale(100.0f, 100.0f, 0.0f);
+                Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
+                Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
+                Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, Mat4Multiply(rotation, scale)));
+                glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
 
-        if (gstate->debug) {
-            DrawFPS(5, 5);
+            if (gstate->debug) {
+                DrawFPS(5, 5);
+            }
         }
 
         EndDrawing();
