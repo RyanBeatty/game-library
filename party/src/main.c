@@ -132,6 +132,15 @@ static bool Vec3Eq(Vec3 a, Vec3 b) {
 static bool Vec3EqPro(Vec3 a, Vec3 b, f32 tol) {
     return ((f32abs(a.x - b.x) < tol) && (f32abs(a.y - b.y) < tol) && (f32abs(a.z - b.z) < tol));
 }
+static Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
+    axis = Vec3Normalize(axis);
+    f32 cosr = f32cos(rot);
+    f32 sinr = f32sin(rot);
+    Vec3 vcos = Vec3Scale(v, cosr);
+    Vec3 axv = Vec3Scale(Vec3Cross(axis, v), sinr);
+    Vec3 kk = Vec3Scale(axis, Vec3Dot(axis, v) * (1 - cosr));
+    return Vec3Add(vcos, Vec3Add(axv, kk));
+}
 
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
@@ -940,7 +949,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                      0.0f, 1.0f, 0.0f, 0.0f,  //
                                      0.0f, 0.0f, 1.0f, 0.0f,  //
                                      0.0f, 0.0f, 0.0f, 1.0f);
-    static Vec3 viewforward;
     static Mat4 viewbody = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
                                    0.0f, 1.0f, 0.0f, 0.0f,  //
                                    0.0f, 0.0f, 1.0f, 0.0f,  //
@@ -1048,7 +1056,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         vieworient = Mat4RotateY(Deg2Rad(90.0f));
         viewbody = vieworient;
-        viewforward = Vec3Lit(-1.0f, 0.0f, 0.0f);
     }
 
     // Camera movement.
@@ -1063,8 +1070,17 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
             Vec3 dir_model = Vec3Lit(x, 0.0f, y);
 
-            Vec3 dir_world = Vec3Transform(dir_model, viewbody);
-            Mat4Print(viewbody);
+            // Determine body forward pos from camera forward.
+            Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
+            Vec3 c = Vec3Normalize(Vec3Lit(-forward.x, 0.0f, -forward.z));
+            Vec3 a = Vec3Normalize(Vec3Cross(Vec3Lit(0.0f, 1.0f, 0.0f), c));
+            Vec3 b = Vec3Normalize(Vec3Cross(c, a));
+            Mat4 rotation = Mat4Identity();
+            rotation.v.a = a;
+            rotation.v.b = b;
+            rotation.v.c = c;
+
+            Vec3 dir_world = Vec3Transform(dir_model, rotation);
             Vec3 mov_world = Vec3Scale(dir_world, VEL * delta);
             viewpos = Vec3Add(viewpos, mov_world);
         }
@@ -1087,8 +1103,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     f32 angularvel = VEL * len * delta;
                     Mat4 rotation = Mat4Rotate(angularvel, axis);
-                    breakpoint();
-                    viewforward = Vec3Transform(viewforward, rotation);
+                    vieworient = Mat4Multiply(vieworient, rotation);
                 }
 
                 // rotate body.
@@ -1133,8 +1148,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
-    Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), vieworient));
-    view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
+    Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
+    Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
     Mat4 vp = Mat4Multiply(proj, view);
 
