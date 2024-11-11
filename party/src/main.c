@@ -1090,7 +1090,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
             if (x != 0.0f || y != 0.0f) {
-                static const rad VEL = Deg2Rad(90.0f);
+                static const rad VEL = Deg2Rad(70.0f);
 
                 // rotate orient.
                 {
@@ -1124,66 +1124,69 @@ static void GameStateDraw(GameState* gstate, float delta) {
         }
     }
 
-    // Drawing begin.
+    // Drawing.
     {
-        BeginDrawing();
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-
-    // Enable/Disable culling.
-    // TODO: Make this nicer at some point. Useful for debugging.
-    {
-        if (gstate->debug) {
-            glDisable(GL_CULL_FACE);
-        } else {
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
-            glFrontFace(GL_CCW);
+        // Begin.
+        {
+            BeginDrawing();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
-    }
 
-    // Begin shader.
-    glUseProgram(SHADER.pid);
+        // Enable/Disable culling.
+        // TODO: Make this nicer at some point. Useful for debugging.
+        {
+            if (gstate->debug) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glFrontFace(GL_CCW);
+            }
+        }
 
-    glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
+        // Begin shader.
+        glUseProgram(SHADER.pid);
 
-    Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
-    Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
-    Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 100.0f);
-    Mat4 vp = Mat4Multiply(proj, view);
+        glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
-    // Draw cubes.
-    {
-        Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
-                            Vec3Lit(-15.0f, 0.0f, 0.0f)};
+        Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
+        Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
+        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+        Mat4 vp = Mat4Multiply(proj, view);
 
-        glBindVertexArray(VA1);
-        for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-            Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-            Mat4 translate = Mat4TranslateV(positions[i]);
-            Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
+        // Draw cubes.
+        {
+            Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
+                                Vec3Lit(-15.0f, 0.0f, 0.0f)};
+
+            glBindVertexArray(VA1);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                Mat4 translate = Mat4TranslateV(positions[i]);
+                Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
+                glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
+
+        // Draw floor.
+        {
+            glBindVertexArray(VA2);
+            Mat4 scale = Mat4Scale(100.0f, 100.0f, 0.0f);
+            Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
+            Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
+            Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, Mat4Multiply(rotation, scale)));
             glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-    }
 
-    // Draw floor.
-    {
-        glBindVertexArray(VA2);
-        Mat4 scale = Mat4Scale(100.0f, 100.0f, 0.0f);
-        Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
-        Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
-        Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, Mat4Multiply(rotation, scale)));
-        glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-    }
+        if (gstate->debug) {
+            DrawFPS(5, 5);
+        }
 
-    if (gstate->debug) {
-        DrawFPS(5, 5);
+        EndDrawing();
     }
-
-    EndDrawing();
 }
 
 ////////////////////////////////////////////////////////////
