@@ -1150,6 +1150,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
+        // Get camera matrix by finding transformed forward and then getting look at matrix from that dir + worl pos.
+        // remember that we can't just use the view orient matrix because the j and k basis vectors will have
+        // roll in them. for fps style camera we wan't no roll.
         Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
         Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
