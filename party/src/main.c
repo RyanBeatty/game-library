@@ -821,6 +821,42 @@ static LShader GetShader() {
     return SHADER;
 }
 
+static LShader GetLightShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 InPos;\n"
+        "\n"
+        "uniform mat4 MVP;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = MVP * vec4(InPos, 1.0);\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "void main()\n"
+        "{\n"
+        "    FragColor = vec4(1.0);\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.pos_loc = glGetAttribLocation(SHADER.pid, "InPos");
+            SHADER.mmvp_loc = glGetUniformLocation(SHADER.pid, "MVP");
+        }
+    }
+
+    return SHADER;
+}
+
 typedef enum AttLoc {
     LOC_POS_X = 0,
     LOC_POS_Y,
@@ -956,6 +992,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     static bool INIT = false;
     static LShader SHADER = {0};
+    static LShader LIGHT_SHADER = {0};
     static u32 VA1 = 0;
     static u32 VA2 = 0;
 
@@ -963,6 +1000,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         INIT = true;
 
         SHADER = GetShader();
+        LIGHT_SHADER = GetLightShader();
 
         {
             glGenVertexArrays(1, &VA1);
@@ -1129,7 +1167,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         // Begin.
         {
             BeginDrawing();
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
 
@@ -1145,11 +1183,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
             }
         }
 
-        // Begin shader.
-        glUseProgram(SHADER.pid);
-
-        glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
-
         // Get camera matrix by finding transformed forward and then getting look at matrix from that dir + worl pos.
         // remember that we can't just use the view orient matrix because the j and k basis vectors will have
         // roll in them. for fps style camera we wan't no roll.
@@ -1157,6 +1190,28 @@ static void GameStateDraw(GameState* gstate, float delta) {
         Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
         Mat4 vp = Mat4Multiply(proj, view);
+
+        // Lights
+        {
+            LShader shader = LIGHT_SHADER;
+            glUseProgram(shader.pid);
+            {
+                Vec3 positions[] = {Vec3Lit(10.0f, 10.0f, -10.0f)};
+
+                glBindVertexArray(VA1);
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                    Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                    Mat4 translate = Mat4TranslateV(positions[i]);
+                    Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
+                    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                }
+            }
+        }
+
+        // Begin shader.
+        glUseProgram(SHADER.pid);
+        glUniform4f(SHADER.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
 
         // Draw cubes.
         {
@@ -1181,7 +1236,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
             Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, Mat4Multiply(rotation, scale)));
             glUniformMatrix4fv(SHADER.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
         if (gstate->debug) {
