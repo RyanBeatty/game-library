@@ -34,6 +34,7 @@ typedef f32 deg;
 
 #define Deg2Rad(d) ((d) * LTAU / 360.0f)
 #define Rad2Deg(r) ((r) * 360.0f / LTAU)
+#define RGB01(v) ((v) / 255.0f)
 
 ////////////////////////////////////////////////////////////
 // S:Math
@@ -1171,7 +1172,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         // Begin.
         {
             BeginDrawing();
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClearColor(RGB01(20.0f), RGB01(24.0f), RGB01(82.0f), 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
 
