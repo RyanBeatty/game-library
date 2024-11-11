@@ -821,7 +821,8 @@ static LShader GetShader() {
     return SHADER;
 }
 
-static LShader GetLightShader() {
+// Shader that will draw light sources without lighting calculations effecting the color.
+static LShader GetUnlitShader() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 InPos;\n"
@@ -992,7 +993,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     static bool INIT = false;
     static LShader SHADER = {0};
-    static LShader LIGHT_SHADER = {0};
+    static LShader UNLIT_SHADER = {0};
     static u32 VA1 = 0;
     static u32 VA2 = 0;
 
@@ -1000,7 +1001,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         INIT = true;
 
         SHADER = GetShader();
-        LIGHT_SHADER = GetLightShader();
+        UNLIT_SHADER = GetUnlitShader();
 
         {
             glGenVertexArrays(1, &VA1);
@@ -1193,7 +1194,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // Lights
         {
-            LShader shader = LIGHT_SHADER;
+            LShader shader = UNLIT_SHADER;
             glUseProgram(shader.pid);
             {
                 Vec3 positions[] = {Vec3Lit(10.0f, 10.0f, -10.0f)};
