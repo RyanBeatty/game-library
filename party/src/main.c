@@ -746,6 +746,9 @@ typedef struct LShader {
     u32 ulight_pos_loc;
     u32 light_color_loc;
     u32 mmvp_loc;
+    u32 model_loc;
+    u32 view_loc;
+    u32 proj_loc;
 } LShader;
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
@@ -788,13 +791,15 @@ static LShader GetShader() {
         "layout (location = 1) in vec3 InColor;\n"
         "layout (location = 2) in vec3 normal;\n"
         "\n"
-        "uniform mat4 MVP;\n"
+        "uniform mat4 model;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 proj;\n"
         "\n"
         "out vec4 VertColor;\n"
         "out vec3 Normal;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = MVP * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
+        "   gl_Position = proj * view * model * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
         "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
         "   Normal = normal;\n"
         "}\0";
@@ -829,7 +834,9 @@ static LShader GetShader() {
             SHADER.ucolor_loc = glGetUniformLocation(SHADER.pid, "UColor");
             SHADER.ulight_pos_loc = glGetUniformLocation(SHADER.pid, "lightPos");
             SHADER.light_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
-            SHADER.mmvp_loc = glGetUniformLocation(SHADER.pid, "MVP");
+            SHADER.model_loc = glGetUniformLocation(SHADER.pid, "model");
+            SHADER.view_loc = glGetUniformLocation(SHADER.pid, "view");
+            SHADER.proj_loc = glGetUniformLocation(SHADER.pid, "proj");
         }
     }
 
@@ -1240,6 +1247,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
             glUniform3f(shader.ulight_pos_loc, LIGHT_POS.x, LIGHT_POS.y, LIGHT_POS.z);
             glUniform4f(shader.light_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
+            glUniformMatrix4fv(shader.view_loc, 1, GL_FALSE, (const f32*)&view.m);
+            glUniformMatrix4fv(shader.proj_loc, 1, GL_FALSE, (const f32*)&proj.m);
 
             // Draw cubes.
             {
@@ -1250,8 +1259,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                     Mat4 translate = Mat4TranslateV(positions[i]);
-                    Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
-                    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+                    Mat4 model = Mat4Multiply(translate, rotation);
+                    glUniformMatrix4fv(shader.model_loc, 1, GL_FALSE, (const f32*)&model.m);
                     glDrawArrays(GL_TRIANGLES, 0, 36);
                 }
             }
@@ -1262,8 +1271,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Mat4 scale = Mat4Scale(100.0f, 100.0f, 0.0f);
                 Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
                 Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
-                Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, Mat4Multiply(rotation, scale)));
-                glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+                Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
+                glUniformMatrix4fv(shader.model_loc, 1, GL_FALSE, (const f32*)&model.m);
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
 
