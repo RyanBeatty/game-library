@@ -794,17 +794,20 @@ static LShader GetShader() {
         "uniform mat4 view;\n"
         "uniform mat4 proj;\n"
         "\n"
+        "out vec3 FragPosWorld;\n"
         "out vec4 VertColor;\n"
         "out vec3 Normal;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = proj * view * model * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
+        "   FragPosWorld = vec3(model * vec4(InPos.x, InPos.y, InPos.z, 1.0));\n"
         "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
         "   Normal = normal;\n"
         "}\0";
 
     static const char* FSRC =
         "#version 330 core\n"
+        "in vec3 FragPosWorld;\n"
         "in vec4 VertColor;\n"
         "in vec3 Normal;\n"
         "out vec4 FragColor;\n"
@@ -813,9 +816,15 @@ static LShader GetShader() {
         "uniform vec4 lightColor;\n"
         "void main()\n"
         "{\n"
-        "    float ambientstr = 0.1;\n"
-        "    vec3 ambient = (ambientstr * lightColor).xyz;\n"
-        "    FragColor = vec4(VertColor.xyz * ambient, 1.0);\n"
+        "   float ambientstr = 0.1;\n"
+        "   vec3 ambient = (ambientstr * lightColor).xyz;\n"
+        "\n"
+        "   vec3 norm = normalize(Normal);\n"
+        "   vec3 lightdir = normalize(lightPos - FragPosWorld);\n"
+        "   float diff = max(dot(norm, lightdir), 0.0);\n"
+        "   vec3 diffuse = diff * lightColor.xyz;\n"
+        "\n"
+        "   FragColor = vec4(VertColor.xyz * (ambient + diffuse), 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
