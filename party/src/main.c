@@ -745,7 +745,6 @@ typedef struct LShader {
     u32 ucolor_loc;
     u32 ulight_pos_loc;
     u32 light_color_loc;
-    u32 mmvp_loc;
     u32 model_loc;
     u32 view_loc;
     u32 proj_loc;
@@ -849,11 +848,13 @@ static LShader GetUnlitShader() {
         "#version 330 core\n"
         "layout (location = 0) in vec3 InPos;\n"
         "\n"
-        "uniform mat4 MVP;\n"
+        "uniform mat4 model;\n"
+        "uniform mat4 view;\n"
+        "uniform mat4 proj;\n"
         "\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = MVP * vec4(InPos, 1.0);\n"
+        "   gl_Position = proj * view * model * vec4(InPos, 1.0);\n"
         "}\0";
 
     static const char* FSRC =
@@ -873,7 +874,9 @@ static LShader GetUnlitShader() {
         // Att lookup.
         {
             SHADER.pos_loc = glGetAttribLocation(SHADER.pid, "InPos");
-            SHADER.mmvp_loc = glGetUniformLocation(SHADER.pid, "MVP");
+            SHADER.model_loc = glGetUniformLocation(SHADER.pid, "model");
+            SHADER.view_loc = glGetUniformLocation(SHADER.pid, "view");
+            SHADER.proj_loc = glGetUniformLocation(SHADER.pid, "proj");
         }
     }
 
@@ -1227,6 +1230,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             LShader shader = UNLIT_SHADER;
             glUseProgram(shader.pid);
+            glUniformMatrix4fv(shader.view_loc, 1, GL_FALSE, (const f32*)&view.m);
+            glUniformMatrix4fv(shader.proj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+
+            // Draw cube lights.
             {
                 Vec3 positions[] = {LIGHT_POS};
 
@@ -1234,8 +1241,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                     Mat4 translate = Mat4TranslateV(positions[i]);
-                    Mat4 mvp = Mat4Multiply(vp, Mat4Multiply(translate, rotation));
-                    glUniformMatrix4fv(shader.mmvp_loc, 1, GL_FALSE, (const f32*)&mvp.m);
+                    Mat4 model = Mat4Multiply(translate, rotation);
+                    glUniformMatrix4fv(shader.model_loc, 1, GL_FALSE, (const f32*)&model.m);
                     glDrawArrays(GL_TRIANGLES, 0, 36);
                 }
             }
