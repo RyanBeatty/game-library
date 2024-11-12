@@ -740,8 +740,10 @@ typedef struct LShader {
     u32 fid;
 
     u32 pos_loc;
+    u32 normal_loc;
     u32 color_loc;
     u32 ucolor_loc;
+    u32 ulight_pos_loc;
     u32 light_color_loc;
     u32 mmvp_loc;
 } LShader;
@@ -784,21 +786,26 @@ static LShader GetShader() {
         "#version 330 core\n"
         "layout (location = 0) in vec3 InPos;\n"
         "layout (location = 1) in vec3 InColor;\n"
+        "layout (location = 2) in vec3 normal;\n"
         "\n"
         "uniform mat4 MVP;\n"
         "\n"
         "out vec4 VertColor;\n"
+        "out vec3 Normal;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = MVP * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
         "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
+        "   Normal = normal;\n"
         "}\0";
 
     static const char* FSRC =
         "#version 330 core\n"
         "in vec4 VertColor;\n"
+        "in vec3 Normal;\n"
         "out vec4 FragColor;\n"
         "uniform vec4 UColor;\n"
+        "uniform vec3 lightPos;\n"
         "uniform vec4 lightColor;\n"
         "void main()\n"
         "{\n"
@@ -816,9 +823,11 @@ static LShader GetShader() {
         // Att lookup.
         {
             SHADER.pos_loc = glGetAttribLocation(SHADER.pid, "InPos");
+            SHADER.normal_loc = glGetAttribLocation(SHADER.pid, "normal");
             SHADER.color_loc = glGetAttribLocation(SHADER.pid, "InColor");
 
             SHADER.ucolor_loc = glGetUniformLocation(SHADER.pid, "UColor");
+            SHADER.ulight_pos_loc = glGetUniformLocation(SHADER.pid, "lightPos");
             SHADER.light_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
             SHADER.mmvp_loc = glGetUniformLocation(SHADER.pid, "MVP");
         }
@@ -1006,6 +1015,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static LShader UNLIT_SHADER = {0};
     static u32 VA1 = 0;
     static u32 VA2 = 0;
+    static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
 
     if (!INIT) {
         INIT = true;
@@ -1076,6 +1086,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glEnableVertexAttribArray(SHADER.pos_loc);
             glVertexAttribPointer(SHADER.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
             glEnableVertexAttribArray(SHADER.color_loc);
+            glVertexAttribPointer(SHADER.normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(SHADER.normal_loc);
         }
 
         {
@@ -1101,6 +1113,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glEnableVertexAttribArray(SHADER.pos_loc);
             glVertexAttribPointer(SHADER.color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
             glEnableVertexAttribArray(SHADER.color_loc);
+            glVertexAttribPointer(SHADER.normal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(6 * sizeof(float)));
+            glEnableVertexAttribArray(SHADER.normal_loc);
         }
 
         vieworient = Mat4RotateY(Deg2Rad(90.0f));
@@ -1207,7 +1221,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             LShader shader = UNLIT_SHADER;
             glUseProgram(shader.pid);
             {
-                Vec3 positions[] = {Vec3Lit(10.0f, 10.0f, -10.0f)};
+                Vec3 positions[] = {LIGHT_POS};
 
                 glBindVertexArray(VA1);
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -1224,6 +1238,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             LShader shader = SHADER;
             glUseProgram(shader.pid);
             glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
+            glUniform3f(shader.ulight_pos_loc, LIGHT_POS.x, LIGHT_POS.y, LIGHT_POS.z);
             glUniform4f(shader.light_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
 
             // Draw cubes.
