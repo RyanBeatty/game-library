@@ -802,7 +802,9 @@ static LShader GetShader() {
         "uniform vec4 lightColor;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = VertColor * lightColor;\n"
+        "    float ambientstr = 0.1;\n"
+        "    vec3 ambient = (ambientstr * lightColor).xyz;\n"
+        "    FragColor = vec4(VertColor.xyz * ambient, 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
