@@ -222,7 +222,16 @@ static Mat4 Mat4Identity() {
     return m;
 }
 
-static Mat4 Mat4Scale(f32 x, f32 y, f32 z) {
+static Mat4 Mat4Scale(f32 n) {
+    // TODO: Should this scale the w component? doing that throws off normal calcs, but thats probably
+    // because I'm hackily making the normal matrix at the moment.
+    return Mat4Lit(n, 0.0f, 0.0f, 0.0f,  //
+                   0.0f, n, 0.0f, 0.0f,  //
+                   0.0f, 0.0f, n, 0.0f,  //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+static Mat4 Mat4ScaleXYZ(f32 x, f32 y, f32 z) {
     return Mat4Lit(x, 0.0f, 0.0f, 0.0f,  //
                    0.0f, y, 0.0f, 0.0f,  //
                    0.0f, 0.0f, z, 0.0f,  //
@@ -802,7 +811,9 @@ static LShader GetShader() {
         "   gl_Position = proj * view * model * vec4(InPos.x, InPos.y, InPos.z, 1.0);\n"
         "   FragPosWorld = vec3(model * vec4(InPos.x, InPos.y, InPos.z, 1.0));\n"
         "   VertColor = vec4(InColor.x, InColor.y, InColor.z, 1.0);\n"
-        "   Normal = normal;\n"
+        // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
+        // more robust way to do this. also consider moving this calc to CPU.
+        "   Normal = mat3(transpose(inverse(model))) * normal;\n"
         "}\0";
 
     static const char* FSRC =
@@ -1113,13 +1124,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glGenVertexArrays(1, &VA2);
             glBindVertexArray(VA2);
 
-            VAtt vertices[] = {                                                             //
-                               {{-0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
-                               {{-0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},  //
-                               {{0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
-                               {{0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},   //
-                               {{0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}},    //
-                               {{-0.5f, 0.5f, 0.0f, 0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f}}
+            VAtt vertices[] = {                                                              //
+                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},   //
+                               {{-0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},  //
+                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},   //
+                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},   //
+                               {{0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},    //
+                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}
 
             };
 
@@ -1268,23 +1279,39 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             // Draw cubes.
             {
-                Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f),
-                                    Vec3Lit(15.0f, 3.0f, -50.0f), Vec3Lit(-15.0f, 0.0f, 0.0f)};
+                {
+                    Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f),
+                                        Vec3Lit(15.0f, 3.0f, -50.0f), Vec3Lit(-15.0f, 0.0f, 0.0f)};
 
-                glBindVertexArray(VA1);
-                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                    Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                    Mat4 translate = Mat4TranslateV(positions[i]);
-                    Mat4 model = Mat4Multiply(translate, rotation);
-                    glUniformMatrix4fv(shader.model_loc, 1, GL_FALSE, (const f32*)&model.m);
-                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                    glBindVertexArray(VA1);
+                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                        Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                        Mat4 translate = Mat4TranslateV(positions[i]);
+                        Mat4 model = Mat4Multiply(translate, rotation);
+                        glUniformMatrix4fv(shader.model_loc, 1, GL_FALSE, (const f32*)&model.m);
+                        glDrawArrays(GL_TRIANGLES, 0, 36);
+                    }
+                }
+
+                // Draw non rotating cube for easier lighting visual debug.
+                {
+                    Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f)};
+
+                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                        Mat4 scale = Mat4Scale(3.0f);
+                        Mat4 rotation = Mat4Rotate(Deg2Rad(45.0f), Vec3Lit(0.0f, 1.0f, 0.0f));
+                        Mat4 translate = Mat4TranslateV(positions[i]);
+                        Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
+                        glUniformMatrix4fv(shader.model_loc, 1, GL_FALSE, (const f32*)&model.m);
+                        glDrawArrays(GL_TRIANGLES, 0, 36);
+                    }
                 }
             }
 
             // Draw floor.
             {
                 glBindVertexArray(VA2);
-                Mat4 scale = Mat4Scale(100.0f, 100.0f, 0.0f);
+                Mat4 scale = Mat4Scale(100.0f);
                 Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
                 Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
                 Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
@@ -1383,31 +1410,31 @@ static void TestMath() {
             Mat4 m = Mat4Lit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
             TAssert(Mat4Eq(MatrixToMat4(Mat4ToRMatrix(m)), m), "Mat4 to Matrix");
         }
-        // Mat4Scale
+        // Mat4ScaleXYZ
         {
             // Test uniform scaling.
-            Mat4 scaleUniform = Mat4Scale(2.0f, 2.0f, 2.0f);
+            Mat4 scaleUniform = Mat4ScaleXYZ(2.0f, 2.0f, 2.0f);
             Mat4 expectedUniform =
                 Mat4Lit(2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-            TAssert(Mat4Eq(scaleUniform, expectedUniform), "Mat4Scale Uniform");
+            TAssert(Mat4Eq(scaleUniform, expectedUniform), "Mat4ScaleXYZ Uniform");
 
             // Test non-uniform scaling.
-            Mat4 scaleNonUniform = Mat4Scale(3.0f, 2.0f, 1.0f);
+            Mat4 scaleNonUniform = Mat4ScaleXYZ(3.0f, 2.0f, 1.0f);
             Mat4 expectedNonUniform =
                 Mat4Lit(3.0f, 0.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-            TAssert(Mat4Eq(scaleNonUniform, expectedNonUniform), "Mat4Scale Non-Uniform");
+            TAssert(Mat4Eq(scaleNonUniform, expectedNonUniform), "Mat4ScaleXYZ Non-Uniform");
 
             // Test identity scaling (scaling by 1 on all axes).
-            Mat4 scaleIdentity = Mat4Scale(1.0f, 1.0f, 1.0f);
+            Mat4 scaleIdentity = Mat4ScaleXYZ(1.0f, 1.0f, 1.0f);
             Mat4 expectedIdentity =
                 Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-            TAssert(Mat4Eq(scaleIdentity, expectedIdentity), "Mat4Scale Identity");
+            TAssert(Mat4Eq(scaleIdentity, expectedIdentity), "Mat4ScaleXYZ Identity");
 
             // Test scaling with zero on one axis.
-            Mat4 scaleZeroX = Mat4Scale(0.0f, 1.0f, 1.0f);
+            Mat4 scaleZeroX = Mat4ScaleXYZ(0.0f, 1.0f, 1.0f);
             Mat4 expectedZeroX =
                 Mat4Lit(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
-            TAssert(Mat4Eq(scaleZeroX, expectedZeroX), "Mat4Scale Zero X");
+            TAssert(Mat4Eq(scaleZeroX, expectedZeroX), "Mat4ScaleXYZ Zero X");
         }
 
         // Test Mat4TranslateV
@@ -1578,7 +1605,7 @@ static void TestMath() {
             TAssert(Mat4Eq(result2, expected2), "Mat4Multiply - Multiplying two arbitrary matrices");
 
             // Test case 3: Multiplying by a scaling matrix
-            Mat4 scale = Mat4Scale(2.0f, 3.0f, 4.0f);
+            Mat4 scale = Mat4ScaleXYZ(2.0f, 3.0f, 4.0f);
             Mat4 expected3 = Mat4Lit(2.0f, 6.0f, 12.0f, 4.0f, 10.0f, 18.0f, 28.0f, 8.0f, 18.0f, 30.0f, 44.0f, 12.0f,
                                      26.0f, 42.0f, 60.0f, 16.0f);
             Mat4 result3 = Mat4Multiply(matrix, scale);
