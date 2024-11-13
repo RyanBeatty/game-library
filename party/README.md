@@ -1,1 +1,6 @@
-Blank project that is cloneable with basic boilerplate structure already set up.
+Engine Features Desired for Gameplay Prototyping
+* Directional Lighting (i.e. the sun)
+    * (Optional bonus) basic shadows
+* Basic Text Rendering
+* Basic Model Loading (Possibly not even necessary as I can try to use procedural geometry for as long as possible)
+
