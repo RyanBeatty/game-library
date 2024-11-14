@@ -815,7 +815,7 @@ static LShader GetShader() {
         "   fColor = vec4(vColor.x, vColor.y, vColor.z, 1.0);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
-        "   fNormal = mat3(transpose(inverse(vModel))) * vNormal;\n"
+        "   fNormal = mat3(transpose(inverse(vView * vModel))) * vNormal;\n"
         "}\0";
 
     static const char* FSRC =
@@ -1260,7 +1260,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
         Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
         Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-        Mat4 vp = Mat4Multiply(proj, view);
 
         // Lights
         {
@@ -1287,7 +1286,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             LShader shader = SHADER;
             glUseProgram(shader.pid);
-            glUniform4f(shader.flightdirin_loc, -0.2f, -1.0f, -0.3f, 0.0f);
+            {
+                // Calculate the sun direction in view space (only factoring in rotation).
+                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
+                Mat4 norm = Mat4Transpose(Mat4Invert(view));
+                norm.v.d = Vec3Zero();
+                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
+                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
+            }
             glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
