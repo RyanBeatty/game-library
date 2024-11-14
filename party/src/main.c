@@ -752,7 +752,7 @@ typedef struct LShader {
     u32 normal_loc;
     u32 color_loc;
     u32 ucolor_loc;
-    u32 ulight_pos_loc;
+    u32 lightdirin_loc;
     u32 light_color_loc;
     u32 model_loc;
     u32 view_loc;
@@ -823,19 +823,21 @@ static LShader GetShader() {
         "in vec3 Normal;\n"
         "out vec4 FragColor;\n"
         "uniform vec4 UColor;\n"
-        "uniform vec3 lightPos;\n"
+        "uniform vec4 lightDirIn;\n"
         "uniform vec4 lightColor;\n"
         "void main()\n"
         "{\n"
+        "\n"
+        "   vec4 nLightDirIn = normalize(lightDirIn);\n"
+        "\n"
         // Ambient.
         "\n"
-        "   float ambientstr = 0.1;\n"
-        "   vec3 ambient = (ambientstr * lightColor).xyz;\n"
+        "   float mat_ambient = 0.1;\n"
+        "   vec3 ambient = (mat_ambient * lightColor).xyz;\n"
         // Diffuse.
         "\n"
         "   vec3 norm = normalize(Normal);\n"
-        "   vec3 lightdir = normalize(lightPos - FragPosWorld);\n"
-        "   float diff = max(dot(norm, lightdir), 0.0);\n"
+        "   float diff = max(dot(vec4(norm, 1.0f), -nLightDirIn), 0.0);\n"
         "   vec3 diffuse = diff * lightColor.xyz;\n"
         "\n"
         // specular.
@@ -861,7 +863,7 @@ static LShader GetShader() {
             SHADER.color_loc = glGetAttribLocation(SHADER.pid, "InColor");
 
             SHADER.ucolor_loc = glGetUniformLocation(SHADER.pid, "UColor");
-            SHADER.ulight_pos_loc = glGetUniformLocation(SHADER.pid, "lightPos");
+            SHADER.lightdirin_loc = glGetUniformLocation(SHADER.pid, "lightDirIn");
             SHADER.light_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
             SHADER.model_loc = glGetUniformLocation(SHADER.pid, "model");
             SHADER.view_loc = glGetUniformLocation(SHADER.pid, "view");
@@ -1282,7 +1284,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             LShader shader = SHADER;
             glUseProgram(shader.pid);
             glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
-            glUniform3f(shader.ulight_pos_loc, LIGHT_POS.x, LIGHT_POS.y, LIGHT_POS.z);
+            glUniform4f(shader.lightdirin_loc, -0.2f, -1.0f, -0.3f, 0.0f);
             glUniform4f(shader.light_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
             glUniformMatrix4fv(shader.view_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.proj_loc, 1, GL_FALSE, (const f32*)&proj.m);
