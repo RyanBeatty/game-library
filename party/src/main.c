@@ -799,9 +799,9 @@ static LShader GetShader() {
         "#version 330 core\n"
         "layout (location = 0) in vec3 vInPos;\n"
         "layout (location = 1) in vec3 vInColor;\n"
-        "layout (location = 2) in vec3 normal;\n"
+        "layout (location = 2) in vec3 vNormal;\n"
         "\n"
-        "uniform mat4 model;\n"
+        "uniform mat4 vModel;\n"
         "uniform mat4 view;\n"
         "uniform mat4 proj;\n"
         "\n"
@@ -810,12 +810,12 @@ static LShader GetShader() {
         "out vec3 Normal;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = proj * view * model * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0);\n"
-        "   FragPosWorld = vec3(model * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0));\n"
+        "   gl_Position = proj * view * vModel * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0);\n"
+        "   FragPosWorld = vec3(vModel * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0));\n"
         "   VertColor = vec4(vInColor.x, vInColor.y, vInColor.z, 1.0);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
-        "   Normal = mat3(transpose(inverse(model))) * normal;\n"
+        "   Normal = mat3(transpose(inverse(vModel))) * vNormal;\n"
         "}\0";
 
     static const char* FSRC =
@@ -864,12 +864,12 @@ static LShader GetShader() {
         // Att lookup.
         {
             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vInPos");
-            SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "normal");
+            SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "vNormal");
             SHADER.vcolor_loc = glGetAttribLocation(SHADER.pid, "vInColor");
 
             SHADER.flightdirin_loc = glGetUniformLocation(SHADER.pid, "lightDirIn");
             SHADER.flight_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "model");
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "view");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "proj");
         }
@@ -884,13 +884,13 @@ static LShader GetUnlitShader() {
         "#version 330 core\n"
         "layout (location = 0) in vec3 vInPos;\n"
         "\n"
-        "uniform mat4 model;\n"
+        "uniform mat4 vModel;\n"
         "uniform mat4 view;\n"
         "uniform mat4 proj;\n"
         "\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = proj * view * model * vec4(vInPos, 1.0);\n"
+        "   gl_Position = proj * view * vModel * vec4(vInPos, 1.0);\n"
         "}\0";
 
     static const char* FSRC =
@@ -910,7 +910,7 @@ static LShader GetUnlitShader() {
         // Att lookup.
         {
             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vInPos");
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "model");
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "view");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "proj");
         }
