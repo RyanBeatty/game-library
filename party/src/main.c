@@ -802,15 +802,15 @@ static LShader GetShader() {
         "layout (location = 2) in vec3 vNormal;\n"
         "\n"
         "uniform mat4 vModel;\n"
-        "uniform mat4 view;\n"
-        "uniform mat4 proj;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
         "\n"
         "out vec3 FragPosWorld;\n"
         "out vec4 VertColor;\n"
         "out vec3 Normal;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = proj * view * vModel * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0);\n"
         "   FragPosWorld = vec3(vModel * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0));\n"
         "   VertColor = vec4(vInColor.x, vInColor.y, vInColor.z, 1.0);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
@@ -870,8 +870,8 @@ static LShader GetShader() {
             SHADER.flightdirin_loc = glGetUniformLocation(SHADER.pid, "lightDirIn");
             SHADER.flight_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "view");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "proj");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
         }
     }
 
@@ -885,12 +885,12 @@ static LShader GetUnlitShader() {
         "layout (location = 0) in vec3 vInPos;\n"
         "\n"
         "uniform mat4 vModel;\n"
-        "uniform mat4 view;\n"
-        "uniform mat4 proj;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
         "\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = proj * view * vModel * vec4(vInPos, 1.0);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vInPos, 1.0);\n"
         "}\0";
 
     static const char* FSRC =
@@ -911,8 +911,8 @@ static LShader GetUnlitShader() {
         {
             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vInPos");
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "view");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "proj");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
         }
     }
 
