@@ -805,25 +805,25 @@ static LShader GetShader() {
         "uniform mat4 vView;\n"
         "uniform mat4 vProj;\n"
         "\n"
-        "out vec3 FragPosWorld;\n"
-        "out vec4 VertColor;\n"
-        "out vec3 Normal;\n"
+        "out vec3 fPosWorld;\n"
+        "out vec4 fColor;\n"
+        "out vec3 fNormal;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   FragPosWorld = vec3(vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
-        "   VertColor = vec4(vColor.x, vColor.y, vColor.z, 1.0);\n"
+        "   fPosWorld = vec3(vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
+        "   fColor = vec4(vColor.x, vColor.y, vColor.z, 1.0);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
-        "   Normal = mat3(transpose(inverse(vModel))) * vNormal;\n"
+        "   fNormal = mat3(transpose(inverse(vModel))) * vNormal;\n"
         "}\0";
 
     static const char* FSRC =
         "#version 330 core\n"
         "\n"
-        "in vec3 FragPosWorld;\n"
-        "in vec4 VertColor;\n"
-        "in vec3 Normal;\n"
+        "in vec3 fPosWorld;\n"
+        "in vec4 fColor;\n"
+        "in vec3 fNormal;\n"
         "\n"
         "uniform vec4 lightDirIn;\n"
         "uniform vec4 lightColor;\n"
@@ -834,6 +834,7 @@ static LShader GetShader() {
         "{\n"
         "\n"
         "   vec4 nLightDirIn = normalize(lightDirIn);\n"
+        "   vec3 norm = normalize(fNormal);\n"
         "\n"
         // Ambient.
         "\n"
@@ -841,7 +842,6 @@ static LShader GetShader() {
         "   vec3 ambient = (mat_ambient * lightColor).xyz;\n"
         // Diffuse.
         "\n"
-        "   vec3 norm = normalize(Normal);\n"
         "   float diff = max(dot(vec4(norm, 1.0f), -nLightDirIn), 0.0);\n"
         "   vec3 diffuse = diff * lightColor.xyz;\n"
         "\n"
@@ -852,7 +852,7 @@ static LShader GetShader() {
         // controls intensity of specular highlight (i.e. how bright/dark).
         "   float mat_spec = 0.5;\n"
         "\n"
-        "   FragColor = vec4(VertColor.xyz * (ambient + diffuse), 1.0);\n"
+        "   FragColor = vec4(fColor.xyz * (ambient + diffuse), 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
