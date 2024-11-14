@@ -827,13 +827,23 @@ static LShader GetShader() {
         "uniform vec4 lightColor;\n"
         "void main()\n"
         "{\n"
+        // Ambient.
+        "\n"
         "   float ambientstr = 0.1;\n"
         "   vec3 ambient = (ambientstr * lightColor).xyz;\n"
+        // Diffuse.
         "\n"
         "   vec3 norm = normalize(Normal);\n"
         "   vec3 lightdir = normalize(lightPos - FragPosWorld);\n"
         "   float diff = max(dot(norm, lightdir), 0.0);\n"
         "   vec3 diffuse = diff * lightColor.xyz;\n"
+        "\n"
+        // specular.
+        "\n"
+        // controls wide specular highlight is. higher = tighter highlight with faster falloff.
+        "   float mat_glossy = 32.0;\n"
+        // controls intensity of specular highlight (i.e. how bright/dark).
+        "   float mat_spec = 0.5;\n"
         "\n"
         "   FragColor = vec4(VertColor.xyz * (ambient + diffuse), 1.0);\n"
         "}\0";
