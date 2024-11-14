@@ -805,13 +805,13 @@ static LShader GetShader() {
         "uniform mat4 vView;\n"
         "uniform mat4 vProj;\n"
         "\n"
-        "out vec3 fPosWorld;\n"
+        "out vec3 fPosEye;\n"
         "out vec4 fColor;\n"
         "out vec3 fNormal;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fPosWorld = vec3(vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
+        "   fPosEye = vec3(vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
         "   fColor = vec4(vColor.x, vColor.y, vColor.z, 1.0);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
@@ -821,7 +821,7 @@ static LShader GetShader() {
     static const char* FSRC =
         "#version 330 core\n"
         "\n"
-        "in vec3 fPosWorld;\n"
+        "in vec3 fPosEye;\n"
         "in vec4 fColor;\n"
         "in vec3 fNormal;\n"
         "\n"
@@ -834,7 +834,8 @@ static LShader GetShader() {
         "{\n"
         "\n"
         "   vec4 nLightDirIn = normalize(fLightDirIn);\n"
-        "   vec3 norm = normalize(fNormal);\n"
+        "   vec4 norm = vec4(normalize(fNormal).xyz, 0.0f);\n"
+        "   vec3 eyePos = vec3(0.0, 0.0, 0.0);\n"
         "\n"
         // Ambient.
         "\n"
@@ -842,17 +843,21 @@ static LShader GetShader() {
         "   vec3 ambient = (mat_ambient * fLightColor).xyz;\n"
         // Diffuse.
         "\n"
-        "   float diff = max(dot(vec4(norm, 1.0f), -nLightDirIn), 0.0);\n"
+        "   float diff = max(dot(norm, -nLightDirIn), 0.0);\n"
         "   vec3 diffuse = diff * fLightColor.xyz;\n"
         "\n"
         // specular.
         "\n"
         // controls wide specular highlight is. higher = tighter highlight with faster falloff.
-        "   float mat_glossy = 32.0;\n"
+        "   float mat_glossy = 128.0;\n"
         // controls intensity of specular highlight (i.e. how bright/dark).
         "   float mat_spec = 0.5;\n"
+        "   vec4 eyeDirOut = vec4(normalize(eyePos - fPosEye).xyz, 0.0);\n"
+        "   vec4 nLightDirOut = normalize(reflect(nLightDirIn, norm));\n"
+        "   float spec = pow(max(dot(nLightDirOut, eyeDirOut), 0.0), mat_glossy);\n"
+        "   vec3 specular = spec * mat_spec * fLightColor.xyz;\n"
         "\n"
-        "   FragColor = vec4(fColor.xyz * (ambient + diffuse), 1.0);\n"
+        "   FragColor = vec4(fColor.xyz * (ambient + diffuse + specular), 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
