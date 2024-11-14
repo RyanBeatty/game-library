@@ -751,7 +751,6 @@ typedef struct LShader {
     u32 pos_loc;
     u32 normal_loc;
     u32 color_loc;
-    u32 ucolor_loc;
     u32 lightdirin_loc;
     u32 light_color_loc;
     u32 model_loc;
@@ -818,13 +817,16 @@ static LShader GetShader() {
 
     static const char* FSRC =
         "#version 330 core\n"
+        "\n"
         "in vec3 FragPosWorld;\n"
         "in vec4 VertColor;\n"
         "in vec3 Normal;\n"
-        "out vec4 FragColor;\n"
-        "uniform vec4 UColor;\n"
+        "\n"
         "uniform vec4 lightDirIn;\n"
         "uniform vec4 lightColor;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
         "void main()\n"
         "{\n"
         "\n"
@@ -862,7 +864,6 @@ static LShader GetShader() {
             SHADER.normal_loc = glGetAttribLocation(SHADER.pid, "normal");
             SHADER.color_loc = glGetAttribLocation(SHADER.pid, "InColor");
 
-            SHADER.ucolor_loc = glGetUniformLocation(SHADER.pid, "UColor");
             SHADER.lightdirin_loc = glGetUniformLocation(SHADER.pid, "lightDirIn");
             SHADER.light_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
             SHADER.model_loc = glGetUniformLocation(SHADER.pid, "model");
@@ -1283,7 +1284,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             LShader shader = SHADER;
             glUseProgram(shader.pid);
-            glUniform4f(shader.ucolor_loc, 0.0f, 0.0f, 0.0f, 1.0f);
             glUniform4f(shader.lightdirin_loc, -0.2f, -1.0f, -0.3f, 0.0f);
             glUniform4f(shader.light_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
             glUniformMatrix4fv(shader.view_loc, 1, GL_FALSE, (const f32*)&view.m);
