@@ -849,8 +849,9 @@ static LShader GetShader() {
         // specular.
         "\n"
         // controls wide specular highlight is. higher = tighter highlight with faster falloff.
-        "   float mat_glossy = 128.0;\n"
+        "   float mat_glossy = 32.0;\n"
         // controls intensity of specular highlight (i.e. how bright/dark).
+        // TODO: Some part of this is not woking I think.
         "   float mat_spec = 0.5;\n"
         "   vec4 eyeDirOut = vec4(normalize(eyePos - fPosEye).xyz, 0.0);\n"
         "   vec4 nLightDirOut = normalize(reflect(nLightDirIn, norm));\n"
@@ -1294,6 +1295,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             {
                 // Calculate the sun direction in view space (only factoring in rotation).
                 Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
+                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
                 Mat4 norm = Mat4Transpose(Mat4Invert(view));
                 norm.v.d = Vec3Zero();
                 Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
@@ -1321,11 +1323,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                 // Draw non rotating cube for easier lighting visual debug.
                 {
-                    Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f)};
+                    Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f), Vec3Lit(0.0f, 3.0f, 5.0f)};
+                    f32 rotations[] = {Deg2Rad(45.0f), Deg2Rad(0.0f)};
 
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         Mat4 scale = Mat4Scale(3.0f);
-                        Mat4 rotation = Mat4Rotate(Deg2Rad(45.0f), Vec3Lit(0.0f, 1.0f, 0.0f));
+                        Mat4 rotation = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                         Mat4 translate = Mat4TranslateV(positions[i]);
                         Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
