@@ -825,25 +825,25 @@ static LShader GetShader() {
         "in vec4 fColor;\n"
         "in vec3 fNormal;\n"
         "\n"
-        "uniform vec4 lightDirIn;\n"
-        "uniform vec4 lightColor;\n"
+        "uniform vec4 fLightDirIn;\n"
+        "uniform vec4 fLightColor;\n"
         "\n"
         "out vec4 FragColor;\n"
         "\n"
         "void main()\n"
         "{\n"
         "\n"
-        "   vec4 nLightDirIn = normalize(lightDirIn);\n"
+        "   vec4 nLightDirIn = normalize(fLightDirIn);\n"
         "   vec3 norm = normalize(fNormal);\n"
         "\n"
         // Ambient.
         "\n"
         "   float mat_ambient = 0.1;\n"
-        "   vec3 ambient = (mat_ambient * lightColor).xyz;\n"
+        "   vec3 ambient = (mat_ambient * fLightColor).xyz;\n"
         // Diffuse.
         "\n"
         "   float diff = max(dot(vec4(norm, 1.0f), -nLightDirIn), 0.0);\n"
-        "   vec3 diffuse = diff * lightColor.xyz;\n"
+        "   vec3 diffuse = diff * fLightColor.xyz;\n"
         "\n"
         // specular.
         "\n"
@@ -867,8 +867,8 @@ static LShader GetShader() {
             SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "vNormal");
             SHADER.vcolor_loc = glGetAttribLocation(SHADER.pid, "vColor");
 
-            SHADER.flightdirin_loc = glGetUniformLocation(SHADER.pid, "lightDirIn");
-            SHADER.flight_color_loc = glGetUniformLocation(SHADER.pid, "lightColor");
+            SHADER.flightdirin_loc = glGetUniformLocation(SHADER.pid, "fLightDirIn");
+            SHADER.flight_color_loc = glGetUniformLocation(SHADER.pid, "fLightColor");
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
