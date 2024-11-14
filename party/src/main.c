@@ -797,7 +797,7 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
 static LShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
-        "layout (location = 0) in vec3 vInPos;\n"
+        "layout (location = 0) in vec3 vPos;\n"
         "layout (location = 1) in vec3 vInColor;\n"
         "layout (location = 2) in vec3 vNormal;\n"
         "\n"
@@ -810,8 +810,8 @@ static LShader GetShader() {
         "out vec3 Normal;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0);\n"
-        "   FragPosWorld = vec3(vModel * vec4(vInPos.x, vInPos.y, vInPos.z, 1.0));\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   FragPosWorld = vec3(vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
         "   VertColor = vec4(vInColor.x, vInColor.y, vInColor.z, 1.0);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
@@ -863,7 +863,7 @@ static LShader GetShader() {
 
         // Att lookup.
         {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vInPos");
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
             SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "vNormal");
             SHADER.vcolor_loc = glGetAttribLocation(SHADER.pid, "vInColor");
 
@@ -882,7 +882,7 @@ static LShader GetShader() {
 static LShader GetUnlitShader() {
     static const char* VSRC =
         "#version 330 core\n"
-        "layout (location = 0) in vec3 vInPos;\n"
+        "layout (location = 0) in vec3 vPos;\n"
         "\n"
         "uniform mat4 vModel;\n"
         "uniform mat4 vView;\n"
@@ -890,7 +890,7 @@ static LShader GetUnlitShader() {
         "\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vInPos, 1.0);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos, 1.0);\n"
         "}\0";
 
     static const char* FSRC =
@@ -909,7 +909,7 @@ static LShader GetUnlitShader() {
 
         // Att lookup.
         {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vInPos");
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
