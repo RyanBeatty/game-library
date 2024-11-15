@@ -669,8 +669,12 @@ typedef struct Entity {
     /////////////////////////////////////////////////////////////////
     // Core field.
     EntityId id;
-    Vec3 pos;
     EntityFlag flags;
+
+    // Decomposition of model matrix.
+    Vec3 pos;
+    f32 scale;  // only allow uniform scaling.
+    Mat4 orient;
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
@@ -681,11 +685,6 @@ typedef struct Entity {
     } monster_link;
 
 } Entity;
-
-typedef struct EntityEntry {
-    EntityId key;
-    Entity value;
-} EntityEntry;
 
 #define ENTITY_CAP 1024
 
@@ -1244,7 +1243,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         // Begin.
         {
             BeginDrawing();
-            glClearColor(RGB01(20.0f), RGB01(24.0f), RGB01(82.0f), 1.0f);
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
 
@@ -1327,6 +1326,23 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     f32 rotations[] = {Deg2Rad(45.0f), Deg2Rad(0.0f)};
 
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                        Mat4 scale = Mat4Scale(3.0f);
+                        Mat4 rotation = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                        Mat4 translate = Mat4TranslateV(positions[i]);
+                        Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
+                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                        glDrawArrays(GL_TRIANGLES, 0, 36);
+                    }
+                }
+
+                // Physics cube.
+                {
+                    static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 0.0f)};
+                    static Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
+                    static f32 rotations[] = {Deg2Rad(0.0f)};
+
+                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                        positions[i] = Vec3Add(positions[i], Vec3Scale(velocities[i], delta));
                         Mat4 scale = Mat4Scale(3.0f);
                         Mat4 rotation = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                         Mat4 translate = Mat4TranslateV(positions[i]);
