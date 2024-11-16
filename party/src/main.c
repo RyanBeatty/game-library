@@ -1202,45 +1202,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                    0.0f, 0.0f, 0.0f, 1.0f);
 
     static bool INIT = false;
-    static LShader SHADER = {0};
-    static LShader UNLIT_SHADER = {0};
-    static u32 VA2 = 0;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
 
     if (!INIT) {
         INIT = true;
 
-        SHADER = GetShader();
-        UNLIT_SHADER = GetUnlitShader();
         RenderDataInit();
-
-        {
-            glGenVertexArrays(1, &VA2);
-            glBindVertexArray(VA2);
-
-            VAtt vertices[] = {                                                              //
-                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},   //
-                               {{-0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},  //
-                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},   //
-                               {{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},   //
-                               {{0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}},    //
-                               {{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}
-
-            };
-
-            u32 vb = 0;
-            glGenBuffers(1, &vb);
-            glBindBuffer(GL_ARRAY_BUFFER, vb);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-            glVertexAttribPointer(SHADER.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
-            glEnableVertexAttribArray(SHADER.vpos_loc);
-            glVertexAttribPointer(SHADER.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
-            glEnableVertexAttribArray(SHADER.vcolor_loc);
-            glVertexAttribPointer(SHADER.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(6 * sizeof(float)));
-            glEnableVertexAttribArray(SHADER.vnormal_loc);
-        }
-
         vieworient = Mat4RotateY(Deg2Rad(90.0f));
         viewbody = vieworient;
     }
@@ -1342,7 +1309,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // Lights
         {
-            LShader shader = UNLIT_SHADER;
+            LShader shader = GetUnlitShader();
             glUseProgram(shader.pid);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
@@ -1363,7 +1330,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         }
 
         {
-            LShader shader = SHADER;
+            LShader shader = GetShader();
             glUseProgram(shader.pid);
             {
                 // Calculate the sun direction in view space (only factoring in rotation).
