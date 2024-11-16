@@ -810,7 +810,7 @@ static LShader GetUnlitShader() {
         "out vec4 FragColor;\n"
         "void main()\n"
         "{\n"
-        "    FragColor = vec4(1.0);\n"
+        "    FragColor = vec4(0.0, 0.0, 0.5, 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
@@ -1183,7 +1183,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static bool INIT = false;
     static LShader SHADER = {0};
     static LShader UNLIT_SHADER = {0};
-    static u32 VA1 = 0;
     static u32 VA2 = 0;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
 
@@ -1192,76 +1191,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         SHADER = GetShader();
         UNLIT_SHADER = GetUnlitShader();
-
         RenderDataInit();
-
-        {
-            glGenVertexArrays(1, &VA1);
-            glBindVertexArray(VA1);
-
-            Vertex vertices[] = {
-                // Back.
-                {{{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
-                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
-                {{{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
-                {{{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
-                {{{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
-                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
-
-                // Front.
-                {{{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
-                {{{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
-                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},    //
-                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},    //
-                {{{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
-                {{{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
-
-                // Left.
-                {{{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},    //
-                {{{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},   //
-                {{{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},  //
-                {{{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},  //
-                {{{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},   //
-                {{{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},    //
-
-                // Right.
-                {{{0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},   //
-                {{{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},    //
-                {{{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},  //
-                {{{0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},   //
-                {{{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},  //
-                {{{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},    //
-
-                // Bottom.
-                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},  //
-                {{{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},   //
-                {{{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},    //
-                {{{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},    //
-                {{{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},   //
-                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},  //
-
-                // Top.
-                {{{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},   //
-                {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},  //
-                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
-                {{{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},   //
-                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
-                {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}}   //
-            };
-
-            u32 vb = 0;
-            glGenBuffers(1, &vb);
-            glBindBuffer(GL_ARRAY_BUFFER, vb);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-            glVertexAttribPointer(SHADER.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-            glEnableVertexAttribArray(SHADER.vpos_loc);
-            glVertexAttribPointer(SHADER.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
-            glEnableVertexAttribArray(SHADER.vcolor_loc);
-            glVertexAttribPointer(SHADER.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-                                  (void*)(6 * sizeof(float)));
-            glEnableVertexAttribArray(SHADER.vnormal_loc);
-        }
 
         {
             glGenVertexArrays(1, &VA2);
@@ -1388,6 +1318,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
         Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
+        glBindVertexArray(VAO);
+
         // Lights
         {
             LShader shader = UNLIT_SHADER;
@@ -1397,15 +1329,15 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             // Draw cube lights.
             {
+                LMesh mesh = GetMesh(M_CUBE);
                 Vec3 positions[] = {LIGHT_POS};
 
-                glBindVertexArray(VA1);
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                     Mat4 translate = Mat4TranslateV(positions[i]);
                     Mat4 model = Mat4Multiply(translate, rotation);
                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                    glDrawArrays(GL_TRIANGLES, 0, 36);
+                    glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
                 }
             }
         }
@@ -1425,8 +1357,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-
-            glBindVertexArray(VAO);
 
             // Draw cubes.
             {
