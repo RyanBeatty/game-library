@@ -914,8 +914,19 @@ static Vertex VBUFFER[] = {
     {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
     {{{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},   //
     {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
-    {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}}   //
+    {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},  //
     // Cube End.
+    /////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    // Quad Begin
+    {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
+    {{{-0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},  //
+    {{{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
+    {{{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
+    {{{0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},    //
+    {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}}
+    // Quad End
     /////////////////////////////////////////////////////////////////
 };
 
@@ -927,7 +938,7 @@ typedef struct LMesh {
 #define MAX_MESHES 256
 static LMesh MESHES[MAX_MESHES] = {0};
 
-typedef enum MID { M_CUBE = 0 } MID;
+typedef enum MID { M_CUBE = 0, M_QUAD, M_COUNT } MID;
 
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
@@ -963,10 +974,20 @@ static void RenderDataInit() {
 
     u32 midx = 0;
     u32 vidx = 0;
+    // Cube.
     {
         LMesh* mesh = &MESHES[midx];
         mesh->vidx = vidx;
         mesh->ntriangles = 12;
+        ++midx;
+        vidx += mesh->ntriangles;
+    }
+
+    // Quad.
+    {
+        LMesh* mesh = &MESHES[midx];
+        mesh->vidx = vidx;
+        mesh->ntriangles = 2;
         ++midx;
         vidx += mesh->ntriangles;
     }
@@ -1297,6 +1318,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             BeginDrawing();
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBindVertexArray(VAO);
         }
 
         // Enable/Disable culling.
@@ -1317,8 +1339,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
         Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
         Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-
-        glBindVertexArray(VAO);
 
         // Lights
         {
