@@ -647,100 +647,7 @@ static void PhysicsStateDraw(PhysicsState* pstate) {
 }
 
 ////////////////////////////////////////////////////////////
-
-const float RenderWidth = 1280;
-const float RenderHeight = 720;
-
-static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
-static const Vec2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
-
-////////////////////////////////////////////////////////////
-typedef enum EntityFlag {
-    EFLAG_NONE = 0,
-    EFLAG_ACTIVE = 1 << 0,
-    EFLAG_DRAW = 1 << 1,
-    EFLAG_PLAYER_CONTROLLED = 1 << 2,
-    EFLAG_PHYSICS_ON = 1 << 3
-} EntityFlag;
-
-typedef u32 EntityId;
-
-typedef struct Entity {
-    /////////////////////////////////////////////////////////////////
-    // Core field.
-    EntityId id;
-    EntityFlag flags;
-
-    // Decomposition of model matrix.
-    Vec3 pos;
-    f32 scale;  // only allow uniform scaling.
-    Mat4 orient;
-
-    /////////////////////////////////////////////////////////////////
-    // Gameplay fields.
-
-    struct {
-        struct Entity* prev;
-        struct Entity* next;
-    } monster_link;
-
-} Entity;
-
-#define ENTITY_CAP 1024
-
-typedef struct EntityManager {
-    Entity entities[ENTITY_CAP];
-} EntityManager;
-
-static EntityManager EntityM = {0};
-
-#define GetEntityManager() &EntityM
-
-static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
-
-static Entity* GetEntity(EntityId id) {
-    EntityManager* em = GetEntityManager();
-    Entity* entity = &em->entities[id];
-    return entity;
-}
-
-static EntityId NextEntityId() {
-    EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = &em->entities[i];
-        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
-            return i;
-        }
-    }
-    Assert(false);
-    return 0;
-}
-
-static Entity* AllocateEntity() {
-    EntityId id = NextEntityId();
-    Entity* entity = GetEntity(id);
-    Assert(entity != NULL);
-    memset(entity, 0, sizeof(*entity));
-    entity->id = id;
-    entity->flags = EFLAG_ACTIVE;
-    FlagOn(entity->flags, EFLAG_DRAW);
-    return entity;
-}
-
-////////////////////////////////////////////////////////////
-
-typedef enum InputDir {
-    DIR_NONE = 0,
-    DIR_UP,
-    DIR_DOWN,
-    DIR_LEFT,
-    DIR_RIGHT,
-
-    DIR_COUNT
-} InputDir;
-
-////////////////////////////////////////////////////////////
-// S: Render
+// S:Render Data
 
 typedef struct LShader {
     u32 pid;  // program id.
@@ -944,7 +851,219 @@ typedef struct VAtt {
     f32 atts[LOC_COUNT];
 } VAtt;
 
+typedef struct Vertex {
+    union {
+        f32 f[sizeof(Vec3) * 3];
+
+        struct {
+            Vec3 pos;
+            Vec3 normal;
+            Vec3 color;
+        };
+    };
+} Vertex;
+
+static u32 VAO = 0;
+static u32 VBO = 0;
+static Vertex VBUFFER[] = {
+    /////////////////////////////////////////////////////////////////
+    // Cube Begin.
+    // Back.
+    {{{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+    {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
+    {{{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
+    {{{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+    {{{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
+    {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
+
+    // Front.
+    {{{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
+    {{{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
+    {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},    //
+    {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},    //
+    {{{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
+    {{{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
+
+    // Left.
+    {{{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},    //
+    {{{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},   //
+    {{{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},  //
+    {{{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},  //
+    {{{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},   //
+    {{{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},    //
+
+    // Right.
+    {{{0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},   //
+    {{{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},    //
+    {{{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},  //
+    {{{0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},   //
+    {{{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},  //
+    {{{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},    //
+
+    // Bottom.
+    {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},  //
+    {{{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},   //
+    {{{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},    //
+    {{{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},    //
+    {{{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},   //
+    {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},  //
+
+    // Top.
+    {{{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},   //
+    {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},  //
+    {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
+    {{{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},   //
+    {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
+    {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}}   //
+    // Cube End.
+    /////////////////////////////////////////////////////////////////
+};
+
+typedef struct LMesh {
+    u32 vidx;  // Offset into vertex buffer
+    u32 ntriangles;
+} LMesh;
+
+#define MAX_MESHES 256
+static LMesh MESHES[MAX_MESHES] = {0};
+
+typedef enum MID { M_CUBE = 0 } MID;
+
+static LMesh GetMesh(u32 mid) {
+    Assert(mid < MAX_MESHES);
+    return MESHES[mid];
+}
+
+// Assumes buffer has been bound and shader program used.
+static void DrawLMesh(LShader shader, LMesh m, Mat4 mmodel) {
+    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&mmodel.m);
+    glDrawArrays(GL_TRIANGLES, m.vidx, m.ntriangles * 3);
+}
+
+static void RenderDataInit() {
+    static bool INIT = false;
+    Assert(!INIT);
+    INIT = true;
+
+    LShader shader = GetShader();
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(VBUFFER), VBUFFER, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    glEnableVertexAttribArray(shader.vpos_loc);
+    glVertexAttribPointer(shader.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(shader.vcolor_loc);
+    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(shader.vnormal_loc);
+
+    u32 midx = 0;
+    u32 vidx = 0;
+    {
+        LMesh* mesh = &MESHES[midx];
+        mesh->vidx = vidx;
+        mesh->ntriangles = 12;
+        ++midx;
+        vidx += mesh->ntriangles;
+    }
+}
+
 ////////////////////////////////////////////////////////////
+
+const float RenderWidth = 1280;
+const float RenderHeight = 720;
+
+static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
+static const Vec2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
+
+////////////////////////////////////////////////////////////
+typedef enum EntityFlag {
+    EFLAG_NONE = 0,
+    EFLAG_ACTIVE = 1 << 0,
+    EFLAG_DRAW = 1 << 1,
+    EFLAG_PLAYER_CONTROLLED = 1 << 2,
+    EFLAG_PHYSICS_ON = 1 << 3
+} EntityFlag;
+
+typedef u32 EntityId;
+
+typedef struct Entity {
+    /////////////////////////////////////////////////////////////////
+    // Core field.
+    EntityId id;
+    EntityFlag flags;
+
+    // Decomposition of model matrix.
+    Vec3 pos;
+    f32 scale;  // only allow uniform scaling.
+    Mat4 orient;
+
+    /////////////////////////////////////////////////////////////////
+    // Gameplay fields.
+
+    struct {
+        struct Entity* prev;
+        struct Entity* next;
+    } monster_link;
+
+} Entity;
+
+#define ENTITY_CAP 1024
+
+typedef struct EntityManager {
+    Entity entities[ENTITY_CAP];
+} EntityManager;
+
+static EntityManager EntityM = {0};
+
+#define GetEntityManager() &EntityM
+
+static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
+
+static Entity* GetEntity(EntityId id) {
+    EntityManager* em = GetEntityManager();
+    Entity* entity = &em->entities[id];
+    return entity;
+}
+
+static EntityId NextEntityId() {
+    EntityManager* em = GetEntityManager();
+    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+        Entity* entity = &em->entities[i];
+        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
+            return i;
+        }
+    }
+    Assert(false);
+    return 0;
+}
+
+static Entity* AllocateEntity() {
+    EntityId id = NextEntityId();
+    Entity* entity = GetEntity(id);
+    Assert(entity != NULL);
+    memset(entity, 0, sizeof(*entity));
+    entity->id = id;
+    entity->flags = EFLAG_ACTIVE;
+    FlagOn(entity->flags, EFLAG_DRAW);
+    return entity;
+}
+
+////////////////////////////////////////////////////////////
+
+typedef enum InputDir {
+    DIR_NONE = 0,
+    DIR_UP,
+    DIR_DOWN,
+    DIR_LEFT,
+    DIR_RIGHT,
+
+    DIR_COUNT
+} InputDir;
 
 typedef struct GameState {
     /////////////////////////////////////////
@@ -1074,58 +1193,60 @@ static void GameStateDraw(GameState* gstate, float delta) {
         SHADER = GetShader();
         UNLIT_SHADER = GetUnlitShader();
 
+        RenderDataInit();
+
         {
             glGenVertexArrays(1, &VA1);
             glBindVertexArray(VA1);
 
-            VAtt vertices[] = {
+            Vertex vertices[] = {
                 // Back.
-                {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}},   //
-                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}},  //
-                {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}},    //
-                {{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}},   //
-                {{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}},    //
-                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}},  //
+                {{{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
+                {{{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
+                {{{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+                {{{0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
+                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
 
                 // Front.
-                {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}},  //
-                {{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}},   //
-                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}},    //
-                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}},    //
-                {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}},   //
-                {{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}},  //
+                {{{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
+                {{{0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
+                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},    //
+                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},    //
+                {{{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
+                {{{-0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
 
                 // Left.
-                {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}},    //
-                {{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}},   //
-                {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}},  //
-                {{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}},  //
-                {{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}},   //
-                {{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}},    //
+                {{{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},    //
+                {{{-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},   //
+                {{{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},  //
+                {{{-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},  //
+                {{{-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},   //
+                {{{-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, -1.0f, 0.0f, 0.0f}}},    //
 
                 // Right.
-                {{0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
-                {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}},    //
-                {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}},  //
-                {{0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}},   //
-                {{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}},  //
-                {{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}},    //
+                {{{0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},   //
+                {{{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},    //
+                {{{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},  //
+                {{{0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},   //
+                {{{0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},  //
+                {{{0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f}}},    //
 
                 // Bottom.
-                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}},  //
-                {{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}},   //
-                {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}},    //
-                {{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}},    //
-                {{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}},   //
-                {{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}},  //
+                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},  //
+                {{{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},   //
+                {{{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},    //
+                {{{0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},    //
+                {{{-0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},   //
+                {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f}}},  //
 
                 // Top.
-                {{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}},   //
-                {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}},  //
-                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}},    //
-                {{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}},   //
-                {{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}},    //
-                {{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}   //
+                {{{0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},   //
+                {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},  //
+                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
+                {{{-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},   //
+                {{{0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}},    //
+                {{{-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f}}}   //
             };
 
             u32 vb = 0;
@@ -1133,11 +1254,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glBindBuffer(GL_ARRAY_BUFFER, vb);
             glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-            glVertexAttribPointer(SHADER.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)0);
+            glVertexAttribPointer(SHADER.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
             glEnableVertexAttribArray(SHADER.vpos_loc);
-            glVertexAttribPointer(SHADER.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(3 * sizeof(float)));
+            glVertexAttribPointer(SHADER.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
             glEnableVertexAttribArray(SHADER.vcolor_loc);
-            glVertexAttribPointer(SHADER.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(VAtt), (void*)(6 * sizeof(float)));
+            glVertexAttribPointer(SHADER.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                  (void*)(6 * sizeof(float)));
             glEnableVertexAttribArray(SHADER.vnormal_loc);
         }
 
@@ -1304,19 +1426,21 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
 
+            glBindVertexArray(VAO);
+
             // Draw cubes.
             {
+                LMesh mesh = GetMesh(M_CUBE);
                 {
                     Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f),
                                         Vec3Lit(15.0f, 3.0f, -50.0f), Vec3Lit(-15.0f, 0.0f, 0.0f)};
 
-                    glBindVertexArray(VA1);
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                         Mat4 translate = Mat4TranslateV(positions[i]);
                         Mat4 model = Mat4Multiply(translate, rotation);
                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                        glDrawArrays(GL_TRIANGLES, 0, 36);
+                        glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
                     }
                 }
 
@@ -1331,7 +1455,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         Mat4 translate = Mat4TranslateV(positions[i]);
                         Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                        glDrawArrays(GL_TRIANGLES, 0, 36);
+                        glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
                     }
                 }
 
@@ -1348,7 +1472,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         Mat4 translate = Mat4TranslateV(positions[i]);
                         Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                        glDrawArrays(GL_TRIANGLES, 0, 36);
+                        glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
                     }
                 }
             }
