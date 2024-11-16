@@ -980,7 +980,7 @@ static void RenderDataInit() {
         mesh->vidx = vidx;
         mesh->ntriangles = 12;
         ++midx;
-        vidx += mesh->ntriangles;
+        vidx += mesh->ntriangles * 3;
     }
 
     // Quad.
@@ -989,7 +989,7 @@ static void RenderDataInit() {
         mesh->vidx = vidx;
         mesh->ntriangles = 2;
         ++midx;
-        vidx += mesh->ntriangles;
+        vidx += mesh->ntriangles * 3;
     }
 }
 
@@ -1429,13 +1429,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             // Draw floor.
             {
-                glBindVertexArray(VA2);
+                LMesh mesh = GetMesh(M_QUAD);
                 Mat4 scale = Mat4Scale(100.0f);
                 Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
                 Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
                 Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
                 glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                breakpoint();
+                glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
             }
 
             if (gstate->debug) {
