@@ -1221,6 +1221,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static EntityId SPINNING[MAX_ENTITY_BATCH] = {0};
     static u32 SPINNING_SIZE = 0;
 
+    static EntityId SHADOW_DEBUG[MAX_ENTITY_BATCH] = {0};
+    static u32 SHADOW_DEBUG_SIZE = 0;
+
     if (!INIT) {
         INIT = true;
 
@@ -1250,6 +1253,21 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
+                entities[i] = entity->id;
+            }
+        }
+
+        {
+            Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f), Vec3Lit(0.0f, 3.0f, 5.0f)};
+            f32 rotations[] = {Deg2Rad(45.0f), Deg2Rad(0.0f)};
+            EntityId* entities = SHADOW_DEBUG;
+            SHADOW_DEBUG_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_CUBE);
+                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
         }
@@ -1401,17 +1419,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                 // Draw non rotating cube for easier lighting visual debug.
                 {
-                    Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f), Vec3Lit(0.0f, 3.0f, 5.0f)};
-                    f32 rotations[] = {Deg2Rad(45.0f), Deg2Rad(0.0f)};
-
-                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                        Mat4 scale = Mat4Scale(3.0f);
-                        Mat4 rotation = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-                        Mat4 translate = Mat4TranslateV(positions[i]);
-                        Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
-                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                        glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
-                    }
+                    EntityId* entities = SHADOW_DEBUG;
+                    u32 size = SHADOW_DEBUG_SIZE;
+                    DrawBatch(shader, entities, size);
                 }
 
                 // Physics cube.
