@@ -1223,6 +1223,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
     static u32 PHYSICS_SIZE = 0;
 
+    static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
+    static u32 WALLS_SIZE = 0;
+
     if (!INIT) {
         INIT = true;
 
@@ -1287,6 +1290,23 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                 entity->scale = 3.0f;
                 entity->v = velocities[i];
+                entities[i] = entity->id;
+            }
+        }
+
+        {
+            static Vec3 positions[] = {Vec3Lit(0.0f, -10.0f, 0.0f)};
+            static f32 rotations[] = {Deg2Rad(-90.0f)};
+            static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
+
+            EntityId* entities = WALLS;
+            WALLS_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_QUAD);
+                entity->orient = Mat4Rotate(rotations[i], axis[i]);
+                entity->scale = 100.0f;
                 entities[i] = entity->id;
             }
         }
@@ -1423,48 +1443,39 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
 
-            // Draw cubes.
             {
-                LMesh mesh = GetMesh(M_CUBE);
-                {
-                    EntityId* entities = SPINNING;
-                    u32 size = SPINNING_SIZE;
-                    for (u32 i = 0; i < size; ++i) {
-                        Entity* entity = GetEntity(entities[i]);
-                        entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                    }
-                    DrawBatch(shader, entities, size);
+                EntityId* entities = SPINNING;
+                u32 size = SPINNING_SIZE;
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* entity = GetEntity(entities[i]);
+                    entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                 }
-
-                // Draw non rotating cube for easier lighting visual debug.
-                {
-                    EntityId* entities = SHADOW_DEBUG;
-                    u32 size = SHADOW_DEBUG_SIZE;
-                    DrawBatch(shader, entities, size);
-                }
-
-                // Physics cube.
-                {
-                    EntityId* entities = PHYSICS;
-                    u32 size = PHYSICS_SIZE;
-                    for (u32 i = 0; i < size; ++i) {
-                        Entity* entity = GetEntity(entities[i]);
-                        entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
-                    }
-                    DrawBatch(shader, entities, size);
-                }
+                DrawBatch(shader, entities, size);
             }
 
-            // Draw floor.
+            // Draw non rotating cube for easier lighting visual debug.
             {
-                LMesh mesh = GetMesh(M_QUAD);
-                Mat4 scale = Mat4Scale(100.0f);
-                Mat4 rotation = Mat4RotateX(Deg2Rad(-90.0f));
-                Mat4 translate = Mat4Translate(0.0f, -10.0f, 0.0f);
-                Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
-                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                breakpoint();
-                glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
+                EntityId* entities = SHADOW_DEBUG;
+                u32 size = SHADOW_DEBUG_SIZE;
+                DrawBatch(shader, entities, size);
+            }
+
+            // Physics cube.
+            {
+                EntityId* entities = PHYSICS;
+                u32 size = PHYSICS_SIZE;
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* entity = GetEntity(entities[i]);
+                    entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
+                }
+                DrawBatch(shader, entities, size);
+            }
+
+            // Walls.
+            {
+                EntityId* entities = WALLS;
+                u32 size = WALLS_SIZE;
+                DrawBatch(shader, entities, size);
             }
 
             if (gstate->debug) {
