@@ -1017,6 +1017,8 @@ typedef struct Entity {
     f32 scale;  // only allow uniform scaling.
     Mat4 orient;
 
+    Vec3 v;
+
     LMesh mesh;
 
     /////////////////////////////////////////////////////////////////
@@ -1203,14 +1205,8 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 
 static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-    static Mat4 vieworient = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
-                                     0.0f, 1.0f, 0.0f, 0.0f,  //
-                                     0.0f, 0.0f, 1.0f, 0.0f,  //
-                                     0.0f, 0.0f, 0.0f, 1.0f);
-    static Mat4 viewbody = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
-                                   0.0f, 1.0f, 0.0f, 0.0f,  //
-                                   0.0f, 0.0f, 1.0f, 0.0f,  //
-                                   0.0f, 0.0f, 0.0f, 1.0f);
+    static Mat4 vieworient = {0};
+    static Mat4 viewbody = {0};
 
     static bool INIT = false;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
@@ -1223,6 +1219,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     static EntityId SHADOW_DEBUG[MAX_ENTITY_BATCH] = {0};
     static u32 SHADOW_DEBUG_SIZE = 0;
+
+    static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
+    static u32 PHYSICS_SIZE = 0;
 
     if (!INIT) {
         INIT = true;
@@ -1247,6 +1246,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
                                 Vec3Lit(-15.0f, 0.0f, 0.0f)};
+
             EntityId* entities = SPINNING;
             SPINNING_SIZE = ArraySizeOf(positions);
             for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -1260,6 +1260,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f), Vec3Lit(0.0f, 3.0f, 5.0f)};
             f32 rotations[] = {Deg2Rad(45.0f), Deg2Rad(0.0f)};
+
             EntityId* entities = SHADOW_DEBUG;
             SHADOW_DEBUG_SIZE = ArraySizeOf(positions);
             for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -1268,6 +1269,24 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->mesh = GetMesh(M_CUBE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                 entity->scale = 3.0f;
+                entities[i] = entity->id;
+            }
+        }
+
+        {
+            static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 0.0f)};
+            static Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
+            static f32 rotations[] = {Deg2Rad(0.0f)};
+
+            EntityId* entities = PHYSICS;
+            PHYSICS_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_CUBE);
+                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->scale = 3.0f;
+                entity->v = velocities[i];
                 entities[i] = entity->id;
             }
         }
@@ -1426,19 +1445,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                 // Physics cube.
                 {
-                    static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 0.0f)};
-                    static Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
-                    static f32 rotations[] = {Deg2Rad(0.0f)};
-
-                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                        positions[i] = Vec3Add(positions[i], Vec3Scale(velocities[i], delta));
-                        Mat4 scale = Mat4Scale(3.0f);
-                        Mat4 rotation = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-                        Mat4 translate = Mat4TranslateV(positions[i]);
-                        Mat4 model = Mat4Multiply(translate, Mat4Multiply(rotation, scale));
-                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                        glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
+                    EntityId* entities = PHYSICS;
+                    u32 size = PHYSICS_SIZE;
+                    for (u32 i = 0; i < size; ++i) {
+                        Entity* entity = GetEntity(entities[i]);
+                        entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
                     }
+                    DrawBatch(shader, entities, size);
                 }
             }
 
