@@ -1158,12 +1158,15 @@ static void GameStateInit(GameState* gstate) {
     { glEnable(GL_DEPTH_TEST); }
 }
 
-static void DrawEntity(LShader shader, Entity* entity) {
-    Mat4 scale = Mat4Scale(entity->scale);
-    Mat4 translate = Mat4TranslateV(entity->pos);
-    Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-    glDrawArrays(GL_TRIANGLES, entity->mesh.vidx, entity->mesh.ntriangles * 3);
+static void DrawBatch(LShader shader, EntityId* entities, u32 size) {
+    for (u32 i = 0; i < size; ++i) {
+        Entity* entity = GetEntity(entities[i]);
+        Mat4 scale = Mat4Scale(entity->scale);
+        Mat4 translate = Mat4TranslateV(entity->pos);
+        Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
+        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+        glDrawArrays(GL_TRIANGLES, entity->mesh.vidx, entity->mesh.ntriangles * 3);
+    }
 }
 
 static void GameStateUpdate(GameState* gstate, float dt) {
@@ -1196,6 +1199,8 @@ static void GameStateUpdate(GameState* gstate, float dt) {
     gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
 }
 
+#define MAX_ENTITY_BATCH 256
+
 static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Mat4 vieworient = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,  //
@@ -1209,7 +1214,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     static bool INIT = false;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
-    static EntityId LIGHTS[1] = {0};
+    static EntityId LIGHTS[MAX_ENTITY_BATCH] = {0};
+    static u32 LIGHTS_SIZE = 0;
 
     if (!INIT) {
         INIT = true;
@@ -1228,6 +1234,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entities[idx] = entity->id;
                 ++idx;
             }
+            LIGHTS_SIZE = idx;
         }
     }
 
@@ -1336,11 +1343,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
             // Draw cube lights.
             {
                 EntityId* entities = LIGHTS;
-                for (u32 i = 0; i < ArraySizeOf(entities); ++i) {
+                u32 size = LIGHTS_SIZE;
+                for (u32 i = 0; i < size; ++i) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                    DrawEntity(shader, entity);
                 }
+
+                DrawBatch(shader, entities, size);
             }
         }
 
