@@ -1234,16 +1234,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
         viewbody = vieworient;
 
         {
+            Vec3 positions[] = {LIGHT_POS};
+
             EntityId* entities = LIGHTS;
-            u32 idx = 0;
-            {
+            LIGHTS_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                 Entity* entity = AllocateEntity();
-                entity->pos = LIGHT_POS;
+                entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
-                entities[idx] = entity->id;
-                ++idx;
+                entities[i] = entity->id;
             }
-            LIGHTS_SIZE = idx;
         }
 
         {
