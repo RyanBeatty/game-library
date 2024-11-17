@@ -945,12 +945,6 @@ static LMesh GetMesh(u32 mid) {
     return MESHES[mid];
 }
 
-// Assumes buffer has been bound and shader program used.
-static void DrawLMesh(LShader shader, LMesh m, Mat4 mmodel) {
-    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&mmodel.m);
-    glDrawArrays(GL_TRIANGLES, m.vidx, m.ntriangles * 3);
-}
-
 static void RenderDataInit() {
     static bool INIT = false;
     Assert(!INIT);
@@ -1023,6 +1017,8 @@ typedef struct Entity {
     f32 scale;  // only allow uniform scaling.
     Mat4 orient;
 
+    LMesh mesh;
+
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
 
@@ -1070,6 +1066,8 @@ static Entity* AllocateEntity() {
     memset(entity, 0, sizeof(*entity));
     entity->id = id;
     entity->flags = EFLAG_ACTIVE;
+    entity->scale = 1.0f;
+    entity->orient = Mat4Identity();
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -1160,6 +1158,14 @@ static void GameStateInit(GameState* gstate) {
     { glEnable(GL_DEPTH_TEST); }
 }
 
+static void DrawEntity(LShader shader, Entity* entity) {
+    Mat4 scale = Mat4Scale(entity->scale);
+    Mat4 translate = Mat4TranslateV(entity->pos);
+    Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
+    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+    glDrawArrays(GL_TRIANGLES, entity->mesh.vidx, entity->mesh.ntriangles * 3);
+}
+
 static void GameStateUpdate(GameState* gstate, float dt) {
     gstate->timer += dt;
 
@@ -1203,6 +1209,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     static bool INIT = false;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
+    static EntityId LIGHTS[1] = {0};
 
     if (!INIT) {
         INIT = true;
@@ -1210,6 +1217,18 @@ static void GameStateDraw(GameState* gstate, float delta) {
         RenderDataInit();
         vieworient = Mat4RotateY(Deg2Rad(90.0f));
         viewbody = vieworient;
+
+        {
+            EntityId* entities = LIGHTS;
+            u32 idx = 0;
+            {
+                Entity* entity = AllocateEntity();
+                entity->pos = LIGHT_POS;
+                entity->mesh = GetMesh(M_CUBE);
+                entities[idx] = entity->id;
+                ++idx;
+            }
+        }
     }
 
     // Camera movement.
@@ -1316,15 +1335,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             // Draw cube lights.
             {
-                LMesh mesh = GetMesh(M_CUBE);
-                Vec3 positions[] = {LIGHT_POS};
-
-                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                    Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                    Mat4 translate = Mat4TranslateV(positions[i]);
-                    Mat4 model = Mat4Multiply(translate, rotation);
-                    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                    glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
+                EntityId* entities = LIGHTS;
+                for (u32 i = 0; i < ArraySizeOf(entities); ++i) {
+                    Entity* entity = GetEntity(entities[i]);
+                    entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                    DrawEntity(shader, entity);
                 }
             }
         }
