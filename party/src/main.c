@@ -1089,8 +1089,6 @@ typedef enum InputDir {
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
-    Camera camera;
-
     bool debug;
     bool game_over;
 
@@ -1134,11 +1132,9 @@ static void GameStateInit(GameState* gstate) {
     PhysicsState* pstate = &gstate->pstate;
     PhysicsStateInit(pstate);
     pstate->gravity = Vec2Lit(0.0f, -10.0f);
-    // pstate->gravity = Vec2Zero();
 
     InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
-    // ToggleFullscreen();
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
@@ -1146,16 +1142,6 @@ static void GameStateInit(GameState* gstate) {
     gstate->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
     SimpleScene(gstate);
-
-    {
-        Camera camera = {0};
-        camera.position = Vec3ToRVector3(Vec3Lit(0.0f, 20.0f, 40.0f));
-        camera.target = Vec3ToRVector3(ORIGIN);
-        camera.up = Vec3ToRVector3(Vec3Lit(0.0f, 1.0f, 0.0f));
-        camera.fovy = 60.0f;
-        camera.projection = CAMERA_PERSPECTIVE;
-        gstate->camera = camera;
-    }
 
     { glEnable(GL_DEPTH_TEST); }
 }
