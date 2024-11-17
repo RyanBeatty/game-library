@@ -1214,8 +1214,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     static bool INIT = false;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
+
     static EntityId LIGHTS[MAX_ENTITY_BATCH] = {0};
     static u32 LIGHTS_SIZE = 0;
+
+    static EntityId SPINNING[MAX_ENTITY_BATCH] = {0};
+    static u32 SPINNING_SIZE = 0;
 
     if (!INIT) {
         INIT = true;
@@ -1235,6 +1239,19 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 ++idx;
             }
             LIGHTS_SIZE = idx;
+        }
+
+        {
+            Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
+                                Vec3Lit(-15.0f, 0.0f, 0.0f)};
+            EntityId* entities = SPINNING;
+            SPINNING_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_CUBE);
+                entities[i] = entity->id;
+            }
         }
     }
 
@@ -1373,16 +1390,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
             {
                 LMesh mesh = GetMesh(M_CUBE);
                 {
-                    Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f),
-                                        Vec3Lit(15.0f, 3.0f, -50.0f), Vec3Lit(-15.0f, 0.0f, 0.0f)};
-
-                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                        Mat4 rotation = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                        Mat4 translate = Mat4TranslateV(positions[i]);
-                        Mat4 model = Mat4Multiply(translate, rotation);
-                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                        glDrawArrays(GL_TRIANGLES, mesh.vidx, mesh.ntriangles * 3);
+                    EntityId* entities = SPINNING;
+                    u32 size = SPINNING_SIZE;
+                    for (u32 i = 0; i < size; ++i) {
+                        Entity* entity = GetEntity(entities[i]);
+                        entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                     }
+                    DrawBatch(shader, entities, size);
                 }
 
                 // Draw non rotating cube for easier lighting visual debug.
