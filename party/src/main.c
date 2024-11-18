@@ -765,6 +765,7 @@ static LShader GetShader() {
         "   vec3 specular = spec * mat_spec * fLightColor.xyz;\n"
         "\n"
         "   FragColor = vec4(fColor.xyz * (ambient + diffuse + specular), 1.0);\n"
+        "   FragColor = vec4(fColor.xyz, 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
@@ -857,14 +858,15 @@ typedef struct Vertex {
 
         struct {
             Vec3 pos;
-            Vec3 normal;
             Vec3 color;
+            Vec3 normal;
         };
     };
 } Vertex;
 
 static u32 VAO = 0;
 static u32 VBO = 0;
+static u32 VIO = 0;  // Index buffer.
 static Vertex VBUFFER[] = {
     /////////////////////////////////////////////////////////////////
     // Cube Begin.
@@ -930,8 +932,44 @@ static Vertex VBUFFER[] = {
     /////////////////////////////////////////////////////////////////
 };
 
+static u32 IBUFFER[] = {
+    /////////////////////////////////////////////////////////////////
+    // Cube Begin.
+    // Back.
+    0, 1, 2,  //
+    3, 2, 1,  //
+
+    // TODO
+    // Front.
+    6, 7, 8,    //
+    9, 10, 11,  //
+
+    // TODO
+    // Left.
+    12, 13, 14,  //
+    15, 16, 17,  //
+
+    // TODO
+    // Right.
+    18, 19, 20,  //
+    21, 22, 23,  //
+
+    // TODO
+    // Bottom.
+    24, 25, 26,  //
+    27, 28, 29,  //
+
+    // TODO
+    // // Top.
+    30, 31, 32,  //
+    33, 34, 35   //
+    // Cube End.
+    /////////////////////////////////////////////////////////////////
+};
+
 typedef struct LMesh {
     u32 vidx;  // Offset into vertex buffer
+    u32 iidx;  // Offset into index buffer
     u32 ntriangles;
 } LMesh;
 
@@ -959,6 +997,10 @@ static void RenderDataInit() {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(VBUFFER), VBUFFER, GL_STATIC_DRAW);
 
+    glGenBuffers(1, &VIO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
+
     glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(shader.vpos_loc);
     glVertexAttribPointer(shader.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
@@ -968,10 +1010,12 @@ static void RenderDataInit() {
 
     u32 midx = 0;
     u32 vidx = 0;
+    u32 iidx = 0;
     // Cube.
     {
         LMesh* mesh = &MESHES[midx];
         mesh->vidx = vidx;
+        mesh->iidx = iidx;
         mesh->ntriangles = 12;
         ++midx;
         vidx += mesh->ntriangles * 3;
@@ -981,9 +1025,11 @@ static void RenderDataInit() {
     {
         LMesh* mesh = &MESHES[midx];
         mesh->vidx = vidx;
+        mesh->iidx = iidx;
         mesh->ntriangles = 2;
         ++midx;
         vidx += mesh->ntriangles * 3;
+        iidx += mesh->ntriangles;
     }
 }
 
@@ -1153,7 +1199,8 @@ static void DrawBatch(LShader shader, EntityId* entities, u32 size) {
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-        glDrawArrays(GL_TRIANGLES, entity->mesh.vidx, entity->mesh.ntriangles * 3);
+        // TODO: offset.
+        glDrawElements(GL_TRIANGLES, entity->mesh.ntriangles * 3, GL_UNSIGNED_INT, 0);
     }
 }
 
