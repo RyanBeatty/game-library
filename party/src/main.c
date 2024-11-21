@@ -913,9 +913,7 @@ static Vertex VBUFFER[] = {
     {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
     {{{-0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},  //
     {{{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
-    {{{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
     {{{0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},    //
-    {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}}
     // Quad End
     /////////////////////////////////////////////////////////////////
 };
@@ -945,14 +943,20 @@ static u32 IBUFFER[] = {
 
     // Top.
     20, 21, 22,  //
-    22, 23, 20   //
+    22, 23, 20,  //
     // Cube End.
+    /////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    // Quad Begin.
+    24, 25, 26,  //
+    26, 27, 24,  //
+    // Quad End.
     /////////////////////////////////////////////////////////////////
 };
 
 typedef struct LMesh {
-    u32 vidx;  // Offset into vertex buffer
-    u32 iidx;  // Offset into index buffer
+    u32 ibufferidx;  // Offset into index buffer
     u32 ntriangles;
 } LMesh;
 
@@ -992,28 +996,27 @@ static void RenderDataInit() {
     glEnableVertexAttribArray(shader.vnormal_loc);
 
     u32 midx = 0;
-    u32 vidx = 0;
-    u32 iidx = 0;
+    u32 ibufferidx = 0;
     // Cube.
     {
         LMesh* mesh = &MESHES[midx];
-        mesh->vidx = vidx;
-        mesh->iidx = iidx;
+        mesh->ibufferidx = ibufferidx;
         mesh->ntriangles = 12;
+        ibufferidx += mesh->ntriangles * 3;
         ++midx;
-        vidx += mesh->ntriangles * 3;
     }
 
     // Quad.
     {
         LMesh* mesh = &MESHES[midx];
-        mesh->vidx = vidx;
-        mesh->iidx = iidx;
+        mesh->ibufferidx = ibufferidx;
         mesh->ntriangles = 2;
+        ibufferidx += mesh->ntriangles * 3;
         ++midx;
-        vidx += mesh->ntriangles * 3;
-        iidx += mesh->ntriangles;
     }
+
+    breakpoint();
+    int a = 0;
 }
 
 ////////////////////////////////////////////////////////////
@@ -1182,8 +1185,8 @@ static void DrawBatch(LShader shader, EntityId* entities, u32 size) {
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-        // TODO: offset.
-        glDrawElements(GL_TRIANGLES, entity->mesh.ntriangles * 3, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, entity->mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                       (void*)(entity->mesh.ibufferidx * sizeof(GLuint)));
     }
 }
 
