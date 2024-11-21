@@ -1014,9 +1014,6 @@ static void RenderDataInit() {
         ibufferidx += mesh->ntriangles * 3;
         ++midx;
     }
-
-    breakpoint();
-    int a = 0;
 }
 
 ////////////////////////////////////////////////////////////
