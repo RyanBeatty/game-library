@@ -992,6 +992,7 @@ typedef struct LMesh {
 
 #define MAX_MESHES 256
 static LMesh MESHES[MAX_MESHES] = {0};
+static u32 MESHES_SIZE = 0;
 
 typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_PYRAMID, M_COUNT } MID;
 
@@ -1025,33 +1026,31 @@ static void RenderDataInit() {
     glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(shader.vnormal_loc);
 
-    u32 midx = 0;
-    u32 ibufferidx = 0;
     // Cube.
     {
-        LMesh* mesh = &MESHES[midx];
-        mesh->ibufferidx = ibufferidx;
+        LMesh* mesh = &MESHES[MESHES_SIZE];
+        ++MESHES_SIZE;
+        mesh->ibufferidx = IBUFFER_SIZE;
         mesh->ntriangles = 12;
-        ibufferidx += mesh->ntriangles * 3;
-        ++midx;
+        IBUFFER_SIZE += mesh->ntriangles * 3;
     }
 
     // Quad.
     {
-        LMesh* mesh = &MESHES[midx];
-        mesh->ibufferidx = ibufferidx;
+        LMesh* mesh = &MESHES[MESHES_SIZE];
+        ++MESHES_SIZE;
+        mesh->ibufferidx = IBUFFER_SIZE;
         mesh->ntriangles = 2;
-        ibufferidx += mesh->ntriangles * 3;
-        ++midx;
+        IBUFFER_SIZE += mesh->ntriangles * 3;
     }
 
     // Triangle.
     {
-        LMesh* mesh = &MESHES[midx];
-        mesh->ibufferidx = ibufferidx;
+        LMesh* mesh = &MESHES[MESHES_SIZE];
+        ++MESHES_SIZE;
+        mesh->ibufferidx = IBUFFER_SIZE;
         mesh->ntriangles = 1;
-        ibufferidx += mesh->ntriangles * 3;
-        ++midx;
+        IBUFFER_SIZE += mesh->ntriangles * 3;
     }
 }
 
