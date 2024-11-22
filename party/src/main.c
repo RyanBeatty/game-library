@@ -864,10 +864,12 @@ typedef struct Vertex {
     };
 } Vertex;
 
+#define MAX_VERTICES 256
+
 static u32 VAO = 0;
 static u32 VBO = 0;
 static u32 VIO = 0;  // Index buffer.
-static Vertex VBUFFER[] = {
+static Vertex VBUFFER[MAX_VERTICES] = {
     /////////////////////////////////////////////////////////////////
     // Cube Begin.
     // Back.
@@ -924,9 +926,22 @@ static Vertex VBUFFER[] = {
     {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
     // Iso Triangle End
     /////////////////////////////////////////////////////////////////
+
+    // /////////////////////////////////////////////////////////////////
+    // // PYRAMID Begin
+    // // Base
+    // {{{-1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+    // {{{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
+    // {{{1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+    // {{{1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
+    // // PYRAMID End
+    // /////////////////////////////////////////////////////////////////
 };
 
-static u32 IBUFFER[] = {
+static u32 VBUFFER_SIZE = 0;
+
+#define MAX_TRIANGLES 256
+static u32 IBUFFER[MAX_TRIANGLES] = {
     /////////////////////////////////////////////////////////////////
     // Cube Begin.
     // Back.
@@ -963,11 +978,12 @@ static u32 IBUFFER[] = {
     /////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////
-    // Iso Triagnle Begin.
+    // Iso Triangle Begin.
     28, 29, 30,  //
-    // Iso Triagnle End.
+    // Iso Triangle End.
     /////////////////////////////////////////////////////////////////
 };
+static u32 IBUFFER_SIZE = 0;
 
 typedef struct LMesh {
     u32 ibufferidx;  // Offset into index buffer
@@ -977,7 +993,7 @@ typedef struct LMesh {
 #define MAX_MESHES 256
 static LMesh MESHES[MAX_MESHES] = {0};
 
-typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_COUNT } MID;
+typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_PYRAMID, M_COUNT } MID;
 
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
