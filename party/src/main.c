@@ -916,6 +916,14 @@ static Vertex VBUFFER[] = {
     {{{0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},    //
     // Quad End
     /////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    // Iso Triangle Begin
+    {{{0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
+    {{{-1.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},  //
+    {{{1.0f, 0.0f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},   //
+    // Iso Triangle End
+    /////////////////////////////////////////////////////////////////
 };
 
 static u32 IBUFFER[] = {
@@ -953,6 +961,12 @@ static u32 IBUFFER[] = {
     26, 27, 24,  //
     // Quad End.
     /////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    // Iso Triagnle Begin.
+    28, 29, 30,  //
+    // Iso Triagnle End.
+    /////////////////////////////////////////////////////////////////
 };
 
 typedef struct LMesh {
@@ -963,7 +977,7 @@ typedef struct LMesh {
 #define MAX_MESHES 256
 static LMesh MESHES[MAX_MESHES] = {0};
 
-typedef enum MID { M_CUBE = 0, M_QUAD, M_COUNT } MID;
+typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_COUNT } MID;
 
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
@@ -1011,6 +1025,15 @@ static void RenderDataInit() {
         LMesh* mesh = &MESHES[midx];
         mesh->ibufferidx = ibufferidx;
         mesh->ntriangles = 2;
+        ibufferidx += mesh->ntriangles * 3;
+        ++midx;
+    }
+
+    // Triangle.
+    {
+        LMesh* mesh = &MESHES[midx];
+        mesh->ibufferidx = ibufferidx;
+        mesh->ntriangles = 1;
         ibufferidx += mesh->ntriangles * 3;
         ++midx;
     }
@@ -1239,6 +1262,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
     static u32 PHYSICS_SIZE = 0;
 
+    static EntityId ISO_TRIANGLES[MAX_ENTITY_BATCH] = {0};
+    static u32 ISO_TRIANGLES_SIZE = 0;
+
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
 
@@ -1306,6 +1332,22 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                 entity->scale = 3.0f;
                 entity->v = velocities[i];
+                entities[i] = entity->id;
+            }
+        }
+
+        {
+            static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 15.0f)};
+            static f32 rotations[] = {Deg2Rad(0.0f)};
+
+            EntityId* entities = ISO_TRIANGLES;
+            ISO_TRIANGLES_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_ISO_TRIANGLE);
+                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
         }
@@ -1484,6 +1526,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
                 }
+                DrawBatch(shader, entities, size);
+            }
+
+            // Physics cube.
+            {
+                EntityId* entities = ISO_TRIANGLES;
+                u32 size = ISO_TRIANGLES_SIZE;
                 DrawBatch(shader, entities, size);
             }
 
