@@ -977,11 +977,11 @@ static u32 IBUFFER[MAX_TRIANGLES] = {
     // Quad End.
     /////////////////////////////////////////////////////////////////
 
-    /////////////////////////////////////////////////////////////////
-    // Iso Triangle Begin.
-    28, 29, 30,  //
-    // Iso Triangle End.
-    /////////////////////////////////////////////////////////////////
+    // /////////////////////////////////////////////////////////////////
+    // // Iso Triangle Begin.
+    // 28, 29, 30,  //
+    // // Iso Triangle End.
+    // /////////////////////////////////////////////////////////////////
 };
 static u32 IBUFFER_SIZE = 0;
 
@@ -1030,13 +1030,6 @@ static void RenderDataInit() {
 
     // Triangle.
     {
-        LMesh* mesh = &MESHES[MESHES_SIZE];
-        ++MESHES_SIZE;
-        mesh->ibufferidx = IBUFFER_SIZE;
-        mesh->ntriangles = 1;
-        IBUFFER_SIZE += mesh->ntriangles * 3;
-        Assert(IBUFFER_SIZE <= MAX_TRIANGLES);
-
         Vertex vs[] = {
             {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
             {{{-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
@@ -1046,7 +1039,25 @@ static void RenderDataInit() {
         for (u32 i = 0; i < vsize; ++i) {
             VBUFFER[VBUFFER_SIZE + i] = vs[i];
         }
+        u32 vbufferidx = VBUFFER_SIZE;
         VBUFFER_SIZE += vsize;
+        Assert(VBUFFER_SIZE <= MAX_TRIANGLES);
+
+        f32 ts[] = {0, 1, 2};
+        u32 tsize = ArraySizeOf(ts);
+        for (u32 i = 0; i < tsize; ++i) {
+            IBUFFER[IBUFFER_SIZE + i] = vbufferidx + ts[i];
+        }
+        u32 ibufferidx = IBUFFER_SIZE;
+        IBUFFER_SIZE += tsize;
+        Assert(IBUFFER_SIZE <= MAX_TRIANGLES);
+
+        u32 ntriangles = tsize / 3;
+
+        LMesh* mesh = &MESHES[MESHES_SIZE];
+        ++MESHES_SIZE;
+        mesh->ibufferidx = ibufferidx;
+        mesh->ntriangles = ntriangles;
     }
 
     LShader shader = GetShader();
