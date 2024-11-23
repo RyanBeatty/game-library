@@ -1015,7 +1015,7 @@ static void RenderDataInit() {
         AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
-    // Pyramid.
+    // PYRAMID Mesh.
     {
         Vertex vs[] = {
             // Base
@@ -1025,14 +1025,20 @@ static void RenderDataInit() {
             {{{1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
 
             // Top point.
-            {{{0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
+            {{{0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
         };
         f32 ts[] = {
             // Base
             0, 1, 2,  //
             2, 3, 0,  //
-
-            // top
+            // Top
+            0, 4, 3,  //
+            // Left
+            0, 1, 4,  //
+            // Right
+            3, 4, 2,  //
+            // Bottom
+            1, 2, 4,  //
         };
         AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
