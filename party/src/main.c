@@ -1006,25 +1006,7 @@ static void RenderDataInit() {
     Assert(!INIT);
     INIT = true;
 
-    LShader shader = GetShader();
-
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VBUFFER), VBUFFER, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &VIO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    glEnableVertexAttribArray(shader.vpos_loc);
-    glVertexAttribPointer(shader.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(shader.vcolor_loc);
-    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(shader.vnormal_loc);
+    // Important!!!! Init the buffer before sending to GPU or else no vertex data!!!!!
 
     // Cube.
     {
@@ -1044,6 +1026,8 @@ static void RenderDataInit() {
         IBUFFER_SIZE += mesh->ntriangles * 3;
     }
 
+    VBUFFER_SIZE = 28;
+
     // Triangle.
     {
         LMesh* mesh = &MESHES[MESHES_SIZE];
@@ -1051,7 +1035,39 @@ static void RenderDataInit() {
         mesh->ibufferidx = IBUFFER_SIZE;
         mesh->ntriangles = 1;
         IBUFFER_SIZE += mesh->ntriangles * 3;
+        Assert(IBUFFER_SIZE <= MAX_TRIANGLES);
+
+        Vertex vs[] = {
+            {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+            {{{-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+            {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+        };
+        u32 vsize = ArraySizeOf(vs);
+        for (u32 i = 0; i < vsize; ++i) {
+            VBUFFER[VBUFFER_SIZE + i] = vs[i];
+        }
+        VBUFFER_SIZE += vsize;
     }
+
+    LShader shader = GetShader();
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(VBUFFER), VBUFFER, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &VIO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    glEnableVertexAttribArray(shader.vpos_loc);
+    glVertexAttribPointer(shader.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(shader.vcolor_loc);
+    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(shader.vnormal_loc);
 }
 
 ////////////////////////////////////////////////////////////
