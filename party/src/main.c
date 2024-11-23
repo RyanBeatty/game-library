@@ -893,7 +893,7 @@ static LMesh GetMesh(u32 mid) {
     return MESHES[mid];
 }
 
-static LMesh AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
+static void AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
     for (u32 i = 0; i < vsize; ++i) {
         VBUFFER[VBUFFER_SIZE + i] = vs[i];
     }
@@ -1020,9 +1020,9 @@ static void RenderDataInit() {
         Vertex vs[] = {
             // Base
             {{{-1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
-            {{{-1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
-            {{{1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
-            {{{1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
+            {{{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
+            {{{1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f}}},   //
+            {{{1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
 
             // Top point.
             {{{0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
