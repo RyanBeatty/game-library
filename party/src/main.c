@@ -869,22 +869,12 @@ typedef struct Vertex {
 static u32 VAO = 0;
 static u32 VBO = 0;
 static u32 VIO = 0;  // Index buffer.
-static Vertex VBUFFER[MAX_VERTICES] = {
-    // /////////////////////////////////////////////////////////////////
-    // // PYRAMID Begin
-    // // Base
-    // {{{-1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
-    // {{{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
-    // {{{1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
-    // {{{1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
-    // // PYRAMID End
-    // /////////////////////////////////////////////////////////////////
-};
 
+static Vertex VBUFFER[MAX_VERTICES] = {};  // Vertex buffer
 static u32 VBUFFER_SIZE = 0;
 
 #define MAX_TRIANGLES 256
-static u32 IBUFFER[MAX_TRIANGLES] = {};
+static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
 static u32 IBUFFER_SIZE = 0;
 
 typedef struct LMesh {
@@ -909,7 +899,7 @@ static LMesh AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
     }
     u32 vbufferidx = VBUFFER_SIZE;
     VBUFFER_SIZE += vsize;
-    Assert(VBUFFER_SIZE <= MAX_TRIANGLES);
+    Assert(VBUFFER_SIZE <= MAX_VERTICES);
 
     for (u32 i = 0; i < tsize; ++i) {
         IBUFFER[IBUFFER_SIZE + i] = vbufferidx + ts[i];
@@ -1022,6 +1012,28 @@ static void RenderDataInit() {
             {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
         };
         f32 ts[] = {0, 1, 2};
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+    }
+
+    // Pyramid.
+    {
+        Vertex vs[] = {
+            // Base
+            {{{-1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+            {{{-1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
+            {{{1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},   //
+            {{{1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},    //
+
+            // Top point.
+            {{{0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
+        };
+        f32 ts[] = {
+            // Base
+            0, 1, 2,  //
+            2, 3, 0,  //
+
+            // top
+        };
         AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
@@ -1272,6 +1284,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static EntityId ISO_TRIANGLES[MAX_ENTITY_BATCH] = {0};
     static u32 ISO_TRIANGLES_SIZE = 0;
 
+    static EntityId PYRAMIDS[MAX_ENTITY_BATCH] = {0};
+    static u32 PYRAMIDS_SIZE = 0;
+
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
 
@@ -1354,6 +1369,23 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_ISO_TRIANGLE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->scale = 3.0f;
+                entities[i] = entity->id;
+            }
+        }
+
+        // PYRAMIDS
+        {
+            static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, 15.0f)};
+            static f32 rotations[] = {Deg2Rad(0.0f)};
+
+            EntityId* entities = PYRAMIDS;
+            PYRAMIDS_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_PYRAMID);
+                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(1.0f, 0.0f, 0.0f));
                 entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
@@ -1536,10 +1568,17 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 DrawBatch(shader, entities, size);
             }
 
-            // Physics cube.
+            // ISO_TRIANGLES Draw.
             {
                 EntityId* entities = ISO_TRIANGLES;
                 u32 size = ISO_TRIANGLES_SIZE;
+                DrawBatch(shader, entities, size);
+            }
+
+            // PYRAMIDS Draw.
+            {
+                EntityId* entities = PYRAMIDS;
+                u32 size = PYRAMIDS_SIZE;
                 DrawBatch(shader, entities, size);
             }
 
