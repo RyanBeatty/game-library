@@ -886,7 +886,7 @@ typedef struct LMesh {
 static LMesh MESHES[MAX_MESHES] = {0};
 static u32 MESHES_SIZE = 0;
 
-typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_PYRAMID, M_COUNT } MID;
+typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_PYRAMID, M_2S_ISO_TRIANGLE, M_COUNT } MID;
 
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
@@ -1004,7 +1004,7 @@ static void RenderDataInit() {
         AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
-    // ISO Triangle.
+    // ISO TRIANGLE Mesh.
     {
         Vertex vs[] = {
             {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
@@ -1039,6 +1039,23 @@ static void RenderDataInit() {
             3, 2, 4,  //
             // Bottom
             2, 1, 4,  //
+        };
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+    }
+
+    // 2S ISO TRIANGLE Mesh.
+    {
+        Vertex vs[] = {
+            {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+            {{{-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+            {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+            {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
+            {{{-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
+            {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
+        };
+        f32 ts[] = {
+            0, 1, 2,  //
+            3, 4, 5,  //
         };
         AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
@@ -1364,6 +1381,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             }
         }
 
+        // ISO TRIANGLES Init.
         {
             static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 15.0f)};
             static f32 rotations[] = {Deg2Rad(0.0f)};
@@ -1373,7 +1391,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
-                entity->mesh = GetMesh(M_ISO_TRIANGLE);
+                entity->mesh = GetMesh(M_2S_ISO_TRIANGLE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                 entity->scale = 3.0f;
                 entities[i] = entity->id;
