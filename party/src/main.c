@@ -1046,12 +1046,12 @@ static void RenderDataInit() {
     // 2S ISO TRIANGLE Mesh.
     {
         Vertex vs[] = {
-            {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
-            {{{-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
             {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+            {{{-0.5f, 0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+            {{{-0.5f, -0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
             {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
-            {{{-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
-            {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
+            {{{-0.5f, -0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
+            {{{-0.5f, 0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
         };
         f32 ts[] = {
             0, 1, 2,  //
@@ -1614,30 +1614,73 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3 b = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 1]].pos;
                     Vec3 c = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 2]].pos;
 
+                    Vec3 ab = Vec3Sub(b, a);
+                    Vec3 ac = Vec3Sub(c, a);
+                    Vec3 f0 = Vec3Normalize(Vec3Cross(ab, ac));
+
                     Vec3 d = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 0]].pos;
                     Vec3 e = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 1]].pos;
                     Vec3 f = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 2]].pos;
 
+                    Vec3 de = Vec3Sub(e, d);
+                    Vec3 df = Vec3Sub(f, d);
+                    Vec3 f1 = Vec3Normalize(Vec3Cross(de, df));
+
                     {
-                        Vec3 vs[] = {a, b, c};
-                        for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                            Vec3 pos = vs[i];
-                            Mat4 model = Mat4Multiply(e0m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                            LMesh mesh = GetMesh(M_CUBE);
-                            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                        // Draw points.
+                        {
+                            // model space
+                            Vec3 vs[] = {a, b, c};
+                            for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                                Vec3 pos = vs[i];
+                                Mat4 model = Mat4Multiply(e0m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                                LMesh mesh = GetMesh(M_CUBE);
+                                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                            }
+                        }
+                        {
+                            // model space
+                            Vec3 vs[] = {d, e, f};
+                            for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                                Vec3 pos = vs[i];
+                                Mat4 model = Mat4Multiply(e1m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                                LMesh mesh = GetMesh(M_CUBE);
+                                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                            }
                         }
                     }
+                    // Draw normals
                     {
-                        Vec3 vs[] = {d, e, f};
-                        for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                            Vec3 pos = vs[i];
-                            Mat4 model = Mat4Multiply(e1m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                            LMesh mesh = GetMesh(M_CUBE);
-                            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                        {
+                            // model space
+                            Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
+                            // Vec3 ns[] = {f0};
+                            for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                                Vec3 pos = vs[i];
+                                Mat4 model = Mat4Multiply(e0m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                                LMesh mesh = GetMesh(M_CUBE);
+                                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                            }
+                        }
+
+                        {
+                            // model space
+                            Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
+                            // Vec3 ns[] = {f0};
+                            for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                                Vec3 pos = vs[i];
+                                Mat4 model = Mat4Multiply(e1m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                                LMesh mesh = GetMesh(M_CUBE);
+                                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                            }
                         }
                     }
                 }
