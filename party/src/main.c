@@ -1240,6 +1240,13 @@ static void GameStateInit(GameState* gstate) {
     { glEnable(GL_DEPTH_TEST); }
 }
 
+static Mat4 EntityGetMat(Entity* e) {
+    Mat4 scale = Mat4Scale(e->scale);
+    Mat4 translate = Mat4TranslateV(e->pos);
+    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+    return model;
+}
+
 static void DrawBatch(LShader shader, EntityId* entities, u32 size) {
     for (u32 i = 0; i < size; ++i) {
         Entity* entity = GetEntity(entities[i]);
@@ -1383,8 +1390,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // ISO TRIANGLES Init.
         {
-            static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 15.0f)};
-            static f32 rotations[] = {Deg2Rad(0.0f)};
+            static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 15.0f), Vec3Lit(-20.0f, 3.0f, 20.0f)};
+            static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(90.0f)};
 
             EntityId* entities = ISO_TRIANGLES;
             ISO_TRIANGLES_SIZE = ArraySizeOf(positions);
@@ -1592,10 +1599,33 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 DrawBatch(shader, entities, size);
             }
 
-            // ISO_TRIANGLES Draw.
+            // ISO TRIANGLES DRAW Draw.
             {
                 EntityId* entities = ISO_TRIANGLES;
                 u32 size = ISO_TRIANGLES_SIZE;
+
+                {
+                    Entity* e0 = GetEntity(entities[0]);
+                    Entity* e1 = GetEntity(entities[1]);
+                    Mat4 e0m = EntityGetMat(e0);
+
+                    // LMesh m1 = GetMesh(e1->mesh);
+
+                    Vec3 a = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 0]].pos;
+                    Vec3 b = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 1]].pos;
+                    Vec3 c = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 2]].pos;
+
+                    Vec3 vs[] = {a, b, c};
+                    for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                        Vec3 pos = vs[i];
+                        Mat4 model = Mat4Multiply(e0m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                        LMesh mesh = GetMesh(M_CUBE);
+                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                        glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                       (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                    }
+                }
+
                 DrawBatch(shader, entities, size);
             }
 
