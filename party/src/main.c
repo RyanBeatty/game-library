@@ -1608,21 +1608,37 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* e0 = GetEntity(entities[0]);
                     Entity* e1 = GetEntity(entities[1]);
                     Mat4 e0m = EntityGetMat(e0);
-
-                    // LMesh m1 = GetMesh(e1->mesh);
+                    Mat4 e1m = EntityGetMat(e1);
 
                     Vec3 a = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 0]].pos;
                     Vec3 b = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 1]].pos;
                     Vec3 c = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 2]].pos;
 
-                    Vec3 vs[] = {a, b, c};
-                    for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                        Vec3 pos = vs[i];
-                        Mat4 model = Mat4Multiply(e0m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                        LMesh mesh = GetMesh(M_CUBE);
-                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                        glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                       (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                    Vec3 d = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 0]].pos;
+                    Vec3 e = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 1]].pos;
+                    Vec3 f = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 2]].pos;
+
+                    {
+                        Vec3 vs[] = {a, b, c};
+                        for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                            Vec3 pos = vs[i];
+                            Mat4 model = Mat4Multiply(e0m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                            LMesh mesh = GetMesh(M_CUBE);
+                            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                        }
+                    }
+                    {
+                        Vec3 vs[] = {d, e, f};
+                        for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                            Vec3 pos = vs[i];
+                            Mat4 model = Mat4Multiply(e1m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                            LMesh mesh = GetMesh(M_CUBE);
+                            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                        }
                     }
                 }
 
