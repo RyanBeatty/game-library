@@ -1701,7 +1701,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     Vec3 norm = ns[i];
                                     pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
                                     pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
-                                    Mat4 model = Mat4Multiply(em, Mat4SRT(scale, orient, pos));
+                                    Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
                                     LMesh mesh = GetMesh(M_PYRAMID);
                                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                     glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
