@@ -385,6 +385,10 @@ static Mat4 Mat4Invert(Mat4 m) {
     return m2;
 }
 
+static Mat4 Mat4SRT(f32 scale, Mat4 rotate, Vec3 pos) {
+    return Mat4Multiply(Mat4TranslateV(pos), Mat4Multiply(rotate, Mat4Scale(scale)));
+}
+
 static bool Mat4Eq(Mat4 a, Mat4 b) {
     bool result = Vec3Eq(a.v.a, b.v.a) && Vec3Eq(a.v.b, b.v.b) && Vec3Eq(a.v.c, b.v.c) && Vec3Eq(a.v.d, b.v.d) &&
                   f32eq(a.v.x, b.v.x) && f32eq(a.v.y, b.v.y) && f32eq(a.v.z, b.v.z) && f32eq(a.v.w, b.v.w);
@@ -1661,22 +1665,43 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
                             Vec3 ns[] = {f0};
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                                // Get rot matrix that will point mesh's forward along the normal.
+                                Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
+                                Vec3 norm = ns[i];
+                                f32 angle = Vec3Angle(forward, norm);
+                                Vec3 axis = Vec3Cross(forward, norm);
+                                Mat4 orient = Mat4Rotate(angle, axis);
+
                                 f32 scale = 0.06f;
+                                // Point.
                                 {
                                     Vec3 pos = vs[i];
-                                    Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(scale)));
+                                    Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
                                     LMesh mesh = GetMesh(M_CUBE);
                                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                     glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
                                                    (void*)(mesh.ibufferidx * sizeof(GLuint)));
                                 }
 
+                                // Normal tail.
                                 {
                                     Vec3 pos = vs[i];
                                     Vec3 norm = ns[i];
                                     pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
-                                    Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(scale)));
+                                    Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
                                     LMesh mesh = GetMesh(M_CUBE);
+                                    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                                    glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                                   (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                                }
+                                // Normal tip.
+                                {
+                                    Vec3 pos = vs[i];
+                                    Vec3 norm = ns[i];
+                                    pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
+                                    pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
+                                    Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
+                                    LMesh mesh = GetMesh(M_PYRAMID);
                                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                     glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
                                                    (void*)(mesh.ibufferidx * sizeof(GLuint)));
