@@ -1459,7 +1459,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // Left stick movement.
         {
-            static const f32 VEL = 20.0f;
+            static const f32 WALK_VEL = 20.0f;
+            static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+            f32 vel = WALK_VEL;
+            if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                vel = RUN_VEL;
+            }
 
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
@@ -1476,7 +1482,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             rotation.v.c = c;
 
             Vec3 dir_world = Vec3Transform(dir_model, rotation);
-            Vec3 mov_world = Vec3Scale(dir_world, VEL * delta);
+            Vec3 mov_world = Vec3Scale(dir_world, vel * delta);
             viewpos = Vec3Add(viewpos, mov_world);
         }
 
