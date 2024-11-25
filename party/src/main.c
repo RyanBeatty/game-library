@@ -1666,6 +1666,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             Vec3 ns[] = {f0};
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 // Get rot matrix that will point mesh's forward along the normal.
+                                // TODO: For some reason, when i apply this to cubes they look strange.
                                 Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
                                 Vec3 norm = ns[i];
                                 f32 angle = Vec3Angle(forward, norm);
@@ -1700,7 +1701,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     Vec3 norm = ns[i];
                                     pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
                                     pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
-                                    Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
+                                    Mat4 model = Mat4Multiply(em, Mat4SRT(scale, orient, pos));
                                     LMesh mesh = GetMesh(M_PYRAMID);
                                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                     glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
