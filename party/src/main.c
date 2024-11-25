@@ -1638,13 +1638,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3 ac = Vec3Sub(c, a);
                     Vec3 f0 = Vec3Normalize(Vec3Cross(ab, ac));
 
-                    Vec3 d = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 0]].pos;
-                    Vec3 e = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 1]].pos;
-                    Vec3 f = VBUFFER[IBUFFER[e1->mesh.ibufferidx + 2]].pos;
+                    // Bring other triangle's vertexes into e0's coordinate space.
+                    Vec3 d = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 0]].pos, e1toe0m);
+                    Vec3 e = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 1]].pos, e1toe0m);
+                    Vec3 f = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 2]].pos, e1toe0m);
 
                     Vec3 de = Vec3Sub(e, d);
                     Vec3 df = Vec3Sub(f, d);
                     Vec3 f1 = Vec3Normalize(Vec3Cross(de, df));
+
+                    Vec3 norm_abde = Vec3Normalize(Vec3Cross(ab, de));
 
                     {
                         // Draw points.
@@ -1680,8 +1683,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             // Do not include translation in normal transform because those are direction vectors
                             // only.
                             Mat4 em = e0m;
-                            Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3WTransform(Vec3Zero(), e1toe0m)};
-                            Vec3 ns[] = {f0, Vec3Transform(f1, e1toe0m)};
+                            Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3WTransform(Vec3Zero(), e1toe0m),
+                                         Vec3Add(a, Vec3Scale(ab, 0.5f))};
+                            Vec3 ns[] = {f0, f1, norm_abde};
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 // Get rot matrix that will point mesh's forward along the normal.
                                 // TODO: For some reason, when i apply this to cubes they look strange.
