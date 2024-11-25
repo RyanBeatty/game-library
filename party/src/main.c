@@ -422,12 +422,15 @@ static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
     );
 }
 
+// Useful if needing to transform a positionless vector by a matrix.
+// The positionless aspect is why we don't include the w component here.
 static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
     return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02),  //
                    (v.x * m.mm.m10) + (v.y * m.mm.m11) + (v.z * m.mm.m12),  //
                    (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22));
 }
 
+// Useful if needing to transform with translation a vector.
 static Vec3 Vec3WTransform(Vec3 v, Mat4 m) {
     // Include origin transform. useful for things like transforming points from one space
     // to another.
@@ -1650,25 +1653,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3 norm_abde = Vec3Normalize(Vec3Cross(ab, de));
 
                     {
-                        // Draw points.
+                        // Draw vertexes of triangles.
                         {
-                            // model space
-                            Vec3 vs[] = {a, b, c};
+                            // model space of e0
+                            Mat4 em = e0m;
+                            Vec3 vs[] = {a, b, c, d, e, f};
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 Vec3 pos = vs[i];
-                                Mat4 model = Mat4Multiply(e0m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                                LMesh mesh = GetMesh(M_CUBE);
-                                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
-                            }
-                        }
-                        {
-                            // model space
-                            Vec3 vs[] = {d, e, f};
-                            for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                                Vec3 pos = vs[i];
-                                Mat4 model = Mat4Multiply(e1m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                                Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
                                 LMesh mesh = GetMesh(M_CUBE);
                                 glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                 glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
@@ -1729,20 +1721,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
                                                    (void*)(mesh.ibufferidx * sizeof(GLuint)));
                                 }
-                            }
-                        }
-
-                        {
-                            // model space
-                            Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
-                            // Vec3 ns[] = {f0};
-                            for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                                Vec3 pos = vs[i];
-                                Mat4 model = Mat4Multiply(e1m, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                                LMesh mesh = GetMesh(M_CUBE);
-                                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
                             }
                         }
                     }
