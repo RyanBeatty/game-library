@@ -1670,8 +1670,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     // Draw normals
                     {
                         {
+                            // All of these normals and posistions need to be in the model space of e0.
+                            // Do not include translation in normal transform because those are direction vectors
+                            // only.
                             Mat4 em = e0m;
-                            // model space
                             Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3WTransform(Vec3Zero(), e1toe0m)};
                             Vec3 ns[] = {f0, Vec3Transform(f1, e1toe0m)};
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
