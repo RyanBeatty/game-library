@@ -428,6 +428,15 @@ static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
                    (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22));
 }
 
+static Vec3 Vec3WTransform(Vec3 v, Mat4 m) {
+    // Include origin transform. useful for things like transforming points from one space
+    // to another.
+    // TODO: think about if Vec3Transform should just do this.
+    return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02) + (1.0f * m.mm.m03),  //
+                   (v.x * m.mm.m10) + (v.y * m.mm.m11) + (v.z * m.mm.m12) + (1.0f * m.mm.m13),  //
+                   (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22) + (1.0f * m.mm.m23));
+}
+
 ////////////////////////////////////////////////////////////
 // S:Collision
 
@@ -1613,6 +1622,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* e1 = GetEntity(entities[1]);
                     Mat4 e0m = EntityGetMat(e0);
                     Mat4 e1m = EntityGetMat(e1);
+                    Mat4 e1toe0m = Mat4Multiply(Mat4Invert(e0m), e1m);
 
                     Vec3 a = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 0]].pos;
                     Vec3 b = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 1]].pos;
@@ -1662,8 +1672,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         {
                             Mat4 em = e0m;
                             // model space
-                            Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
-                            Vec3 ns[] = {f0};
+                            Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3WTransform(Vec3Zero(), e1toe0m)};
+                            Vec3 ns[] = {f0, Vec3Transform(f1, e1toe0m)};
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 // Get rot matrix that will point mesh's forward along the normal.
                                 // TODO: For some reason, when i apply this to cubes they look strange.
