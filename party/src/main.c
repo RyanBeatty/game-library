@@ -1732,6 +1732,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
             {
                 EntityId* entities = PYRAMIDS;
                 u32 size = PYRAMIDS_SIZE;
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* entity = GetEntity(entities[i]);
+                    entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                }
                 DrawBatch(shader, entities, size);
             }
 
