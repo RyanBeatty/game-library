@@ -1673,23 +1673,31 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         {
                             {
                                 Mat4 em = e0m;
+                                Mat4 enormm = e0->orient;
                                 Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3WTransform(Vec3Zero(), e1toe0m),
                                              Vec3Add(a, Vec3Scale(ab, 0.5f))};
                                 Vec3 ns[] = {f0, f1, norm_abde};
                                 for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                                    // Get rot matrix that will point mesh's forward along the normal.
-                                    // TODO: For some reason, when i apply this to cubes they look strange.
+                                    // Get rot matrix that will point mesh's forward along the normal. Note that we need
+                                    // to calculate what the direction of the normal will be in world space, so we
+                                    // transform the normal from model to world via the e0's orientation.
                                     Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
-                                    Vec3 norm = ns[i];
+                                    Vec3 norm = Vec3Transform(ns[i], enormm);
                                     f32 angle = Vec3Angle(forward, norm);
                                     Vec3 axis = Vec3Cross(forward, norm);
-                                    Mat4 orient = Mat4Rotate(angle, axis);
+                                    Mat4 orient_world = Mat4Rotate(angle, axis);
 
-                                    f32 scale = 0.06f;
+                                    // Need to take the model space position and figure out the world coords, that
+                                    // means we need to use the entity model mat to transform into world space
+                                    // (since it will correctly place the point based on scale, rot, translation).
+                                    Vec3 pos_world = Vec3WTransform(vs[i], em);
+
+                                    f32 scale = 0.1f;
                                     // Point.
                                     {
-                                        Vec3 pos = vs[i];
-                                        Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
+                                        Vec3 pos = pos_world;
+                                        Mat4 orient = orient_world;
+                                        Mat4 model = Mat4SRT(scale, orient_world, pos);
                                         LMesh mesh = GetMesh(M_CUBE);
                                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                         glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
