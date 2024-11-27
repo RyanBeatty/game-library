@@ -1706,10 +1706,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                                     // Normal tail.
                                     {
-                                        Vec3 pos = vs[i];
-                                        Vec3 norm = ns[i];
-                                        pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
-                                        Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
+                                        Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
+                                        Mat4 model = Mat4SRT(scale, orient_world, pos);
                                         LMesh mesh = GetMesh(M_CUBE);
                                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                         glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
