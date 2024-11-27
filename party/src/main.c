@@ -1692,12 +1692,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     // (since it will correctly place the point based on scale, rot, translation).
                                     Vec3 pos_world = Vec3WTransform(vs[i], em);
 
-                                    f32 scale = 0.1f;
+                                    f32 scale = 0.3f;
                                     // Point.
                                     {
                                         Vec3 pos = pos_world;
                                         Mat4 orient = orient_world;
-                                        Mat4 model = Mat4SRT(scale, orient_world, pos);
+                                        Mat4 model = Mat4SRT(scale, orient, pos);
                                         LMesh mesh = GetMesh(M_CUBE);
                                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                         glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
@@ -1707,7 +1707,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     // Normal tail.
                                     {
                                         Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
-                                        Mat4 model = Mat4SRT(scale, orient_world, pos);
+                                        Mat4 orient = orient_world;
+                                        Mat4 model = Mat4SRT(scale, orient, pos);
                                         LMesh mesh = GetMesh(M_CUBE);
                                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                         glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
@@ -1715,11 +1716,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     }
                                     // Normal tip.
                                     {
-                                        Vec3 pos = vs[i];
-                                        Vec3 norm = ns[i];
+                                        Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
                                         pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
-                                        pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
-                                        Mat4 model = Mat4Multiply(em, Mat4SRT(scale, Mat4Identity(), pos));
+                                        Mat4 orient = orient_world;
+                                        Mat4 model = Mat4SRT(scale, orient, pos);
                                         LMesh mesh = GetMesh(M_PYRAMID);
                                         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                                         glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
