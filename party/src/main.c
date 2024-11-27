@@ -1248,6 +1248,7 @@ static void GameStateInit(GameState* gstate) {
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
+    DisableCursor();
 
     gstate->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
