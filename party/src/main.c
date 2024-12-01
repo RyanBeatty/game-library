@@ -93,6 +93,12 @@ typedef struct Vec3 {
             f32 z;
         };
 
+        struct {
+            f32 yaw;
+            f32 pitch;
+            f32 roll;
+        };
+
         f32 f[3];
     };
 } Vec3;
@@ -1248,7 +1254,7 @@ static void GameStateInit(GameState* gstate) {
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     EntitySystemInit();
-    DisableCursor();
+    // DisableCursor();
 
     gstate->target = LoadRenderTexture(RenderWidth, RenderHeight);
 
@@ -1310,6 +1316,7 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 
 static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+    static Vec3 vieworient2 = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Mat4 vieworient = {0};
     static Mat4 viewbody = {0};
 
@@ -1343,6 +1350,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         RenderDataInit();
         vieworient = Mat4RotateY(Deg2Rad(90.0f));
         viewbody = vieworient;
+        vieworient2.yaw = Deg2Rad(180.0f);
 
         {
             Vec3 positions[] = {LIGHT_POS};
@@ -1509,6 +1517,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     f32 angularvel = VEL * len * delta;
                     Mat4 rotation = Mat4Rotate(angularvel, axis);
                     vieworient = Mat4Multiply(vieworient, rotation);
+
+                    vieworient2.yaw += -1.0f * x * VEL * delta;
+                    vieworient2.pitch += y * VEL * delta;
                 }
 
                 // rotate body.
@@ -1532,7 +1543,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     // Get camera matrix by finding transformed forward and then getting look at matrix from that dir + worl pos.
     // remember that we can't just use the view orient matrix because the j and k basis vectors will have
     // roll in them. for fps style camera we wan't no roll.
-    Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
+    // Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
+    Vec3 viewforward = Vec3Lit(f32cos(vieworient2.yaw) * f32cos(vieworient2.pitch), f32sin(vieworient2.pitch),
+                               -f32sin(vieworient2.yaw) * f32cos(vieworient2.pitch));
     Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
