@@ -52,6 +52,8 @@ static f32 TOL = 0.001;
 #define f32acos acos
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
 
+static f32 f32clamp(f32 v, f32 min, f32 max) { return f32min(f32max(v, min), max); }
+
 typedef struct Vec2 {
     f32 x;
     f32 y;
@@ -1520,6 +1522,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     vieworient2.yaw += -1.0f * x * VEL * delta;
                     vieworient2.pitch += y * VEL * delta;
+                    vieworient2.pitch = f32clamp(vieworient2.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
                 }
 
                 // rotate body.
