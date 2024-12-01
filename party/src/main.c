@@ -1318,7 +1318,7 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 
 static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-    static Vec3 vieworient2 = Vec3Lit(0.0f, 0.0f, 0.0f);
+    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
     static bool INIT = false;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
@@ -1348,7 +1348,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         INIT = true;
 
         RenderDataInit();
-        vieworient2.yaw = Deg2Rad(180.0f);
+        vieworient.yaw = Deg2Rad(180.0f);
 
         {
             Vec3 positions[] = {LIGHT_POS};
@@ -1482,8 +1482,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
             Vec3 dir_model = Vec3Lit(x, 0.0f, y);
 
             // Determine body forward pos from camera forward.
-            Vec3 forward = Vec3Lit(f32cos(vieworient2.yaw) * f32cos(vieworient2.pitch), f32sin(vieworient2.pitch),
-                                   -f32sin(vieworient2.yaw) * f32cos(vieworient2.pitch));
+            Vec3 forward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
+                                   -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
+            // TODO: Clean this up. seems like we are basically doing a mat4lookat to get the direciton to move
+            // in world space.
             Vec3 c = Vec3Normalize(Vec3Lit(-forward.x, 0.0f, -forward.z));
             Vec3 a = Vec3Normalize(Vec3Cross(Vec3Lit(0.0f, 1.0f, 0.0f), c));
             Vec3 b = Vec3Normalize(Vec3Cross(c, a));
@@ -1505,47 +1507,17 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 static const rad VEL = Deg2Rad(90.0f);
 
                 // rotate orient.
-                {
-                    // // Find rotation axis in model space.
-                    // Vec3 dir = Vec3Lit(x, y, 0.0f);
-                    // Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
-                    // Vec3 axis = Vec3Cross(forward, dir);
-
-                    // f32 len = Vec3Len(dir);
-
-                    // f32 angularvel = VEL * len * delta;
-                    // Mat4 rotation = Mat4Rotate(angularvel, axis);
-                    // vieworient = Mat4Multiply(vieworient, rotation);
-
-                    vieworient2.yaw += -1.0f * x * VEL * delta;
-                    vieworient2.pitch += y * VEL * delta;
-                    vieworient2.pitch = f32clamp(vieworient2.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
-                }
-
-                // // rotate body.
-                // {
-                //     // Find rotation axis in model space. only consider rotation around y axis
-                //     // (which comes from moving stick left/right in x dir).
-                //     Vec3 dir = Vec3Lit(x, 0.0f, 0.0f);
-                //     Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
-                //     Vec3 axis = Vec3Cross(forward, dir);
-
-                //     f32 len = Vec3Len(dir);
-
-                //     f32 angularvel = VEL * len * delta;
-                //     Mat4 rotation = Mat4Rotate(angularvel, axis);
-                //     viewbody = Mat4Multiply(viewbody, rotation);
-                // }
+                vieworient.yaw += -1.0f * x * VEL * delta;
+                vieworient.pitch += y * VEL * delta;
+                // Clamp pitch to avoid looking too high/low which would sign flip things.
+                vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
             }
         }
     }
 
     // Get camera matrix by finding transformed forward and then getting look at matrix from that dir + worl pos.
-    // remember that we can't just use the view orient matrix because the j and k basis vectors will have
-    // roll in them. for fps style camera we wan't no roll.
-    // Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
-    Vec3 viewforward = Vec3Lit(f32cos(vieworient2.yaw) * f32cos(vieworient2.pitch), f32sin(vieworient2.pitch),
-                               -f32sin(vieworient2.yaw) * f32cos(vieworient2.pitch));
+    Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
+                               -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
     Mat4 view = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
