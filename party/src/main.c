@@ -1319,8 +1319,6 @@ static void GameStateUpdate(GameState* gstate, float dt) {
 static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient2 = Vec3Lit(0.0f, 0.0f, 0.0f);
-    static Mat4 vieworient = {0};
-    static Mat4 viewbody = {0};
 
     static bool INIT = false;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
@@ -1350,8 +1348,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
         INIT = true;
 
         RenderDataInit();
-        vieworient = Mat4RotateY(Deg2Rad(90.0f));
-        viewbody = vieworient;
         vieworient2.yaw = Deg2Rad(180.0f);
 
         {
@@ -1486,7 +1482,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
             Vec3 dir_model = Vec3Lit(x, 0.0f, y);
 
             // Determine body forward pos from camera forward.
-            Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworient);
+            Vec3 forward = Vec3Lit(f32cos(vieworient2.yaw) * f32cos(vieworient2.pitch), f32sin(vieworient2.pitch),
+                                   -f32sin(vieworient2.yaw) * f32cos(vieworient2.pitch));
             Vec3 c = Vec3Normalize(Vec3Lit(-forward.x, 0.0f, -forward.z));
             Vec3 a = Vec3Normalize(Vec3Cross(Vec3Lit(0.0f, 1.0f, 0.0f), c));
             Vec3 b = Vec3Normalize(Vec3Cross(c, a));
@@ -1509,36 +1506,36 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                 // rotate orient.
                 {
-                    // Find rotation axis in model space.
-                    Vec3 dir = Vec3Lit(x, y, 0.0f);
-                    Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
-                    Vec3 axis = Vec3Cross(forward, dir);
+                    // // Find rotation axis in model space.
+                    // Vec3 dir = Vec3Lit(x, y, 0.0f);
+                    // Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
+                    // Vec3 axis = Vec3Cross(forward, dir);
 
-                    f32 len = Vec3Len(dir);
+                    // f32 len = Vec3Len(dir);
 
-                    f32 angularvel = VEL * len * delta;
-                    Mat4 rotation = Mat4Rotate(angularvel, axis);
-                    vieworient = Mat4Multiply(vieworient, rotation);
+                    // f32 angularvel = VEL * len * delta;
+                    // Mat4 rotation = Mat4Rotate(angularvel, axis);
+                    // vieworient = Mat4Multiply(vieworient, rotation);
 
                     vieworient2.yaw += -1.0f * x * VEL * delta;
                     vieworient2.pitch += y * VEL * delta;
                     vieworient2.pitch = f32clamp(vieworient2.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
                 }
 
-                // rotate body.
-                {
-                    // Find rotation axis in model space. only consider rotation around y axis
-                    // (which comes from moving stick left/right in x dir).
-                    Vec3 dir = Vec3Lit(x, 0.0f, 0.0f);
-                    Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
-                    Vec3 axis = Vec3Cross(forward, dir);
+                // // rotate body.
+                // {
+                //     // Find rotation axis in model space. only consider rotation around y axis
+                //     // (which comes from moving stick left/right in x dir).
+                //     Vec3 dir = Vec3Lit(x, 0.0f, 0.0f);
+                //     Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
+                //     Vec3 axis = Vec3Cross(forward, dir);
 
-                    f32 len = Vec3Len(dir);
+                //     f32 len = Vec3Len(dir);
 
-                    f32 angularvel = VEL * len * delta;
-                    Mat4 rotation = Mat4Rotate(angularvel, axis);
-                    viewbody = Mat4Multiply(viewbody, rotation);
-                }
+                //     f32 angularvel = VEL * len * delta;
+                //     Mat4 rotation = Mat4Rotate(angularvel, axis);
+                //     viewbody = Mat4Multiply(viewbody, rotation);
+                // }
             }
         }
     }
