@@ -1505,7 +1505,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
             if (x != 0.0f || y != 0.0f) {
-                static const rad VEL = Deg2Rad(70.0f);
+                static const rad VEL = Deg2Rad(90.0f);
 
                 // rotate orient.
                 {
