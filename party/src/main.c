@@ -1513,11 +1513,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
     }
 
     Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
-    Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
-    // // Keep this around for debugging for a bit.
+    // Keep this around for debugging for a bit.
     // Mat4 vieworientm = Mat4RotateEuler(vieworient);
-    // // Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
-    // //                            -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
+    // Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
+    // // // Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
+    // // //                            -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
     // Mat4 view2 = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
     // Assert(Mat4Eq(view, view2));
     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
