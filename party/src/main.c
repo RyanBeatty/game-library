@@ -1651,6 +1651,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     Vec3 ab = Vec3Sub(b, a);
                     Vec3 ac = Vec3Sub(c, a);
+                    Vec3 bc = Vec3Sub(c, b);
                     Vec3 f0 = Vec3Normalize(Vec3Cross(ab, ac));
 
                     // Bring other triangle's vertexes into e0's coordinate space.
@@ -1660,9 +1661,24 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     Vec3 de = Vec3Sub(e, d);
                     Vec3 df = Vec3Sub(f, d);
+                    Vec3 ef = Vec3Sub(f, e);
                     Vec3 f1 = Vec3Normalize(Vec3Cross(de, df));
 
                     Vec3 norm_abde = Vec3Normalize(Vec3Cross(ab, de));
+                    Vec3 norm_abdf = Vec3Normalize(Vec3Cross(ab, df));
+                    Vec3 norm_abef = Vec3Normalize(Vec3Cross(ab, ef));
+
+                    Vec3 norm_acde = Vec3Normalize(Vec3Cross(ac, de));
+                    Vec3 norm_acdf = Vec3Normalize(Vec3Cross(ac, df));
+                    Vec3 norm_acef = Vec3Normalize(Vec3Cross(ac, ef));
+
+                    Vec3 norm_bcde = Vec3Normalize(Vec3Cross(bc, de));
+                    Vec3 norm_bcdf = Vec3Normalize(Vec3Cross(bc, df));
+                    Vec3 norm_bcef = Vec3Normalize(Vec3Cross(bc, ef));
+
+                    Vec3 half_ab = Vec3Add(a, Vec3Scale(ab, 0.5f));
+                    Vec3 half_ac = Vec3Add(a, Vec3Scale(ac, 0.5f));
+                    Vec3 half_bc = Vec3Add(b, Vec3Scale(bc, 0.5f));
 
                     // NOTE: All drawing is done in e0 local coordinate space.
                     // Do not include translation in normal transform because those are direction vectors
@@ -1686,9 +1702,19 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             {
                                 Mat4 em = e0m;
                                 Mat4 enormm = e0->orient;
-                                Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3WTransform(Vec3Zero(), e1toe0m),
-                                             Vec3Add(a, Vec3Scale(ab, 0.5f))};
-                                Vec3 ns[] = {f0, f1, norm_abde};
+                                Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f),
+                                             Vec3WTransform(Vec3Zero(), e1toe0m),
+                                             half_ab,
+                                             half_ab,
+                                             half_ab,
+                                             half_ac,
+                                             half_ac,
+                                             half_ac,
+                                             half_bc,
+                                             half_bc,
+                                             half_bc};
+                                Vec3 ns[] = {f0,        f1,        norm_abde, norm_abdf, norm_abef, norm_acde,
+                                             norm_acdf, norm_acef, norm_bcde, norm_bcdf, norm_bcef};
                                 for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                     // Get rot matrix that will point mesh's forward along the normal. We get this
                                     // rotation by computing the rotation matrix of the normal direction. Note that we
