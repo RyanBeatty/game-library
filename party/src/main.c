@@ -1481,23 +1481,10 @@ static void GameStateDraw(GameState* gstate, float delta) {
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
             Vec3 dir_model = Vec3Lit(x, 0.0f, y);
 
-            // // Determine body forward pos from camera forward.
-            // Vec3 forward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
-            //                        -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
-            // // // TODO: Clean this up. seems like we are basically doing a mat4lookat to get the direciton to move
-            // // // in world space.
-            // // Vec3 c = Vec3Normalize(Vec3Lit(-forward.x, 0.0f, -forward.z));
-            // // Vec3 a = Vec3Normalize(Vec3Cross(Vec3Lit(0.0f, 1.0f, 0.0f), c));
-            // // Vec3 b = Vec3Normalize(Vec3Cross(c, a));
-            // // Mat4 rotation = Mat4Identity();
-            // // rotation.v.a = a;
-            // // rotation.v.b = b;
-            // // rotation.v.c = c;
-
             Vec3 bodyorient = vieworient;
             bodyorient.pitch = 0.0f;  // fps style movement rather than free cam movement.
-            rotation = Mat4Multiply(Mat4RotateY(bodyorient.yaw),
-                                    Mat4Multiply(Mat4RotateX(bodyorient.pitch), Mat4RotateZ(bodyorient.roll)));
+            Mat4 rotation = Mat4Multiply(Mat4RotateY(bodyorient.yaw),
+                                         Mat4Multiply(Mat4RotateX(bodyorient.pitch), Mat4RotateZ(bodyorient.roll)));
 
             Vec3 dir_world = Vec3Transform(dir_model, rotation);
             Vec3 mov_world = Vec3Scale(dir_world, vel * delta);
