@@ -270,6 +270,31 @@ static Mat4 Mat4Transpose(Mat4 m) {
     );
 }
 
+static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
+    return Mat4Lit(
+        // Row 0.
+        (a.mm.m00 * b.mm.m00) + (a.mm.m01 * b.mm.m10) + (a.mm.m02 * b.mm.m20) + (a.mm.m03 * b.mm.m30),  //
+        (a.mm.m00 * b.mm.m01) + (a.mm.m01 * b.mm.m11) + (a.mm.m02 * b.mm.m21) + (a.mm.m03 * b.mm.m31),  //
+        (a.mm.m00 * b.mm.m02) + (a.mm.m01 * b.mm.m12) + (a.mm.m02 * b.mm.m22) + (a.mm.m03 * b.mm.m32),  //
+        (a.mm.m00 * b.mm.m03) + (a.mm.m01 * b.mm.m13) + (a.mm.m02 * b.mm.m23) + (a.mm.m03 * b.mm.m33),  //
+        // Row 1.
+        (a.mm.m10 * b.mm.m00) + (a.mm.m11 * b.mm.m10) + (a.mm.m12 * b.mm.m20) + (a.mm.m13 * b.mm.m30),  //
+        (a.mm.m10 * b.mm.m01) + (a.mm.m11 * b.mm.m11) + (a.mm.m12 * b.mm.m21) + (a.mm.m13 * b.mm.m31),  //
+        (a.mm.m10 * b.mm.m02) + (a.mm.m11 * b.mm.m12) + (a.mm.m12 * b.mm.m22) + (a.mm.m13 * b.mm.m32),  //
+        (a.mm.m10 * b.mm.m03) + (a.mm.m11 * b.mm.m13) + (a.mm.m12 * b.mm.m23) + (a.mm.m13 * b.mm.m33),  //
+        // Row 2.
+        (a.mm.m20 * b.mm.m00) + (a.mm.m21 * b.mm.m10) + (a.mm.m22 * b.mm.m20) + (a.mm.m23 * b.mm.m30),  //
+        (a.mm.m20 * b.mm.m01) + (a.mm.m21 * b.mm.m11) + (a.mm.m22 * b.mm.m21) + (a.mm.m23 * b.mm.m31),  //
+        (a.mm.m20 * b.mm.m02) + (a.mm.m21 * b.mm.m12) + (a.mm.m22 * b.mm.m22) + (a.mm.m23 * b.mm.m32),  //
+        (a.mm.m20 * b.mm.m03) + (a.mm.m21 * b.mm.m13) + (a.mm.m22 * b.mm.m23) + (a.mm.m23 * b.mm.m33),  //
+        // Row 3.
+        (a.mm.m30 * b.mm.m00) + (a.mm.m31 * b.mm.m10) + (a.mm.m32 * b.mm.m20) + (a.mm.m33 * b.mm.m30),  //
+        (a.mm.m30 * b.mm.m01) + (a.mm.m31 * b.mm.m11) + (a.mm.m32 * b.mm.m21) + (a.mm.m33 * b.mm.m31),  //
+        (a.mm.m30 * b.mm.m02) + (a.mm.m31 * b.mm.m12) + (a.mm.m32 * b.mm.m22) + (a.mm.m33 * b.mm.m32),  //
+        (a.mm.m30 * b.mm.m03) + (a.mm.m31 * b.mm.m13) + (a.mm.m32 * b.mm.m23) + (a.mm.m33 * b.mm.m33)   //
+    );
+}
+
 static Mat4 Mat4RotateX(rad r) {
     return Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,             //
                    0.0f, f32cos(r), -f32sin(r), 0.0f,  //
@@ -289,6 +314,12 @@ static Mat4 Mat4RotateZ(rad r) {
                    f32sin(r), f32cos(r), 0.0f, 0.0f,   //
                    0.0f, 0.0f, 1.0f, 0.0f,             //
                    0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+// Construct rotation matrix for the euler angle rotation representation. angles in radians.
+// Will rotate from model to upright.
+static Mat4 Mat4RotateEuler(Vec3 v) {
+    return Mat4Multiply(Mat4RotateY(v.yaw), Mat4Multiply(Mat4RotateX(v.pitch), Mat4RotateZ(v.roll)));
 }
 
 static Mat4 Mat4Rotate(rad t, Vec3 axis) {
@@ -337,31 +368,6 @@ static Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
                    y.x, y.y, y.z, -Vec3Dot(y, eye),  //
                    z.x, z.y, z.z, -Vec3Dot(z, eye),  //
                    0.0f, 0.0f, 0.0f, 1.0f);
-}
-
-static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
-    return Mat4Lit(
-        // Row 0.
-        (a.mm.m00 * b.mm.m00) + (a.mm.m01 * b.mm.m10) + (a.mm.m02 * b.mm.m20) + (a.mm.m03 * b.mm.m30),  //
-        (a.mm.m00 * b.mm.m01) + (a.mm.m01 * b.mm.m11) + (a.mm.m02 * b.mm.m21) + (a.mm.m03 * b.mm.m31),  //
-        (a.mm.m00 * b.mm.m02) + (a.mm.m01 * b.mm.m12) + (a.mm.m02 * b.mm.m22) + (a.mm.m03 * b.mm.m32),  //
-        (a.mm.m00 * b.mm.m03) + (a.mm.m01 * b.mm.m13) + (a.mm.m02 * b.mm.m23) + (a.mm.m03 * b.mm.m33),  //
-        // Row 1.
-        (a.mm.m10 * b.mm.m00) + (a.mm.m11 * b.mm.m10) + (a.mm.m12 * b.mm.m20) + (a.mm.m13 * b.mm.m30),  //
-        (a.mm.m10 * b.mm.m01) + (a.mm.m11 * b.mm.m11) + (a.mm.m12 * b.mm.m21) + (a.mm.m13 * b.mm.m31),  //
-        (a.mm.m10 * b.mm.m02) + (a.mm.m11 * b.mm.m12) + (a.mm.m12 * b.mm.m22) + (a.mm.m13 * b.mm.m32),  //
-        (a.mm.m10 * b.mm.m03) + (a.mm.m11 * b.mm.m13) + (a.mm.m12 * b.mm.m23) + (a.mm.m13 * b.mm.m33),  //
-        // Row 2.
-        (a.mm.m20 * b.mm.m00) + (a.mm.m21 * b.mm.m10) + (a.mm.m22 * b.mm.m20) + (a.mm.m23 * b.mm.m30),  //
-        (a.mm.m20 * b.mm.m01) + (a.mm.m21 * b.mm.m11) + (a.mm.m22 * b.mm.m21) + (a.mm.m23 * b.mm.m31),  //
-        (a.mm.m20 * b.mm.m02) + (a.mm.m21 * b.mm.m12) + (a.mm.m22 * b.mm.m22) + (a.mm.m23 * b.mm.m32),  //
-        (a.mm.m20 * b.mm.m03) + (a.mm.m21 * b.mm.m13) + (a.mm.m22 * b.mm.m23) + (a.mm.m23 * b.mm.m33),  //
-        // Row 3.
-        (a.mm.m30 * b.mm.m00) + (a.mm.m31 * b.mm.m10) + (a.mm.m32 * b.mm.m20) + (a.mm.m33 * b.mm.m30),  //
-        (a.mm.m30 * b.mm.m01) + (a.mm.m31 * b.mm.m11) + (a.mm.m32 * b.mm.m21) + (a.mm.m33 * b.mm.m31),  //
-        (a.mm.m30 * b.mm.m02) + (a.mm.m31 * b.mm.m12) + (a.mm.m32 * b.mm.m22) + (a.mm.m33 * b.mm.m32),  //
-        (a.mm.m30 * b.mm.m03) + (a.mm.m31 * b.mm.m13) + (a.mm.m32 * b.mm.m23) + (a.mm.m33 * b.mm.m33)   //
-    );
 }
 
 static Mat4 Mat4Invert(Mat4 m) {
@@ -1483,8 +1489,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             Vec3 bodyorient = vieworient;
             bodyorient.pitch = 0.0f;  // fps style movement rather than free cam movement.
-            Mat4 rotation = Mat4Multiply(Mat4RotateY(bodyorient.yaw),
-                                         Mat4Multiply(Mat4RotateX(bodyorient.pitch), Mat4RotateZ(bodyorient.roll)));
+            Mat4 rotation = Mat4RotateEuler(bodyorient);
 
             Vec3 dir_world = Vec3Transform(dir_model, rotation);
             Vec3 mov_world = Vec3Scale(dir_world, vel * delta);
@@ -1508,8 +1513,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     }
 
     // Get camera matrix by finding transformed forward and then getting look at matrix from that dir + worl pos.
-    Mat4 vieworientm = Mat4Multiply(Mat4RotateY(vieworient.yaw),
-                                    Mat4Multiply(Mat4RotateX(vieworient.pitch), Mat4RotateZ(vieworient.roll)));
+    Mat4 vieworientm = Mat4RotateEuler(vieworient);
     Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
     // Keep this around for debugging for a bit.
     // Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
