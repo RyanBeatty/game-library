@@ -372,23 +372,27 @@ static Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-// Eye is world space pos of camera. Target is what it is looking at in worldspace.
-// Up just needs to be pointing somewhere along the plane between the +z and where you want the +y
-// axis to be.
+// Construct a rotation matrix such that will point along the forward vector (model->upright space).
+// Forward is in upright space. Up can be any arbitrary axis in forward space. We will construct the
+// true up vector inside. Normally up will be (0, 1, 0).
 static Mat4 Mat4PointAt(Vec3 forward, Vec3 up) {
-    // We need target -> eye direction vec because we assueme +z is towards the viewer.
-    Vec3 z = Vec3Normalize(Vec3Scale(forward));
+    // We assume the forward vector points in the opposite direction of the z axis of the coordinate
+    // space, so invert the z axis here.
+    Vec3 z = Vec3Normalize(Vec3Scale(forward, -1.0f));
 
-    // Get the right camera axis by using the +z and a vector pointint up (but not necessarily
+    // Get the right camera axis by using the +z and a vector pointing up (but not necessarily
     // the up axis)
     Vec3 x = Vec3Normalize(Vec3Cross(up, z));
 
+    // compute the true up axis.
     Vec3 y = Vec3Normalize(Vec3Cross(z, x));
 
-    return Mat4Lit(x.x, x.y, x.z, 0.0f,  //
-                   y.x, y.y, y.z, 0.0f,  //
-                   z.x, z.y, z.z, 0.0f,  //
-                   0.0f, 0.0f, 0.0f, 1.0f);
+    Mat4 m = Mat4Identity();
+    // Override basis vectors.
+    m.v.a = x;
+    m.v.b = y;
+    m.v.c = z;
+    return m;
 }
 
 static Mat4 Mat4Invert(Mat4 m) {
@@ -1685,28 +1689,15 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                 Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3WTransform(Vec3Zero(), e1toe0m),
                                              Vec3Add(a, Vec3Scale(ab, 0.5f))};
                                 Vec3 ns[] = {f0, f1, norm_abde};
-                                for (u32 i = 0; i < 1 && ArraySizeOf(vs); ++i) {
-                                    // Get rot matrix that will point mesh's forward along the normal. Note that we need
-                                    // to calculate what the direction of the normal will be in world space, so we
-                                    // transform the normal from model to world via the e0's orientation.
-                                    // Vec3 forward = Vec3Lit(0.0f, 0.0f, -1.0f);
-                                    // Vec3 norm = Vec3Transform(ns[i], enormm);
-                                    // f32 angle = Vec3Angle(forward, norm);
-                                    // Vec3 axis = Vec3Cross(forward, norm);
-                                    // Mat4 orient_world = Mat4Rotate(angle, axis);
+                                for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                                    // Get rot matrix that will point mesh's forward along the normal. We get this
+                                    // rotation by computing the rotation matrix of the normal direction. Note that we
+                                    // need to calculate what the direction our mesh should point in upright space so we
+                                    // concat the normal rotation matrix by the upright rotation matrix of the e0's
+                                    // orientation.
                                     Vec3 norm = ns[i];
-                                    // if you think of norm forming a right triangle, this is length of adjacent side.
-                                    f32 norm_adj = f32sqrt(1 - (norm.y * norm.y));
-                                    // TODO: don't think this is safe. norm.x could be 0 in which case this is
-                                    // undefined.
-                                    // f32 yaw = f32atan(norm.z / norm.x);  // f32acos(norm.x / norm_adj);
-                                    f32 yaw = -f32asin(norm.x / norm_adj);
-                                    f32 pitch = f32asin(norm.y);
-                                    f32 roll = 0.0f;
-                                    Vec3 normorient = Vec3Lit(yaw, pitch, roll);
-                                    Mat4 normrot = Mat4RotateEuler(normorient);
+                                    Mat4 normrot = Mat4PointAt(norm, Vec3Lit(0.0f, 1.0f, 0.0f));
                                     Mat4 orient_world = Mat4Multiply(enormm, normrot);
-                                    breakpoint();
 
                                     // Need to take the model space position and figure out the world coords, that
                                     // means we need to use the entity model mat to transform into world space
