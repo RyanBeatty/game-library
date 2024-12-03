@@ -1399,6 +1399,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
 
+    // Init logic.
     if (!INIT) {
         INIT = true;
 
@@ -1518,81 +1519,50 @@ static void GameStateDraw(GameState* gstate, float delta) {
         }
     }
 
-    // Camera movement.
+    // Update logic.
     {
-        static const u8 GAMEPAD_ID = 0;
-
-        // Left stick movement.
+        // Camera movement.
         {
-            static const f32 WALK_VEL = 20.0f;
-            static const f32 RUN_VEL = 2.0f * WALK_VEL;
+            static const u8 GAMEPAD_ID = 0;
 
-            f32 vel = WALK_VEL;
-            if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-                vel = RUN_VEL;
+            // Left stick movement.
+            {
+                static const f32 WALK_VEL = 20.0f;
+                static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+                f32 vel = WALK_VEL;
+                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                    vel = RUN_VEL;
+                }
+
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
+                Vec3 bodyorient = vieworient;
+                bodyorient.pitch = 0.0f;  // fps style movement rather than free cam movement.
+                Mat4 rotation = Mat4RotateEuler(bodyorient);
+
+                Vec3 dir_world = Vec3Transform(dir_model, rotation);
+                Vec3 mov_world = Vec3Scale(dir_world, vel * delta);
+                viewpos = Vec3Add(viewpos, mov_world);
             }
 
-            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-            f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-            Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+            // Right stick movement.
+            {
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                if (x != 0.0f || y != 0.0f) {
+                    static const rad VEL = Deg2Rad(90.0f);
 
-            Vec3 bodyorient = vieworient;
-            bodyorient.pitch = 0.0f;  // fps style movement rather than free cam movement.
-            Mat4 rotation = Mat4RotateEuler(bodyorient);
-
-            Vec3 dir_world = Vec3Transform(dir_model, rotation);
-            Vec3 mov_world = Vec3Scale(dir_world, vel * delta);
-            viewpos = Vec3Add(viewpos, mov_world);
-        }
-
-        // Right stick movement.
-        {
-            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-            if (x != 0.0f || y != 0.0f) {
-                static const rad VEL = Deg2Rad(90.0f);
-
-                // rotate orient.
-                vieworient.yaw += -1.0f * x * VEL * delta;
-                vieworient.pitch += y * VEL * delta;
-                // Clamp pitch to avoid looking too high/low which would sign flip things.
-                vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+                    // rotate orient.
+                    vieworient.yaw += -1.0f * x * VEL * delta;
+                    vieworient.pitch += y * VEL * delta;
+                    // Clamp pitch to avoid looking too high/low which would sign flip things.
+                    vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+                }
             }
         }
-    }
-
-    Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
-    // Keep this around for debugging for a bit.
-    // Mat4 vieworientm = Mat4RotateEuler(vieworient);
-    // Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
-    // // // Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
-    // // //                            -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
-    // Mat4 view2 = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
-    // Assert(Mat4Eq(view, view2));
-    Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-
-    // Drawing.
-    {
-        // TODO: do something with this.
-        // // Lights
-        // {
-        //     LShader shader = GetUnlitShader();
-        //     glUseProgram(shader.pid);
-        //     glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-        //     glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-
-        //     // Draw cube lights.
-        //     {
-        //         EntityId* entities = LIGHTS;
-        //         u32 size = LIGHTS_SIZE;
-        //         for (u32 i = 0; i < size; ++i) {
-        //             Entity* entity = GetEntity(entities[i]);
-        //             entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-        //         }
-
-        //         DrawEntities(shader, entities, size);
-        //     }
-        // }
 
         {
             LShader shader = GetShader();
@@ -1777,6 +1747,27 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     // Drawing
     {
+        // TODO: do something with this.
+        // // Lights
+        // {
+        //     LShader shader = GetUnlitShader();
+        //     glUseProgram(shader.pid);
+        //     glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
+        //     glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+
+        //     // Draw cube lights.
+        //     {
+        //         EntityId* entities = LIGHTS;
+        //         u32 size = LIGHTS_SIZE;
+        //         for (u32 i = 0; i < size; ++i) {
+        //             Entity* entity = GetEntity(entities[i]);
+        //             entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+        //         }
+
+        //         DrawEntities(shader, entities, size);
+        //     }
+        // }
+
         // Begin.
         {
             BeginDrawing();
@@ -1784,6 +1775,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glBindVertexArray(VAO);
         }
+
+        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        // Keep this around for debugging for a bit.
+        // Mat4 vieworientm = Mat4RotateEuler(vieworient);
+        // Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
+        // // // Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
+        // // //                            -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
+        // Mat4 view2 = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
+        // Assert(Mat4Eq(view, view2));
+        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
         // Enable/Disable culling.
         // TODO: Make this nicer at some point. Useful for debugging.
