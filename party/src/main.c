@@ -248,14 +248,6 @@ static Mat4 Mat4ScaleXYZ(f32 x, f32 y, f32 z) {
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-static Mat4 Mat4Translate(f32 x, f32 y, f32 z) {
-    return Mat4Lit(1.0f, 0.0f, 0.0f, x,    //
-                   0.0f, 1.0f, 0.0f, y,    //
-                   0.0f, 0.0f, 1.0f, z,    //
-                   0.0f, 0.0f, 0.0f, 1.0f  //
-    );
-}
-
 static Mat4 Mat4TranslateV(Vec3 v) {
     return Mat4Lit(1.0f, 0.0f, 0.0f, v.x,  //
                    0.0f, 1.0f, 0.0f, v.y,  //
@@ -383,6 +375,8 @@ static Mat4 Mat4PointAt(Vec3 forward, Vec3 up) {
     // Get the right camera axis by using the +z and a vector pointing up (but not necessarily
     // the up axis)
     Vec3 x = Vec3Normalize(Vec3Cross(up, z));
+    // TODO: If this happens, handle by choosing a vector orthogonal to 0, 1, 0.
+    // Assert(!Vec3Eq(x, Vec3Zero()));
 
     // compute the true up axis.
     Vec3 y = Vec3Normalize(Vec3Cross(z, x));
@@ -716,6 +710,8 @@ typedef struct LShader {
     u32 vmodel_loc;
     u32 vview_loc;
     u32 vproj_loc;
+    u32 vucolor_loc;
+    u32 vcolor_blend_loc;
 
     // frag shader.
     u32 flightdirin_loc;
@@ -766,6 +762,9 @@ static LShader GetShader() {
         "uniform mat4 vView;\n"
         "uniform mat4 vProj;\n"
         "\n"
+        "uniform vec4 vUColor;\n"
+        "uniform float vColorBlend;\n"
+        "\n"
         "out vec3 fPosEye;\n"
         "out vec4 fColor;\n"
         "out vec3 fNormal;\n"
@@ -773,7 +772,7 @@ static LShader GetShader() {
         "{\n"
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
         "   fPosEye = vec3(vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
-        "   fColor = vec4(vColor.x, vColor.y, vColor.z, 1.0);\n"
+        "   fColor = mix(vec4(vColor.x, vColor.y, vColor.z, 1.0), vUColor, 0.0);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
         "   fNormal = mat3(transpose(inverse(vView * vModel))) * vNormal;\n"
@@ -840,6 +839,8 @@ static LShader GetShader() {
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+            SHADER.vcolor_blend_loc = glGetUniformLocation(SHADER.pid, "vColorBlendLoc");
         }
     }
 
@@ -1169,6 +1170,7 @@ typedef struct Entity {
     Vec3 v;
 
     LMesh mesh;
+    Vec4 color;
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.

@@ -11,3 +11,13 @@ Engine Features Desired for Gameplay Prototyping
 * Basic Text Rendering
 * Basic Model Loading (Possibly not even necessary as I can try to use procedural geometry for as long as possible)
 
+
+TODO
+* Collisions
+    * Mat4Point
+        * handle up x z == 0
+    * Some separating axis are 0, figure out whats up with that.
+* Rendering
+    * switch to DrawCommands
+    * support being able to shade meshes one solid color. useful for controlling debug info.
+
