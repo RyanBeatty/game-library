@@ -1137,6 +1137,30 @@ static void RenderDataInit() {
     glEnableVertexAttribArray(shader.vnormal_loc);
 }
 
+typedef struct DrawCmd {
+    LMesh meshid;
+    Mat4 modelm;  // converts from model space to world space.
+} DrawCmd;
+
+#define MAX_CMDS 256
+static DrawCmd CBUFFER[MAX_CMDS] = {0};
+static u32 CBUFFER_SIZE = 0;
+
+static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm) {
+    Assert(CBUFFER_SIZE < MAX_CMDS);
+    DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
+    ++CBUFFER_SIZE;
+    memset(cmd, 0, sizeof(CBUFFER[0]));
+    cmd->meshid = meshid;
+    cmd->modelm = modelm;
+    return cmd;
+}
+
+static void CmdBufferZero() {
+    CBUFFER_SIZE = 0;
+    memset(CBUFFER, 0, ArraySizeOf(CBUFFER) * sizeof(CBUFFER[0]));
+}
+
 ////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
@@ -1305,15 +1329,13 @@ static Mat4 EntityGetMat(Entity* e) {
     return model;
 }
 
-static void DrawBatch(LShader shader, EntityId* entities, u32 size) {
+static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     for (u32 i = 0; i < size; ++i) {
         Entity* entity = GetEntity(entities[i]);
         Mat4 scale = Mat4Scale(entity->scale);
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-        glDrawElements(GL_TRIANGLES, entity->mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                       (void*)(entity->mesh.ibufferidx * sizeof(GLuint)));
+        AddCmd(entity->mesh, model);
     }
 }
 
@@ -1551,62 +1573,29 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     // Drawing.
     {
-        // Begin.
-        {
-            BeginDrawing();
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindVertexArray(VAO);
-        }
+        // TODO: do something with this.
+        // // Lights
+        // {
+        //     LShader shader = GetUnlitShader();
+        //     glUseProgram(shader.pid);
+        //     glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
+        //     glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
 
-        // Enable/Disable culling.
-        // TODO: Make this nicer at some point. Useful for debugging.
-        {
-            if (gstate->debug) {
-                glDisable(GL_CULL_FACE);
-            } else {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-                glFrontFace(GL_CCW);
-            }
-        }
+        //     // Draw cube lights.
+        //     {
+        //         EntityId* entities = LIGHTS;
+        //         u32 size = LIGHTS_SIZE;
+        //         for (u32 i = 0; i < size; ++i) {
+        //             Entity* entity = GetEntity(entities[i]);
+        //             entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+        //         }
 
-        // Lights
-        {
-            LShader shader = GetUnlitShader();
-            glUseProgram(shader.pid);
-            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-
-            // Draw cube lights.
-            {
-                EntityId* entities = LIGHTS;
-                u32 size = LIGHTS_SIZE;
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* entity = GetEntity(entities[i]);
-                    entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                }
-
-                DrawBatch(shader, entities, size);
-            }
-        }
+        //         DrawEntities(shader, entities, size);
+        //     }
+        // }
 
         {
             LShader shader = GetShader();
-            glUseProgram(shader.pid);
-            {
-                // Calculate the sun direction in view space (only factoring in rotation).
-                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
-                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
-                Mat4 norm = Mat4Transpose(Mat4Invert(view));
-                norm.v.d = Vec3Zero();
-                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
-                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
-            }
-            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
-            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-
             {
                 EntityId* entities = SPINNING;
                 u32 size = SPINNING_SIZE;
@@ -1614,14 +1603,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                 }
-                DrawBatch(shader, entities, size);
+                DrawEntities(shader, entities, size);
             }
 
             // Draw non rotating cube for easier lighting visual debug.
             {
                 EntityId* entities = SHADOW_DEBUG;
                 u32 size = SHADOW_DEBUG_SIZE;
-                DrawBatch(shader, entities, size);
+                DrawEntities(shader, entities, size);
             }
 
             // Physics cube.
@@ -1632,7 +1621,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
                 }
-                DrawBatch(shader, entities, size);
+                DrawEntities(shader, entities, size);
             }
 
             // ISO TRIANGLES DRAW Draw.
@@ -1693,10 +1682,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 Vec3 pos = vs[i];
                                 Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                                LMesh mesh = GetMesh(M_CUBE);
-                                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                                AddCmd(GetMesh(M_CUBE), model);
                             }
                         }
                         // Draw normals
@@ -1738,10 +1724,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                         Vec3 pos = pos_world;
                                         Mat4 orient = orient_world;
                                         Mat4 model = Mat4SRT(scale, orient, pos);
-                                        LMesh mesh = GetMesh(M_CUBE);
-                                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                                        glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                                       (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                                        AddCmd(GetMesh(M_CUBE), model);
                                     }
 
                                     // Normal tail.
@@ -1749,10 +1732,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                         Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
                                         Mat4 orient = orient_world;
                                         Mat4 model = Mat4SRT(scale, orient, pos);
-                                        LMesh mesh = GetMesh(M_CUBE);
-                                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                                        glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                                       (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                                        AddCmd(GetMesh(M_CUBE), model);
                                     }
                                     // Normal tip.
                                     {
@@ -1760,10 +1740,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                         pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
                                         Mat4 orient = orient_world;
                                         Mat4 model = Mat4SRT(scale, orient, pos);
-                                        LMesh mesh = GetMesh(M_PYRAMID);
-                                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                                        glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                                       (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                                        AddCmd(GetMesh(M_PYRAMID), model);
                                     }
                                 }
                             }
@@ -1771,7 +1748,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     }
                 }
 
-                DrawBatch(shader, entities, size);
+                DrawEntities(shader, entities, size);
             }
 
             // PYRAMIDS Draw.
@@ -1782,22 +1759,71 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                 }
-                DrawBatch(shader, entities, size);
+                DrawEntities(shader, entities, size);
             }
 
             // Walls.
             {
                 EntityId* entities = WALLS;
                 u32 size = WALLS_SIZE;
-                DrawBatch(shader, entities, size);
+                DrawEntities(shader, entities, size);
             }
 
             if (gstate->debug) {
                 DrawFPS(5, 5);
             }
         }
+    }
+
+    // Drawing
+    {
+        // Begin.
+        {
+            BeginDrawing();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBindVertexArray(VAO);
+        }
+
+        // Enable/Disable culling.
+        // TODO: Make this nicer at some point. Useful for debugging.
+        {
+            if (gstate->debug) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glFrontFace(GL_CCW);
+            }
+        }
+
+        // Use shader + setup norm + view + proj matrix.
+        LShader shader = GetShader();
+        {
+            glUseProgram(shader.pid);
+            {
+                // Calculate the sun direction in view space (only factoring in rotation).
+                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
+                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
+                Mat4 norm = Mat4Transpose(Mat4Invert(view));
+                norm.v.d = Vec3Zero();
+                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
+                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
+            }
+            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
+            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
+            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+        }
+
+        for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
+            DrawCmd* cmd = &CBUFFER[i];
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+        }
 
         EndDrawing();
+        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
     }
 }
 

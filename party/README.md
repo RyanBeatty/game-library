@@ -20,4 +20,5 @@ TODO
 * Rendering
     * switch to DrawCommands
     * support being able to shade meshes one solid color. useful for controlling debug info.
+    * get lights + lighting working again.
 
