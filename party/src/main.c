@@ -541,182 +541,6 @@ static const Vec4 LPURPLE = Vec4Lit(1.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
 
 ////////////////////////////////////////////////////////////
-// S:Physics
-
-typedef u32 ParticleId;
-
-typedef u32 ConstraintId;
-
-typedef struct Constraint {
-    bool active;
-    ParticleId pid_a;
-    ParticleId pid_b;
-    f32 rest_len;
-} Constraint;
-
-typedef u32 BodyId;
-
-typedef struct Body {
-    bool active;
-
-    // Only support triangles, CCW order.
-    ParticleId pids[3];
-} Body;
-
-static void BodyInit(Body* body) {
-    static Body ZERO = {0};
-    *body = ZERO;
-}
-
-#define MAX_PARTICLES 10
-#define MAX_CONSTRAINTS 10
-#define MAX_ITERATIONS 10
-#define MAX_BODIES 10
-
-typedef struct PhysicsState {
-    f32 fixed_dt;
-    Vec2 gravity;
-
-    bool active[MAX_PARTICLES];
-    Vec2 pos[MAX_PARTICLES];
-    Vec2 pos_old[MAX_PARTICLES];
-    Vec2 force[MAX_PARTICLES];
-    Constraint constraints[MAX_CONSTRAINTS];
-    Body body[MAX_BODIES];
-
-} PhysicsState;
-
-#define ParticleGetPos(pstate, id) ((pstate)->pos[(id)])
-#define GetBody(pstate, bid) (&(pstate)->body[(bid)])
-#define GetConstraint(pstate, cid) (&(pstate)->constraints[(cid)])
-
-static void PhysicsStateInit(PhysicsState* pstate) {
-    memset(pstate, 0, sizeof(*pstate));
-    pstate->fixed_dt = 1.0f / 60.0f;
-}
-
-static ParticleId PhysicsStateAddParticle(PhysicsState* pstate, Vec2 pos) {
-    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
-        if (!pstate->active[i]) {
-            pstate->active[i] = true;
-            pstate->pos[i] = pos;
-            pstate->pos_old[i] = pos;
-            return i;
-        }
-    }
-
-    Assert(false);
-    return 0;
-}
-
-static Constraint* PhysicsStateAllocateConstraint(PhysicsState* pstate) {
-    for (u32 i = 0; i < MAX_CONSTRAINTS; ++i) {
-        if (!pstate->constraints[i].active) {
-            Constraint c = {0};
-            Constraint* cc = &pstate->constraints[i];
-            *cc = c;
-            cc->active = true;
-            return cc;
-        }
-    }
-
-    Assert(false);
-    return NULL;
-}
-
-static void PhysicsStateAccumulateForces(PhysicsState* pstate) {
-    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
-        pstate->force[i] = Vec2Scale(pstate->gravity, pstate->active[i]);
-    }
-}
-static void PhysicsStateIntegrate(PhysicsState* pstate) {
-    f32 dt_squared = pstate->fixed_dt * pstate->fixed_dt;
-    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
-        // x_new = 2x - x_old + force * dt^2
-        Vec2 cur_x = pstate->pos[i];
-        Vec2 dx = Vec2Add(Vec2Sub(cur_x, pstate->pos_old[i]), Vec2Scale(pstate->force[i], dt_squared));
-        pstate->pos[i] = Vec2Add(cur_x, Vec2Scale(dx, pstate->active[i]));
-        pstate->pos_old[i] = cur_x;
-    }
-}
-static void PhysicsStateSatisfyConstraints(PhysicsState* pstate) {
-    f32 d = 100.0f;
-    Vec2 minv = Vec2Lit(-d, -d);
-    Vec2 maxv = Vec2Lit(d, d);
-    for (u32 j = 0; j < MAX_ITERATIONS; ++j) {
-        for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
-            // Cube constraint.
-            pstate->pos[i] = Vec2Clamp(pstate->pos[i], minv, maxv);
-        }
-
-        for (u32 k = 0; k < MAX_CONSTRAINTS; ++k) {
-            Constraint c = pstate->constraints[k];
-            if (!c.active) {
-                continue;
-            }
-
-            // Stick constraint.
-            Vec2 x0 = pstate->pos[c.pid_a];
-            Vec2 x1 = pstate->pos[c.pid_b];
-            Vec2 delta = Vec2Sub(x0, x1);
-            f32 delta_len = Vec2Len(delta);
-            f32 diff = (delta_len - c.rest_len) / delta_len;
-            pstate->pos[c.pid_a] = Vec2Sub(x0, Vec2Scale(delta, 0.5f * diff));
-            pstate->pos[c.pid_b] = Vec2Add(x1, Vec2Scale(delta, 0.5f * diff));
-        }
-
-        Vec2 normal = Vec2Zero();
-        f32 depth = 0.0f;
-        if (CollideTriangleTriangle(pstate->pos[0], pstate->pos[1], pstate->pos[2], pstate->pos[3], pstate->pos[4],
-                                    pstate->pos[5], &normal, &depth)) {
-            // pstate->active[0] = false;
-            // pstate->active[1] = false;
-            // pstate->active[2] = false;
-            // pstate->active[3] = false;
-            // pstate->active[4] = false;
-            // pstate->active[5] = false;
-
-            Vec2 disp = Vec2Scale(normal, 0.5f * depth);
-            Vec2 neg_disp = Vec2Scale(disp, -1.0f);
-            pstate->pos[0] = Vec2Add(pstate->pos[0], disp);
-            pstate->pos[1] = Vec2Add(pstate->pos[1], disp);
-            pstate->pos[2] = Vec2Add(pstate->pos[2], disp);
-
-            pstate->pos[3] = Vec2Add(pstate->pos[3], neg_disp);
-            pstate->pos[4] = Vec2Add(pstate->pos[4], neg_disp);
-            pstate->pos[5] = Vec2Add(pstate->pos[5], neg_disp);
-        }
-    }
-}
-
-static void PhysicsStateTick(PhysicsState* pstate) {
-    PhysicsStateAccumulateForces(pstate);
-    PhysicsStateIntegrate(pstate);
-    PhysicsStateSatisfyConstraints(pstate);
-}
-
-static void PhysicsStateDraw(PhysicsState* pstate) {
-    for (ConstraintId cid = 0; cid < MAX_CONSTRAINTS; ++cid) {
-        Constraint* c = GetConstraint(pstate, cid);
-        if (!c->active) {
-            continue;
-        }
-        Vec2 pa = ParticleGetPos(pstate, c->pid_a);
-        Vec2 pb = ParticleGetPos(pstate, c->pid_b);
-        DrawLineEx(Vec2ToRVector2(pa), Vec2ToRVector2(pb), 2, BLACK);
-    }
-
-    for (ParticleId i = 0; i < MAX_PARTICLES; ++i) {
-        if (!pstate->active[i]) {
-            continue;
-        }
-
-        Vec2 p = ParticleGetPos(pstate, i);
-        DrawCircle(p.x, p.y, 3, RED);
-    }
-}
-
-////////////////////////////////////////////////////////////
 // S:Render Data
 
 typedef struct LShader {
@@ -868,46 +692,46 @@ static LShader GetShader() {
     return SHADER;
 }
 
-// Shader that will draw light sources without lighting calculations effecting the color.
-static LShader GetUnlitShader() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos, 1.0);\n"
-        "}\0";
+// // Shader that will draw light sources without lighting calculations effecting the color.
+// static LShader GetUnlitShader() {
+//     static const char* VSRC =
+//         "#version 330 core\n"
+//         "layout (location = 0) in vec3 vPos;\n"
+//         "\n"
+//         "uniform mat4 vModel;\n"
+//         "uniform mat4 vView;\n"
+//         "uniform mat4 vProj;\n"
+//         "\n"
+//         "void main()\n"
+//         "{\n"
+//         "   gl_Position = vProj * vView * vModel * vec4(vPos, 1.0);\n"
+//         "}\0";
 
-    static const char* FSRC =
-        "#version 330 core\n"
-        "out vec4 FragColor;\n"
-        "void main()\n"
-        "{\n"
-        "    FragColor = vec4(0.0, 0.0, 0.5, 1.0);\n"
-        "}\0";
-    static bool INIT = false;
-    static LShader SHADER = {0};
+//     static const char* FSRC =
+//         "#version 330 core\n"
+//         "out vec4 FragColor;\n"
+//         "void main()\n"
+//         "{\n"
+//         "    FragColor = vec4(0.0, 0.0, 0.5, 1.0);\n"
+//         "}\0";
+//     static bool INIT = false;
+//     static LShader SHADER = {0};
 
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
+//     if (!INIT) {
+//         INIT = true;
+//         LShaderInit(&SHADER, VSRC, FSRC);
 
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-        }
-    }
+//         // Att lookup.
+//         {
+//             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+//             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+//             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+//             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+//         }
+//     }
 
-    return SHADER;
-}
+//     return SHADER;
+// }
 
 typedef enum AttLoc {
     LOC_POS_X = 0,
@@ -1168,17 +992,6 @@ typedef struct DrawCmd {
 static DrawCmd CBUFFER[MAX_CMDS] = {0};
 static u32 CBUFFER_SIZE = 0;
 
-// static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm) {
-//     Assert(CBUFFER_SIZE < MAX_CMDS);
-//     DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
-//     ++CBUFFER_SIZE;
-//     memset(cmd, 0, sizeof(CBUFFER[0]));
-//     cmd->meshid = meshid;
-//     cmd->modelm = modelm;
-//     cmd->color = Vec4Lit(0.0f, 0.0f, 0.0f, 0.0f);
-//     return cmd;
-// }
-
 static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm, Vec4 color) {
     Assert(CBUFFER_SIZE < MAX_CMDS);
     DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
@@ -1306,8 +1119,6 @@ typedef struct GameState {
 
     RenderTexture2D target;
 
-    PhysicsState pstate;
-
     /////////////////////////////////////////
     // Gameplay fields
 
@@ -1319,7 +1130,6 @@ typedef struct GameState {
 
 #define RenderWidth(state) ((state)->target.texture.width)
 #define RenderHeight(state) ((state)->target.texture.height)
-#define GetPhysicsState(gstate) (&(gstate)->pstate)
 
 static GameState GState;
 
@@ -1338,10 +1148,6 @@ static void SimpleScene(GameState* state) {
 
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
-
-    PhysicsState* pstate = &gstate->pstate;
-    PhysicsStateInit(pstate);
-    pstate->gravity = Vec2Lit(0.0f, -10.0f);
 
     InitWindow(RenderWidth, RenderHeight, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
@@ -1377,11 +1183,6 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
 static void GameStateUpdate(GameState* gstate, float dt) {
     gstate->timer += dt;
 
-    // PhysicsStateUpdate(&state->pstate, dt);
-    if (!IsKeyDown(KEY_SPACE)) {
-        PhysicsStateTick(&gstate->pstate);
-    }
-
     EntityManager* em = GetEntityManager();
     for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = GetEntity(i);
@@ -1414,7 +1215,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
 
     static EntityId LIGHTS[MAX_ENTITY_BATCH] = {0};
-    static u32 LIGHTS_SIZE = 0;
+    // static u32 LIGHTS_SIZE = 0;
 
     static EntityId SPINNING[MAX_ENTITY_BATCH] = {0};
     static u32 SPINNING_SIZE = 0;
@@ -1446,7 +1247,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             Vec4 colors[] = {LBLUE};
 
             EntityId* entities = LIGHTS;
-            LIGHTS_SIZE = ArraySizeOf(positions);
+            // LIGHTS_SIZE = ArraySizeOf(positions);
             for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
