@@ -438,13 +438,24 @@ static bool Mat4Eq(Mat4 a, Mat4 b) {
 
 // Used for debug.
 typedef struct Vec4 {
-    f32 x;
-    f32 y;
-    f32 z;
-    f32 w;
+    union {
+        struct {
+            f32 x;
+            f32 y;
+            f32 z;
+            f32 w;
+        };
+        struct {
+            f32 r;
+            f32 g;
+            f32 b;
+            f32 a;
+        };
+        f32 f[4];
+    };
 } Vec4;
 
-#define Vec4Lit(x, y, z, w) ((Vec4){(x), (y), (z), (w)})
+#define Vec4Lit(v0, v1, v2, v3) ((Vec4){.x = (v0), .y = (v1), .z = (v2), .w = (v3)})
 
 static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
     return Vec4Lit((x * m.mm.m00) + (x * m.mm.m01) + (x + m.mm.m02) + (x * m.mm.m03),  //
@@ -518,6 +529,13 @@ bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f, Vec
 
     return true;
 }
+
+////////////////////////////////////////////////////////////
+// S:Color
+
+static const Vec4 LRED = Vec4Lit(1.0f, 0.0f, 0.0f, 1.0f);
+static const Vec4 LGREEN = Vec4Lit(0.0f, 1.0f, 0.0f, 1.0f);
+static const Vec4 LBLUE = Vec4Lit(0.0f, 0.0f, 1.0f, 1.0f);
 
 ////////////////////////////////////////////////////////////
 // S:Physics
@@ -772,7 +790,7 @@ static LShader GetShader() {
         "{\n"
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
         "   fPosEye = vec3(vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
-        "   fColor = mix(vec4(vColor.x, vColor.y, vColor.z, 1.0), vUColor, 0.0);\n"
+        "   fColor = mix(vec4(vColor.x, vColor.y, vColor.z, 1.0), vUColor, vColorBlend);\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
         "   fNormal = mat3(transpose(inverse(vView * vModel))) * vNormal;\n"
@@ -840,7 +858,7 @@ static LShader GetShader() {
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vcolor_blend_loc = glGetUniformLocation(SHADER.pid, "vColorBlendLoc");
+            SHADER.vcolor_blend_loc = glGetUniformLocation(SHADER.pid, "vColorBlend");
         }
     }
 
@@ -1140,6 +1158,7 @@ static void RenderDataInit() {
 typedef struct DrawCmd {
     LMesh meshid;
     Mat4 modelm;  // converts from model space to world space.
+    Vec4 color;
 } DrawCmd;
 
 #define MAX_CMDS 256
@@ -1153,6 +1172,18 @@ static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm) {
     memset(cmd, 0, sizeof(CBUFFER[0]));
     cmd->meshid = meshid;
     cmd->modelm = modelm;
+    cmd->color = Vec4Lit(0.0f, 0.0f, 0.0f, 0.0f);
+    return cmd;
+}
+
+static DrawCmd* AddCmdPro(LMesh meshid, Mat4 modelm, Vec4 color) {
+    Assert(CBUFFER_SIZE < MAX_CMDS);
+    DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
+    ++CBUFFER_SIZE;
+    memset(cmd, 0, sizeof(CBUFFER[0]));
+    cmd->meshid = meshid;
+    cmd->modelm = modelm;
+    cmd->color = color;
     return cmd;
 }
 
@@ -1694,7 +1725,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                         Vec3 pos = pos_world;
                                         Mat4 orient = orient_world;
                                         Mat4 model = Mat4SRT(scale, orient, pos);
-                                        AddCmd(GetMesh(M_CUBE), model);
+                                        AddCmdPro(GetMesh(M_CUBE), model, LRED);
                                     }
 
                                     // Normal tail.
@@ -1819,6 +1850,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
         for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
             DrawCmd* cmd = &CBUFFER[i];
             glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+            glUniform4f(shader.vucolor_loc, 1.0f, 0.0f, 0.0f, 1.0f);
+            glUniform1f(shader.vcolor_blend_loc, cmd->color.a);
             glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
                            (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
         }
