@@ -1165,18 +1165,18 @@ typedef struct DrawCmd {
 static DrawCmd CBUFFER[MAX_CMDS] = {0};
 static u32 CBUFFER_SIZE = 0;
 
-static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm) {
-    Assert(CBUFFER_SIZE < MAX_CMDS);
-    DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
-    ++CBUFFER_SIZE;
-    memset(cmd, 0, sizeof(CBUFFER[0]));
-    cmd->meshid = meshid;
-    cmd->modelm = modelm;
-    cmd->color = Vec4Lit(0.0f, 0.0f, 0.0f, 0.0f);
-    return cmd;
-}
+// static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm) {
+//     Assert(CBUFFER_SIZE < MAX_CMDS);
+//     DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
+//     ++CBUFFER_SIZE;
+//     memset(cmd, 0, sizeof(CBUFFER[0]));
+//     cmd->meshid = meshid;
+//     cmd->modelm = modelm;
+//     cmd->color = Vec4Lit(0.0f, 0.0f, 0.0f, 0.0f);
+//     return cmd;
+// }
 
-static DrawCmd* AddCmdPro(LMesh meshid, Mat4 modelm, Vec4 color) {
+static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm, Vec4 color) {
     Assert(CBUFFER_SIZE < MAX_CMDS);
     DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
     ++CBUFFER_SIZE;
@@ -1276,6 +1276,7 @@ static Entity* AllocateEntity() {
     entity->flags = EFLAG_ACTIVE;
     entity->scale = 1.0f;
     entity->orient = Mat4Identity();
+    entity->color = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -1366,7 +1367,7 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
         Mat4 scale = Mat4Scale(entity->scale);
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-        AddCmd(entity->mesh, model);
+        AddCmd(entity->mesh, model, entity->color);
     }
 }
 
@@ -1683,7 +1684,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 Vec3 pos = vs[i];
                                 Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                                AddCmd(GetMesh(M_CUBE), model);
+                                AddCmd(GetMesh(M_CUBE), model, LRED);
                             }
                         }
                         // Draw normals
@@ -1725,7 +1726,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                         Vec3 pos = pos_world;
                                         Mat4 orient = orient_world;
                                         Mat4 model = Mat4SRT(scale, orient, pos);
-                                        AddCmdPro(GetMesh(M_CUBE), model, LRED);
+                                        AddCmd(GetMesh(M_CUBE), model, LRED);
                                     }
 
                                     // Normal tail.
@@ -1733,7 +1734,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                         Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
                                         Mat4 orient = orient_world;
                                         Mat4 model = Mat4SRT(scale, orient, pos);
-                                        AddCmdPro(GetMesh(M_CUBE), model, LBLUE);
+                                        AddCmd(GetMesh(M_CUBE), model, LBLUE);
                                     }
                                     // Normal tip.
                                     {
@@ -1741,7 +1742,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                         pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
                                         Mat4 orient = orient_world;
                                         Mat4 model = Mat4SRT(scale, orient, pos);
-                                        AddCmdPro(GetMesh(M_PYRAMID), model, LBLUE);
+                                        AddCmd(GetMesh(M_PYRAMID), model, LBLUE);
                                     }
                                 }
                             }
@@ -1851,7 +1852,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             DrawCmd* cmd = &CBUFFER[i];
             glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
             glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            glUniform1f(shader.vcolor_blend_loc, cmd->color.a);
+            glUniform1f(shader.vcolor_blend_loc, cmd->color.a != 0.0f ? 1.0f : 0.0f);
             glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
                            (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
         }
