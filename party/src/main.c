@@ -536,6 +536,9 @@ bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f, Vec
 static const Vec4 LRED = Vec4Lit(1.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LGREEN = Vec4Lit(0.0f, 1.0f, 0.0f, 1.0f);
 static const Vec4 LBLUE = Vec4Lit(0.0f, 0.0f, 1.0f, 1.0f);
+static const Vec4 LBLACK = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
+static const Vec4 LPURPLE = Vec4Lit(1.0f, 0.0f, 1.0f, 1.0f);
+static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
 
 ////////////////////////////////////////////////////////////
 // S:Physics
@@ -1440,6 +1443,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         {
             Vec3 positions[] = {LIGHT_POS};
+            Vec4 colors[] = {LBLUE};
 
             EntityId* entities = LIGHTS;
             LIGHTS_SIZE = ArraySizeOf(positions);
@@ -1447,6 +1451,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
+                entity->color = colors[i];
                 entities[i] = entity->id;
             }
         }
@@ -1454,6 +1459,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
                                 Vec3Lit(-15.0f, 0.0f, 0.0f)};
+            Vec4 colors[] = {LBLUE, LBLUE, LBLUE, LBLUE};
 
             EntityId* entities = SPINNING;
             SPINNING_SIZE = ArraySizeOf(positions);
@@ -1461,6 +1467,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
+                entity->color = colors[i];
                 entities[i] = entity->id;
             }
         }
@@ -1468,6 +1475,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f), Vec3Lit(0.0f, 3.0f, 5.0f)};
             f32 rotations[] = {Deg2Rad(45.0f), Deg2Rad(0.0f)};
+            Vec4 colors[] = {LGREEN, LGREEN};
 
             EntityId* entities = SHADOW_DEBUG;
             SHADOW_DEBUG_SIZE = ArraySizeOf(positions);
@@ -1476,6 +1484,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->color = colors[i];
                 entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
@@ -1485,6 +1494,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 0.0f)};
             static Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
             static f32 rotations[] = {Deg2Rad(0.0f)};
+            Vec4 colors[] = {LPURPLE};
 
             EntityId* entities = PHYSICS;
             PHYSICS_SIZE = ArraySizeOf(positions);
@@ -1493,6 +1503,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->color = colors[i];
                 entity->scale = 3.0f;
                 entity->v = velocities[i];
                 entities[i] = entity->id;
@@ -1503,6 +1514,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 15.0f), Vec3Lit(-20.0f, 3.0f, 20.0f)};
             static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(90.0f)};
+            Vec4 colors[] = {LBLACK, LBLACK};
 
             EntityId* entities = ISO_TRIANGLES;
             ISO_TRIANGLES_SIZE = ArraySizeOf(positions);
@@ -1511,6 +1523,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_2S_ISO_TRIANGLE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->color = colors[i];
                 entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
@@ -1520,6 +1533,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, 15.0f)};
             static f32 rotations[] = {Deg2Rad(0.0f)};
+            Vec4 colors[] = {LORANGE};
 
             EntityId* entities = PYRAMIDS;
             PYRAMIDS_SIZE = ArraySizeOf(positions);
@@ -1528,6 +1542,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_PYRAMID);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(1.0f, 0.0f, 0.0f));
+                entity->color = colors[i];
                 entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
