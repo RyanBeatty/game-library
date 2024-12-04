@@ -1552,6 +1552,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             static Vec3 positions[] = {Vec3Lit(0.0f, -10.0f, 0.0f)};
             static f32 rotations[] = {Deg2Rad(-90.0f)};
             static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
+            Vec4 colors[] = {Vec4Lit(1.0f, 0.5f, 0.31f, 1.0f)};
 
             EntityId* entities = WALLS;
             WALLS_SIZE = ArraySizeOf(positions);
@@ -1560,6 +1561,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_QUAD);
                 entity->orient = Mat4Rotate(rotations[i], axis[i]);
+                entity->color = colors[i];
                 entity->scale = 100.0f;
                 entities[i] = entity->id;
             }
