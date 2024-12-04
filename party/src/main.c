@@ -458,13 +458,13 @@ typedef struct Vec4 {
 
 #define Vec4Lit(v0, v1, v2, v3) ((Vec4){.x = (v0), .y = (v1), .z = (v2), .w = (v3)})
 
-static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
-    return Vec4Lit((x * m.mm.m00) + (x * m.mm.m01) + (x + m.mm.m02) + (x * m.mm.m03),  //
-                   (y * m.mm.m10) + (y * m.mm.m11) + (y + m.mm.m12) + (y * m.mm.m13),  //
-                   (z * m.mm.m20) + (z * m.mm.m21) + (z + m.mm.m22 + (z * m.mm.m23)),  //
-                   (w * m.mm.m30) + (w * m.mm.m31) + (w + m.mm.m32 + (w * m.mm.m33))   //
+// static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
+//     return Vec4Lit((x * m.mm.m00) + (x * m.mm.m01) + (x + m.mm.m02) + (x * m.mm.m03),  //
+//                    (y * m.mm.m10) + (y * m.mm.m11) + (y + m.mm.m12) + (y * m.mm.m13),  //
+//                    (z * m.mm.m20) + (z * m.mm.m21) + (z + m.mm.m22 + (z * m.mm.m23)),  //
+//                    (w * m.mm.m30) + (w * m.mm.m31) + (w + m.mm.m32 + (w * m.mm.m33))   //
 
-    );
+//     );
 }
 
 // Useful if needing to transform a positionless vector by a matrix.
@@ -1745,6 +1745,12 @@ static void TestMath() {
         TAssert(f32eq(Vec3Dot(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f)), 0.0f), "Vec3Dot |_");
         TAssert(f32eq(Vec3Dot(Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 0.0f, 1.0f)), 1.0f), "Vec3Dot ||");
         TAssert(f32eq(Vec3Dot(Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 0.0f, -1.0f)), -1.0f), "Vec3Dot neg ||");
+
+        TAssert(f32eq(Vec3Angle(Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 0.0f, 1.0f)), 0.0f), "Vec3Angle ||");
+
+        TAssert(Vec3Eq(Vec3RotateAxis(Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(1.0f, 0.0f, 0.0f), Deg2Rad(-90.0f)),
+                       Vec3Lit(0.0f, 1.0f, 0.0f)),
+                "Vec3RotateAxis z->y");
 
         // Vec3Cross
         {
