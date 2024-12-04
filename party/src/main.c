@@ -1850,7 +1850,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
             DrawCmd* cmd = &CBUFFER[i];
             glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-            glUniform4f(shader.vucolor_loc, cmd->color.r, cmd->color.g, cmd->color.b, cmd->color.a);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
             glUniform1f(shader.vcolor_blend_loc, cmd->color.a);
             glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
                            (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
