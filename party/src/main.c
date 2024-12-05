@@ -458,16 +458,6 @@ typedef struct Vec4 {
 
 #define Vec4Lit(v0, v1, v2, v3) ((Vec4){.x = (v0), .y = (v1), .z = (v2), .w = (v3)})
 
-// static Vec4 Mat4TransformVec4(Mat4 m, f32 x, f32 y, f32 z, f32 w) {
-//     return Vec4Lit((x * m.mm.m00) + (x * m.mm.m01) + (x + m.mm.m02) + (x * m.mm.m03),  //
-//                    (y * m.mm.m10) + (y * m.mm.m11) + (y + m.mm.m12) + (y * m.mm.m13),  //
-//                    (z * m.mm.m20) + (z * m.mm.m21) + (z + m.mm.m22 + (z * m.mm.m23)),  //
-//                    (w * m.mm.m30) + (w * m.mm.m31) + (w + m.mm.m32 + (w * m.mm.m33))   //
-
-//     );
-}
-
-// Useful if needing to transform a positionless vector by a matrix.
 // The positionless aspect is why we don't include the w component here.
 static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
     return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02),  //
@@ -483,52 +473,6 @@ static Vec3 Vec3WTransform(Vec3 v, Mat4 m) {
     return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02) + (1.0f * m.mm.m03),  //
                    (v.x * m.mm.m10) + (v.y * m.mm.m11) + (v.z * m.mm.m12) + (1.0f * m.mm.m13),  //
                    (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22) + (1.0f * m.mm.m23));
-}
-
-////////////////////////////////////////////////////////////
-// S:Collision
-
-// CCW winding.
-// If collision, normal will point in direction of separating axis towards triangle ABC.
-bool CollideTriangleTriangle(Vec2 a, Vec2 b, Vec2 c, Vec2 d, Vec2 e, Vec2 f, Vec2* normal, f32* depth) {
-    Vec2 edges[6] = {Vec2Sub(b, a), Vec2Sub(c, b), Vec2Sub(a, c), Vec2Sub(e, d), Vec2Sub(f, e), Vec2Sub(d, f)};
-
-    *depth = F32_MAX;
-
-    // SAT.
-    for (u8 i = 0; i < 6; ++i) {
-        Vec2 edge = edges[i];
-        Vec2 n = Vec2Normalize(Vec2Cross(edge));
-        f32 proj_a = Vec2Dot(a, n);
-        f32 proj_b = Vec2Dot(b, n);
-        f32 proj_c = Vec2Dot(c, n);
-
-        f32 proj_d = Vec2Dot(d, n);
-        f32 proj_e = Vec2Dot(e, n);
-        f32 proj_f = Vec2Dot(f, n);
-
-        f32 max_abc = f32max(proj_a, f32max(proj_b, proj_c));
-        f32 min_def = f32min(proj_d, f32min(proj_e, proj_f));
-
-        if (max_abc < min_def) {
-            return false;
-        }
-
-        f32 min_abc = f32min(proj_a, f32min(proj_b, proj_c));
-        f32 max_def = f32max(proj_d, f32max(proj_e, proj_f));
-
-        if (min_abc > max_def) {
-            return false;
-        }
-
-        f32 d = f32abs((max_abc - min_abc) - (max_def - min_def));
-        if (d < *depth) {
-            *depth = d;
-            *normal = n;
-        }
-    }
-
-    return true;
 }
 
 ////////////////////////////////////////////////////////////
@@ -1098,18 +1042,6 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
-////////////////////////////////////////////////////////////
-
-typedef enum InputDir {
-    DIR_NONE = 0,
-    DIR_UP,
-    DIR_DOWN,
-    DIR_LEFT,
-    DIR_RIGHT,
-
-    DIR_COUNT
-} InputDir;
-
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
@@ -1118,34 +1050,13 @@ typedef struct GameState {
 
     float timer;
 
-    RenderTexture2D target;
-
     /////////////////////////////////////////
     // Gameplay fields
-
-    struct {
-        Entity* head;
-        Entity* tail;
-    } monsters;
 } GameState;
-
-#define RenderWidth(state) ((state)->target.texture.width)
-#define RenderHeight(state) ((state)->target.texture.height)
 
 static GameState GState;
 
 #define GetGameState() (&GState)
-
-static void SimpleScene(GameState* state) {
-    // LoadLevel();
-
-    // Entity 0.
-    {
-        Entity* entity = AllocateEntity();
-        FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        entity->pos = ORIGIN;
-    }
-}
 
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
@@ -1156,10 +1067,6 @@ static void GameStateInit(GameState* gstate) {
     SetTargetFPS(60);
     EntitySystemInit();
     // DisableCursor();
-
-    gstate->target = LoadRenderTexture(RenderWidth, RenderHeight);
-
-    SimpleScene(gstate);
 
     { glEnable(GL_DEPTH_TEST); }
 }
@@ -1720,8 +1627,12 @@ static void TestMath() {
         TAssert(Vec2Len(Vec2Lit(1.0f, 0.0)) == 1.0f, "Vec2Len");
         TAssert(Vec2Len(Vec2Zero()) == 0.0f, "Vec2Len Zero");
         TAssert(Vec2Eq(Vec2Add(Vec2Zero(), Vec2Lit(1.0f, 1.0f)), Vec2Lit(1.0f, 1.0f)), "Vec2Add");
+        TAssert(Vec2Eq(Vec2Sub(Vec2Zero(), Vec2Lit(1.0f, 1.0f)), Vec2Lit(-1.0f, -1.0f)), "Vec2Sub");
         TAssert(Vec2Eq(Vec2Scale(Vec2Lit(1.0f, 1.0f), 2.0f), Vec2Lit(2.0f, 2.0f)), "Vec2Scale");
         TAssert(Vec2Eq(Vec2Clamp(Vec2Zero(), Vec2Zero(), Vec2Zero()), Vec2Zero()), "Vec2Clamp");
+        TAssert(f32eq(Vec2Dot(Vec2Lit(1.0f, 0.0f), Vec2Lit(1.0f, 0.0f)), 1.0f), "Vec2Dot");
+        TAssert(Vec2Eq(Vec2Normalize(Vec2Lit(3.0f, 0.0f)), Vec2Lit(1.0f, 0.0f)), "Vec2Normalize");
+        TAssert(Vec2Eq(Vec2Cross(Vec2Lit(1.0f, 0.0f)), Vec2Lit(0.0f, -1.0f)), "Vec2Cross");
     }
 
     // Test Vec3.
