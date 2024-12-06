@@ -1088,7 +1088,8 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     }
 }
 
-static void DrawArrow(Vec3 pos, Mat4 orient, f32 scale, Vec4 color, Vec3 forward) {
+static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color) {
+    forward = Vec3Normalize(forward);
     // tail.
     AddCmd(GetMesh(M_CUBE), Mat4SRT(scale, orient, pos), color);
     pos = Vec3Add(pos, Vec3Scale(forward, 1.3f * scale));
@@ -1476,7 +1477,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     // (since it will correctly place the point based on scale, rot, translation).
                                     Vec3 pos_world = Vec3WTransform(vs[i], em);
 
-                                    DrawArrow(pos_world, orient_world, 0.3f, LRED, ns[i]);
+                                    DrawArrow(ns[i], pos_world, orient_world, 0.3f, LRED);
                                 }
                             }
                         }
