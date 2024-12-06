@@ -1137,6 +1137,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static EntityId ISO_TRIANGLES[MAX_ENTITY_BATCH] = {0};
     static u32 ISO_TRIANGLES_SIZE = 0;
 
+    static EntityId COLLISIONS[MAX_ENTITY_BATCH] = {0};
+    static u32 COLLISIONS_SIZE = 0;
+
     static EntityId PYRAMIDS[MAX_ENTITY_BATCH] = {0};
     static u32 PYRAMIDS_SIZE = 0;
 
@@ -1238,9 +1241,28 @@ static void GameStateDraw(GameState* gstate, float delta) {
             }
         }
 
+        // Collisions Init.
+        {
+            static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, 15.0f), Vec3Lit(20.0f, 3.0f, 20.0f)};
+            static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(0.0f)};
+            Vec4 colors[] = {LBLACK, LBLACK};
+
+            EntityId* entities = COLLISIONS;
+            COLLISIONS_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_CUBE);
+                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->color = colors[i];
+                entity->scale = 3.0f;
+                entities[i] = entity->id;
+            }
+        }
+
         // PYRAMIDS
         {
-            static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, 15.0f)};
+            static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, -15.0f)};
             static f32 rotations[] = {Deg2Rad(0.0f)};
             Vec4 colors[] = {LORANGE};
 
@@ -1476,6 +1498,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     }
                 }
 
+                DrawEntities(shader, entities, size);
+            }
+
+            // COLLISIONS Draw.
+            {
+                EntityId* entities = COLLISIONS;
+                u32 size = COLLISIONS_SIZE;
                 DrawEntities(shader, entities, size);
             }
 
