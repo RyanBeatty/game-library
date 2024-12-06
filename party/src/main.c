@@ -927,6 +927,32 @@ static void RenderDataInit() {
     glEnableVertexAttribArray(shader.vnormal_loc);
 }
 
+static Vertex MeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
+
+typedef struct BBox {
+    Vec3 min;
+    Vec3 max;
+} BBox;
+
+#define BBoxLit(a, b) ((BBox){.min = (a), .max = (b)})
+
+static BBox LMeshGetBBox(LMesh mid) {
+    Vertex v = MeshGetVertex(mid, 0);
+    Vec3 min = v.pos;
+    Vec3 max = min;
+    for (u32 i = 1; i < mid.ntriangles * 3; ++i) {
+        v = MeshGetVertex(mid, i);
+        min.x = f32min(min.x, v.pos.x);
+        min.y = f32min(min.y, v.pos.y);
+        min.z = f32min(min.z, v.pos.z);
+
+        max.x = f32max(max.x, v.pos.x);
+        max.y = f32max(max.y, v.pos.y);
+        max.z = f32max(max.z, v.pos.z);
+    }
+    return BBoxLit(min, max);
+}
+
 typedef struct DrawCmd {
     LMesh meshid;
     Mat4 modelm;  // converts from model space to world space.
@@ -1095,6 +1121,13 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
     pos = Vec3Add(pos, Vec3Scale(forward, 1.3f * scale));
     // tip.
     AddCmd(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
+}
+
+static void DrawBBox(BBox box, Vec3 pos, Mat4 orient, Vec4 color) {
+    // f32 scalex = bbox.max.x - bb.min.x;
+    // f32 scaley = bbox.max.y - bb.min.y;
+    // f32 scalez = bbox.max.z - bb.min.z;
+    AddCmd(GetMesh(M_CUBE), Mat4SRT(10.0f, orient, pos), color);
 }
 
 static void GameStateUpdate(GameState* gstate, float dt) {
@@ -1269,7 +1302,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             }
         }
 
-        // PYRAMIDS
+        // PYRAMIDS init
         {
             static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, -15.0f)};
             static f32 rotations[] = {Deg2Rad(0.0f)};
@@ -1623,6 +1656,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 for (u32 i = 0; i < size; ++i) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                    BBox box = LMeshGetBBox(entity->mesh);
+                    DrawBBox(box, entity->pos, entity->orient, LBLACK);
                 }
                 DrawEntities(shader, entities, size);
             }
