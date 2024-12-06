@@ -1088,6 +1088,14 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     }
 }
 
+static void DrawArrow(Vec3 pos, Mat4 orient, f32 scale, Vec4 color, Vec3 forward) {
+    // tail.
+    AddCmd(GetMesh(M_CUBE), Mat4SRT(scale, orient, pos), color);
+    pos = Vec3Add(pos, Vec3Scale(forward, 1.3f * scale));
+    // tip.
+    AddCmd(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
+}
+
 static void GameStateUpdate(GameState* gstate, float dt) {
     gstate->timer += dt;
 
@@ -1468,30 +1476,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                     // (since it will correctly place the point based on scale, rot, translation).
                                     Vec3 pos_world = Vec3WTransform(vs[i], em);
 
-                                    f32 scale = 0.3f;
-                                    // Point.
-                                    {
-                                        Vec3 pos = pos_world;
-                                        Mat4 orient = orient_world;
-                                        Mat4 model = Mat4SRT(scale, orient, pos);
-                                        AddCmd(GetMesh(M_CUBE), model, LRED);
-                                    }
-
-                                    // Normal tail.
-                                    {
-                                        Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
-                                        Mat4 orient = orient_world;
-                                        Mat4 model = Mat4SRT(scale, orient, pos);
-                                        AddCmd(GetMesh(M_CUBE), model, LBLUE);
-                                    }
-                                    // Normal tip.
-                                    {
-                                        Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
-                                        pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
-                                        Mat4 orient = orient_world;
-                                        Mat4 model = Mat4SRT(scale, orient, pos);
-                                        AddCmd(GetMesh(M_PYRAMID), model, LBLUE);
-                                    }
+                                    DrawArrow(pos_world, orient_world, 0.3f, LRED, ns[i]);
                                 }
                             }
                         }
@@ -1505,6 +1490,128 @@ static void GameStateDraw(GameState* gstate, float delta) {
             {
                 EntityId* entities = COLLISIONS;
                 u32 size = COLLISIONS_SIZE;
+
+                {
+                    Entity* e0 = GetEntity(entities[0]);
+                    Entity* e1 = GetEntity(entities[1]);
+                    Mat4 e0m = EntityGetMat(e0);
+                    Mat4 e1m = EntityGetMat(e1);
+                    Mat4 e1toe0m = Mat4Multiply(Mat4Invert(e0m), e1m);
+
+                    // Vec3 a = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 0]].pos;
+                    // Vec3 b = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 1]].pos;
+                    // Vec3 c = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 2]].pos;
+
+                    // Vec3 ab = Vec3Sub(b, a);
+                    // Vec3 ac = Vec3Sub(c, a);
+                    // Vec3 bc = Vec3Sub(c, b);
+                    // Vec3 f0 = Vec3Normalize(Vec3Cross(ab, ac));
+
+                    // // Bring other triangle's vertexes into e0's coordinate space.
+                    // Vec3 d = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 0]].pos, e1toe0m);
+                    // Vec3 e = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 1]].pos, e1toe0m);
+                    // Vec3 f = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 2]].pos, e1toe0m);
+
+                    // Vec3 de = Vec3Sub(e, d);
+                    // Vec3 df = Vec3Sub(f, d);
+                    // Vec3 ef = Vec3Sub(f, e);
+                    // Vec3 f1 = Vec3Normalize(Vec3Cross(de, df));
+
+                    // Vec3 norm_abde = Vec3Normalize(Vec3Cross(ab, de));
+                    // Vec3 norm_abdf = Vec3Normalize(Vec3Cross(ab, df));
+                    // Vec3 norm_abef = Vec3Normalize(Vec3Cross(ab, ef));
+
+                    // Vec3 norm_acde = Vec3Normalize(Vec3Cross(ac, de));
+                    // Vec3 norm_acdf = Vec3Normalize(Vec3Cross(ac, df));
+                    // Vec3 norm_acef = Vec3Normalize(Vec3Cross(ac, ef));
+
+                    // Vec3 norm_bcde = Vec3Normalize(Vec3Cross(bc, de));
+                    // Vec3 norm_bcdf = Vec3Normalize(Vec3Cross(bc, df));
+                    // Vec3 norm_bcef = Vec3Normalize(Vec3Cross(bc, ef));
+
+                    // Vec3 half_ab = Vec3Add(a, Vec3Scale(ab, 0.5f));
+                    // Vec3 half_ac = Vec3Add(a, Vec3Scale(ac, 0.5f));
+                    // Vec3 half_bc = Vec3Add(b, Vec3Scale(bc, 0.5f));
+
+                    // // NOTE: All drawing is done in e0 local coordinate space.
+                    // // Do not include translation in normal transform because those are direction vectors
+                    // // only.
+                    // {
+                    //     // Draw vertexes of triangles.
+                    //     {
+                    //         Mat4 em = e0m;
+                    //         Vec3 vs[] = {a, b, c, d, e, f};
+                    //         for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                    //             Vec3 pos = vs[i];
+                    //             Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                    //             AddCmd(GetMesh(M_CUBE), model, LRED);
+                    //         }
+                    //     }
+                    //     // Draw normals
+                    //     {
+                    //         {
+                    //             Mat4 em = e0m;
+                    //             Mat4 enormm = e0->orient;
+                    //             Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f),
+                    //                          Vec3WTransform(Vec3Zero(), e1toe0m),
+                    //                          half_ab,
+                    //                          half_ab,
+                    //                          half_ab,
+                    //                          half_ac,
+                    //                          half_ac,
+                    //                          half_ac,
+                    //                          half_bc,
+                    //                          half_bc,
+                    //                          half_bc};
+                    //             Vec3 ns[] = {f0,        f1,        norm_abde, norm_abdf, norm_abef, norm_acde,
+                    //                          norm_acdf, norm_acef, norm_bcde, norm_bcdf, norm_bcef};
+                    //             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
+                    //                 // Get rot matrix that will point mesh's forward along the normal. We get this
+                    //                 // rotation by computing the rotation matrix of the normal direction. Note that
+                    //                 we
+                    //                 // need to calculate what the direction our mesh should point in upright space so
+                    //                 we
+                    //                 // concat the normal rotation matrix by the upright rotation matrix of the e0's
+                    //                 // orientation.
+                    //                 Vec3 norm = ns[i];
+                    //                 Mat4 normrot = Mat4PointAt(norm, Vec3Lit(0.0f, 1.0f, 0.0f));
+                    //                 Mat4 orient_world = Mat4Multiply(enormm, normrot);
+
+                    //                 // Need to take the model space position and figure out the world coords, that
+                    //                 // means we need to use the entity model mat to transform into world space
+                    //                 // (since it will correctly place the point based on scale, rot, translation).
+                    //                 Vec3 pos_world = Vec3WTransform(vs[i], em);
+
+                    //                 f32 scale = 0.3f;
+                    //                 // Point.
+                    //                 {
+                    //                     Vec3 pos = pos_world;
+                    //                     Mat4 orient = orient_world;
+                    //                     Mat4 model = Mat4SRT(scale, orient, pos);
+                    //                     AddCmd(GetMesh(M_CUBE), model, LRED);
+                    //                 }
+
+                    //                 // Normal tail.
+                    //                 {
+                    //                     Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
+                    //                     Mat4 orient = orient_world;
+                    //                     Mat4 model = Mat4SRT(scale, orient, pos);
+                    //                     AddCmd(GetMesh(M_CUBE), model, LBLUE);
+                    //                 }
+                    //                 // Normal tip.
+                    //                 {
+                    //                     Vec3 pos = Vec3Add(pos_world, Vec3Scale(norm, 1.3f * scale));
+                    //                     pos = Vec3Add(pos, Vec3Scale(norm, 1.3f * scale));
+                    //                     Mat4 orient = orient_world;
+                    //                     Mat4 model = Mat4SRT(scale, orient, pos);
+                    //                     AddCmd(GetMesh(M_PYRAMID), model, LBLUE);
+                    //                 }
+                    //             }
+                    //         }
+                    //     }
+                    // }
+                }
+
                 DrawEntities(shader, entities, size);
             }
 
