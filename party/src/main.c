@@ -957,6 +957,7 @@ typedef struct DrawCmd {
     LMesh meshid;
     Mat4 modelm;  // converts from model space to world space.
     Vec4 color;
+    bool wireframe;
 } DrawCmd;
 
 #define MAX_CMDS 256
@@ -971,6 +972,7 @@ static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm, Vec4 color) {
     cmd->meshid = meshid;
     cmd->modelm = modelm;
     cmd->color = color;
+    cmd->wireframe = false;
     return cmd;
 }
 
@@ -1127,7 +1129,8 @@ static void DrawBBox(BBox box, Vec3 pos, Mat4 orient, Vec4 color) {
     // f32 scalex = bbox.max.x - bb.min.x;
     // f32 scaley = bbox.max.y - bb.min.y;
     // f32 scalez = bbox.max.z - bb.min.z;
-    AddCmd(GetMesh(M_CUBE), Mat4SRT(10.0f, orient, pos), color);
+    DrawCmd* cmd = AddCmd(GetMesh(M_CUBE), Mat4SRT(10.0f, orient, pos), color);
+    cmd->wireframe = true;
 }
 
 static void GameStateUpdate(GameState* gstate, float dt) {
@@ -1751,8 +1754,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
             glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
             glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
             glUniform1f(shader.vcolor_blend_loc, cmd->color.a != 0.0f ? 1.0f : 0.0f);
+            if (cmd->wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }
             glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
                            (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+            if (cmd->wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
         }
 
         EndDrawing();
