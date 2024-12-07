@@ -379,9 +379,11 @@ static Mat4 Mat4PointAt(Vec3 forward) {
 
     // Get the right camera axis by using the +z and a vector pointing up (but not necessarily
     // the up axis)
+    Vec3 up = Vec3Lit(0.0f, 1.0f, 0.0);
     Vec3 x = Vec3Normalize(Vec3Cross(UP, z));
     if (Vec3Eq(x, Vec3Zero())) {
-        x = Vec3Normalize(Vec3Cross(Vec3Lit(-1.0f, 0.0f, 0.0f), z));
+        up = Vec3Lit(-1.0f, 0.0f, 0.0f);
+        x = Vec3Normalize(Vec3Cross(up, z));
     }
     Assert(!Vec3Eq(x, Vec3Zero()));
 
@@ -1468,7 +1470,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                              half_ac,
                                              half_ac,
                                              half_bc,
-                                             half_bc,
                                              half_bc};
                                 Vec3 ns[] = {f0,        f1,        norm_abde, norm_abdf, norm_abef, norm_acde,
                                              norm_acdf, norm_acef, norm_bcde, norm_bcdf, norm_bcef};
@@ -1506,8 +1507,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* e0 = GetEntity(entities[0]);
                     Entity* e1 = GetEntity(entities[1]);
 
-                    {
-                        Entity* e = e0;
+                    Entity* es[] = {e0, e1};
+                    for (u32 j = 0; j < ArraySizeOf(es); j++) {
+                        Entity* e = es[j];
                         Mat4 model = EntityGetMat(e);
                         Mat4 rot = e->orient;
                         LMesh mid = e->mesh;
