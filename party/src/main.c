@@ -1544,6 +1544,51 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 {
                     Entity* e0 = GetEntity(entities[0]);
                     Entity* e1 = GetEntity(entities[1]);
+                    Mat4 e1e0m = Mat4Multiply(Mat4Invert(EntityGetMat(e0)), EntityGetMat(e1));
+
+                    Vertex m0[MAX_VERTICES] = {0};
+                    u32 m0size = 0;
+                    for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m0size) {
+                        m0[i] = LMeshGetVertex(e0->mesh, i);
+                    }
+
+                    Vertex m1[MAX_VERTICES] = {0};
+                    u32 m1size = 0;
+                    for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m1size) {
+                        m1[i] = LMeshGetVertex(e1->mesh, i);
+                        // Ensure both meshes are in same frame of reference.
+                        m1[i].pos = Vec3WTransform(m1[i].pos, e1e0m);
+                    }
+
+                    // Points from A (e0) to B (e1).
+                    Vec3 dir = Vec3Zero();
+                    f32 d = 0.0f;
+                    bool collides = false;
+                    for (u32 i = 0; i < e0->mesh.ntriangles; ++i) {
+                        Triangle t0 = LMeshGetTriangle(e0->mesh, i);
+
+                        // Calc face normal.
+                        Vec3 ab = Vec3Sub(t0.b.pos, t0.a.pos);
+                        Vec3 ac = Vec3Sub(t0.c.pos, t0.a.pos);
+                        Vec3 axis = Vec3Cross(ab, ac);
+
+                        // Project mesh along line and get interval.
+                        f32 t0min = Vec3Dot(t0.a.pos, axis);
+                        f32 t0max = t0min;
+                        f32 b = Vec3Dot(t0.b.pos, axis);
+                        t0min = f32min(t0min, b);
+                        t0max = f32max(t0max, b);
+                        f32 c = Vec3Dot(t0.b.pos, axis);
+                        t0min = f32min(t0min, c);
+                        t0max = f32max(t0max, c);
+
+                        for (u32 j = 0; j < e1->mesh.ntriangles; ++j) {
+                            Triangle t1 = LMeshGetTriangle(e1->mesh, j);
+                            // t1.a.pos = Vec3WTransform(t1.a.pos, e1e0m);
+                            // t1.b.pos = Vec3WTransform(t1.b.pos, e1e0m);
+                            // t1.c.pos = Vec3WTransform(t1.c.pos, e1e0m);
+                        }
+                    }
 
                     // Draw face normals.
                     Entity* es[] = {e0, e1};
