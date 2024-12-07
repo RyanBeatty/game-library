@@ -719,6 +719,19 @@ typedef struct Vertex {
     };
 } Vertex;
 
+typedef struct Triangle {
+    union {
+        Vertex vs[3];
+        struct {
+            Vertex a;
+            Vertex b;
+            Vertex c;
+        };
+    };
+} Triangle;
+
+#define TriangleLit(n0, n1, n2) ((Triangle){.a = (n0), .b = (n1), .c = (n2)})
+
 #define MAX_VERTICES 256
 
 static u32 VAO = 0;
@@ -937,6 +950,14 @@ static void RenderDataInit() {
 }
 
 static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
+
+static Triangle LMeshGetTriangle(LMesh mid, u32 tid) {
+    u32 offset = tid * 3;
+    Vertex v0 = LMeshGetVertex(mid, offset + 0);
+    Vertex v1 = LMeshGetVertex(mid, offset + 1);
+    Vertex v2 = LMeshGetVertex(mid, offset + 2);
+    return TriangleLit(v0, v1, v2);
+}
 
 typedef struct DrawCmd {
     LMesh meshid;
@@ -1531,16 +1552,14 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         Mat4 model = EntityGetMat(e);
                         Mat4 rot = e->orient;
                         LMesh mid = e->mesh;
-                        for (u32 i = 0, offset = 0; i < mid.ntriangles; i += 1, offset = i * 3) {
-                            Vec3 a = LMeshGetVertex(mid, offset + 0).pos;
-                            Vec3 b = LMeshGetVertex(mid, offset + 1).pos;
-                            Vec3 c = LMeshGetVertex(mid, offset + 2).pos;
+                        for (u32 i = 0; i < mid.ntriangles; i += 1) {
+                            Triangle t = LMeshGetTriangle(mid, i);
 
-                            Vec3 ab = Vec3Sub(b, a);
-                            Vec3 ac = Vec3Sub(c, a);
+                            Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
+                            Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
                             Vec3 norm = Vec3Cross(ab, ac);
 
-                            Vec3 center = Vec3Scale(Vec3Add(a, Vec3Add(b, c)), 1.0f / 3.0f);
+                            Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
                             center = Vec3WTransform(center, model);
 
                             Mat4 orient = Mat4PointAt(norm);
