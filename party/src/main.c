@@ -1279,6 +1279,17 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
+
+            for (u32 i = 0; i < ArraySizeOf(positions); i += 2) {
+                Entity* e0 = GetEntity(entities[i + 0]);
+                Entity* e1 = GetEntity(entities[i + 1]);
+
+                // Collide in half sec.
+                // NOTE: this will just collide the centers, but actual collision might occur sooner.
+                Vec3 v = Vec3Sub(e0->pos, e1->pos);
+                v = Vec3Scale(v, 1.0f / 15.0f);
+                e1->v = v;
+            }
         }
 
         // PYRAMIDS init
@@ -1503,10 +1514,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 EntityId* entities = COLLISIONS;
                 u32 size = COLLISIONS_SIZE;
 
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* e = GetEntity(entities[i]);
+                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, delta));
+                }
+
                 {
                     Entity* e0 = GetEntity(entities[0]);
                     Entity* e1 = GetEntity(entities[1]);
 
+                    // Draw face normals.
                     Entity* es[] = {e0, e1};
                     for (u32 j = 0; j < ArraySizeOf(es); j++) {
                         Entity* e = es[j];
