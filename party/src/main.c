@@ -927,31 +927,7 @@ static void RenderDataInit() {
     glEnableVertexAttribArray(shader.vnormal_loc);
 }
 
-static Vertex MeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
-
-typedef struct BBox {
-    Vec3 min;
-    Vec3 max;
-} BBox;
-
-#define BBoxLit(a, b) ((BBox){.min = (a), .max = (b)})
-
-static BBox LMeshGetBBox(LMesh mid) {
-    Vertex v = MeshGetVertex(mid, 0);
-    Vec3 min = v.pos;
-    Vec3 max = min;
-    for (u32 i = 1; i < mid.ntriangles * 3; ++i) {
-        v = MeshGetVertex(mid, i);
-        min.x = f32min(min.x, v.pos.x);
-        min.y = f32min(min.y, v.pos.y);
-        min.z = f32min(min.z, v.pos.z);
-
-        max.x = f32max(max.x, v.pos.x);
-        max.y = f32max(max.y, v.pos.y);
-        max.z = f32max(max.z, v.pos.z);
-    }
-    return BBoxLit(min, max);
-}
+static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
 
 typedef struct DrawCmd {
     LMesh meshid;
@@ -1123,14 +1099,6 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
     pos = Vec3Add(pos, Vec3Scale(forward, 1.3f * scale));
     // tip.
     AddCmd(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
-}
-
-static void DrawBBox(BBox box, Vec3 pos, Mat4 orient, Vec4 color) {
-    // f32 scalex = bbox.max.x - bb.min.x;
-    // f32 scaley = bbox.max.y - bb.min.y;
-    // f32 scalez = bbox.max.z - bb.min.z;
-    DrawCmd* cmd = AddCmd(GetMesh(M_CUBE), Mat4SRT(10.0f, orient, pos), color);
-    cmd->wireframe = true;
 }
 
 static void GameStateUpdate(GameState* gstate, float dt) {
@@ -1431,9 +1399,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Mat4 e1m = EntityGetMat(e1);
                     Mat4 e1toe0m = Mat4Multiply(Mat4Invert(e0m), e1m);
 
-                    Vec3 a = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 0]].pos;
-                    Vec3 b = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 1]].pos;
-                    Vec3 c = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 2]].pos;
+                    Vec3 a = LMeshGetVertex(e0->mesh, 0).pos;
+                    Vec3 b = LMeshGetVertex(e0->mesh, 1).pos;
+                    Vec3 c = LMeshGetVertex(e0->mesh, 2).pos;
 
                     Vec3 ab = Vec3Sub(b, a);
                     Vec3 ac = Vec3Sub(c, a);
@@ -1441,9 +1409,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3 f0 = Vec3Normalize(Vec3Cross(ab, ac));
 
                     // Bring other triangle's vertexes into e0's coordinate space.
-                    Vec3 d = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 0]].pos, e1toe0m);
-                    Vec3 e = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 1]].pos, e1toe0m);
-                    Vec3 f = Vec3WTransform(VBUFFER[IBUFFER[e1->mesh.ibufferidx + 2]].pos, e1toe0m);
+                    Vec3 d = Vec3WTransform(LMeshGetVertex(e1->mesh, 0).pos, e1toe0m);
+                    Vec3 e = Vec3WTransform(LMeshGetVertex(e1->mesh, 1).pos, e1toe0m);
+                    Vec3 f = Vec3WTransform(LMeshGetVertex(e1->mesh, 2).pos, e1toe0m);
 
                     Vec3 de = Vec3Sub(e, d);
                     Vec3 df = Vec3Sub(f, d);
@@ -1659,8 +1627,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 for (u32 i = 0; i < size; ++i) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                    BBox box = LMeshGetBBox(entity->mesh);
-                    DrawBBox(box, entity->pos, entity->orient, LBLACK);
                 }
                 DrawEntities(shader, entities, size);
             }
