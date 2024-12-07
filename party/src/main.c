@@ -132,6 +132,8 @@ static Vec3 Vec3Normalize(Vec3 v) {
     }
     return v;
 }
+
+// in right handed notation. a is index, b is pointer.
 static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
@@ -1096,7 +1098,7 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
     forward = Vec3Normalize(forward);
     // tail.
     AddCmd(GetMesh(M_CUBE), Mat4SRT(scale, orient, pos), color);
-    pos = Vec3Add(pos, Vec3Scale(forward, 1.3f * scale));
+    pos = Vec3Add(pos, Vec3Scale(forward, 1.0f * scale));
     // tip.
     AddCmd(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
 }
@@ -1491,7 +1493,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 DrawEntities(shader, entities, size);
             }
 
-            // COLLISIONS Draw.
+            // COLLISIONS Update.
             {
                 EntityId* entities = COLLISIONS;
                 u32 size = COLLISIONS_SIZE;
@@ -1499,9 +1501,32 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 {
                     Entity* e0 = GetEntity(entities[0]);
                     Entity* e1 = GetEntity(entities[1]);
-                    Mat4 e0m = EntityGetMat(e0);
-                    Mat4 e1m = EntityGetMat(e1);
-                    Mat4 e1toe0m = Mat4Multiply(Mat4Invert(e0m), e1m);
+
+                    {
+                        Entity* e = e0;
+                        Mat4 model = EntityGetMat(e);
+                        Mat4 rot = e->orient;
+                        LMesh mid = e->mesh;
+                        for (u32 i = 0; i < mid.ntriangles; i += 3) {
+                            Vec3 a = LMeshGetVertex(mid, i + 0).pos;
+                            Vec3 b = LMeshGetVertex(mid, i + 1).pos;
+                            Vec3 c = LMeshGetVertex(mid, i + 2).pos;
+
+                            Vec3 ab = Vec3Sub(b, a);
+                            Vec3 ac = Vec3Sub(c, a);
+                            Vec3 norm = Vec3Cross(ab, ac);
+
+                            Vec3 center = Vec3Scale(Vec3Add(a, Vec3Add(b, c)), 1.0f / 3.0f);
+                            center = Vec3WTransform(center, model);
+
+                            Mat4 orient = Mat4PointAt(norm, Vec3Lit(0.0f, 1.0f, 0.0f));
+                            orient = Mat4Multiply(rot, orient);
+                            DrawArrow(norm, center, orient, 0.3f, LRED);
+                        }
+                    }
+                    // Mat4 e0m = EntityGetMat(e0);
+                    // Mat4 e1m = EntityGetMat(e1);
+                    // Mat4 e1toe0m = Mat4Multiply(Mat4Invert(e0m), e1m);
 
                     // Vec3 a = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 0]].pos;
                     // Vec3 b = VBUFFER[IBUFFER[e0->mesh.ibufferidx + 1]].pos;
