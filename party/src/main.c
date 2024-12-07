@@ -561,6 +561,7 @@ static LShader GetShader() {
         "uniform mat4 vProj;\n"
         "\n"
         "uniform vec4 vUColor;\n"
+        // TODO: remove this.
         "uniform float vColorBlend;\n"
         "\n"
         "out vec3 fPosEye;\n"
@@ -570,7 +571,7 @@ static LShader GetShader() {
         "{\n"
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
         "   fPosEye = vec3(vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0));\n"
-        "   fColor = mix(vec4(vColor.x, vColor.y, vColor.z, 1.0), vUColor, vColorBlend);\n"
+        "   fColor = vUColor;\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
         "   fNormal = mat3(transpose(inverse(vView * vModel))) * vNormal;\n"
@@ -617,7 +618,7 @@ static LShader GetShader() {
         "   vec3 specular = spec * mat_spec * fLightColor.xyz;\n"
         "\n"
         "   FragColor = vec4(fColor.xyz * (ambient + diffuse + specular), 1.0);\n"
-        "   FragColor = vec4(fColor.xyz, 1.0);\n"
+        "   FragColor = fColor;\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
@@ -1266,7 +1267,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, 15.0f), Vec3Lit(20.0f, 3.0f, 20.0f)};
             static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(0.0f)};
-            Vec4 colors[] = {LBLACK, LBLACK};
 
             EntityId* entities = COLLISIONS;
             COLLISIONS_SIZE = ArraySizeOf(positions);
@@ -1275,7 +1275,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-                entity->color = colors[i];
+                entity->color = i % 2 == 0 ? LBLUE : LORANGE;
+                entity->color.a = 0.5f;
                 entity->scale = 3.0f;
                 entities[i] = entity->id;
             }
@@ -1578,27 +1579,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     // Drawing
     {
-        // TODO: do something with this.
-        // // Lights
-        // {
-        //     LShader shader = GetUnlitShader();
-        //     glUseProgram(shader.pid);
-        //     glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-        //     glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-
-        //     // Draw cube lights.
-        //     {
-        //         EntityId* entities = LIGHTS;
-        //         u32 size = LIGHTS_SIZE;
-        //         for (u32 i = 0; i < size; ++i) {
-        //             Entity* entity = GetEntity(entities[i]);
-        //             entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-        //         }
-
-        //         DrawEntities(shader, entities, size);
-        //     }
-        // }
-
         // Begin.
         {
             BeginDrawing();
