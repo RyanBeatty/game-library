@@ -1122,6 +1122,9 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     }
 }
 
+// TODO: Consider deriving partial orientation from arrow direction and then having passed in orient
+// be the upright orientation of the entitie's rotation. Maybe this function here could be the Pro version
+// and the other could be default.
 static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color) {
     forward = Vec3Normalize(forward);
     // tail.
@@ -1560,9 +1563,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         m1[i].pos = Vec3WTransform(m1[i].pos, e1e0m);
                     }
 
-                    // Points from A (e0) to B (e1).
                     Vec3 dir = Vec3Zero();
-                    f32 mind = F32_MAX;
+                    f32 dmin = F32_MAX;
                     bool collides = false;
                     for (u32 i = 0; i < e0->mesh.ntriangles; ++i) {
                         u32 ioffset = i * 3;
@@ -1593,49 +1595,62 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             t1max = f32max(t1max, n);
                         }
 
+                        // Check for overlap. this will give magnitude of displacement if positive
+                        // (dir of displacement is the separating axis).
+                        // Negative value here means no overlap.
                         f32 imin = f32max(t0min, t1min);
                         f32 imax = f32min(t0max, t1max);
                         f32 d = imax - imin;
-                        if (collides) {
-                            breakpoint();
-                        }
                         if (d < 0.0f) {
                             collides = false;
                             break;
                         }
 
-                        if (d < mind) {
+                        if (d < dmin) {
                             collides = true;
                             dir = axis;
-                            mind = d;
+                            dmin = d;
                         }
                     }
 
                     if (collides) {
                         e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
-                    }
 
-                    // Draw face normals.
-                    Entity* es[] = {e0, e1};
-                    for (u32 j = 0; j < ArraySizeOf(es); j++) {
-                        Entity* e = es[j];
-                        Mat4 model = EntityGetMat(e);
-                        Mat4 rot = e->orient;
-                        LMesh mid = e->mesh;
-                        for (u32 i = 0; i < mid.ntriangles; i += 1) {
-                            Triangle t = LMeshGetTriangle(mid, i);
+                        {
+                            Vec3 arrow = dir;
+                            Mat4 orient = Mat4PointAt(arrow);
+                            orient = Mat4Multiply(e0->orient, orient);
+                            DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
+                        }
+                        {
+                            Vec3 arrow = Vec3Scale(dir, -1.0f);
+                            Mat4 orient = Mat4PointAt(arrow);
+                            orient = Mat4Multiply(e0->orient, orient);
+                            DrawArrow(arrow, e1->pos, orient, 0.3f, LPURPLE);
+                        }
+                    } else {
+                        // Draw face normals.
+                        Entity* es[] = {e0, e1};
+                        for (u32 j = 0; j < ArraySizeOf(es); j++) {
+                            Entity* e = es[j];
+                            Mat4 model = EntityGetMat(e);
+                            Mat4 rot = e->orient;
+                            LMesh mid = e->mesh;
+                            for (u32 i = 0; i < mid.ntriangles; i += 1) {
+                                Triangle t = LMeshGetTriangle(mid, i);
 
-                            Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
-                            Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
-                            Vec3 norm = Vec3Cross(ab, ac);
+                                Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
+                                Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
+                                Vec3 norm = Vec3Cross(ab, ac);
 
-                            Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
-                            center = Vec3WTransform(center, model);
+                                Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
+                                center = Vec3WTransform(center, model);
 
-                            Mat4 orient = Mat4PointAt(norm);
-                            orient = Mat4Multiply(rot, orient);
-                            DrawArrow(norm, center, orient, 0.3f, LRED);
+                                Mat4 orient = Mat4PointAt(norm);
+                                orient = Mat4Multiply(rot, orient);
+                                DrawArrow(norm, center, orient, 0.3f, LRED);
+                            }
                         }
                     }
                 }
