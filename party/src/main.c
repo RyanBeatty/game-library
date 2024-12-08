@@ -1562,32 +1562,58 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     // Points from A (e0) to B (e1).
                     Vec3 dir = Vec3Zero();
-                    f32 d = 0.0f;
+                    f32 mind = F32_MAX;
                     bool collides = false;
                     for (u32 i = 0; i < e0->mesh.ntriangles; ++i) {
-                        Triangle t0 = LMeshGetTriangle(e0->mesh, i);
+                        u32 ioffset = i * 3;
+                        Vec3 a = m0[ioffset + 0].pos;
+                        Vec3 b = m0[ioffset + 1].pos;
+                        Vec3 c = m0[ioffset + 2].pos;
 
                         // Calc face normal.
-                        Vec3 ab = Vec3Sub(t0.b.pos, t0.a.pos);
-                        Vec3 ac = Vec3Sub(t0.c.pos, t0.a.pos);
+                        Vec3 ab = Vec3Sub(b, a);
+                        Vec3 ac = Vec3Sub(c, a);
                         Vec3 axis = Vec3Cross(ab, ac);
 
-                        // Project mesh along line and get interval.
-                        f32 t0min = Vec3Dot(t0.a.pos, axis);
+                        // Project mesh A along line and get interval.
+                        f32 t0min = Vec3Dot(m0[0].pos, axis);
                         f32 t0max = t0min;
-                        f32 b = Vec3Dot(t0.b.pos, axis);
-                        t0min = f32min(t0min, b);
-                        t0max = f32max(t0max, b);
-                        f32 c = Vec3Dot(t0.b.pos, axis);
-                        t0min = f32min(t0min, c);
-                        t0max = f32max(t0max, c);
-
-                        for (u32 j = 0; j < e1->mesh.ntriangles; ++j) {
-                            Triangle t1 = LMeshGetTriangle(e1->mesh, j);
-                            // t1.a.pos = Vec3WTransform(t1.a.pos, e1e0m);
-                            // t1.b.pos = Vec3WTransform(t1.b.pos, e1e0m);
-                            // t1.c.pos = Vec3WTransform(t1.c.pos, e1e0m);
+                        for (u32 k = 1; k < m0size; ++k) {
+                            f32 n = Vec3Dot(m0[k].pos, axis);
+                            t0min = f32min(t0min, n);
+                            t0max = f32max(t0max, n);
                         }
+
+                        // Project mesh B along line and get interval.
+                        f32 t1min = Vec3Dot(m1[0].pos, axis);
+                        f32 t1max = t1min;
+                        for (u32 k = 1; k < m1size; ++k) {
+                            f32 n = Vec3Dot(m1[k].pos, axis);
+                            t1min = f32min(t1min, n);
+                            t1max = f32max(t1max, n);
+                        }
+
+                        f32 imin = f32max(t0min, t1min);
+                        f32 imax = f32min(t0max, t1max);
+                        f32 d = imax - imin;
+                        if (collides) {
+                            breakpoint();
+                        }
+                        if (d < 0.0f) {
+                            collides = false;
+                            break;
+                        }
+
+                        if (d < mind) {
+                            collides = true;
+                            dir = axis;
+                            mind = d;
+                        }
+                    }
+
+                    if (collides) {
+                        e0->v = Vec3Zero();
+                        e1->v = Vec3Zero();
                     }
 
                     // Draw face normals.
