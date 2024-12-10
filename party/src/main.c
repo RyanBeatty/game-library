@@ -1291,7 +1291,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             static f32 margin = 10.0f;
             Vec3 pos = Vec3Lit(20.0f, 3.0f, 15.0f);
-            static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(0.0f)};
+            static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(90.0f)};
 
             EntityId* entities = COLLISIONS;
             COLLISIONS_SIZE = ArraySizeOf(rotations);
@@ -1545,9 +1545,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, delta));
                 }
 
-                {
-                    Entity* e0 = GetEntity(entities[0]);
-                    Entity* e1 = GetEntity(entities[1]);
+                for (u32 i = 0; i < size - 1; i += 2) {
+                    Entity* e0 = GetEntity(entities[i + 0]);
+                    Entity* e1 = GetEntity(entities[i + 1]);
                     Mat4 e1e0m = Mat4Multiply(Mat4Invert(EntityGetMat(e0)), EntityGetMat(e1));
 
                     Vertex m0[MAX_VERTICES] = {0};
