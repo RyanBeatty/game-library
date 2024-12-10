@@ -966,7 +966,7 @@ typedef struct DrawCmd {
     bool wireframe;
 } DrawCmd;
 
-#define MAX_CMDS 256
+#define MAX_CMDS 1024
 static DrawCmd CBUFFER[MAX_CMDS] = {0};
 static u32 CBUFFER_SIZE = 0;
 
@@ -1291,7 +1291,33 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             static f32 margin = 5.0f;
             Vec3 pos = Vec3Lit(20.0f, 3.0f, 15.0f);
-            static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(90.0f)};
+            static f32 rs[] = {Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(90.0f)};
+
+            static Vec3 axis[36] = {0};
+            static f32 rotations[36] = {0};
+            u32 offset = 0;
+            for (u32 i = 0; i < 6; ++i, offset += 2) {
+                Vec3 a0 = Vec3Lit(0.0f, 1.0f, 0.0f);
+                f32 r0 = Deg2Rad(i * 90.0f);
+                if (i < 4) {
+                    a0 = Vec3Lit(1.0f, 0.0f, 0.0f);
+                    r0 = Deg2Rad((i % 4) - 1 == 0 ? 90.0f : -90.0f);
+                }
+                axis[offset] = a0;
+                rotations[offset] = r0;
+            }
+
+            offset = 1;
+            for (u32 i = 0; i < 6; ++i, offset += 2) {
+                Vec3 a0 = Vec3Lit(0.0f, 1.0f, 0.0f);
+                f32 r0 = Deg2Rad(i * 90.0f);
+                if (i < 4) {
+                    a0 = Vec3Lit(1.0f, 0.0f, 0.0f);
+                    r0 = Deg2Rad((i % 4) - 1 == 0 ? 90.0f : -90.0f);
+                }
+                axis[offset] = a0;
+                rotations[offset] = r0;
+            }
 
             EntityId* entities = COLLISIONS;
             COLLISIONS_SIZE = ArraySizeOf(rotations);
@@ -1299,7 +1325,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Entity* entity = AllocateEntity();
                 entity->pos = pos;
                 entity->mesh = GetMesh(M_CUBE);
-                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                entity->orient = Mat4Rotate(rotations[i], axis[i]);
                 entity->color = i % 2 == 0 ? LBLUE : LORANGE;
                 entity->color.a = 0.5f;
                 entity->scale = 3.0f;
