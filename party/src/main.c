@@ -1289,7 +1289,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // Collisions Init.
         {
-            static f32 margin = 10.0f;
+            static f32 margin = 5.0f;
             Vec3 pos = Vec3Lit(20.0f, 3.0f, 15.0f);
             static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(90.0f)};
 
@@ -1313,7 +1313,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 // Collide in half sec.
                 // NOTE: this will just collide the centers, but actual collision might occur sooner.
                 Vec3 v = Vec3Sub(e0->pos, e1->pos);
-                v = Vec3Scale(v, 1.0f / 15.0f);
+                f32 sec = 3.0f;
+                v = Vec3Scale(v, 1.0f / sec);
                 e1->v = v;
             }
         }
