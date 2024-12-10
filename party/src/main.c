@@ -1289,14 +1289,15 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // Collisions Init.
         {
-            static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, 15.0f), Vec3Lit(20.0f, 3.0f, 20.0f)};
+            static f32 margin = 10.0f;
+            Vec3 pos = Vec3Lit(20.0f, 3.0f, 15.0f);
             static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(0.0f)};
 
             EntityId* entities = COLLISIONS;
-            COLLISIONS_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+            COLLISIONS_SIZE = ArraySizeOf(rotations);
+            for (u32 i = 0; i < ArraySizeOf(rotations); ++i, pos = Vec3Add(pos, Vec3Lit(0.0f, 0.0f, margin))) {
                 Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
+                entity->pos = pos;
                 entity->mesh = GetMesh(M_CUBE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                 entity->color = i % 2 == 0 ? LBLUE : LORANGE;
@@ -1305,7 +1306,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entities[i] = entity->id;
             }
 
-            for (u32 i = 0; i < ArraySizeOf(positions); i += 2) {
+            for (u32 i = 0; i < ArraySizeOf(rotations); i += 2) {
                 Entity* e0 = GetEntity(entities[i + 0]);
                 Entity* e1 = GetEntity(entities[i + 1]);
 
