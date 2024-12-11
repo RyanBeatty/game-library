@@ -1380,29 +1380,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Deg2Rad(-90.0f), Deg2Rad(-90.0f),  //
 
             };
-            // for (u32 i = 0, offset = 0; i < 6; ++i) {
-            //     Vec3 a0 = Vec3Lit(0.0f, 1.0f, 0.0f);
-            //     f32 r0 = Deg2Rad(i * 90.0f);
-            //     if (i > 3) {
-            //         a0 = Vec3Lit(1.0f, 0.0f, 0.0f);
-            //         r0 = Deg2Rad(i == 4 ? 90.0f : -90.0f);
-            //     }
-            //     for (u32 j = i; j < 6; ++j, offset += 2) {
-            //         Vec3 a1 = Vec3Lit(0.0f, 1.0f, 0.0f);
-            //         f32 r1 = Deg2Rad(j * 90.0f);
-            //         if (j > 3) {
-            //             a1 = Vec3Lit(1.0f, 0.0f, 0.0f);
-            //             r1 = Deg2Rad(j == 4 ? 90.0f : -90.0f);
-            //         }
-
-            //         // breakpoint();
-            //         axis[offset + 0] = a0;
-            //         rotations[offset + 0] = r0;
-            //         axis[offset + 1] = a1;
-            //         rotations[offset + 1] = r1;
-            //     }
-            // }
-            breakpoint();
 
             EntityId* entities = COLLISIONS;
             COLLISIONS_SIZE = ArraySizeOf(rotations);
@@ -1413,7 +1390,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->orient = Mat4Rotate(rotations[i], axis[i]);
                 entity->color = i % 2 == 0 ? LBLUE : LORANGE;
                 entity->color.a = 0.5f;
-                entity->scale = 3.0f;
+                entity->scale = i % 2 == 0 ? 3.0f : 1.0f;
                 entities[i] = entity->id;
             }
 
@@ -1651,21 +1628,26 @@ static void GameStateDraw(GameState* gstate, float delta) {
             {
                 EntityId* entities = COLLISIONS;
                 u32 size = COLLISIONS_SIZE;
+                static bool trip = false;
 
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, delta));
                 }
 
-                for (u32 i = 0; i < size - 1; i += 2) {
-                    Entity* e0 = GetEntity(entities[i + 0]);
-                    Entity* e1 = GetEntity(entities[i + 1]);
-                    Mat4 e1e0m = Mat4Multiply(Mat4Invert(EntityGetMat(e0)), EntityGetMat(e1));
+                for (u32 eidx = 0; eidx < size - 1; eidx += 2) {
+                    Entity* e0 = GetEntity(entities[eidx + 0]);
+                    Entity* e1 = GetEntity(entities[eidx + 1]);
+                    Mat4 e0m = EntityGetMat(e0);
+                    Mat4 e1m = EntityGetMat(e1);
 
+                    // NOTE: We do collision detection in world space.
                     Vertex m0[MAX_VERTICES] = {0};
                     u32 m0size = 0;
                     for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m0size) {
                         m0[i] = LMeshGetVertex(e0->mesh, i);
+                        // Ensure both meshes are in same frame of reference.
+                        m0[i].pos = Vec3WTransform(m0[i].pos, e0m);
                     }
 
                     Vertex m1[MAX_VERTICES] = {0};
@@ -1673,7 +1655,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m1size) {
                         m1[i] = LMeshGetVertex(e1->mesh, i);
                         // Ensure both meshes are in same frame of reference.
-                        m1[i].pos = Vec3WTransform(m1[i].pos, e1e0m);
+                        m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
                     }
 
                     Vec3 dir = Vec3Zero();
@@ -1688,7 +1670,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         // Calc face normal.
                         Vec3 ab = Vec3Sub(b, a);
                         Vec3 ac = Vec3Sub(c, a);
-                        Vec3 axis = Vec3Cross(ab, ac);
+                        Vec3 axis = Vec3Normalize(Vec3Cross(ab, ac));
 
                         // Project mesh A along line and get interval.
                         f32 t0min = Vec3Dot(m0[0].pos, axis);
@@ -1719,8 +1701,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             break;
                         }
 
+                        collides = true;
                         if (d < dmin) {
-                            collides = true;
                             dir = axis;
                             dmin = d;
                         }
@@ -1729,21 +1711,15 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     if (collides) {
                         e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
-                        if (i == 0) {
-                            breakpoint();
-                        }
-
                         {
                             Vec3 arrow = dir;
                             Mat4 orient = Mat4PointAt(arrow);
-                            orient = Mat4Multiply(e0->orient, orient);
                             DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
                         }
                         {
                             Vec3 arrow = Vec3Scale(dir, -1.0f);
                             Mat4 orient = Mat4PointAt(arrow);
-                            orient = Mat4Multiply(e0->orient, orient);
-                            DrawArrow(arrow, e1->pos, orient, 0.3f, LPURPLE);
+                            DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
                         }
                     } else {
                         // Draw face normals.
