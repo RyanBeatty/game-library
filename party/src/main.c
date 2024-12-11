@@ -1293,8 +1293,29 @@ static void GameStateDraw(GameState* gstate, float delta) {
             Vec3 pos = Vec3Lit(20.0f, 3.0f, 15.0f);
             static f32 rs[] = {Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(90.0f)};
 
-            static Vec3 axis[36] = {0};
-            static f32 rotations[36] = {0};
+            static Vec3 axis[18] = {0};
+            static f32 rotations[18] = {0};
+            for (u32 i = 0, offset = 0; i < 6; ++i) {
+                Vec3 a0 = Vec3Lit(0.0f, 1.0f, 0.0f);
+                f32 r0 = Deg2Rad(i * 90.0f);
+                if (i < 4) {
+                    a0 = Vec3Lit(1.0f, 0.0f, 0.0f);
+                    r0 = Deg2Rad((i % 4) - 1 == 0 ? 90.0f : -90.0f);
+                }
+                for (u32 j = i; j < 6; ++j, offset += 2) {
+                    Vec3 a1 = Vec3Lit(0.0f, 1.0f, 0.0f);
+                    f32 r1 = Deg2Rad(j * 90.0f);
+                    if (j < 4) {
+                        a1 = Vec3Lit(1.0f, 0.0f, 0.0f);
+                        r1 = Deg2Rad((j % 4) - 1 == 0 ? 90.0f : -90.0f);
+                    }
+
+                    axis[offset + 0] = a0;
+                    rotations[offset + 0] = r0;
+                    axis[offset + 1] = a1;
+                    rotations[offset + 1] = r1;
+                }
+            }
             u32 offset = 0;
             for (u32 i = 0; i < 6; ++i, offset += 2) {
                 Vec3 a0 = Vec3Lit(0.0f, 1.0f, 0.0f);
@@ -1318,6 +1339,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 axis[offset] = a0;
                 rotations[offset] = r0;
             }
+            breakpoint();
 
             EntityId* entities = COLLISIONS;
             COLLISIONS_SIZE = ArraySizeOf(rotations);
@@ -1644,6 +1666,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     if (collides) {
                         e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
+                        if (i == 0) {
+                            breakpoint();
+                        }
 
                         {
                             Vec3 arrow = dir;
