@@ -1291,7 +1291,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
         {
             static f32 margin = 5.0f;
             Vec3 pos = Vec3Lit(20.0f, 3.0f, 15.0f);
-            static f32 rs[] = {Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(0.0f), Deg2Rad(90.0f)};
 
             static Vec3 axis[18] = {0};
             static f32 rotations[18] = {0};
