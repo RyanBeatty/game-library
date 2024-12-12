@@ -1730,24 +1730,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
                     }
 
-                    // Vec3 n0[MAX_TRIANGLES] = {0};
-                    // u32 n0size = 0;
-                    // for (u32 i = 0; i < e0->mesh.ntriangles; ++i, ++n0size) {
-                    //     u32 ioffset = i * 3;
-                    //     Vec3 a = LMeshGetVertex(e0->mesh, ioffset + 0).pos;
-                    //     Vec3 b = LMeshGetVertex(e0->mesh, ioffset + 1).pos;
-                    //     Vec3 c = LMeshGetVertex(e0->mesh, ioffset + 2).pos;
-
-                    //     // Calc face normal.
-                    //     Vec3 ab = Vec3Sub(b, a);
-                    //     Vec3 ac = Vec3Sub(c, a);
-                    //     Vec3 axis = Vec3Cross(ab, ac);
-
-                    //     // Transform normal into world space.
-                    //     axis = Vec3Normalize(Vec3Transform(axis, e0->orient));
-                    //     n0[n0size] = axis;
-                    // }
-
                     Vec3 dir = Vec3Zero();
                     f32 dmin = F32_MAX;
                     bool collides = false;
