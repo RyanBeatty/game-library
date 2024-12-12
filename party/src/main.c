@@ -1293,185 +1293,242 @@ static void GameStateDraw(GameState* gstate, float delta) {
             static const Vec3 col_margin = Vec3Lit(-10.0f, 0.0f, 0.0f);
             static const Vec3 origin = Vec3Lit(20.0f, 3.0f, 15.0f);
 
-            static Vec3 axis[] = {
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-                Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-                Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
-
-            };
-            static f32 rotations[] = {
-                Deg2Rad(0.0f),   Deg2Rad(0.0f),    //
-                Deg2Rad(0.0f),   Deg2Rad(90.0f),   //
-                Deg2Rad(0.0f),   Deg2Rad(180.0f),  //
-                Deg2Rad(0.0f),   Deg2Rad(270.0f),  //
-                Deg2Rad(0.0f),   Deg2Rad(90.0f),   //
-                Deg2Rad(0.0f),   Deg2Rad(-90.0f),  //
-
-                Deg2Rad(90.0f),  Deg2Rad(0.0f),    //
-                Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
-                Deg2Rad(90.0f),  Deg2Rad(180.0f),  //
-                Deg2Rad(90.0f),  Deg2Rad(270.0f),  //
-                Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
-                Deg2Rad(90.0f),  Deg2Rad(-90.0f),  //
-
-                Deg2Rad(180.0f), Deg2Rad(0.0f),    //
-                Deg2Rad(180.0f), Deg2Rad(90.0f),   //
-                Deg2Rad(180.0f), Deg2Rad(180.0f),  //
-                Deg2Rad(180.0f), Deg2Rad(270.0f),  //
-                Deg2Rad(180.0f), Deg2Rad(90.0f),   //
-                Deg2Rad(180.0f), Deg2Rad(-90.0f),  //
-
-                Deg2Rad(180.0f), Deg2Rad(0.0f),    //
-                Deg2Rad(270.0f), Deg2Rad(90.0f),   //
-                Deg2Rad(270.0f), Deg2Rad(180.0f),  //
-                Deg2Rad(270.0f), Deg2Rad(270.0f),  //
-                Deg2Rad(270.0f), Deg2Rad(90.0f),   //
-                Deg2Rad(270.0f), Deg2Rad(-90.0f),  //
-
-                Deg2Rad(90.0f),  Deg2Rad(0.0f),    //
-                Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
-                Deg2Rad(90.0f),  Deg2Rad(180.0f),  //
-                Deg2Rad(90.0f),  Deg2Rad(270.0f),  //
-                Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
-                Deg2Rad(90.0f),  Deg2Rad(-90.0f),  //
-
-                Deg2Rad(-90.0f), Deg2Rad(0.0f),    //
-                Deg2Rad(-90.0f), Deg2Rad(90.0f),   //
-                Deg2Rad(-90.0f), Deg2Rad(180.0f),  //
-                Deg2Rad(-90.0f), Deg2Rad(270.0f),  //
-                Deg2Rad(-90.0f), Deg2Rad(90.0f),   //
-                Deg2Rad(-90.0f), Deg2Rad(-90.0f),  //
-
-            };
-
             u32 size = 0;
             u32 ncols = 0;
+
             {
-                Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
-                ++ncols;
+                static Vec3 axis[] = {
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
 
-                EntityId* entities = COLLISIONS;
-                for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
-                    {
-                        u32 j = i;
-                        Entity* entity = AllocateEntity();
-                        entity->pos = pos;
-                        entity->mesh = GetMesh(M_CUBE);
-                        entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                        entity->color = LBLUE;  //: LORANGE;
-                        entity->color.a = 0.5f;
-                        entity->scale = 3.0f;  // 1.0f;
-                        entities[size + j] = entity->id;
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
+
+                };
+                static f32 rotations[] = {
+                    Deg2Rad(0.0f),   Deg2Rad(0.0f),    //
+                    Deg2Rad(0.0f),   Deg2Rad(90.0f),   //
+                    Deg2Rad(0.0f),   Deg2Rad(180.0f),  //
+                    Deg2Rad(0.0f),   Deg2Rad(270.0f),  //
+                    Deg2Rad(0.0f),   Deg2Rad(90.0f),   //
+                    Deg2Rad(0.0f),   Deg2Rad(-90.0f),  //
+
+                    Deg2Rad(90.0f),  Deg2Rad(0.0f),    //
+                    Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
+                    Deg2Rad(90.0f),  Deg2Rad(180.0f),  //
+                    Deg2Rad(90.0f),  Deg2Rad(270.0f),  //
+                    Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
+                    Deg2Rad(90.0f),  Deg2Rad(-90.0f),  //
+
+                    Deg2Rad(180.0f), Deg2Rad(0.0f),    //
+                    Deg2Rad(180.0f), Deg2Rad(90.0f),   //
+                    Deg2Rad(180.0f), Deg2Rad(180.0f),  //
+                    Deg2Rad(180.0f), Deg2Rad(270.0f),  //
+                    Deg2Rad(180.0f), Deg2Rad(90.0f),   //
+                    Deg2Rad(180.0f), Deg2Rad(-90.0f),  //
+
+                    Deg2Rad(180.0f), Deg2Rad(0.0f),    //
+                    Deg2Rad(270.0f), Deg2Rad(90.0f),   //
+                    Deg2Rad(270.0f), Deg2Rad(180.0f),  //
+                    Deg2Rad(270.0f), Deg2Rad(270.0f),  //
+                    Deg2Rad(270.0f), Deg2Rad(90.0f),   //
+                    Deg2Rad(270.0f), Deg2Rad(-90.0f),  //
+
+                    Deg2Rad(90.0f),  Deg2Rad(0.0f),    //
+                    Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
+                    Deg2Rad(90.0f),  Deg2Rad(180.0f),  //
+                    Deg2Rad(90.0f),  Deg2Rad(270.0f),  //
+                    Deg2Rad(90.0f),  Deg2Rad(90.0f),   //
+                    Deg2Rad(90.0f),  Deg2Rad(-90.0f),  //
+
+                    Deg2Rad(-90.0f), Deg2Rad(0.0f),    //
+                    Deg2Rad(-90.0f), Deg2Rad(90.0f),   //
+                    Deg2Rad(-90.0f), Deg2Rad(180.0f),  //
+                    Deg2Rad(-90.0f), Deg2Rad(270.0f),  //
+                    Deg2Rad(-90.0f), Deg2Rad(90.0f),   //
+                    Deg2Rad(-90.0f), Deg2Rad(-90.0f),  //
+
+                };
+
+                {
+                    Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
+                    ++ncols;
+
+                    EntityId* entities = COLLISIONS;
+                    for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
+                        {
+                            u32 j = i;
+                            Entity* entity = AllocateEntity();
+                            entity->pos = pos;
+                            entity->mesh = GetMesh(M_CUBE);
+                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                            entity->color = LBLUE;  //: LORANGE;
+                            entity->color.a = 0.5f;
+                            entity->scale = 3.0f;  // 1.0f;
+                            entities[size + j] = entity->id;
+                        }
+                        {
+                            u32 j = i + 1;
+                            Entity* entity = AllocateEntity();
+                            entity->pos = Vec3Add(pos, row_margin);
+                            entity->mesh = GetMesh(M_CUBE);
+                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                            entity->color = LORANGE;
+                            entity->color.a = 0.5f;
+                            entity->scale = 1.0f;
+                            entities[size + j] = entity->id;
+                        }
+
+                        {
+                            Entity* e0 = GetEntity(entities[size + 0]);
+                            Entity* e1 = GetEntity(entities[size + 1]);
+
+                            // Collide in half sec.
+                            // NOTE: this will just collide the centers, but actual collision might occur sooner.
+                            Vec3 v = Vec3Sub(e0->pos, e1->pos);
+                            f32 sec = 3.0f;
+                            v = Vec3Scale(v, 1.0f / sec);
+                            e1->v = v;
+                        }
+
+                        pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
                     }
-                    {
-                        u32 j = i + 1;
-                        Entity* entity = AllocateEntity();
-                        entity->pos = Vec3Add(pos, row_margin);
-                        entity->mesh = GetMesh(M_CUBE);
-                        entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                        entity->color = LORANGE;
-                        entity->color.a = 0.5f;
-                        entity->scale = 1.0f;
-                        entities[size + j] = entity->id;
+                }
+
+                // Col 1 rotation comb + obj B on top.
+                {
+                    Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
+                    ++ncols;
+
+                    EntityId* entities = COLLISIONS;
+                    for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
+                        {
+                            u32 j = i;
+                            Entity* entity = AllocateEntity();
+                            entity->pos = pos;
+                            entity->mesh = GetMesh(M_CUBE);
+                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                            entity->color = LBLUE;  //: LORANGE;
+                            entity->color.a = 0.5f;
+                            entity->scale = 3.0f;  // 1.0f;
+                            entities[size + j] = entity->id;
+                        }
+                        {
+                            u32 j = i + 1;
+                            Entity* entity = AllocateEntity();
+                            entity->pos = Vec3Add(pos, Vec3Lit(0.0f, 5.0f, 0.0f));
+                            entity->mesh = GetMesh(M_CUBE);
+                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                            entity->color = LORANGE;
+                            entity->color.a = 0.5f;
+                            entity->scale = 1.0f;
+                            entities[size + j] = entity->id;
+                        }
+
+                        {
+                            Entity* e0 = GetEntity(entities[size + 0]);
+                            Entity* e1 = GetEntity(entities[size + 1]);
+
+                            // Collide in half sec.
+                            // NOTE: this will just collide the centers, but actual collision might occur sooner.
+                            Vec3 v = Vec3Sub(e0->pos, e1->pos);
+                            f32 sec = 3.0f;
+                            v = Vec3Scale(v, 1.0f / sec);
+                            e1->v = v;
+                        }
+
+                        pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
                     }
-
-                    {
-                        Entity* e0 = GetEntity(entities[size + 0]);
-                        Entity* e1 = GetEntity(entities[size + 1]);
-
-                        // Collide in half sec.
-                        // NOTE: this will just collide the centers, but actual collision might occur sooner.
-                        Vec3 v = Vec3Sub(e0->pos, e1->pos);
-                        f32 sec = 3.0f;
-                        v = Vec3Scale(v, 1.0f / sec);
-                        e1->v = v;
-                    }
-
-                    pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
                 }
             }
 
-            // Col 1 rotation comb + obj B on top.
             {
-                Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
-                ++ncols;
+                static Vec3 axis[] = {
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                };
+                static f32 rotations[] = {
+                    Deg2Rad(0.0f), Deg2Rad(45.0f),  //
+                };
 
-                EntityId* entities = COLLISIONS;
-                for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
-                    {
-                        u32 j = i;
-                        Entity* entity = AllocateEntity();
-                        entity->pos = pos;
-                        entity->mesh = GetMesh(M_CUBE);
-                        entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                        entity->color = LBLUE;  //: LORANGE;
-                        entity->color.a = 0.5f;
-                        entity->scale = 3.0f;  // 1.0f;
-                        entities[size + j] = entity->id;
+                {
+                    Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
+                    ++ncols;
+
+                    EntityId* entities = COLLISIONS;
+                    for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
+                        {
+                            u32 j = i;
+                            Entity* entity = AllocateEntity();
+                            entity->pos = pos;
+                            entity->mesh = GetMesh(M_CUBE);
+                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                            entity->color = LBLUE;  //: LORANGE;
+                            entity->color.a = 0.5f;
+                            entity->scale = 3.0f;  // 1.0f;
+                            entities[size + j] = entity->id;
+                        }
+                        {
+                            u32 j = i + 1;
+                            Entity* entity = AllocateEntity();
+                            entity->pos = Vec3Add(pos, row_margin);
+                            entity->mesh = GetMesh(M_CUBE);
+                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                            entity->color = LORANGE;
+                            entity->color.a = 0.5f;
+                            entity->scale = 1.0f;
+                            entities[size + j] = entity->id;
+                        }
+
+                        {
+                            Entity* e0 = GetEntity(entities[size + 0]);
+                            Entity* e1 = GetEntity(entities[size + 1]);
+
+                            // Collide in half sec.
+                            // NOTE: this will just collide the centers, but actual collision might occur sooner.
+                            Vec3 v = Vec3Sub(e0->pos, e1->pos);
+                            f32 sec = 3.0f;
+                            v = Vec3Scale(v, 1.0f / sec);
+                            e1->v = v;
+                        }
+
+                        pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
                     }
-                    {
-                        u32 j = i + 1;
-                        Entity* entity = AllocateEntity();
-                        entity->pos = Vec3Add(pos, Vec3Lit(0.0f, 5.0f, 0.0f));
-                        entity->mesh = GetMesh(M_CUBE);
-                        entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                        entity->color = LORANGE;
-                        entity->color.a = 0.5f;
-                        entity->scale = 1.0f;
-                        entities[size + j] = entity->id;
-                    }
-
-                    {
-                        Entity* e0 = GetEntity(entities[size + 0]);
-                        Entity* e1 = GetEntity(entities[size + 1]);
-
-                        // Collide in half sec.
-                        // NOTE: this will just collide the centers, but actual collision might occur sooner.
-                        Vec3 v = Vec3Sub(e0->pos, e1->pos);
-                        f32 sec = 3.0f;
-                        v = Vec3Scale(v, 1.0f / sec);
-                        e1->v = v;
-                    }
-
-                    pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
                 }
             }
 
