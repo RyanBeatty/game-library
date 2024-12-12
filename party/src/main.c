@@ -966,7 +966,7 @@ typedef struct DrawCmd {
     bool wireframe;
 } DrawCmd;
 
-#define MAX_CMDS 2048
+#define MAX_CMDS 4092
 static DrawCmd CBUFFER[MAX_CMDS] = {0};
 static u32 CBUFFER_SIZE = 0;
 
@@ -1290,7 +1290,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
         // Collisions Init.
         {
             static const Vec3 row_margin = Vec3Lit(0.0f, 0.0f, 5.0f);
-            static const Vec3 col_margin = Vec3Lit(10.0f, 0.0f, 0.0f);
+            static const Vec3 col_margin = Vec3Lit(-10.0f, 0.0f, 0.0f);
             static const Vec3 origin = Vec3Lit(20.0f, 3.0f, 15.0f);
 
             static Vec3 axis[] = {
@@ -1385,7 +1385,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             u32 size = 0;
             u32 ncols = 0;
             {
-                Vec3 pos = origin;
+                Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
                 ++ncols;
 
                 EntityId* entities = COLLISIONS;
@@ -1414,8 +1414,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     }
 
                     {
-                        Entity* e0 = GetEntity(entities[i + 0]);
-                        Entity* e1 = GetEntity(entities[i + 1]);
+                        Entity* e0 = GetEntity(entities[size + 0]);
+                        Entity* e1 = GetEntity(entities[size + 1]);
 
                         // Collide in half sec.
                         // NOTE: this will just collide the centers, but actual collision might occur sooner.
@@ -1429,50 +1429,50 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 }
             }
 
-            // {
-            //     Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
-            //     ++ncols;
+            {
+                Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
+                ++ncols;
 
-            //     EntityId* entities = COLLISIONS;
-            //     COLLISIONS_SIZE = ArraySizeOf(rotations);
-            //     for (u32 i = 0; i < ArraySizeOf(rotations); i += 2) {
-            //         {
-            //             u32 j = i;
-            //             Entity* entity = AllocateEntity();
-            //             entity->pos = pos;
-            //             entity->mesh = GetMesh(M_CUBE);
-            //             entity->orient = Mat4Rotate(rotations[j], axis[j]);
-            //             entity->color = LBLUE;  //: LORANGE;
-            //             entity->color.a = 0.5f;
-            //             entity->scale = 3.0f;  // 1.0f;
-            //             entities[j] = entity->id;
-            //         }
-            //         {
-            //             u32 j = i + 1;
-            //             Entity* entity = AllocateEntity();
-            //             entity->pos = Vec3Add(pos, row_margin);
-            //             entity->mesh = GetMesh(M_CUBE);
-            //             entity->orient = Mat4Rotate(rotations[j], axis[j]);
-            //             entity->color = LORANGE;
-            //             entity->color.a = 0.5f;
-            //             entity->scale = 1.0f;
-            //             entities[j] = entity->id;
-            //         }
-            //         pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
-            //     }
+                EntityId* entities = COLLISIONS;
+                for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
+                    {
+                        u32 j = i;
+                        Entity* entity = AllocateEntity();
+                        entity->pos = pos;
+                        entity->mesh = GetMesh(M_CUBE);
+                        entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                        entity->color = LBLUE;  //: LORANGE;
+                        entity->color.a = 0.5f;
+                        entity->scale = 3.0f;  // 1.0f;
+                        entities[size + j] = entity->id;
+                    }
+                    {
+                        u32 j = i + 1;
+                        Entity* entity = AllocateEntity();
+                        entity->pos = Vec3Add(pos, row_margin);
+                        entity->mesh = GetMesh(M_CUBE);
+                        entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                        entity->color = LORANGE;
+                        entity->color.a = 0.5f;
+                        entity->scale = 1.0f;
+                        entities[size + j] = entity->id;
+                    }
 
-            //     for (u32 i = 0; i < ArraySizeOf(rotations); i += 2) {
-            //         Entity* e0 = GetEntity(entities[i + 0]);
-            //         Entity* e1 = GetEntity(entities[i + 1]);
+                    {
+                        Entity* e0 = GetEntity(entities[size + 0]);
+                        Entity* e1 = GetEntity(entities[size + 1]);
 
-            //         // Collide in half sec.
-            //         // NOTE: this will just collide the centers, but actual collision might occur sooner.
-            //         Vec3 v = Vec3Sub(e0->pos, e1->pos);
-            //         f32 sec = 3.0f;
-            //         v = Vec3Scale(v, 1.0f / sec);
-            //         e1->v = v;
-            //     }
-            // }
+                        // Collide in half sec.
+                        // NOTE: this will just collide the centers, but actual collision might occur sooner.
+                        Vec3 v = Vec3Sub(e0->pos, e1->pos);
+                        f32 sec = 3.0f;
+                        v = Vec3Scale(v, 1.0f / sec);
+                        e1->v = v;
+                    }
+
+                    pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
+                }
+            }
 
             COLLISIONS_SIZE = size;
             Assert(COLLISIONS_SIZE < MAX_ENTITY_BATCH);
