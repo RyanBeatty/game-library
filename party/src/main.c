@@ -1658,6 +1658,24 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
                     }
 
+                    // Vec3 n0[MAX_TRIANGLES] = {0};
+                    // u32 n0size = 0;
+                    // for (u32 i = 0; i < e0->mesh.ntriangles; ++i, ++n0size) {
+                    //     u32 ioffset = i * 3;
+                    //     Vec3 a = LMeshGetVertex(e0->mesh, ioffset + 0).pos;
+                    //     Vec3 b = LMeshGetVertex(e0->mesh, ioffset + 1).pos;
+                    //     Vec3 c = LMeshGetVertex(e0->mesh, ioffset + 2).pos;
+
+                    //     // Calc face normal.
+                    //     Vec3 ab = Vec3Sub(b, a);
+                    //     Vec3 ac = Vec3Sub(c, a);
+                    //     Vec3 axis = Vec3Cross(ab, ac);
+
+                    //     // Transform normal into world space.
+                    //     axis = Vec3Normalize(Vec3Transform(axis, e0->orient));
+                    //     n0[n0size] = axis;
+                    // }
+
                     Vec3 dir = Vec3Zero();
                     f32 dmin = F32_MAX;
                     bool collides = false;
@@ -1676,7 +1694,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         f32 t0min = Vec3Dot(m0[0].pos, axis);
                         f32 t0max = t0min;
                         for (u32 k = 1; k < m0size; ++k) {
-                            f32 n = Vec3Dot(m0[k].pos, axis);
+                            f32 n = f32abs(Vec3Dot(m0[k].pos, axis));
                             t0min = f32min(t0min, n);
                             t0max = f32max(t0max, n);
                         }
@@ -1685,7 +1703,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         f32 t1min = Vec3Dot(m1[0].pos, axis);
                         f32 t1max = t1min;
                         for (u32 k = 1; k < m1size; ++k) {
-                            f32 n = Vec3Dot(m1[k].pos, axis);
+                            f32 n = f32abs(Vec3Dot(m1[k].pos, axis));
                             t1min = f32min(t1min, n);
                             t1max = f32max(t1max, n);
                         }
@@ -1712,12 +1730,12 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
                         {
-                            Vec3 arrow = dir;
+                            Vec3 arrow = Vec3Scale(dir, -1.0f);
                             Mat4 orient = Mat4PointAt(arrow);
                             DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
                         }
                         {
-                            Vec3 arrow = Vec3Scale(dir, -1.0f);
+                            Vec3 arrow = dir;
                             Mat4 orient = Mat4PointAt(arrow);
                             DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
                         }
