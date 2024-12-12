@@ -1289,8 +1289,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
         // Collisions Init.
         {
-            static f32 margin = 5.0f;
-            Vec3 pos = Vec3Lit(20.0f, 3.0f, 15.0f);
+            static const Vec3 row_margin = Vec3Lit(0.0f, 0.0f, 5.0f);
+            static const Vec3 col_margin = Vec3Lit(10.0f, 0.0f, 0.0f);
+            static const Vec3 origin = Vec3Lit(20.0f, 3.0f, 15.0f);
+
+            Vec3 pos = origin;
 
             static Vec3 axis[] = {
                 Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
@@ -1383,7 +1386,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             EntityId* entities = COLLISIONS;
             COLLISIONS_SIZE = ArraySizeOf(rotations);
-            for (u32 i = 0; i < ArraySizeOf(rotations); ++i, pos = Vec3Add(pos, Vec3Lit(0.0f, 0.0f, margin))) {
+            for (u32 i = 0; i < ArraySizeOf(rotations); ++i) {
                 Entity* entity = AllocateEntity();
                 entity->pos = pos;
                 entity->mesh = GetMesh(M_CUBE);
@@ -1392,6 +1395,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->color.a = 0.5f;
                 entity->scale = i % 2 == 0 ? 3.0f : 1.0f;
                 entities[i] = entity->id;
+
+                pos = Vec3Add(pos, row_margin);
             }
 
             for (u32 i = 0; i < ArraySizeOf(rotations); i += 2) {
@@ -1628,7 +1633,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             {
                 EntityId* entities = COLLISIONS;
                 u32 size = COLLISIONS_SIZE;
-                static bool trip = false;
+                // static bool trip = false;
 
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
