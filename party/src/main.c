@@ -1429,6 +1429,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 }
             }
 
+            // Col 1 rotation comb + obj B on top.
             {
                 Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
                 ++ncols;
@@ -1449,7 +1450,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     {
                         u32 j = i + 1;
                         Entity* entity = AllocateEntity();
-                        entity->pos = Vec3Add(pos, row_margin);
+                        entity->pos = Vec3Add(pos, Vec3Lit(0.0f, 5.0f, 0.0f));
                         entity->mesh = GetMesh(M_CUBE);
                         entity->orient = Mat4Rotate(rotations[j], axis[j]);
                         entity->color = LORANGE;
