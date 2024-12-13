@@ -1532,7 +1532,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
             //     }
             // }
 
-            breakpoint();
             COLLISIONS_SIZE = size;
             Assert(COLLISIONS_SIZE < MAX_ENTITY_BATCH);
         }
@@ -1840,25 +1839,28 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             t1max = f32max(t1max, n);
                         }
 
-                        // TODO: Add some margin here.
-                        if (eidx == 10) {
+                        if (eidx == 10 && Vec3Eq(e1->v, Vec3Zero())) {
                             breakpoint();
                         }
+
+                        // TODO: Add some margin here.
                         if (t0max < t1min || t0min > t1max) {
                             collides = false;
                             dir = axis;  // Useful to keep axis of separationg for debugging.
                             break;
                         }
 
+                        // NOTE: This does not work!!!!! This will give wrong dispalcement.
                         // Abs okay here because we just want the magnitude of the displacement.
-                        f32 d = f32abs((t0max - t0min) - (t1max - t1min));
+                        // f32 d = f32abs((t0max - t0min) - (t1max - t1min));
 
-                        // // Check for overlap. this will give magnitude of displacement if positive
-                        // // (dir of displacement is the separating axis).
-                        // // Negative value here means no overlap.
-                        // f32 imin = f32max(t0min, t1min);
-                        // f32 imax = f32min(t0max, t1max);
-                        // f32 d = imax - imin;
+                        // Check for overlap. this will give magnitude of displacement if positive
+                        // (dir of displacement is the separating axis).
+                        // Negative value here means no overlap.
+                        f32 imin = f32max(t0min, t1min);
+                        f32 imax = f32min(t0max, t1max);
+                        f32 d = imax - imin;
+                        Assert(d > 0.0f);
                         // if (d < 0.0f) {
                         //     collides = false;
                         //     dir = axis;  // Useful to keep axis of separationg for debugging.
@@ -1873,9 +1875,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     }
 
                     if (collides) {
-                        if (eidx == 10 || eidx == 12) {
-                            breakpoint();
-                        }
+                        // if (eidx == 10 || eidx == 12) {
+                        //     breakpoint();
+                        // }
                         e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
                         {
