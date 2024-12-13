@@ -1827,6 +1827,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         f32 d = imax - imin;
                         if (d < 0.0f) {
                             collides = false;
+                            dir = axis;  // Useful to keep axis of separationg for debugging.
                             break;
                         }
 
@@ -1851,28 +1852,38 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
                         }
                     } else {
-                        // Draw face normals.
-                        Entity* es[] = {e0, e1};
-                        for (u32 j = 0; j < ArraySizeOf(es); j++) {
-                            Entity* e = es[j];
-                            Mat4 model = EntityGetMat(e);
-                            Mat4 rot = e->orient;
-                            LMesh mid = e->mesh;
-                            for (u32 i = 0; i < mid.ntriangles; i += 1) {
-                                Triangle t = LMeshGetTriangle(mid, i);
-
-                                Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
-                                Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
-                                Vec3 norm = Vec3Cross(ab, ac);
-
-                                Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
-                                center = Vec3WTransform(center, model);
-
-                                Mat4 orient = Mat4PointAt(norm);
-                                orient = Mat4Multiply(rot, orient);
-                                DrawArrow(norm, center, orient, 0.3f, LRED);
-                            }
+                        {
+                            Vec3 arrow = Vec3Scale(dir, -1.0f);
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e0->pos, orient, 0.3f, LGREEN);
                         }
+                        {
+                            Vec3 arrow = dir;
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
+                        }
+                        // // Draw face normals.
+                        // Entity* es[] = {e0, e1};
+                        // for (u32 j = 0; j < ArraySizeOf(es); j++) {
+                        //     Entity* e = es[j];
+                        //     Mat4 model = EntityGetMat(e);
+                        //     Mat4 rot = e->orient;
+                        //     LMesh mid = e->mesh;
+                        //     for (u32 i = 0; i < mid.ntriangles; i += 1) {
+                        //         Triangle t = LMeshGetTriangle(mid, i);
+
+                        //         Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
+                        //         Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
+                        //         Vec3 norm = Vec3Cross(ab, ac);
+
+                        //         Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
+                        //         center = Vec3WTransform(center, model);
+
+                        //         Mat4 orient = Mat4PointAt(norm);
+                        //         orient = Mat4Multiply(rot, orient);
+                        //         DrawArrow(norm, center, orient, 0.3f, LRED);
+                        //     }
+                        // }
                     }
                 }
 
