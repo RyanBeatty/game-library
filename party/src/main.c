@@ -1293,6 +1293,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             static const Vec3 col_margin = Vec3Lit(-10.0f, 0.0f, 0.0f);
             static const Vec3 origin = Vec3Lit(20.0f, 3.0f, 15.0f);
 
+            EntityId* entities = COLLISIONS;
             u32 size = 0;
             u32 ncols = 0;
 
@@ -1390,7 +1391,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
                     ++ncols;
 
-                    EntityId* entities = COLLISIONS;
                     for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
                         {
                             u32 j = i;
@@ -1401,7 +1401,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->color = LBLUE;  //: LORANGE;
                             entity->color.a = 0.5f;
                             entity->scale = 3.0f;  // 1.0f;
-                            entities[size + j] = entity->id;
+                            entities[size + 0] = entity->id;
                         }
                         {
                             u32 j = i + 1;
@@ -1412,7 +1412,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->color = LORANGE;
                             entity->color.a = 0.5f;
                             entity->scale = 1.0f;
-                            entities[size + j] = entity->id;
+                            entities[size + 1] = entity->id;
                         }
 
                         {
@@ -1431,107 +1431,108 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     }
                 }
 
-                // Col 1 rotation comb + obj B on top.
-                {
-                    Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
-                    ++ncols;
+                // // Col 1 rotation comb + obj B on top.
+                // {
+                //     Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
+                //     ++ncols;
 
-                    EntityId* entities = COLLISIONS;
-                    for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
-                        {
-                            u32 j = i;
-                            Entity* entity = AllocateEntity();
-                            entity->pos = pos;
-                            entity->mesh = GetMesh(M_CUBE);
-                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                            entity->color = LBLUE;  //: LORANGE;
-                            entity->color.a = 0.5f;
-                            entity->scale = 3.0f;  // 1.0f;
-                            entities[size + j] = entity->id;
-                        }
-                        {
-                            u32 j = i + 1;
-                            Entity* entity = AllocateEntity();
-                            entity->pos = Vec3Add(pos, Vec3Lit(0.0f, 5.0f, 0.0f));
-                            entity->mesh = GetMesh(M_CUBE);
-                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                            entity->color = LORANGE;
-                            entity->color.a = 0.5f;
-                            entity->scale = 1.0f;
-                            entities[size + j] = entity->id;
-                        }
+                //     EntityId* entities = COLLISIONS;
+                //     for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
+                //         {
+                //             u32 j = i;
+                //             Entity* entity = AllocateEntity();
+                //             entity->pos = pos;
+                //             entity->mesh = GetMesh(M_CUBE);
+                //             entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                //             entity->color = LBLUE;  //: LORANGE;
+                //             entity->color.a = 0.5f;
+                //             entity->scale = 3.0f;  // 1.0f;
+                //             entities[size + j] = entity->id;
+                //         }
+                //         {
+                //             u32 j = i + 1;
+                //             Entity* entity = AllocateEntity();
+                //             entity->pos = Vec3Add(pos, Vec3Lit(0.0f, 5.0f, 0.0f));
+                //             entity->mesh = GetMesh(M_CUBE);
+                //             entity->orient = Mat4Rotate(rotations[j], axis[j]);
+                //             entity->color = LORANGE;
+                //             entity->color.a = 0.5f;
+                //             entity->scale = 1.0f;
+                //             entities[size + j] = entity->id;
+                //         }
 
-                        {
-                            Entity* e0 = GetEntity(entities[size + 0]);
-                            Entity* e1 = GetEntity(entities[size + 1]);
+                //         {
+                //             Entity* e0 = GetEntity(entities[size + 0]);
+                //             Entity* e1 = GetEntity(entities[size + 1]);
 
-                            // Collide in half sec.
-                            // NOTE: this will just collide the centers, but actual collision might occur sooner.
-                            Vec3 v = Vec3Sub(e0->pos, e1->pos);
-                            f32 sec = 3.0f;
-                            v = Vec3Scale(v, 1.0f / sec);
-                            e1->v = v;
-                        }
+                //             // Collide in half sec.
+                //             // NOTE: this will just collide the centers, but actual collision might occur sooner.
+                //             Vec3 v = Vec3Sub(e0->pos, e1->pos);
+                //             f32 sec = 3.0f;
+                //             v = Vec3Scale(v, 1.0f / sec);
+                //             e1->v = v;
+                //         }
 
-                        pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
-                    }
-                }
+                //         pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
+                //     }
+                // }
             }
 
-            {
-                static Vec3 axis[] = {
-                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
-                };
-                static f32 rotations[] = {
-                    Deg2Rad(0.0f), Deg2Rad(45.0f),  //
-                };
+            // {
+            //     static Vec3 axis[] = {
+            //         Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+            //     };
+            //     static f32 rotations[] = {
+            //         Deg2Rad(0.0f), Deg2Rad(45.0f),  //
+            //     };
 
-                {
-                    Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
-                    ++ncols;
+            //     {
+            //         Vec3 pos = Vec3Add(origin, Vec3Scale(col_margin, ncols));
+            //         ++ncols;
 
-                    EntityId* entities = COLLISIONS;
-                    for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
-                        {
-                            u32 j = i;
-                            Entity* entity = AllocateEntity();
-                            entity->pos = pos;
-                            entity->mesh = GetMesh(M_CUBE);
-                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                            entity->color = LBLUE;  //: LORANGE;
-                            entity->color.a = 0.5f;
-                            entity->scale = 3.0f;  // 1.0f;
-                            entities[size + j] = entity->id;
-                        }
-                        {
-                            u32 j = i + 1;
-                            Entity* entity = AllocateEntity();
-                            entity->pos = Vec3Add(pos, row_margin);
-                            entity->mesh = GetMesh(M_CUBE);
-                            entity->orient = Mat4Rotate(rotations[j], axis[j]);
-                            entity->color = LORANGE;
-                            entity->color.a = 0.5f;
-                            entity->scale = 1.0f;
-                            entities[size + j] = entity->id;
-                        }
+            //         EntityId* entities = COLLISIONS;
+            //         for (u32 i = 0; i < ArraySizeOf(rotations); i += 2, size += 2) {
+            //             {
+            //                 u32 j = i;
+            //                 Entity* entity = AllocateEntity();
+            //                 entity->pos = pos;
+            //                 entity->mesh = GetMesh(M_CUBE);
+            //                 entity->orient = Mat4Rotate(rotations[j], axis[j]);
+            //                 entity->color = LBLUE;  //: LORANGE;
+            //                 entity->color.a = 0.5f;
+            //                 entity->scale = 3.0f;  // 1.0f;
+            //                 entities[size + j] = entity->id;
+            //             }
+            //             {
+            //                 u32 j = i + 1;
+            //                 Entity* entity = AllocateEntity();
+            //                 entity->pos = Vec3Add(pos, row_margin);
+            //                 entity->mesh = GetMesh(M_CUBE);
+            //                 entity->orient = Mat4Rotate(rotations[j], axis[j]);
+            //                 entity->color = LORANGE;
+            //                 entity->color.a = 0.5f;
+            //                 entity->scale = 1.0f;
+            //                 entities[size + j] = entity->id;
+            //             }
 
-                        {
-                            Entity* e0 = GetEntity(entities[size + 0]);
-                            Entity* e1 = GetEntity(entities[size + 1]);
+            //             {
+            //                 Entity* e0 = GetEntity(entities[size + 0]);
+            //                 Entity* e1 = GetEntity(entities[size + 1]);
 
-                            // Collide in half sec.
-                            // NOTE: this will just collide the centers, but actual collision might occur sooner.
-                            Vec3 v = Vec3Sub(e0->pos, e1->pos);
-                            f32 sec = 3.0f;
-                            v = Vec3Scale(v, 1.0f / sec);
-                            e1->v = v;
-                        }
+            //                 // Collide in half sec.
+            //                 // NOTE: this will just collide the centers, but actual collision might occur sooner.
+            //                 Vec3 v = Vec3Sub(e0->pos, e1->pos);
+            //                 f32 sec = 3.0f;
+            //                 v = Vec3Scale(v, 1.0f / sec);
+            //                 e1->v = v;
+            //             }
 
-                        pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
-                    }
-                }
-            }
+            //             pos = Vec3Add(pos, Vec3Scale(row_margin, 2.0f));
+            //         }
+            //     }
+            // }
 
+            breakpoint();
             COLLISIONS_SIZE = size;
             Assert(COLLISIONS_SIZE < MAX_ENTITY_BATCH);
         }
@@ -1787,25 +1788,45 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
                     }
 
+                    // NOTE: We do collision detection in world space.
+                    Vec3 n0[MAX_TRIANGLES] = {0};
+                    u32 n0size = 0;
+                    for (u32 i = 0; i < e0->mesh.ntriangles; ++i, ++n0size) {
+                        u32 ioffset = i * 3;
+                        Vec3 a = LMeshGetVertex(e0->mesh, ioffset + 0).pos;
+                        Vec3 b = LMeshGetVertex(e0->mesh, ioffset + 1).pos;
+                        Vec3 c = LMeshGetVertex(e0->mesh, ioffset + 2).pos;
+
+                        // Calc face normal. Must do so in model space as triangle verts might not
+                        // be in CCW order still when converted to world space.
+                        Vec3 ab = Vec3Sub(b, a);
+                        Vec3 ac = Vec3Sub(c, a);
+                        Vec3 axis = Vec3Cross(ac, ab);
+
+                        axis = Vec3Normalize(Vec3Transform(axis, e0->orient));
+                        n0[i] = axis;
+                    }
+
                     Vec3 dir = Vec3Zero();
                     f32 dmin = F32_MAX;
                     bool collides = false;
                     for (u32 i = 0; i < e0->mesh.ntriangles; ++i) {
-                        u32 ioffset = i * 3;
-                        Vec3 a = m0[ioffset + 0].pos;
-                        Vec3 b = m0[ioffset + 1].pos;
-                        Vec3 c = m0[ioffset + 2].pos;
+                        // u32 ioffset = i * 3;
+                        // Vec3 a = m0[ioffset + 0].pos;
+                        // Vec3 b = m0[ioffset + 1].pos;
+                        // Vec3 c = m0[ioffset + 2].pos;
 
-                        // Calc face normal.
-                        Vec3 ab = Vec3Sub(b, a);
-                        Vec3 ac = Vec3Sub(c, a);
-                        Vec3 axis = Vec3Normalize(Vec3Cross(ab, ac));
+                        // // Calc face normal.
+                        // Vec3 ab = Vec3Sub(b, a);
+                        // Vec3 ac = Vec3Sub(c, a);
+                        // Vec3 axis = Vec3Normalize(Vec3Cross(ab, ac));
+                        Vec3 axis = n0[i];
 
                         // Project mesh A along line and get interval.
                         f32 t0min = Vec3Dot(m0[0].pos, axis);
                         f32 t0max = t0min;
                         for (u32 k = 1; k < m0size; ++k) {
-                            f32 n = f32abs(Vec3Dot(m0[k].pos, axis));
+                            f32 n = Vec3Dot(m0[k].pos, axis);
                             t0min = f32min(t0min, n);
                             t0max = f32max(t0max, n);
                         }
@@ -1814,22 +1835,35 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         f32 t1min = Vec3Dot(m1[0].pos, axis);
                         f32 t1max = t1min;
                         for (u32 k = 1; k < m1size; ++k) {
-                            f32 n = f32abs(Vec3Dot(m1[k].pos, axis));
+                            f32 n = Vec3Dot(m1[k].pos, axis);
                             t1min = f32min(t1min, n);
                             t1max = f32max(t1max, n);
                         }
 
-                        // Check for overlap. this will give magnitude of displacement if positive
-                        // (dir of displacement is the separating axis).
-                        // Negative value here means no overlap.
-                        f32 imin = f32max(t0min, t1min);
-                        f32 imax = f32min(t0max, t1max);
-                        f32 d = imax - imin;
-                        if (d < 0.0f) {
+                        // TODO: Add some margin here.
+                        if (eidx == 10) {
+                            breakpoint();
+                        }
+                        if (t0max < t1min || t0min > t1max) {
                             collides = false;
                             dir = axis;  // Useful to keep axis of separationg for debugging.
                             break;
                         }
+
+                        // Abs okay here because we just want the magnitude of the displacement.
+                        f32 d = f32abs((t0max - t0min) - (t1max - t1min));
+
+                        // // Check for overlap. this will give magnitude of displacement if positive
+                        // // (dir of displacement is the separating axis).
+                        // // Negative value here means no overlap.
+                        // f32 imin = f32max(t0min, t1min);
+                        // f32 imax = f32min(t0max, t1max);
+                        // f32 d = imax - imin;
+                        // if (d < 0.0f) {
+                        //     collides = false;
+                        //     dir = axis;  // Useful to keep axis of separationg for debugging.
+                        //     break;
+                        // }
 
                         collides = true;
                         if (d < dmin) {
@@ -1839,6 +1873,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     }
 
                     if (collides) {
+                        if (eidx == 10 || eidx == 12) {
+                            breakpoint();
+                        }
                         e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
                         {
