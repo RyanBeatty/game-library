@@ -1839,7 +1839,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             t1max = f32max(t1max, n);
                         }
 
-                        if (eidx == 10 && Vec3Eq(e1->v, Vec3Zero())) {
+                        if (eidx == 12 && Vec3Eq(e1->v, Vec3Zero())) {
                             breakpoint();
                         }
 
@@ -1875,9 +1875,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     }
 
                     if (collides) {
-                        // if (eidx == 10 || eidx == 12) {
-                        //     breakpoint();
-                        // }
+                        // By convention, we need dir to point towards B. It might not if the shapes
+                        // have normals pointing in opposite directions (the magnitude will be the same)
+                        // TODO: Is this really necessary? shouldn't the above tests give me the correct direction
+                        // vector? this also really only works if both e0 and e1 are convex shapes since we are
+                        // guaranteed their centers will be on either side of the separating plane.
+                        // TODO: Is the above even true?
+                        Vec3 e0toe1 = Vec3Sub(e1->pos, e0->pos);
+                        f32 flip = Vec3Dot(dir, e0toe1) < 0.0f ? -1.0f : 1.0f;
+                        dir = Vec3Scale(dir, flip);
+
                         e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
                         {
