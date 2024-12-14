@@ -1479,6 +1479,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             {
                 static Vec3 axis[] = {
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.3f, 0.5f),                //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.707106781f, -0.707106781f, 0),  //
+
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
@@ -1498,11 +1501,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),  //
                 };
                 static f32 rotations[] = {
-                    Deg2Rad(0.0f), Deg2Rad(45.0f),   //
-                    Deg2Rad(0.0f), Deg2Rad(53.0f),   //
-                    Deg2Rad(0.0f), Deg2Rad(-72.0f),  //
-                    Deg2Rad(0.0f), Deg2Rad(0.1f),    //
-                    Deg2Rad(0.0f), Deg2Rad(-12.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(120.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(125.264),  //
 
                     Deg2Rad(0.0f), Deg2Rad(45.0f),   //
                     Deg2Rad(0.0f), Deg2Rad(53.0f),   //
@@ -1516,6 +1516,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Deg2Rad(0.0f), Deg2Rad(0.1f),    //
                     Deg2Rad(0.0f), Deg2Rad(-12.0f),  //
 
+                    Deg2Rad(0.0f), Deg2Rad(45.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(53.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(-72.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(0.1f),    //
+                    Deg2Rad(0.0f), Deg2Rad(-12.0f),  //
                 };
 
                 {
