@@ -1607,7 +1607,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->mesh = GetMesh(M_QUAD);
                 entity->orient = Mat4Rotate(rotations[i], axis[i]);
                 entity->color = colors[i];
-                entity->scale = 100.0f;
+                entity->scale = 10000.0f;
                 entities[i] = entity->id;
             }
         }
