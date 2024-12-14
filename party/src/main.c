@@ -1197,6 +1197,33 @@ static Mat4 EntityGetMat(Entity* e) {
     return model;
 }
 
+static CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout) {
+    Mat4 e0m = EntityGetMat(e0);
+    Mat4 e1m = EntityGetMat(e1);
+
+    // NOTE: We do collision detection in world space.
+    Vertex m0[MAX_VERTICES] = {0};
+    u32 m0size = 0;
+    for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m0size) {
+        m0[i] = LMeshGetVertex(e0->mesh, i);
+        // Ensure both meshes are in same frame of reference.
+        m0[i].pos = Vec3WTransform(m0[i].pos, e0m);
+    }
+
+    Vertex m1[MAX_VERTICES] = {0};
+    u32 m1size = 0;
+    for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m1size) {
+        m1[i] = LMeshGetVertex(e1->mesh, i);
+        // Ensure both meshes are in same frame of reference.
+        m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
+    }
+
+    Vec3 e0toe1 = Vec3Sub(e1->pos, e0->pos);
+
+    // Check faces A against B.
+    return CollidePolyhedraFaces(m0, m0size, m1, m1size, e0toe1, dirout, dout);
+}
+
 static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     for (u32 i = 0; i < size; ++i) {
         Entity* entity = GetEntity(entities[i]);
@@ -1943,57 +1970,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Mat4 e0m = EntityGetMat(e0);
                     Mat4 e1m = EntityGetMat(e1);
 
-                    // NOTE: We do collision detection in world space.
-                    Vertex m0[MAX_VERTICES] = {0};
-                    u32 m0size = 0;
-                    for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m0size) {
-                        m0[i] = LMeshGetVertex(e0->mesh, i);
-                        // Ensure both meshes are in same frame of reference.
-                        m0[i].pos = Vec3WTransform(m0[i].pos, e0m);
-                    }
-
-                    Vertex m1[MAX_VERTICES] = {0};
-                    u32 m1size = 0;
-                    for (u32 i = 0; i < e0->mesh.ntriangles * 3; ++i, ++m1size) {
-                        m1[i] = LMeshGetVertex(e1->mesh, i);
-                        // Ensure both meshes are in same frame of reference.
-                        m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
-                    }
-
-                    // // NOTE: We do collision detection in world space.
-                    // Vec3 n0[MAX_TRIANGLES] = {0};
-                    // u32 n0size = 0;
-                    // for (u32 i = 0; i < e0->mesh.ntriangles; ++i, ++n0size) {
-                    //     u32 ioffset = i * 3;
-                    //     Vec3 a = LMeshGetVertex(e0->mesh, ioffset + 0).pos;
-                    //     Vec3 b = LMeshGetVertex(e0->mesh, ioffset + 1).pos;
-                    //     Vec3 c = LMeshGetVertex(e0->mesh, ioffset + 2).pos;
-
-                    //     // Calc face normal. Must do so in model space as triangle verts might not
-                    //     // be in CCW order still when converted to world space.
-                    //     Vec3 ab = Vec3Sub(b, a);
-                    //     Vec3 ac = Vec3Sub(c, a);
-                    //     Vec3 axis = Vec3Cross(ac, ab);
-
-                    //     axis = Vec3Normalize(Vec3Transform(axis, e0->orient));
-                    //     n0[i] = axis;
-                    // }
-
-                    Vec3 e0toe1 = Vec3Sub(e1->pos, e0->pos);
-
-                    Vec3 dir = {0};
+                    Vec3 dir = Vec3Zero();
                     f32 dmin = 0.0f;
-                    // Check faces A against B.
-                    bool collides = CollidePolyhedraFaces(m0, m0size, m1, m1size, e0toe1, &dir, &dmin);
-                    if (!collides) {
-                        // Check faces B against A.
-                        // collides = CollidePolyhedraFaces(m1, m1size, m0, m0size, e0toe1, &dir, &dmin);
-                    }
-
-                    // bool collides = CollidePolyhedraFaces(m0, m0size, m1, m1size, e0toe1, &dir, &dmin);
-                    // if (!collides) {
-                    //     continue;
-                    // }
+                    bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
 
                     if (collides) {
                         e0->v = Vec3Zero();
