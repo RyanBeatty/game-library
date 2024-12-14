@@ -1218,10 +1218,91 @@ static CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout) {
         m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
     }
 
-    Vec3 e0toe1 = Vec3Sub(e1->pos, e0->pos);
+    Vec3 atob = Vec3Sub(e1->pos, e0->pos);
+
+    Vec3 dir = Vec3Zero();
+    f32 dmin = F32_MAX;
+    bool collides = false;
 
     // Check faces A against B.
-    return CollidePolyhedraFaces(m0, m0size, m1, m1size, e0toe1, dirout, dout);
+    // return CollidePolyhedraFaces(m0, m0size, m1, m1size, e0toe1, dirout, dout);
+    {
+        // Vertex *ma = m0;
+        // f32 masize = m0size;
+        for (u32 i = 0; i < m0size; i += 3) {
+            Vec3 a = m0[i + 0].pos;
+            Vec3 b = m0[i + 1].pos;
+            Vec3 c = m0[i + 2].pos;
+
+            // Calc face normal. Fine to do so in the transformed space of the mesh
+            // as we will adjust orientation to be A -> B at end.
+            Vec3 ab = Vec3Sub(b, a);
+            Vec3 ac = Vec3Sub(c, a);
+            Vec3 axis = Vec3Normalize(Vec3Cross(ab, ac));
+
+            // Project mesh A along line and get interval.
+            f32 t0min = Vec3Dot(m0[0].pos, axis);
+            f32 t0max = t0min;
+            for (u32 k = 1; k < m0size; ++k) {
+                f32 n = Vec3Dot(m0[k].pos, axis);
+                t0min = f32min(t0min, n);
+                t0max = f32max(t0max, n);
+            }
+
+            // Project mesh B along line and get interval.
+            f32 t1min = Vec3Dot(m1[0].pos, axis);
+            f32 t1max = t1min;
+            for (u32 k = 1; k < m1size; ++k) {
+                f32 n = Vec3Dot(m1[k].pos, axis);
+                t1min = f32min(t1min, n);
+                t1max = f32max(t1max, n);
+            }
+
+            // TODO: Add some margin here.
+            if (t0max < t1min || t0min > t1max) {
+                collides = false;
+                dir = axis;  // Useful to keep axis of separationg for debugging.
+                break;
+            }
+
+            // NOTE: This does not work!!!!! This will give wrong dispalcement.
+            // Abs okay here because we just want the magnitude of the displacement.
+            // f32 d = f32abs((t0max - t0min) - (t1max - t1min));
+
+            // Check for overlap. this will give magnitude of displacement if positive
+            // (dir of displacement is the separating axis).
+            // Negative value here means no overlap.
+            f32 imin = f32max(t0min, t1min);
+            f32 imax = f32min(t0max, t1max);
+            f32 d = imax - imin;
+            Assert(d > 0.0f);
+            // if (d < 0.0f) {
+            //     collides = false;
+            //     dir = axis;  // Useful to keep axis of separationg for debugging.
+            //     break;
+            // }
+
+            collides = true;
+            if (d < dmin) {
+                dir = axis;
+                dmin = d;
+            }
+        }
+
+        // By convention, we need dir to point towards B. It might not if the shapes
+        // have normals pointing in opposite directions (the magnitude will be the same)
+        // TODO: Is this really necessary? shouldn't the above tests give me the correct direction
+        // vector? this also really only works if both e0 and e1 are convex shapes since we are
+        // guaranteed their centers will be on either side of the separating plane.
+        // TODO: Is the above even true?
+        f32 flip = Vec3Dot(dir, atob) < 0.0f ? -1.0f : 1.0f;
+        dir = Vec3Scale(dir, flip);
+
+        *dirout = dir;
+        *dout = dmin;
+    }
+
+    return collides;
 }
 
 static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
