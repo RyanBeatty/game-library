@@ -1145,12 +1145,14 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
     // Check faces A against B.
 
     {
-        // Vertex *ma = m0;
-        // f32 masize = m0size;
-        for (u32 i = 0; i < m0size; i += 3) {
-            Vec3 a = m0[i + 0];
-            Vec3 b = m0[i + 1];
-            Vec3 c = m0[i + 2];
+        Vec3* ma = m0;
+        f32 masize = m0size;
+        Vec3* mb = m1;
+        f32 mbsize = m1size;
+        for (u32 i = 0; i < masize; i += 3) {
+            Vec3 a = ma[i + 0];
+            Vec3 b = ma[i + 1];
+            Vec3 c = ma[i + 2];
 
             // Calc face normal. Fine to do so in the transformed space of the mesh
             // as we will adjust orientation to be A -> B at end.
@@ -1159,46 +1161,37 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
             Vec3 axis = Vec3Normalize(Vec3Cross(ab, ac));
 
             // Project mesh A along line and get interval.
-            f32 t0min = Vec3Dot(m0[0], axis);
-            f32 t0max = t0min;
-            for (u32 k = 1; k < m0size; ++k) {
-                f32 n = Vec3Dot(m0[k], axis);
-                t0min = f32min(t0min, n);
-                t0max = f32max(t0max, n);
+            f32 tamin = Vec3Dot(ma[0], axis);
+            f32 tamax = tamin;
+            for (u32 k = 1; k < masize; ++k) {
+                f32 n = Vec3Dot(ma[k], axis);
+                tamin = f32min(tamin, n);
+                tamax = f32max(tamax, n);
             }
 
             // Project mesh B along line and get interval.
-            f32 t1min = Vec3Dot(m1[0], axis);
-            f32 t1max = t1min;
-            for (u32 k = 1; k < m1size; ++k) {
-                f32 n = Vec3Dot(m1[k], axis);
-                t1min = f32min(t1min, n);
-                t1max = f32max(t1max, n);
+            f32 tbmin = Vec3Dot(mb[0], axis);
+            f32 tbmax = tbmin;
+            for (u32 k = 1; k < mbsize; ++k) {
+                f32 n = Vec3Dot(mb[k], axis);
+                tbmin = f32min(tbmin, n);
+                tbmax = f32max(tbmax, n);
             }
 
             // TODO: Add some margin here.
-            if (t0max < t1min || t0min > t1max) {
+            if (tamax < tbmin || tamin > tbmax) {
                 collides = false;
                 dir = axis;  // Useful to keep axis of separationg for debugging.
                 break;
             }
 
-            // NOTE: This does not work!!!!! This will give wrong dispalcement.
-            // Abs okay here because we just want the magnitude of the displacement.
-            // f32 d = f32abs((t0max - t0min) - (t1max - t1min));
-
             // Check for overlap. this will give magnitude of displacement if positive
             // (dir of displacement is the separating axis).
             // Negative value here means no overlap.
-            f32 imin = f32max(t0min, t1min);
-            f32 imax = f32min(t0max, t1max);
+            f32 imin = f32max(tamin, tbmin);
+            f32 imax = f32min(tamax, tbmax);
             f32 d = imax - imin;
             Assert(d > 0.0f);
-            // if (d < 0.0f) {
-            //     collides = false;
-            //     dir = axis;  // Useful to keep axis of separationg for debugging.
-            //     break;
-            // }
 
             collides = true;
             if (d < dmin) {
