@@ -1592,34 +1592,72 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),  //
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),  //
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),  //
+
+                    // Reverse.
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+
+                    Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
+                    Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
                 };
                 static f32 rotations[] = {
-                    Deg2Rad(45.0f),  Deg2Rad(45.0f),   //
-                    Deg2Rad(53.0f),  Deg2Rad(53.0f),   //
+                    Deg2Rad(45.0f), Deg2Rad(45.0f),    //
+                    Deg2Rad(53.0f), Deg2Rad(53.0f),    //
                     Deg2Rad(-72.0f), Deg2Rad(-72.0f),  //
-                    Deg2Rad(0.1f),   Deg2Rad(0.1f),    //
+                    Deg2Rad(0.1f), Deg2Rad(0.1f),      //
                     Deg2Rad(-12.0f), Deg2Rad(-12.0f),  //
 
-                    Deg2Rad(0.0f),   Deg2Rad(120.0f),   //
-                    Deg2Rad(0.0f),   Deg2Rad(125.264),  //
+                    Deg2Rad(0.0f), Deg2Rad(120.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(125.264),  //
 
-                    Deg2Rad(0.0f),   Deg2Rad(45.0f),   //
-                    Deg2Rad(0.0f),   Deg2Rad(53.0f),   //
-                    Deg2Rad(0.0f),   Deg2Rad(-72.0f),  //
-                    Deg2Rad(0.0f),   Deg2Rad(0.1f),    //
-                    Deg2Rad(0.0f),   Deg2Rad(-12.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(45.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(53.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(-72.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(0.1f),    //
+                    Deg2Rad(0.0f), Deg2Rad(-12.0f),  //
 
-                    Deg2Rad(0.0f),   Deg2Rad(45.0f),   //
-                    Deg2Rad(0.0f),   Deg2Rad(53.0f),   //
-                    Deg2Rad(0.0f),   Deg2Rad(-72.0f),  //
-                    Deg2Rad(0.0f),   Deg2Rad(0.1f),    //
-                    Deg2Rad(0.0f),   Deg2Rad(-12.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(45.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(53.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(-72.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(0.1f),    //
+                    Deg2Rad(0.0f), Deg2Rad(-12.0f),  //
 
-                    Deg2Rad(0.0f),   Deg2Rad(45.0f),   //
-                    Deg2Rad(0.0f),   Deg2Rad(53.0f),   //
-                    Deg2Rad(0.0f),   Deg2Rad(-72.0f),  //
-                    Deg2Rad(0.0f),   Deg2Rad(0.1f),    //
-                    Deg2Rad(0.0f),   Deg2Rad(-12.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(45.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(53.0f),   //
+                    Deg2Rad(0.0f), Deg2Rad(-72.0f),  //
+                    Deg2Rad(0.0f), Deg2Rad(0.1f),    //
+                    Deg2Rad(0.0f), Deg2Rad(-12.0f),  //
+
+                    // Reverse
+                    Deg2Rad(45.0f), Deg2Rad(0.0f),   //
+                    Deg2Rad(53.0f), Deg2Rad(0.0f),   //
+                    Deg2Rad(-72.0f), Deg2Rad(0.0f),  //
+                    Deg2Rad(0.1f), Deg2Rad(0.0f),    //
+                    Deg2Rad(-12.0f), Deg2Rad(0.0f),  //
+
+                    Deg2Rad(45.0f), Deg2Rad(0.0f),   //
+                    Deg2Rad(53.0f), Deg2Rad(0.0f),   //
+                    Deg2Rad(-72.0f), Deg2Rad(0.0f),  //
+                    Deg2Rad(0.1f), Deg2Rad(0.0f),    //
+                    Deg2Rad(-12.0f), Deg2Rad(0.0f),  //
+
+                    Deg2Rad(45.0f), Deg2Rad(0.0f),   //
+                    Deg2Rad(53.0f), Deg2Rad(0.0f),   //
+                    Deg2Rad(-72.0f), Deg2Rad(0.0f),  //
+                    Deg2Rad(0.1f), Deg2Rad(0.0f),    //
+                    Deg2Rad(-12.0f), Deg2Rad(0.0f),  //
                 };
 
                 {
@@ -1945,19 +1983,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                     Vec3 dir = {0};
                     f32 dmin = 0.0f;
+                    // Check faces A against B.
                     bool collides = CollidePolyhedraFaces(m0, m0size, m1, m1size, e0toe1, &dir, &dmin);
                     if (!collides) {
-                        {
-                            Vec3 arrow = Vec3Scale(dir, -1.0f);
-                            Mat4 orient = Mat4PointAt(arrow);
-                            DrawArrow(arrow, e0->pos, orient, 0.3f, LGREEN);
-                        }
-                        {
-                            Vec3 arrow = dir;
-                            Mat4 orient = Mat4PointAt(arrow);
-                            DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
-                        }
-                        continue;
+                        // Check faces B against A.
+                        // collides = CollidePolyhedraFaces(m1, m1size, m0, m0size, e0toe1, &dir, &dmin);
                     }
 
                     // bool collides = CollidePolyhedraFaces(m0, m0size, m1, m1size, e0toe1, &dir, &dmin);
@@ -1978,41 +2008,40 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             Mat4 orient = Mat4PointAt(arrow);
                             DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
                         }
+                    } else {
+                        {
+                            Vec3 arrow = Vec3Scale(dir, -1.0f);
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e0->pos, orient, 0.3f, LGREEN);
+                        }
+                        {
+                            Vec3 arrow = dir;
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
+                        }
+                        // // Draw face normals.
+                        // Entity* es[] = {e0, e1};
+                        // for (u32 j = 0; j < ArraySizeOf(es); j++) {
+                        //     Entity* e = es[j];
+                        //     Mat4 model = EntityGetMat(e);
+                        //     Mat4 rot = e->orient;
+                        //     LMesh mid = e->mesh;
+                        //     for (u32 i = 0; i < mid.ntriangles; i += 1) {
+                        //         Triangle t = LMeshGetTriangle(mid, i);
+
+                        //         Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
+                        //         Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
+                        //         Vec3 norm = Vec3Cross(ab, ac);
+
+                        //         Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
+                        //         center = Vec3WTransform(center, model);
+
+                        //         Mat4 orient = Mat4PointAt(norm);
+                        //         orient = Mat4Multiply(rot, orient);
+                        //         DrawArrow(norm, center, orient, 0.3f, LRED);
+                        //     }
+                        // }
                     }
-                    // else {
-                    //     {
-                    //         Vec3 arrow = Vec3Scale(dir, -1.0f);
-                    //         Mat4 orient = Mat4PointAt(arrow);
-                    //         DrawArrow(arrow, e0->pos, orient, 0.3f, LGREEN);
-                    //     }
-                    //     {
-                    //         Vec3 arrow = dir;
-                    //         Mat4 orient = Mat4PointAt(arrow);
-                    //         DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
-                    //     }
-                    //     // // Draw face normals.
-                    //     // Entity* es[] = {e0, e1};
-                    //     // for (u32 j = 0; j < ArraySizeOf(es); j++) {
-                    //     //     Entity* e = es[j];
-                    //     //     Mat4 model = EntityGetMat(e);
-                    //     //     Mat4 rot = e->orient;
-                    //     //     LMesh mid = e->mesh;
-                    //     //     for (u32 i = 0; i < mid.ntriangles; i += 1) {
-                    //     //         Triangle t = LMeshGetTriangle(mid, i);
-
-                    //     //         Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
-                    //     //         Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
-                    //     //         Vec3 norm = Vec3Cross(ab, ac);
-
-                    //     //         Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
-                    //     //         center = Vec3WTransform(center, model);
-
-                    //     //         Mat4 orient = Mat4PointAt(norm);
-                    //     //         orient = Mat4Multiply(rot, orient);
-                    //     //         DrawArrow(norm, center, orient, 0.3f, LRED);
-                    //     //     }
-                    //     // }
-                    // }
                 }
 
                 DrawEntities(shader, entities, size);
