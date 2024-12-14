@@ -2035,7 +2035,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
             {
                 EntityId* entities = COLLISIONS;
                 u32 size = COLLISIONS_SIZE;
-                // static bool trip = false;
 
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
