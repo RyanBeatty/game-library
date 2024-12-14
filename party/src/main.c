@@ -1297,6 +1297,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             u32 size = 0;
             u32 ncols = 0;
 
+            // Test all face-face combinations.
             {
                 static Vec3 axis[] = {
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
@@ -1477,6 +1478,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 }
             }
 
+            // Test some basic cube rotations.
             {
                 static Vec3 axis[] = {
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.3f, 0.5f),                //
