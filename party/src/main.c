@@ -1142,13 +1142,16 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
 
     Vec3 atob = Vec3Sub(e1->pos, e0->pos);
 
-    // Check faces A against B.
-
-    {
-        Vec3* ma = m0;
-        f32 masize = m0size;
-        Vec3* mb = m1;
-        f32 mbsize = m1size;
+    // Check faces A against B and vice versa.
+    Vec3* mas[] = {m0, m1};
+    f32 masizes[] = {m0size, m1size};
+    Vec3* mbs[] = {m1, m0};
+    f32 mbsizes[] = {m1size, m0size};
+    for (u32 midx = 0; midx < ArraySizeOf(mas); ++midx) {
+        Vec3* ma = mas[midx];
+        f32 masize = masizes[midx];
+        Vec3* mb = mbs[midx];
+        f32 mbsize = mbsizes[midx];
         for (u32 i = 0; i < masize; i += 3) {
             Vec3 a = ma[i + 0];
             Vec3 b = ma[i + 1];
@@ -1209,11 +1212,16 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
         f32 flip = Vec3Dot(dir, atob) < 0.0f ? -1.0f : 1.0f;
         dir = Vec3Scale(dir, flip);
 
-        *dirout = dir;
-        *dout = dmin;
+        if (!collides) {
+            *dirout = dir;
+            *dout = dmin;
+            return false;
+        }
     }
 
-    return collides;
+    *dirout = dir;
+    *dout = dmin;
+    return true;
 }
 
 static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
