@@ -1140,8 +1140,6 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
     f32 dmin = F32_MAX;
     bool collides = false;
 
-    Vec3 atob = Vec3Sub(e1->pos, e0->pos);
-
     // Check faces A against B and vice versa.
     Vec3* mas[] = {m0, m1};
     f32 masizes[] = {m0size, m1size};
@@ -1204,85 +1202,89 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
         }
     }
 
-    // Vec* ma = m0;
-    // f32 masize = m0size;
-    // Vec* mb = m1;
-    // f32 mbsize = m1size;
-    // for (u32 ti; ti < masize; ti += 3) {
-    //     Vec3 a = ma[ti + 0];
-    //     Vec3 b = ma[ti + 1];
-    //     Vec3 c = ma[ti + 2];
+    // Check all edge/edge combinations between all of the triangles of A and B.
+    {
+        Vec3* ma = m0;
+        f32 masize = m0size;
+        Vec3* mb = m1;
+        f32 mbsize = m1size;
+        for (u32 ti; ti < masize; ti += 3) {
+            Vec3 a = ma[ti + 0];
+            Vec3 b = ma[ti + 1];
+            Vec3 c = ma[ti + 2];
 
-    //     Vec3 ab = Vec3Sub(b, a);
-    //     Vec3 ac = Vec3Sub(c, a);
-    //     Vec3 bc = Vec3Sub(c, b);
+            Vec3 ab = Vec3Sub(b, a);
+            Vec3 ac = Vec3Sub(c, a);
+            Vec3 bc = Vec3Sub(c, b);
 
-    //     for (u32 tj; tj < mbsize; tj += 3) {
-    //         Vec3 d = mb[tj + 0];
-    //         Vec3 e = mb[tj + 1];
-    //         Vec3 f = mb[tj + 2];
+            for (u32 tj; tj < mbsize; tj += 3) {
+                Vec3 d = mb[tj + 0];
+                Vec3 e = mb[tj + 1];
+                Vec3 f = mb[tj + 2];
 
-    //         Vec3 de = Vec3Sub(e, d);
-    //         Vec3 df = Vec3Sub(f, d);
-    //         Vec3 ef = Vec3Sub(f, e);
+                Vec3 de = Vec3Sub(e, d);
+                Vec3 df = Vec3Sub(f, d);
+                Vec3 ef = Vec3Sub(f, e);
 
-    //         Vec3 ns[] = {
-    //             Vec3Normalize(Vec3Cross(ab, de)),  //
-    //             Vec3Normalize(Vec3Cross(ab, df)),  //
-    //             Vec3Normalize(Vec3Cross(ab, ef)),  //
+                // Compute all edge/edge combinations between A and B.
+                Vec3 ns[] = {
+                    Vec3Normalize(Vec3Cross(ab, de)),  //
+                    Vec3Normalize(Vec3Cross(ab, df)),  //
+                    Vec3Normalize(Vec3Cross(ab, ef)),  //
 
-    //             Vec3Normalize(Vec3Cross(ac, de)),  //
-    //             Vec3Normalize(Vec3Cross(ac, df)),  //
-    //             Vec3Normalize(Vec3Cross(ac, ef)),  //
+                    Vec3Normalize(Vec3Cross(ac, de)),  //
+                    Vec3Normalize(Vec3Cross(ac, df)),  //
+                    Vec3Normalize(Vec3Cross(ac, ef)),  //
 
-    //             Vec3Normalize(Vec3Cross(bc, de)),  //
-    //             Vec3Normalize(Vec3Cross(bc, df)),  //
-    //             Vec3Normalize(Vec3Cross(bc, ef)),  //
-    //         };
-    //         for (u32 ni = 0; ni < ArraySizeOf(ns); ++ni) {
-    //             Vec3 axis = ns[ni];
+                    Vec3Normalize(Vec3Cross(bc, de)),  //
+                    Vec3Normalize(Vec3Cross(bc, df)),  //
+                    Vec3Normalize(Vec3Cross(bc, ef)),  //
+                };
+                for (u32 ni = 0; ni < ArraySizeOf(ns); ++ni) {
+                    Vec3 axis = ns[ni];
 
-    //             // Project mesh A along line and get interval.
-    //             f32 tamin = Vec3Dot(ma[0], axis);
-    //             f32 tamax = tamin;
-    //             for (u32 k = 1; k < masize; ++k) {
-    //                 f32 n = Vec3Dot(ma[k], axis);
-    //                 tamin = f32min(tamin, n);
-    //                 tamax = f32max(tamax, n);
-    //             }
+                    // Project mesh A along line and get interval.
+                    f32 tamin = Vec3Dot(ma[0], axis);
+                    f32 tamax = tamin;
+                    for (u32 k = 1; k < masize; ++k) {
+                        f32 n = Vec3Dot(ma[k], axis);
+                        tamin = f32min(tamin, n);
+                        tamax = f32max(tamax, n);
+                    }
 
-    //             // Project mesh B along line and get interval.
-    //             f32 tbmin = Vec3Dot(mb[0], axis);
-    //             f32 tbmax = tbmin;
-    //             for (u32 k = 1; k < mbsize; ++k) {
-    //                 f32 n = Vec3Dot(mb[k], axis);
-    //                 tbmin = f32min(tbmin, n);
-    //                 tbmax = f32max(tbmax, n);
-    //             }
+                    // Project mesh B along line and get interval.
+                    f32 tbmin = Vec3Dot(mb[0], axis);
+                    f32 tbmax = tbmin;
+                    for (u32 k = 1; k < mbsize; ++k) {
+                        f32 n = Vec3Dot(mb[k], axis);
+                        tbmin = f32min(tbmin, n);
+                        tbmax = f32max(tbmax, n);
+                    }
 
-    //             // TODO: Add some margin here.
-    //             if (tamax < tbmin || tamin > tbmax) {
-    //                 collides = false;
-    //                 dir = axis;  // Useful to keep axis of separationg for debugging.
-    //                 goto collideret;
-    //             }
+                    // TODO: Add some margin here.
+                    if (tamax < tbmin || tamin > tbmax) {
+                        collides = false;
+                        dir = axis;  // Useful to keep axis of separationg for debugging.
+                        goto collideret;
+                    }
 
-    //             // Check for overlap. this will give magnitude of displacement if positive
-    //             // (dir of displacement is the separating axis).
-    //             // Negative value here means no overlap.
-    //             f32 imin = f32max(tamin, tbmin);
-    //             f32 imax = f32min(tamax, tbmax);
-    //             f32 d = imax - imin;
-    //             Assert(d > 0.0f);
+                    // Check for overlap. this will give magnitude of displacement if positive
+                    // (dir of displacement is the separating axis).
+                    // Negative value here means no overlap.
+                    f32 imin = f32max(tamin, tbmin);
+                    f32 imax = f32min(tamax, tbmax);
+                    f32 d = imax - imin;
+                    Assert(d > 0.0f);
 
-    //             collides = true;
-    //             if (d < dmin) {
-    //                 dir = axis;
-    //                 dmin = d;
-    //             }
-    //         }
-    //     }
-    // }
+                    collides = true;
+                    if (d < dmin) {
+                        dir = axis;
+                        dmin = d;
+                    }
+                }
+            }
+        }
+    }
 
 collideret:
     // By convention, we need dir to point towards B. It might not if the shapes
@@ -1291,6 +1293,7 @@ collideret:
     // vector? this also really only works if both e0 and e1 are convex shapes since we are
     // guaranteed their centers will be on either side of the separating plane.
     // TODO: Is the above even true?
+    Vec3 atob = Vec3Sub(e1->pos, e0->pos);
     f32 flip = Vec3Dot(dir, atob) < 0.0f ? -1.0f : 1.0f;
     dir = Vec3Scale(dir, flip);
 
