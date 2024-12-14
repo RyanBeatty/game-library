@@ -1823,39 +1823,39 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         m1[i].pos = Vec3WTransform(m1[i].pos, e1m);
                     }
 
-                    // NOTE: We do collision detection in world space.
-                    Vec3 n0[MAX_TRIANGLES] = {0};
-                    u32 n0size = 0;
-                    for (u32 i = 0; i < e0->mesh.ntriangles; ++i, ++n0size) {
-                        u32 ioffset = i * 3;
-                        Vec3 a = LMeshGetVertex(e0->mesh, ioffset + 0).pos;
-                        Vec3 b = LMeshGetVertex(e0->mesh, ioffset + 1).pos;
-                        Vec3 c = LMeshGetVertex(e0->mesh, ioffset + 2).pos;
+                    // // NOTE: We do collision detection in world space.
+                    // Vec3 n0[MAX_TRIANGLES] = {0};
+                    // u32 n0size = 0;
+                    // for (u32 i = 0; i < e0->mesh.ntriangles; ++i, ++n0size) {
+                    //     u32 ioffset = i * 3;
+                    //     Vec3 a = LMeshGetVertex(e0->mesh, ioffset + 0).pos;
+                    //     Vec3 b = LMeshGetVertex(e0->mesh, ioffset + 1).pos;
+                    //     Vec3 c = LMeshGetVertex(e0->mesh, ioffset + 2).pos;
 
-                        // Calc face normal. Must do so in model space as triangle verts might not
-                        // be in CCW order still when converted to world space.
-                        Vec3 ab = Vec3Sub(b, a);
-                        Vec3 ac = Vec3Sub(c, a);
-                        Vec3 axis = Vec3Cross(ac, ab);
+                    //     // Calc face normal. Must do so in model space as triangle verts might not
+                    //     // be in CCW order still when converted to world space.
+                    //     Vec3 ab = Vec3Sub(b, a);
+                    //     Vec3 ac = Vec3Sub(c, a);
+                    //     Vec3 axis = Vec3Cross(ac, ab);
 
-                        axis = Vec3Normalize(Vec3Transform(axis, e0->orient));
-                        n0[i] = axis;
-                    }
+                    //     axis = Vec3Normalize(Vec3Transform(axis, e0->orient));
+                    //     n0[i] = axis;
+                    // }
 
                     Vec3 dir = Vec3Zero();
                     f32 dmin = F32_MAX;
                     bool collides = false;
                     for (u32 i = 0; i < e0->mesh.ntriangles; ++i) {
-                        // u32 ioffset = i * 3;
-                        // Vec3 a = m0[ioffset + 0].pos;
-                        // Vec3 b = m0[ioffset + 1].pos;
-                        // Vec3 c = m0[ioffset + 2].pos;
+                        u32 ioffset = i * 3;
+                        Vec3 a = m0[ioffset + 0].pos;
+                        Vec3 b = m0[ioffset + 1].pos;
+                        Vec3 c = m0[ioffset + 2].pos;
 
-                        // // Calc face normal.
-                        // Vec3 ab = Vec3Sub(b, a);
-                        // Vec3 ac = Vec3Sub(c, a);
-                        // Vec3 axis = Vec3Normalize(Vec3Cross(ab, ac));
-                        Vec3 axis = n0[i];
+                        // Calc face normal. Fine to do so in the transformed space of the mesh
+                        // as we will adjust orientation to be A -> B at end.
+                        Vec3 ab = Vec3Sub(b, a);
+                        Vec3 ac = Vec3Sub(c, a);
+                        Vec3 axis = Vec3Normalize(Vec3Cross(ab, ac));
 
                         // Project mesh A along line and get interval.
                         f32 t0min = Vec3Dot(m0[0].pos, axis);
