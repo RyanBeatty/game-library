@@ -1676,6 +1676,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
             // Test some basic cube rotations.
             {
                 static Vec3 axis[] = {
+                    // This first case is edge on edge collision.
+                    // TODO: The collision detects, but the normal is not right. need to figure out
+                    // how to handle case of parallel edges. How to determine what the axis of separation is
+                    // if edges are parallel and on a line with eachother?
+                    Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f),  //
@@ -1723,6 +1728,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3Lit(0.0f, 0.0f, 1.0f), Vec3Lit(0.0f, 1.0f, 0.0f),  //
                 };
                 static f32 rotations[] = {
+                    Deg2Rad(45.0f), Deg2Rad(45.0f),    //
                     Deg2Rad(45.0f), Deg2Rad(45.0f),    //
                     Deg2Rad(53.0f), Deg2Rad(53.0f),    //
                     Deg2Rad(-72.0f), Deg2Rad(-72.0f),  //
