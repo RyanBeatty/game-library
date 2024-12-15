@@ -1208,7 +1208,7 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
         f32 masize = m0size;
         Vec3* mb = m1;
         f32 mbsize = m1size;
-        for (u32 ti; ti < masize; ti += 3) {
+        for (u32 ti = 0; ti < masize; ti += 3) {
             Vec3 a = ma[ti + 0];
             Vec3 b = ma[ti + 1];
             Vec3 c = ma[ti + 2];
@@ -1217,7 +1217,7 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
             Vec3 ac = Vec3Sub(c, a);
             Vec3 bc = Vec3Sub(c, b);
 
-            for (u32 tj; tj < mbsize; tj += 3) {
+            for (u32 tj = 0; tj < mbsize; tj += 3) {
                 Vec3 d = mb[tj + 0];
                 Vec3 e = mb[tj + 1];
                 Vec3 f = mb[tj + 2];
@@ -1242,6 +1242,11 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
                 };
                 for (u32 ni = 0; ni < ArraySizeOf(ns); ++ni) {
                     Vec3 axis = ns[ni];
+                    // TODO: Handle this case using Ericson p159. It does happen.
+                    // Assert(!Vec3Eq(axis, Vec3Zero()));
+                    if (Vec3Eq(axis, Vec3Zero())) {
+                        continue;
+                    }
 
                     // Project mesh A along line and get interval.
                     f32 tamin = Vec3Dot(ma[0], axis);
