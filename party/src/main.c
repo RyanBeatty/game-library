@@ -517,7 +517,6 @@ typedef struct LShader {
     u32 vview_loc;
     u32 vproj_loc;
     u32 vucolor_loc;
-    u32 vcolor_blend_loc;
 
     // frag shader.
     u32 flightdirin_loc;
@@ -569,8 +568,6 @@ static LShader GetShader() {
         "uniform mat4 vProj;\n"
         "\n"
         "uniform vec4 vUColor;\n"
-        // TODO: remove this.
-        "uniform float vColorBlend;\n"
         "\n"
         "out vec3 fPosEye;\n"
         "out vec4 fColor;\n"
@@ -647,7 +644,6 @@ static LShader GetShader() {
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vcolor_blend_loc = glGetUniformLocation(SHADER.pid, "vColorBlend");
         }
     }
 
@@ -2275,7 +2271,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
             DrawCmd* cmd = &CBUFFER[i];
             glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
             glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            glUniform1f(shader.vcolor_blend_loc, cmd->color.a != 0.0f ? 1.0f : 0.0f);
             if (cmd->wireframe) {
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             }
