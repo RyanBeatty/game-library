@@ -1501,15 +1501,18 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Vec3Add(origin, Vec3Lit(-hlen, 0.0f, 0.0f)), Vec3Add(origin, Vec3Lit(hlen, 0.0f, 0.0f)),
                     Vec3Add(origin, Vec3Lit(0.0f, 0.0f, hlen)),  Vec3Add(origin, Vec3Lit(0.0f, 0.0f, -hlen)),
                     Vec3Add(origin, Vec3Lit(0.0f, -hlen, 0.0f)), Vec3Add(origin, Vec3Lit(0.0f, hlen, 0.0f))};
-                const f32 rotations[] = {Deg2Rad(90.0f)};
-                const Vec4 colors[] = {LGRAY};
+                const Vec3 axis[] = {Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
+                                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f)};
+                const f32 rotations[] = {Deg2Rad(90.0f),  Deg2Rad(90.0f), Deg2Rad(180.0f),
+                                         Deg2Rad(180.0f), Deg2Rad(90.0f), Deg2Rad(90.0f)};
+                const Vec4 colors[] = {LGRAY, LGRAY, LGRAY, LGRAY, LGRAY, LGRAY};
                 const Vec3 scale = Vec3Lit(len, len, 1.0f);
 
-                for (u32 i = 0; i < 1; ++i, ++size) {
+                for (u32 i = 0; i < 4; ++i, ++size) {
                     Entity* entity = AllocateEntity();
                     entity->pos = positions[i];
                     entity->mesh = GetMesh(M_CUBE);
-                    entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                    entity->orient = Mat4Rotate(rotations[i], axis[i]);
                     entity->color = colors[i];
                     entity->scale = 3.0f;
                     entity->scale2 = scale;
