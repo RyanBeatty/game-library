@@ -1471,7 +1471,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             EntityId* entities = PHYSICS;
             u32 size = 0;
 
-            const Vec3 origin = Vec3Lit(-20.0f, 3.0f, -50.0f);
+            const Vec3 origin = Vec3Lit(-20.0f, 30.0f, -50.0f);
 
             // Colliders
             {
@@ -1508,7 +1508,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 const Vec4 colors[] = {LGRAY, LGRAY, LGRAY, LGRAY, LGRAY, LGRAY};
                 const Vec3 scale = Vec3Lit(len, len, 1.0f);
 
-                for (u32 i = 0; i < 4; ++i, ++size) {
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
                     Entity* entity = AllocateEntity();
                     entity->pos = positions[i];
                     entity->mesh = GetMesh(M_CUBE);
