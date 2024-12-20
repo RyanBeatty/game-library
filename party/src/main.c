@@ -244,6 +244,13 @@ static Mat4 Mat4Scale(f32 n) {
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+static Mat4 Mat4ScaleV(Vec3 v) {
+    return Mat4Lit(v.x, 0.0f, 0.0f, 0.0f,  //
+                   0.0f, v.y, 0.0f, 0.0f,  //
+                   0.0f, 0.0f, v.z, 0.0f,  //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
 static Mat4 Mat4ScaleXYZ(f32 x, f32 y, f32 z) {
     return Mat4Lit(x, 0.0f, 0.0f, 0.0f,  //
                    0.0f, y, 0.0f, 0.0f,  //
@@ -492,6 +499,7 @@ static const Vec4 LBLUE = Vec4Lit(0.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LBLACK = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LPURPLE = Vec4Lit(1.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
+static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255.0f, 0.16f);
 
 ////////////////////////////////////////////////////////////
 // S:Render Data
@@ -1016,6 +1024,7 @@ typedef struct Entity {
     // Decomposition of model matrix.
     Vec3 pos;
     f32 scale;  // only allow uniform scaling.
+    Vec3 scale2;
     Mat4 orient;
 
     Vec3 v;
@@ -1312,6 +1321,9 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     for (u32 i = 0; i < size; ++i) {
         Entity* entity = GetEntity(entities[i]);
         Mat4 scale = Mat4Scale(entity->scale);
+        if (!Vec3Eq(entity->scale2, Vec3Zero())) {
+            scale = Mat4ScaleV(entity->scale2);
+        }
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
         AddCmd(entity->mesh, model, entity->color);
@@ -1444,14 +1456,16 @@ static void GameStateDraw(GameState* gstate, float delta) {
             }
         }
 
-        // PHYSICS update
+        // PHYSICS init
         {
             EntityId* entities = PHYSICS;
             u32 size = 0;
 
+            const Vec3 origin = Vec3Lit(-20.0f, 3.0f, -50.0f);
+
             // Colliders
             {
-                const Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 0.0f)};
+                const Vec3 positions[] = {origin};
                 const Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
                 const f32 rotations[] = {Deg2Rad(0.0f)};
                 const Vec4 colors[] = {LPURPLE};
@@ -1465,34 +1479,34 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     entity->scale = 3.0f;
                     entity->v = velocities[i];
                     FlagOn(entity->flags, EFLAG_COLLIDER);
-                    entities[i] = entity->id;
+                    entities[size] = entity->id;
                 }
             }
 
-            // // Walls
-            // {
-            //     const Vec3 origin = Vec3Lit(-20.0f, 3.0f, 0.0f);
-            //     const f32 len = 50.0f;
-            //     const Vec3 positions[] = {
-            //         Vec3Add(origin, Vec3Lit(-len, 0.0f, 0.0f)), Vec3Add(origin, Vec3Lit(len, 0.0f, 0.0f)),
-            //         Vec3Add(origin, Vec3Lit(0.0f, 0.0f len)),   Vec3Add(origin, Vec3Lit(0.0f, 0.0f - len)),
-            //         Vec3Add(origin, Vec3Lit(0.0f, -len, 0.0f)), Vec3Add(origin, Vec3Lit(0.0f, len, 0.0f))};
-            //     const Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
-            //     const f32 rotations[] = {Deg2Rad(0.0f)};
-            //     const Vec4 colors[] = {LPURPLE};
+            // Walls
+            {
+                const f32 len = 50.0f;
+                const f32 hlen = len / 2.0f;
+                const Vec3 positions[] = {
+                    Vec3Add(origin, Vec3Lit(-hlen, 0.0f, 0.0f)), Vec3Add(origin, Vec3Lit(hlen, 0.0f, 0.0f)),
+                    Vec3Add(origin, Vec3Lit(0.0f, 0.0f, hlen)),  Vec3Add(origin, Vec3Lit(0.0f, 0.0f, -hlen)),
+                    Vec3Add(origin, Vec3Lit(0.0f, -hlen, 0.0f)), Vec3Add(origin, Vec3Lit(0.0f, hlen, 0.0f))};
+                const f32 rotations[] = {Deg2Rad(90.0f)};
+                const Vec4 colors[] = {LGRAY};
+                const Vec3 scale = Vec3Lit(len, len, 1.0f);
 
-            //     for (u32 i = 0; i < ArraySizeOf(positions); ++i; ++size) {
-            //         Entity* entity = AllocateEntity();
-            //         entity->pos = positions[i];
-            //         entity->mesh = GetMesh(M_CUBE);
-            //         entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-            //         entity->color = colors[i];
-            //         entity->scale = 3.0f;
-            //         entity->v = velocities[i];
-            //         FlagOn(entity->flags, EFLAG_COLLIDER);
-            //         entities[i] = entity->id;
-            //     }
-            // }
+                for (u32 i = 0; i < 1; ++i, ++size) {
+                    Entity* entity = AllocateEntity();
+                    entity->pos = positions[i];
+                    entity->mesh = GetMesh(M_CUBE);
+                    entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                    entity->color = colors[i];
+                    entity->scale = 3.0f;
+                    entity->scale2 = scale;
+                    FlagOn(entity->flags, EFLAG_COLLIDER);
+                    entities[size] = entity->id;
+                }
+            }
 
             PHYSICS_SIZE = size;
             Assert(PHYSICS_SIZE < MAX_ENTITY_BATCH);
@@ -1963,7 +1977,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 DrawEntities(shader, entities, size);
             }
 
-            // Physics cube.
+            // Physics update.
             {
                 EntityId* entities = PHYSICS;
                 u32 size = PHYSICS_SIZE;
