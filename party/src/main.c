@@ -1326,6 +1326,20 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     }
 }
 
+static void DrawEntitiesWireFrame(LShader shader, EntityId* entities, u32 size) {
+    for (u32 i = 0; i < size; ++i) {
+        Entity* entity = GetEntity(entities[i]);
+        Mat4 scale = Mat4Scale(entity->scale);
+        if (!Vec3Eq(entity->scale2, Vec3Zero())) {
+            scale = Mat4ScaleV(entity->scale2);
+        }
+        Mat4 translate = Mat4TranslateV(entity->pos);
+        Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
+        DrawCmd* cmd = AddCmd(entity->mesh, model, entity->color);
+        cmd->wireframe = true;
+    }
+}
+
 // TODO: Consider deriving partial orientation from arrow direction and then having passed in orient
 // be the upright orientation of the entitie's rotation. Maybe this function here could be the Pro version
 // and the other could be default.
@@ -1981,7 +1995,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
                 }
-                DrawEntities(shader, entities, size);
+                DrawEntities(shader, entities, 1);
+                DrawEntitiesWireFrame(shader, &entities[1], size - 1);
             }
 
             // ISO TRIANGLES DRAW Draw.
