@@ -16,7 +16,11 @@ TODO
 * Collisions
     * Mat4Point
         * handle up x z == 0
-    * Some separating axis are 0, figure out whats up with that.
+    * Create basic physics demo where cube is bouncing around room (reflect outgoing velocity around collision normal). collision response.
+    * calculate contact points
+        * in collision query (like face face/edge edge) return id[2] of features (either two faces) or (two edges). calculate most antiparallel face
+        * then do a search with the face id (which is a triangle). if surrounding triangles from the verts
+        point in same normal, then also use those verts to clip.
 * Rendering
     * switch to DrawCommands
     * support being able to shade meshes one solid color. useful for controlling debug info.
