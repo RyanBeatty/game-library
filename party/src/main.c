@@ -346,6 +346,23 @@ static Mat4 Mat4Rotate(rad t, Vec3 axis) {
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+// Contstruct matrix that reflects vectors around the plane defined by n. n doesn't need to be unit.
+static Mat4 Mat4Reflect(Vec3 n) {
+    n = Vec3Normalize(n);
+
+    f32 x = n.x * -2.0f;
+    f32 y = n.y * -2.0f;
+    f32 z = n.z * -2.0f;
+    f32 nxny = x * n.y;
+    f32 nxnz = x * n.z;
+    f32 nynz = y * n.z;
+    return Mat4Lit((x * n.x) + 1.0f, nxny, nxnz, 0,  //
+                   nxny, (y * n.y) + 1.0f, nynz, 0,  //
+                   nxnz, nynz, (z * n.z) + 1.0f, 0,  //
+                   0, 0, 0, 1                        //
+    );
+}
+
 static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
     f32 zoom = 1.0f / (f32)f32tan(fov * 0.5f);
     f32 depth = far - near;
@@ -2010,7 +2027,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
 
                     if (collides) {
-                        e0->v = Vec3Zero();
+                        Vec3 normal = Vec3Scale(dir, -1.0f);
+                        Mat4 reflect = Mat4Reflect(normal);
+                        e0->v = Vec3Transform(e0->v, reflect);
+
+                        // e0->v = Vec3Zero();
                         e1->v = Vec3Zero();
                         {
                             Vec3 arrow = Vec3Scale(dir, -1.0f);
