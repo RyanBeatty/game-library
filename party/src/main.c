@@ -1493,7 +1493,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             // Colliders
             {
                 const Vec3 positions[] = {origin};
-                const Vec3 velocities[] = {Vec3Lit(0.0f, 5.0f, -10.0f)};
+                const Vec3 velocities[] = {Vec3Lit(0.0f, 1.0f, -10.0f)};
                 const f32 rotations[] = {Deg2Rad(0.0f)};
                 Vec4 color = LPURPLE;
                 color.a = 0.16f;
@@ -2035,11 +2035,13 @@ static void GameStateDraw(GameState* gstate, float delta) {
                         e1->v = Vec3Zero();
                         {
                             Vec3 arrow = Vec3Scale(dir, -1.0f);
+                            e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
                             Mat4 orient = Mat4PointAt(arrow);
                             DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
                         }
                         {
                             Vec3 arrow = dir;
+                            e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
                             Mat4 orient = Mat4PointAt(arrow);
                             DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
                         }
