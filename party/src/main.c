@@ -1478,7 +1478,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 const Vec3 positions[] = {origin};
                 const Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
                 const f32 rotations[] = {Deg2Rad(0.0f)};
-                const Vec4 colors[] = {LPURPLE};
+                Vec4 color = LPURPLE;
+                color.a = 0.16f;
+                const Vec4 colors[] = {color};
 
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
                     Entity* entity = AllocateEntity();
@@ -2021,11 +2023,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
                         }
                     } else {
-                        {
-                            Vec3 arrow = Vec3Scale(dir, -1.0f);
-                            Mat4 orient = Mat4PointAt(arrow);
-                            DrawArrow(arrow, e0->pos, orient, 0.3f, LGREEN);
-                        }
                         {
                             Vec3 arrow = dir;
                             Mat4 orient = Mat4PointAt(arrow);
