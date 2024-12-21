@@ -1998,6 +1998,42 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
                 }
+
+                for (u32 eidx = 1; eidx < size; ++eidx) {
+                    Entity* e0 = GetEntity(entities[0]);
+                    Entity* e1 = GetEntity(entities[eidx]);
+
+                    Vec3 dir = Vec3Zero();
+                    f32 dmin = 0.0f;
+                    bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
+
+                    if (collides) {
+                        e0->v = Vec3Zero();
+                        e1->v = Vec3Zero();
+                        {
+                            Vec3 arrow = Vec3Scale(dir, -1.0f);
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
+                        }
+                        {
+                            Vec3 arrow = dir;
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
+                        }
+                    } else {
+                        {
+                            Vec3 arrow = Vec3Scale(dir, -1.0f);
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e0->pos, orient, 0.3f, LGREEN);
+                        }
+                        {
+                            Vec3 arrow = dir;
+                            Mat4 orient = Mat4PointAt(arrow);
+                            DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
+                        }
+                    }
+                }
+
                 DrawEntities(shader, entities, 1);
                 DrawEntitiesWireFrame(shader, &entities[1], size - 1);
             }
@@ -2183,41 +2219,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     Entity* e = GetEntity(entities[i]);
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, delta));
                 }
-
-                // for (u32 eidx = 0; eidx < size - 1; eidx += 2) {
-                //     Entity* e0 = GetEntity(entities[eidx + 0]);
-                //     Entity* e1 = GetEntity(entities[eidx + 1]);
-
-                //     Vec3 dir = Vec3Zero();
-                //     f32 dmin = 0.0f;
-                //     bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
-
-                //     if (collides) {
-                //         e0->v = Vec3Zero();
-                //         e1->v = Vec3Zero();
-                //         {
-                //             Vec3 arrow = Vec3Scale(dir, -1.0f);
-                //             Mat4 orient = Mat4PointAt(arrow);
-                //             DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
-                //         }
-                //         {
-                //             Vec3 arrow = dir;
-                //             Mat4 orient = Mat4PointAt(arrow);
-                //             DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
-                //         }
-                //     } else {
-                //         {
-                //             Vec3 arrow = Vec3Scale(dir, -1.0f);
-                //             Mat4 orient = Mat4PointAt(arrow);
-                //             DrawArrow(arrow, e0->pos, orient, 0.3f, LGREEN);
-                //         }
-                //         {
-                //             Vec3 arrow = dir;
-                //             Mat4 orient = Mat4PointAt(arrow);
-                //             DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
-                //         }
-                //     }
-                // }
 
                 DrawEntities(shader, entities, size);
             }
