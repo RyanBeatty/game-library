@@ -1493,7 +1493,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             // Colliders
             {
                 const Vec3 positions[] = {origin};
-                const Vec3 velocities[] = {Vec3Lit(0.0f, 0.0f, -10.0f)};
+                const Vec3 velocities[] = {Vec3Lit(0.0f, 5.0f, -10.0f)};
                 const f32 rotations[] = {Deg2Rad(0.0f)};
                 Vec4 color = LPURPLE;
                 color.a = 0.16f;
