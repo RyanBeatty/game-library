@@ -1203,7 +1203,7 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
             }
 
             // If intervals do not overlap, then no collision.
-            // TODO: Add some margin here.
+            // TODO: floating point robustness.
             if (tamax < tbmin || tamin > tbmax) {
                 collides = false;
                 dir = axis;  // Useful to keep axis of separationg for debugging.
@@ -1215,6 +1215,7 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
             f32 imin = f32max(tamin, tbmin);
             f32 imax = f32min(tamax, tbmax);
             f32 d = imax - imin;
+            // TODO: floating point robustness.
             Assert(d > 0.0f);
 
             // If the separation is more minimal, then remember axis + sep distance.
@@ -1323,6 +1324,7 @@ collideret:
     // guaranteed their centers will be on either side of the separating plane.
     // TODO: Is the above even true?
     Vec3 atob = Vec3Sub(e1->pos, e0->pos);
+    // TODO: floating point robustness.
     f32 flip = Vec3Dot(dir, atob) < 0.0f ? -1.0f : 1.0f;
     dir = Vec3Scale(dir, flip);
 
