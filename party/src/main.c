@@ -1206,26 +1206,17 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
             // If intervals do not overlap, then no collision.
             // TODO: floating point robustness.
             if (tamax < tbmin || tamin > tbmax) {
-                if (e0->id == 7 && e1->id == 10) {
-                    TraceLog(LOG_INFO, "axis: (%f, %f, %f)      aint: [%f, %f]    bint: [%f, %f]", axis.x, axis.y,
-                             axis.z, tamin, tamax, tbmin, tbmax);
-                    if (ON) {
-                        breakpoint();
-                    }
-                }
+                // if (e0->id == 7 && e1->id == 10) {
+                //     TraceLog(LOG_INFO, "axis: (%f, %f, %f)      aint: [%f, %f]    bint: [%f, %f]", axis.x, axis.y,
+                //              axis.z, tamin, tamax, tbmin, tbmax);
+                //     if (ON) {
+                //         breakpoint();
+                //     }
+                // }
                 collides = false;
                 dir = axis;  // Useful to keep axis of separationg for debugging.
                 goto collideret;
             }
-
-            // if (e0->id == 7 && e1->id == 11) {
-            //     TraceLog(LOG_INFO, "axis: (%f, %f, %f)      aint: [%f, %f]    bint: [%f, %f]", axis.x, axis.y,
-            //     axis.z,
-            //              tamin, tamax, tbmin, tbmax);
-            //     if (ON) {
-            //         breakpoint();
-            //     }
-            // }
 
             // Otherwise there is a collision and we need to determine what the displacement is.
             // (dir of displacement is the separating axis).
