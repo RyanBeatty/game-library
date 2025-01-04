@@ -1036,8 +1036,7 @@ typedef struct Entity {
 
     // Decomposition of model matrix.
     Vec3 pos;
-    f32 scale;  // only allow uniform scaling.
-    Vec3 scale2;
+    Vec3 scale;
     Mat4 orient;
 
     Vec3 v;
@@ -1092,7 +1091,7 @@ static Entity* AllocateEntity() {
     memset(entity, 0, sizeof(*entity));
     entity->id = id;
     entity->flags = EFLAG_ACTIVE;
-    entity->scale = 1.0f;
+    entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
     entity->color = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
     FlagOn(entity->flags, EFLAG_DRAW);
@@ -1129,7 +1128,7 @@ static void GameStateInit(GameState* gstate) {
 }
 
 static Mat4 EntityGetMat(Entity* e) {
-    Mat4 scale = Mat4Scale(e->scale);
+    Mat4 scale = Mat4ScaleV(e->scale);
     Mat4 translate = Mat4TranslateV(e->pos);
     Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
     return model;
@@ -1354,10 +1353,7 @@ collideret:
 static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
     for (u32 i = 0; i < size; ++i) {
         Entity* entity = GetEntity(entities[i]);
-        Mat4 scale = Mat4Scale(entity->scale);
-        if (!Vec3Eq(entity->scale2, Vec3Zero())) {
-            scale = Mat4ScaleV(entity->scale2);
-        }
+        Mat4 scale = Mat4ScaleV(entity->scale);
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
         AddCmd(entity->mesh, model, entity->color);
@@ -1367,10 +1363,7 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
 static void DrawEntitiesWireFrame(LShader shader, EntityId* entities, u32 size) {
     for (u32 i = 0; i < size; ++i) {
         Entity* entity = GetEntity(entities[i]);
-        Mat4 scale = Mat4Scale(entity->scale);
-        if (!Vec3Eq(entity->scale2, Vec3Zero())) {
-            scale = Mat4ScaleV(entity->scale2);
-        }
+        Mat4 scale = Mat4ScaleV(entity->scale);
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
         DrawCmd* cmd = AddCmd(entity->mesh, model, entity->color);
@@ -1499,7 +1492,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->mesh = GetMesh(M_CUBE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                 entity->color = colors[i];
-                entity->scale = 3.0f;
+                entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                 entities[i] = entity->id;
             }
         }
@@ -1526,7 +1519,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     entity->mesh = GetMesh(M_CUBE);
                     entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                     entity->color = colors[i];
-                    entity->scale = 3.0f;
+                    entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                     entity->v = velocities[i];
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[size] = entity->id;
@@ -1554,8 +1547,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     entity->mesh = GetMesh(M_CUBE);
                     entity->orient = Mat4Rotate(rotations[i], axis[i]);
                     entity->color = colors[i];
-                    entity->scale = 3.0f;
-                    entity->scale2 = scale;
+                    entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
+                    entity->scale = scale;
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[size] = entity->id;
                 }
@@ -1579,7 +1572,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->mesh = GetMesh(M_2S_ISO_TRIANGLE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                 entity->color = colors[i];
-                entity->scale = 3.0f;
+                entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                 entities[i] = entity->id;
             }
         }
@@ -1698,7 +1691,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->orient = Mat4Rotate(rotations[j], axis[j]);
                             entity->color = LBLUE;  //: LORANGE;
                             entity->color.a = 0.5f;
-                            entity->scale = 3.0f;  // 1.0f;
+                            entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);  // 1.0f;
                             entities[size + 0] = entity->id;
                         }
                         {
@@ -1709,7 +1702,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->orient = Mat4Rotate(rotations[j], axis[j]);
                             entity->color = LORANGE;
                             entity->color.a = 0.5f;
-                            entity->scale = 1.0f;
+                            entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
                             entities[size + 1] = entity->id;
                         }
 
@@ -1743,7 +1736,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->orient = Mat4Rotate(rotations[j], axis[j]);
                             entity->color = LBLUE;  //: LORANGE;
                             entity->color.a = 0.5f;
-                            entity->scale = 3.0f;  // 1.0f;
+                            entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);  // 1.0f;
                             entities[size + 0] = entity->id;
                         }
                         {
@@ -1754,7 +1747,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->orient = Mat4Rotate(rotations[j], axis[j]);
                             entity->color = LORANGE;
                             entity->color.a = 0.5f;
-                            entity->scale = 1.0f;
+                            entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
                             entities[size + 1] = entity->id;
                         }
 
@@ -1891,7 +1884,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->orient = Mat4Rotate(rotations[j], axis[j]);
                             entity->color = LBLUE;  //: LORANGE;
                             entity->color.a = 0.5f;
-                            entity->scale = 3.0f;  // 1.0f;
+                            entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);  // 1.0f;
                             entities[size + 0] = entity->id;
                         }
                         {
@@ -1902,7 +1895,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                             entity->orient = Mat4Rotate(rotations[j], axis[j]);
                             entity->color = LORANGE;
                             entity->color.a = 0.5f;
-                            entity->scale = 1.0f;
+                            entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
                             entities[size + 1] = entity->id;
                         }
 
@@ -1941,7 +1934,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->mesh = GetMesh(M_PYRAMID);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(1.0f, 0.0f, 0.0f));
                 entity->color = colors[i];
-                entity->scale = 3.0f;
+                entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                 entities[i] = entity->id;
             }
         }
@@ -1960,7 +1953,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 entity->mesh = GetMesh(M_QUAD);
                 entity->orient = Mat4Rotate(rotations[i], axis[i]);
                 entity->color = colors[i];
-                entity->scale = 10000.0f;
+                entity->scale = Vec3Lit(10000.0f, 10000.0f, 10000.0f);
                 entities[i] = entity->id;
             }
         }
