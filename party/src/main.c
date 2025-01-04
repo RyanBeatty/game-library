@@ -1135,6 +1135,8 @@ static Mat4 EntityGetMat(Entity* e) {
     return model;
 }
 
+static bool ON = false;
+
 static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout) {
     Mat4 e0m = EntityGetMat(e0);
     Mat4 e1m = EntityGetMat(e1);
@@ -1205,10 +1207,26 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
             // If intervals do not overlap, then no collision.
             // TODO: floating point robustness.
             if (tamax < tbmin || tamin > tbmax) {
+                if (e0->id == 7 && e1->id == 10) {
+                    TraceLog(LOG_INFO, "axis: (%f, %f, %f)      aint: [%f, %f]    bint: [%f, %f]", axis.x, axis.y,
+                             axis.z, tamin, tamax, tbmin, tbmax);
+                    if (ON) {
+                        breakpoint();
+                    }
+                }
                 collides = false;
                 dir = axis;  // Useful to keep axis of separationg for debugging.
                 goto collideret;
             }
+
+            // if (e0->id == 7 && e1->id == 11) {
+            //     TraceLog(LOG_INFO, "axis: (%f, %f, %f)      aint: [%f, %f]    bint: [%f, %f]", axis.x, axis.y,
+            //     axis.z,
+            //              tamin, tamax, tbmin, tbmax);
+            //     if (ON) {
+            //         breakpoint();
+            //     }
+            // }
 
             // Otherwise there is a collision and we need to determine what the displacement is.
             // (dir of displacement is the separating axis).
@@ -1527,7 +1545,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                      Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f)};
                 const f32 rotations[] = {Deg2Rad(90.0f),  Deg2Rad(90.0f), Deg2Rad(180.0f),
                                          Deg2Rad(180.0f), Deg2Rad(90.0f), Deg2Rad(90.0f)};
-                const Vec4 colors[] = {LGRAY, LGRAY, LGRAY, LGRAY, LGRAY, LGRAY};
+                const Vec4 colors[] = {LGRAY, LGRAY, LBLUE, LGRAY, LGRAY, LGRAY};
                 const Vec3 scale = Vec3Lit(len, len, 1.0f);
 
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
@@ -1953,6 +1971,11 @@ static void GameStateDraw(GameState* gstate, float delta) {
         // Camera movement.
         {
             static const u8 GAMEPAD_ID = 0;
+            static bool FREECAM = false;
+
+            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+                FREECAM = !FREECAM;
+            }
 
             // Left stick movement.
             {
@@ -1969,7 +1992,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Vec3 dir_model = Vec3Lit(x, 0.0f, y);
 
                 Vec3 bodyorient = vieworient;
-                bodyorient.pitch = 0.0f;  // fps style movement rather than free cam movement.
+                // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
+                bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
                 Mat4 rotation = Mat4RotateEuler(bodyorient);
 
                 Vec3 dir_world = Vec3Transform(dir_model, rotation);
@@ -2012,52 +2036,67 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 DrawEntities(shader, entities, size);
             }
 
+            if (IsKeyPressed(KEY_R)) {
+                ON = !ON;
+                TraceLog(LOG_INFO, "debug %s", ON ? "on" : "off");
+            }
+
             // Physics update.
             {
+                static bool OFF = false;
+
+                if (IsKeyPressed(KEY_SPACE)) {
+                    OFF = !OFF;
+                }
+
                 EntityId* entities = PHYSICS;
                 u32 size = PHYSICS_SIZE;
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* entity = GetEntity(entities[i]);
-                    entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
+
+                if (!OFF) {
+                    for (u32 i = 0; i < size; ++i) {
+                        Entity* entity = GetEntity(entities[i]);
+                        entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
+                    }
                 }
 
                 for (u32 eidx = 1; eidx < size; ++eidx) {
                     Entity* e0 = GetEntity(entities[0]);
                     Entity* e1 = GetEntity(entities[eidx]);
 
-                    Vec3 dir = Vec3Zero();
-                    f32 dmin = 0.0f;
-                    bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
+                    if (!OFF) {
+                        Vec3 dir = Vec3Zero();
+                        f32 dmin = 0.0f;
+                        bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
 
-                    if (collides) {
-                        Vec3 normal = Vec3Scale(dir, -1.0f);
-                        Mat4 reflect = Mat4Reflect(normal);
-                        e0->v = Vec3Transform(e0->v, reflect);
+                        if (collides) {
+                            Vec3 normal = Vec3Scale(dir, -1.0f);
+                            Mat4 reflect = Mat4Reflect(normal);
+                            e0->v = Vec3Transform(e0->v, reflect);
 
-                        // e0->v = Vec3Zero();
-                        e1->v = Vec3Zero();
-                        {
-                            Vec3 arrow = Vec3Scale(dir, -1.0f);
-                            e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
-                            Mat4 orient = Mat4PointAt(arrow);
-                            DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
-                        }
-                        {
-                            Vec3 arrow = dir;
-                            e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
-                            Mat4 orient = Mat4PointAt(arrow);
-                            DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
-                        }
-                    } else {
-                        {
-                            Vec3 arrow = dir;
-                            Mat4 orient = Mat4PointAt(arrow);
-                            DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
+                            // e0->v = Vec3Zero();
+                            e1->v = Vec3Zero();
+                            {
+                                Vec3 arrow = Vec3Scale(dir, -1.0f);
+                                e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
+                                Mat4 orient = Mat4PointAt(arrow);
+                                DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
+                            }
+                            {
+                                Vec3 arrow = dir;
+                                e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
+                                Mat4 orient = Mat4PointAt(arrow);
+                                DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
+                            }
+                        } else {
+                            {
+                                Vec3 arrow = dir;
+                                Mat4 orient = Mat4PointAt(arrow);
+                                DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
+                            }
                         }
                     }
                 }
-
-                DrawEntities(shader, entities, 1);
+                DrawEntities(shader, entities, size);
                 DrawEntitiesWireFrame(shader, &entities[1], size - 1);
             }
 
