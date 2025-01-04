@@ -1202,6 +1202,7 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
                 tbmax = f32max(tbmax, n);
             }
 
+            // If intervals do not overlap, then no collision.
             // TODO: Add some margin here.
             if (tamax < tbmin || tamin > tbmax) {
                 collides = false;
@@ -1209,14 +1210,14 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
                 goto collideret;
             }
 
-            // Check for overlap. this will give magnitude of displacement if positive
+            // Otherwise there is a collision and we need to determine what the displacement is.
             // (dir of displacement is the separating axis).
-            // Negative value here means no overlap.
             f32 imin = f32max(tamin, tbmin);
             f32 imax = f32min(tamax, tbmax);
             f32 d = imax - imin;
             Assert(d > 0.0f);
 
+            // If the separation is more minimal, then remember axis + sep distance.
             collides = true;
             if (d < dmin) {
                 dir = axis;
