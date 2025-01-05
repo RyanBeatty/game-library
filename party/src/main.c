@@ -1452,6 +1452,27 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     // Init logic.
     if (!gstate->init) {
+        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+        LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
+
+        memset(LIGHTS, 0, sizeof(LIGHTS));
+        memset(SPINNING, 0, sizeof(SPINNING));
+        SPINNING_SIZE = 0;
+        memset(SHADOW_DEBUG, 0, sizeof(SHADOW_DEBUG));
+        SHADOW_DEBUG_SIZE = 0;
+        memset(PHYSICS, 0, sizeof(PHYSICS));
+        PHYSICS_SIZE = 0;
+        memset(ISO_TRIANGLES, 0, sizeof(ISO_TRIANGLES));
+        ISO_TRIANGLES_SIZE = 0;
+        memset(COLLISIONS, 0, sizeof(COLLISIONS));
+        COLLISIONS_SIZE = 0;
+        memset(PYRAMIDS, 0, sizeof(PYRAMIDS));
+        PYRAMIDS_SIZE = 0;
+        memset(WALLS, 0, sizeof(WALLS));
+        WALLS_SIZE = 0;
+
         vieworient.yaw = Deg2Rad(90.0f);
 
         {
