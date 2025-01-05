@@ -1397,7 +1397,7 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
 
 #define MAX_ENTITY_BATCH 256
 
-static void GameStateTick(GameState* gstate) {
+static void Scene1Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -2385,11 +2385,38 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
-        gstate->scenefuncs[idx++] = GameStateTick;
+        gstate->scenefuncs[idx++] = Scene1Tick;
         Assert(idx < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
     GameStateLoadScene(gstate, 0);
+}
+
+static void GameStateTick(GameState* gstate) {
+    gstate->dt = GetFrameTime();
+
+    // Check if scene needs to be changed.
+    {
+        bool right = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1);
+        bool left = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_1);
+
+        if ((right || left) && !(right && left)) {
+            // Need signed id for ring buffer wraparound on left.
+            i32 sceneid = gstate->sceneid;
+            if (right) {
+                sceneid = (sceneid + 1) % gstate->scenefuncssize;
+            } else {
+                sceneid = (((sceneid - 1) % gstate->scenefuncssize) + gstate->scenefuncssize) % gstate->scenefuncssize;
+            }
+
+            GameStateLoadScene(gstate, sceneid);
+        }
+    }
+
+    // Tick scene.
+    gstate->scenefuncs[gstate->sceneid](gstate);
+
+    gstate->init = true;
 }
 
 static void TestL();
@@ -2400,30 +2427,7 @@ int main(void) {
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
-        GState.dt = GetFrameTime();
-
-        // Check if scene needs to be changed.
-        {
-            bool right = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1);
-            bool left = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_1);
-
-            if ((right || left) && !(right && left)) {
-                // Need signed id for ring buffer wraparound on left.
-                i32 sceneid = GState.sceneid;
-                if (right) {
-                    sceneid = (sceneid + 1) % GState.scenefuncssize;
-                } else {
-                    sceneid = (((sceneid - 1) % GState.scenefuncssize) + GState.scenefuncssize) % GState.scenefuncssize;
-                }
-
-                GameStateLoadScene(&GState, sceneid);
-            }
-        }
-
-        GState.scenefuncs[GState.sceneid](&GState);
-        // GameStateTick(&GState);
-
-        GState.init = true;
+        GameStateTick(&GState);
     }
 
     CloseWindow();
