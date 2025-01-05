@@ -1128,7 +1128,7 @@ static GameState GState;
 static void LoadScene(GameState* gstate) {
     EntitySystemInit();
     CmdBufferZero();
-    // TODO: Should probably add RenderDataInit here right?
+    RenderDataInit();
 
     // Signal to scene update func to run init.
     gstate->init = false;
@@ -1452,9 +1452,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     // Init logic.
     if (!gstate->init) {
-        gstate->init = true;
-
-        RenderDataInit();
         vieworient.yaw = Deg2Rad(90.0f);
 
         {
@@ -2386,6 +2383,8 @@ int main(void) {
         }
         GameStateUpdate(&GState, delta);
         GameStateDraw(&GState, delta);
+
+        GState.init = true;
     }
 
     CloseWindow();
