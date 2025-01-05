@@ -806,9 +806,13 @@ static void AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
 }
 
 static void RenderDataInit() {
-    static bool INIT = false;
-    Assert(!INIT);
-    INIT = true;
+    VAO = 0;
+    VBO = 0;
+    VIO = 0;
+    memset(VBUFFER, 0, sizeof(VBUFFER));
+    VBUFFER_SIZE = 0;
+    memset(IBUFFER, 0, sizeof(IBUFFER));
+    IBUFFER_SIZE = 0;
 
     // Important!!!! Init the buffer before sending to GPU or else no vertex data!!!!!
 
@@ -1016,6 +1020,8 @@ const float RenderHeight = 720;
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
 
+static const u8 GAMEPAD_ID = 0;
+
 ////////////////////////////////////////////////////////////
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
@@ -1103,6 +1109,7 @@ typedef struct GameState {
     // Core fields
     bool debug;
     bool game_over;
+    bool init;  // False on first frame of scene load. Used to tell update function to perform init.
 
     float timer;
 
@@ -1114,6 +1121,19 @@ static GameState GState;
 
 #define GetGameState() (&GState)
 
+// Resets global state/system state that contains per scene info. Experimental approach
+// for use in scene switching as opposed to putting all this state into GameState object
+// and passing that around. The globalness of these systems is kind of convenient at the
+// moment.
+static void LoadScene(GameState* gstate) {
+    EntitySystemInit();
+    CmdBufferZero();
+    // TODO: Should probably add RenderDataInit here right?
+
+    // Signal to scene update func to run init.
+    gstate->init = false;
+}
+
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
 
@@ -1121,10 +1141,11 @@ static void GameStateInit(GameState* gstate) {
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
-    EntitySystemInit();
     // DisableCursor();
 
     { glEnable(GL_DEPTH_TEST); }
+
+    LoadScene(gstate);
 }
 
 static Mat4 EntityGetMat(Entity* e) {
@@ -1385,8 +1406,6 @@ static void GameStateUpdate(GameState* gstate, float dt) {
         }
 
         if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            static const u8 GAMEPAD_ID = 0;
-
             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
             f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
 
@@ -1405,7 +1424,6 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-    static bool INIT = false;
     static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
 
     static EntityId LIGHTS[MAX_ENTITY_BATCH] = {0};
@@ -1433,8 +1451,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
     static u32 WALLS_SIZE = 0;
 
     // Init logic.
-    if (!INIT) {
-        INIT = true;
+    if (!gstate->init) {
+        gstate->init = true;
 
         RenderDataInit();
         vieworient.yaw = Deg2Rad(90.0f);
@@ -2362,6 +2380,10 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         float delta = GetFrameTime();
+
+        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
+            LoadScene(&GState);
+        }
         GameStateUpdate(&GState, delta);
         GameStateDraw(&GState, delta);
     }
