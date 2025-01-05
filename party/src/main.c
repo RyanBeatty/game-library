@@ -2366,6 +2366,299 @@ static void Scene1Tick(GameState* gstate) {
     }
 }
 
+static void Scene2Tick(GameState* gstate) {
+    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+    static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
+
+    static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
+    static u32 PHYSICS_SIZE = 0;
+
+    static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
+    static u32 WALLS_SIZE = 0;
+
+    f32 dt = gstate->dt;
+
+    // Init logic.
+    if (!gstate->init) {
+        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+        LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
+
+        memset(PHYSICS, 0, sizeof(PHYSICS));
+        PHYSICS_SIZE = 0;
+        memset(WALLS, 0, sizeof(WALLS));
+        WALLS_SIZE = 0;
+
+        vieworient.yaw = Deg2Rad(90.0f);
+
+        // PHYSICS init
+        {
+            EntityId* entities = PHYSICS;
+            u32 size = 0;
+
+            const Vec3 origin = Vec3Lit(-20.0f, 30.0f, -50.0f);
+
+            // Colliders
+            {
+                const Vec3 positions[] = {origin};
+                const Vec3 velocities[] = {Vec3Lit(3.0f, 10.0f, -6.0f)};
+                const f32 rotations[] = {Deg2Rad(0.0f)};
+                Vec4 color = LPURPLE;
+                color.a = 0.16f;
+                const Vec4 colors[] = {color};
+
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
+                    Entity* entity = AllocateEntity();
+                    entity->pos = positions[i];
+                    entity->mesh = GetMesh(M_CUBE);
+                    entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                    entity->color = colors[i];
+                    entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
+                    entity->v = velocities[i];
+                    FlagOn(entity->flags, EFLAG_COLLIDER);
+                    entities[size] = entity->id;
+                }
+            }
+
+            // Walls
+            {
+                const f32 len = 20.0f;
+                const f32 hlen = len / 2.0f;
+                const Vec3 positions[] = {
+                    Vec3Add(origin, Vec3Lit(-hlen, 0.0f, 0.0f)), Vec3Add(origin, Vec3Lit(hlen, 0.0f, 0.0f)),
+                    Vec3Add(origin, Vec3Lit(0.0f, 0.0f, hlen)),  Vec3Add(origin, Vec3Lit(0.0f, 0.0f, -hlen)),
+                    Vec3Add(origin, Vec3Lit(0.0f, -hlen, 0.0f)), Vec3Add(origin, Vec3Lit(0.0f, hlen, 0.0f))};
+                const Vec3 axis[] = {Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
+                                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f)};
+                const f32 rotations[] = {Deg2Rad(90.0f),  Deg2Rad(90.0f), Deg2Rad(180.0f),
+                                         Deg2Rad(180.0f), Deg2Rad(90.0f), Deg2Rad(90.0f)};
+                const Vec4 colors[] = {LGRAY, LGRAY, LGRAY, LGRAY, LGRAY, LGRAY};
+                const Vec3 scale = Vec3Lit(len, len, 1.0f);
+
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
+                    Entity* entity = AllocateEntity();
+                    entity->pos = positions[i];
+                    entity->mesh = GetMesh(M_CUBE);
+                    entity->orient = Mat4Rotate(rotations[i], axis[i]);
+                    entity->color = colors[i];
+                    entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
+                    entity->scale = scale;
+                    FlagOn(entity->flags, EFLAG_COLLIDER);
+                    entities[size] = entity->id;
+                }
+            }
+
+            PHYSICS_SIZE = size;
+            Assert(PHYSICS_SIZE < MAX_ENTITY_BATCH);
+        }
+
+        {
+            static Vec3 positions[] = {Vec3Lit(0.0f, -10.0f, 0.0f)};
+            static f32 rotations[] = {Deg2Rad(-90.0f)};
+            static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
+            Vec4 colors[] = {LORANGE};
+
+            EntityId* entities = WALLS;
+            WALLS_SIZE = ArraySizeOf(positions);
+            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                Entity* entity = AllocateEntity();
+                entity->pos = positions[i];
+                entity->mesh = GetMesh(M_QUAD);
+                entity->orient = Mat4Rotate(rotations[i], axis[i]);
+                entity->color = colors[i];
+                entity->scale = Vec3Lit(10000.0f, 10000.0f, 10000.0f);
+                entities[i] = entity->id;
+            }
+        }
+    }
+
+    // Update logic.
+    {
+        // Camera movement.
+        {
+            static const u8 GAMEPAD_ID = 0;
+            static bool FREECAM = false;
+
+            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+                FREECAM = !FREECAM;
+            }
+
+            // Left stick movement.
+            {
+                static const f32 WALK_VEL = 20.0f;
+                static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+                f32 vel = WALK_VEL;
+                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                    vel = RUN_VEL;
+                }
+
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
+                Vec3 bodyorient = vieworient;
+                // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
+                bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
+                Mat4 rotation = Mat4RotateEuler(bodyorient);
+
+                Vec3 dir_world = Vec3Transform(dir_model, rotation);
+                Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
+                viewpos = Vec3Add(viewpos, mov_world);
+            }
+
+            // Right stick movement.
+            {
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                if (x != 0.0f || y != 0.0f) {
+                    static const rad VEL = Deg2Rad(90.0f);
+
+                    // rotate orient.
+                    vieworient.yaw += -1.0f * x * VEL * dt;
+                    vieworient.pitch += y * VEL * dt;
+                    // Clamp pitch to avoid looking too high/low which would sign flip things.
+                    vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+                }
+            }
+        }
+
+        {
+            LShader shader = GetShader();
+
+            // Physics update.
+            {
+                static bool OFF = false;
+
+                if (IsKeyPressed(KEY_SPACE)) {
+                    OFF = !OFF;
+                }
+
+                EntityId* entities = PHYSICS;
+                u32 size = PHYSICS_SIZE;
+
+                if (!OFF) {
+                    for (u32 i = 0; i < size; ++i) {
+                        Entity* entity = GetEntity(entities[i]);
+                        entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, dt));
+                    }
+                }
+
+                for (u32 eidx = 1; eidx < size; ++eidx) {
+                    Entity* e0 = GetEntity(entities[0]);
+                    Entity* e1 = GetEntity(entities[eidx]);
+
+                    if (!OFF) {
+                        Vec3 dir = Vec3Zero();
+                        f32 dmin = 0.0f;
+                        bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
+
+                        if (collides) {
+                            Vec3 normal = Vec3Scale(dir, -1.0f);
+                            Mat4 reflect = Mat4Reflect(normal);
+                            e0->v = Vec3Transform(e0->v, reflect);
+
+                            // e0->v = Vec3Zero();
+                            e1->v = Vec3Zero();
+                            {
+                                Vec3 arrow = Vec3Scale(dir, -1.0f);
+                                e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
+                                Mat4 orient = Mat4PointAt(arrow);
+                                DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
+                            }
+                            {
+                                Vec3 arrow = dir;
+                                e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
+                                Mat4 orient = Mat4PointAt(arrow);
+                                DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
+                            }
+                        } else {
+                            {
+                                Vec3 arrow = dir;
+                                Mat4 orient = Mat4PointAt(arrow);
+                                DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
+                            }
+                        }
+                    }
+                }
+                DrawEntities(shader, entities, size);
+                DrawEntitiesWireFrame(shader, &entities[1], size - 1);
+            }
+
+            // Walls.
+            {
+                EntityId* entities = WALLS;
+                u32 size = WALLS_SIZE;
+                DrawEntities(shader, entities, size);
+            }
+        }
+    }
+
+    // Drawing
+    {
+        // Begin.
+        {
+            BeginDrawing();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBindVertexArray(VAO);
+        }
+
+        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+
+        // Enable/Disable culling.
+        // TODO: Make this nicer at some point. Useful for debugging.
+        {
+            if (gstate->debug) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glFrontFace(GL_CCW);
+            }
+        }
+
+        // Use shader + setup norm + view + proj matrix.
+        LShader shader = GetShader();
+        {
+            glUseProgram(shader.pid);
+            {
+                // Calculate the sun direction in view space (only factoring in rotation).
+                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
+                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
+                Mat4 norm = Mat4Transpose(Mat4Invert(view));
+                norm.v.d = Vec3Zero();
+                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
+                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
+            }
+            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
+            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
+            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+        }
+
+        for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
+            DrawCmd* cmd = &CBUFFER[i];
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+            if (cmd->wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }
+            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+            if (cmd->wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+        }
+
+        EndDrawing();
+        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
+    }
+}
+
 ////////////////////////////////////////////////////////////
 
 static void GameStateInit(GameState* gstate) {
@@ -2383,6 +2676,7 @@ static void GameStateInit(GameState* gstate) {
     {
         u32 idx = 0;
         gstate->scenefuncs[idx++] = Scene1Tick;
+        gstate->scenefuncs[idx++] = Scene2Tick;
         Assert(idx < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
