@@ -1967,9 +1967,6 @@ static void Scene1Tick(GameState* gstate) {
 
     // Update logic.
     {
-        gstate->timer += dt;
-        gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
-
         // Camera movement.
         {
             static const u8 GAMEPAD_ID = 0;
@@ -2394,6 +2391,7 @@ static void GameStateInit(GameState* gstate) {
 
 static void GameStateTick(GameState* gstate) {
     gstate->dt = GetFrameTime();
+    f32 dt = gstate->dt;
 
     // Check if scene needs to be changed.
     {
@@ -2412,6 +2410,9 @@ static void GameStateTick(GameState* gstate) {
             GameStateLoadScene(gstate, sceneid);
         }
     }
+
+    gstate->timer += dt;
+    gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
 
     // Tick scene.
     gstate->scenefuncs[gstate->sceneid](gstate);
