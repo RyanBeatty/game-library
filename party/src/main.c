@@ -1395,32 +1395,9 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
     AddCmd(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
 }
 
-static void GameStateUpdate(GameState* gstate, float dt) {
-    gstate->timer += dt;
-
-    EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = GetEntity(i);
-        if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
-            continue;
-        }
-
-        if (TestFlag(entity->flags, EFLAG_PLAYER_CONTROLLED)) {
-            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-            f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-
-            // TODO: auto align movement direction to camera position.
-            Vec3 dir = Vec3Normalize(Vec3Lit(x, 0.0f, y));
-            entity->pos = Vec3Add(entity->pos, Vec3Scale(dir, 30.0f * dt));
-        }
-    }
-
-    gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
-}
-
 #define MAX_ENTITY_BATCH 256
 
-static void GameStateDraw(GameState* gstate, float delta) {
+static void GameStateTick(GameState* gstate, float dt) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -1988,6 +1965,9 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
     // Update logic.
     {
+        gstate->timer += dt;
+        gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
+
         // Camera movement.
         {
             static const u8 GAMEPAD_ID = 0;
@@ -2017,7 +1997,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 Mat4 rotation = Mat4RotateEuler(bodyorient);
 
                 Vec3 dir_world = Vec3Transform(dir_model, rotation);
-                Vec3 mov_world = Vec3Scale(dir_world, vel * delta);
+                Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
                 viewpos = Vec3Add(viewpos, mov_world);
             }
 
@@ -2029,8 +2009,8 @@ static void GameStateDraw(GameState* gstate, float delta) {
                     static const rad VEL = Deg2Rad(90.0f);
 
                     // rotate orient.
-                    vieworient.yaw += -1.0f * x * VEL * delta;
-                    vieworient.pitch += y * VEL * delta;
+                    vieworient.yaw += -1.0f * x * VEL * dt;
+                    vieworient.pitch += y * VEL * dt;
                     // Clamp pitch to avoid looking too high/low which would sign flip things.
                     vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
                 }
@@ -2075,7 +2055,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 if (!OFF) {
                     for (u32 i = 0; i < size; ++i) {
                         Entity* entity = GetEntity(entities[i]);
-                        entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, delta));
+                        entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, dt));
                     }
                 }
 
@@ -2230,7 +2210,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
-                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, delta));
+                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
 
                 for (u32 eidx = 0; eidx < size - 1; eidx += 2) {
@@ -2299,7 +2279,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                 u32 size = PYRAMIDS_SIZE;
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
-                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, delta));
+                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
 
                 DrawEntities(shader, entities, size);
@@ -2397,13 +2377,12 @@ int main(void) {
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
-        float delta = GetFrameTime();
+        float dt = GetFrameTime();
 
         if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
             LoadScene(&GState);
         }
-        GameStateUpdate(&GState, delta);
-        GameStateDraw(&GState, delta);
+        GameStateTick(&GState, dt);
 
         GState.init = true;
     }
