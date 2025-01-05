@@ -1111,7 +1111,8 @@ typedef struct GameState {
     bool game_over;
     bool init;  // False on first frame of scene load. Used to tell update function to perform init.
 
-    float timer;
+    f32 dt;  // frame delta time.
+    f32 timer;
 
     /////////////////////////////////////////
     // Gameplay fields
@@ -1398,7 +1399,7 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
 
 #define MAX_ENTITY_BATCH 256
 
-static void GameStateTick(GameState* gstate, float dt) {
+static void GameStateTick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -1427,6 +1428,8 @@ static void GameStateTick(GameState* gstate, float dt) {
 
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
+
+    f32 dt = gstate->dt;
 
     // Init logic.
     if (!gstate->init) {
@@ -2378,12 +2381,12 @@ int main(void) {
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
-        float dt = GetFrameTime();
+        GState.dt = GetFrameTime();
 
         if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
             LoadScene(&GState);
         }
-        GameStateTick(&GState, dt);
+        GameStateTick(&GState);
 
         GState.init = true;
     }
