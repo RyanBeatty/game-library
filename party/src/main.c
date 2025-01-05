@@ -1132,6 +1132,7 @@ static void LoadScene(GameState* gstate) {
 
     // Signal to scene update func to run init.
     gstate->init = false;
+    gstate->timer = 0.0f;
 }
 
 static void GameStateInit(GameState* gstate) {
