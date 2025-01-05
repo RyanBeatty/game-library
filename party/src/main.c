@@ -1104,6 +1104,8 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
+#define MAX_SCENES 10
+
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
@@ -1114,6 +1116,10 @@ typedef struct GameState {
     f32 dt;  // frame delta time.
     f32 timer;
 
+    void (*scenefuncs[MAX_SCENES])(struct GameState*);
+    u32 scenefuncssize;
+    u32 sceneid;
+
     /////////////////////////////////////////
     // Gameplay fields
 } GameState;
@@ -1122,11 +1128,15 @@ static GameState GState;
 
 #define GetGameState() (&GState)
 
+typedef void (*SceneTickFunc)(GameState* gstate);
+
 // Resets global state/system state that contains per scene info. Experimental approach
 // for use in scene switching as opposed to putting all this state into GameState object
 // and passing that around. The globalness of these systems is kind of convenient at the
 // moment.
-static void LoadScene(GameState* gstate) {
+static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
+    Assert(sceneid < MAX_SCENES);
+
     EntitySystemInit();
     CmdBufferZero();
     RenderDataInit();
@@ -1134,20 +1144,8 @@ static void LoadScene(GameState* gstate) {
     // Signal to scene update func to run init.
     gstate->init = false;
     gstate->timer = 0.0f;
-}
 
-static void GameStateInit(GameState* gstate) {
-    memset(gstate, 0, sizeof(GameState));
-
-    InitWindow(RenderWidth, RenderHeight, "Game");
-    SetWindowState(FLAG_WINDOW_UNDECORATED);
-    SetConfigFlags(FLAG_VSYNC_HINT);
-    SetTargetFPS(60);
-    // DisableCursor();
-
-    { glEnable(GL_DEPTH_TEST); }
-
-    LoadScene(gstate);
+    gstate->sceneid = sceneid;
 }
 
 static Mat4 EntityGetMat(Entity* e) {
@@ -2373,6 +2371,27 @@ static void GameStateTick(GameState* gstate) {
 
 ////////////////////////////////////////////////////////////
 
+static void GameStateInit(GameState* gstate) {
+    memset(gstate, 0, sizeof(GameState));
+
+    InitWindow(RenderWidth, RenderHeight, "Game");
+    SetWindowState(FLAG_WINDOW_UNDECORATED);
+    SetConfigFlags(FLAG_VSYNC_HINT);
+    SetTargetFPS(60);
+    // DisableCursor();
+
+    { glEnable(GL_DEPTH_TEST); }
+
+    // Register scenes.
+    {
+        u32 idx = 0;
+        gstate->scenefuncs[idx++] = GameStateTick;
+        Assert(idx < MAX_SCENES);
+        gstate->scenefuncssize = idx;
+    }
+    GameStateLoadScene(gstate, 0);
+}
+
 static void TestL();
 
 int main(void) {
@@ -2383,10 +2402,26 @@ int main(void) {
     while (!WindowShouldClose()) {
         GState.dt = GetFrameTime();
 
-        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
-            LoadScene(&GState);
+        // Check if scene needs to be changed.
+        {
+            bool right = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1);
+            bool left = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_1);
+
+            if ((right || left) && !(right && left)) {
+                // Need signed id for ring buffer wraparound on left.
+                i32 sceneid = GState.sceneid;
+                if (right) {
+                    sceneid = (sceneid + 1) % GState.scenefuncssize;
+                } else {
+                    sceneid = (((sceneid - 1) % GState.scenefuncssize) + GState.scenefuncssize) % GState.scenefuncssize;
+                }
+
+                GameStateLoadScene(&GState, sceneid);
+            }
         }
-        GameStateTick(&GState);
+
+        GState.scenefuncs[GState.sceneid](&GState);
+        // GameStateTick(&GState);
 
         GState.init = true;
     }
