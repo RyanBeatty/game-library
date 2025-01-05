@@ -1498,7 +1498,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
             // Colliders
             {
                 const Vec3 positions[] = {origin};
-                const Vec3 velocities[] = {Vec3Lit(0.0f, 1.0f, -10.0f)};
+                const Vec3 velocities[] = {Vec3Lit(3.0f, 10.0f, -6.0f)};
                 const f32 rotations[] = {Deg2Rad(0.0f)};
                 Vec4 color = LPURPLE;
                 color.a = 0.16f;
@@ -1519,7 +1519,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
 
             // Walls
             {
-                const f32 len = 50.0f;
+                const f32 len = 20.0f;
                 const f32 hlen = len / 2.0f;
                 const Vec3 positions[] = {
                     Vec3Add(origin, Vec3Lit(-hlen, 0.0f, 0.0f)), Vec3Add(origin, Vec3Lit(hlen, 0.0f, 0.0f)),
@@ -1529,7 +1529,7 @@ static void GameStateDraw(GameState* gstate, float delta) {
                                      Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f)};
                 const f32 rotations[] = {Deg2Rad(90.0f),  Deg2Rad(90.0f), Deg2Rad(180.0f),
                                          Deg2Rad(180.0f), Deg2Rad(90.0f), Deg2Rad(90.0f)};
-                const Vec4 colors[] = {LGRAY, LGRAY, LBLUE, LGRAY, LGRAY, LGRAY};
+                const Vec4 colors[] = {LGRAY, LGRAY, LGRAY, LGRAY, LGRAY, LGRAY};
                 const Vec3 scale = Vec3Lit(len, len, 1.0f);
 
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {

@@ -16,13 +16,18 @@ TODO
 * Collisions
     * Mat4Point
         * handle up x z == 0
-    * Create basic physics demo where cube is bouncing around room (reflect outgoing velocity around collision normal). collision response.
+    * implement time of impact calculation
+    * floating point robustness
     * calculate contact points
         * in collision query (like face face/edge edge) return id[2] of features (either two faces) or (two edges). calculate most antiparallel face
         * then do a search with the face id (which is a triangle). if surrounding triangles from the verts
         point in same normal, then also use those verts to clip.
 * Rendering
-    * switch to DrawCommands
-    * support being able to shade meshes one solid color. useful for controlling debug info.
     * get lights + lighting working again.
+* Core
+    * impl scene switching.
+    * impl hot reloading
+    * impl audio and sound playback.
+    * stop using raylib for input
+    * stop using raylib for window creation
 
