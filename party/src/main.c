@@ -2370,8 +2370,6 @@ static void Scene2Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-    static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
-
     static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
     static u32 PHYSICS_SIZE = 0;
 
@@ -2384,8 +2382,6 @@ static void Scene2Tick(GameState* gstate) {
     if (!gstate->init) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-        LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
 
         memset(PHYSICS, 0, sizeof(PHYSICS));
         PHYSICS_SIZE = 0;
