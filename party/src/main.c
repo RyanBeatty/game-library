@@ -993,15 +993,41 @@ static void RenderDataInit() {
     // https://en.wikipedia.org/wiki/Icosahedron
     {
         // golden ratio.
-        float t = (1 + sqrtf(5)) / 2;
+        f32 t = (1 + sqrtf(5)) / 2;
 
         Vec3 vs[] = {
-            Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(-0.5f, 0.866f, 0.0f),  Vec3Lit(-0.5f, -0.866f, 0.0f),
-            Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(-0.5f, -0.866f, 0.0f), Vec3Lit(-0.5f, 0.866f, 0.0f),
+            Vec3Lit(-1.0f, t, 0.0f), Vec3Lit(1.0f, t, 0.0f), Vec3Lit(-1.0f, -t, 0.0f), Vec3Lit(1.0f, -t, 0.0f),
+            Vec3Lit(0.0f, -1.0f, t), Vec3Lit(0.0f, 1.0f, t), Vec3Lit(0.0f, -1.0f, -t), Vec3Lit(0.0f, 1.0f, -t),
+            Vec3Lit(t, 0.0f, -1.0f), Vec3Lit(t, 0.0f, 1.0f), Vec3Lit(-t, 0.0f, -1.0f), Vec3Lit(-t, 0.0f, 1.0f),
         };
         Triangle ts[] = {
-            TriLit(0, 1, 2),  //
-            TriLit(3, 4, 5)   //
+            // 5 faces around point 0
+            TriLit(0, 11, 5),
+            TriLit(0, 5, 1),
+            TriLit(0, 1, 7),
+            TriLit(0, 7, 10),
+            TriLit(0, 10, 11),
+
+            // 5 adjacent faces
+            TriLit(1, 5, 9),
+            TriLit(5, 11, 4),
+            TriLit(11, 10, 2),
+            TriLit(10, 7, 6),
+            TriLit(7, 1, 8),
+
+            // 5 faces around point 3
+            TriLit(3, 9, 4),
+            TriLit(3, 4, 2),
+            TriLit(3, 2, 6),
+            TriLit(3, 6, 8),
+            TriLit(3, 8, 9),
+
+            // 5 adjacent faces
+            TriLit(4, 9, 5),
+            TriLit(2, 4, 11),
+            TriLit(6, 2, 10),
+            TriLit(8, 6, 7),
+            TriLit(9, 8, 1),
         };
         AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
@@ -2184,9 +2210,10 @@ static void Scene1Tick(GameState* gstate) {
                 u32 size = MESH_TEST_SIZE;
                 for (u32 i = 0; i < size; ++i) {
                     Entity* entity = GetEntity(entities[i]);
-                    entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                    entity->orient = Mat4Rotate(gstate->timer * 0.5f, Vec3Lit(1.0f, 0.3f, 0.5f));
                 }
                 DrawEntities(shader, entities, size);
+                DrawEntitiesWireFrame(shader, entities, size);
             }
 
             // ISO TRIANGLES DRAW Draw.
