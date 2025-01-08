@@ -805,7 +805,6 @@ static void AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
     mesh->ntriangles = ntriangles;
 }
 
-// TODO: Broken.
 static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = VBUFFER_SIZE;
     u32 ioffset = IBUFFER_SIZE;
@@ -814,6 +813,7 @@ static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
     Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
 
+    Vec3 ns[MAX_VERTICES] = {0};
     for (u32 i = 0; i < tsize; ++i) {
         Triangle t = ts[i];
         Vec3 a = vs[t.a];
@@ -821,14 +821,17 @@ static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
         Vec3 c = vs[t.c];
         Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
 
-        u32 voffset = VBUFFER_SIZE;
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = a, .normal = n, .color = Vec3Zero()};
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = b, .normal = n, .color = Vec3Zero()};
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = c, .normal = n, .color = Vec3Zero()};
+        ns[t.a] = n;
+        ns[t.b] = n;
+        ns[t.c] = n;
 
-        IBUFFER[IBUFFER_SIZE++] = voffset + 0;
-        IBUFFER[IBUFFER_SIZE++] = voffset + 1;
-        IBUFFER[IBUFFER_SIZE++] = voffset + 2;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.a;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.b;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.c;
+    }
+
+    for (u32 i = 0; i < vsize; ++i) {
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .color = Vec3Zero()};
     }
 
     LMesh* mesh = &MESHES[MESHES_SIZE];
@@ -851,6 +854,7 @@ static void RenderDataInit() {
     // Cube.
     {
         Vertex vs[] = {
+            // Back.
             {{{0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
             {{{-0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
             {{{-0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
