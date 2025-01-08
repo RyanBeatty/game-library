@@ -742,16 +742,16 @@ typedef struct Vertex {
 
 typedef struct Triangle {
     union {
-        Vertex vs[3];
+        u32 vs[3];
         struct {
-            Vertex a;
-            Vertex b;
-            Vertex c;
+            u32 a;
+            u32 b;
+            u32 c;
         };
     };
 } Triangle;
 
-#define TriangleLit(n0, n1, n2) ((Triangle){.a = (n0), .b = (n1), .c = (n2)})
+#define TriLit(n0, n1, n2) ((Triangle){.a = (n0), .b = (n1), .c = (n2)})
 
 #define MAX_VERTICES 256
 
@@ -775,7 +775,7 @@ typedef struct LMesh {
 static LMesh MESHES[MAX_MESHES] = {0};
 static u32 MESHES_SIZE = 0;
 
-typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_PYRAMID, M_2S_ISO_TRIANGLE, M_COUNT } MID;
+typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_PYRAMID, M_2S_ISO_TRIANGLE, M_ICOSAHEDRON, M_COUNT } MID;
 
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
@@ -803,6 +803,38 @@ static void AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
     ++MESHES_SIZE;
     mesh->ibufferidx = ibufferidx;
     mesh->ntriangles = ntriangles;
+}
+
+// TODO: Broken.
+static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
+    u32 voffset = VBUFFER_SIZE;
+    u32 ioffset = IBUFFER_SIZE;
+
+    Assert(vsize % 3 == 0);
+    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
+    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
+
+    for (u32 i = 0; i < tsize; ++i) {
+        Triangle t = ts[i];
+        Vec3 a = vs[t.a];
+        Vec3 b = vs[t.b];
+        Vec3 c = vs[t.c];
+        Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
+
+        u32 voffset = VBUFFER_SIZE;
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = a, .normal = n, .color = Vec3Zero()};
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = b, .normal = n, .color = Vec3Zero()};
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = c, .normal = n, .color = Vec3Zero()};
+
+        IBUFFER[IBUFFER_SIZE++] = voffset + 0;
+        IBUFFER[IBUFFER_SIZE++] = voffset + 1;
+        IBUFFER[IBUFFER_SIZE++] = voffset + 2;
+    }
+
+    LMesh* mesh = &MESHES[MESHES_SIZE];
+    ++MESHES_SIZE;
+    mesh->ibufferidx = ioffset;
+    mesh->ntriangles = tsize;
 }
 
 static void RenderDataInit() {
@@ -953,6 +985,23 @@ static void RenderDataInit() {
         AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
+    // Icosahedron Mesh.
+    // https://en.wikipedia.org/wiki/Icosahedron
+    {
+        // golden ratio.
+        float t = (1 + sqrtf(5)) / 2;
+
+        Vec3 vs[] = {
+            Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(-0.5f, 0.866f, 0.0f),  Vec3Lit(-0.5f, -0.866f, 0.0f),
+            Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(-0.5f, -0.866f, 0.0f), Vec3Lit(-0.5f, 0.866f, 0.0f),
+        };
+        Triangle ts[] = {
+            TriLit(0, 1, 2),  //
+            TriLit(3, 4, 5)   //
+        };
+        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+    }
+
     LShader shader = GetShader();
 
     glGenVertexArrays(1, &VAO);
@@ -975,14 +1024,6 @@ static void RenderDataInit() {
 }
 
 static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
-
-static Triangle LMeshGetTriangle(LMesh mid, u32 tid) {
-    u32 offset = tid * 3;
-    Vertex v0 = LMeshGetVertex(mid, offset + 0);
-    Vertex v1 = LMeshGetVertex(mid, offset + 1);
-    Vertex v2 = LMeshGetVertex(mid, offset + 2);
-    return TriangleLit(v0, v1, v2);
-}
 
 typedef struct DrawCmd {
     LMesh meshid;
@@ -1409,6 +1450,9 @@ static void Scene1Tick(GameState* gstate) {
     static EntityId SPINNING[MAX_ENTITY_BATCH] = {0};
     static u32 SPINNING_SIZE = 0;
 
+    static EntityId MESH_TEST[MAX_ENTITY_BATCH] = {0};
+    static u32 MESH_TEST_SIZE = 0;
+
     static EntityId SHADOW_DEBUG[MAX_ENTITY_BATCH] = {0};
     static u32 SHADOW_DEBUG_SIZE = 0;
 
@@ -1483,6 +1527,37 @@ static void Scene1Tick(GameState* gstate) {
                 entity->color = colors[i];
                 entities[i] = entity->id;
             }
+        }
+
+        // MESH_TEST init
+        {
+            EntityId* entities = MESH_TEST;
+            u32 size = 0;
+
+            const Vec3 origin = Vec3Lit(-40.0f, 0.0f, 0.0f);
+
+            // Colliders
+            {
+                Vec4 color = LGRAY;
+                color.a = 0.5f;
+
+                Vec3 pos = origin;
+
+                for (u32 i = 0; i < M_COUNT; ++i, ++size) {
+                    Entity* entity = AllocateEntity();
+                    entity->pos = pos;
+                    entity->mesh = GetMesh(i);
+                    entity->orient = Mat4Identity();
+                    entity->color = color;
+                    entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+                    entities[size] = entity->id;
+
+                    pos = Vec3Add(pos, Vec3Lit(0, 0, 5.0f));
+                }
+            }
+
+            MESH_TEST_SIZE = size;
+            Assert(MESH_TEST_SIZE < MAX_ENTITY_BATCH);
         }
 
         {
@@ -2097,6 +2172,17 @@ static void Scene1Tick(GameState* gstate) {
                 }
                 DrawEntities(shader, entities, size);
                 DrawEntitiesWireFrame(shader, &entities[1], size - 1);
+            }
+
+            // MESH_TEST update.
+            {
+                EntityId* entities = MESH_TEST;
+                u32 size = MESH_TEST_SIZE;
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* entity = GetEntity(entities[i]);
+                    entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
+                }
+                DrawEntities(shader, entities, size);
             }
 
             // ISO TRIANGLES DRAW Draw.

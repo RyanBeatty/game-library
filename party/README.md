@@ -25,7 +25,7 @@ TODO
 * Rendering
     * get lights + lighting working again.
 * Core
-    * impl scene switching.
+    * impl loading blender scene
     * impl hot reloading
     * impl audio and sound playback.
     * stop using raylib for input
