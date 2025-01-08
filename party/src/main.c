@@ -805,6 +805,7 @@ static void AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
     mesh->ntriangles = ntriangles;
 }
 
+// TODO: Switch AddMesh() usage to this
 static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = VBUFFER_SIZE;
     u32 ioffset = IBUFFER_SIZE;
