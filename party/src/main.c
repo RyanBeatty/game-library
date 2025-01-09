@@ -754,7 +754,7 @@ typedef struct Triangle {
 
 #define TriLit(n0, n1, n2) ((Triangle){.va = (n0), .vb = (n1), .vc = (n2)})
 
-#define MAX_VERTICES 256
+#define MAX_VERTICES 512
 
 static u32 VAO = 0;
 static u32 VBO = 0;
@@ -763,7 +763,7 @@ static u32 VIO = 0;  // Index buffer.
 static Vertex VBUFFER[MAX_VERTICES] = {};  // Vertex buffer
 static u32 VBUFFER_SIZE = 0;
 
-#define MAX_TRIANGLES 512
+#define MAX_TRIANGLES 2048
 static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
 static u32 IBUFFER_SIZE = 0;
 
@@ -1047,7 +1047,7 @@ static void RenderDataInit() {
     }
 
     // ICOSPHERE Mesh.
-    // https://en.wikipedia.org/wiki/Icosahedron
+    // https://gist.github.com/skeeto/b4aecead36ddec149d99b9f09830a373
     {
         // golden ratio.
         f32 t = LPHI;
@@ -1136,7 +1136,9 @@ static void RenderDataInit() {
         Assert(tsize < ArraySizeOf(ts));
         ts[tsize++] = TriLit(9, 8, 1);
 
-        u32 nsubdivides = 1;
+        // TODO: Issue. seems like a seg fault when I bump this too high. probably something
+        // to do with max ibuffer or vbuffer size.
+        u32 nsubdivides = 2;
 
         bool found[MAX_VERTICES][MAX_VERTICES] = {0};
         u32 midpoints[MAX_VERTICES][MAX_VERTICES] = {0};
