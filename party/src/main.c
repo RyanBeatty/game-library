@@ -763,7 +763,7 @@ static u32 VIO = 0;  // Index buffer.
 static Vertex VBUFFER[MAX_VERTICES] = {};  // Vertex buffer
 static u32 VBUFFER_SIZE = 0;
 
-#define MAX_TRIANGLES 256
+#define MAX_TRIANGLES 512
 static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
 static u32 IBUFFER_SIZE = 0;
 
@@ -1136,16 +1136,51 @@ static void RenderDataInit() {
         Assert(tsize < ArraySizeOf(ts));
         ts[tsize++] = TriLit(9, 8, 1);
 
-        u32 nsubdivides = 0;
+        u32 nsubdivides = 1;
 
-        bool found[MAX_TRIANGLES][MAX_TRIANGLES] = {0};
-        u32 midmap[MAX_TRIANGLES][MAX_TRIANGLES] = {0};
+        bool found[MAX_VERTICES][MAX_VERTICES] = {0};
+        u32 midpoints[MAX_VERTICES][MAX_VERTICES] = {0};
         for (u32 count = 0; count < nsubdivides; ++count) {
-            Triangle ts2 = {0};
+            Triangle ts2[MAX_TRIANGLES] = {0};
             u32 ts2size = 0;
             for (u32 ti = 0; ti < tsize; ++ti) {
                 Triangle t = ts[ti];
+                u32 edges[][2] = {{t.va, t.vb}, {t.vb, t.vc}, {t.vc, t.va}};
+                // compute midpoint of each edge.
+                for (u32 ei = 0; ei < ArraySizeOf(edges); ++ei) {
+                    u32 va = edges[ei][0];
+                    u32 vb = edges[ei][1];
+                    if (!found[va][vb]) {
+                        Vec3 midpoint = Vec3Scale(Vec3Add(vs[va], vs[vb]), 0.5f);
+                        u32 idx = vsize;
+                        Assert(vsize < ArraySizeOf(vs));
+                        vs[vsize++] = Vec3Normalize(midpoint);
+
+                        found[va][vb] = true;
+                        found[vb][va] = true;
+                        midpoints[va][vb] = idx;
+                        midpoints[vb][va] = idx;
+                    }
+                }
+
+                u32 a = midpoints[t.va][t.vb];
+                u32 b = midpoints[t.vb][t.vc];
+                u32 c = midpoints[t.vc][t.va];
+
+                Assert(ts2size < ArraySizeOf(ts2));
+                ts2[ts2size++] = TriLit(t.va, a, c);
+                Assert(ts2size < ArraySizeOf(ts2));
+                ts2[ts2size++] = TriLit(t.vb, b, a);
+                Assert(ts2size < ArraySizeOf(ts2));
+                ts2[ts2size++] = TriLit(t.vc, c, b);
+                Assert(ts2size < ArraySizeOf(ts2));
+                ts2[ts2size++] = TriLit(a, b, c);
             }
+
+            for (u32 j = 0; j < ts2size; ++j) {
+                ts[j] = ts2[j];
+            }
+            tsize = ts2size;
         }
 
         AddMesh2(vs, vsize, ts, tsize);
