@@ -745,14 +745,14 @@ typedef struct Triangle {
     union {
         u32 vs[3];
         struct {
-            u32 a;
-            u32 b;
-            u32 c;
+            u32 va;
+            u32 vb;
+            u32 vc;
         };
     };
 } Triangle;
 
-#define TriLit(n0, n1, n2) ((Triangle){.a = (n0), .b = (n1), .c = (n2)})
+#define TriLit(n0, n1, n2) ((Triangle){.va = (n0), .vb = (n1), .vc = (n2)})
 
 #define MAX_VERTICES 256
 
@@ -827,18 +827,18 @@ static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     Vec3 ns[MAX_VERTICES] = {0};
     for (u32 i = 0; i < tsize; ++i) {
         Triangle t = ts[i];
-        Vec3 a = vs[t.a];
-        Vec3 b = vs[t.b];
-        Vec3 c = vs[t.c];
+        Vec3 a = vs[t.va];
+        Vec3 b = vs[t.vb];
+        Vec3 c = vs[t.vc];
         Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
 
-        ns[t.a] = n;
-        ns[t.b] = n;
-        ns[t.c] = n;
+        ns[t.va] = n;
+        ns[t.vb] = n;
+        ns[t.vc] = n;
 
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.a;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.b;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.c;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
     }
 
     for (u32 i = 0; i < vsize; ++i) {
@@ -1135,6 +1135,19 @@ static void RenderDataInit() {
         ts[tsize++] = TriLit(8, 6, 7);
         Assert(tsize < ArraySizeOf(ts));
         ts[tsize++] = TriLit(9, 8, 1);
+
+        u32 nsubdivides = 0;
+
+        bool found[MAX_TRIANGLES][MAX_TRIANGLES] = {0};
+        u32 midmap[MAX_TRIANGLES][MAX_TRIANGLES] = {0};
+        for (u32 count = 0; count < nsubdivides; ++count) {
+            Triangle ts2 = {0};
+            u32 ts2size = 0;
+            for (u32 ti = 0; ti < tsize; ++ti) {
+                Triangle t = ts[ti];
+            }
+        }
+
         AddMesh2(vs, vsize, ts, tsize);
     }
 
@@ -2477,11 +2490,11 @@ static void Scene1Tick(GameState* gstate) {
                         //     for (u32 i = 0; i < mid.ntriangles; i += 1) {
                         //         Triangle t = LMeshGetTriangle(mid, i);
 
-                        //         Vec3 ab = Vec3Sub(t.b.pos, t.a.pos);
-                        //         Vec3 ac = Vec3Sub(t.c.pos, t.a.pos);
+                        //         Vec3 ab = Vec3Sub(t.vb.pos, t.va.pos);
+                        //         Vec3 ac = Vec3Sub(t.vc.pos, t.va.pos);
                         //         Vec3 norm = Vec3Cross(ab, ac);
 
-                        //         Vec3 center = Vec3Scale(Vec3Add(t.a.pos, Vec3Add(t.b.pos, t.c.pos)), 1.0f / 3.0f);
+                        //         Vec3 center = Vec3Scale(Vec3Add(t.va.pos, Vec3Add(t.vb.pos, t.vc.pos)), 1.0f / 3.0f);
                         //         center = Vec3WTransform(center, model);
 
                         //         Mat4 orient = Mat4PointAt(norm);
