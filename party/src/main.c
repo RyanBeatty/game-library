@@ -31,6 +31,7 @@ typedef f32 deg;
 
 #define LPI ((f32)3.1415926535)
 #define LTAU ((f32)6.2831853071)
+#define LPHI ((f32)1.6180339887)  // golden ratio
 
 #define Deg2Rad(d) ((d) * LTAU / 360.0f)
 #define Rad2Deg(r) ((r) * 360.0f / LTAU)
@@ -994,12 +995,15 @@ static void RenderDataInit() {
     // https://en.wikipedia.org/wiki/Icosahedron
     {
         // golden ratio.
-        f32 t = (1 + sqrtf(5)) / 2;
+        f32 t = LPHI;
 
         Vec3 vs[] = {
-            Vec3Lit(-1.0f, t, 0.0f), Vec3Lit(1.0f, t, 0.0f), Vec3Lit(-1.0f, -t, 0.0f), Vec3Lit(1.0f, -t, 0.0f),
-            Vec3Lit(0.0f, -1.0f, t), Vec3Lit(0.0f, 1.0f, t), Vec3Lit(0.0f, -1.0f, -t), Vec3Lit(0.0f, 1.0f, -t),
-            Vec3Lit(t, 0.0f, -1.0f), Vec3Lit(t, 0.0f, 1.0f), Vec3Lit(-t, 0.0f, -1.0f), Vec3Lit(-t, 0.0f, 1.0f),
+            Vec3Normalize(Vec3Lit(-1.0f, t, 0.0f)),  Vec3Normalize(Vec3Lit(1.0f, t, 0.0f)),
+            Vec3Normalize(Vec3Lit(-1.0f, -t, 0.0f)), Vec3Normalize(Vec3Lit(1.0f, -t, 0.0f)),
+            Vec3Normalize(Vec3Lit(0.0f, -1.0f, t)),  Vec3Normalize(Vec3Lit(0.0f, 1.0f, t)),
+            Vec3Normalize(Vec3Lit(0.0f, -1.0f, -t)), Vec3Normalize(Vec3Lit(0.0f, 1.0f, -t)),
+            Vec3Normalize(Vec3Lit(t, 0.0f, -1.0f)),  Vec3Normalize(Vec3Lit(t, 0.0f, 1.0f)),
+            Vec3Normalize(Vec3Lit(-t, 0.0f, -1.0f)), Vec3Normalize(Vec3Lit(-t, 0.0f, 1.0f)),
         };
         Triangle ts[] = {
             // 5 faces around point 0
