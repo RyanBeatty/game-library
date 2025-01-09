@@ -776,7 +776,16 @@ typedef struct LMesh {
 static LMesh MESHES[MAX_MESHES] = {0};
 static u32 MESHES_SIZE = 0;
 
-typedef enum MID { M_CUBE = 0, M_QUAD, M_ISO_TRIANGLE, M_PYRAMID, M_2S_ISO_TRIANGLE, M_ICOSAHEDRON, M_COUNT } MID;
+typedef enum MID {
+    M_CUBE = 0,
+    M_QUAD,
+    M_ISO_TRIANGLE,
+    M_PYRAMID,
+    M_2S_ISO_TRIANGLE,
+    M_ICOSAHEDRON,
+    M_ICOSPHERE,
+    M_COUNT
+} MID;
 
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
@@ -1035,6 +1044,98 @@ static void RenderDataInit() {
             TriLit(9, 8, 1),
         };
         AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+    }
+
+    // ICOSPHERE Mesh.
+    // https://en.wikipedia.org/wiki/Icosahedron
+    {
+        // golden ratio.
+        f32 t = LPHI;
+
+        Vec3 vs[MAX_VERTICES] = {0};
+        u32 vsize = 0;
+
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(-1.0f, t, 0.0f));
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(1.0f, t, 0.0f));
+
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(-1.0f, -t, 0.0f));
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(1.0f, -t, 0.0f));
+
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(0.0f, -1.0f, t));
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(0.0f, 1.0f, t));
+
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(0.0f, -1.0f, -t));
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(0.0f, 1.0f, -t));
+
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(t, 0.0f, -1.0f));
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(t, 0.0f, 1.0f));
+
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(-t, 0.0f, -1.0f));
+        Assert(vsize < ArraySizeOf(vs));
+        vs[vsize++] = Vec3Normalize(Vec3Lit(-t, 0.0f, 1.0f));
+
+        Triangle ts[MAX_TRIANGLES] = {0};
+        u32 tsize = 0;
+
+        // 5 faces around point 0
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(0, 11, 5);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(0, 5, 1);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(0, 1, 7);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(0, 7, 10);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(0, 10, 11);
+
+        // 5 adjacent faces
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(1, 5, 9);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(5, 11, 4);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(11, 10, 2);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(10, 7, 6);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(7, 1, 8);
+
+        // 5 faces around point 3
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(3, 9, 4);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(3, 4, 2);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(3, 2, 6);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(3, 6, 8);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(3, 8, 9);
+
+        // 5 adjacent faces
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(4, 9, 5);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(2, 4, 11);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(6, 2, 10);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(8, 6, 7);
+        Assert(tsize < ArraySizeOf(ts));
+        ts[tsize++] = TriLit(9, 8, 1);
+        AddMesh2(vs, vsize, ts, tsize);
     }
 
     LShader shader = GetShader();
