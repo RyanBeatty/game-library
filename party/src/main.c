@@ -1138,7 +1138,7 @@ static void RenderDataInit() {
 
         // TODO: Issue. seems like a seg fault when I bump this too high. probably something
         // to do with max ibuffer or vbuffer size.
-        u32 nsubdivides = 2;
+        u32 nsubdivides = 1;
 
         bool found[MAX_VERTICES][MAX_VERTICES] = {0};
         u32 midpoints[MAX_VERTICES][MAX_VERTICES] = {0};
@@ -2682,7 +2682,7 @@ static void Scene2Tick(GameState* gstate) {
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
                     Entity* entity = AllocateEntity();
                     entity->pos = positions[i];
-                    entity->mesh = GetMesh(M_CUBE);
+                    entity->mesh = GetMesh(M_ICOSPHERE);
                     entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                     entity->color = colors[i];
                     entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
