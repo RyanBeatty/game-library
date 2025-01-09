@@ -13,6 +13,9 @@ Engine Features Desired for Gameplay Prototyping
 
 
 TODO
+* Bugs
+    * segfault when switching scenes with icosphere with too many subdivisions. sometimes segfaults on program
+    startup as well.
 * Collisions
     * Mat4Point
         * handle up x z == 0
