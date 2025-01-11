@@ -3014,7 +3014,7 @@ static void Scene3Tick(GameState* gstate) {
             Vec4 colors[] = {LORANGE};
 
             EntityId* entities = WALLS;
-            WALLS_SIZE = ArraySizeOf(positions);
+            u32* size = &WALLS_SIZE;
             for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
@@ -3022,7 +3022,7 @@ static void Scene3Tick(GameState* gstate) {
                 entity->orient = Mat4Rotate(rotations[i], axis[i]);
                 entity->color = colors[i];
                 entity->scale = Vec3Lit(10000.0f, 10000.0f, 10000.0f);
-                entities[i] = entity->id;
+                entities[((*size)++) + i] = entity->id;
             }
         }
     }
@@ -3085,14 +3085,14 @@ static void Scene3Tick(GameState* gstate) {
         // Scene3 update.
         {
             LShader shader = GetShader();
-
-            // MOBS update.
             {
-                EntityId* entities = MOBS;
-                u32 size = MOBS_SIZE;
+                EntityManager* em = GetEntityManager();
+                for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
 
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* e = GetEntity(entities[i]);
                     if (TestFlag(e->flags, EFLAG_MOB)) {
                         Vec3 wish_dir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
                         e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
@@ -3100,15 +3100,16 @@ static void Scene3Tick(GameState* gstate) {
                     }
                 }
 
-                DrawEntities(shader, entities, size);
-                DrawEntitiesWireFrame(shader, entities, size);
-            }
-
-            // Walls.
-            {
-                EntityId* entities = WALLS;
-                u32 size = WALLS_SIZE;
-                DrawEntities(shader, entities, size);
+                for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE) || !TestFlag(e->flags, EFLAG_DRAW)) {
+                        continue;
+                    }
+                    EntityId entities[] = {e->id};
+                    u32 size = ArraySizeOf(entities);
+                    DrawEntities(shader, entities, size);
+                    DrawEntitiesWireFrame(shader, entities, size);
+                }
             }
         }
     }
@@ -3565,7 +3566,8 @@ static void TestMath() {
                                      -0.2002002f, 0.0f, 0.0f, -1.0f, 0.0f);
             TAssert(Mat4Eq(result3, expected3), "Mat4Perspective - 60-degree FOV, 21:9 aspect ratio");
 
-            // Test case 4: Perspective matrix with small near and large far planes (30-degree FOV, 4:3 aspect ratio)
+            // Test case 4: Perspective matrix with small near and large far planes (30-degree FOV, 4:3 aspect
+            // ratio)
             Mat4 result4 = Mat4Perspective(Deg2Rad(30.0f), 4.0f / 3.0f, 0.01f, 1000.0f);
             Mat4 expected4 = Mat4Lit(2.79904f, 0.0f, 0.0f, 0.0f, 0.0f, 3.73205f, 0.0f, 0.0f, 0.0f, 0.0f, -1.00002f,
                                      -0.0200002f, 0.0f, 0.0f, -1.0f, 0.0f);
