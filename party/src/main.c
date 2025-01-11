@@ -2997,7 +2997,6 @@ static void Scene3Tick(GameState* gstate) {
                     entity->v = velocities[i];
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     FlagOn(entity->flags, EFLAG_MOB);
-                    FlagOn(entity->flags, EFLAG_PHYSICS_ON);
                     entities[size] = entity->id;
                 }
             }
@@ -3099,6 +3098,10 @@ static void Scene3Tick(GameState* gstate) {
                         e->orient = Mat4PointAt(wish_dir);
                     }
 
+                    if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    }
+
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
                             Entity* shot = AllocateEntity();
@@ -3106,7 +3109,7 @@ static void Scene3Tick(GameState* gstate) {
                             shot->mesh = GetMesh(M_CUBE);
                             shot->color = LPURPLE;
                             FlagOn(shot->flags, EFLAG_PHYSICS_ON);
-                            shot->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 10.0f);
+                            shot->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
                         }
                     }
                 }
