@@ -1343,6 +1343,7 @@ typedef struct GameState {
 
     f32 dt;  // frame delta time.
     f32 timer;
+    u32 nframe;  // num frame we are on.
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*);
     u32 scenefuncssize;
@@ -1372,6 +1373,7 @@ static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
     // Signal to scene update func to run init.
     gstate->init = false;
     gstate->timer = 0.0f;
+    gstate->nframe = 0;
 
     gstate->sceneid = sceneid;
 }
@@ -2972,7 +2974,7 @@ static void Scene3Tick(GameState* gstate) {
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
                     Entity* entity = AllocateEntity();
                     entity->pos = positions[i];
-                    entity->mesh = GetMesh(M_ICOSPHERE);
+                    entity->mesh = GetMesh(M_CUBE);
                     entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                     entity->color = colors[i];
                     entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
@@ -3081,8 +3083,10 @@ static void Scene3Tick(GameState* gstate) {
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
                     if (TestFlag(e->flags, EFLAG_MOB)) {
-                        Vec3 dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
-                        e->v = Vec3Scale(dir, 10.0f);
+                        if ((gstate->nframe % 20) == 0) {
+                            Vec3 dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
+                            e->v = Vec3Scale(dir, 10.0f);
+                        }
                     }
                 }
 
@@ -3215,6 +3219,7 @@ static void GameStateTick(GameState* gstate) {
     gstate->scenefuncs[gstate->sceneid](gstate);
 
     gstate->init = true;
+    ++gstate->nframe;
 }
 
 static void TestL();
