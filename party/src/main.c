@@ -3083,10 +3083,9 @@ static void Scene3Tick(GameState* gstate) {
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
                     if (TestFlag(e->flags, EFLAG_MOB)) {
-                        if ((gstate->nframe % 20) == 0) {
-                            Vec3 dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
-                            e->v = Vec3Scale(dir, 10.0f);
-                        }
+                        Vec3 dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
+                        e->v = Vec3Scale(dir, 10.0f);
+                        e->orient = Mat4PointAt(dir);
                     }
                 }
 
