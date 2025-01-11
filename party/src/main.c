@@ -1256,7 +1256,8 @@ typedef enum EntityFlag {
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_PHYSICS_ON = 1 << 3,
-    EFLAG_COLLIDER = 1 << 4
+    EFLAG_COLLIDER = 1 << 4,
+    EFLAG_MOB = 1 << 5
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2977,6 +2978,8 @@ static void Scene3Tick(GameState* gstate) {
                     entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
                     entity->v = velocities[i];
                     FlagOn(entity->flags, EFLAG_COLLIDER);
+                    FlagOn(entity->flags, EFLAG_MOB);
+                    FlagOn(entity->flags, EFLAG_PHYSICS_ON);
                     entities[size] = entity->id;
                 }
             }
@@ -2985,6 +2988,7 @@ static void Scene3Tick(GameState* gstate) {
             Assert(MOBS_SIZE < MAX_ENTITY_BATCH);
         }
 
+        // walls init.
         {
             static Vec3 positions[] = {Vec3Lit(0.0f, -10.0f, 0.0f)};
             static f32 rotations[] = {Deg2Rad(-90.0f)};
@@ -3061,17 +3065,29 @@ static void Scene3Tick(GameState* gstate) {
 
             // MOBS update.
             {
-                static bool OFF = false;
-
-                if (IsKeyPressed(KEY_SPACE)) {
-                    OFF = !OFF;
-                }
-
                 EntityId* entities = MOBS;
                 u32 size = MOBS_SIZE;
 
+                Vec3 playerpos = viewpos;
+
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* e = GetEntity(entities[i]);
+                    breakpoint();
+                    if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    }
+                }
+
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* e = GetEntity(entities[i]);
+                    if (TestFlag(e->flags, EFLAG_MOB)) {
+                        Vec3 dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
+                        e->v = Vec3Scale(dir, 10.0f);
+                    }
+                }
+
                 DrawEntities(shader, entities, size);
-                DrawEntitiesWireFrame(shader, &entities[1], size - 1);
+                DrawEntitiesWireFrame(shader, entities, size);
             }
 
             // Walls.
