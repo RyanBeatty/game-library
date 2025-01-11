@@ -54,6 +54,7 @@ static f32 TOL = 0.001;
 #define f32acos acos
 #define f32atan atan
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
+#define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
 
 static f32 f32clamp(f32 v, f32 min, f32 max) { return f32min(f32max(v, min), max); }
 
@@ -138,6 +139,10 @@ static Vec3 Vec3Normalize(Vec3 v) {
 static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
+static Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
+    return Vec3Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t));
+}
+
 static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 static f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
@@ -3062,6 +3067,7 @@ static void Scene3Tick(GameState* gstate) {
             }
         }
 
+        // Scene3 update.
         {
             LShader shader = GetShader();
 
@@ -3074,18 +3080,10 @@ static void Scene3Tick(GameState* gstate) {
 
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
-                    breakpoint();
-                    if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                    }
-                }
-
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* e = GetEntity(entities[i]);
                     if (TestFlag(e->flags, EFLAG_MOB)) {
-                        Vec3 dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
-                        e->v = Vec3Scale(dir, 10.0f);
-                        e->orient = Mat4PointAt(dir);
+                        Vec3 wish_dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
+                        e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
+                        e->orient = Mat4PointAt(wish_dir);
                     }
                 }
 
