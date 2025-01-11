@@ -2940,6 +2940,8 @@ static void Scene3Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
+    static EntityId playerid;
+
     static EntityId MOBS[MAX_ENTITY_BATCH] = {0};
     static u32 MOBS_SIZE = 0;
 
@@ -2951,7 +2953,6 @@ static void Scene3Tick(GameState* gstate) {
     // Init logic.
     if (!gstate->init) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
         memset(MOBS, 0, sizeof(MOBS));
         MOBS_SIZE = 0;
@@ -2959,6 +2960,16 @@ static void Scene3Tick(GameState* gstate) {
         WALLS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
+
+        // Player init.
+        {
+            Entity* entity = AllocateEntity();
+            entity->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
+            entity->orient = Mat4RotateY(Deg2Rad(90.0f));
+            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+
+            playerid = entity->id;
+        }
 
         // MOBS init
         {
@@ -3018,6 +3029,8 @@ static void Scene3Tick(GameState* gstate) {
 
     // Update logic.
     {
+        Entity* player = GetEntity(playerid);
+
         // Camera movement.
         {
             static const u8 GAMEPAD_ID = 0;
@@ -3049,6 +3062,7 @@ static void Scene3Tick(GameState* gstate) {
                 Vec3 dir_world = Vec3Transform(dir_model, rotation);
                 Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
                 viewpos = Vec3Add(viewpos, mov_world);
+                player->pos = viewpos;
             }
 
             // Right stick movement.
@@ -3063,6 +3077,7 @@ static void Scene3Tick(GameState* gstate) {
                     vieworient.pitch += y * VEL * dt;
                     // Clamp pitch to avoid looking too high/low which would sign flip things.
                     vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+                    player->orient = Mat4RotateEuler(vieworient);
                 }
             }
         }
@@ -3076,12 +3091,10 @@ static void Scene3Tick(GameState* gstate) {
                 EntityId* entities = MOBS;
                 u32 size = MOBS_SIZE;
 
-                Vec3 playerpos = viewpos;
-
                 for (u32 i = 0; i < size; ++i) {
                     Entity* e = GetEntity(entities[i]);
                     if (TestFlag(e->flags, EFLAG_MOB)) {
-                        Vec3 wish_dir = Vec3Normalize(Vec3Sub(playerpos, e->pos));
+                        Vec3 wish_dir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
                         e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
                         e->orient = Mat4PointAt(wish_dir);
                     }
