@@ -3098,8 +3098,20 @@ static void Scene3Tick(GameState* gstate) {
                         e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
                         e->orient = Mat4PointAt(wish_dir);
                     }
+
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
+                            Entity* shot = AllocateEntity();
+                            shot->pos = player->pos;
+                            shot->mesh = GetMesh(M_CUBE);
+                            shot->color = LPURPLE;
+                            FlagOn(shot->flags, EFLAG_PHYSICS_ON);
+                            shot->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 10.0f);
+                        }
+                    }
                 }
 
+                // Draw.
                 for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
                     Entity* e = GetEntity(i);
                     if (!TestFlag(e->flags, EFLAG_ACTIVE) || !TestFlag(e->flags, EFLAG_DRAW)) {
@@ -3185,7 +3197,7 @@ static void GameStateInit(GameState* gstate) {
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
-    // DisableCursor();
+    DisableCursor();
 
     { glEnable(GL_DEPTH_TEST); }
 
