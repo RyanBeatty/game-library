@@ -3106,8 +3106,9 @@ static void Scene3Tick(GameState* gstate) {
                         if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
                             Entity* shot = AllocateEntity();
                             shot->pos = player->pos;
-                            shot->mesh = GetMesh(M_CUBE);
+                            shot->mesh = GetMesh(M_ICOSPHERE);
                             shot->color = LPURPLE;
+                            shot->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
                             FlagOn(shot->flags, EFLAG_PHYSICS_ON);
                             shot->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
                         }
