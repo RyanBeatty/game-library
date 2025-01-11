@@ -2932,8 +2932,8 @@ static void Scene3Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-    static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
-    static u32 PHYSICS_SIZE = 0;
+    static EntityId MOBS[MAX_ENTITY_BATCH] = {0};
+    static u32 MOBS_SIZE = 0;
 
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
@@ -2945,19 +2945,19 @@ static void Scene3Tick(GameState* gstate) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-        memset(PHYSICS, 0, sizeof(PHYSICS));
-        PHYSICS_SIZE = 0;
+        memset(MOBS, 0, sizeof(MOBS));
+        MOBS_SIZE = 0;
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
 
-        // PHYSICS init
+        // MOBS init
         {
-            EntityId* entities = PHYSICS;
+            EntityId* entities = MOBS;
             u32 size = 0;
 
-            const Vec3 origin = Vec3Lit(-20.0f, 30.0f, -50.0f);
+            const Vec3 origin = Vec3Lit(-50.0f, 0.0f, 0.0f);
 
             // Colliders
             {
@@ -2974,43 +2974,15 @@ static void Scene3Tick(GameState* gstate) {
                     entity->mesh = GetMesh(M_ICOSPHERE);
                     entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                     entity->color = colors[i];
-                    entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
+                    entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
                     entity->v = velocities[i];
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[size] = entity->id;
                 }
             }
 
-            // Walls
-            {
-                const f32 len = 20.0f;
-                const f32 hlen = len / 2.0f;
-                const Vec3 positions[] = {
-                    Vec3Add(origin, Vec3Lit(-hlen, 0.0f, 0.0f)), Vec3Add(origin, Vec3Lit(hlen, 0.0f, 0.0f)),
-                    Vec3Add(origin, Vec3Lit(0.0f, 0.0f, hlen)),  Vec3Add(origin, Vec3Lit(0.0f, 0.0f, -hlen)),
-                    Vec3Add(origin, Vec3Lit(0.0f, -hlen, 0.0f)), Vec3Add(origin, Vec3Lit(0.0f, hlen, 0.0f))};
-                const Vec3 axis[] = {Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
-                                     Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f)};
-                const f32 rotations[] = {Deg2Rad(90.0f),  Deg2Rad(90.0f), Deg2Rad(180.0f),
-                                         Deg2Rad(180.0f), Deg2Rad(90.0f), Deg2Rad(90.0f)};
-                const Vec4 colors[] = {LGRAY, LGRAY, LGRAY, LGRAY, LGRAY, LGRAY};
-                const Vec3 scale = Vec3Lit(len, len, 1.0f);
-
-                for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
-                    Entity* entity = AllocateEntity();
-                    entity->pos = positions[i];
-                    entity->mesh = GetMesh(M_CUBE);
-                    entity->orient = Mat4Rotate(rotations[i], axis[i]);
-                    entity->color = colors[i];
-                    entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
-                    entity->scale = scale;
-                    FlagOn(entity->flags, EFLAG_COLLIDER);
-                    entities[size] = entity->id;
-                }
-            }
-
-            PHYSICS_SIZE = size;
-            Assert(PHYSICS_SIZE < MAX_ENTITY_BATCH);
+            MOBS_SIZE = size;
+            Assert(MOBS_SIZE < MAX_ENTITY_BATCH);
         }
 
         {
@@ -3087,7 +3059,7 @@ static void Scene3Tick(GameState* gstate) {
         {
             LShader shader = GetShader();
 
-            // Physics update.
+            // MOBS update.
             {
                 static bool OFF = false;
 
@@ -3095,53 +3067,9 @@ static void Scene3Tick(GameState* gstate) {
                     OFF = !OFF;
                 }
 
-                EntityId* entities = PHYSICS;
-                u32 size = PHYSICS_SIZE;
+                EntityId* entities = MOBS;
+                u32 size = MOBS_SIZE;
 
-                if (!OFF) {
-                    for (u32 i = 0; i < size; ++i) {
-                        Entity* entity = GetEntity(entities[i]);
-                        entity->pos = Vec3Add(entity->pos, Vec3Scale(entity->v, dt));
-                    }
-                }
-
-                for (u32 eidx = 1; eidx < size; ++eidx) {
-                    Entity* e0 = GetEntity(entities[0]);
-                    Entity* e1 = GetEntity(entities[eidx]);
-
-                    if (!OFF) {
-                        Vec3 dir = Vec3Zero();
-                        f32 dmin = 0.0f;
-                        bool collides = CollideEntityEntity(e0, e1, &dir, &dmin);
-
-                        if (collides) {
-                            Vec3 normal = Vec3Scale(dir, -1.0f);
-                            Mat4 reflect = Mat4Reflect(normal);
-                            e0->v = Vec3Transform(e0->v, reflect);
-
-                            // e0->v = Vec3Zero();
-                            e1->v = Vec3Zero();
-                            {
-                                Vec3 arrow = Vec3Scale(dir, -1.0f);
-                                e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
-                                Mat4 orient = Mat4PointAt(arrow);
-                                DrawArrow(arrow, e0->pos, orient, 0.3f, LPURPLE);
-                            }
-                            {
-                                Vec3 arrow = dir;
-                                e0->pos = Vec3Add(e0->pos, Vec3Scale(arrow, 0.5f * dmin));
-                                Mat4 orient = Mat4PointAt(arrow);
-                                DrawArrow(arrow, e1->pos, orient, 0.3f, LBLACK);
-                            }
-                        } else {
-                            {
-                                Vec3 arrow = dir;
-                                Mat4 orient = Mat4PointAt(arrow);
-                                DrawArrow(arrow, e1->pos, orient, 0.3f, LGREEN);
-                            }
-                        }
-                    }
-                }
                 DrawEntities(shader, entities, size);
                 DrawEntitiesWireFrame(shader, &entities[1], size - 1);
             }
