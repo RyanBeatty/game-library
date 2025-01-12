@@ -3163,8 +3163,18 @@ static void Scene3Tick(GameState* gstate) {
                         Vec3 wishdir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
                         e->v = Vec3Scale(wishdir, 10.0f);
 
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                        e->orient = Mat4PointAt(e->v);
+                        // e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        {
+                            Vec3 wishdir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
+                            Vec3 dir = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient));
+                            f32 diff = Vec3Angle(dir, wishdir);
+                            if (diff != 0.0f) {
+                                Vec3 axis = Vec3Cross(dir, wishdir);
+                                Mat4 rot = Mat4Rotate(diff * Deg2Rad(45.0f) * dt, axis);
+                                dir = Vec3Normalize(Vec3Transform(dir, rot));
+                                e->orient = Mat4PointAt(dir);
+                            }
+                        }
 
                         if (gstate->debug) {
                             Sphere sphere = EntityBoundingSphere(e);
@@ -3257,6 +3267,8 @@ static void Scene3Tick(GameState* gstate) {
                     Mat4 translate = Mat4TranslateV(e->pos);
                     Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
                     AddCmd(e->mesh, model, color);
+                    DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
+                    cmd2->wireframe = true;
                 }
             }
         }
