@@ -3148,8 +3148,10 @@ static void Scene3Tick(GameState* gstate) {
                         e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
                         e->orient = Mat4PointAt(wish_dir);
 
-                        Sphere sphere = EntityBoundingSphere(e);
-                        DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+                        if (gstate->debug) {
+                            Sphere sphere = EntityBoundingSphere(e);
+                            DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+                        }
                     }
 
                     if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
