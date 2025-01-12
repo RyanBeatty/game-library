@@ -3163,8 +3163,10 @@ static void Scene3Tick(GameState* gstate) {
 
                                 Sphere s1 = EntityBoundingSphere(e1);
 
-                                f32 d = Vec3Len(Vec3Sub(s1.c, s0.c));
-                                if (d <= s0.r + s1.r) {
+                                Vec3 dir = Vec3Sub(s1.c, s0.c);
+                                f32 d = Vec3Dot(dir, dir);
+                                f32 rr = s0.r + s1.r;
+                                if (d <= rr * rr) {
                                     FlagOff(e0->flags, EFLAG_ACTIVE);
                                     break;
                                 }
