@@ -1303,6 +1303,7 @@ typedef struct Entity {
     /////////////////////////////////////////////////////////////////
     // Core field.
     EntityId id;
+    // TODO: Convert to u64
     EntityFlag flags;
 
     // Decomposition of model matrix.
