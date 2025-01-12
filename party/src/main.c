@@ -1507,13 +1507,6 @@ static bool CollideEntityEntity(Entity* e0, Entity* e1, Vec3* dirout, f32* dout)
             // If intervals do not overlap, then no collision.
             // TODO: floating point robustness.
             if (tamax < tbmin || tamin > tbmax) {
-                // if (e0->id == 7 && e1->id == 10) {
-                //     TraceLog(LOG_INFO, "axis: (%f, %f, %f)      aint: [%f, %f]    bint: [%f, %f]", axis.x, axis.y,
-                //              axis.z, tamin, tamax, tbmin, tbmax);
-                //     if (ON) {
-                //         breakpoint();
-                //     }
-                // }
                 collides = false;
                 dir = axis;  // Useful to keep axis of separationg for debugging.
                 goto collideret;
@@ -3168,7 +3161,6 @@ static void Scene3Tick(GameState* gstate) {
                                     continue;
                                 }
 
-                                breakpoint();
                                 Sphere s1 = EntityBoundingSphere(e1);
 
                                 f32 d = Vec3Len(Vec3Sub(s1.c, s0.c));
