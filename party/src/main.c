@@ -3231,7 +3231,12 @@ static void Scene3Tick(GameState* gstate) {
 
                     Vec4 color = e->color;
                     if (TestFlag(e->flags, EFLAG_MOB) && e->hit) {
-                        color = LRED;
+                        static const f32 FREQ = 2.5f;
+                        f32 t = 0.5f * (1.0f + f32sin(2.0f * LPI * FREQ * e->hit_timer));
+                        color.r = f32lerp(color.r, LRED.r, t);
+                        color.g = f32lerp(color.g, LRED.g, t);
+                        color.b = f32lerp(color.b, LRED.b, t);
+                        color.a = f32lerp(color.a, LRED.a, t);
                     }
 
                     Mat4 scale = Mat4ScaleV(e->scale);
