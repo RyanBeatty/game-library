@@ -145,6 +145,7 @@ static Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
 
 static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
+// Returns the angle between a and b in radians. Assumes a and b are normalized.
 static f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
 static bool Vec3Eq(Vec3 a, Vec3 b) {
     return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL) && (f32abs(a.z - b.z) < TOL));
@@ -3142,15 +3143,28 @@ static void Scene3Tick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_MOB)) {
                         if (e->hit) {
                             e->hit_timer += dt;
-                            if (e->hit_timer >= 2.0f) {
+                            if (e->hit_timer >= 1.2f) {
                                 e->hit = false;
                                 e->hit_timer = 0.0f;
                             }
                         }
 
-                        Vec3 wish_dir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
-                        e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
-                        e->orient = Mat4PointAt(wish_dir);
+                        // {
+                        //     Vec3 dir = Vec3Normalize(e->v);
+                        //     f32 radian = Vec3Angle(dir, wishdir);
+                        //     if (radian != 0.0f) {
+                        //         Vec3 axis = Vec3Cross(wishdir, dir);
+                        //         Mat4 rot = Mat4Rotate(radian, axis);
+
+                        //         f32 speed = Vec3Len(e->v);
+                        //         e->v = Vec3Scale(Vec3Transform(dir, rot), );
+                        //     }
+                        // }
+                        Vec3 wishdir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
+                        e->v = Vec3Scale(wishdir, 10.0f);
+
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        e->orient = Mat4PointAt(e->v);
 
                         if (gstate->debug) {
                             Sphere sphere = EntityBoundingSphere(e);
