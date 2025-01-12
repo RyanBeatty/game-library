@@ -1317,6 +1317,9 @@ typedef struct Entity {
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
 
+    bool hit;
+    f32 hit_timer;
+
     struct {
         struct Entity* prev;
         struct Entity* next;
@@ -3137,6 +3140,14 @@ static void Scene3Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_MOB)) {
+                        if (e->hit) {
+                            e->hit_timer += dt;
+                            if (e->hit_timer >= 2.0f) {
+                                e->hit = false;
+                                e->hit_timer = 0.0f;
+                            }
+                        }
+
                         Vec3 wish_dir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
                         e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
                         e->orient = Mat4PointAt(wish_dir);
@@ -3168,6 +3179,9 @@ static void Scene3Tick(GameState* gstate) {
                                 f32 rr = s0.r + s1.r;
                                 if (d <= rr * rr) {
                                     FlagOff(e0->flags, EFLAG_ACTIVE);
+
+                                    e1->hit = true;
+                                    e1->hit_timer = 0.0f;
                                     break;
                                 }
                             }
@@ -3214,10 +3228,16 @@ static void Scene3Tick(GameState* gstate) {
                     if (!TestFlag(e->flags, EFLAG_ACTIVE) || !TestFlag(e->flags, EFLAG_DRAW)) {
                         continue;
                     }
-                    EntityId entities[] = {e->id};
-                    u32 size = ArraySizeOf(entities);
-                    DrawEntities(shader, entities, size);
-                    DrawEntitiesWireFrame(shader, entities, size);
+
+                    Vec4 color = e->color;
+                    if (TestFlag(e->flags, EFLAG_MOB) && e->hit) {
+                        color = LRED;
+                    }
+
+                    Mat4 scale = Mat4ScaleV(e->scale);
+                    Mat4 translate = Mat4TranslateV(e->pos);
+                    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+                    AddCmd(e->mesh, model, color);
                 }
             }
         }
