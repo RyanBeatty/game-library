@@ -523,6 +523,7 @@ static const Vec4 LBLACK = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LPURPLE = Vec4Lit(1.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
 static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255.0f, 0.16f);
+static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 
 ////////////////////////////////////////////////////////////
 // S:Render Data
@@ -1245,6 +1246,35 @@ static void CmdBufferZero() {
 }
 
 ////////////////////////////////////////////////////////////
+// S:Collisions
+
+typedef struct Sphere {
+    Vec3 c;  // center
+    f32 r;   // radius
+} Sphere;
+
+// Computes a sphere in the coord space of the passed in verts.
+static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
+    Vec3 center = {0};
+    for (u32 i = 0; i < vsize; ++i) {
+        center = Vec3Add(center, vs[i]);
+    }
+    center.x /= vsize;
+    center.y /= vsize;
+    center.z /= vsize;
+
+    f32 radius = 0.0f;
+    for (u32 i = 0; i < vsize; ++i) {
+        f32 len = Vec3Len(Vec3Sub(vs[i], center));
+        if (len > radius) {
+            radius = len;
+        }
+    }
+
+    return (Sphere){.c = center, .r = radius};
+}
+
+////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
 const float RenderHeight = 720;
@@ -1262,7 +1292,8 @@ typedef enum EntityFlag {
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_PHYSICS_ON = 1 << 3,
     EFLAG_COLLIDER = 1 << 4,
-    EFLAG_MOB = 1 << 5
+    EFLAG_MOB = 1 << 5,
+    EFLAG_PROJECTILE = 1 << 6,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -1337,6 +1368,27 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
+static Mat4 EntityGetMat(Entity* e) {
+    Mat4 scale = Mat4ScaleV(e->scale);
+    Mat4 translate = Mat4TranslateV(e->pos);
+    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+    return model;
+}
+
+// Returns the bounding sphere in world space.
+static Sphere EntityBoundingSphere(Entity* e) {
+    Mat4 m = EntityGetMat(e);
+    Vec3 vs[MAX_VERTICES] = {0};
+    u32 vsize = e->mesh.ntriangles * 3;
+    Assert(vsize < MAX_VERTICES);
+    for (u32 i = 0; i < vsize; ++i, ++i) {
+        Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
+        vs[i] = Vec3WTransform(pos, m);
+    }
+
+    return BoundingSphere(vs, vsize);
+}
+
 #define MAX_SCENES 10
 
 typedef struct GameState {
@@ -1381,13 +1433,6 @@ static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
     gstate->nframe = 0;
 
     gstate->sceneid = sceneid;
-}
-
-static Mat4 EntityGetMat(Entity* e) {
-    Mat4 scale = Mat4ScaleV(e->scale);
-    Mat4 translate = Mat4TranslateV(e->pos);
-    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-    return model;
 }
 
 static bool ON = false;
@@ -1628,6 +1673,11 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
     pos = Vec3Add(pos, Vec3Scale(forward, 1.0f * scale));
     // tip.
     AddCmd(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
+}
+
+static void DrawSphereWf(Vec3 center, f32 radius, Vec4 color) {
+    DrawCmd* cmd = AddCmd(GetMesh(M_ICOSPHERE), Mat4SRT(radius, Mat4Identity(), center), color);
+    cmd->wireframe = true;
 }
 
 #define MAX_ENTITY_BATCH 256
@@ -3086,7 +3136,8 @@ static void Scene3Tick(GameState* gstate) {
             LShader shader = GetShader();
             {
                 EntityManager* em = GetEntityManager();
-                for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
+                u32 esize = ArraySizeOf(em->entities);
+                for (u32 i = 0; i < esize; ++i) {
                     Entity* e = GetEntity(i);
                     if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                         continue;
@@ -3096,24 +3147,70 @@ static void Scene3Tick(GameState* gstate) {
                         Vec3 wish_dir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
                         e->pos = Vec3Add(e->pos, Vec3Scale(wish_dir, 10.0f * dt));
                         e->orient = Mat4PointAt(wish_dir);
+
+                        Sphere sphere = EntityBoundingSphere(e);
+                        DrawSphereWf(e->pos, e->scale.x, LYELLOW);
                     }
 
-                    if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
+                    if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                        // Collisions
+                        {
+                            Entity* e0 = e;
+                            Sphere s0 = EntityBoundingSphere(e0);
+                            for (u32 j = 0; j < esize; ++j) {
+                                Entity* e1 = GetEntity(j);
+                                if (e1->id == e0->id || !TestFlag(e1->flags, EFLAG_ACTIVE) ||
+                                    !TestFlag(e1->flags, EFLAG_MOB)) {
+                                    continue;
+                                }
+
+                                breakpoint();
+                                Sphere s1 = EntityBoundingSphere(e1);
+
+                                f32 d = Vec3Len(Vec3Sub(s1.c, s0.c));
+                                if (d <= s0.r + s1.r) {
+                                    FlagOff(e0->flags, EFLAG_ACTIVE);
+                                    break;
+                                }
+                            }
+                        }
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                            Entity* shot = AllocateEntity();
-                            shot->pos = player->pos;
-                            shot->mesh = GetMesh(M_ICOSPHERE);
-                            shot->color = LPURPLE;
-                            shot->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
-                            FlagOn(shot->flags, EFLAG_PHYSICS_ON);
-                            shot->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
+                            Entity* projectile = AllocateEntity();
+                            projectile->pos = player->pos;
+                            projectile->mesh = GetMesh(M_ICOSPHERE);
+                            projectile->color = LPURPLE;
+                            projectile->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
+                            FlagOn(projectile->flags, EFLAG_PROJECTILE);
+                            projectile->v =
+                                Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
                         }
                     }
                 }
+
+                // // Collision detection.
+                // {
+                //     u32 size = ArraySizeOf(em->entities);
+                //     for (u32 i = 0; i < size; ++i) {
+                //         Entity* e0 = GetEntity(i);
+                //         if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                //             continue;
+                //         }
+                //         Sphere s0 = EntityBoundingSphere(e0);
+                //         for (u32 j = i + 1; j < size; ++j) {
+                //             Entity* e1 = GetEntity(j);
+                //             if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                //                 continue;
+                //             }
+                //             Sphere s1 = EntityBoundingSphere(e1);
+
+                //         }
+                //     }
+                // }
 
                 // Draw.
                 for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
