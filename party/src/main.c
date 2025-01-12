@@ -1381,7 +1381,7 @@ static Sphere EntityBoundingSphere(Entity* e) {
     Vec3 vs[MAX_VERTICES] = {0};
     u32 vsize = e->mesh.ntriangles * 3;
     Assert(vsize < MAX_VERTICES);
-    for (u32 i = 0; i < vsize; ++i, ++i) {
+    for (u32 i = 0; i < vsize; ++i) {
         Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
         vs[i] = Vec3WTransform(pos, m);
     }
@@ -3149,7 +3149,7 @@ static void Scene3Tick(GameState* gstate) {
                         e->orient = Mat4PointAt(wish_dir);
 
                         Sphere sphere = EntityBoundingSphere(e);
-                        DrawSphereWf(e->pos, e->scale.x, LYELLOW);
+                        DrawSphereWf(sphere.c, sphere.r, LYELLOW);
                     }
 
                     if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
