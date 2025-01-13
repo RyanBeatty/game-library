@@ -3154,7 +3154,7 @@ static void Scene3Tick(GameState* gstate) {
                         // e->v = Vec3Scale(wishdir, 10.0f);
                         // e-
 
-                        // e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        Vec3 posnext = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         {
                             Vec3 wishdir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
                             Vec3 dir = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient));
@@ -3166,9 +3166,6 @@ static void Scene3Tick(GameState* gstate) {
                                 i32 flip = diff > 0.0f ? 1.0f : -1.0f;
                                 diff = f32abs(diff);
                                 f32 to_rotate = f32min(diff, ANGULAR_SPEED * dt);
-                                // if (to_rotate > ANGULAR_SPEED * 1.4f) {
-
-                                // }
 
                                 Mat4 rot = Mat4Rotate(flip * to_rotate, axis);
                                 dir = Vec3Normalize(Vec3Transform(dir, rot));
@@ -3176,6 +3173,8 @@ static void Scene3Tick(GameState* gstate) {
                                 e->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient), 10.0f);
                             }
                         }
+
+                        e->pos = posnext;
 
                         if (gstate->debug) {
                             Sphere sphere = EntityBoundingSphere(e);
