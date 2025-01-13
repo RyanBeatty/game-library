@@ -3150,19 +3150,9 @@ static void Scene3Tick(GameState* gstate) {
                             }
                         }
 
-                        // {
-                        //     Vec3 dir = Vec3Normalize(e->v);
-                        //     f32 radian = Vec3Angle(dir, wishdir);
-                        //     if (radian != 0.0f) {
-                        //         Vec3 axis = Vec3Cross(wishdir, dir);
-                        //         Mat4 rot = Mat4Rotate(radian, axis);
-
-                        //         f32 speed = Vec3Len(e->v);
-                        //         e->v = Vec3Scale(Vec3Transform(dir, rot), );
-                        //     }
-                        // }
-                        Vec3 wishdir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
-                        e->v = Vec3Scale(wishdir, 10.0f);
+                        // Vec3 wishdir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
+                        // e->v = Vec3Scale(wishdir, 10.0f);
+                        // e-
 
                         // e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         {
@@ -3170,14 +3160,20 @@ static void Scene3Tick(GameState* gstate) {
                             Vec3 dir = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient));
                             f32 diff = Vec3Angle(dir, wishdir);
                             if (diff != 0.0f) {
+                                static f32 ANGULAR_SPEED = Deg2Rad(15.0f);
                                 Vec3 axis = Vec3Cross(dir, wishdir);
-                                f32 to_rotate = f32min(diff, Deg2Rad(15.0f) * dt);
-                                if (diff < 0.0f) {
-                                    to_rotate = f32max(diff, Deg2Rad(-15.0f) * dt);
-                                }
-                                Mat4 rot = Mat4Rotate(to_rotate, axis);
+
+                                i32 flip = diff > 0.0f ? 1.0f : -1.0f;
+                                diff = f32abs(diff);
+                                f32 to_rotate = f32min(diff, ANGULAR_SPEED * dt);
+                                // if (to_rotate > ANGULAR_SPEED * 1.4f) {
+
+                                // }
+
+                                Mat4 rot = Mat4Rotate(flip * to_rotate, axis);
                                 dir = Vec3Normalize(Vec3Transform(dir, rot));
                                 e->orient = Mat4PointAt(dir);
+                                e->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient), 10.0f);
                             }
                         }
 
