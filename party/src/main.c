@@ -3172,6 +3172,9 @@ static void Scene3Tick(GameState* gstate) {
                             if (diff != 0.0f) {
                                 Vec3 axis = Vec3Cross(dir, wishdir);
                                 f32 to_rotate = f32min(diff, Deg2Rad(15.0f) * dt);
+                                if (diff < 0.0f) {
+                                    to_rotate = f32max(diff, Deg2Rad(-15.0f) * dt);
+                                }
                                 Mat4 rot = Mat4Rotate(to_rotate, axis);
                                 dir = Vec3Normalize(Vec3Transform(dir, rot));
                                 e->orient = Mat4PointAt(dir);
