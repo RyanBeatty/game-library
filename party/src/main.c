@@ -3170,7 +3170,8 @@ static void Scene3Tick(GameState* gstate) {
                                 e->orient = Mat4PointAt(dir);
                             }
 
-                            e->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient), SPEED);
+                            e->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient),
+                                             SPEED * (diff <= ANGULAR_SPEED * 1.4f));
                             e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         }
 
