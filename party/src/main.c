@@ -3150,7 +3150,9 @@ static void Scene3Tick(GameState* gstate) {
                             }
                         }
 
-                        // Movement.
+                        // Mob Movement.
+                        // TODO: You could imagine something much more intelligent like some
+                        // path finding/planner code to drive better interactions.
                         {
                             static const f32 SPEED = 10.0f;
                             static const f32 ANGULAR_SPEED = Deg2Rad(15.0f);
