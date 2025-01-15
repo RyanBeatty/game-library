@@ -3243,10 +3243,12 @@ static void Scene3Tick(GameState* gstate) {
                     }
                 }
 
+                // Collisions.
                 {
                     CollisionInfo collisions[10] = {0};
                     u32 csize = 0;
 
+                    // Detection.
                     u32 size = ArraySizeOf(em->entities);
                     for (u32 i = 0; i < size; ++i) {
                         Entity* e0 = GetEntity(i);
@@ -3276,6 +3278,7 @@ static void Scene3Tick(GameState* gstate) {
                         }
                     }
 
+                    // Response.
                     for (u32 i = 0; i < csize; ++i) {
                         CollisionInfo* collision = &collisions[i];
                         Entity* e0 = GetEntity(collision->id0);
