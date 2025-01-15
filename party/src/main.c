@@ -3231,32 +3231,6 @@ static void Scene3Tick(GameState* gstate) {
 
                     if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-
-                        // // Collisions
-                        // {
-                        //     Entity* e0 = e;
-                        //     Sphere s0 = EntityBoundingSphere(e0);
-                        //     for (u32 j = 0; j < esize; ++j) {
-                        //         Entity* e1 = GetEntity(j);
-                        //         if (e1->id == e0->id || !TestFlag(e1->flags, EFLAG_ACTIVE) ||
-                        //             !TestFlag(e1->flags, EFLAG_MOB)) {
-                        //             continue;
-                        //         }
-
-                        //         Sphere s1 = EntityBoundingSphere(e1);
-
-                        //         Vec3 dir = Vec3Sub(s1.c, s0.c);
-                        //         f32 d = Vec3Dot(dir, dir);
-                        //         f32 rr = s0.r + s1.r;
-                        //         if (d <= rr * rr) {
-                        //             FlagOff(e0->flags, EFLAG_ACTIVE);
-
-                        //             e1->hit = true;
-                        //             e1->hit_timer = 0.0f;
-                        //             break;
-                        //         }
-                        //     }
-                        // }
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -3268,7 +3242,7 @@ static void Scene3Tick(GameState* gstate) {
                             projectile->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
                             FlagOn(projectile->flags, EFLAG_PROJECTILE);
                             FlagOn(projectile->flags, EFLAG_COLLIDER);
-                            projectile->v =
+                            projgit ectile->v =
                                 Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
                         }
                     }
