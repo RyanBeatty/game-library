@@ -2993,6 +2993,9 @@ static void Scene3Tick(GameState* gstate) {
     static EntityId MOBS[MAX_ENTITY_BATCH] = {0};
     static u32 MOBS_SIZE = 0;
 
+    static EntityId TARGETS[MAX_ENTITY_BATCH] = {0};
+    static u32 TARGETS_SIZE = 0;
+
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
 
@@ -3051,6 +3054,38 @@ static void Scene3Tick(GameState* gstate) {
 
             MOBS_SIZE = size;
             Assert(MOBS_SIZE < MAX_ENTITY_BATCH);
+        }
+
+        // TARGETS init
+        {
+            EntityId* entities = TARGETS;
+            u32 size = 0;
+
+            const Vec3 origin = Vec3Lit(-50.0f, 0.0f, 30.0f);
+
+            {
+                const Vec3 positions[] = {origin};
+                const Vec3 velocities[] = {Vec3Lit(3.0f, 10.0f, -6.0f)};
+                const f32 rotations[] = {Deg2Rad(0.0f)};
+                Vec4 color = LRED;
+                color.a = 0.16f;
+                const Vec4 colors[] = {color};
+
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
+                    Entity* entity = AllocateEntity();
+                    entity->pos = positions[i];
+                    entity->mesh = GetMesh(M_ICOSAHEDRON);
+                    entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+                    entity->color = colors[i];
+                    entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
+                    entity->v = velocities[i];
+                    FlagOn(entity->flags, EFLAG_COLLIDER);
+                    entities[++size] = entity->id;
+                    Assert(size < MAX_ENTITY_BATCH);
+                }
+            }
+
+            TARGETS_SIZE = size;
         }
 
         // walls init.
