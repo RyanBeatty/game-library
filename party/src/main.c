@@ -1247,7 +1247,7 @@ static void CmdBufferZero() {
 }
 
 ////////////////////////////////////////////////////////////
-// S:Collisions
+// S:Geometry
 
 typedef struct Sphere {
     Vec3 c;  // center
@@ -1393,6 +1393,17 @@ static Sphere EntityBoundingSphere(Entity* e) {
 
     return BoundingSphere(vs, vsize);
 }
+
+////////////////////////////////////////////////////
+typedef struct CollisionInfo {
+    EntityId id0;
+    EntityId id1;
+
+    f32 depth;
+    Vec3 normal;
+} CollisionInfo;
+
+////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
 
@@ -3221,31 +3232,31 @@ static void Scene3Tick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
-                        // Collisions
-                        {
-                            Entity* e0 = e;
-                            Sphere s0 = EntityBoundingSphere(e0);
-                            for (u32 j = 0; j < esize; ++j) {
-                                Entity* e1 = GetEntity(j);
-                                if (e1->id == e0->id || !TestFlag(e1->flags, EFLAG_ACTIVE) ||
-                                    !TestFlag(e1->flags, EFLAG_MOB)) {
-                                    continue;
-                                }
+                        // // Collisions
+                        // {
+                        //     Entity* e0 = e;
+                        //     Sphere s0 = EntityBoundingSphere(e0);
+                        //     for (u32 j = 0; j < esize; ++j) {
+                        //         Entity* e1 = GetEntity(j);
+                        //         if (e1->id == e0->id || !TestFlag(e1->flags, EFLAG_ACTIVE) ||
+                        //             !TestFlag(e1->flags, EFLAG_MOB)) {
+                        //             continue;
+                        //         }
 
-                                Sphere s1 = EntityBoundingSphere(e1);
+                        //         Sphere s1 = EntityBoundingSphere(e1);
 
-                                Vec3 dir = Vec3Sub(s1.c, s0.c);
-                                f32 d = Vec3Dot(dir, dir);
-                                f32 rr = s0.r + s1.r;
-                                if (d <= rr * rr) {
-                                    FlagOff(e0->flags, EFLAG_ACTIVE);
+                        //         Vec3 dir = Vec3Sub(s1.c, s0.c);
+                        //         f32 d = Vec3Dot(dir, dir);
+                        //         f32 rr = s0.r + s1.r;
+                        //         if (d <= rr * rr) {
+                        //             FlagOff(e0->flags, EFLAG_ACTIVE);
 
-                                    e1->hit = true;
-                                    e1->hit_timer = 0.0f;
-                                    break;
-                                }
-                            }
-                        }
+                        //             e1->hit = true;
+                        //             e1->hit_timer = 0.0f;
+                        //             break;
+                        //         }
+                        //     }
+                        // }
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -3256,31 +3267,62 @@ static void Scene3Tick(GameState* gstate) {
                             projectile->color = LPURPLE;
                             projectile->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
                             FlagOn(projectile->flags, EFLAG_PROJECTILE);
+                            FlagOn(projectile->flags, EFLAG_COLLIDER);
                             projectile->v =
                                 Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
                         }
                     }
                 }
 
-                // // Collision detection.
-                // {
-                //     u32 size = ArraySizeOf(em->entities);
-                //     for (u32 i = 0; i < size; ++i) {
-                //         Entity* e0 = GetEntity(i);
-                //         if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
-                //             continue;
-                //         }
-                //         Sphere s0 = EntityBoundingSphere(e0);
-                //         for (u32 j = i + 1; j < size; ++j) {
-                //             Entity* e1 = GetEntity(j);
-                //             if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                //                 continue;
-                //             }
-                //             Sphere s1 = EntityBoundingSphere(e1);
+                {
+                    CollisionInfo collisions[10] = {0};
+                    u32 csize = 0;
 
-                //         }
-                //     }
-                // }
+                    u32 size = ArraySizeOf(em->entities);
+                    for (u32 i = 0; i < size; ++i) {
+                        Entity* e0 = GetEntity(i);
+                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                            continue;
+                        }
+
+                        Sphere s0 = EntityBoundingSphere(e0);
+                        for (u32 j = i + 1; j < size; ++j) {
+                            Entity* e1 = GetEntity(j);
+                            if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                                continue;
+                            }
+
+                            Sphere s1 = EntityBoundingSphere(e1);
+                            Vec3 dir = Vec3Sub(s1.c, s0.c);
+                            f32 d = Vec3Dot(dir, dir);
+                            f32 rr = s0.r + s1.r;
+                            if (d <= rr * rr) {
+                                f32 depth = f32sqrt(d);
+                                Vec3 normal = Vec3Normalize(dir);
+                                CollisionInfo collision = {
+                                    .id0 = e0->id, .id1 = e1->id, .depth = depth, .normal = normal};
+                                collisions[csize++] = collision;
+                                Assert(csize < 10);
+                            }
+                        }
+                    }
+
+                    for (u32 i = 0; i < csize; ++i) {
+                        CollisionInfo* collision = &collisions[i];
+                        Entity* e0 = GetEntity(collision->id0);
+                        Entity* e1 = GetEntity(collision->id1);
+                        if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
+                            e0->hit = true;
+                            e0->hit_timer = 0.0f;
+                            FlagOff(e1->flags, EFLAG_ACTIVE);
+                        }
+                        if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_MOB)) {
+                            e1->hit = true;
+                            e1->hit_timer = 0.0f;
+                            FlagOff(e0->flags, EFLAG_ACTIVE);
+                        }
+                    }
+                }
 
                 // Draw.
                 for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
