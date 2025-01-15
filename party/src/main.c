@@ -3222,11 +3222,6 @@ static void Scene3Tick(GameState* gstate) {
                             e->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient), SPEED * should_move);
                             e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         }
-
-                        if (gstate->debug) {
-                            Sphere sphere = EntityBoundingSphere(e);
-                            DrawSphereWf(sphere.c, sphere.r, LYELLOW);
-                        }
                     }
 
                     if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
@@ -3242,7 +3237,7 @@ static void Scene3Tick(GameState* gstate) {
                             projectile->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
                             FlagOn(projectile->flags, EFLAG_PROJECTILE);
                             FlagOn(projectile->flags, EFLAG_COLLIDER);
-                            projgit ectile->v =
+                            projectile->v =
                                 Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
                         }
                     }
@@ -3321,6 +3316,11 @@ static void Scene3Tick(GameState* gstate) {
                     AddCmd(e->mesh, model, color);
                     DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
                     cmd2->wireframe = true;
+
+                    if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+                        Sphere sphere = EntityBoundingSphere(e);
+                        DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+                    }
                 }
             }
         }
