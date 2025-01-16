@@ -3564,7 +3564,6 @@ static void Scene4Tick(GameState* gstate) {
                             f32 d = Vec3Dot(s.c, normal);
                             if (d < s.r) {
                                 d = s.r - d;
-                                breakpoint();
                                 e->pos = Vec3Add(e->pos, Vec3Scale(normal, d));
                                 e->v = Vec3Transform(e->v, Mat4Reflect(normal));
                             }
