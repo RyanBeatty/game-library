@@ -3410,6 +3410,7 @@ static void Scene4Tick(GameState* gstate) {
     // Init logic.
     if (!gstate->init) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
@@ -3421,7 +3422,7 @@ static void Scene4Tick(GameState* gstate) {
         // Player init.
         {
             Entity* entity = AllocateEntity();
-            entity->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
+            entity->pos = Vec3Lit(0.0f, 10.0f, 0.0f);
             entity->orient = Mat4RotateY(Deg2Rad(90.0f));
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
 
@@ -3433,7 +3434,7 @@ static void Scene4Tick(GameState* gstate) {
             EntityId* entities = BALLS;
             u32 size = 0;
 
-            const Vec3 origin = Vec3Lit(-50.0f, 0.0f, 0.0f);
+            const Vec3 origin = Vec3Lit(-50.0f, 10.0f, 0.0f);
 
             {
                 const Vec3 positions[] = {origin};
@@ -3464,7 +3465,7 @@ static void Scene4Tick(GameState* gstate) {
 
         // walls init.
         {
-            static Vec3 positions[] = {Vec3Lit(0.0f, -10.0f, 0.0f)};
+            static Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
             static f32 rotations[] = {Deg2Rad(-90.0f)};
             static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
             Vec4 colors[] = {LORANGE};
