@@ -122,6 +122,7 @@ static Vec3 Vec3Zero() {
 
 static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
 // Remember end - start gives you start -> end.
+// formula v1 - v2
 static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
 static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
 static Vec3 Vec3Normalize(Vec3 v) {
@@ -3560,12 +3561,17 @@ static void Scene4Tick(GameState* gstate) {
                         // HACK FOR NOW UNTIL I IMPLEMENT SOME SORT OF BOUDNING VOLUME FOR WALLS
                         {
                             Sphere s = EntityBoundingSphere(e);
+                            // Normal points from b (the wall) to a.
                             Vec3 normal = Vec3Lit(0.0f, 1.0f, 0.0f);
                             f32 d = Vec3Dot(s.c, normal);
                             if (d < s.r) {
                                 d = s.r - d;
                                 e->pos = Vec3Add(e->pos, Vec3Scale(normal, d));
-                                e->v = Vec3Transform(e->v, Mat4Reflect(normal));
+                                f32 restitution = 2.0f;
+                                // Reflect velocity about the contact normal.
+                                // Remember that to reflect a vec about a normal you add the portion fo the vec in the
+                                // per to the negative of the portion in the parallel.
+                                e->v = Vec3Sub(e->v, Vec3Scale(normal, restitution * Vec3Dot(e->v, normal)));
                             }
                         }
                     }
