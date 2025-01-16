@@ -3517,8 +3517,7 @@ static void Scene4Tick(GameState* gstate) {
 
                 Vec3 dir_world = Vec3Transform(dir_model, rotation);
                 Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
-                viewpos = Vec3Add(viewpos, mov_world);
-                player->pos = viewpos;
+                player->pos = Vec3Add(player->pos, mov_world);
             }
 
             // Right stick movement.
@@ -3652,6 +3651,9 @@ static void Scene4Tick(GameState* gstate) {
                 }
             }
         }
+
+        // Update camera pos at the end of all this to make sure player pos is final position for frame.
+        viewpos = player->pos;
     }
 
     // Drawing
