@@ -3397,6 +3397,8 @@ static void Scene4Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
+    static Vec3 GRAVITY = Vec3Lit(0.0f, -3.0f, 0.0f);
+
     static EntityId playerid;
 
     static EntityId BALLS[MAX_ENTITY_BATCH] = {0};
@@ -3452,7 +3454,7 @@ static void Scene4Tick(GameState* gstate) {
                     entity->color = colors[i];
                     entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                     entity->v = velocities[i];
-                    // FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+                    FlagOn(entity->flags, EFLAG_PHYSICS_ON);
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[++size] = entity->id;
                     Assert(size < MAX_ENTITY_BATCH);
@@ -3550,6 +3552,7 @@ static void Scene4Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
+                        e->v = Vec3Add(e->v, Vec3Scale(GRAVITY, dt));
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
 
