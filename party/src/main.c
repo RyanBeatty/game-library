@@ -3451,6 +3451,7 @@ static void Scene4Tick(GameState* gstate) {
                     entity->color = colors[i];
                     entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                     entity->v = velocities[i];
+                    // FlagOn(entity->flags, EFLAG_PHYSICS_ON);
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[++size] = entity->id;
                     Assert(size < MAX_ENTITY_BATCH);
@@ -3548,21 +3549,21 @@ static void Scene4Tick(GameState* gstate) {
                         continue;
                     }
 
-                    if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                    if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                            Entity* projectile = AllocateEntity();
-                            projectile->pos = player->pos;
-                            projectile->mesh = GetMesh(M_ICOSPHERE);
-                            projectile->color = LPURPLE;
-                            projectile->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
-                            FlagOn(projectile->flags, EFLAG_PROJECTILE);
-                            FlagOn(projectile->flags, EFLAG_COLLIDER);
-                            projectile->v =
-                                Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
+                            // Entity* projectile = AllocateEntity();
+                            // projectile->pos = player->pos;
+                            // projectile->mesh = GetMesh(M_ICOSPHERE);
+                            // projectile->color = LPURPLE;
+                            // projectile->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
+                            // FlagOn(projectile->flags, EFLAG_PROJECTILE);
+                            // FlagOn(projectile->flags, EFLAG_COLLIDER);
+                            // projectile->v =
+                            //     Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
                         }
                     }
                 }
