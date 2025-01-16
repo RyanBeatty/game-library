@@ -3399,8 +3399,8 @@ static void Scene4Tick(GameState* gstate) {
 
     static EntityId playerid;
 
-    static EntityId TARGETS[MAX_ENTITY_BATCH] = {0};
-    static u32 TARGETS_SIZE = 0;
+    static EntityId BALLS[MAX_ENTITY_BATCH] = {0};
+    static u32 BALLS_SIZE = 0;
 
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
@@ -3413,8 +3413,8 @@ static void Scene4Tick(GameState* gstate) {
 
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
-        memset(TARGETS, 0, sizeof(TARGETS));
-        TARGETS_SIZE = 0;
+        memset(BALLS, 0, sizeof(BALLS));
+        BALLS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
 
@@ -3428,12 +3428,12 @@ static void Scene4Tick(GameState* gstate) {
             playerid = entity->id;
         }
 
-        // TARGETS init
+        // BALLS init
         {
-            EntityId* entities = TARGETS;
+            EntityId* entities = BALLS;
             u32 size = 0;
 
-            const Vec3 origin = Vec3Lit(-50.0f, 0.0f, 30.0f);
+            const Vec3 origin = Vec3Lit(-50.0f, 0.0f, 0.0f);
 
             {
                 const Vec3 positions[] = {origin};
@@ -3446,10 +3446,10 @@ static void Scene4Tick(GameState* gstate) {
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
                     Entity* entity = AllocateEntity();
                     entity->pos = positions[i];
-                    entity->mesh = GetMesh(M_ICOSAHEDRON);
+                    entity->mesh = GetMesh(M_ICOSPHERE);
                     entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
                     entity->color = colors[i];
-                    entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
+                    entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                     entity->v = velocities[i];
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[++size] = entity->id;
@@ -3457,8 +3457,8 @@ static void Scene4Tick(GameState* gstate) {
                 }
             }
 
-            TARGETS_SIZE = size;
-            Assert(TARGETS_SIZE < ArraySizeOf(TARGETS));
+            BALLS_SIZE = size;
+            Assert(BALLS_SIZE < ArraySizeOf(BALLS));
         }
 
         // walls init.
