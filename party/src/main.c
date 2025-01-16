@@ -3554,6 +3554,18 @@ static void Scene4Tick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
                         e->v = Vec3Add(e->v, Vec3Scale(GRAVITY, dt));
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                        // Check ground intersection.
+                        // HACK FOR NOW UNTIL I IMPLEMENT SOME SORT OF BOUDNING VOLUME FOR WALLS
+                        {
+                            Sphere s = EntityBoundingSphere(e);
+                            Vec3 groundnorm = Vec3Lit(0.0f, 1.0f, 0.0f);
+                            f32 d = Vec3Dot(s.c, groundnorm);
+                            if (d < s.r) {
+                                e->pos.y = s.r;
+                                e->v = Vec3Zero();
+                            }
+                        }
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
