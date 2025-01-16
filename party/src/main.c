@@ -354,6 +354,7 @@ static Mat4 Mat4Rotate(rad t, Vec3 axis) {
 }
 
 // Contstruct matrix that reflects vectors around the plane defined by n. n doesn't need to be unit.
+// useful for 3d reflections. see FOGB 2.3
 static Mat4 Mat4Reflect(Vec3 n) {
     n = Vec3Normalize(n);
 
@@ -3563,8 +3564,9 @@ static void Scene4Tick(GameState* gstate) {
                             f32 d = Vec3Dot(s.c, normal);
                             if (d < s.r) {
                                 d = s.r - d;
+                                breakpoint();
                                 e->pos = Vec3Add(e->pos, Vec3Scale(normal, d));
-                                e->v = Vec3Zero();
+                                e->v = Vec3Transform(e->v, Mat4Reflect(normal));
                             }
                         }
                     }
