@@ -139,9 +139,9 @@ static Vec3 Vec3Normalize(Vec3 v) {
 static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
-static Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
-    return Vec3Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t));
-}
+// static Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
+//     return Vec3Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t));
+// }
 
 static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
@@ -3020,6 +3020,8 @@ static void Scene3Tick(GameState* gstate) {
         MOBS_SIZE = 0;
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
+        memset(TARGETS, 0, sizeof(TARGETS));
+        TARGETS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
 
@@ -3097,6 +3099,7 @@ static void Scene3Tick(GameState* gstate) {
             }
 
             TARGETS_SIZE = size;
+            Assert(TARGETS_SIZE < ArraySizeOf(TARGETS));
         }
 
         // walls init.
@@ -3177,7 +3180,6 @@ static void Scene3Tick(GameState* gstate) {
 
         // Scene3 update.
         {
-            LShader shader = GetShader();
             {
                 EntityManager* em = GetEntityManager();
                 u32 esize = ArraySizeOf(em->entities);
@@ -3409,10 +3411,10 @@ static void Scene4Tick(GameState* gstate) {
     if (!gstate->init) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-        memset(MOBS, 0, sizeof(MOBS));
-        MOBS_SIZE = 0;
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
+        memset(TARGETS, 0, sizeof(TARGETS));
+        TARGETS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
 
@@ -3456,6 +3458,7 @@ static void Scene4Tick(GameState* gstate) {
             }
 
             TARGETS_SIZE = size;
+            Assert(TARGETS_SIZE < ArraySizeOf(TARGETS));
         }
 
         // walls init.
@@ -3536,7 +3539,6 @@ static void Scene4Tick(GameState* gstate) {
 
         // Scene4 update.
         {
-            LShader shader = GetShader();
             {
                 EntityManager* em = GetEntityManager();
                 u32 esize = ArraySizeOf(em->entities);
