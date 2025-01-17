@@ -3565,15 +3565,17 @@ static void Scene4Tick(GameState* gstate) {
                             Vec3 normal = Vec3Lit(0.0f, 1.0f, 0.0f);
                             f32 d = Vec3Dot(s.c, normal);
                             if (d < s.r) {
+                                static const f32 RESTITUTION = 0.8f;
+                                static const f32 FRICTION = 0.7f;
+
                                 d = s.r - d;
                                 e->pos = Vec3Add(e->pos, Vec3Scale(normal, d));
-                                f32 restitution = 2.0f;
                                 // Reflect velocity about the contact normal.
                                 // Remember that to reflect a vec about a normal you add the portion fo the vec in the
                                 // per to the negative of the portion in the parallel.
                                 Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(e->v, normal));
                                 Vec3 v_perp = Vec3Sub(e->v, v_parallel);
-                                e->v = Vec3Add(Vec3Scale(v_perp, 0.5f), Vec3Scale(v_parallel, -1.0f * 0.8));
+                                e->v = Vec3Add(Vec3Scale(v_perp, FRICTION), Vec3Scale(v_parallel, -1.0f * RESTITUTION));
                             }
                         }
                     }
