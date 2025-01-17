@@ -3378,6 +3378,7 @@ static void Scene4Tick(GameState* gstate) {
             entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
             entity->mesh = GetMesh(M_CUBE);
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+            FlagOff(entity->flags, EFLAG_DRAW);
             // FlagOn(entity->flags, EFLAG_COLLIDER);
 
             playerid = entity->id;
