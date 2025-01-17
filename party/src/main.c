@@ -3575,7 +3575,7 @@ static void Scene4Tick(GameState* gstate) {
                                 // per to the negative of the portion in the parallel.
                                 Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(e->v, normal));
                                 Vec3 v_perp = Vec3Sub(e->v, v_parallel);
-                                e->v = Vec3Add(Vec3Scale(v_perp, FRICTION), Vec3Scale(v_parallel, -1.0f * RESTITUTION));
+                                e->v = Vec3Add(Vec3Scale(v_perp, RESTITUTION), Vec3Scale(v_parallel, -1.0f * FRICTION));
                             }
                         }
                     }
