@@ -3399,7 +3399,7 @@ static void Scene4Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-    static Vec3 GRAVITY = Vec3Lit(0.0f, -3.0f, 0.0f);
+    static Vec3 GRAVITY = Vec3Lit(0.0f, -9.81f, 0.0f);
 
     static EntityId playerid;
 
@@ -3571,7 +3571,9 @@ static void Scene4Tick(GameState* gstate) {
                                 // Reflect velocity about the contact normal.
                                 // Remember that to reflect a vec about a normal you add the portion fo the vec in the
                                 // per to the negative of the portion in the parallel.
-                                e->v = Vec3Sub(e->v, Vec3Scale(normal, restitution * Vec3Dot(e->v, normal)));
+                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(e->v, normal));
+                                Vec3 v_perp = Vec3Sub(e->v, v_parallel);
+                                e->v = Vec3Add(Vec3Scale(v_perp, 0.5f), Vec3Scale(v_parallel, -1.0f * 0.8));
                             }
                         }
                     }
