@@ -3247,59 +3247,6 @@ static void Scene3Tick(GameState* gstate) {
                     }
                 }
 
-                // Collisions.
-                {
-                    CollisionInfo collisions[10] = {0};
-                    u32 csize = 0;
-
-                    // Detection.
-                    u32 size = ArraySizeOf(em->entities);
-                    for (u32 i = 0; i < size; ++i) {
-                        Entity* e0 = GetEntity(i);
-                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
-                            continue;
-                        }
-
-                        Sphere s0 = EntityBoundingSphere(e0);
-                        for (u32 j = i + 1; j < size; ++j) {
-                            Entity* e1 = GetEntity(j);
-                            if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                                continue;
-                            }
-
-                            Sphere s1 = EntityBoundingSphere(e1);
-                            Vec3 dir = Vec3Sub(s1.c, s0.c);
-                            f32 d = Vec3Dot(dir, dir);
-                            f32 rr = s0.r + s1.r;
-                            if (d <= rr * rr) {
-                                f32 depth = f32sqrt(d);
-                                Vec3 normal = Vec3Normalize(dir);
-                                CollisionInfo collision = {
-                                    .id0 = e0->id, .id1 = e1->id, .depth = depth, .normal = normal};
-                                collisions[csize++] = collision;
-                                Assert(csize < 10);
-                            }
-                        }
-                    }
-
-                    // Response.
-                    for (u32 i = 0; i < csize; ++i) {
-                        CollisionInfo* collision = &collisions[i];
-                        Entity* e0 = GetEntity(collision->id0);
-                        Entity* e1 = GetEntity(collision->id1);
-                        if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
-                            e0->hit = true;
-                            e0->hit_timer = 0.0f;
-                            FlagOff(e1->flags, EFLAG_ACTIVE);
-                        }
-                        if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_MOB)) {
-                            e1->hit = true;
-                            e1->hit_timer = 0.0f;
-                            FlagOff(e0->flags, EFLAG_ACTIVE);
-                        }
-                    }
-                }
-
                 // Draw.
                 for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
                     Entity* e = GetEntity(i);
@@ -3428,7 +3375,10 @@ static void Scene4Tick(GameState* gstate) {
             Entity* entity = AllocateEntity();
             entity->pos = Vec3Lit(0.0f, 10.0f, 0.0f);
             entity->orient = Mat4RotateY(Deg2Rad(90.0f));
+            entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
+            entity->mesh = GetMesh(M_CUBE);
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+            // FlagOn(entity->flags, EFLAG_COLLIDER);
 
             playerid = entity->id;
         }
@@ -3583,17 +3533,6 @@ static void Scene4Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                            // Entity* projectile = AllocateEntity();
-                            // projectile->pos = player->pos;
-                            // projectile->mesh = GetMesh(M_ICOSPHERE);
-                            // projectile->color = LPURPLE;
-                            // projectile->scale = Vec3Lit(0.3f, 0.3f, 0.3f);
-                            // FlagOn(projectile->flags, EFLAG_PROJECTILE);
-                            // FlagOn(projectile->flags, EFLAG_COLLIDER);
-                            // projectile->v =
-                            //     Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), player->orient), 200.0f);
-                        }
                     }
                 }
 
@@ -3637,15 +3576,13 @@ static void Scene4Tick(GameState* gstate) {
                         CollisionInfo* collision = &collisions[i];
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
-                        if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
-                            e0->hit = true;
-                            e0->hit_timer = 0.0f;
-                            FlagOff(e1->flags, EFLAG_ACTIVE);
+                        if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                            Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e0->orient);
+                            e1->v = Vec3Scale(dir, 10.0f);
                         }
-                        if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_MOB)) {
-                            e1->hit = true;
-                            e1->hit_timer = 0.0f;
-                            FlagOff(e0->flags, EFLAG_ACTIVE);
+                        if (TestFlag(e0->flags, EFLAG_COLLIDER) && TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED)) {
+                            Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e1->orient);
+                            e0->v = Vec3Scale(dir, 10.0f);
                         }
                     }
                 }
