@@ -3573,9 +3573,11 @@ static void Scene4Tick(GameState* gstate) {
                                 // Reflect velocity about the contact normal.
                                 // Remember that to reflect a vec about a normal you add the portion fo the vec in the
                                 // per to the negative of the portion in the parallel.
+                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
+                                // the surface. some texts treat it the other way around.
                                 Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(e->v, normal));
                                 Vec3 v_perp = Vec3Sub(e->v, v_parallel);
-                                e->v = Vec3Add(Vec3Scale(v_perp, RESTITUTION), Vec3Scale(v_parallel, -1.0f * FRICTION));
+                                e->v = Vec3Add(Vec3Scale(v_perp, FRICTION), Vec3Scale(v_parallel, -1.0f * RESTITUTION));
                             }
                         }
                     }
