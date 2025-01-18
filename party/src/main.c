@@ -3727,25 +3727,32 @@ static void Scene4Tick(GameState* gstate) {
                             continue;
                         }
 
-                        Sphere s0 = EntityBoundingSphere(e0);
+                        Polyhedron p0 = EntityBoundingVolume(e0);
                         for (u32 j = i + 1; j < size; ++j) {
                             Entity* e1 = GetEntity(j);
                             if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
                                 continue;
                             }
 
-                            Sphere s1 = EntityBoundingSphere(e1);
-                            Vec3 dir = Vec3Sub(s1.c, s0.c);
-                            f32 d = Vec3Dot(dir, dir);
-                            f32 rr = s0.r + s1.r;
-                            if (d <= rr * rr) {
-                                f32 depth = f32sqrt(d);
-                                Vec3 normal = Vec3Normalize(dir);
-                                CollisionInfo collision = {
-                                    .id0 = e0->id, .id1 = e1->id, .depth = depth, .normal = normal};
+                            Polyhedron p1 = EntityBoundingVolume(e1);
+
+                            CollisionInfo collision = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
+                            if (collides) {
                                 collisions[csize++] = collision;
                                 Assert(csize < 10);
                             }
+                            // Sphere s1 = EntityBoundingSphere(e1);
+                            // Vec3 dir = Vec3Sub(s1.c, s0.c);
+                            // f32 d = Vec3Dot(dir, dir);
+                            // f32 rr = s0.r + s1.r;
+                            // if (d <= rr * rr) {
+                            //     f32 depth = f32sqrt(d);
+                            //     Vec3 normal = Vec3Normalize(dir);
+                            //     CollisionInfo collision = {
+                            //         .id0 = e0->id, .id1 = e1->id, .depth = depth, .normal = normal};
+
+                            // }
                         }
                     }
 
