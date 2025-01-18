@@ -1277,6 +1277,45 @@ static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
     return (Sphere){.c = center, .r = radius};
 }
 
+typedef struct AABB {
+    Vec3 c;  // center.
+    Vec3 r;  // half width extents along each axis.
+} AABB;
+
+// Computes the axis aligned bounding box in the coordinate space of passed in vertices.
+static AABB ComputeAABB(Vec3* vs, u32 size) {
+    static Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
+
+    AABB aabb = {0};
+    for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
+        Vec3 dir = AXIS[i];
+
+        u32 imin = 0;
+        u32 imax = 0;
+        f32 dmin = F32_MAX;
+        f32 dmax = -F32_MAX;
+        for (u32 j = 0; j < size; ++j) {
+            f32 d = Vec3Dot(vs[j], dir);
+            if (d < dmin) {
+                dmin = d;
+                imin = j;
+            }
+            if (d > dmax) {
+                dmax = d;
+                imax = j;
+            }
+        }
+
+        // compute the half width extent of the dimension of the axis.
+        // the center can be found by adding the radius to the min vertexes
+        // value in the correct coordinate.
+        aabb.r.f[i] = 0.5f * Vec3Len(Vec3Sub(vs[imax], vs[imin]));
+        aabb.c.f[i] = aabb.r.f[i] + vs[imin].f[i];
+    }
+
+    return aabb;
+}
+
 ////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
@@ -3375,11 +3414,11 @@ static void Scene4Tick(GameState* gstate) {
             Entity* entity = AllocateEntity();
             entity->pos = Vec3Lit(0.0f, 10.0f, 0.0f);
             entity->orient = Mat4RotateY(Deg2Rad(90.0f));
-            entity->scale = Vec3Lit(5.0f, 5.0f, 5.0f);
-            entity->mesh = GetMesh(M_CUBE);
+            entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
+            entity->mesh = GetMesh(M_ICOSPHERE);
+            entity->color = LBLUE;
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-            FlagOff(entity->flags, EFLAG_DRAW);
-            // FlagOn(entity->flags, EFLAG_COLLIDER);
+            FlagOn(entity->flags, EFLAG_COLLIDER);
 
             playerid = entity->id;
         }
