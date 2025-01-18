@@ -946,6 +946,7 @@ static void RenderDataInit() {
 
     // Quad.
     {
+        // quad is aligned with the xy plane.
         Vertex vs[] = {
             {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},
             {{{-0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},
@@ -1432,6 +1433,7 @@ typedef enum EntityFlag {
     EFLAG_COLLIDER = 1 << 4,
     EFLAG_MOB = 1 << 5,
     EFLAG_PROJECTILE = 1 << 6,
+    EFLAG_WALL = 1 << 7,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -3607,7 +3609,9 @@ static void Scene4Tick(GameState* gstate) {
                 entity->mesh = GetMesh(M_QUAD);
                 entity->orient = Mat4Rotate(rotations[i], axis[i]);
                 entity->color = colors[i];
-                entity->scale = Vec3Lit(10000.0f, 10000.0f, 10000.0f);
+                entity->scale = Vec3Lit(10000.0f, 10000.0f, 0.0f);
+                entity->phtype = PH_AABB;
+                FlagOn(entity->flags, EFLAG_COLLIDER);
                 entities[((*size)++) + i] = entity->id;
             }
         }
@@ -3693,7 +3697,7 @@ static void Scene4Tick(GameState* gstate) {
                             f32 depth = 0.0f;
                             bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &normal, &depth);
 
-                            if (collides) {
+                            if (false) {
                                 static const f32 RESTITUTION = 0.8f;
                                 static const f32 FRICTION = 0.7f;
 
@@ -3735,6 +3739,9 @@ static void Scene4Tick(GameState* gstate) {
                             }
 
                             Polyhedron p1 = EntityBoundingVolume(e1);
+                            if (e1->id == 2) {
+                                breakpoint();
+                            }
 
                             CollisionInfo collision = {0};
                             bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
@@ -3761,11 +3768,11 @@ static void Scene4Tick(GameState* gstate) {
                         CollisionInfo* collision = &collisions[i];
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
-                        if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                        if (TestFlag(e0->flags, EFLAG_WALL) && TestFlag(e1->flags, EFLAG_COLLIDER)) {
                             e0->v = Vec3Zero();
                             e1->v = Vec3Zero();
                         }
-                        if (TestFlag(e0->flags, EFLAG_COLLIDER) && TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        if (TestFlag(e0->flags, EFLAG_COLLIDER) && TestFlag(e1->flags, EFLAG_WALL)) {
                             e0->v = Vec3Zero();
                             e1->v = Vec3Zero();
                         }
