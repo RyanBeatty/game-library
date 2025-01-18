@@ -1325,7 +1325,7 @@ static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
     Vec3 max = Vec3Add(aabb.c, aabb.r);
     Vec3 min = Vec3Sub(aabb.c, aabb.r);
 
-    // Find closest point from sphere center to aabb.
+    // Find closest point from sphere center to the space bounded by aabb (which might be inside of) aabb.
     Vec3 cp = Vec3Zero();
     for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
         f32 v = s.c.f[i];
@@ -3612,12 +3612,14 @@ static void Scene4Tick(GameState* gstate) {
                             Vec3 normal = Vec3Lit(0.0f, 1.0f, 0.0f);
                             f32 depth = Vec3Dot(s.c, normal);
 
-                            if (depth < s.r) {
+                            bool collides =
+                                TestSphereVsAABB(s, (AABB){Vec3Zero(), Vec3Lit(100.0f, 0.0f, 100.0f)}, &normal, &depth);
+
+                            if (collides) {
                                 static const f32 RESTITUTION = 0.8f;
                                 static const f32 FRICTION = 0.7f;
 
-                                depth = s.r - depth;
-                                e->pos = Vec3Add(e->pos, Vec3Scale(normal, depth));
+                                e->pos = Vec3Add(e->pos, Vec3Scale(normal, -depth));
                                 // Reflect velocity about the contact normal.
                                 // Remember that to reflect a vec about a normal you add the portion fo the vec in the
                                 // per to the negative of the portion in the parallel.
