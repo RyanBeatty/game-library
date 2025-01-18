@@ -1366,8 +1366,27 @@ typedef struct Polyhedron {
     };
 } Polyhedron;
 
+static Polyhedron ComputePolyhedron(Vec3* vs, u32 vsize, PolyhedronType type) {
+    Polyhedron p = {0};
+    p.type = type;
+    switch (type) {
+        case PH_SPHERE: {
+            p.sphere = BoundingSphere(vs, vsize);
+            break;
+        }
+        case PH_AABB: {
+            p.aabb = ComputeAABB(vs, vsize);
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+    return p;
+}
+
 // Returns true if both polyhedrons collide. normal will point from b to a.
-bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal, f32* depth) {
+static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal, f32* depth) {
     bool collides = false;
     Vec3 n = Vec3Zero();
     f32 d = 0.0f;
@@ -1433,6 +1452,11 @@ typedef struct Entity {
 
     LMesh mesh;
     Vec4 color;
+
+    // TODO: At some point it might make more sense to store a polyhedron struct itself here.
+    // Might only make sense if we ever need to incrementally recompute bounding volumes.
+    // Right now we always do on the fly.
+    PolyhedronType phtype;
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
@@ -1524,6 +1548,19 @@ static AABB EntityAABB(Entity* e) {
     }
 
     return ComputeAABB(vs, vsize);
+}
+
+static Polyhedron EntityBoundingVolume(Entity* e) {
+    Mat4 m = EntityGetMat(e);
+    Vec3 vs[MAX_VERTICES] = {0};
+    u32 vsize = e->mesh.ntriangles * 3;
+    Assert(vsize < MAX_VERTICES);
+    for (u32 i = 0; i < vsize; ++i) {
+        Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
+        vs[i] = Vec3WTransform(pos, m);
+    }
+
+    return ComputePolyhedron(vs, vsize, e->phtype);
 }
 
 ////////////////////////////////////////////////////
@@ -3543,6 +3580,7 @@ static void Scene4Tick(GameState* gstate) {
                     entity->color = colors[i];
                     entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                     entity->v = velocities[i];
+                    entity->phtype = PH_SPHERE;
                     FlagOn(entity->flags, EFLAG_PHYSICS_ON);
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[++size] = entity->id;
