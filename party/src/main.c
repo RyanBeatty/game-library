@@ -464,6 +464,10 @@ static Mat4 Mat4SRT(f32 scale, Mat4 rotate, Vec3 pos) {
     return Mat4Multiply(Mat4TranslateV(pos), Mat4Multiply(rotate, Mat4Scale(scale)));
 }
 
+static Mat4 Mat4SVRT(Vec3 scale, Mat4 rotate, Vec3 pos) {
+    return Mat4Multiply(Mat4TranslateV(pos), Mat4Multiply(rotate, Mat4ScaleV(scale)));
+}
+
 static bool Mat4Eq(Mat4 a, Mat4 b) {
     bool result = Vec3Eq(a.v.a, b.v.a) && Vec3Eq(a.v.b, b.v.b) && Vec3Eq(a.v.c, b.v.c) && Vec3Eq(a.v.d, b.v.d) &&
                   f32eq(a.v.x, b.v.x) && f32eq(a.v.y, b.v.y) && f32eq(a.v.z, b.v.z) && f32eq(a.v.w, b.v.w);
@@ -1435,6 +1439,20 @@ static Sphere EntityBoundingSphere(Entity* e) {
     return BoundingSphere(vs, vsize);
 }
 
+// Returns the AABB in world sphere.
+static AABB EntityAABB(Entity* e) {
+    Mat4 m = EntityGetMat(e);
+    Vec3 vs[MAX_VERTICES] = {0};
+    u32 vsize = e->mesh.ntriangles * 3;
+    Assert(vsize < MAX_VERTICES);
+    for (u32 i = 0; i < vsize; ++i) {
+        Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
+        vs[i] = Vec3WTransform(pos, m);
+    }
+
+    return ComputeAABB(vs, vsize);
+}
+
 ////////////////////////////////////////////////////
 typedef struct CollisionInfo {
     EntityId id0;
@@ -1727,6 +1745,12 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
 
 static void DrawSphereWf(Vec3 center, f32 radius, Vec4 color) {
     DrawCmd* cmd = AddCmd(GetMesh(M_ICOSPHERE), Mat4SRT(radius, Mat4Identity(), center), color);
+    cmd->wireframe = true;
+}
+
+static void DrawAABBWf(Vec3 center, Vec3 radius, Vec4 color) {
+    // Reminder that radius are the *half* widths, so need to multiply by 2 to scale correctly
+    DrawCmd* cmd = AddCmd(GetMesh(M_CUBE), Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center), color);
     cmd->wireframe = true;
 }
 
@@ -3415,10 +3439,10 @@ static void Scene4Tick(GameState* gstate) {
             entity->pos = Vec3Lit(0.0f, 10.0f, 0.0f);
             entity->orient = Mat4RotateY(Deg2Rad(90.0f));
             entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
-            entity->mesh = GetMesh(M_ICOSPHERE);
-            entity->color = LBLUE;
+            // entity->mesh = GetMesh(M_ICOSPHERE);
+            // entity->color = LCLEAR;
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-            FlagOn(entity->flags, EFLAG_COLLIDER);
+            // FlagOn(entity->flags, EFLAG_COLLIDER);
 
             playerid = entity->id;
         }
@@ -3617,12 +3641,12 @@ static void Scene4Tick(GameState* gstate) {
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
                         if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                            Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e0->orient);
-                            e1->v = Vec3Scale(dir, 10.0f);
+                            e0->v = Vec3Zero();
+                            e1->v = Vec3Zero();
                         }
                         if (TestFlag(e0->flags, EFLAG_COLLIDER) && TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED)) {
-                            Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e1->orient);
-                            e0->v = Vec3Scale(dir, 10.0f);
+                            e0->v = Vec3Zero();
+                            e1->v = Vec3Zero();
                         }
                     }
                 }
@@ -3654,6 +3678,9 @@ static void Scene4Tick(GameState* gstate) {
                     if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
                         Sphere sphere = EntityBoundingSphere(e);
                         DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+
+                        AABB aabb = EntityAABB(e);
+                        DrawAABBWf(aabb.c, aabb.r, LBLUE);
                     }
                 }
             }
