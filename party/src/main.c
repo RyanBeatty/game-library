@@ -2611,6 +2611,13 @@ static void Scene1Tick(GameState* gstate) {
                 for (u32 i = 0; i < size; ++i) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer * 0.5f, Vec3Lit(1.0f, 0.3f, 0.5f));
+
+                    if (gstate->debug) {
+                        Sphere sphere = EntityBoundingSphere(entity);
+                        DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+                        AABB aabb = EntityAABB(entity);
+                        DrawAABBWf(aabb.c, aabb.r, LBLUE);
+                    }
                 }
                 DrawEntities(shader, entities, size);
                 DrawEntitiesWireFrame(shader, entities, size);
