@@ -1255,6 +1255,8 @@ static void CmdBufferZero() {
 ////////////////////////////////////////////////////////////
 // S:Geometry
 
+static const Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
+
 typedef struct Sphere {
     Vec3 c;  // center
     f32 r;   // radius
@@ -1288,8 +1290,6 @@ typedef struct AABB {
 
 // Computes the axis aligned bounding box in the coordinate space of passed in vertices.
 static AABB ComputeAABB(Vec3* vs, u32 size) {
-    static Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
-
     AABB aabb = {0};
     for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
         Vec3 dir = AXIS[i];
@@ -1318,6 +1318,39 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
     }
 
     return aabb;
+}
+
+// Returns normal pointing from aabb to sphere if there is a collision.
+static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
+    Vec3 max = Vec3Add(aabb.c, aabb.r);
+    Vec3 min = Vec3Sub(aabb.c, aabb.r);
+
+    // Find closest point from sphere center to aabb.
+    Vec3 cp = Vec3Zero();
+    for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
+        f32 v = s.c.f[i];
+        if (v < min.f[i]) {
+            v = min.f[i];
+        }
+        if (v > max.f[i]) {
+            v = max.f[i];
+        }
+        cp.f[i] = v;
+    }
+
+    bool hit = false;
+    Vec3 dir = Vec3Sub(cp, s.c);
+    f32 d = Vec3Dot(dir, dir);
+    if (d <= s.r * s.r) {
+        hit = true;
+        d = f32sqrt(d);
+        d = s.r - d;
+        dir = Vec3Normalize(dir);
+    }
+
+    *normal = dir;
+    *depth = d;
+    return hit;
 }
 
 ////////////////////////////////////////////////////////////
@@ -3577,13 +3610,14 @@ static void Scene4Tick(GameState* gstate) {
                             Sphere s = EntityBoundingSphere(e);
                             // Normal points from b (the wall) to a.
                             Vec3 normal = Vec3Lit(0.0f, 1.0f, 0.0f);
-                            f32 d = Vec3Dot(s.c, normal);
-                            if (d < s.r) {
+                            f32 depth = Vec3Dot(s.c, normal);
+
+                            if (depth < s.r) {
                                 static const f32 RESTITUTION = 0.8f;
                                 static const f32 FRICTION = 0.7f;
 
-                                d = s.r - d;
-                                e->pos = Vec3Add(e->pos, Vec3Scale(normal, d));
+                                depth = s.r - depth;
+                                e->pos = Vec3Add(e->pos, Vec3Scale(normal, depth));
                                 // Reflect velocity about the contact normal.
                                 // Remember that to reflect a vec about a normal you add the portion fo the vec in the
                                 // per to the negative of the portion in the parallel.
