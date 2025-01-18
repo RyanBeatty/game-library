@@ -3685,13 +3685,13 @@ static void Scene4Tick(GameState* gstate) {
                         // Check ground intersection.
                         // HACK FOR NOW UNTIL I IMPLEMENT SOME SORT OF BOUDNING VOLUME FOR WALLS
                         {
-                            Sphere s = EntityBoundingSphere(e);
-                            // Normal points from b (the wall) to a.
-                            Vec3 normal = Vec3Lit(0.0f, 1.0f, 0.0f);
-                            f32 depth = Vec3Dot(s.c, normal);
+                            Polyhedron p0 = EntityBoundingVolume(e);
+                            Polyhedron p1 =
+                                (Polyhedron){PH_AABB, .aabb = (AABB){Vec3Zero(), Vec3Lit(100.0f, 0.0f, 100.0f)}};
 
-                            bool collides =
-                                TestSphereVsAABB(s, (AABB){Vec3Zero(), Vec3Lit(100.0f, 0.0f, 100.0f)}, &normal, &depth);
+                            Vec3 normal = Vec3Zero();
+                            f32 depth = 0.0f;
+                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &normal, &depth);
 
                             if (collides) {
                                 static const f32 RESTITUTION = 0.8f;
