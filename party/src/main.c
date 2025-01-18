@@ -125,6 +125,8 @@ static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y,
 // formula v1 - v2
 static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
 static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
+// Inverts a vector.
+static Vec3 Vec3Negate(Vec3 v) { return Vec3Lit(-1.0f * v.x, -1.0f * v.y, -1.0f * v.z); }
 static Vec3 Vec3Normalize(Vec3 v) {
     f32 len = f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
     if (len > 0.0f) {
@@ -1351,6 +1353,44 @@ static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
     *normal = dir;
     *depth = d;
     return hit;
+}
+
+typedef enum PolyhedronType { PH_NONE = 0, PH_SPHERE, PH_AABB, PH_COUNT } PolyhedronType;
+
+typedef struct Polyhedron {
+    PolyhedronType type;
+
+    union {
+        Sphere sphere;
+        AABB aabb;
+    };
+} Polyhedron;
+
+// Returns true if both polyhedrons collide. normal will point from b to a.
+bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal, f32* depth) {
+    bool collides = false;
+    Vec3 n = Vec3Zero();
+    f32 d = 0.0f;
+
+    // Collision table. if we don't have an entry in the collision table set up between two
+    // polyedron types, then we just say they never collide.
+    // IMPORTANT: If you are adding new entries here, you need to handle a vs b and b vs a
+    // comparisons.
+    if (a->type == PH_SPHERE) {
+        if (b->type == PH_AABB) {
+            collides = TestSphereVsAABB(a->sphere, b->aabb, &n, &d);
+        }
+    } else if (b->type == PH_AABB) {
+        if (a->type == PH_SPHERE) {
+            collides = TestSphereVsAABB(b->sphere, a->aabb, &n, &d);
+            // point normal from b to a.
+            n = Vec3Negate(n);
+        }
+    }
+
+    *normal = n;
+    *depth = d;
+    return collides;
 }
 
 ////////////////////////////////////////////////////////////
