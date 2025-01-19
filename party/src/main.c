@@ -1297,19 +1297,15 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
     for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
         Vec3 dir = AXIS[i];
 
-        u32 imin = 0;
-        u32 imax = 0;
         f32 dmin = F32_MAX;
         f32 dmax = -F32_MAX;
         for (u32 j = 0; j < size; ++j) {
             f32 d = Vec3Dot(vs[j], dir);
             if (d < dmin) {
                 dmin = d;
-                imin = j;
             }
             if (d > dmax) {
                 dmax = d;
-                imax = j;
             }
         }
 
@@ -3619,6 +3615,7 @@ static void Scene4Tick(GameState* gstate) {
                 entity->scale = Vec3Lit(10000.0f, 10000.0f, 0.0f);
                 entity->phtype = PH_AABB;
                 FlagOn(entity->flags, EFLAG_COLLIDER);
+                FlagOn(entity->flags, EFLAG_WALL);
                 entities[((*size)++) + i] = entity->id;
             }
         }
@@ -3746,13 +3743,12 @@ static void Scene4Tick(GameState* gstate) {
                             }
 
                             Polyhedron p1 = EntityBoundingVolume(e1);
-                            if (e1->id == 2) {
-                                breakpoint();
-                            }
 
                             CollisionInfo collision = {0};
                             bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
                             if (collides) {
+                                collision.id0 = e0->id;
+                                collision.id1 = e1->id;
                                 collisions[csize++] = collision;
                                 Assert(csize < 10);
                             }
