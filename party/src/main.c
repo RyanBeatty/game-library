@@ -3616,13 +3616,13 @@ static void Scene4Tick(GameState* gstate) {
 
         // walls init.
         {
-            static Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
-            static f32 rotations[] = {Deg2Rad(-90.0f)};
-            static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
-            Vec4 colors[] = {LORANGE};
+            static Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, -12.0f)};
+            static f32 rotations[] = {Deg2Rad(-90.0f), Deg2Rad(0.0f)};
+            static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f)};
+            Vec4 colors[] = {LORANGE, LGRAY};
 
             EntityId* entities = WALLS;
-            u32* size = &WALLS_SIZE;
+            u32 size = WALLS_SIZE;
             for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
@@ -3633,8 +3633,12 @@ static void Scene4Tick(GameState* gstate) {
                 entity->phtype = PH_AABB;
                 FlagOn(entity->flags, EFLAG_COLLIDER);
                 FlagOn(entity->flags, EFLAG_WALL);
-                entities[((*size)++) + i] = entity->id;
+                entities[++size] = entity->id;
+                Assert(size < MAX_ENTITY_BATCH);
             }
+
+            WALLS_SIZE = size;
+            Assert(WALLS_SIZE < ArraySizeOf(WALLS));
         }
     }
 
