@@ -3689,33 +3689,6 @@ static void Scene4Tick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
                         e->v = Vec3Add(e->v, Vec3Scale(GRAVITY, dt));
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-
-                        // Check ground intersection.
-                        // HACK FOR NOW UNTIL I IMPLEMENT SOME SORT OF BOUDNING VOLUME FOR WALLS
-                        {
-                            Polyhedron p0 = EntityBoundingVolume(e);
-                            Polyhedron p1 =
-                                (Polyhedron){PH_AABB, .aabb = (AABB){Vec3Zero(), Vec3Lit(100.0f, 0.0f, 100.0f)}};
-
-                            Vec3 normal = Vec3Zero();
-                            f32 depth = 0.0f;
-                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &normal, &depth);
-
-                            if (false) {
-                                static const f32 RESTITUTION = 0.8f;
-                                static const f32 FRICTION = 0.7f;
-
-                                e->pos = Vec3Add(e->pos, Vec3Scale(normal, -depth));
-                                // Reflect velocity about the contact normal.
-                                // Remember that to reflect a vec about a normal you add the portion fo the vec in the
-                                // per to the negative of the portion in the parallel.
-                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
-                                // the surface. some texts treat it the other way around.
-                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(e->v, normal));
-                                Vec3 v_perp = Vec3Sub(e->v, v_parallel);
-                                e->v = Vec3Add(Vec3Scale(v_perp, FRICTION), Vec3Scale(v_parallel, -1.0f * RESTITUTION));
-                            }
-                        }
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
