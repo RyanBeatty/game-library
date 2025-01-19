@@ -1314,10 +1314,10 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
         }
 
         // compute the half width extent of the dimension of the axis.
-        // the center can be found by adding the radius to the min vertexes
+        // the center can be found by adding the radius to the min distance.
         // value in the correct coordinate.
-        aabb.r.f[i] = 0.5f * Vec3Len(Vec3Sub(vs[imax], vs[imin]));
-        aabb.c.f[i] = aabb.r.f[i] + vs[imin].f[i];
+        aabb.r.f[i] = 0.5f * (dmax - dmin);
+        aabb.c.f[i] = aabb.r.f[i] + dmin;
     }
 
     return aabb;
