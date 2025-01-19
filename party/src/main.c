@@ -3819,6 +3819,9 @@ static void Scene4Tick(GameState* gstate) {
 
         // Update camera pos at the end of all this to make sure player pos is final position for frame.
         viewpos = player->pos;
+        if (gstate->debug) {
+            TraceLog(LOG_INFO, "pos: %f %f %f", player->pos.x, player->pos.y, player->pos.z);
+        }
     }
 
     // Drawing
