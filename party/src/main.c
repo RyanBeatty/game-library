@@ -1286,6 +1286,23 @@ static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
     return (Sphere){.c = center, .r = radius};
 }
 
+// Returns normal pointing from b to a if there is a collision.
+static bool TestSphereVsSphere(Sphere a, Sphere b, Vec3* normal, f32* depth) {
+    bool hit = false;
+    Vec3 dir = Vec3Sub(b.c, a.c);
+    f32 d = Vec3Dot(dir, dir);
+    f32 rr = a.r + b.r;
+    if (d <= rr * rr) {
+        hit = true;
+        d = f32sqrt(d);
+        dir = Vec3Normalize(dir);
+    }
+
+    *normal = dir;
+    *depth = d;
+    return hit;
+}
+
 typedef struct AABB {
     Vec3 c;  // center.
     Vec3 r;  // half width extents along each axis.
@@ -3725,17 +3742,6 @@ static void Scene4Tick(GameState* gstate) {
                                 collisions[csize++] = collision;
                                 Assert(csize < 10);
                             }
-                            // Sphere s1 = EntityBoundingSphere(e1);
-                            // Vec3 dir = Vec3Sub(s1.c, s0.c);
-                            // f32 d = Vec3Dot(dir, dir);
-                            // f32 rr = s0.r + s1.r;
-                            // if (d <= rr * rr) {
-                            //     f32 depth = f32sqrt(d);
-                            //     Vec3 normal = Vec3Normalize(dir);
-                            //     CollisionInfo collision = {
-                            //         .id0 = e0->id, .id1 = e1->id, .depth = depth, .normal = normal};
-
-                            // }
                         }
                     }
 
