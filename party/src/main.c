@@ -1450,6 +1450,7 @@ typedef enum EntityFlag {
     EFLAG_PROJECTILE = 1 << 6,
     EFLAG_WALL = 1 << 7,
     EFLAG_BUMPER = 1 << 8,
+    EFLAG_BALL = 1 << 9,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -3608,7 +3609,7 @@ static void Scene4Tick(GameState* gstate) {
                     entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                     entity->v = velocities[i];
                     entity->phtype = PH_SPHERE;
-                    FlagOn(entity->flags, EFLAG_PHYSICS_ON);
+                    FlagOn(entity->flags, EFLAG_BALL);
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[++size] = entity->id;
                     Assert(size < MAX_ENTITY_BATCH);
@@ -3718,6 +3719,11 @@ static void Scene4Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PHYSICS_ON)) {
+                        e->v = Vec3Add(e->v, Vec3Scale(GRAVITY, dt));
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_BALL)) {
                         e->v = Vec3Add(e->v, Vec3Scale(GRAVITY, dt));
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
