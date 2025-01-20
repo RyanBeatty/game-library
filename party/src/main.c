@@ -3821,6 +3821,34 @@ static void Scene4Tick(GameState* gstate) {
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
                         {
+                            bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                            bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
+                            bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                            bool e1wall = TestFlag(e1->flags, EFLAG_WALL);
+                            if ((e0ball && e1wall) || (e0wall && e1ball)) {
+                                Vec3 normal = collision->normal;
+                                f32 depth = collision->depth;
+                                Entity* eball = e0;
+                                Entity* ewall = e1;
+                                if (e0wall && e1ball) {
+                                    eball = e1;
+                                    ewall = e0;
+                                    normal = Vec3Negate(normal);
+                                }
+
+                                eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, -depth));
+                                // Reflect velocity about the contact normal.
+                                // Remember that to reflect a vec about a normal you add the portion fo the vec in the
+                                // per to the negative of the portion in the parallel.
+                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
+                                // the surface. some texts treat it the other way around.
+                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                            }
+                        }
+
+                        {
                             bool e0physics = TestFlag(e0->flags, EFLAG_PHYSICS_ON);
                             bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
                             bool e1physics = TestFlag(e1->flags, EFLAG_PHYSICS_ON);
