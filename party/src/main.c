@@ -3749,7 +3749,7 @@ static void Scene4Tick(GameState* gstate) {
                                 if (BUMPER == NULL) {
                                     Entity* enew = AllocateEntity();
                                     enew->mesh = GetMesh(M_CUBE);
-                                    enew->scale = Vec3Lit(5.0f, 10.0f, 10.0f);
+                                    enew->scale = Vec3Lit(5.0f, 20.0f, 10.0f);
                                     enew->phtype = PH_AABB;
                                     enew->friction = 1.0f;
                                     enew->restitution = 1.2f;
