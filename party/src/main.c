@@ -3714,6 +3714,8 @@ static void Scene4Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
+                        }
                     }
                 }
 
