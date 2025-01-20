@@ -3766,8 +3766,6 @@ static void Scene4Tick(GameState* gstate) {
                                 Mat4 m = Mat4RotateEuler(bodyorient);
                                 m = Mat4Multiply(Mat4TranslateV(e->pos), m);
                                 BUMPER->pos = Vec3WTransform(Vec3Scale(FORWARD, 20.0f), m);
-
-                                // BUMPER->pos =
                             } else if (BUMPER != NULL) {
                                 FlagOff(BUMPER->flags, EFLAG_ACTIVE);
                                 BUMPER = NULL;
