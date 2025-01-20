@@ -3621,10 +3621,12 @@ static void Scene4Tick(GameState* gstate) {
 
         // walls init.
         {
-            static Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, -12.0f),
-                                       Vec3Lit(0.0f, 0.0f, 5.0f)};
-            static f32 rotations[] = {Deg2Rad(-90.0f), Deg2Rad(0.0f), Deg2Rad(0.0f)};
-            static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f)};
+            u32 width = 20.0f;
+            u32 height = 10.0f;
+            Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, -0.5f * width),
+                                Vec3Lit(0.0f, 0.0f, 0.5f * width)};
+            f32 rotations[] = {Deg2Rad(-90.0f), Deg2Rad(0.0f), Deg2Rad(0.0f)};
+            Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f)};
             Vec4 colors[] = {LORANGE, LGRAY, LGRAY};
 
             EntityId* entities = WALLS;
