@@ -3849,6 +3849,27 @@ static void Scene4Tick(GameState* gstate) {
                         }
 
                         {
+                            bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                            bool e0bumper = TestFlag(e0->flags, EFLAG_BUMPER);
+                            bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                            bool e1bumper = TestFlag(e1->flags, EFLAG_BUMPER);
+                            if ((e0ball && e1bumper) || (e0bumper && e1ball)) {
+                                Vec3 normal = collision->normal;
+                                f32 depth = collision->depth;
+                                Entity* eball = e0;
+                                Entity* ebumper = e1;
+                                if (e0bumper && e1ball) {
+                                    eball = e1;
+                                    ebumper = e0;
+                                    normal = Vec3Negate(normal);
+                                }
+
+                                // Why isn't this a positive value to scale?
+                                eball->v = Vec3Scale(normal, -20.0f);
+                            }
+                        }
+
+                        {
                             bool e0physics = TestFlag(e0->flags, EFLAG_PHYSICS_ON);
                             bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
                             bool e1physics = TestFlag(e1->flags, EFLAG_PHYSICS_ON);
