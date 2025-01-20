@@ -101,9 +101,9 @@ typedef struct Vec3 {
         };
 
         struct {
-            f32 yaw;
-            f32 pitch;
-            f32 roll;
+            f32 yaw;    // rotation about up (y) axis.
+            f32 pitch;  // rotation about (x) axis
+            f32 roll;   // rotation about z axis.
         };
 
         f32 f[3];
@@ -3721,24 +3721,57 @@ static void Scene4Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static Entity* BUMPER = NULL;
-                        if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
-                            if (BUMPER == NULL) {
-                                Entity* enew = AllocateEntity();
-                                enew->mesh = GetMesh(M_CUBE);
-                                enew->scale = Vec3Lit(1000.0f, 2.0f, 1000.0f);
-                                enew->pos = ORIGIN;
-                                enew->phtype = PH_AABB;
-                                enew->friction = 1.0f;
-                                enew->restitution = 1.2f;
-                                FlagOn(enew->flags, EFLAG_COLLIDER);
-                                FlagOn(enew->flags, EFLAG_BUMPER);
-                                FlagOn(enew->flags, EFLAG_WALL);
-                                BUMPER = enew;
+                        {
+                            static Entity* BUMPER = NULL;
+                            if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
+                                if (BUMPER == NULL) {
+                                    Entity* enew = AllocateEntity();
+                                    enew->mesh = GetMesh(M_CUBE);
+                                    enew->scale = Vec3Lit(1000.0f, 2.0f, 1000.0f);
+                                    enew->pos = ORIGIN;
+                                    enew->phtype = PH_AABB;
+                                    enew->friction = 1.0f;
+                                    enew->restitution = 1.2f;
+                                    FlagOn(enew->flags, EFLAG_COLLIDER);
+                                    FlagOn(enew->flags, EFLAG_BUMPER);
+                                    FlagOn(enew->flags, EFLAG_WALL);
+                                    BUMPER = enew;
+                                }
+                            } else if (BUMPER != NULL) {
+                                FlagOff(BUMPER->flags, EFLAG_ACTIVE);
+                                BUMPER = NULL;
                             }
-                        } else if (BUMPER != NULL) {
-                            FlagOff(BUMPER->flags, EFLAG_ACTIVE);
-                            BUMPER = NULL;
+                        }
+
+                        {
+                            static Entity* BUMPER = NULL;
+                            if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
+                                if (BUMPER == NULL) {
+                                    Entity* enew = AllocateEntity();
+                                    enew->mesh = GetMesh(M_CUBE);
+                                    enew->scale = Vec3Lit(5.0f, 10.0f, 10.0f);
+                                    enew->phtype = PH_AABB;
+                                    enew->friction = 1.0f;
+                                    enew->restitution = 1.2f;
+                                    enew->color = LRED;
+                                    FlagOn(enew->flags, EFLAG_COLLIDER);
+                                    FlagOn(enew->flags, EFLAG_BUMPER);
+                                    FlagOn(enew->flags, EFLAG_WALL);
+                                    FlagOff(enew->flags, EFLAG_DRAW);
+                                    BUMPER = enew;
+                                }
+
+                                Vec3 bodyorient = vieworient;
+                                bodyorient.pitch = 0.0f;
+                                Mat4 m = Mat4RotateEuler(bodyorient);
+                                m = Mat4Multiply(Mat4TranslateV(e->pos), m);
+                                BUMPER->pos = Vec3WTransform(Vec3Scale(FORWARD, 20.0f), m);
+
+                                // BUMPER->pos =
+                            } else if (BUMPER != NULL) {
+                                FlagOff(BUMPER->flags, EFLAG_ACTIVE);
+                                BUMPER = NULL;
+                            }
                         }
                     }
                 }
@@ -3815,26 +3848,28 @@ static void Scene4Tick(GameState* gstate) {
                 // Draw.
                 for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
                     Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE) || !TestFlag(e->flags, EFLAG_DRAW)) {
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                         continue;
                     }
 
-                    Vec4 color = e->color;
-                    if (TestFlag(e->flags, EFLAG_MOB) && e->hit) {
-                        static const f32 FREQ = 2.5f;
-                        f32 t = 0.5f * (1.0f + f32sin(2.0f * LPI * FREQ * e->hit_timer));
-                        color.r = f32lerp(color.r, LRED.r, t);
-                        color.g = f32lerp(color.g, LRED.g, t);
-                        color.b = f32lerp(color.b, LRED.b, t);
-                        color.a = f32lerp(color.a, LRED.a, t);
-                    }
+                    if (TestFlag(e->flags, EFLAG_DRAW)) {
+                        Vec4 color = e->color;
+                        if (TestFlag(e->flags, EFLAG_MOB) && e->hit) {
+                            static const f32 FREQ = 2.5f;
+                            f32 t = 0.5f * (1.0f + f32sin(2.0f * LPI * FREQ * e->hit_timer));
+                            color.r = f32lerp(color.r, LRED.r, t);
+                            color.g = f32lerp(color.g, LRED.g, t);
+                            color.b = f32lerp(color.b, LRED.b, t);
+                            color.a = f32lerp(color.a, LRED.a, t);
+                        }
 
-                    Mat4 scale = Mat4ScaleV(e->scale);
-                    Mat4 translate = Mat4TranslateV(e->pos);
-                    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-                    AddCmd(e->mesh, model, color);
-                    DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
-                    cmd2->wireframe = true;
+                        Mat4 scale = Mat4ScaleV(e->scale);
+                        Mat4 translate = Mat4TranslateV(e->pos);
+                        Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+                        AddCmd(e->mesh, model, color);
+                        DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
+                        cmd2->wireframe = true;
+                    }
 
                     if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
                         Sphere sphere = EntityBoundingSphere(e);
