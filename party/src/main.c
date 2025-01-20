@@ -1437,6 +1437,8 @@ static const Vec2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
 static const u8 GAMEPAD_ID = 0;
 
 ////////////////////////////////////////////////////////////
+static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
+
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
     EFLAG_ACTIVE = 1 << 0,
@@ -1447,6 +1449,7 @@ typedef enum EntityFlag {
     EFLAG_MOB = 1 << 5,
     EFLAG_PROJECTILE = 1 << 6,
     EFLAG_WALL = 1 << 7,
+    EFLAG_BUMPER = 1 << 8,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -3714,7 +3717,22 @@ static void Scene4Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
+                        static Entity* BUMPER = NULL;
+                        if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
+                            if (BUMPER == NULL) {
+                                Entity* enew = AllocateEntity();
+                                enew->mesh = GetMesh(M_CUBE);
+                                enew->scale = Vec3Lit(1000.0f, 2.0f, 1000.0f);
+                                enew->pos = ORIGIN;
+                                enew->phtype = PH_AABB;
+                                // FlagOn(enew->flags, EFLAG_COLLIDER);
+                                // FlagOn(enew->flags, EFLAG_BUMPER);
+                                // FlagOn(enew->flags, EFLAG_WALL);
+                                BUMPER = enew;
+                            }
+                        } else if (BUMPER != NULL) {
+                            FlagOff(BUMPER->flags, EFLAG_ACTIVE);
+                            BUMPER = NULL;
                         }
                     }
                 }
