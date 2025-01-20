@@ -1467,6 +1467,8 @@ typedef struct Entity {
     Mat4 orient;
 
     Vec3 v;
+    f32 friction;
+    f32 restitution;
 
     LMesh mesh;
     Vec4 color;
@@ -3635,6 +3637,8 @@ static void Scene4Tick(GameState* gstate) {
                 entity->color = colors[i];
                 entity->scale = Vec3Lit(10000.0f, 10000.0f, 0.0f);
                 entity->phtype = PH_AABB;
+                entity->friction = 0.7f;
+                entity->restitution = 0.8f;
                 FlagOn(entity->flags, EFLAG_COLLIDER);
                 FlagOn(entity->flags, EFLAG_WALL);
                 entities[++size] = entity->id;
@@ -3781,14 +3785,13 @@ static void Scene4Tick(GameState* gstate) {
                             bool e1physics = TestFlag(e1->flags, EFLAG_PHYSICS_ON);
                             bool e1wall = TestFlag(e1->flags, EFLAG_WALL);
                             if ((e0physics && e1wall) || (e0wall && e1physics)) {
-                                static const f32 RESTITUTION = 0.8f;
-                                static const f32 FRICTION = 0.7f;
-
                                 Vec3 normal = collision->normal;
                                 f32 depth = collision->depth;
                                 Entity* ephysics = e0;
+                                Entity* ewall = e1;
                                 if (e0wall && e1physics) {
                                     ephysics = e1;
+                                    ewall = e0;
                                     normal = Vec3Negate(normal);
                                 }
 
@@ -3800,8 +3803,8 @@ static void Scene4Tick(GameState* gstate) {
                                 // the surface. some texts treat it the other way around.
                                 Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(ephysics->v, normal));
                                 Vec3 v_perp = Vec3Sub(ephysics->v, v_parallel);
-                                ephysics->v =
-                                    Vec3Add(Vec3Scale(v_perp, FRICTION), Vec3Scale(v_parallel, -1.0f * RESTITUTION));
+                                ephysics->v = Vec3Add(Vec3Scale(v_perp, ewall->friction),
+                                                      Vec3Scale(v_parallel, -1.0f * ewall->restitution));
                             }
                         }
                     }
