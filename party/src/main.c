@@ -3729,9 +3729,11 @@ static void Scene4Tick(GameState* gstate) {
                                 enew->scale = Vec3Lit(1000.0f, 2.0f, 1000.0f);
                                 enew->pos = ORIGIN;
                                 enew->phtype = PH_AABB;
-                                // FlagOn(enew->flags, EFLAG_COLLIDER);
-                                // FlagOn(enew->flags, EFLAG_BUMPER);
-                                // FlagOn(enew->flags, EFLAG_WALL);
+                                enew->friction = 1.0f;
+                                enew->restitution = 1.2f;
+                                FlagOn(enew->flags, EFLAG_COLLIDER);
+                                FlagOn(enew->flags, EFLAG_BUMPER);
+                                FlagOn(enew->flags, EFLAG_WALL);
                                 BUMPER = enew;
                             }
                         } else if (BUMPER != NULL) {
