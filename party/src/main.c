@@ -3623,12 +3623,13 @@ static void Scene4Tick(GameState* gstate) {
         // walls init.
         {
             u32 width = 20.0f;
-            u32 height = 10.0f;
-            Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, -0.5f * width),
-                                Vec3Lit(0.0f, 0.0f, 0.5f * width)};
-            f32 rotations[] = {Deg2Rad(-90.0f), Deg2Rad(0.0f), Deg2Rad(0.0f)};
-            Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f)};
-            Vec4 colors[] = {LORANGE, LGRAY, LGRAY};
+            u32 height = 30.0f;
+            Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(0.0f, height, 0.0f),
+                                Vec3Lit(0.0f, 0.0f, -0.5f * width), Vec3Lit(0.0f, 0.0f, 0.5f * width)};
+            f32 rotations[] = {Deg2Rad(-90.0f), Deg2Rad(90.0f), Deg2Rad(0.0f), Deg2Rad(0.0f)};
+            Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
+                           Vec3Lit(0.0f, 1.0f, 0.0f)};
+            Vec4 colors[] = {LORANGE, LBLUE, LGRAY, LGRAY};
 
             EntityId* entities = WALLS;
             u32 size = WALLS_SIZE;
@@ -3940,7 +3941,7 @@ static void Scene4Tick(GameState* gstate) {
         // Update camera pos at the end of all this to make sure player pos is final position for frame.
         viewpos = player->pos;
         if (gstate->debug) {
-            TraceLog(LOG_INFO, "pos: %f %f %f", player->pos.x, player->pos.y, player->pos.z);
+            // TraceLog(LOG_INFO, "pos: %f %f %f", player->pos.x, player->pos.y, player->pos.z);
         }
     }
 
