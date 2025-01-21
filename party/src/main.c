@@ -3868,10 +3868,9 @@ static void Scene4Tick(GameState* gstate) {
                                     normal = Vec3Negate(normal);
                                 }
 
-                                breakpoint();
                                 if (eball->last_hit != ebumper->id) {
                                     Vec3 bodyorient = vieworient;
-                                    bodyorient.pitch = 0.0f;
+                                    bodyorient.pitch = Deg2Rad(15.0f);
                                     Mat4 rotate = Mat4RotateEuler(bodyorient);
                                     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
                                     // Why isn't this a positive value to scale?
