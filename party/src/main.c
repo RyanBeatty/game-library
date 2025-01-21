@@ -3873,7 +3873,6 @@ static void Scene4Tick(GameState* gstate) {
                                     bodyorient.pitch = Deg2Rad(15.0f);
                                     Mat4 rotate = Mat4RotateEuler(bodyorient);
                                     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                                    // Why isn't this a positive value to scale?
                                     eball->v = Vec3Scale(normal, 20.0f);
                                 }
 
