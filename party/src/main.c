@@ -3858,6 +3858,9 @@ static void Scene4Tick(GameState* gstate) {
                             bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
                             bool e1bumper = TestFlag(e1->flags, EFLAG_BUMPER);
                             if ((e0ball && e1bumper) || (e0bumper && e1ball)) {
+                                static const f32 RETURN_SPEED = 30.0f;
+                                static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+
                                 Vec3 normal = collision->normal;
                                 f32 depth = collision->depth;
                                 Entity* eball = e0;
@@ -3870,10 +3873,10 @@ static void Scene4Tick(GameState* gstate) {
 
                                 if (eball->last_hit != ebumper->id) {
                                     Vec3 bodyorient = vieworient;
-                                    bodyorient.pitch = Deg2Rad(15.0f);
+                                    bodyorient.pitch = RETURN_ANGLE_RAD;
                                     Mat4 rotate = Mat4RotateEuler(bodyorient);
                                     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                                    eball->v = Vec3Scale(normal, 20.0f);
+                                    eball->v = Vec3Scale(normal, RETURN_SPEED);
                                 }
 
                                 eball->last_hit = ebumper->id;
