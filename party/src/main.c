@@ -3760,7 +3760,7 @@ static void Scene4Tick(GameState* gstate) {
                                 if (BUMPER == NULL) {
                                     Entity* enew = AllocateEntity();
                                     enew->mesh = GetMesh(M_CUBE);
-                                    enew->scale = Vec3Lit(5.0f, 20.0f, 10.0f);
+                                    enew->scale = Vec3Lit(10.0f, 20.0f, 10.0f);
                                     enew->phtype = PH_AABB;
                                     enew->friction = 1.0f;
                                     enew->restitution = 1.2f;
@@ -3775,7 +3775,7 @@ static void Scene4Tick(GameState* gstate) {
                                 bodyorient.pitch = 0.0f;
                                 Mat4 m = Mat4RotateEuler(bodyorient);
                                 m = Mat4Multiply(Mat4TranslateV(e->pos), m);
-                                BUMPER->pos = Vec3WTransform(Vec3Scale(FORWARD, 20.0f), m);
+                                BUMPER->pos = Vec3WTransform(Vec3Scale(FORWARD, 10.0f), m);
                             } else if (BUMPER != NULL) {
                                 FlagOff(BUMPER->flags, EFLAG_ACTIVE);
                                 BUMPER = NULL;
