@@ -1484,6 +1484,7 @@ typedef struct Entity {
 
     bool hit;
     f32 hit_timer;
+    i32 last_hit;  // entity id. signed to set to -1 for sentinel val.
 
     struct {
         struct Entity* prev;
@@ -3609,6 +3610,7 @@ static void Scene4Tick(GameState* gstate) {
                     entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                     entity->v = velocities[i];
                     entity->phtype = PH_SPHERE;
+                    entity->last_hit = -1;
                     FlagOn(entity->flags, EFLAG_BALL);
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[++size] = entity->id;
@@ -3744,7 +3746,6 @@ static void Scene4Tick(GameState* gstate) {
                                     enew->restitution = 1.2f;
                                     FlagOn(enew->flags, EFLAG_COLLIDER);
                                     FlagOn(enew->flags, EFLAG_BUMPER);
-                                    FlagOn(enew->flags, EFLAG_WALL);
                                     BUMPER = enew;
                                 }
                             } else if (BUMPER != NULL) {
@@ -3766,7 +3767,6 @@ static void Scene4Tick(GameState* gstate) {
                                     enew->color = LRED;
                                     FlagOn(enew->flags, EFLAG_COLLIDER);
                                     FlagOn(enew->flags, EFLAG_BUMPER);
-                                    FlagOn(enew->flags, EFLAG_WALL);
                                     FlagOff(enew->flags, EFLAG_DRAW);
                                     BUMPER = enew;
                                 }
@@ -3847,6 +3847,8 @@ static void Scene4Tick(GameState* gstate) {
                                 Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
                                 Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
                                 eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+
+                                eball->last_hit = ewall->id;
                             }
                         }
 
@@ -3866,12 +3868,17 @@ static void Scene4Tick(GameState* gstate) {
                                     normal = Vec3Negate(normal);
                                 }
 
-                                Vec3 bodyorient = vieworient;
-                                bodyorient.pitch = 0.0f;
-                                Mat4 rotate = Mat4RotateEuler(bodyorient);
-                                normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                                // Why isn't this a positive value to scale?
-                                eball->v = Vec3Scale(normal, 20.0f);
+                                breakpoint();
+                                if (eball->last_hit != ebumper->id) {
+                                    Vec3 bodyorient = vieworient;
+                                    bodyorient.pitch = 0.0f;
+                                    Mat4 rotate = Mat4RotateEuler(bodyorient);
+                                    normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
+                                    // Why isn't this a positive value to scale?
+                                    eball->v = Vec3Scale(normal, 20.0f);
+                                }
+
+                                eball->last_hit = ebumper->id;
                             }
                         }
 
