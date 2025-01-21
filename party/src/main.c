@@ -3862,7 +3862,6 @@ static void Scene4Tick(GameState* gstate) {
                                 static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
 
                                 Vec3 normal = collision->normal;
-                                f32 depth = collision->depth;
                                 Entity* eball = e0;
                                 Entity* ebumper = e1;
                                 if (e0bumper && e1ball) {
