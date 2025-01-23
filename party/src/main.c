@@ -4019,6 +4019,308 @@ static void Scene4Tick(GameState* gstate) {
     }
 }
 
+static void Scene5Tick(GameState* gstate) {
+    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+    static EntityId playerid;
+
+    static EntityId BALLS[MAX_ENTITY_BATCH] = {0};
+    static u32 BALLS_SIZE = 0;
+
+    static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
+    static u32 WALLS_SIZE = 0;
+
+    f32 dt = gstate->dt;
+
+    // Init logic.
+    if (!gstate->init) {
+        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+        memset(WALLS, 0, sizeof(WALLS));
+        WALLS_SIZE = 0;
+        memset(BALLS, 0, sizeof(BALLS));
+        BALLS_SIZE = 0;
+
+        viewpos = Vec3Add(viewpos, Vec3Lit(0.0f, 0.0f, 50.0f));
+
+        // Player init.
+        {
+            Entity* entity = AllocateEntity();
+            entity->pos = Vec3Lit(0.0f, 10.0f, 0.0f);
+            entity->orient = Mat4RotateY(Deg2Rad(90.0f));
+            entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
+            entity->mesh = GetMesh(M_CUBE);
+            entity->color = LRED;
+            entity->scale = Vec3Lit(10.0f, 5.0f, 1.0f);
+            // entity->color = LCLEAR;
+            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+            // FlagOn(entity->flags, EFLAG_COLLIDER);
+
+            playerid = entity->id;
+        }
+
+        // // BALLS init
+        // {
+        //     EntityId* entities = BALLS;
+        //     u32 size = 0;
+
+        //     const Vec3 origin = Vec3Lit(-50.0f, 10.0f, 0.0f);
+
+        //     {
+        //         const Vec3 positions[] = {origin};
+        //         const Vec3 velocities[] = {Vec3Lit(3.0f, 10.0f, -6.0f)};
+        //         const f32 rotations[] = {Deg2Rad(0.0f)};
+        //         Vec4 color = LRED;
+        //         color.a = 0.16f;
+        //         const Vec4 colors[] = {color};
+
+        //         for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
+        //             Entity* entity = AllocateEntity();
+        //             entity->pos = positions[i];
+        //             entity->mesh = GetMesh(M_ICOSPHERE);
+        //             entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
+        //             entity->color = colors[i];
+        //             entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
+        //             entity->v = velocities[i];
+        //             entity->phtype = PH_SPHERE;
+        //             entity->last_hit = -1;
+        //             FlagOn(entity->flags, EFLAG_BALL);
+        //             FlagOn(entity->flags, EFLAG_COLLIDER);
+        //             entities[++size] = entity->id;
+        //             Assert(size < MAX_ENTITY_BATCH);
+        //         }
+        //     }
+
+        //     BALLS_SIZE = size;
+        //     Assert(BALLS_SIZE < ArraySizeOf(BALLS));
+        // }
+
+        //     // walls init.
+        //     {
+        //         u32 width = 20.0f;
+        //         u32 height = 30.0f;
+        //         Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f)};
+        //         f32 rotations[] = {Deg2Rad(0.0f)};
+        //         Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
+        //         Vec4 colors[] = {LBLACK};
+
+        //         EntityId* entities = WALLS;
+        //         u32 size = WALLS_SIZE;
+        //         for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+        //             Entity* entity = AllocateEntity();
+        //             entity->pos = positions[i];
+        //             entity->mesh = GetMesh(M_QUAD);
+        //             entity->orient = Mat4Rotate(rotations[i], axis[i]);
+        //             entity->color = colors[i];
+        //             entity->scale = Vec3Lit(10000.0f, 10000.0f, 0.0f);
+        //             entity->phtype = PH_AABB;
+        //             entity->friction = 0.7f;
+        //             entity->restitution = 0.8f;
+        //             FlagOn(entity->flags, EFLAG_WALL);
+        //             entities[++size] = entity->id;
+        //             Assert(size < MAX_ENTITY_BATCH);
+        //         }
+
+        //         WALLS_SIZE = size;
+        //         Assert(WALLS_SIZE < ArraySizeOf(WALLS));
+        //     }
+    }
+
+    // Update logic.
+    {
+        Entity* player = GetEntity(playerid);
+
+        // Scene4 update.
+        {
+            {
+                EntityManager* em = GetEntityManager();
+                u32 esize = ArraySizeOf(em->entities);
+                for (u32 i = 0; i < esize; ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                    }
+                }
+
+                // Collisions.
+                {
+                    CollisionInfo collisions[10] = {0};
+                    u32 csize = 0;
+
+                    // Detection.
+                    u32 size = ArraySizeOf(em->entities);
+                    for (u32 i = 0; i < size; ++i) {
+                        Entity* e0 = GetEntity(i);
+                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                            continue;
+                        }
+
+                        Polyhedron p0 = EntityBoundingVolume(e0);
+                        for (u32 j = i + 1; j < size; ++j) {
+                            Entity* e1 = GetEntity(j);
+                            if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                                continue;
+                            }
+
+                            Polyhedron p1 = EntityBoundingVolume(e1);
+
+                            CollisionInfo collision = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
+                            if (collides) {
+                                collision.id0 = e0->id;
+                                collision.id1 = e1->id;
+                                collisions[csize++] = collision;
+                                Assert(csize < 10);
+                            }
+                        }
+                    }
+
+                    // Response.
+                    for (u32 i = 0; i < csize; ++i) {
+                        CollisionInfo* collision = &collisions[i];
+                        Entity* e0 = GetEntity(collision->id0);
+                        Entity* e1 = GetEntity(collision->id1);
+
+                        // {
+                        //     bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                        //     bool e0bumper = TestFlag(e0->flags, EFLAG_BUMPER);
+                        //     bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                        //     bool e1bumper = TestFlag(e1->flags, EFLAG_BUMPER);
+                        //     if ((e0ball && e1bumper) || (e0bumper && e1ball)) {
+                        //         static const f32 RETURN_SPEED = 30.0f;
+                        //         static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+
+                        //         Vec3 normal = collision->normal;
+                        //         Entity* eball = e0;
+                        //         Entity* ebumper = e1;
+                        //         if (e0bumper && e1ball) {
+                        //             eball = e1;
+                        //             ebumper = e0;
+                        //             normal = Vec3Negate(normal);
+                        //         }
+
+                        //         if (eball->last_hit != ebumper->id) {
+                        //             Vec3 bodyorient = vieworient;
+                        //             bodyorient.pitch = RETURN_ANGLE_RAD;
+                        //             Mat4 rotate = Mat4RotateEuler(bodyorient);
+                        //             normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
+                        //             eball->v = Vec3Scale(normal, RETURN_SPEED);
+                        //         }
+
+                        //         eball->last_hit = ebumper->id;
+                        //     }
+                        // }
+                    }
+                }
+
+                // Draw walls
+                { AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), LBLACK); }
+
+                // Draw.
+                for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_DRAW)) {
+                        Vec4 color = e->color;
+                        if (TestFlag(e->flags, EFLAG_MOB) && e->hit) {
+                            static const f32 FREQ = 2.5f;
+                            f32 t = 0.5f * (1.0f + f32sin(2.0f * LPI * FREQ * e->hit_timer));
+                            color.r = f32lerp(color.r, LRED.r, t);
+                            color.g = f32lerp(color.g, LRED.g, t);
+                            color.b = f32lerp(color.b, LRED.b, t);
+                            color.a = f32lerp(color.a, LRED.a, t);
+                        }
+
+                        Mat4 scale = Mat4ScaleV(e->scale);
+                        Mat4 translate = Mat4TranslateV(e->pos);
+                        Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+                        AddCmd(e->mesh, model, color);
+                        DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
+                        cmd2->wireframe = true;
+                    }
+
+                    if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+                        Sphere sphere = EntityBoundingSphere(e);
+                        DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+
+                        AABB aabb = EntityAABB(e);
+                        DrawAABBWf(aabb.c, aabb.r, LBLUE);
+                    }
+                }
+            }
+        }
+    }
+
+    // Drawing
+    {
+        // Begin.
+        {
+            BeginDrawing();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBindVertexArray(VAO);
+        }
+
+        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+
+        // Enable/Disable culling.
+        // TODO: Make this nicer at some point. Useful for debugging.
+        {
+            if (gstate->debug) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glFrontFace(GL_CCW);
+            }
+        }
+
+        // Use shader + setup norm + view + proj matrix.
+        LShader shader = GetShader();
+        {
+            glUseProgram(shader.pid);
+            {
+                // Calculate the sun direction in view space (only factoring in rotation).
+                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
+                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
+                Mat4 norm = Mat4Transpose(Mat4Invert(view));
+                norm.v.d = Vec3Zero();
+                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
+                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
+            }
+            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
+            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
+            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+        }
+
+        for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
+            DrawCmd* cmd = &CBUFFER[i];
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+            if (cmd->wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            }
+            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+            if (cmd->wireframe) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
+        }
+
+        EndDrawing();
+        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
+    }
+}
+
 ////////////////////////////////////////////////////////////
 
 static void GameStateInit(GameState* gstate) {
@@ -4039,6 +4341,7 @@ static void GameStateInit(GameState* gstate) {
         gstate->scenefuncs[idx++] = Scene2Tick;
         gstate->scenefuncs[idx++] = Scene3Tick;
         gstate->scenefuncs[idx++] = Scene4Tick;
+        gstate->scenefuncs[idx++] = Scene5Tick;
         Assert(idx < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
