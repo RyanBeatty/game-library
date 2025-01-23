@@ -4111,13 +4111,13 @@ static void Scene5Tick(GameState* gstate) {
 
         // walls init.
         {
-            u32 xoffset = 35.0f;
+            i32 xoffset = 35.0f;
             u32 width = 1.0f;
             u32 height = 200.0f;
             u32 depth = 10.0f;
 
-            Vec3 positions[] = {Vec3Lit(xoffset, 0.0f, 0.0f)};
-            Vec3 scales[] = {Vec3Lit(width, height, depth)};
+            Vec3 positions[] = {Vec3Lit(xoffset, 0.0f, 0.0f), Vec3Lit(-xoffset, 0.0f, 0.0f)};
+            Vec3 scales[] = {Vec3Lit(width, height, depth), Vec3Lit(width, height, depth)};
 
             EntityId* entities = WALLS;
             u32 size = WALLS_SIZE;
@@ -4161,7 +4161,6 @@ static void Scene5Tick(GameState* gstate) {
                         f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
                         if (f32abs(x) > MOVE_THRESHOLD) {
                             f32 flip = x >= MOVE_THRESHOLD ? 1.0f : -1.0f;
-                            Vec3 dir = Vec3Lit(1.0f, 0.0f, 0.0f);
                             Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), flip * MOVE_SPEED * dt);
                             e->pos = Vec3Add(e->pos, dx);
                         }
