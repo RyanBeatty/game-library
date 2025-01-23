@@ -4026,7 +4026,11 @@ static void Scene5Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-    static const Vec4 COLOR1 = RGBLit(181.0f, 141.0f, 182.0f);
+    static const Vec4 COLOR0 = RGBLit(181.0f, 141.0f, 182.0f);
+    static const Vec4 COLOR1 = RGBLit(93.0f, 46.0f, 70.0f);
+    static const Vec4 COLOR2 = RGBLit(173.0f, 106.0f, 108.0f);
+    static const Vec4 COLOR3 = RGBLit(208.0f, 173.0f, 167.0f);
+    static const Vec4 COLOR4 = RGBLit(232.0f, 214.0f, 203.0f);
 
     static EntityId playerid;
 
@@ -4056,7 +4060,7 @@ static void Scene5Tick(GameState* gstate) {
             entity->pos = Vec3Lit(0.0f, -17.5f, 0.0f);
             entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
             entity->mesh = GetMesh(M_CUBE);
-            entity->color = LRED;
+            entity->color = COLOR2;
             entity->scale = Vec3Lit(15.0f, 0.5f, 1.0f);
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
 
