@@ -4150,6 +4150,15 @@ static void Scene5Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        static const f32 MOVE_THRESHOLD = 0.33f;
+                        static const f32 MOVE_SPEED = 40.0f;
+                        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                        if (f32abs(x) > MOVE_THRESHOLD) {
+                            f32 flip = x >= MOVE_THRESHOLD ? 1.0f : -1.0f;
+                            Vec3 dir = Vec3Lit(1.0f, 0.0f, 0.0f);
+                            Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), flip * MOVE_SPEED * dt);
+                            e->pos = Vec3Add(e->pos, dx);
+                        }
                     }
                 }
 
