@@ -1599,6 +1599,12 @@ typedef struct CollisionInfo {
 
 ////////////////////////////////////////////////////
 
+static Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
+    return Mat4Invert(Mat4Multiply(Mat4TranslateV(eye), Mat4RotateEuler(orient)));
+}
+
+////////////////////////////////////////////////////
+
 #define MAX_SCENES 10
 
 typedef struct GameState {
@@ -2854,7 +2860,7 @@ static void Scene1Tick(GameState* gstate) {
             glBindVertexArray(VAO);
         }
 
-        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        Mat4 view = GetCameraMat(viewpos, vieworient);
         // Keep this around for debugging for a bit.
         // Mat4 vieworientm = Mat4RotateEuler(vieworient);
         // Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
@@ -3150,7 +3156,7 @@ static void Scene2Tick(GameState* gstate) {
             glBindVertexArray(VAO);
         }
 
-        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        Mat4 view = GetCameraMat(viewpos, vieworient);
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
         // Enable/Disable culling.
@@ -3495,7 +3501,7 @@ static void Scene3Tick(GameState* gstate) {
             glBindVertexArray(VAO);
         }
 
-        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        Mat4 view = GetCameraMat(viewpos, vieworient);
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
         // Enable/Disable culling.
@@ -3970,7 +3976,7 @@ static void Scene4Tick(GameState* gstate) {
             glBindVertexArray(VAO);
         }
 
-        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        Mat4 view = GetCameraMat(viewpos, vieworient);
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
         // Enable/Disable culling.
@@ -4284,7 +4290,7 @@ static void Scene5Tick(GameState* gstate) {
             glBindVertexArray(VAO);
         }
 
-        Mat4 view = Mat4Invert(Mat4Multiply(Mat4TranslateV(viewpos), Mat4RotateEuler(vieworient)));
+        Mat4 view = GetCameraMat(viewpos, vieworient);
         Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
         // Enable/Disable culling.
