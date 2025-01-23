@@ -4066,7 +4066,7 @@ static void Scene5Tick(GameState* gstate) {
             entity->pos = Vec3Lit(0.0f, -17.5f, 0.0f);
             entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
             entity->mesh = GetMesh(M_CUBE);
-            entity->color = COLOR2;
+            entity->color = COLOR3;
             entity->scale = Vec3Lit(15.0f, 0.5f, 1.0f);
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
 
@@ -4112,12 +4112,15 @@ static void Scene5Tick(GameState* gstate) {
         // walls init.
         {
             i32 xoffset = 35.0f;
+            i32 yoffset = 20.0f;
             u32 width = 1.0f;
             u32 height = 200.0f;
             u32 depth = 10.0f;
 
-            Vec3 positions[] = {Vec3Lit(xoffset, 0.0f, 0.0f), Vec3Lit(-xoffset, 0.0f, 0.0f)};
-            Vec3 scales[] = {Vec3Lit(width, height, depth), Vec3Lit(width, height, depth)};
+            Vec3 positions[] = {Vec3Lit(xoffset, 0.0f, 0.0f), Vec3Lit(-xoffset, 0.0f, 0.0f),
+                                Vec3Lit(1.0f, yoffset, 0.0f), Vec3Lit(1.0f, -yoffset, 0.0f)};
+            Vec3 scales[] = {Vec3Lit(width, height, depth), Vec3Lit(width, height, depth),
+                             Vec3Lit(height, width, depth), Vec3Lit(height, width, depth)};
 
             EntityId* entities = WALLS;
             u32 size = WALLS_SIZE;
@@ -4125,7 +4128,7 @@ static void Scene5Tick(GameState* gstate) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
-                entity->color = LBLACK;
+                entity->color = COLOR2;
                 entity->scale = scales[i];
                 entity->phtype = PH_AABB;
                 entity->friction = 0.7f;
