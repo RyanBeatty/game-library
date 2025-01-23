@@ -4048,15 +4048,12 @@ static void Scene5Tick(GameState* gstate) {
         // Player init.
         {
             Entity* entity = AllocateEntity();
-            entity->pos = Vec3Lit(0.0f, 10.0f, 0.0f);
-            entity->orient = Mat4RotateY(Deg2Rad(90.0f));
+            entity->pos = Vec3Lit(0.0f, -17.5f, 0.0f);
             entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
             entity->mesh = GetMesh(M_CUBE);
             entity->color = LRED;
-            entity->scale = Vec3Lit(10.0f, 5.0f, 1.0f);
-            // entity->color = LCLEAR;
+            entity->scale = Vec3Lit(15.0f, 0.5f, 1.0f);
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-            // FlagOn(entity->flags, EFLAG_COLLIDER);
 
             playerid = entity->id;
         }
@@ -4218,7 +4215,7 @@ static void Scene5Tick(GameState* gstate) {
                     }
                 }
 
-                // Draw walls
+                // Draw background
                 { AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), LBLACK); }
 
                 // Draw.
