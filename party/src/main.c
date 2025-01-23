@@ -534,6 +534,9 @@ static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
 static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255.0f, 0.16f);
 static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 
+#define RGBALit(r, g, b, a) (Vec4Lit((r) / 255.0f, (g) / 255.0f, (b) / 255.0f, (a)))
+#define RGBLit(r, g, b) (RGBALit((r), (g), (b), 1.0f))
+
 ////////////////////////////////////////////////////////////
 // S:Render Data
 
@@ -4023,6 +4026,8 @@ static void Scene5Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
+    static const Vec4 COLOR1 = RGBLit(181.0f, 141.0f, 182.0f);
+
     static EntityId playerid;
 
     static EntityId BALLS[MAX_ENTITY_BATCH] = {0};
@@ -4216,7 +4221,7 @@ static void Scene5Tick(GameState* gstate) {
                 }
 
                 // Draw background
-                { AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), LBLACK); }
+                { AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1); }
 
                 // Draw.
                 for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
