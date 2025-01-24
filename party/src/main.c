@@ -4162,8 +4162,8 @@ static void Scene5Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_BALL)) {
-                        // Vec3 dx = Vec3Scale(e->v, dt);
-                        // e->pos = Vec3Add(e->pos, dx);
+                        Vec3 dx = Vec3Scale(e->v, dt);
+                        e->pos = Vec3Add(e->pos, dx);
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -4217,48 +4217,48 @@ static void Scene5Tick(GameState* gstate) {
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
 
-                        // {
-                        //     bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
-                        //     bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
-                        //     bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
-                        //     bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
-                        //     bool flip = e0player && e1ball;
-                        //     if (false && (e0ball && e1player) || flip) {
-                        //         // static const f32 RETURN_SPEED = 30.0f;
-                        //         // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+                        if (false) {
+                            bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                            bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
+                            bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                            bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+                            bool flip = e0player && e1ball;
+                            if ((e0ball && e1player) || flip) {
+                                // static const f32 RETURN_SPEED = 30.0f;
+                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
 
-                        //         Vec3 normal = collision->normal;
-                        //         Entity* eball = e0;
-                        //         Entity* eplayer = e1;
-                        //         if (flip) {
-                        //             eball = e1;
-                        //             eplayer = e0;
-                        //             normal = Vec3Negate(normal);
-                        //         }
+                                Vec3 normal = collision->normal;
+                                Entity* eball = e0;
+                                Entity* eplayer = e1;
+                                if (flip) {
+                                    eball = e1;
+                                    eplayer = e0;
+                                    normal = Vec3Negate(normal);
+                                }
 
-                        //         // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+                                // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
-                        //         // Reflect velocity about the contact normal.
-                        //         // Remember that to reflect a vec about a normal you add the portion fo the vec in
-                        //         the
-                        //         // per to the negative of the portion in the parallel.
-                        //         // NOTE: That parallel and perp are in relation to the colission *normal* rather than
-                        //         // the surface. some texts treat it the other way around.
-                        //         // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
-                        //         // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
-                        //         // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                                // Reflect velocity about the contact normal.
+                                // Remember that to reflect a vec about a normal you add the portion fo the vec in
+                                // the
+                                // per to the negative of the portion in the parallel.
+                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
+                                // the surface. some texts treat it the other way around.
+                                // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
 
-                        //         // if (eball->last_hit != eplayer->id) {
-                        //         //     Vec3 bodyorient = vieworient;
-                        //         //     bodyorient.pitch = RETURN_ANGLE_RAD;
-                        //         //     Mat4 rotate = Mat4RotateEuler(bodyorient);
-                        //         //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                        //         //     eball->v = Vec3Scale(normal, RETURN_SPEED);
-                        //         // }
+                                // if (eball->last_hit != eplayer->id) {
+                                //     Vec3 bodyorient = vieworient;
+                                //     bodyorient.pitch = RETURN_ANGLE_RAD;
+                                //     Mat4 rotate = Mat4RotateEuler(bodyorient);
+                                //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
+                                //     eball->v = Vec3Scale(normal, RETURN_SPEED);
+                                // }
 
-                        //         eball->last_hit = eplayer->id;
-                        //     }
-                        // }
+                                eball->last_hit = eplayer->id;
+                            }
+                        }
                     }
                 }
 
