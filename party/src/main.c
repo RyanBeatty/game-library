@@ -4272,11 +4272,12 @@ static void Scene5Tick(GameState* gstate) {
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
 
-                        if (true) {
-                            bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
-                            bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
-                            bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
-                            bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+                        bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                        bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
+                        bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                        bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+
+                        {
                             bool flip = e0player && e1ball;
                             breakpoint();
                             if ((e0ball && e1player) || flip) {
