@@ -4468,7 +4468,10 @@ static void GameStateTick(GameState* gstate) {
     }
 
     gstate->timer += dt;
-    gstate->debug ^= (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE));
+    if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE)) {
+        gstate->debug = !gstate->debug;
+        gstate->update = !gstate->debug;
+    }
 
     // Tick scene.
     gstate->scenefuncs[gstate->sceneid](gstate);
