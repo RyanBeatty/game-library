@@ -4295,22 +4295,13 @@ static void Scene5Tick(GameState* gstate) {
                                 eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
                                 // Reflect velocity about the contact normal.
-                                // Remember that to reflect a vec about a normal you add the portion fo the vec in
-                                // the
+                                // Remember that to reflect a vec about a normal you add the portion fo the vec in the
                                 // per to the negative of the portion in the parallel.
                                 // NOTE: That parallel and perp are in relation to the colission *normal* rather than
                                 // the surface. some texts treat it the other way around.
-                                // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
-                                // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
-                                // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
-
-                                // if (eball->last_hit != eplayer->id) {
-                                //     Vec3 bodyorient = vieworient;
-                                //     bodyorient.pitch = RETURN_ANGLE_RAD;
-                                //     Mat4 rotate = Mat4RotateEuler(bodyorient);
-                                //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                                //     eball->v = Vec3Scale(normal, RETURN_SPEED);
-                                // }
+                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
 
                                 eball->last_hit = eplayer->id;
                             }
