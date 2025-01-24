@@ -4144,211 +4144,208 @@ static void Scene5Tick(GameState* gstate) {
         }
     }
 
-    // Update logic.
+    // Scene4 update.
     {
         Entity* player = GetEntity(playerid);
 
-        // Scene4 update.
-        {
-            if (gstate->debug) {
-                static const u8 GAMEPAD_ID = 0;
-                static bool FREECAM = true;
+        if (gstate->debug) {
+            static const u8 GAMEPAD_ID = 0;
+            static bool FREECAM = true;
 
-                if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
-                    FREECAM = !FREECAM;
-                }
-
-                // Left stick movement.
-                {
-                    static const f32 WALK_VEL = 20.0f;
-                    static const f32 RUN_VEL = 2.0f * WALK_VEL;
-
-                    f32 vel = WALK_VEL;
-                    if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-                        vel = RUN_VEL;
-                    }
-
-                    f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                    f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                    Vec3 dir_model = Vec3Lit(x, 0.0f, y);
-
-                    Vec3 bodyorient = vieworient;
-                    // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
-                    bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
-                    Mat4 rotation = Mat4RotateEuler(bodyorient);
-
-                    Vec3 dir_world = Vec3Transform(dir_model, rotation);
-                    Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
-                    viewpos = Vec3Add(viewpos, mov_world);
-                }
-
-                // Right stick movement.
-                {
-                    f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                    f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                    if (x != 0.0f || y != 0.0f) {
-                        static const rad VEL = Deg2Rad(90.0f);
-
-                        // rotate orient.
-                        vieworient.yaw += -1.0f * x * VEL * dt;
-                        vieworient.pitch += y * VEL * dt;
-                        // Clamp pitch to avoid looking too high/low which would sign flip things.
-                        vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
-                    }
-                }
-            } else {
-                viewpos = Vec3Lit(0.0f, 0.0f, 50.0f);
+            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+                FREECAM = !FREECAM;
             }
 
+            // Left stick movement.
             {
-                EntityManager* em = GetEntityManager();
-                u32 esize = ArraySizeOf(em->entities);
-                for (u32 i = 0; i < esize; ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                static const f32 WALK_VEL = 20.0f;
+                static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+                f32 vel = WALK_VEL;
+                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                    vel = RUN_VEL;
+                }
+
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
+                Vec3 bodyorient = vieworient;
+                // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
+                bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
+                Mat4 rotation = Mat4RotateEuler(bodyorient);
+
+                Vec3 dir_world = Vec3Transform(dir_model, rotation);
+                Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
+                viewpos = Vec3Add(viewpos, mov_world);
+            }
+
+            // Right stick movement.
+            {
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                if (x != 0.0f || y != 0.0f) {
+                    static const rad VEL = Deg2Rad(90.0f);
+
+                    // rotate orient.
+                    vieworient.yaw += -1.0f * x * VEL * dt;
+                    vieworient.pitch += y * VEL * dt;
+                    // Clamp pitch to avoid looking too high/low which would sign flip things.
+                    vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+                }
+            }
+        } else {
+            viewpos = Vec3Lit(0.0f, 0.0f, 50.0f);
+        }
+
+        {
+            EntityManager* em = GetEntityManager();
+            u32 esize = ArraySizeOf(em->entities);
+            for (u32 i = 0; i < esize; ++i) {
+                Entity* e = GetEntity(i);
+                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                    continue;
+                }
+
+                if (TestFlag(e->flags, EFLAG_BALL)) {
+                    Vec3 dx = Vec3Scale(e->v, dt);
+                    e->pos = Vec3Add(e->pos, dx);
+                    TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
+                }
+
+                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                    static const f32 MOVE_THRESHOLD = 0.33f;
+                    static const f32 MOVE_SPEED = 40.0f;
+                    f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                    if (f32abs(x) > MOVE_THRESHOLD) {
+                        f32 flip = x >= MOVE_THRESHOLD ? 1.0f : -1.0f;
+                        Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), flip * MOVE_SPEED * dt);
+                        e->pos = Vec3Add(e->pos, dx);
+                    }
+                }
+            }
+
+            // Collisions.
+            {
+                CollisionInfo collisions[10] = {0};
+                u32 csize = 0;
+
+                // Detection.
+                u32 size = ArraySizeOf(em->entities);
+                for (u32 i = 0; i < size; ++i) {
+                    Entity* e0 = GetEntity(i);
+                    if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
                         continue;
                     }
 
-                    if (TestFlag(e->flags, EFLAG_BALL)) {
-                        Vec3 dx = Vec3Scale(e->v, dt);
-                        e->pos = Vec3Add(e->pos, dx);
-                        TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static const f32 MOVE_THRESHOLD = 0.33f;
-                        static const f32 MOVE_SPEED = 40.0f;
-                        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                        if (f32abs(x) > MOVE_THRESHOLD) {
-                            f32 flip = x >= MOVE_THRESHOLD ? 1.0f : -1.0f;
-                            Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), flip * MOVE_SPEED * dt);
-                            e->pos = Vec3Add(e->pos, dx);
-                        }
-                    }
-                }
-
-                // Collisions.
-                {
-                    CollisionInfo collisions[10] = {0};
-                    u32 csize = 0;
-
-                    // Detection.
-                    u32 size = ArraySizeOf(em->entities);
-                    for (u32 i = 0; i < size; ++i) {
-                        Entity* e0 = GetEntity(i);
-                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                    Polyhedron p0 = EntityBoundingVolume(e0);
+                    for (u32 j = i + 1; j < size; ++j) {
+                        Entity* e1 = GetEntity(j);
+                        if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
                             continue;
                         }
 
-                        Polyhedron p0 = EntityBoundingVolume(e0);
-                        for (u32 j = i + 1; j < size; ++j) {
-                            Entity* e1 = GetEntity(j);
-                            if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                                continue;
-                            }
+                        Polyhedron p1 = EntityBoundingVolume(e1);
 
-                            Polyhedron p1 = EntityBoundingVolume(e1);
-
-                            CollisionInfo collision = {0};
-                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
-                            if (collides) {
-                                collision.id0 = e0->id;
-                                collision.id1 = e1->id;
-                                collisions[csize++] = collision;
-                                Assert(csize < 10);
-                            }
-                        }
-                    }
-
-                    // Response.
-                    for (u32 i = 0; i < csize; ++i) {
-                        CollisionInfo* collision = &collisions[i];
-                        Entity* e0 = GetEntity(collision->id0);
-                        Entity* e1 = GetEntity(collision->id1);
-
-                        breakpoint();
-
-                        if (true) {
-                            bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
-                            bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
-                            bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
-                            bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
-                            bool flip = e0player && e1ball;
-                            if ((e0ball && e1player) || flip) {
-                                // static const f32 RETURN_SPEED = 30.0f;
-                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
-
-                                Vec3 normal = collision->normal;
-                                Entity* eball = e0;
-                                Entity* eplayer = e1;
-                                if (flip) {
-                                    eball = e1;
-                                    eplayer = e0;
-                                    normal = Vec3Negate(normal);
-                                }
-
-                                // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
-
-                                // Reflect velocity about the contact normal.
-                                // Remember that to reflect a vec about a normal you add the portion fo the vec in
-                                // the
-                                // per to the negative of the portion in the parallel.
-                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
-                                // the surface. some texts treat it the other way around.
-                                // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
-                                // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
-                                // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
-
-                                // if (eball->last_hit != eplayer->id) {
-                                //     Vec3 bodyorient = vieworient;
-                                //     bodyorient.pitch = RETURN_ANGLE_RAD;
-                                //     Mat4 rotate = Mat4RotateEuler(bodyorient);
-                                //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                                //     eball->v = Vec3Scale(normal, RETURN_SPEED);
-                                // }
-
-                                eball->last_hit = eplayer->id;
-                            }
+                        CollisionInfo collision = {0};
+                        bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
+                        if (collides) {
+                            collision.id0 = e0->id;
+                            collision.id1 = e1->id;
+                            collisions[csize++] = collision;
+                            Assert(csize < 10);
                         }
                     }
                 }
 
-                // Draw background
-                { AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1); }
+                // Response.
+                for (u32 i = 0; i < csize; ++i) {
+                    CollisionInfo* collision = &collisions[i];
+                    Entity* e0 = GetEntity(collision->id0);
+                    Entity* e1 = GetEntity(collision->id1);
 
-                // Draw.
-                for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                        continue;
-                    }
+                    breakpoint();
 
-                    if (TestFlag(e->flags, EFLAG_DRAW)) {
-                        Vec4 color = e->color;
-                        if (TestFlag(e->flags, EFLAG_MOB) && e->hit) {
-                            static const f32 FREQ = 2.5f;
-                            f32 t = 0.5f * (1.0f + f32sin(2.0f * LPI * FREQ * e->hit_timer));
-                            color.r = f32lerp(color.r, LRED.r, t);
-                            color.g = f32lerp(color.g, LRED.g, t);
-                            color.b = f32lerp(color.b, LRED.b, t);
-                            color.a = f32lerp(color.a, LRED.a, t);
+                    if (true) {
+                        bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                        bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
+                        bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                        bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+                        bool flip = e0player && e1ball;
+                        if ((e0ball && e1player) || flip) {
+                            // static const f32 RETURN_SPEED = 30.0f;
+                            // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+
+                            Vec3 normal = collision->normal;
+                            Entity* eball = e0;
+                            Entity* eplayer = e1;
+                            if (flip) {
+                                eball = e1;
+                                eplayer = e0;
+                                normal = Vec3Negate(normal);
+                            }
+
+                            // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+
+                            // Reflect velocity about the contact normal.
+                            // Remember that to reflect a vec about a normal you add the portion fo the vec in
+                            // the
+                            // per to the negative of the portion in the parallel.
+                            // NOTE: That parallel and perp are in relation to the colission *normal* rather than
+                            // the surface. some texts treat it the other way around.
+                            // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                            // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                            // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+
+                            // if (eball->last_hit != eplayer->id) {
+                            //     Vec3 bodyorient = vieworient;
+                            //     bodyorient.pitch = RETURN_ANGLE_RAD;
+                            //     Mat4 rotate = Mat4RotateEuler(bodyorient);
+                            //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
+                            //     eball->v = Vec3Scale(normal, RETURN_SPEED);
+                            // }
+
+                            eball->last_hit = eplayer->id;
                         }
+                    }
+                }
+            }
 
-                        Mat4 scale = Mat4ScaleV(e->scale);
-                        Mat4 translate = Mat4TranslateV(e->pos);
-                        Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-                        AddCmd(e->mesh, model, color);
-                        DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
-                        cmd2->wireframe = true;
+            // Draw background
+            { AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1); }
+
+            // Draw.
+            for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
+                Entity* e = GetEntity(i);
+                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                    continue;
+                }
+
+                if (TestFlag(e->flags, EFLAG_DRAW)) {
+                    Vec4 color = e->color;
+                    if (TestFlag(e->flags, EFLAG_MOB) && e->hit) {
+                        static const f32 FREQ = 2.5f;
+                        f32 t = 0.5f * (1.0f + f32sin(2.0f * LPI * FREQ * e->hit_timer));
+                        color.r = f32lerp(color.r, LRED.r, t);
+                        color.g = f32lerp(color.g, LRED.g, t);
+                        color.b = f32lerp(color.b, LRED.b, t);
+                        color.a = f32lerp(color.a, LRED.a, t);
                     }
 
-                    if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
-                        Sphere sphere = EntityBoundingSphere(e);
-                        DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+                    Mat4 scale = Mat4ScaleV(e->scale);
+                    Mat4 translate = Mat4TranslateV(e->pos);
+                    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+                    AddCmd(e->mesh, model, color);
+                    DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
+                    cmd2->wireframe = true;
+                }
 
-                        AABB aabb = EntityAABB(e);
-                        DrawAABBWf(aabb.c, aabb.r, LBLUE);
-                    }
+                if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+                    Sphere sphere = EntityBoundingSphere(e);
+                    DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+
+                    AABB aabb = EntityAABB(e);
+                    DrawAABBWf(aabb.c, aabb.r, LBLUE);
                 }
             }
         }
