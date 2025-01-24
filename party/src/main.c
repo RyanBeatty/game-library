@@ -4073,41 +4073,36 @@ static void Scene5Tick(GameState* gstate) {
             playerid = entity->id;
         }
 
-        // // BALLS init
-        // {
-        //     EntityId* entities = BALLS;
-        //     u32 size = 0;
+        // BALLS init
+        {
+            EntityId* entities = BALLS;
+            u32 size = 0;
 
-        //     const Vec3 origin = Vec3Lit(-50.0f, 10.0f, 0.0f);
+            const Vec3 origin = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-        //     {
-        //         const Vec3 positions[] = {origin};
-        //         const Vec3 velocities[] = {Vec3Lit(3.0f, 10.0f, -6.0f)};
-        //         const f32 rotations[] = {Deg2Rad(0.0f)};
-        //         Vec4 color = LRED;
-        //         color.a = 0.16f;
-        //         const Vec4 colors[] = {color};
+            {
+                const Vec3 positions[] = {origin};
+                const Vec3 velocities[] = {Vec3Lit(3.0f, 10.0f, -6.0f)};
 
-        //         for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
-        //             Entity* entity = AllocateEntity();
-        //             entity->pos = positions[i];
-        //             entity->mesh = GetMesh(M_ICOSPHERE);
-        //             entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-        //             entity->color = colors[i];
-        //             entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
-        //             entity->v = velocities[i];
-        //             entity->phtype = PH_SPHERE;
-        //             entity->last_hit = -1;
-        //             FlagOn(entity->flags, EFLAG_BALL);
-        //             FlagOn(entity->flags, EFLAG_COLLIDER);
-        //             entities[++size] = entity->id;
-        //             Assert(size < MAX_ENTITY_BATCH);
-        //         }
-        //     }
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
+                    Entity* entity = AllocateEntity();
+                    entity->pos = positions[i];
+                    entity->mesh = GetMesh(M_ICOSPHERE);
+                    entity->color = COLOR4;
+                    entity->scale = Vec3Lit(0.5f, 0.5f, 0.5f);
+                    // entity->v = velocities[i];
+                    entity->phtype = PH_SPHERE;
+                    entity->last_hit = -1;
+                    FlagOn(entity->flags, EFLAG_BALL);
+                    // FlagOn(entity->flags, EFLAG_COLLIDER);
+                    entities[++size] = entity->id;
+                    Assert(size < MAX_ENTITY_BATCH);
+                }
+            }
 
-        //     BALLS_SIZE = size;
-        //     Assert(BALLS_SIZE < ArraySizeOf(BALLS));
-        // }
+            BALLS_SIZE = size;
+            Assert(BALLS_SIZE < ArraySizeOf(BALLS));
+        }
 
         // walls init.
         {
