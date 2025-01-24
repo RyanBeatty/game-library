@@ -4475,7 +4475,9 @@ static void GameStateTick(GameState* gstate) {
         gstate->update = !gstate->debug;
     }
     if (gstate->debug) {
-        if (IsKeyPressed(KEY_U)) {
+        bool updatekey = IsKeyPressed(KEY_U);
+        bool updategp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
+        if (updatekey || updategp) {
             gstate->update = !gstate->update;
         }
     }
