@@ -4472,6 +4472,11 @@ static void GameStateTick(GameState* gstate) {
         gstate->debug = !gstate->debug;
         gstate->update = !gstate->debug;
     }
+    if (gstate->debug) {
+        if (IsKeyPressed(KEY_U)) {
+            gstate->update = !gstate->update;
+        }
+    }
 
     // Tick scene.
     gstate->scenefuncs[gstate->sceneid](gstate);
