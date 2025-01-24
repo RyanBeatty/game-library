@@ -1419,8 +1419,8 @@ static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* norma
         if (b->type == PH_AABB) {
             collides = TestSphereVsAABB(a->sphere, b->aabb, &n, &d);
         }
-    } else if (b->type == PH_AABB) {
-        if (a->type == PH_SPHERE) {
+    } else if (a->type == PH_AABB) {
+        if (b->type == PH_SPHERE) {
             collides = TestSphereVsAABB(b->sphere, a->aabb, &n, &d);
             // point normal from b to a.
             n = Vec3Negate(n);
@@ -1618,6 +1618,8 @@ typedef struct GameState {
     bool game_over;
     bool init;  // False on first frame of scene load. Used to tell update function to perform init.
 
+    bool ever_debug;
+
     f32 dt;  // frame delta time.
     f32 timer;
     u32 nframe;  // num frame we are on.
@@ -1650,6 +1652,8 @@ static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
     // Signal to scene update func to run init.
     gstate->init = false;
     gstate->update = true;
+    gstate->debug = false;
+    gstate->ever_debug = false;
     gstate->timer = 0.0f;
     gstate->nframe = 0;
 
@@ -4214,7 +4218,7 @@ static void Scene5Tick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_BALL)) {
                         Vec3 dx = Vec3Scale(e->v, dt);
                         e->pos = Vec3Add(e->pos, dx);
-                        TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
+                        // TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -4268,14 +4272,13 @@ static void Scene5Tick(GameState* gstate) {
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
 
-                        breakpoint();
-
                         if (true) {
                             bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
                             bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
                             bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
                             bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
                             bool flip = e0player && e1ball;
+                            breakpoint();
                             if ((e0ball && e1player) || flip) {
                                 // static const f32 RETURN_SPEED = 30.0f;
                                 // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
@@ -4289,7 +4292,7 @@ static void Scene5Tick(GameState* gstate) {
                                     normal = Vec3Negate(normal);
                                 }
 
-                                // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+                                eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
                                 // Reflect velocity about the contact normal.
                                 // Remember that to reflect a vec about a normal you add the portion fo the vec in
@@ -4473,6 +4476,7 @@ static void GameStateTick(GameState* gstate) {
     if (debugkey || debuggp) {
         gstate->debug = !gstate->debug;
         gstate->update = !gstate->debug;
+        gstate->ever_debug = true;
     }
     if (gstate->debug) {
         bool updatekey = IsKeyPressed(KEY_U);
