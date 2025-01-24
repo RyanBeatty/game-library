@@ -4468,7 +4468,9 @@ static void GameStateTick(GameState* gstate) {
     }
 
     gstate->timer += dt;
-    if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE)) {
+    bool debugkey = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE);
+    bool debuggp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2);
+    if (debugkey || debuggp) {
         gstate->debug = !gstate->debug;
         gstate->update = !gstate->debug;
     }
