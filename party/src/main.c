@@ -1614,6 +1614,7 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
     bool debug;
+    bool update;
     bool game_over;
     bool init;  // False on first frame of scene load. Used to tell update function to perform init.
 
@@ -1648,6 +1649,7 @@ static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
 
     // Signal to scene update func to run init.
     gstate->init = false;
+    gstate->update = true;
     gstate->timer = 0.0f;
     gstate->nframe = 0;
 
@@ -4201,111 +4203,114 @@ static void Scene5Tick(GameState* gstate) {
         {
             EntityManager* em = GetEntityManager();
             u32 esize = ArraySizeOf(em->entities);
-            for (u32 i = 0; i < esize; ++i) {
-                Entity* e = GetEntity(i);
-                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                    continue;
-                }
 
-                if (TestFlag(e->flags, EFLAG_BALL)) {
-                    Vec3 dx = Vec3Scale(e->v, dt);
-                    e->pos = Vec3Add(e->pos, dx);
-                    TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
-                }
-
-                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                    static const f32 MOVE_THRESHOLD = 0.33f;
-                    static const f32 MOVE_SPEED = 40.0f;
-                    f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                    if (f32abs(x) > MOVE_THRESHOLD) {
-                        f32 flip = x >= MOVE_THRESHOLD ? 1.0f : -1.0f;
-                        Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), flip * MOVE_SPEED * dt);
-                        e->pos = Vec3Add(e->pos, dx);
-                    }
-                }
-            }
-
-            // Collisions.
-            {
-                CollisionInfo collisions[10] = {0};
-                u32 csize = 0;
-
-                // Detection.
-                u32 size = ArraySizeOf(em->entities);
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* e0 = GetEntity(i);
-                    if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+            if (gstate->update) {
+                for (u32 i = 0; i < esize; ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                         continue;
                     }
 
-                    Polyhedron p0 = EntityBoundingVolume(e0);
-                    for (u32 j = i + 1; j < size; ++j) {
-                        Entity* e1 = GetEntity(j);
-                        if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                            continue;
-                        }
+                    if (TestFlag(e->flags, EFLAG_BALL)) {
+                        Vec3 dx = Vec3Scale(e->v, dt);
+                        e->pos = Vec3Add(e->pos, dx);
+                        TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
+                    }
 
-                        Polyhedron p1 = EntityBoundingVolume(e1);
-
-                        CollisionInfo collision = {0};
-                        bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
-                        if (collides) {
-                            collision.id0 = e0->id;
-                            collision.id1 = e1->id;
-                            collisions[csize++] = collision;
-                            Assert(csize < 10);
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        static const f32 MOVE_THRESHOLD = 0.33f;
+                        static const f32 MOVE_SPEED = 40.0f;
+                        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                        if (f32abs(x) > MOVE_THRESHOLD) {
+                            f32 flip = x >= MOVE_THRESHOLD ? 1.0f : -1.0f;
+                            Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), flip * MOVE_SPEED * dt);
+                            e->pos = Vec3Add(e->pos, dx);
                         }
                     }
                 }
 
-                // Response.
-                for (u32 i = 0; i < csize; ++i) {
-                    CollisionInfo* collision = &collisions[i];
-                    Entity* e0 = GetEntity(collision->id0);
-                    Entity* e1 = GetEntity(collision->id1);
+                // Collisions.
+                {
+                    CollisionInfo collisions[10] = {0};
+                    u32 csize = 0;
 
-                    breakpoint();
+                    // Detection.
+                    u32 size = ArraySizeOf(em->entities);
+                    for (u32 i = 0; i < size; ++i) {
+                        Entity* e0 = GetEntity(i);
+                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                            continue;
+                        }
 
-                    if (true) {
-                        bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
-                        bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
-                        bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
-                        bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
-                        bool flip = e0player && e1ball;
-                        if ((e0ball && e1player) || flip) {
-                            // static const f32 RETURN_SPEED = 30.0f;
-                            // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
-
-                            Vec3 normal = collision->normal;
-                            Entity* eball = e0;
-                            Entity* eplayer = e1;
-                            if (flip) {
-                                eball = e1;
-                                eplayer = e0;
-                                normal = Vec3Negate(normal);
+                        Polyhedron p0 = EntityBoundingVolume(e0);
+                        for (u32 j = i + 1; j < size; ++j) {
+                            Entity* e1 = GetEntity(j);
+                            if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                                continue;
                             }
 
-                            // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+                            Polyhedron p1 = EntityBoundingVolume(e1);
 
-                            // Reflect velocity about the contact normal.
-                            // Remember that to reflect a vec about a normal you add the portion fo the vec in
-                            // the
-                            // per to the negative of the portion in the parallel.
-                            // NOTE: That parallel and perp are in relation to the colission *normal* rather than
-                            // the surface. some texts treat it the other way around.
-                            // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
-                            // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
-                            // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                            CollisionInfo collision = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
+                            if (collides) {
+                                collision.id0 = e0->id;
+                                collision.id1 = e1->id;
+                                collisions[csize++] = collision;
+                                Assert(csize < 10);
+                            }
+                        }
+                    }
 
-                            // if (eball->last_hit != eplayer->id) {
-                            //     Vec3 bodyorient = vieworient;
-                            //     bodyorient.pitch = RETURN_ANGLE_RAD;
-                            //     Mat4 rotate = Mat4RotateEuler(bodyorient);
-                            //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                            //     eball->v = Vec3Scale(normal, RETURN_SPEED);
-                            // }
+                    // Response.
+                    for (u32 i = 0; i < csize; ++i) {
+                        CollisionInfo* collision = &collisions[i];
+                        Entity* e0 = GetEntity(collision->id0);
+                        Entity* e1 = GetEntity(collision->id1);
 
-                            eball->last_hit = eplayer->id;
+                        breakpoint();
+
+                        if (true) {
+                            bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                            bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
+                            bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                            bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+                            bool flip = e0player && e1ball;
+                            if ((e0ball && e1player) || flip) {
+                                // static const f32 RETURN_SPEED = 30.0f;
+                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+
+                                Vec3 normal = collision->normal;
+                                Entity* eball = e0;
+                                Entity* eplayer = e1;
+                                if (flip) {
+                                    eball = e1;
+                                    eplayer = e0;
+                                    normal = Vec3Negate(normal);
+                                }
+
+                                // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+
+                                // Reflect velocity about the contact normal.
+                                // Remember that to reflect a vec about a normal you add the portion fo the vec in
+                                // the
+                                // per to the negative of the portion in the parallel.
+                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
+                                // the surface. some texts treat it the other way around.
+                                // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+
+                                // if (eball->last_hit != eplayer->id) {
+                                //     Vec3 bodyorient = vieworient;
+                                //     bodyorient.pitch = RETURN_ANGLE_RAD;
+                                //     Mat4 rotate = Mat4RotateEuler(bodyorient);
+                                //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
+                                //     eball->v = Vec3Scale(normal, RETURN_SPEED);
+                                // }
+
+                                eball->last_hit = eplayer->id;
+                            }
                         }
                     }
                 }
