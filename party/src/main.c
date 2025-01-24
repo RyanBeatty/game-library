@@ -4061,8 +4061,6 @@ static void Scene5Tick(GameState* gstate) {
         memset(BALLS, 0, sizeof(BALLS));
         BALLS_SIZE = 0;
 
-        viewpos = Vec3Add(viewpos, Vec3Lit(0.0f, 0.0f, 50.0f));
-
         // Player init.
         {
             Entity* entity = AllocateEntity();
@@ -4152,6 +4150,56 @@ static void Scene5Tick(GameState* gstate) {
 
         // Scene4 update.
         {
+            if (gstate->debug) {
+                static const u8 GAMEPAD_ID = 0;
+                static bool FREECAM = true;
+
+                if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+                    FREECAM = !FREECAM;
+                }
+
+                // Left stick movement.
+                {
+                    static const f32 WALK_VEL = 20.0f;
+                    static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+                    f32 vel = WALK_VEL;
+                    if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                        vel = RUN_VEL;
+                    }
+
+                    f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                    f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                    Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
+                    Vec3 bodyorient = vieworient;
+                    // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
+                    bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
+                    Mat4 rotation = Mat4RotateEuler(bodyorient);
+
+                    Vec3 dir_world = Vec3Transform(dir_model, rotation);
+                    Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
+                    viewpos = Vec3Add(viewpos, mov_world);
+                }
+
+                // Right stick movement.
+                {
+                    f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                    f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                    if (x != 0.0f || y != 0.0f) {
+                        static const rad VEL = Deg2Rad(90.0f);
+
+                        // rotate orient.
+                        vieworient.yaw += -1.0f * x * VEL * dt;
+                        vieworient.pitch += y * VEL * dt;
+                        // Clamp pitch to avoid looking too high/low which would sign flip things.
+                        vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+                    }
+                }
+            } else {
+                viewpos = Vec3Lit(0.0f, 0.0f, 50.0f);
+            }
+
             {
                 EntityManager* em = GetEntityManager();
                 u32 esize = ArraySizeOf(em->entities);
@@ -4164,6 +4212,7 @@ static void Scene5Tick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_BALL)) {
                         Vec3 dx = Vec3Scale(e->v, dt);
                         e->pos = Vec3Add(e->pos, dx);
+                        TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -4217,7 +4266,9 @@ static void Scene5Tick(GameState* gstate) {
                         Entity* e0 = GetEntity(collision->id0);
                         Entity* e1 = GetEntity(collision->id1);
 
-                        if (false) {
+                        breakpoint();
+
+                        if (true) {
                             bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
                             bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
                             bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
