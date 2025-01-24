@@ -4082,7 +4082,10 @@ static void Scene5Tick(GameState* gstate) {
 
             {
                 const Vec3 positions[] = {origin};
-                const Vec3 velocities[] = {Vec3Lit(3.0f, 10.0f, -6.0f)};
+
+                Entity* player = GetEntity(playerid);
+                Vec3 v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, origin)), 5.0f);
+                const Vec3 velocities[] = {v};
 
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
                     Entity* entity = AllocateEntity();
@@ -4090,11 +4093,11 @@ static void Scene5Tick(GameState* gstate) {
                     entity->mesh = GetMesh(M_ICOSPHERE);
                     entity->color = COLOR4;
                     entity->scale = Vec3Lit(0.5f, 0.5f, 0.5f);
-                    // entity->v = velocities[i];
+                    entity->v = velocities[i];
                     entity->phtype = PH_SPHERE;
                     entity->last_hit = -1;
                     FlagOn(entity->flags, EFLAG_BALL);
-                    // FlagOn(entity->flags, EFLAG_COLLIDER);
+                    FlagOn(entity->flags, EFLAG_COLLIDER);
                     entities[++size] = entity->id;
                     Assert(size < MAX_ENTITY_BATCH);
                 }
@@ -4151,6 +4154,11 @@ static void Scene5Tick(GameState* gstate) {
                     Entity* e = GetEntity(i);
                     if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                         continue;
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_BALL)) {
+                        Vec3 dx = Vec3Scale(e->v, dt);
+                        e->pos = Vec3Add(e->pos, dx);
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
