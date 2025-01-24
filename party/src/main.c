@@ -1396,6 +1396,9 @@ static Polyhedron ComputePolyhedron(Vec3* vs, u32 vsize, PolyhedronType type) {
             break;
         }
         default: {
+            TraceLog(LOG_ERROR,
+                     "ComputePolyhedron: Unknown polyhedron type=%d. Most likely entity needs bounding volume type set",
+                     type);
             exit(1);
         }
     }
@@ -4068,7 +4071,9 @@ static void Scene5Tick(GameState* gstate) {
             entity->mesh = GetMesh(M_CUBE);
             entity->color = COLOR3;
             entity->scale = Vec3Lit(15.0f, 0.5f, 1.0f);
+            entity->phtype = PH_AABB;
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+            FlagOn(entity->flags, EFLAG_COLLIDER);
 
             playerid = entity->id;
         }
@@ -4157,8 +4162,8 @@ static void Scene5Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_BALL)) {
-                        Vec3 dx = Vec3Scale(e->v, dt);
-                        e->pos = Vec3Add(e->pos, dx);
+                        // Vec3 dx = Vec3Scale(e->v, dt);
+                        // e->pos = Vec3Add(e->pos, dx);
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -4214,31 +4219,44 @@ static void Scene5Tick(GameState* gstate) {
 
                         // {
                         //     bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
-                        //     bool e0bumper = TestFlag(e0->flags, EFLAG_BUMPER);
+                        //     bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
                         //     bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
-                        //     bool e1bumper = TestFlag(e1->flags, EFLAG_BUMPER);
-                        //     if ((e0ball && e1bumper) || (e0bumper && e1ball)) {
-                        //         static const f32 RETURN_SPEED = 30.0f;
-                        //         static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+                        //     bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+                        //     bool flip = e0player && e1ball;
+                        //     if (false && (e0ball && e1player) || flip) {
+                        //         // static const f32 RETURN_SPEED = 30.0f;
+                        //         // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
 
                         //         Vec3 normal = collision->normal;
                         //         Entity* eball = e0;
-                        //         Entity* ebumper = e1;
-                        //         if (e0bumper && e1ball) {
+                        //         Entity* eplayer = e1;
+                        //         if (flip) {
                         //             eball = e1;
-                        //             ebumper = e0;
+                        //             eplayer = e0;
                         //             normal = Vec3Negate(normal);
                         //         }
 
-                        //         if (eball->last_hit != ebumper->id) {
-                        //             Vec3 bodyorient = vieworient;
-                        //             bodyorient.pitch = RETURN_ANGLE_RAD;
-                        //             Mat4 rotate = Mat4RotateEuler(bodyorient);
-                        //             normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
-                        //             eball->v = Vec3Scale(normal, RETURN_SPEED);
-                        //         }
+                        //         // eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
-                        //         eball->last_hit = ebumper->id;
+                        //         // Reflect velocity about the contact normal.
+                        //         // Remember that to reflect a vec about a normal you add the portion fo the vec in
+                        //         the
+                        //         // per to the negative of the portion in the parallel.
+                        //         // NOTE: That parallel and perp are in relation to the colission *normal* rather than
+                        //         // the surface. some texts treat it the other way around.
+                        //         // Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                        //         // Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                        //         // eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+
+                        //         // if (eball->last_hit != eplayer->id) {
+                        //         //     Vec3 bodyorient = vieworient;
+                        //         //     bodyorient.pitch = RETURN_ANGLE_RAD;
+                        //         //     Mat4 rotate = Mat4RotateEuler(bodyorient);
+                        //         //     normal = Vec3Normalize(Vec3Transform(FORWARD, rotate));
+                        //         //     eball->v = Vec3Scale(normal, RETURN_SPEED);
+                        //         // }
+
+                        //         eball->last_hit = eplayer->id;
                         //     }
                         // }
                     }
