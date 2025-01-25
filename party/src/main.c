@@ -4140,7 +4140,9 @@ static void Scene5Tick(GameState* gstate) {
                 entity->phtype = PH_AABB;
                 entity->friction = 0.7f;
                 entity->restitution = 0.8f;
+                entity->phtype = PH_AABB;
                 FlagOn(entity->flags, EFLAG_WALL);
+                FlagOn(entity->flags, EFLAG_COLLIDER);
                 entities[++size] = entity->id;
                 Assert(size < MAX_ENTITY_BATCH);
             }
@@ -4274,12 +4276,14 @@ static void Scene5Tick(GameState* gstate) {
 
                         bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
                         bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
+                        bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
+
                         bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
                         bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+                        bool e1wall = TestFlag(e1->flags, EFLAG_WALL);
 
                         {
                             bool flip = e0player && e1ball;
-                            breakpoint();
                             if ((e0ball && e1player) || flip) {
                                 // static const f32 RETURN_SPEED = 30.0f;
                                 // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
@@ -4305,6 +4309,36 @@ static void Scene5Tick(GameState* gstate) {
                                 eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
 
                                 eball->last_hit = eplayer->id;
+                            }
+                        }
+
+                        {
+                            bool flip = e0wall && e1ball;
+                            if ((e0ball && e1wall) || flip) {
+                                // static const f32 RETURN_SPEED = 30.0f;
+                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+
+                                Vec3 normal = collision->normal;
+                                Entity* eball = e0;
+                                Entity* ewall = e1;
+                                if (flip) {
+                                    eball = e1;
+                                    ewall = e0;
+                                    normal = Vec3Negate(normal);
+                                }
+
+                                eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+
+                                // Reflect velocity about the contact normal.
+                                // Remember that to reflect a vec about a normal you add the portion fo the vec in the
+                                // per to the negative of the portion in the parallel.
+                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
+                                // the surface. some texts treat it the other way around.
+                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+
+                                eball->last_hit = ewall->id;
                             }
                         }
                     }
