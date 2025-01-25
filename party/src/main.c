@@ -4204,6 +4204,7 @@ static void Scene5Tick(GameState* gstate) {
             }
         } else {
             viewpos = Vec3Lit(0.0f, 0.0f, 50.0f);
+            vieworient = Vec3Zero();
         }
 
         {
@@ -4327,6 +4328,7 @@ static void Scene5Tick(GameState* gstate) {
                                     normal = Vec3Negate(normal);
                                 }
 
+                                breakpoint();
                                 eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
                                 // Reflect velocity about the contact normal.
