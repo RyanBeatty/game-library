@@ -4166,8 +4166,6 @@ static void Scene5Tick(GameState* gstate) {
 
     // Scene4 update.
     {
-        Entity* player = GetEntity(playerid);
-
         if (gstate->debug) {
             static const u8 GAMEPAD_ID = 0;
             static bool FREECAM = true;
@@ -4240,12 +4238,11 @@ static void Scene5Tick(GameState* gstate) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static const f32 MOVE_THRESHOLD = 0.33f;
-                        static const f32 MOVE_SPEED = 40.0f;
+                        static const f32 MOVE_THRESHOLD = 0.05f;
+                        static const f32 MAX_SPEED = 40.0f;
                         f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
                         if (f32abs(x) > MOVE_THRESHOLD) {
-                            f32 flip = x >= MOVE_THRESHOLD ? 1.0f : -1.0f;
-                            Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), flip * MOVE_SPEED * dt);
+                            Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), x * MAX_SPEED * dt);
                             e->pos = Vec3Add(e->pos, dx);
                         }
                     }
