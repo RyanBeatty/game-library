@@ -25,6 +25,8 @@ typedef float f32;
 typedef double f64;
 
 #define F32_MAX FLT_MAX
+// Min value a float can differ by.
+#define F32_EPSILON FLT_EPSILON
 
 typedef f32 rad;
 typedef f32 deg;
@@ -1261,6 +1263,8 @@ static void CmdBufferZero() {
 ////////////////////////////////////////////////////////////
 // S:Geometry
 
+static const f32 SLOP = 2.0f * F32_EPSILON;
+
 static const Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
 
 typedef struct Sphere {
@@ -1339,6 +1343,8 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
     return aabb;
 }
 
+static bool DEBUG_EVER = false;
+
 // Returns normal pointing from aabb to sphere if there is a collision.
 static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
     Vec3 max = Vec3Add(aabb.c, aabb.r);
@@ -1355,6 +1361,10 @@ static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
             v = max.f[i];
         }
         cp.f[i] = v;
+    }
+
+    if (DEBUG_EVER) {
+        breakpoint();
     }
 
     bool hit = false;
@@ -1618,7 +1628,7 @@ typedef struct GameState {
     bool game_over;
     bool init;  // False on first frame of scene load. Used to tell update function to perform init.
 
-    bool ever_debug;
+    bool debug_ever;
 
     f32 dt;  // frame delta time.
     f32 timer;
@@ -1653,7 +1663,7 @@ static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
     gstate->init = false;
     gstate->update = true;
     gstate->debug = false;
-    gstate->ever_debug = false;
+    gstate->debug_ever = false;
     gstate->timer = 0.0f;
     gstate->nframe = 0;
 
@@ -4222,6 +4232,7 @@ static void Scene5Tick(GameState* gstate) {
                         Vec3 dx = Vec3Scale(e->v, dt);
                         e->pos = Vec3Add(e->pos, dx);
                         // TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
+                        // TraceLog(LOG_INFO, "v: %f %f %f", e->v.x, e->v.y, e->v.z);
                     }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -4328,7 +4339,7 @@ static void Scene5Tick(GameState* gstate) {
                                     normal = Vec3Negate(normal);
                                 }
 
-                                breakpoint();
+                                // breakpoint();
                                 eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
                                 // Reflect velocity about the contact normal.
@@ -4504,7 +4515,8 @@ static void GameStateTick(GameState* gstate) {
     if (debugkey || debuggp) {
         gstate->debug = !gstate->debug;
         gstate->update = !gstate->debug;
-        gstate->ever_debug = true;
+        gstate->debug_ever = true;
+        DEBUG_EVER = true;
     }
     if (gstate->debug) {
         bool updatekey = IsKeyPressed(KEY_U);
