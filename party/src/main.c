@@ -144,9 +144,9 @@ static Vec3 Vec3Normalize(Vec3 v) {
 static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
-// static Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
-//     return Vec3Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t));
-// }
+static Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
+    return Vec3Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t));
+}
 
 static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
@@ -1363,18 +1363,19 @@ static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
         cp.f[i] = v;
     }
 
-    if (DEBUG_EVER) {
-        breakpoint();
-    }
-
     bool hit = false;
     Vec3 dir = Vec3Sub(cp, s.c);
     f32 d = Vec3Dot(dir, dir);
     if (d <= s.r * s.r) {
+        // if (DEBUG_EVER) {
+        //     breakpoint();
+        // }
         hit = true;
         d = f32sqrt(d);
-        d = s.r - d;
-        dir = Vec3Normalize(dir);
+        // TODO: Add SLOP.
+        d = (s.r - d);
+        // Want to point normal towards sphere so negate.
+        dir = Vec3Normalize(Vec3Negate(dir));
     }
 
     *normal = dir;
@@ -1480,6 +1481,7 @@ typedef struct Entity {
 
     // Decomposition of model matrix.
     Vec3 pos;
+    Vec3 ppos;  // prev pos.
     Vec3 scale;
     Mat4 orient;
 
@@ -4228,6 +4230,8 @@ static void Scene5Tick(GameState* gstate) {
                         continue;
                     }
 
+                    e->ppos = e->pos;
+
                     if (TestFlag(e->flags, EFLAG_BALL)) {
                         Vec3 dx = Vec3Scale(e->v, dt);
                         e->pos = Vec3Add(e->pos, dx);
@@ -4274,6 +4278,33 @@ static void Scene5Tick(GameState* gstate) {
                             if (collides) {
                                 collision.id0 = e0->id;
                                 collision.id1 = e1->id;
+
+                                // // Time of impact calculation. will back up entities to earliest detected collision
+                                // // point.
+                                // static const u32 ITERATIONS = 3;
+                                // f32 startdt = 0.0f;
+                                // f32 enddt = 1.0f;
+                                // for (u32 itoi = 0; itoi < ITERATIONS; ++itoi) {
+                                //     f32 toi = (startdt + enddt) / 2.0f;
+                                //     e0->pos = Vec3Lerp(e0->ppos, e0->pos, toi);
+                                //     e1->pos = Vec3Lerp(e1->ppos, e1->pos, toi);
+
+                                //     Polyhedron pa = EntityBoundingVolume(e0);
+                                //     Polyhedron pb = EntityBoundingVolume(e1);
+                                //     CollisionInfo ci = {0};
+                                //     bool c = TestPolyhedronVsPolyhedron(&pa, &pb, &ci.normal, &ci.depth);
+                                //     if (c) {
+                                //         enddt = toi;
+                                //         collision = ci;  // Keep track of earliest detected collision.
+                                //     } else {
+                                //         startdt = toi;
+                                //     }
+                                // }
+
+                                if (DEBUG_EVER) {
+                                    breakpoint();
+                                }
+
                                 collisions[csize++] = collision;
                                 Assert(csize < 10);
                             }
@@ -4339,7 +4370,6 @@ static void Scene5Tick(GameState* gstate) {
                                     normal = Vec3Negate(normal);
                                 }
 
-                                // breakpoint();
                                 eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
                                 // Reflect velocity about the contact normal.
@@ -4352,6 +4382,14 @@ static void Scene5Tick(GameState* gstate) {
                                 eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
 
                                 eball->last_hit = ewall->id;
+
+                                // Polyhedron pa = EntityBoundingVolume(eball);
+                                // Polyhedron pb = EntityBoundingVolume(ewall);
+                                // CollisionInfo c = {0};
+                                // breakpoint();
+                                // if (TestPolyhedronVsPolyhedron(&pa, &pb, &c.normal, &c.depth)) {
+                                //     breakpoint();
+                                // }
                             }
                         }
                     }
