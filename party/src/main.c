@@ -4236,6 +4236,7 @@ static void Scene5Tick(GameState* gstate) {
 
                     if (TestFlag(e->flags, EFLAG_BLOCK)) {
                         if (e->health == 0) {
+                            // TODO: particles!
                             FlagOff(e->flags, EFLAG_ACTIVE);
                         }
                     }
