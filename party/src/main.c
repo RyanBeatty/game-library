@@ -4112,7 +4112,7 @@ static void Scene5Tick(GameState* gstate) {
                 const Vec3 positions[] = {origin};
 
                 Entity* player = GetEntity(playerid);
-                Vec3 v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, origin)), 15.0f);
+                Vec3 v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, origin)), 30.0f);
                 const Vec3 velocities[] = {v};
 
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
