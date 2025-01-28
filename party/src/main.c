@@ -1512,6 +1512,8 @@ typedef struct Entity {
     f32 hit_timer;
     i32 last_hit;  // entity id. signed to set to -1 for sentinel val.
 
+    u32 health;
+
     struct {
         struct Entity* prev;
         struct Entity* next;
@@ -4161,6 +4163,7 @@ static void Scene5Tick(GameState* gstate) {
                 entity->phtype = PH_AABB;
                 FlagOn(entity->flags, EFLAG_BLOCK);
                 FlagOn(entity->flags, EFLAG_COLLIDER);
+                entity->health = 1;
             }
         }
     }
@@ -4230,6 +4233,12 @@ static void Scene5Tick(GameState* gstate) {
                     }
 
                     e->ppos = e->pos;
+
+                    if (TestFlag(e->flags, EFLAG_BLOCK)) {
+                        if (e->health == 0) {
+                            FlagOff(e->flags, EFLAG_ACTIVE);
+                        }
+                    }
 
                     if (TestFlag(e->flags, EFLAG_BALL)) {
                         Vec3 dx = Vec3Scale(e->v, dt);
@@ -4475,9 +4484,6 @@ static void Scene5Tick(GameState* gstate) {
                         {
                             bool flip = e0block && e1ball;
                             if ((e0ball && e1block) || flip) {
-                                // static const f32 RETURN_SPEED = 30.0f;
-                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
-
                                 Vec3 normal = collision->normal;
                                 Entity* eball = e0;
                                 Entity* eblock = e1;
@@ -4515,6 +4521,9 @@ static void Scene5Tick(GameState* gstate) {
                                 }
 
                                 eball->last_hit = eblock->id;
+                                if (eblock->health != 0) {
+                                    --eblock->health;
+                                }
                             }
                         }
 
