@@ -1475,6 +1475,7 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 7,
     EFLAG_BUMPER = 1 << 8,
     EFLAG_BALL = 1 << 9,
+    EFLAG_BLOCK = 1 << 10,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -4068,23 +4069,12 @@ static void Scene5Tick(GameState* gstate) {
 
     static EntityId playerid;
 
-    static EntityId BALLS[MAX_ENTITY_BATCH] = {0};
-    static u32 BALLS_SIZE = 0;
-
-    static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
-    static u32 WALLS_SIZE = 0;
-
     f32 dt = gstate->dt;
 
     // Init logic.
     if (!gstate->init) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-        memset(WALLS, 0, sizeof(WALLS));
-        WALLS_SIZE = 0;
-        memset(BALLS, 0, sizeof(BALLS));
-        BALLS_SIZE = 0;
 
         // Player init.
         {
@@ -4103,9 +4093,6 @@ static void Scene5Tick(GameState* gstate) {
 
         // BALLS init
         {
-            EntityId* entities = BALLS;
-            u32 size = 0;
-
             const Vec3 origin = Vec3Lit(0.0f, 0.0f, 0.0f);
 
             {
@@ -4115,7 +4102,7 @@ static void Scene5Tick(GameState* gstate) {
                 Vec3 v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, origin)), 30.0f);
                 const Vec3 velocities[] = {v};
 
-                for (u32 i = 0; i < ArraySizeOf(positions); ++i, ++size) {
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     Entity* entity = AllocateEntity();
                     entity->pos = positions[i];
                     entity->mesh = GetMesh(M_ICOSPHERE);
@@ -4126,13 +4113,8 @@ static void Scene5Tick(GameState* gstate) {
                     entity->last_hit = -1;
                     FlagOn(entity->flags, EFLAG_BALL);
                     FlagOn(entity->flags, EFLAG_COLLIDER);
-                    entities[++size] = entity->id;
-                    Assert(size < MAX_ENTITY_BATCH);
                 }
             }
-
-            BALLS_SIZE = size;
-            Assert(BALLS_SIZE < ArraySizeOf(BALLS));
         }
 
         // walls init.
@@ -4148,8 +4130,6 @@ static void Scene5Tick(GameState* gstate) {
             Vec3 scales[] = {Vec3Lit(width, height, depth), Vec3Lit(width, height, depth),
                              Vec3Lit(height, width, depth), Vec3Lit(height, width, depth)};
 
-            EntityId* entities = WALLS;
-            u32 size = WALLS_SIZE;
             for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
@@ -4162,12 +4142,7 @@ static void Scene5Tick(GameState* gstate) {
                 entity->phtype = PH_AABB;
                 FlagOn(entity->flags, EFLAG_WALL);
                 FlagOn(entity->flags, EFLAG_COLLIDER);
-                entities[++size] = entity->id;
-                Assert(size < MAX_ENTITY_BATCH);
             }
-
-            WALLS_SIZE = size;
-            Assert(WALLS_SIZE < ArraySizeOf(WALLS));
         }
     }
 
