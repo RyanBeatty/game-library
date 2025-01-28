@@ -168,6 +168,8 @@ static Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
     return Vec3Add(vcos, Vec3Add(axv, kk));
 }
 
+static Vec3 Vec3Project(Vec3 v, Vec3 axis) { return Vec3Scale(axis, Vec3Dot(v, axis)); }
+
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
 // For matrix mult notation wise we will compose from right to left. i.e. X = CBAv.
@@ -1267,13 +1269,7 @@ static const f32 SLOP = 2.0f * F32_EPSILON;
 
 static const Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
 
-typedef struct Sphere {
-    Vec3 c;  // center
-    f32 r;   // radius
-} Sphere;
-
-// Computes a sphere in the coord space of the passed in verts.
-static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
+static Vec3 ComputeCentroid(Vec3* vs, u32 vsize) {
     Vec3 center = {0};
     for (u32 i = 0; i < vsize; ++i) {
         center = Vec3Add(center, vs[i]);
@@ -1281,6 +1277,17 @@ static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
     center.x /= vsize;
     center.y /= vsize;
     center.z /= vsize;
+    return center;
+}
+
+typedef struct Sphere {
+    Vec3 c;  // center
+    f32 r;   // radius
+} Sphere;
+
+// Computes a sphere in the coord space of the passed in verts.
+static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
+    Vec3 center = ComputeCentroid(vs, vsize);
 
     f32 radius = 0.0f;
     for (u32 i = 0; i < vsize; ++i) {
@@ -4346,6 +4353,107 @@ static void Scene5Tick(GameState* gstate) {
                                 // the surface. some texts treat it the other way around.
                                 Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
                                 Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+
+                                // {
+                                //     u32 faceidx = 0;
+                                //     if (Vec3Eq(normal, Vec3Lit(1.0f, 0.0f, 0.0f))) {
+                                //         faceidx = 1;
+                                //     } else if (Vec3Eq(normal, Vec3Lit(-1.0f, 0.0f, 0.0f))) {
+                                //         faceidx = 2;
+                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 1.0f, 0.0f))) {
+                                //         faceidx = 3;
+                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, -1.0f, 0.0f))) {
+                                //         faceidx = 4;
+                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, 1.0f))) {
+                                //         faceidx = 5;
+                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, -1.0f))) {
+                                //         faceidx = 6;
+                                //     }
+
+                                //     Vec3 translate = eplayer->pos;
+                                //     Vec3 scale = eplayer->scale;
+                                //     Vec3 points[4] = {0};
+                                //     u32 psize = 4;
+                                //     switch (faceidx) {
+                                //         case 1: {
+                                //             points[0] = Vec3Lit(1.0f, 1.0f, 1.0f);
+                                //             points[1] = Vec3Lit(1.0f, -1.0f, 1.0f);
+                                //             points[2] = Vec3Lit(1.0f, -1.0f, -1.0f);
+                                //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
+                                //             break;
+                                //         }
+                                //         case 2: {
+                                //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
+                                //             points[1] = Vec3Lit(-1.0f, -1.0f, -1.0f);
+                                //             points[2] = Vec3Lit(-1.0f, -1.0f, 1.0f);
+                                //             points[3] = Vec3Lit(-1.0f, 1.0f, 1.0f);
+                                //             break;
+                                //         }
+                                //         case 3: {
+                                //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
+                                //             points[1] = Vec3Lit(-1.0f, 1.0f, 1.0f);
+                                //             points[2] = Vec3Lit(1.0f, 1.0f, 1.0f);
+                                //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
+                                //             break;
+                                //         }
+                                //         case 4: {
+                                //             points[0] = Vec3Lit(-1.0f, -1.0f, -1.0f);
+                                //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
+                                //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
+                                //             points[3] = Vec3Lit(-1.0f, -1.0f, 1.0f);
+                                //             break;
+                                //         }
+                                //         case 5: {
+                                //             points[0] = Vec3Lit(-1.0f, 1.0f, 1.0f);
+                                //             points[1] = Vec3Lit(-1.0f, -1.0f, 1.0f);
+                                //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
+                                //             points[3] = Vec3Lit(1.0f, 1.0f, 1.0f);
+                                //             break;
+                                //         }
+                                //         case 6: {
+                                //             points[0] = Vec3Lit(1.0f, 1.0f, -1.0f);
+                                //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
+                                //             points[2] = Vec3Lit(-1.0f, -1.0f, -1.0f);
+                                //             points[3] = Vec3Lit(-1.0f, 1.0f, -1.0f);
+                                //             break;
+                                //         }
+                                //         default: {
+                                //             TraceLog(LOG_ERROR, "bad faceidx %d", faceidx);
+                                //             exit(1);
+                                //         }
+                                //     }
+
+                                //     Mat4 m = Mat4Multiply(Mat4TranslateV(translate), Mat4ScaleV(scale));
+                                //     for (u32 vi = 0; vi < psize; ++vi) {
+                                //         points[vi] = Vec3WTransform(points[vi], m);
+                                //     }
+
+                                //     Vec3 aabbcenter = ComputeCentroid(points, psize);
+
+                                //     Polyhedron p = EntityBoundingVolume(eball);
+                                //     Vec3 cp = Vec3Add(p.sphere.c, Vec3Scale(normal, collision->depth));
+
+                                //     TraceLog(LOG_INFO, "center %f %f %f || cp %f %f %f", aabbcenter.x, aabbcenter.y,
+                                //              aabbcenter.z, cp.x, cp.y, cp.z);
+                                //     // Vec3 dir = Vec3Sub(cp, aabbcenter);
+
+                                //     // Vec3 axis = Vec3Lit(1.0f, 0.0f, 0.0f);
+                                //     // center = Vec3Project(center, axis);
+
+                                //     // f32 d = Vec3Dot(cp, axis);
+                                //     // // Vec3 cp = Vec3Project(Vec3Add(p.aabb.c, Vec3Scale(normal,
+                                //     collision->depth)),
+                                //     // // axis);
+
+                                //     // // Vec3 diff = Vec3Sub(cp, center);
+                                //     // // f32 d = Vec3Len(diff);
+                                //     // if (d >= 0.0f) {
+                                //     //     TraceLog(LOG_INFO, "right");
+                                //     // } else {
+                                //     //     TraceLog(LOG_INFO, "left");
+                                //     // }
+                                // }
+
                                 eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
 
                                 eball->last_hit = eplayer->id;
