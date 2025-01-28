@@ -4095,7 +4095,7 @@ static void Scene5Tick(GameState* gstate) {
 
         // BALLS init
         {
-            Vec3 origin = Vec3Lit(0.0f, 5.0f, 0.0f);
+            Vec3 origin = Vec3Lit(0.0f, -5.0f, 0.0f);
 
             {
                 const Vec3 positions[] = {origin};
@@ -4149,14 +4149,14 @@ static void Scene5Tick(GameState* gstate) {
 
         // blocks init.
         {
-            Vec3 positions[] = {ORIGIN};
+            Vec3 pos = Vec3Lit(-10.0f, 0.0f, 0.0f);
 
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+            for (u32 i = 0; i < 20; ++i) {
                 Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
+                entity->pos = pos;
                 entity->mesh = GetMesh(M_CUBE);
-                entity->color = COLOR0;
-                entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+                entity->color = i % 2 == 0 ? COLOR0 : COLOR2;
+                entity->scale = Vec3Lit(2.0f, 2.0f, 2.0f);
                 entity->phtype = PH_AABB;
                 entity->friction = 0.7f;
                 entity->restitution = 0.8f;
@@ -4164,6 +4164,9 @@ static void Scene5Tick(GameState* gstate) {
                 FlagOn(entity->flags, EFLAG_BLOCK);
                 FlagOn(entity->flags, EFLAG_COLLIDER);
                 entity->health = 1;
+
+                Polyhedron p = EntityBoundingVolume(entity);
+                pos = Vec3Add(pos, Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 2.0f * p.aabb.r.f[0]));
             }
         }
     }
