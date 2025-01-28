@@ -4346,115 +4346,123 @@ static void Scene5Tick(GameState* gstate) {
 
                                 eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
-                                // Reflect velocity about the contact normal.
-                                // Remember that to reflect a vec about a normal you add the portion fo the vec in the
-                                // per to the negative of the portion in the parallel.
-                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
-                                // the surface. some texts treat it the other way around.
-                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
-                                Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                Vec3 vnew = eball->v;
 
-                                // {
-                                //     u32 faceidx = 0;
-                                //     if (Vec3Eq(normal, Vec3Lit(1.0f, 0.0f, 0.0f))) {
-                                //         faceidx = 1;
-                                //     } else if (Vec3Eq(normal, Vec3Lit(-1.0f, 0.0f, 0.0f))) {
-                                //         faceidx = 2;
-                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 1.0f, 0.0f))) {
-                                //         faceidx = 3;
-                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, -1.0f, 0.0f))) {
-                                //         faceidx = 4;
-                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, 1.0f))) {
-                                //         faceidx = 5;
-                                //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, -1.0f))) {
-                                //         faceidx = 6;
-                                //     }
+                                f32 parallel = Vec3Dot(normal, eball->v);
+                                if (!f32eq(parallel, 0.0f) || true) {
+                                    // Reflect velocity about the contact normal.
+                                    // Remember that to reflect a vec about a normal you add the portion fo the vec in
+                                    // the per to the negative of the portion in the parallel. NOTE: That parallel and
+                                    // perp are in relation to the colission *normal* rather than the surface. some
+                                    // texts treat it the other way around.
+                                    Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                    Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
 
-                                //     Vec3 translate = eplayer->pos;
-                                //     Vec3 scale = eplayer->scale;
-                                //     Vec3 points[4] = {0};
-                                //     u32 psize = 4;
-                                //     switch (faceidx) {
-                                //         case 1: {
-                                //             points[0] = Vec3Lit(1.0f, 1.0f, 1.0f);
-                                //             points[1] = Vec3Lit(1.0f, -1.0f, 1.0f);
-                                //             points[2] = Vec3Lit(1.0f, -1.0f, -1.0f);
-                                //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
-                                //             break;
-                                //         }
-                                //         case 2: {
-                                //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
-                                //             points[1] = Vec3Lit(-1.0f, -1.0f, -1.0f);
-                                //             points[2] = Vec3Lit(-1.0f, -1.0f, 1.0f);
-                                //             points[3] = Vec3Lit(-1.0f, 1.0f, 1.0f);
-                                //             break;
-                                //         }
-                                //         case 3: {
-                                //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
-                                //             points[1] = Vec3Lit(-1.0f, 1.0f, 1.0f);
-                                //             points[2] = Vec3Lit(1.0f, 1.0f, 1.0f);
-                                //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
-                                //             break;
-                                //         }
-                                //         case 4: {
-                                //             points[0] = Vec3Lit(-1.0f, -1.0f, -1.0f);
-                                //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
-                                //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
-                                //             points[3] = Vec3Lit(-1.0f, -1.0f, 1.0f);
-                                //             break;
-                                //         }
-                                //         case 5: {
-                                //             points[0] = Vec3Lit(-1.0f, 1.0f, 1.0f);
-                                //             points[1] = Vec3Lit(-1.0f, -1.0f, 1.0f);
-                                //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
-                                //             points[3] = Vec3Lit(1.0f, 1.0f, 1.0f);
-                                //             break;
-                                //         }
-                                //         case 6: {
-                                //             points[0] = Vec3Lit(1.0f, 1.0f, -1.0f);
-                                //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
-                                //             points[2] = Vec3Lit(-1.0f, -1.0f, -1.0f);
-                                //             points[3] = Vec3Lit(-1.0f, 1.0f, -1.0f);
-                                //             break;
-                                //         }
-                                //         default: {
-                                //             TraceLog(LOG_ERROR, "bad faceidx %d", faceidx);
-                                //             exit(1);
-                                //         }
-                                //     }
+                                    // {
+                                    //     u32 faceidx = 0;
+                                    //     if (Vec3Eq(normal, Vec3Lit(1.0f, 0.0f, 0.0f))) {
+                                    //         faceidx = 1;
+                                    //     } else if (Vec3Eq(normal, Vec3Lit(-1.0f, 0.0f, 0.0f))) {
+                                    //         faceidx = 2;
+                                    //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 1.0f, 0.0f))) {
+                                    //         faceidx = 3;
+                                    //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, -1.0f, 0.0f))) {
+                                    //         faceidx = 4;
+                                    //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, 1.0f))) {
+                                    //         faceidx = 5;
+                                    //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, -1.0f))) {
+                                    //         faceidx = 6;
+                                    //     }
 
-                                //     Mat4 m = Mat4Multiply(Mat4TranslateV(translate), Mat4ScaleV(scale));
-                                //     for (u32 vi = 0; vi < psize; ++vi) {
-                                //         points[vi] = Vec3WTransform(points[vi], m);
-                                //     }
+                                    //     Vec3 translate = eplayer->pos;
+                                    //     Vec3 scale = eplayer->scale;
+                                    //     Vec3 points[4] = {0};
+                                    //     u32 psize = 4;
+                                    //     switch (faceidx) {
+                                    //         case 1: {
+                                    //             points[0] = Vec3Lit(1.0f, 1.0f, 1.0f);
+                                    //             points[1] = Vec3Lit(1.0f, -1.0f, 1.0f);
+                                    //             points[2] = Vec3Lit(1.0f, -1.0f, -1.0f);
+                                    //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
+                                    //             break;
+                                    //         }
+                                    //         case 2: {
+                                    //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
+                                    //             points[1] = Vec3Lit(-1.0f, -1.0f, -1.0f);
+                                    //             points[2] = Vec3Lit(-1.0f, -1.0f, 1.0f);
+                                    //             points[3] = Vec3Lit(-1.0f, 1.0f, 1.0f);
+                                    //             break;
+                                    //         }
+                                    //         case 3: {
+                                    //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
+                                    //             points[1] = Vec3Lit(-1.0f, 1.0f, 1.0f);
+                                    //             points[2] = Vec3Lit(1.0f, 1.0f, 1.0f);
+                                    //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
+                                    //             break;
+                                    //         }
+                                    //         case 4: {
+                                    //             points[0] = Vec3Lit(-1.0f, -1.0f, -1.0f);
+                                    //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
+                                    //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
+                                    //             points[3] = Vec3Lit(-1.0f, -1.0f, 1.0f);
+                                    //             break;
+                                    //         }
+                                    //         case 5: {
+                                    //             points[0] = Vec3Lit(-1.0f, 1.0f, 1.0f);
+                                    //             points[1] = Vec3Lit(-1.0f, -1.0f, 1.0f);
+                                    //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
+                                    //             points[3] = Vec3Lit(1.0f, 1.0f, 1.0f);
+                                    //             break;
+                                    //         }
+                                    //         case 6: {
+                                    //             points[0] = Vec3Lit(1.0f, 1.0f, -1.0f);
+                                    //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
+                                    //             points[2] = Vec3Lit(-1.0f, -1.0f, -1.0f);
+                                    //             points[3] = Vec3Lit(-1.0f, 1.0f, -1.0f);
+                                    //             break;
+                                    //         }
+                                    //         default: {
+                                    //             TraceLog(LOG_ERROR, "bad faceidx %d", faceidx);
+                                    //             exit(1);
+                                    //         }
+                                    //     }
 
-                                //     Vec3 aabbcenter = ComputeCentroid(points, psize);
+                                    //     Mat4 m = Mat4Multiply(Mat4TranslateV(translate), Mat4ScaleV(scale));
+                                    //     for (u32 vi = 0; vi < psize; ++vi) {
+                                    //         points[vi] = Vec3WTransform(points[vi], m);
+                                    //     }
 
-                                //     Polyhedron p = EntityBoundingVolume(eball);
-                                //     Vec3 cp = Vec3Add(p.sphere.c, Vec3Scale(normal, collision->depth));
+                                    //     Vec3 aabbcenter = ComputeCentroid(points, psize);
 
-                                //     TraceLog(LOG_INFO, "center %f %f %f || cp %f %f %f", aabbcenter.x, aabbcenter.y,
-                                //              aabbcenter.z, cp.x, cp.y, cp.z);
-                                //     // Vec3 dir = Vec3Sub(cp, aabbcenter);
+                                    //     Polyhedron p = EntityBoundingVolume(eball);
+                                    //     Vec3 cp = Vec3Add(p.sphere.c, Vec3Scale(normal, collision->depth));
 
-                                //     // Vec3 axis = Vec3Lit(1.0f, 0.0f, 0.0f);
-                                //     // center = Vec3Project(center, axis);
+                                    //     TraceLog(LOG_INFO, "center %f %f %f || cp %f %f %f", aabbcenter.x,
+                                    //     aabbcenter.y,
+                                    //              aabbcenter.z, cp.x, cp.y, cp.z);
+                                    //     // Vec3 dir = Vec3Sub(cp, aabbcenter);
 
-                                //     // f32 d = Vec3Dot(cp, axis);
-                                //     // // Vec3 cp = Vec3Project(Vec3Add(p.aabb.c, Vec3Scale(normal,
-                                //     collision->depth)),
-                                //     // // axis);
+                                    //     // Vec3 axis = Vec3Lit(1.0f, 0.0f, 0.0f);
+                                    //     // center = Vec3Project(center, axis);
 
-                                //     // // Vec3 diff = Vec3Sub(cp, center);
-                                //     // // f32 d = Vec3Len(diff);
-                                //     // if (d >= 0.0f) {
-                                //     //     TraceLog(LOG_INFO, "right");
-                                //     // } else {
-                                //     //     TraceLog(LOG_INFO, "left");
-                                //     // }
-                                // }
+                                    //     // f32 d = Vec3Dot(cp, axis);
+                                    //     // // Vec3 cp = Vec3Project(Vec3Add(p.aabb.c, Vec3Scale(normal,
+                                    //     collision->depth)),
+                                    //     // // axis);
 
-                                eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                                    //     // // Vec3 diff = Vec3Sub(cp, center);
+                                    //     // // f32 d = Vec3Len(diff);
+                                    //     // if (d >= 0.0f) {
+                                    //     //     TraceLog(LOG_INFO, "right");
+                                    //     // } else {
+                                    //     //     TraceLog(LOG_INFO, "left");
+                                    //     // }
+                                    // }
+
+                                    vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                                }
+
+                                eball->v = vnew;
 
                                 eball->last_hit = eplayer->id;
                             }
