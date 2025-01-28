@@ -4093,7 +4093,7 @@ static void Scene5Tick(GameState* gstate) {
 
         // BALLS init
         {
-            Vec3 origin = Vec3Lit(0.0f, -5.0f, 0.0f);
+            Vec3 origin = Vec3Lit(0.0f, 5.0f, 0.0f);
 
             {
                 const Vec3 positions[] = {origin};
@@ -4153,13 +4153,13 @@ static void Scene5Tick(GameState* gstate) {
                 Entity* entity = AllocateEntity();
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_CUBE);
-                entity->color = COLOR2;
+                entity->color = COLOR0;
                 entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
                 entity->phtype = PH_AABB;
                 entity->friction = 0.7f;
                 entity->restitution = 0.8f;
                 entity->phtype = PH_AABB;
-                FlagOn(entity->flags, EFLAG_WALL);
+                FlagOn(entity->flags, EFLAG_BLOCK);
                 FlagOn(entity->flags, EFLAG_COLLIDER);
             }
         }
@@ -4318,10 +4318,12 @@ static void Scene5Tick(GameState* gstate) {
                         bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
                         bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
                         bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
+                        bool e0block = TestFlag(e0->flags, EFLAG_BLOCK);
 
                         bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
                         bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
                         bool e1wall = TestFlag(e1->flags, EFLAG_WALL);
+                        bool e1block = TestFlag(e1->flags, EFLAG_BLOCK);
 
                         {
                             bool flip = e0player && e1ball;
@@ -4467,6 +4469,52 @@ static void Scene5Tick(GameState* gstate) {
                                 }
 
                                 eball->last_hit = eplayer->id;
+                            }
+                        }
+
+                        {
+                            bool flip = e0block && e1ball;
+                            if ((e0ball && e1block) || flip) {
+                                // static const f32 RETURN_SPEED = 30.0f;
+                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+
+                                Vec3 normal = collision->normal;
+                                Entity* eball = e0;
+                                Entity* eblock = e1;
+                                if (flip) {
+                                    eball = e1;
+                                    eblock = e0;
+                                    normal = Vec3Negate(normal);
+                                }
+
+                                eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+
+                                {
+                                    Vec3 vnew = eball->v;
+
+                                    Vec3 vdir = Vec3Normalize(eball->v);
+                                    f32 parallel = Vec3Dot(normal, vdir);
+                                    if (!f32eq(f32abs(parallel), 1.0f)) {
+                                        // Reflect velocity about the contact normal.
+                                        // Remember that to reflect a vec about a normal you add the portion fo the vec
+                                        // in the per to the negative of the portion in the parallel. NOTE: That
+                                        // parallel and perp are in relation to the colission *normal* rather than the
+                                        // surface. some texts treat it the other way around.
+                                        Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                        Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+
+                                        vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                                    } else {
+                                        // special case dead on collision for now.
+                                        // since we are 2d game logic, just pick the zaxis as the rotation axis.
+                                        Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(-45.0f));
+                                        vnew = Vec3Scale(dir, Vec3Len(eball->v));
+                                    }
+
+                                    eball->v = vnew;
+                                }
+
+                                eball->last_hit = eblock->id;
                             }
                         }
 
