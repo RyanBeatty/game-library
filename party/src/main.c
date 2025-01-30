@@ -4163,9 +4163,10 @@ static void Scene5Tick(GameState* gstate) {
             }
             AABB aabb = ComputeAABB(vs, vsize);
 
-            Vec3 xoffset = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 2.0f * aabb.r.f[0]);
+            Vec3 xoffset = Vec3Lit(2.0f * aabb.r.f[0], 0.0f, 0.0f);
+            Vec3 yoffset = Vec3Lit(0.0f, 2.0f * aabb.r.f[1], 0.0f);
 
-            for (u32 row = 0; row < 1; ++row) {
+            for (u32 row = 0; row < 2; ++row) {
                 u32 nblocks = (row + 1) * 2;
                 for (u32 i = 0; i < nblocks; ++i) {
                     Entity* entity = AllocateEntity();
@@ -4183,6 +4184,7 @@ static void Scene5Tick(GameState* gstate) {
 
                     pos = Vec3Add(pos, xoffset);
                 }
+                pos = Vec3Sub(pos, yoffset);
             }
         }
     }
