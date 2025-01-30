@@ -4149,7 +4149,6 @@ static void Scene5Tick(GameState* gstate) {
 
         // blocks init.
         {
-            Vec3 pos = Vec3Lit(-10.0f, 0.0f, 0.0f);
             Vec3 scale = Vec3Lit(2.0f, 2.0f, 2.0f);
             Mat4 m = Mat4ScaleV(scale);
 
@@ -4166,9 +4165,12 @@ static void Scene5Tick(GameState* gstate) {
             Vec3 xoffset = Vec3Lit(2.0f * aabb.r.f[0], 0.0f, 0.0f);
             Vec3 yoffset = Vec3Lit(0.0f, 2.0f * aabb.r.f[1], 0.0f);
 
-            for (u32 row = 0; row < 2; ++row) {
-                u32 nblocks = (row + 1) * 2;
-                for (u32 i = 0; i < nblocks; ++i) {
+            u32 rsize = 20;
+            Vec3 rowstart = Vec3Lit(-(rsize * aabb.r.f[0]), 0.0f, 0.0f);
+
+            for (u32 row = 0; row < 5; ++row) {
+                Vec3 pos = rowstart;
+                for (u32 i = 0; i < rsize; ++i) {
                     Entity* entity = AllocateEntity();
                     entity->pos = pos;
                     entity->mesh = GetMesh(M_CUBE);
@@ -4184,7 +4186,7 @@ static void Scene5Tick(GameState* gstate) {
 
                     pos = Vec3Add(pos, xoffset);
                 }
-                pos = Vec3Sub(pos, yoffset);
+                rowstart = Vec3Add(rowstart, yoffset);
             }
         }
     }
