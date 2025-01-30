@@ -4635,14 +4635,15 @@ static void Scene5Tick(GameState* gstate) {
                         }
 
                         {
-                            bool flip = e0player && e1wall;
-                            if ((e0wall && e1player) || flip) {
+                            bool flip = e0wall && e1player;
+                            if ((e0player && e1wall) || flip) {
                                 Vec3 normal = collision->normal;
-                                Entity* ewall = e0;
-                                Entity* eplayer = e1;
+                                Entity* eplayer = e0;
+                                Entity* ewall = e1;
                                 if (flip) {
-                                    ewall = e1;
-                                    eplayer = e0;
+                                    eplayer = e1;
+                                    ewall = e0;
+                                    normal = Vec3Negate(normal);
                                 }
 
                                 eplayer->pos = Vec3Add(eplayer->pos, Vec3Scale(normal, collision->depth));
