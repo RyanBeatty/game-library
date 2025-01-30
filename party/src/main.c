@@ -4163,6 +4163,8 @@ static void Scene5Tick(GameState* gstate) {
             }
             AABB aabb = ComputeAABB(vs, vsize);
 
+            Vec3 xoffset = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 2.0f * aabb.r.f[0]);
+
             for (u32 row = 0; row < 1; ++row) {
                 u32 nblocks = (row + 1) * 2;
                 for (u32 i = 0; i < nblocks; ++i) {
@@ -4179,7 +4181,7 @@ static void Scene5Tick(GameState* gstate) {
                     FlagOn(entity->flags, EFLAG_COLLIDER);
                     entity->health = 1;
 
-                    pos = Vec3Add(pos, Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 2.0f * aabb.r.f[0]));
+                    pos = Vec3Add(pos, xoffset);
                 }
             }
         }
