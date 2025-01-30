@@ -4150,23 +4150,37 @@ static void Scene5Tick(GameState* gstate) {
         // blocks init.
         {
             Vec3 pos = Vec3Lit(-10.0f, 0.0f, 0.0f);
+            Vec3 scale = Vec3Lit(2.0f, 2.0f, 2.0f);
+            Mat4 m = Mat4ScaleV(scale);
 
-            for (u32 i = 0; i < 20; ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = pos;
-                entity->mesh = GetMesh(M_CUBE);
-                entity->color = i % 2 == 0 ? COLOR0 : COLOR2;
-                entity->scale = Vec3Lit(2.0f, 2.0f, 2.0f);
-                entity->phtype = PH_AABB;
-                entity->friction = 0.7f;
-                entity->restitution = 0.8f;
-                entity->phtype = PH_AABB;
-                FlagOn(entity->flags, EFLAG_BLOCK);
-                FlagOn(entity->flags, EFLAG_COLLIDER);
-                entity->health = 1;
+            Vec3 vs[MAX_VERTICES] = {0};
+            LMesh mesh = GetMesh(M_CUBE);
+            u32 vsize = mesh.ntriangles * 3;
+            Assert(vsize < MAX_VERTICES);
+            for (u32 i = 0; i < vsize; ++i) {
+                Vec3 pos = LMeshGetVertex(mesh, i).pos;
+                vs[i] = Vec3Transform(pos, m);
+            }
+            AABB aabb = ComputeAABB(vs, vsize);
 
-                Polyhedron p = EntityBoundingVolume(entity);
-                pos = Vec3Add(pos, Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 2.0f * p.aabb.r.f[0]));
+            for (u32 row = 0; row < 1; ++row) {
+                u32 nblocks = (row + 1) * 2;
+                for (u32 i = 0; i < nblocks; ++i) {
+                    Entity* entity = AllocateEntity();
+                    entity->pos = pos;
+                    entity->mesh = GetMesh(M_CUBE);
+                    entity->color = i % 2 == 0 ? COLOR0 : COLOR2;
+                    entity->scale = scale;
+                    entity->phtype = PH_AABB;
+                    entity->friction = 0.7f;
+                    entity->restitution = 0.8f;
+                    entity->phtype = PH_AABB;
+                    FlagOn(entity->flags, EFLAG_BLOCK);
+                    FlagOn(entity->flags, EFLAG_COLLIDER);
+                    entity->health = 1;
+
+                    pos = Vec3Add(pos, Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 2.0f * aabb.r.f[0]));
+                }
             }
         }
     }
