@@ -1265,6 +1265,8 @@ static void CmdBufferZero() {
 ////////////////////////////////////////////////////////////
 // S:Geometry
 
+static bool DEBUG_EVER = false;
+
 static const f32 SLOP = 2.0f * F32_EPSILON;
 
 static const Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
@@ -1350,7 +1352,45 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
     return aabb;
 }
 
-static bool DEBUG_EVER = false;
+static bool TestAABBVsAABB(AABB a, AABB b, Vec3* normal, f32* depth) {
+    if (DEBUG_EVER) {
+        breakpoint();
+    }
+
+    f32 dcx = a.c.f[0] - b.c.f[0];
+    f32 dx = (a.r.f[0] + b.r.f[0]) - f32abs(dcx);
+    if (dx <= 0.0) {
+        return false;
+    }
+
+    f32 dcy = a.c.f[1] - b.c.f[1];
+    f32 dy = (a.r.f[1] + b.r.f[1]) - f32abs(dcy);
+    if (dy <= 0.0f) {
+        return false;
+    }
+
+    f32 dcz = a.c.f[2] - b.c.f[2];
+    f32 dz = (a.r.f[2] + b.r.f[2]) - f32abs(dcz);
+    if (dz <= 0.0f) {
+        return false;
+    }
+
+    Vec3 n = Vec3Lit(1.0f * (dcx < 0.0f ? -1.0f : 1.0f), 0.0f, 0.0f);
+    f32 d = dx;
+    if (dy < d || dz < d) {
+        if (dy < dz) {
+            n = Vec3Lit(0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f), 0.0f);
+            d = dy;
+        } else {
+            n = Vec3Lit(0.0f, 0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f));
+            d = dz;
+        }
+    }
+
+    *normal = n;
+    *depth = d;
+    return true;
+}
 
 // Returns normal pointing from aabb to sphere if there is a collision.
 static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
@@ -1438,7 +1478,9 @@ static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* norma
             collides = TestSphereVsAABB(a->sphere, b->aabb, &n, &d);
         }
     } else if (a->type == PH_AABB) {
-        if (b->type == PH_SPHERE) {
+        if (b->type == PH_AABB) {
+            collides = TestAABBVsAABB(a->aabb, b->aabb, &n, &d);
+        } else if (b->type == PH_SPHERE) {
             collides = TestSphereVsAABB(b->sphere, a->aabb, &n, &d);
             // point normal from b to a.
             n = Vec3Negate(n);
@@ -1621,6 +1663,9 @@ typedef struct CollisionInfo {
     f32 depth;
     Vec3 normal;
 } CollisionInfo;
+
+// L Check And Flip
+#define LCAF(e0, e1, f0, f1, cinfo)
 
 ////////////////////////////////////////////////////
 
@@ -4586,6 +4631,21 @@ static void Scene5Tick(GameState* gstate) {
                                 // if (TestPolyhedronVsPolyhedron(&pa, &pb, &c.normal, &c.depth)) {
                                 //     breakpoint();
                                 // }
+                            }
+                        }
+
+                        {
+                            bool flip = e0player && e1wall;
+                            if ((e0wall && e1player) || flip) {
+                                Vec3 normal = collision->normal;
+                                Entity* ewall = e0;
+                                Entity* eplayer = e1;
+                                if (flip) {
+                                    ewall = e1;
+                                    eplayer = e0;
+                                }
+
+                                eplayer->pos = Vec3Add(eplayer->pos, Vec3Scale(normal, collision->depth));
                             }
                         }
                     }
