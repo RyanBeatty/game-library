@@ -4811,19 +4811,30 @@ static void GameStateTick(GameState* gstate) {
     }
 
     gstate->timer += dt;
-    bool debugkey = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE);
-    bool debuggp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2);
-    if (debugkey || debuggp) {
-        gstate->debug = !gstate->debug;
-        gstate->update = !gstate->debug;
-        gstate->debug_ever = true;
-        DEBUG_EVER = true;
-    }
-    if (gstate->debug) {
-        bool updatekey = IsKeyPressed(KEY_U);
-        bool updategp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
-        if (updatekey || updategp) {
-            gstate->update = !gstate->update;
+
+    {
+        static bool ENABLE_DEBUG_KEYMAP = false;
+
+        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
+            ENABLE_DEBUG_KEYMAP = !ENABLE_DEBUG_KEYMAP;
+        }
+
+        if (ENABLE_DEBUG_KEYMAP) {
+            bool debugkey = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE);
+            bool debuggp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2);
+            if (debugkey || debuggp) {
+                gstate->debug = !gstate->debug;
+                gstate->update = !gstate->debug;
+                gstate->debug_ever = true;
+                DEBUG_EVER = true;
+            }
+            if (gstate->debug) {
+                bool updatekey = IsKeyPressed(KEY_U);
+                bool updategp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
+                if (updatekey || updategp) {
+                    gstate->update = !gstate->update;
+                }
+            }
         }
     }
 
