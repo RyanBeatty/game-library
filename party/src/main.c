@@ -4327,7 +4327,7 @@ static void Scene5Tick(GameState* gstate) {
                             e->pos = Vec3Add(e->pos, dx);
                         }
 
-                        e->straight_shot = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
+                        e->straight_shot = IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
                     }
                 }
 
