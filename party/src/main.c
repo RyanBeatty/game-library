@@ -1554,6 +1554,8 @@ typedef struct Entity {
     f32 hit_timer;
     i32 last_hit;  // entity id. signed to set to -1 for sentinel val.
 
+    bool straight;
+
     u32 health;
 
     struct {
@@ -4236,7 +4238,7 @@ static void Scene5Tick(GameState* gstate) {
         }
     }
 
-    // Scene4 update.
+    // Scene5 update.
     {
         if (gstate->debug) {
             static const u8 GAMEPAD_ID = 0;
@@ -4654,7 +4656,9 @@ static void Scene5Tick(GameState* gstate) {
             }
 
             // Draw background
-            { AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1); }
+            {
+                AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1);
+            }
 
             // Draw.
             for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
@@ -4766,7 +4770,9 @@ static void GameStateInit(GameState* gstate) {
     SetTargetFPS(60);
     DisableCursor();
 
-    { glEnable(GL_DEPTH_TEST); }
+    {
+        glEnable(GL_DEPTH_TEST);
+    }
 
     // Register scenes.
     {
