@@ -4441,109 +4441,29 @@ static void Scene5Tick(GameState* gstate) {
                                             // the surface. some texts treat it the other way around.
                                             Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
                                             Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                            vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
 
-                                            // {
-                                            //     u32 faceidx = 0;
-                                            //     if (Vec3Eq(normal, Vec3Lit(1.0f, 0.0f, 0.0f))) {
-                                            //         faceidx = 1;
-                                            //     } else if (Vec3Eq(normal, Vec3Lit(-1.0f, 0.0f, 0.0f))) {
-                                            //         faceidx = 2;
-                                            //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 1.0f, 0.0f))) {
-                                            //         faceidx = 3;
-                                            //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, -1.0f, 0.0f))) {
-                                            //         faceidx = 4;
-                                            //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, 1.0f))) {
-                                            //         faceidx = 5;
-                                            //     } else if (Vec3Eq(normal, Vec3Lit(0.0f, 0.0f, -1.0f))) {
-                                            //         faceidx = 6;
-                                            //     }
+                                            // Sphere s = EntityBoundingVolume(eball).sphere;
+                                            // Vec3 normball = Vec3Negate(normal);
+                                            // Vec3 cpball = Vec3Add(s.c, Vec3Scale(normball, s.r));
 
-                                            //     Vec3 translate = eplayer->pos;
-                                            //     Vec3 scale = eplayer->scale;
-                                            //     Vec3 points[4] = {0};
-                                            //     u32 psize = 4;
-                                            //     switch (faceidx) {
-                                            //         case 1: {
-                                            //             points[0] = Vec3Lit(1.0f, 1.0f, 1.0f);
-                                            //             points[1] = Vec3Lit(1.0f, -1.0f, 1.0f);
-                                            //             points[2] = Vec3Lit(1.0f, -1.0f, -1.0f);
-                                            //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
-                                            //             break;
-                                            //         }
-                                            //         case 2: {
-                                            //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
-                                            //             points[1] = Vec3Lit(-1.0f, -1.0f, -1.0f);
-                                            //             points[2] = Vec3Lit(-1.0f, -1.0f, 1.0f);
-                                            //             points[3] = Vec3Lit(-1.0f, 1.0f, 1.0f);
-                                            //             break;
-                                            //         }
-                                            //         case 3: {
-                                            //             points[0] = Vec3Lit(-1.0f, 1.0f, -1.0f);
-                                            //             points[1] = Vec3Lit(-1.0f, 1.0f, 1.0f);
-                                            //             points[2] = Vec3Lit(1.0f, 1.0f, 1.0f);
-                                            //             points[3] = Vec3Lit(1.0f, 1.0f, -1.0f);
-                                            //             break;
-                                            //         }
-                                            //         case 4: {
-                                            //             points[0] = Vec3Lit(-1.0f, -1.0f, -1.0f);
-                                            //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
-                                            //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
-                                            //             points[3] = Vec3Lit(-1.0f, -1.0f, 1.0f);
-                                            //             break;
-                                            //         }
-                                            //         case 5: {
-                                            //             points[0] = Vec3Lit(-1.0f, 1.0f, 1.0f);
-                                            //             points[1] = Vec3Lit(-1.0f, -1.0f, 1.0f);
-                                            //             points[2] = Vec3Lit(1.0f, -1.0f, 1.0f);
-                                            //             points[3] = Vec3Lit(1.0f, 1.0f, 1.0f);
-                                            //             break;
-                                            //         }
-                                            //         case 6: {
-                                            //             points[0] = Vec3Lit(1.0f, 1.0f, -1.0f);
-                                            //             points[1] = Vec3Lit(1.0f, -1.0f, -1.0f);
-                                            //             points[2] = Vec3Lit(-1.0f, -1.0f, -1.0f);
-                                            //             points[3] = Vec3Lit(-1.0f, 1.0f, -1.0f);
-                                            //             break;
-                                            //         }
-                                            //         default: {
-                                            //             TraceLog(LOG_ERROR, "bad faceidx %d", faceidx);
-                                            //             exit(1);
-                                            //         }
-                                            //     }
+                                            // AABB aabb = EntityBoundingVolume(eplayer).aabb;
+                                            // Vec3 center = aabb.c;
+                                            // center.x += aabb.r.x * normal.x;
+                                            // center.y += aabb.r.y * normal.y;
+                                            // center.z += aabb.r.z * normal.z;
 
-                                            //     Mat4 m = Mat4Multiply(Mat4TranslateV(translate), Mat4ScaleV(scale));
-                                            //     for (u32 vi = 0; vi < psize; ++vi) {
-                                            //         points[vi] = Vec3WTransform(points[vi], m);
-                                            //     }
+                                            // f32 dist = Vec3Len(Vec3Sub(cpball, center));
+                                            // breakpoint();
 
-                                            //     Vec3 aabbcenter = ComputeCentroid(points, psize);
-
-                                            //     Polyhedron p = EntityBoundingVolume(eball);
-                                            //     Vec3 cp = Vec3Add(p.sphere.c, Vec3Scale(normal, collision->depth));
-
-                                            //     TraceLog(LOG_INFO, "center %f %f %f || cp %f %f %f", aabbcenter.x,
-                                            //     aabbcenter.y,
-                                            //              aabbcenter.z, cp.x, cp.y, cp.z);
-                                            //     // Vec3 dir = Vec3Sub(cp, aabbcenter);
-
-                                            //     // Vec3 axis = Vec3Lit(1.0f, 0.0f, 0.0f);
-                                            //     // center = Vec3Project(center, axis);
-
-                                            //     // f32 d = Vec3Dot(cp, axis);
-                                            //     // // Vec3 cp = Vec3Project(Vec3Add(p.aabb.c, Vec3Scale(normal,
-                                            //     collision->depth)),
-                                            //     // // axis);
-
-                                            //     // // Vec3 diff = Vec3Sub(cp, center);
-                                            //     // // f32 d = Vec3Len(diff);
-                                            //     // if (d >= 0.0f) {
-                                            //     //     TraceLog(LOG_INFO, "right");
-                                            //     // } else {
-                                            //     //     TraceLog(LOG_INFO, "left");
-                                            //     // }
+                                            // f32 angle = 0.0f;
+                                            // if (dist > 0.5f) {
                                             // }
 
-                                            vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                                            // Vec3 dir =
+                                            //     Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(angle));
+                                            // vnew = Vec3Scale(dir, Vec3Len(eball->v));
+
                                         } else {
                                             // special case dead on collision for now.
                                             // since we are 2d game logic, just pick the zaxis as the rotation axis.
