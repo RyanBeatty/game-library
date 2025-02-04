@@ -714,8 +714,8 @@ static LShader GetShader2D() {
         "out vec4 fColor;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   gl_Position = vec4(vPos.xyz, 1.0);\n"
+        "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
+        // "   gl_Position = vModel * vec4(vPos.xy, 0.0, 1.0);\n"
         "   fColor = vUColor;\n"
         "}\0";
 
@@ -3158,7 +3158,7 @@ static void Scene2Tick(GameState* gstate) {
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
 
-        Mat4 model = Mat4Identity();
+        Mat4 model = Mat4Scale(100.0f);
 
         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
         glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
