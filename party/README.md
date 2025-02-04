@@ -27,6 +27,7 @@ TODO
         point in same normal, then also use those verts to clip.
 * Rendering
     * get lights + lighting working again.
+    * 2d/orthographic rendering 
 * Core
     * impl loading blender scene
     * impl hot reloading

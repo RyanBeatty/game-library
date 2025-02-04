@@ -387,6 +387,17 @@ static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
                    0.0f, 0.0f, -1.0f, 0.0f);
 }
 
+// FoGED 6.3.4
+static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
+    f32 w_inv = 1.0f / (right - left);
+    f32 h_inv = 1.0f / (bottom - top);
+    f32 d_inv = 1.0f / (far - near);
+    return Mat4Lit(2.0f * w_inv, 0.0f, 0.0f, -(right + left) * w_inv,  //
+                   0.0f, 2.0f * h_inv, 0.0f, -(bottom + top) * h_inv,  //
+                   0.0f, 0.0f, d_inv, -near * d_inv,                   //
+                   0.0f, 0.0f, 0.0f, 1.0f);
+}
+
 // Eye is world space pos of camera. Target is what it is looking at in worldspace.
 // Up just needs to be pointing somewhere along the plane between the +z and where you want the +y
 // axis to be.
@@ -690,46 +701,53 @@ static LShader GetShader() {
     return SHADER;
 }
 
-// // Shader that will draw light sources without lighting calculations effecting the color.
-// static LShader GetUnlitShader() {
-//     static const char* VSRC =
-//         "#version 330 core\n"
-//         "layout (location = 0) in vec3 vPos;\n"
-//         "\n"
-//         "uniform mat4 vModel;\n"
-//         "uniform mat4 vView;\n"
-//         "uniform mat4 vProj;\n"
-//         "\n"
-//         "void main()\n"
-//         "{\n"
-//         "   gl_Position = vProj * vView * vModel * vec4(vPos, 1.0);\n"
-//         "}\0";
+static LShader GetShader2D() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "\n"
+        "uniform mat4 vModel;\n"
+        "uniform mat4 vProj;\n"
+        "\n"
+        "uniform vec4 vUColor;\n"
+        "\n"
+        "out vec4 fColor;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   fColor = vUColor;\n"
+        "}\0";
 
-//     static const char* FSRC =
-//         "#version 330 core\n"
-//         "out vec4 FragColor;\n"
-//         "void main()\n"
-//         "{\n"
-//         "    FragColor = vec4(0.0, 0.0, 0.5, 1.0);\n"
-//         "}\0";
-//     static bool INIT = false;
-//     static LShader SHADER = {0};
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec4 fColor;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = fColor;\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
 
-//     if (!INIT) {
-//         INIT = true;
-//         LShaderInit(&SHADER, VSRC, FSRC);
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
 
-//         // Att lookup.
-//         {
-//             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-//             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-//             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-//             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-//         }
-//     }
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
 
-//     return SHADER;
-// }
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+        }
+    }
+
+    return SHADER;
+}
 
 typedef enum AttLoc {
     LOC_POS_X = 0,
@@ -3007,10 +3025,36 @@ static void Scene2Tick(GameState* gstate) {
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
 
+    static u32 VAO2 = 0;
+    static u32 VBO2 = 0;
+
     f32 dt = gstate->dt;
 
     // Init logic.
     if (!gstate->init) {
+        f32 vertices[] = {
+            // pos      // tex
+            0.0f, 1.0f, 0.0f, 1.0f,  //
+            1.0f, 0.0f, 1.0f, 0.0f,  //
+            0.0f, 0.0f, 0.0f, 0.0f,  //
+
+            0.0f, 1.0f, 0.0f, 1.0f,  //
+            1.0f, 1.0f, 1.0f, 1.0f,  //
+            1.0f, 0.0f, 1.0f, 0.0f   //
+        };
+
+        glGenVertexArrays(1, &VAO2);
+        glGenBuffers(1, &VBO2);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glBindVertexArray(VAO2);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -3061,57 +3105,8 @@ static void Scene2Tick(GameState* gstate) {
 
     // Update logic.
     {
-        // Camera movement.
         {
-            static const u8 GAMEPAD_ID = 0;
-            static bool FREECAM = false;
-
-            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
-                FREECAM = !FREECAM;
-            }
-
-            // Left stick movement.
-            {
-                static const f32 WALK_VEL = 20.0f;
-                static const f32 RUN_VEL = 2.0f * WALK_VEL;
-
-                f32 vel = WALK_VEL;
-                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-                    vel = RUN_VEL;
-                }
-
-                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                Vec3 dir_model = Vec3Lit(x, 0.0f, y);
-
-                Vec3 bodyorient = vieworient;
-                // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
-                bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
-                Mat4 rotation = Mat4RotateEuler(bodyorient);
-
-                Vec3 dir_world = Vec3Transform(dir_model, rotation);
-                Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
-                viewpos = Vec3Add(viewpos, mov_world);
-            }
-
-            // Right stick movement.
-            {
-                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                if (x != 0.0f || y != 0.0f) {
-                    static const rad VEL = Deg2Rad(90.0f);
-
-                    // rotate orient.
-                    vieworient.yaw += -1.0f * x * VEL * dt;
-                    vieworient.pitch += y * VEL * dt;
-                    // Clamp pitch to avoid looking too high/low which would sign flip things.
-                    vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
-                }
-            }
-        }
-
-        {
-            LShader shader = GetShader();
+            LShader shader = GetShader2D();
 
             // QUAD.
             {
@@ -3139,9 +3134,6 @@ static void Scene2Tick(GameState* gstate) {
             glBindVertexArray(VAO);
         }
 
-        Mat4 view = GetCameraMat(viewpos, vieworient);
-        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-
         // Enable/Disable culling.
         // TODO: Make this nicer at some point. Useful for debugging.
         {
@@ -3151,38 +3143,6 @@ static void Scene2Tick(GameState* gstate) {
                 glEnable(GL_CULL_FACE);
                 glCullFace(GL_BACK);
                 glFrontFace(GL_CCW);
-            }
-        }
-
-        // Use shader + setup norm + view + proj matrix.
-        LShader shader = GetShader();
-        {
-            glUseProgram(shader.pid);
-            {
-                // Calculate the sun direction in view space (only factoring in rotation).
-                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
-                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
-                Mat4 norm = Mat4Transpose(Mat4Invert(view));
-                norm.v.d = Vec3Zero();
-                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
-                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
-            }
-            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
-            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-        }
-
-        for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
-            DrawCmd* cmd = &CBUFFER[i];
-            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            if (cmd->wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            }
-            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
-            if (cmd->wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
         }
 
