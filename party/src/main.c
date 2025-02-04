@@ -715,6 +715,7 @@ static LShader GetShader2D() {
         "void main()\n"
         "{\n"
         "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   gl_Position = vec4(vPos.xyz, 1.0);\n"
         "   fColor = vUColor;\n"
         "}\0";
 
@@ -727,7 +728,8 @@ static LShader GetShader2D() {
         "\n"
         "void main()\n"
         "{\n"
-        "   FragColor = fColor;\n"
+        // "   FragColor = fColor;\n"
+        "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
@@ -3043,17 +3045,18 @@ static void Scene2Tick(GameState* gstate) {
             1.0f, 0.0f, 1.0f, 0.0f   //
         };
 
+        LShader shader = GetShader2D();
+
         glGenVertexArrays(1, &VAO2);
         glGenBuffers(1, &VBO2);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
         glBindVertexArray(VAO2);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glEnableVertexAttribArray(shader.vpos_loc);
+        glVertexAttribPointer(shader.vpos_loc, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -3131,7 +3134,7 @@ static void Scene2Tick(GameState* gstate) {
             BeginDrawing();
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindVertexArray(VAO);
+            glBindVertexArray(VAO2);
         }
 
         // Enable/Disable culling.
@@ -3145,6 +3148,28 @@ static void Scene2Tick(GameState* gstate) {
                 glFrontFace(GL_CCW);
             }
         }
+
+        Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
+
+        LShader shader = GetShader2D();
+
+        {
+            glUseProgram(shader.pid);
+            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+        }
+
+        Mat4 model = Mat4Identity();
+
+        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+        glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
+        // if (cmd->wireframe) {
+        //     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // }
+        glBindVertexArray(VAO2);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // if (cmd->wireframe) {
+        //     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        // }
 
         EndDrawing();
         CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
