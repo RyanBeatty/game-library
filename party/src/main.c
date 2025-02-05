@@ -715,8 +715,8 @@ static LShader GetShader2D() {
         "out vec4 fColor;\n"
         "void main()\n"
         "{\n"
+        // TODO: Incorporate camera at some point.
         "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
-        // "   gl_Position = vModel * vec4(vPos.xy, 0.0, 1.0);\n"
         "   fColor = vUColor;\n"
         "}\0";
 
@@ -729,8 +729,9 @@ static LShader GetShader2D() {
         "\n"
         "void main()\n"
         "{\n"
-        // "   FragColor = fColor;\n"
-        "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+        "   FragColor = fColor;\n"
+        // useful for debug.
+        // "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
