@@ -576,6 +576,9 @@ typedef struct LShader {
 } LShader;
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
+    char error[1024] = {0};
+    u32 size = ArraySizeOf(error);
+
     // vertex shader.
     {
         i32 success = 0;
@@ -583,7 +586,11 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
         glShaderSource(shader->vid, 1, &vsrc, NULL);
         glCompileShader(shader->vid);
         glGetShaderiv(shader->vid, GL_COMPILE_STATUS, &success);
-        Assert(success);
+        if (!success) {
+            glGetShaderInfoLog(shader->vid, size, NULL, error);
+            TraceLog(LOG_ERROR, "Error compiling vertex shader: %s", error);
+            Assert(false);
+        }
     }
 
     // fragment shader.
@@ -593,7 +600,11 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
         glShaderSource(shader->fid, 1, &fsrc, NULL);
         glCompileShader(shader->fid);
         glGetShaderiv(shader->fid, GL_COMPILE_STATUS, &success);
-        Assert(success);
+        if (!success) {
+            glGetShaderInfoLog(shader->fid, size, NULL, error);
+            TraceLog(LOG_ERROR, "Error compiling fragment shader: %s", error);
+            Assert(false);
+        }
     }
 
     // linking.
@@ -713,8 +724,10 @@ static LShader GetShader2D() {
         "uniform vec4 vUColor;\n"
         "\n"
         "out vec4 fColor;\n"
+        "out vec2 fTextCoords;\n"
         "void main()\n"
         "{\n"
+        // "   fTextCoords = vec2(vPos.z, vPos.w);\n"
         // TODO: Incorporate camera at some point.
         "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
         "   fColor = vUColor;\n"
@@ -724,6 +737,9 @@ static LShader GetShader2D() {
         "#version 330 core\n"
         "\n"
         "in vec4 fColor;\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
         "\n"
         "out vec4 FragColor;\n"
         "\n"
@@ -3034,6 +3050,7 @@ static void Scene2Tick(GameState* gstate) {
 
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
+    static u32 TID = 0;
 
     f32 dt = gstate->dt;
 
@@ -3066,6 +3083,11 @@ static void Scene2Tick(GameState* gstate) {
         i32 x, y, n;
         u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
         Assert(data != NULL);
+
+        glGenTextures(0, &TID);
+        glBindTexture(GL_TEXTURE_2D, TID);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
         stbi_image_free(data);
 
