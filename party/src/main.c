@@ -3063,6 +3063,12 @@ static void Scene2Tick(GameState* gstate) {
         glEnableVertexAttribArray(shader.vpos_loc);
         glVertexAttribPointer(shader.vpos_loc, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 
+        i32 x, y, n;
+        u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
+        Assert(data != NULL);
+
+        stbi_image_free(data);
+
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
