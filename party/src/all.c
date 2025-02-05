@@ -9,6 +9,7 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 // Only define once.
+// TODO: Looks like raylib already defines this. Comment back in after removing raylib support.
 // #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 //
