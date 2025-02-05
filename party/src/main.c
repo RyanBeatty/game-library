@@ -388,6 +388,7 @@ static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
 }
 
 // FoGED 6.3.4
+// maps (left, bottom) -> (-1, -1)
 static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
     f32 w_inv = 1.0f / (right - left);
     f32 h_inv = 1.0f / (bottom - top);
@@ -3037,12 +3038,12 @@ static void Scene2Tick(GameState* gstate) {
         f32 vertices[] = {
             // pos      // tex
             0.0f, 1.0f, 0.0f, 1.0f,  //
-            1.0f, 0.0f, 1.0f, 0.0f,  //
             0.0f, 0.0f, 0.0f, 0.0f,  //
+            1.0f, 0.0f, 1.0f, 0.0f,  //
 
             0.0f, 1.0f, 0.0f, 1.0f,  //
+            1.0f, 0.0f, 1.0f, 0.0f,  //
             1.0f, 1.0f, 1.0f, 1.0f,  //
-            1.0f, 0.0f, 1.0f, 0.0f   //
         };
 
         LShader shader = GetShader2D();
