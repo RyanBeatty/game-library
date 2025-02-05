@@ -1495,6 +1495,9 @@ static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* norma
     // polyedron types, then we just say they never collide.
     // IMPORTANT: If you are adding new entries here, you need to handle a vs b and b vs a
     // comparisons.
+    // TODO: Can we make this nicer? Could we literally turn this into a table and just make reverse
+    // functions? ex. Take TestSphereVsAABB. we could make TestAABBVsSphere and have it call the former function
+    // and add negation to the collision normal.
     if (a->type == PH_SPHERE) {
         if (b->type == PH_AABB) {
             collides = TestSphereVsAABB(a->sphere, b->aabb, &n, &d);
