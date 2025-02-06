@@ -632,21 +632,19 @@ static LShader GetShader() {
         "uniform vec4 vUColor;\n"
         "\n"
         "out vec4 fColor;\n"
-        "out vec3 fNormal;\n"
         "void main()\n"
         "{\n"
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
         "   fColor = vUColor;\n"
         // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
         // more robust way to do this. also consider moving this calc to CPU.
-        "   fNormal = mat3(transpose(inverse(vView * vModel))) * vNormal;\n"
+        // "   fNormal = mat3(transpose(inverse(vView * vModel))) * vNormal;\n"
         "}\0";
 
     static const char* FSRC =
         "#version 330 core\n"
         "\n"
         "in vec4 fColor;\n"
-        "in vec3 fNormal;\n"
         "\n"
         "out vec4 FragColor;\n"
         "\n"
