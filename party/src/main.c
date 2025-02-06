@@ -651,40 +651,10 @@ static LShader GetShader() {
         "in vec4 fColor;\n"
         "in vec3 fNormal;\n"
         "\n"
-        "uniform vec4 fLightDirIn;\n"
-        "uniform vec4 fLightColor;\n"
-        "\n"
         "out vec4 FragColor;\n"
         "\n"
         "void main()\n"
         "{\n"
-        "\n"
-        "   vec4 nLightDirIn = normalize(fLightDirIn);\n"
-        "   vec4 norm = vec4(normalize(fNormal).xyz, 0.0f);\n"
-        "   vec3 eyePos = vec3(0.0, 0.0, 0.0);\n"
-        "\n"
-        // Ambient.
-        "\n"
-        "   float mat_ambient = 0.1;\n"
-        "   vec3 ambient = (mat_ambient * fLightColor).xyz;\n"
-        // Diffuse.
-        "\n"
-        "   float diff = max(dot(norm, -nLightDirIn), 0.0);\n"
-        "   vec3 diffuse = diff * fLightColor.xyz;\n"
-        "\n"
-        // specular.
-        "\n"
-        // controls wide specular highlight is. higher = tighter highlight with faster falloff.
-        "   float mat_glossy = 32.0;\n"
-        // controls intensity of specular highlight (i.e. how bright/dark).
-        // TODO: Some part of this is not woking I think.
-        "   float mat_spec = 0.5;\n"
-        "   vec4 eyeDirOut = vec4(normalize(eyePos - fPosEye).xyz, 0.0);\n"
-        "   vec4 nLightDirOut = normalize(reflect(nLightDirIn, norm));\n"
-        "   float spec = pow(max(dot(nLightDirOut, eyeDirOut), 0.0), mat_glossy);\n"
-        "   vec3 specular = spec * mat_spec * fLightColor.xyz;\n"
-        "\n"
-        "   FragColor = vec4(fColor.xyz * (ambient + diffuse + specular), 1.0);\n"
         "   FragColor = fColor;\n"
         "}\0";
     static bool INIT = false;
