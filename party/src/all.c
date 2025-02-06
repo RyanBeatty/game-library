@@ -19,6 +19,7 @@
 // Comment to prevent autolinting
 #include <float.h>
 #include <math.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>

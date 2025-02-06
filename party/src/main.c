@@ -1192,9 +1192,9 @@ static void RenderDataInit() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
     glEnableVertexAttribArray(shader.vpos_loc);
-    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(shader.vnormal_loc);
 }
 
