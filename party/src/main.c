@@ -845,7 +845,6 @@ static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = VBUFFER_SIZE;
     u32 ioffset = IBUFFER_SIZE;
 
-    Assert(vsize % 3 == 0);
     Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
     Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
 
@@ -957,17 +956,17 @@ static void RenderDataInit() {
     // Quad.
     {
         // quad is aligned with the xy plane.
-        Vertex vs[] = {
-            {{{-0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},
-            {{{-0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},
-            {{{0.5f, -0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},
-            {{{0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.31f, 0.0f, 0.0f, 1.0f}}},
+        Vec3 vs[] = {
+            Vec3Lit(-0.5f, 0.5f, 0.0f),
+            Vec3Lit(-0.5f, -0.5f, 0.0f),
+            Vec3Lit(0.5f, -0.5f, 0.0f),
+            Vec3Lit(0.5f, 0.5f, 0.0f),
         };
-        f32 ts[] = {
-            0, 1, 2,  //
-            2, 3, 0   //
+        Triangle ts[] = {
+            TriLit(0, 1, 2),  //
+            TriLit(2, 3, 0),  //
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // ISO TRIANGLE Mesh.
