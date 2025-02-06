@@ -971,13 +971,13 @@ static void RenderDataInit() {
 
     // ISO TRIANGLE Mesh.
     {
-        Vertex vs[] = {
-            {{{0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
-            {{{-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
-            {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
+        Vec3 vs[] = {
+            Vec3Lit(0.0f, 1.0f, 0.0f),
+            Vec3Lit(-1.0f, 0.0f, 0.0f),
+            Vec3Lit(1.0f, 0.0f, 0.0f),
         };
-        f32 ts[] = {0, 1, 2};
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        Triangle ts[] = {TriLit(0, 1, 2)};
+        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // PYRAMID Mesh.
