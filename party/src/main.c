@@ -982,30 +982,30 @@ static void RenderDataInit() {
 
     // PYRAMID Mesh.
     {
-        Vertex vs[] = {
+        Vec3 vs[] = {
             // Base
-            {{{-1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},   //
-            {{{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},  //
-            {{{1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f}}},   //
-            {{{1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},    //
+            Vec3Lit(-1.0f, 1.0f, 0.0f),   //
+            Vec3Lit(-1.0f, -1.0f, 0.0f),  //
+            Vec3Lit(1.0f, -1.0f, 0.0f),   //
+            Vec3Lit(1.0f, 1.0f, 0.0f),    //
 
             // Top point.
-            {{{0.0f, 0.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},  //
+            Vec3Lit(0.0f, 0.0f, -1.0f),  //
         };
-        f32 ts[] = {
+        Triangle ts[] = {
             // Base
-            0, 1, 2,  //
-            2, 3, 0,  //
+            TriLit(0, 1, 2),  //
+            TriLit(2, 3, 0),  //
             // Top
-            0, 3, 4,  //
+            TriLit(0, 3, 4),  //
             // Left
-            1, 0, 4,  //
+            TriLit(1, 0, 4),  //
             // Right
-            3, 2, 4,  //
+            TriLit(3, 2, 4),  //
             // Bottom
-            2, 1, 4,  //
+            TriLit(2, 1, 4),  //
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // 2S ISO TRIANGLE Mesh.
