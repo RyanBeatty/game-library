@@ -568,6 +568,7 @@ typedef struct LShader {
     u32 vmodel_loc;
     u32 vview_loc;
     u32 vproj_loc;
+    u32 vtextcoords_loc;
     u32 vucolor_loc;
 
     // frag shader.
@@ -717,6 +718,7 @@ static LShader GetShader2D() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 1) in vec2 vTextCoords;\n"
         "\n"
         "uniform mat4 vModel;\n"
         "uniform mat4 vProj;\n"
@@ -759,6 +761,7 @@ static LShader GetShader2D() {
         // Att lookup.
         {
             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
 
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
@@ -3057,14 +3060,14 @@ static void Scene2Tick(GameState* gstate) {
     // Init logic.
     if (!gstate->init) {
         f32 vertices[] = {
-            // pos      // tex
-            0.0f, 1.0f, 0.0f, 1.0f,  //
-            0.0f, 0.0f, 0.0f, 0.0f,  //
-            1.0f, 0.0f, 1.0f, 0.0f,  //
+            // pos            // tex
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f,  //
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,  //
+            1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  //
 
-            0.0f, 1.0f, 0.0f, 1.0f,  //
-            1.0f, 0.0f, 1.0f, 0.0f,  //
-            1.0f, 1.0f, 1.0f, 1.0f,  //
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f,  //
+            1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  //
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  //
         };
 
         LShader shader = GetShader2D();
@@ -3078,7 +3081,7 @@ static void Scene2Tick(GameState* gstate) {
         glBindVertexArray(VAO2);
         glBindBuffer(GL_ARRAY_BUFFER, VBO2);
         glEnableVertexAttribArray(shader.vpos_loc);
-        glVertexAttribPointer(shader.vpos_loc, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 
         i32 x, y, n;
         u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
