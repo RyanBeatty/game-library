@@ -3217,14 +3217,8 @@ static void Scene2Tick(GameState* gstate) {
 
         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
         glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
-        // if (cmd->wireframe) {
-        //     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        // }
-        glBindVertexArray(VAO2);
+
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        // if (cmd->wireframe) {
-        //     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        // }
 
         EndDrawing();
         CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
