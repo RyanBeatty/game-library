@@ -572,8 +572,6 @@ typedef struct LShader {
     u32 vucolor_loc;
 
     // frag shader.
-    u32 flightdirin_loc;
-    u32 flight_color_loc;
 } LShader;
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
@@ -702,8 +700,6 @@ static LShader GetShader() {
             SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "vNormal");
             SHADER.vcolor_loc = glGetAttribLocation(SHADER.pid, "vColor");
 
-            SHADER.flightdirin_loc = glGetUniformLocation(SHADER.pid, "fLightDirIn");
-            SHADER.flight_color_loc = glGetUniformLocation(SHADER.pid, "fLightColor");
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
@@ -3009,16 +3005,14 @@ static void Scene1Tick(GameState* gstate) {
         LShader shader = GetShader();
         {
             glUseProgram(shader.pid);
-            {
-                // Calculate the sun direction in view space (only factoring in rotation).
-                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
-                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
-                Mat4 norm = Mat4Transpose(Mat4Invert(view));
-                norm.v.d = Vec3Zero();
-                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
-                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
-            }
-            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
+            // {
+            //     // Calculate the sun direction in view space (only factoring in rotation).
+            //     Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
+            //     // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
+            //     Mat4 norm = Mat4Transpose(Mat4Invert(view));
+            //     norm.v.d = Vec3Zero();
+            //     Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
+            // }
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
@@ -3540,16 +3534,6 @@ static void Scene3Tick(GameState* gstate) {
         LShader shader = GetShader();
         {
             glUseProgram(shader.pid);
-            {
-                // Calculate the sun direction in view space (only factoring in rotation).
-                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
-                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
-                Mat4 norm = Mat4Transpose(Mat4Invert(view));
-                norm.v.d = Vec3Zero();
-                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
-                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
-            }
-            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
@@ -4015,16 +3999,6 @@ static void Scene4Tick(GameState* gstate) {
         LShader shader = GetShader();
         {
             glUseProgram(shader.pid);
-            {
-                // Calculate the sun direction in view space (only factoring in rotation).
-                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
-                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
-                Mat4 norm = Mat4Transpose(Mat4Invert(view));
-                norm.v.d = Vec3Zero();
-                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
-                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
-            }
-            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
@@ -4596,16 +4570,6 @@ static void Scene5Tick(GameState* gstate) {
         LShader shader = GetShader();
         {
             glUseProgram(shader.pid);
-            {
-                // Calculate the sun direction in view space (only factoring in rotation).
-                Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
-                // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
-                Mat4 norm = Mat4Transpose(Mat4Invert(view));
-                norm.v.d = Vec3Zero();
-                Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
-                glUniform4f(shader.flightdirin_loc, lightdir_eye.x, lightdir_eye.y, lightdir_eye.z, 0.0f);
-            }
-            glUniform4f(shader.flight_color_loc, 1.0f, 1.0f, 1.0f, 1.0f);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
