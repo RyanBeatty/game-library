@@ -1010,19 +1010,19 @@ static void RenderDataInit() {
 
     // 2S ISO TRIANGLE Mesh.
     {
-        Vertex vs[] = {
-            {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
-            {{{-0.5f, 0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
-            {{{-0.5f, -0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}}},
-            {{{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
-            {{{-0.5f, -0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
-            {{{-0.5f, 0.866f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f}}},
+        Vec3 vs[] = {
+            Vec3Lit(1.0f, 0.0f, 0.0f),      //
+            Vec3Lit(-0.5f, 0.866f, 0.0f),   //
+            Vec3Lit(-0.5f, -0.866f, 0.0f),  //
+            Vec3Lit(1.0f, 0.0f, 0.0f),      //
+            Vec3Lit(-0.5f, -0.866f, 0.0f),  //
+            Vec3Lit(-0.5f, 0.866f, 0.0f),   //
         };
-        f32 ts[] = {
-            0, 1, 2,  //
-            3, 4, 5,  //
+        Triangle ts[] = {
+            TriLit(0, 1, 2),  //
+            TriLit(3, 4, 5),  //
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // Icosahedron Mesh.
