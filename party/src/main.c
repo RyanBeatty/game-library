@@ -747,8 +747,7 @@ static LShader GetShader2D() {
         "\n"
         "void main()\n"
         "{\n"
-        "    FragColor = texture(texture0, fTextCoords);\n"
-        // "    FragColor = fColor * texture(texture0, fTextCoords);\n"
+        "    FragColor = fColor * texture(texture0, fTextCoords);\n"
         // "   FragColor = fColor;\n"
         // useful for debug.
         // "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
