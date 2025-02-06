@@ -755,15 +755,8 @@ typedef struct VAtt {
 } VAtt;
 
 typedef struct Vertex {
-    union {
-        f32 f[sizeof(Vec3) * 3];
-
-        struct {
-            Vec3 pos;
-            Vec3 color;
-            Vec3 normal;
-        };
-    };
+    Vec3 pos;
+    Vec3 normal;
 } Vertex;
 
 typedef struct Triangle {
@@ -842,7 +835,7 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     }
 
     for (u32 i = 0; i < vsize; ++i) {
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .color = Vec3Zero()};
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i]};
     }
 
     LMesh* mesh = &MESHES[MESHES_SIZE];
@@ -1204,9 +1197,7 @@ static void RenderDataInit() {
 
     glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(shader.vpos_loc);
-    glVertexAttribPointer(shader.vcolor_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(shader.vcolor_loc);
-    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(shader.vnormal_loc);
 }
 
