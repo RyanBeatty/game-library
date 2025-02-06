@@ -3213,7 +3213,10 @@ static void Scene2Tick(GameState* gstate) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, TID);
 
-        Mat4 model = Mat4Scale(300.0f);
+        Mat4 scale = Mat4Scale(300.0f);
+        Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
+        Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
+        Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
         glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
