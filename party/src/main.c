@@ -3090,6 +3090,7 @@ static void Scene2Tick(GameState* gstate) {
                               (void*)(3 * sizeof(float)));
 
         i32 x, y, n;
+        stbi_set_flip_vertically_on_load(true);
         u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
         Assert(data != NULL);
 
@@ -3103,7 +3104,7 @@ static void Scene2Tick(GameState* gstate) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
         stbi_image_free(data);
 
