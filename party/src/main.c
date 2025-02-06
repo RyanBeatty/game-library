@@ -564,7 +564,6 @@ typedef struct LShader {
     // vert shader.
     u32 vpos_loc;
     u32 vnormal_loc;
-    u32 vcolor_loc;
     u32 vmodel_loc;
     u32 vview_loc;
     u32 vproj_loc;
@@ -622,7 +621,6 @@ static LShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 1) in vec3 vColor;\n"
         "layout (location = 2) in vec3 vNormal;\n"
         "\n"
         "uniform mat4 vModel;\n"
@@ -663,7 +661,6 @@ static LShader GetShader() {
         {
             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
             SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "vNormal");
-            SHADER.vcolor_loc = glGetAttribLocation(SHADER.pid, "vColor");
 
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
