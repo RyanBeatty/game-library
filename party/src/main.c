@@ -729,7 +729,7 @@ static LShader GetShader2D() {
         "out vec2 fTextCoords;\n"
         "void main()\n"
         "{\n"
-        // "   fTextCoords = vec2(vPos.z, vPos.w);\n"
+        "   fTextCoords = vTextCoords;\n"
         // TODO: Incorporate camera at some point.
         "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
         "   fColor = vUColor;\n"
@@ -747,7 +747,9 @@ static LShader GetShader2D() {
         "\n"
         "void main()\n"
         "{\n"
-        "   FragColor = fColor;\n"
+        "    FragColor = texture(texture0, fTextCoords);\n"
+        // "    FragColor = fColor * texture(texture0, fTextCoords);\n"
+        // "   FragColor = fColor;\n"
         // useful for debug.
         // "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
         "}\0";
@@ -3083,16 +3085,30 @@ static void Scene2Tick(GameState* gstate) {
         glEnableVertexAttribArray(shader.vpos_loc);
         glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 
+        glEnableVertexAttribArray(shader.vtextcoords_loc);
+        glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                              (void*)(3 * sizeof(float)));
+
         i32 x, y, n;
         u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
         Assert(data != NULL);
 
-        glGenTextures(0, &TID);
+        glGenTextures(1, &TID);
         glBindTexture(GL_TEXTURE_2D, TID);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                        GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // set texture filtering parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
         stbi_image_free(data);
+
+        glUseProgram(shader.pid);
+        glUniform1i(glGetUniformLocation(shader.pid, "texture0"), 0);
 
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -3194,7 +3210,10 @@ static void Scene2Tick(GameState* gstate) {
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
 
-        Mat4 model = Mat4Scale(100.0f);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, TID);
+
+        Mat4 model = Mat4Scale(300.0f);
 
         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
         glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
