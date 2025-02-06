@@ -817,31 +817,7 @@ static LMesh GetMesh(u32 mid) {
     return MESHES[mid];
 }
 
-static void AddMesh(Vertex* vs, u32 vsize, f32* ts, u32 tsize) {
-    for (u32 i = 0; i < vsize; ++i) {
-        VBUFFER[VBUFFER_SIZE + i] = vs[i];
-    }
-    u32 vbufferidx = VBUFFER_SIZE;
-    VBUFFER_SIZE += vsize;
-    Assert(VBUFFER_SIZE <= MAX_VERTICES);
-
-    for (u32 i = 0; i < tsize; ++i) {
-        IBUFFER[IBUFFER_SIZE + i] = vbufferidx + ts[i];
-    }
-    u32 ibufferidx = IBUFFER_SIZE;
-    IBUFFER_SIZE += tsize;
-    Assert(IBUFFER_SIZE <= MAX_TRIANGLES);
-
-    u32 ntriangles = tsize / 3;
-
-    LMesh* mesh = &MESHES[MESHES_SIZE];
-    ++MESHES_SIZE;
-    mesh->ibufferidx = ibufferidx;
-    mesh->ntriangles = ntriangles;
-}
-
-// TODO: Switch AddMesh() usage to this
-static void AddMesh2(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
+static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = VBUFFER_SIZE;
     u32 ioffset = IBUFFER_SIZE;
 
@@ -950,7 +926,7 @@ static void RenderDataInit() {
             TriLit(20, 21, 22),  //
             TriLit(22, 23, 20),  //
         };
-        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // Quad.
@@ -966,7 +942,7 @@ static void RenderDataInit() {
             TriLit(0, 1, 2),  //
             TriLit(2, 3, 0),  //
         };
-        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // ISO TRIANGLE Mesh.
@@ -977,7 +953,7 @@ static void RenderDataInit() {
             Vec3Lit(1.0f, 0.0f, 0.0f),
         };
         Triangle ts[] = {TriLit(0, 1, 2)};
-        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // PYRAMID Mesh.
@@ -1005,7 +981,7 @@ static void RenderDataInit() {
             // Bottom
             TriLit(2, 1, 4),  //
         };
-        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // 2S ISO TRIANGLE Mesh.
@@ -1022,7 +998,7 @@ static void RenderDataInit() {
             TriLit(0, 1, 2),  //
             TriLit(3, 4, 5),  //
         };
-        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // Icosahedron Mesh.
@@ -1068,7 +1044,7 @@ static void RenderDataInit() {
             TriLit(8, 6, 7),
             TriLit(9, 8, 1),
         };
-        AddMesh2(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // ICOSPHERE Mesh.
@@ -1210,7 +1186,7 @@ static void RenderDataInit() {
             tsize = ts2size;
         }
 
-        AddMesh2(vs, vsize, ts, tsize);
+        AddMesh(vs, vsize, ts, tsize);
     }
 
     LShader shader = GetShader();
