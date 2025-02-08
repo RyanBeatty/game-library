@@ -61,8 +61,14 @@ static f32 TOL = 0.001;
 static f32 f32clamp(f32 v, f32 min, f32 max) { return f32min(f32max(v, min), max); }
 
 typedef struct Vec2 {
-    f32 x;
-    f32 y;
+    union {
+        struct {
+            f32 x;
+            f32 y;
+        };
+
+        f32 f[2];
+    };
 } Vec2;
 
 #define Vec2Lit(a, b) ((Vec2){.x = (a), .y = (b)})
@@ -1477,7 +1483,7 @@ const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
-static const Vec2 ORIGIN2D = {ORIGIN.x, ORIGIN.y};
+static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 
 static const u8 GAMEPAD_ID = 0;
 
@@ -3207,7 +3213,10 @@ static void Scene2Tick(GameState* gstate) {
                 Mat4 translate = Mat4TranslateV(pos);
                 Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
+                Vec2 uvoffset = Vec2Lit(0.0f, 0.0f);
+
                 glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                glUniform4fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
                 glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
