@@ -577,6 +577,7 @@ typedef struct LShader {
     u32 vtextcoords_loc;
     u32 vucolor_loc;
     u32 vuvoffset_loc;
+    u32 vuvscale_loc;
 
     // frag shader.
 } LShader;
@@ -691,12 +692,13 @@ static LShader GetShader2D() {
         "\n"
         "uniform vec4 vUColor;\n"
         "uniform vec2 vUVOffset;\n"
+        "uniform vec2 vUVScale;\n"
         "\n"
         "out vec4 fColor;\n"
         "out vec2 fTextCoords;\n"
         "void main()\n"
         "{\n"
-        "   fTextCoords = vTextCoords;\n"
+        "   fTextCoords = vUVScale * vTextCoords;\n"
         // TODO: Incorporate camera at some point.
         "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
         "   fColor = vUColor;\n"
@@ -735,6 +737,7 @@ static LShader GetShader2D() {
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
+            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
         }
     }
 
@@ -3199,8 +3202,13 @@ static void Scene2Tick(GameState* gstate) {
                 Mat4 translate = Mat4TranslateV(pos);
                 Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
+                Vec2 uvoffset = Vec2Zero();
+                Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
+
                 glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                 glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
+                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
@@ -3213,11 +3221,13 @@ static void Scene2Tick(GameState* gstate) {
                 Mat4 translate = Mat4TranslateV(pos);
                 Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-                Vec2 uvoffset = Vec2Lit(0.0f, 0.0f);
+                Vec2 uvoffset = Vec2Zero();
+                Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
 
                 glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                glUniform4fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
                 glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
+                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
