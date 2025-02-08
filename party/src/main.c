@@ -3216,18 +3216,18 @@ static void Scene2Tick(GameState* gstate) {
             pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
 
             {
-                Mat4 scale = Mat4Scale(100.0f);
+                Mat4 scale = Mat4ScaleV(Vec3Lit(100.0f * (48.0f / T1.width), 100.0f, 100.0f));
                 Mat4 orient = Mat4Identity();
                 Mat4 translate = Mat4TranslateV(pos);
                 Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-                Vec2 uvoffset = Vec2Zero();
-                Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
+                Vec2 uvoffset_src = Vec2Zero();
+                Vec2 uvscale_src = Vec2Lit(0.5f, 1.0f);
 
                 glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
                 glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
-                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
-                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
+                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset_src.f);
+                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale_src.f);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
