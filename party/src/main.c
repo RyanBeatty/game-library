@@ -541,6 +541,7 @@ static Vec3 Vec3WTransform(Vec3 v, Mat4 m) {
 ////////////////////////////////////////////////////////////
 // S:Color
 
+static const Vec4 LCLEAR = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
 static const Vec4 LRED = Vec4Lit(1.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LGREEN = Vec4Lit(0.0f, 1.0f, 0.0f, 1.0f);
 static const Vec4 LBLUE = Vec4Lit(0.0f, 0.0f, 1.0f, 1.0f);
@@ -3181,7 +3182,7 @@ static void Scene2Tick(GameState* gstate) {
             Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
             glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
