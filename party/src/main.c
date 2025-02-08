@@ -2977,6 +2977,7 @@ static void Scene2Tick(GameState* gstate) {
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
     static u32 TID = 0;
+    static u32 TID1 = 0;
 
     f32 dt = gstate->dt;
 
@@ -3010,24 +3011,47 @@ static void Scene2Tick(GameState* gstate) {
         glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
                               (void*)(3 * sizeof(float)));
 
-        i32 x, y, n;
-        stbi_set_flip_vertically_on_load(true);
-        u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
-        Assert(data != NULL);
+        {
+            i32 x, y, n;
+            stbi_set_flip_vertically_on_load(true);
+            u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
+            Assert(data != NULL);
 
-        glGenTextures(1, &TID);
-        glBindTexture(GL_TEXTURE_2D, TID);
+            glGenTextures(1, &TID);
+            glBindTexture(GL_TEXTURE_2D, TID);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                        GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        // set texture filtering parameters
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                            GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            // set texture filtering parameters
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-        stbi_image_free(data);
+            stbi_image_free(data);
+        }
+
+        {
+            i32 x, y, n;
+            stbi_set_flip_vertically_on_load(true);
+            u8* data = stbi_load("assets/textures/helloatlas.png", &x, &y, &n, 0);
+            Assert(data != NULL);
+
+            glGenTextures(1, &TID1);
+            glBindTexture(GL_TEXTURE_2D, TID1);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                            GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            // set texture filtering parameters
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+            stbi_image_free(data);
+        }
 
         glUseProgram(shader.pid);
         glUniform1i(glGetUniformLocation(shader.pid, "texture0"), 0);
@@ -3132,18 +3156,35 @@ static void Scene2Tick(GameState* gstate) {
             glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, TID);
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TID);
 
-        Mat4 scale = Mat4Scale(50.0f);
-        Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
-        Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
-        Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+            Mat4 scale = Mat4Scale(50.0f);
+            Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
+            Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
+            Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-        glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TID1);
+
+            Mat4 scale = Mat4Scale(100.0f);
+            Mat4 orient = Mat4Identity();
+            Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 400.0f, 0.0f));
+            Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
 
         EndDrawing();
         CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
