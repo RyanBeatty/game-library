@@ -570,6 +570,7 @@ typedef struct LShader {
     u32 vproj_loc;
     u32 vtextcoords_loc;
     u32 vucolor_loc;
+    u32 vuvoffset_loc;
 
     // frag shader.
 } LShader;
@@ -683,6 +684,7 @@ static LShader GetShader2D() {
         "uniform mat4 vProj;\n"
         "\n"
         "uniform vec4 vUColor;\n"
+        "uniform vec2 vUVOffset;\n"
         "\n"
         "out vec4 fColor;\n"
         "out vec2 fTextCoords;\n"
@@ -726,6 +728,7 @@ static LShader GetShader2D() {
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
         }
     }
 
