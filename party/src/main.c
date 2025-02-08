@@ -803,6 +803,12 @@ typedef enum MID {
     M_COUNT
 } MID;
 
+typedef struct LTexture {
+    u32 id;
+    i32 width;
+    i32 height;
+} LTexture;
+
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
     return MESHES[mid];
@@ -2978,7 +2984,7 @@ static void Scene2Tick(GameState* gstate) {
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
     static u32 TID = 0;
-    static u32 TID1 = 0;
+    static LTexture T1 = {0};
 
     f32 dt = gstate->dt;
 
@@ -3034,13 +3040,13 @@ static void Scene2Tick(GameState* gstate) {
         }
 
         {
-            i32 x, y, n;
+            i32 n = 0;
             stbi_set_flip_vertically_on_load(true);
-            u8* data = stbi_load("assets/textures/helloatlas.png", &x, &y, &n, 0);
+            u8* data = stbi_load("assets/textures/helloatlas.png", &T1.width, &T1.height, &n, 0);
             Assert(data != NULL);
 
-            glGenTextures(1, &TID1);
-            glBindTexture(GL_TEXTURE_2D, TID1);
+            glGenTextures(1, &T1.id);
+            glBindTexture(GL_TEXTURE_2D, T1.id);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
                             GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
@@ -3049,7 +3055,7 @@ static void Scene2Tick(GameState* gstate) {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, T1.width, T1.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
             stbi_image_free(data);
         }
@@ -3176,7 +3182,7 @@ static void Scene2Tick(GameState* gstate) {
             Vec3 pos = Vec3Lit(300.0f, 400.0f, 0.0f);
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, TID1);
+            glBindTexture(GL_TEXTURE_2D, T1.id);
 
             Mat4 scale = Mat4Scale(100.0f);
             Mat4 orient = Mat4Identity();
