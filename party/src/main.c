@@ -3179,20 +3179,36 @@ static void Scene2Tick(GameState* gstate) {
         }
 
         {
-            Vec3 pos = Vec3Lit(300.0f, 400.0f, 0.0f);
-
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, T1.id);
 
-            Mat4 scale = Mat4Scale(100.0f);
-            Mat4 orient = Mat4Identity();
-            Mat4 translate = Mat4TranslateV(pos);
-            Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+            Vec3 pos = Vec3Lit(300.0f, 400.0f, 0.0f);
 
-            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+            {
+                Mat4 scale = Mat4Scale(100.0f);
+                Mat4 orient = Mat4Identity();
+                Mat4 translate = Mat4TranslateV(pos);
+                Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+
+            pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
+
+            {
+                Mat4 scale = Mat4Scale(100.0f);
+                Mat4 orient = Mat4Identity();
+                Mat4 translate = Mat4TranslateV(pos);
+                Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
         }
 
         EndDrawing();
