@@ -1179,8 +1179,6 @@ static void RenderDataInit() {
         AddMesh(vs, vsize, ts, tsize);
     }
 
-    LShader shader = GetShader();
-
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
@@ -1192,6 +1190,8 @@ static void RenderDataInit() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
 
+    // TODO: Maybe this should go in GetShader?
+    LShader shader = GetShader();
     glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
     glEnableVertexAttribArray(shader.vpos_loc);
     glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
@@ -3135,7 +3135,7 @@ static void Scene2Tick(GameState* gstate) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, TID);
 
-        Mat4 scale = Mat4Scale(300.0f);
+        Mat4 scale = Mat4Scale(50.0f);
         Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
         Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
         Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
