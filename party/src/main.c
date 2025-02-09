@@ -698,7 +698,7 @@ static LShader GetShader2D() {
         "out vec2 fTextCoords;\n"
         "void main()\n"
         "{\n"
-        "   fTextCoords = vUVScale * vTextCoords;\n"
+        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
         // TODO: Incorporate camera at some point.
         "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
         "   fColor = vUColor;\n"
@@ -3224,11 +3224,12 @@ static void Scene2Tick(GameState* gstate) {
                 {
                     LTexture tx = T1;
 
-                    for (u32 i = 0; i < 4; ++i) {
+                    for (u32 i = 0; i < 2; ++i) {
                         Vec2 r_src = Vec2Lit(48.0f, 48.0f);
                         Vec2 p_src = Vec2Lit(r_src.x * i, 0.0f);
+                        // TODO: is scale right?
                         Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-                        Vec2 uvoffset = Vec2Lit((i32)p_src.x % tx.width, (i32)p_src.y % tx.height);
+                        Vec2 uvoffset = Vec2Lit(p_src.x / tx.width, p_src.y / tx.height);
 
                         Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
                         Vec2 p_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y);
