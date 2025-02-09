@@ -2984,18 +2984,10 @@ static void Scene1Tick(GameState* gstate) {
 }
 
 static void Scene2Tick(GameState* gstate) {
-    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-    static EntityId QUAD[MAX_ENTITY_BATCH] = {0};
-    static u32 QUAD_SIZE = 0;
-
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
     static u32 TID = 0;
     static LTexture T1 = {0};
-
-    f32 dt = gstate->dt;
 
     // Init logic.
     if (!gstate->init) {
@@ -3071,46 +3063,6 @@ static void Scene2Tick(GameState* gstate) {
 
         glUseProgram(shader.pid);
         glUniform1i(glGetUniformLocation(shader.pid, "texture0"), 0);
-
-        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-        memset(QUAD, 0, sizeof(QUAD));
-        QUAD_SIZE = 0;
-
-        vieworient.yaw = Deg2Rad(90.0f);
-
-        // QUAD init
-        {
-            EntityId* entities = QUAD;
-            u32 size = 0;
-
-            const Vec3 origin = Vec3Lit(-20.0f, 30.0f, -50.0f);
-
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Zero();
-            e->mesh = GetMesh(M_QUAD);
-            e->color = LRED;
-            e->scale = Vec3Lit(50.0f, 50.0f, 1.0f);
-            entities[size++] = e->id;
-
-            QUAD_SIZE = size;
-            Assert(QUAD_SIZE < MAX_ENTITY_BATCH);
-        }
-    }
-
-    // Update logic.
-    {
-        {
-            LShader shader = GetShader2D();
-
-            // QUAD.
-            {
-                EntityId* entities = QUAD;
-                u32 size = QUAD_SIZE;
-                DrawEntities(shader, entities, size);
-            }
-        }
     }
 
     // Drawing
