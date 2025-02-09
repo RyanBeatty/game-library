@@ -3180,7 +3180,7 @@ static void SceneTickTestText(GameState* gstate) {
     }
 }
 
-static void Scene3Tick(GameState* gstate) {
+static void SceneTickItFollows(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -3515,7 +3515,7 @@ static void Scene3Tick(GameState* gstate) {
     }
 }
 
-static void Scene4Tick(GameState* gstate) {
+static void SceneTickTennis(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -3980,7 +3980,7 @@ static void Scene4Tick(GameState* gstate) {
     }
 }
 
-static void Scene5Tick(GameState* gstate) {
+static void SceneTickBrickBreaker(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -4571,9 +4571,9 @@ static void GameStateInit(GameState* gstate) {
         u32 idx = 0;
         gstate->scenefuncs[idx++] = Scene1Tick;
         gstate->scenefuncs[idx++] = SceneTickTestText;
-        gstate->scenefuncs[idx++] = Scene3Tick;
-        gstate->scenefuncs[idx++] = Scene4Tick;
-        gstate->scenefuncs[idx++] = Scene5Tick;
+        gstate->scenefuncs[idx++] = SceneTickItFollows;
+        gstate->scenefuncs[idx++] = SceneTickTennis;
+        gstate->scenefuncs[idx++] = SceneTickBrickBreaker;
         Assert(idx < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
