@@ -2983,7 +2983,7 @@ static void Scene1Tick(GameState* gstate) {
     }
 }
 
-static void Scene2Tick(GameState* gstate) {
+static void SceneTickTestText(GameState* gstate) {
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
     static u32 TID = 0;
@@ -4570,7 +4570,7 @@ static void GameStateInit(GameState* gstate) {
     {
         u32 idx = 0;
         gstate->scenefuncs[idx++] = Scene1Tick;
-        gstate->scenefuncs[idx++] = Scene2Tick;
+        gstate->scenefuncs[idx++] = SceneTickTestText;
         gstate->scenefuncs[idx++] = Scene3Tick;
         gstate->scenefuncs[idx++] = Scene4Tick;
         gstate->scenefuncs[idx++] = Scene5Tick;
