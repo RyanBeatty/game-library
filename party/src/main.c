@@ -4443,10 +4443,10 @@ static void Scene5Tick(GameState* gstate) {
                             if ((e0player && e1wall) || flip) {
                                 Vec3 normal = collision->normal;
                                 Entity* eplayer = e0;
-                                Entity* ewall = e1;
+                                // Entity* ewall = e1;
                                 if (flip) {
                                     eplayer = e1;
-                                    ewall = e0;
+                                    // ewall = e0;
                                     normal = Vec3Negate(normal);
                                 }
 
