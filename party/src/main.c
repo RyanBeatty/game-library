@@ -738,6 +738,9 @@ static LShader GetShader2D() {
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
             SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
         }
     }
 
