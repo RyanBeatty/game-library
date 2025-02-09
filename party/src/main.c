@@ -3199,7 +3199,7 @@ static void Scene2Tick(GameState* gstate) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, T1.id);
 
-            Vec3 pos = Vec3Lit(300.0f, 400.0f, 0.0f);
+            Vec3 pos = Vec3Lit(100.0f, 400.0f, 0.0f);
 
             {
                 Mat4 scale = Mat4Scale(100.0f);
@@ -3224,26 +3224,28 @@ static void Scene2Tick(GameState* gstate) {
                 {
                     LTexture tx = T1;
 
-                    Vec2 p_src = Vec2Lit(0.0f, 0.0f);
-                    Vec2 r_src = Vec2Lit(48.0f, 48.0f);
-                    Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-                    Vec2 uvoffset = Vec2Lit((i32)p_src.x % tx.width, (i32)p_src.y % tx.height);
+                    for (u32 i = 0; i < 4; ++i) {
+                        Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+                        Vec2 p_src = Vec2Lit(r_src.x * i, 0.0f);
+                        Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+                        Vec2 uvoffset = Vec2Lit((i32)p_src.x % tx.width, (i32)p_src.y % tx.height);
 
-                    Vec2 p_dst = Vec2Lit(pos.x, pos.y);
-                    Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
+                        Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
+                        Vec2 p_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y);
 
-                    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
-                    Mat4 orient = Mat4Identity();
+                        Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
+                        Mat4 orient = Mat4Identity();
 
-                    Mat4 translate = Mat4TranslateV(Vec3Lit(p_dst.x, p_dst.y, 0.0f));
-                    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+                        Mat4 translate = Mat4TranslateV(Vec3Lit(p_dst.x, p_dst.y, 0.0f));
+                        Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-                    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                    glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
-                    glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
-                    glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
+                        glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                        glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+                        glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
+                        glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
 
-                    glDrawArrays(GL_TRIANGLES, 0, 6);
+                        glDrawArrays(GL_TRIANGLES, 0, 6);
+                    }
                 }
             }
         }
