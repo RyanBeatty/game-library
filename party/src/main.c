@@ -3180,6 +3180,203 @@ static void SceneTickTestText(GameState* gstate) {
     }
 }
 
+static void SceneTickTextInEngine(GameState* gstate) {
+    static u32 VAO2 = 0;
+    static u32 VBO2 = 0;
+    static u32 TID = 0;
+    static LTexture T1 = {0};
+
+    // Init logic.
+    if (!gstate->init) {
+        f32 vertices[] = {
+            // pos            // tex
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f,  //
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,  //
+            1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  //
+
+            0.0f, 1.0f, 0.0f, 0.0f, 1.0f,  //
+            1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  //
+            1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  //
+        };
+
+        LShader shader = GetShader2D();
+
+        glGenVertexArrays(1, &VAO2);
+        glGenBuffers(1, &VBO2);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        glBindVertexArray(VAO2);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glEnableVertexAttribArray(shader.vpos_loc);
+        glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+        glEnableVertexAttribArray(shader.vtextcoords_loc);
+        glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+                              (void*)(3 * sizeof(float)));
+
+        {
+            i32 x, y, n;
+            stbi_set_flip_vertically_on_load(true);
+            u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
+            Assert(data != NULL);
+
+            glGenTextures(1, &TID);
+            glBindTexture(GL_TEXTURE_2D, TID);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                            GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            // set texture filtering parameters
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+            stbi_image_free(data);
+        }
+
+        {
+            i32 n = 0;
+            stbi_set_flip_vertically_on_load(true);
+            u8* data = stbi_load("assets/textures/helloatlas.png", &T1.width, &T1.height, &n, 0);
+            Assert(data != NULL);
+
+            glGenTextures(1, &T1.id);
+            glBindTexture(GL_TEXTURE_2D, T1.id);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                            GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            // set texture filtering parameters
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, T1.width, T1.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+            stbi_image_free(data);
+        }
+
+        glUseProgram(shader.pid);
+        glUniform1i(glGetUniformLocation(shader.pid, "texture0"), 0);
+    }
+
+    // Drawing
+    {
+        // Begin.
+        {
+            BeginDrawing();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBindVertexArray(VAO2);
+        }
+
+        // Enable/Disable culling.
+        // TODO: Make this nicer at some point. Useful for debugging.
+        {
+            if (gstate->debug) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glFrontFace(GL_CCW);
+            }
+        }
+
+        Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
+
+        LShader shader = GetShader2D();
+
+        {
+            glUseProgram(shader.pid);
+            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+        }
+
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, TID);
+
+            Mat4 scale = Mat4Scale(50.0f);
+            Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
+            Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
+            Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+            Vec2 uvoffset = Vec2Zero();
+            Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
+
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
+            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
+            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, T1.id);
+
+            Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
+
+            {
+                Mat4 scale = Mat4Scale(100.0f);
+                Mat4 orient = Mat4Identity();
+                Mat4 translate = Mat4TranslateV(pos);
+                Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+                Vec2 uvoffset = Vec2Zero();
+                Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
+
+                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
+                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
+
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+
+            pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
+
+            {
+                {
+                    LTexture tx = T1;
+
+                    for (u32 i = 0; i < 2; ++i) {
+                        for (u32 j = 0; j < 2; ++j) {
+                            Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+                            Vec2 p_src = Vec2Lit(r_src.x * i, r_src.y * j);
+
+                            Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
+                            Vec2 p_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
+
+                            // TODO: is scale right?
+                            Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+                            Vec2 uvoffset = Vec2Lit(p_src.x / tx.width, p_src.y / tx.height);
+
+                            Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
+                            Mat4 orient = Mat4Identity();
+
+                            Mat4 translate = Mat4TranslateV(Vec3Lit(p_dst.x, p_dst.y, 0.0f));
+                            Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+                            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
+                            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
+                            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
+                            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
+
+                            glDrawArrays(GL_TRIANGLES, 0, 6);
+                        }
+                    }
+                }
+            }
+        }
+
+        EndDrawing();
+        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
+    }
+}
+
 static void SceneTickItFollows(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -4571,6 +4768,7 @@ static void GameStateInit(GameState* gstate) {
         u32 idx = 0;
         gstate->scenefuncs[idx++] = Scene1Tick;
         gstate->scenefuncs[idx++] = SceneTickTestText;
+        gstate->scenefuncs[idx++] = SceneTickTextInEngine;
         gstate->scenefuncs[idx++] = SceneTickItFollows;
         gstate->scenefuncs[idx++] = SceneTickTennis;
         gstate->scenefuncs[idx++] = SceneTickBrickBreaker;
