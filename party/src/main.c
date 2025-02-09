@@ -3223,9 +3223,9 @@ static void Scene2Tick(GameState* gstate) {
             {
                 {
                     LTexture tx = T1;
-                    Vec2 p = Vec2Lit(0.0f, 0.0f);
-                    Vec2 r = Vec2Lit(48.0f, 48.0f);
-                    Vec2 ur = Vec2Lit(r.x / tx.width, r.y / tx.height);
+                    Vec2 p_src = Vec2Lit(0.0f, 0.0f);
+                    Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+                    Vec2 ur = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
                     Mat4 scale = Mat4ScaleV(Vec3Lit(100.0f * ur.x, 100.0f * ur.y, 1.0f));
                     Mat4 orient = Mat4Identity();
 
