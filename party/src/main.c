@@ -3184,8 +3184,13 @@ static void Scene2Tick(GameState* gstate) {
             Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
             Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
+            Vec2 uvoffset = Vec2Zero();
+            Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
+
             glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
             glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LRED.f);
+            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
+            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
