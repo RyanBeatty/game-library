@@ -3209,7 +3209,7 @@ static void SceneTickTestText(GameState* gstate) {
 static void SceneTickTextInEngine(GameState* gstate) {
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
-    static u32 TID = 0;
+    static LTexture T0 = {0};
     static LTexture T1 = {0};
 
     // Init logic.
@@ -3242,27 +3242,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
         glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
                               (void*)(3 * sizeof(float)));
 
-        {
-            i32 x, y, n;
-            stbi_set_flip_vertically_on_load(true);
-            u8* data = stbi_load("assets/textures/awesomeface.png", &x, &y, &n, 0);
-            Assert(data != NULL);
-
-            glGenTextures(1, &TID);
-            glBindTexture(GL_TEXTURE_2D, TID);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                            GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            // set texture filtering parameters
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-            stbi_image_free(data);
-        }
-
+        T0 = UploadTexture("assets/textures/awesomeface.png");
         T1 = UploadTexture("assets/textures/helloatlas.png");
     }
 
@@ -3299,7 +3279,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
         {
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, TID);
+            glBindTexture(GL_TEXTURE_2D, T0.id);
 
             Mat4 scale = Mat4Scale(50.0f);
             Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
