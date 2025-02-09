@@ -2990,9 +2990,6 @@ static void Scene2Tick(GameState* gstate) {
     static EntityId QUAD[MAX_ENTITY_BATCH] = {0};
     static u32 QUAD_SIZE = 0;
 
-    static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
-    static u32 WALLS_SIZE = 0;
-
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
     static u32 TID = 0;
@@ -3080,8 +3077,6 @@ static void Scene2Tick(GameState* gstate) {
 
         memset(QUAD, 0, sizeof(QUAD));
         QUAD_SIZE = 0;
-        memset(WALLS, 0, sizeof(WALLS));
-        WALLS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
 
@@ -3102,25 +3097,6 @@ static void Scene2Tick(GameState* gstate) {
             QUAD_SIZE = size;
             Assert(QUAD_SIZE < MAX_ENTITY_BATCH);
         }
-
-        {
-            static Vec3 positions[] = {Vec3Lit(0.0f, -10.0f, 0.0f)};
-            static f32 rotations[] = {Deg2Rad(-90.0f)};
-            static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
-            Vec4 colors[] = {LORANGE};
-
-            EntityId* entities = WALLS;
-            WALLS_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
-                entity->mesh = GetMesh(M_QUAD);
-                entity->orient = Mat4Rotate(rotations[i], axis[i]);
-                entity->color = colors[i];
-                entity->scale = Vec3Lit(10000.0f, 10000.0f, 10000.0f);
-                entities[i] = entity->id;
-            }
-        }
     }
 
     // Update logic.
@@ -3132,13 +3108,6 @@ static void Scene2Tick(GameState* gstate) {
             {
                 EntityId* entities = QUAD;
                 u32 size = QUAD_SIZE;
-                DrawEntities(shader, entities, size);
-            }
-
-            // Walls.
-            {
-                EntityId* entities = WALLS;
-                u32 size = WALLS_SIZE;
                 DrawEntities(shader, entities, size);
             }
         }
