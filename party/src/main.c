@@ -824,6 +824,29 @@ typedef struct LTexture {
     i32 height;
 } LTexture;
 
+static LTexture UploadTexture(const char* filename) {
+    LTexture tx = {0};
+    i32 n = 0;
+    stbi_set_flip_vertically_on_load(true);
+    u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
+    Assert(data != NULL);
+
+    glGenTextures(1, &tx.id);
+    glBindTexture(GL_TEXTURE_2D, tx.id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                    GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    stbi_image_free(data);
+    return tx;
+}
+
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
     return MESHES[mid];
@@ -3240,26 +3263,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
             stbi_image_free(data);
         }
 
-        {
-            i32 n = 0;
-            stbi_set_flip_vertically_on_load(true);
-            u8* data = stbi_load("assets/textures/helloatlas.png", &T1.width, &T1.height, &n, 0);
-            Assert(data != NULL);
-
-            glGenTextures(1, &T1.id);
-            glBindTexture(GL_TEXTURE_2D, T1.id);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                            GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            // set texture filtering parameters
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, T1.width, T1.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-            stbi_image_free(data);
-        }
+        T1 = UploadTexture("assets/textures/helloatlas.png");
     }
 
     // Drawing
