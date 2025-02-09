@@ -3260,9 +3260,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
             stbi_image_free(data);
         }
-
-        glUseProgram(shader.pid);
-        glUniform1i(glGetUniformLocation(shader.pid, "texture0"), 0);
     }
 
     // Drawing
