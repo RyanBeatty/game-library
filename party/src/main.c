@@ -3228,12 +3228,13 @@ static void Scene2Tick(GameState* gstate) {
                         for (u32 j = 0; j < 2; ++j) {
                             Vec2 r_src = Vec2Lit(48.0f, 48.0f);
                             Vec2 p_src = Vec2Lit(r_src.x * i, r_src.y * j);
-                            // TODO: is scale right?
-                            Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-                            Vec2 uvoffset = Vec2Lit(p_src.x / tx.width, p_src.y / tx.height);
 
                             Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
                             Vec2 p_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
+
+                            // TODO: is scale right?
+                            Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+                            Vec2 uvoffset = Vec2Lit(p_src.x / tx.width, p_src.y / tx.height);
 
                             Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
                             Mat4 orient = Mat4Identity();
