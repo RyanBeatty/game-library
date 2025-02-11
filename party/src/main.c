@@ -563,8 +563,10 @@ static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 ////////////////////////////////////////////////////////////
 // S:Render Data
 
+typedef u32 ShaderId;
+
 typedef struct LShader {
-    u32 pid;  // program id.
+    ShaderId pid;  // program id.
     u32 vid;
     u32 fid;
 
@@ -4751,8 +4753,8 @@ static void GameStateInit(GameState* gstate) {
     {
         u32 idx = 0;
         gstate->scenefuncs[idx++] = Scene1Tick;
-        gstate->scenefuncs[idx++] = SceneTickTestText;
         gstate->scenefuncs[idx++] = SceneTickTextInEngine;
+        gstate->scenefuncs[idx++] = SceneTickTestText;
         gstate->scenefuncs[idx++] = SceneTickItFollows;
         gstate->scenefuncs[idx++] = SceneTickTennis;
         gstate->scenefuncs[idx++] = SceneTickBrickBreaker;
