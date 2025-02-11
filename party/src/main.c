@@ -565,6 +565,16 @@ static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 
 typedef u32 ShaderId;
 
+typedef struct LShaderData {
+    u32 txid;
+
+    Mat4 vproj;
+    Mat4 vmodel;
+    Vec4 vucolor;
+    Vec2 vuvoffset;
+    Vec2 vuvscale;
+} LShaderData;
+
 typedef struct LShader {
     ShaderId pid;  // program id.
     u32 vid;
@@ -749,17 +759,7 @@ static LShader GetShader2D() {
     return SHADER;
 }
 
-typedef struct Shader2DData {
-    u32 txid;
-
-    Mat4 vproj;
-    Mat4 vmodel;
-    Vec4 vucolor;
-    Vec2 vuvoffset;
-    Vec2 vuvscale;
-} Shader2DData;
-
-static void Shader2DSetData(LShader* shader, Shader2DData* data) {
+static void Shader2DSetData(LShader* shader, LShaderData* data) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, data->txid);
 
@@ -3114,7 +3114,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
             Vec2 uvoffset = Vec2Zero();
             Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
 
-            Shader2DData data = {0};
+            LShaderData data = {0};
             data.txid = T0.id;
             data.vproj = proj;
             data.vmodel = model;
@@ -3141,10 +3141,14 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 Vec2 uvoffset = Vec2Zero();
                 Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
 
-                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
-                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
-                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
+                LShaderData data = {0};
+                data.txid = T1.id;
+                data.vproj = proj;
+                data.vmodel = model;
+                data.vucolor = LCLEAR;
+                data.vuvoffset = uvoffset;
+                data.vuvscale = uvscale;
+                Shader2DSetData(&shader, &data);
 
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
