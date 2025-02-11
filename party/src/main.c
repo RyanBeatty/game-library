@@ -3177,10 +3177,14 @@ static void SceneTickTextInEngine(GameState* gstate) {
                             Mat4 translate = Mat4TranslateV(Vec3Lit(p_dst.x, p_dst.y, 0.0f));
                             Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-                            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&model.m);
-                            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&LCLEAR.f);
-                            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&uvoffset.f);
-                            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&uvscale.f);
+                            LShaderData data = {0};
+                            data.txid = T1.id;
+                            data.vproj = proj;
+                            data.vmodel = model;
+                            data.vucolor = LCLEAR;
+                            data.vuvoffset = uvoffset;
+                            data.vuvscale = uvscale;
+                            Shader2DSetData(&shader, &data);
 
                             glDrawArrays(GL_TRIANGLES, 0, 6);
                         }
