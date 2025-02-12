@@ -563,26 +563,6 @@ static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 ////////////////////////////////////////////////////////////
 // S:Render Data
 
-typedef enum AttLoc {
-    LOC_POS_X = 0,
-    LOC_POS_Y,
-    LOC_POS_Z,
-
-    LOC_COLOR_R,
-    LOC_COLOR_G,
-    LOC_COLOR_B,
-
-    LOC_NORM_X,
-    LOC_NORM_Y,
-    LOC_NORM_Z,
-
-    LOC_COUNT
-} AttLoc;
-
-typedef struct VAtt {
-    f32 atts[LOC_COUNT];
-} VAtt;
-
 typedef struct Vertex {
     Vec3 pos;
     Vec3 normal;
