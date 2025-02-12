@@ -563,6 +563,184 @@ static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 ////////////////////////////////////////////////////////////
 // S:Render Data
 
+typedef enum AttLoc {
+    LOC_POS_X = 0,
+    LOC_POS_Y,
+    LOC_POS_Z,
+
+    LOC_COLOR_R,
+    LOC_COLOR_G,
+    LOC_COLOR_B,
+
+    LOC_NORM_X,
+    LOC_NORM_Y,
+    LOC_NORM_Z,
+
+    LOC_COUNT
+} AttLoc;
+
+typedef struct VAtt {
+    f32 atts[LOC_COUNT];
+} VAtt;
+
+typedef struct Vertex {
+    Vec3 pos;
+    Vec3 normal;
+    Vec2 uv;
+} Vertex;
+
+typedef struct Triangle {
+    union {
+        u32 vs[3];
+        struct {
+            u32 va;
+            u32 vb;
+            u32 vc;
+        };
+    };
+} Triangle;
+
+#define TriLit(n0, n1, n2) ((Triangle){.va = (n0), .vb = (n1), .vc = (n2)})
+
+#define MAX_VERTICES 512
+
+static u32 VAO = 0;
+static u32 VBO = 0;
+static u32 VIO = 0;  // Index buffer.
+
+static Vertex VBUFFER[MAX_VERTICES] = {};  // Vertex buffer
+static u32 VBUFFER_SIZE = 0;
+
+#define MAX_TRIANGLES 2048
+static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
+static u32 IBUFFER_SIZE = 0;
+
+typedef struct LMesh {
+    u32 ibufferidx;  // Offset into index buffer
+    u32 ntriangles;
+} LMesh;
+
+#define MAX_MESHES 256
+static LMesh MESHES[MAX_MESHES] = {0};
+static u32 MESHES_SIZE = 0;
+
+typedef enum MID {
+    M_CUBE = 0,
+    M_QUAD,
+    M_ISO_TRIANGLE,
+    M_PYRAMID,
+    M_2S_ISO_TRIANGLE,
+    M_ICOSAHEDRON,
+    M_ICOSPHERE,
+    M_COUNT
+} MID;
+
+typedef u32 TextureId;
+
+typedef struct LTexture {
+    TextureId id;
+    i32 width;
+    i32 height;
+} LTexture;
+
+static LTexture UploadTexture(const char* filename) {
+    LTexture tx = {0};
+    i32 n = 0;
+    stbi_set_flip_vertically_on_load(true);
+    u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
+    Assert(data != NULL);
+
+    glGenTextures(1, &tx.id);
+    glBindTexture(GL_TEXTURE_2D, tx.id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                    GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    stbi_image_free(data);
+    return tx;
+}
+
+static LMesh GetMesh(u32 mid) {
+    Assert(mid < MAX_MESHES);
+    return MESHES[mid];
+}
+
+static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
+    u32 voffset = VBUFFER_SIZE;
+    u32 ioffset = IBUFFER_SIZE;
+
+    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
+    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
+
+    Vec3 ns[MAX_VERTICES] = {0};
+    for (u32 i = 0; i < tsize; ++i) {
+        Triangle t = ts[i];
+        Vec3 a = vs[t.va];
+        Vec3 b = vs[t.vb];
+        Vec3 c = vs[t.vc];
+        Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
+
+        ns[t.va] = n;
+        ns[t.vb] = n;
+        ns[t.vc] = n;
+
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
+    }
+
+    for (u32 i = 0; i < vsize; ++i) {
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = Vec2Zero()};
+    }
+
+    LMesh* mesh = &MESHES[MESHES_SIZE];
+    ++MESHES_SIZE;
+    mesh->ibufferidx = ioffset;
+    mesh->ntriangles = tsize;
+}
+
+static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u32 tsize) {
+    Assert(vsize == uvsize);
+
+    u32 voffset = VBUFFER_SIZE;
+    u32 ioffset = IBUFFER_SIZE;
+
+    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
+    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
+
+    Vec3 ns[MAX_VERTICES] = {0};
+    for (u32 i = 0; i < tsize; ++i) {
+        Triangle t = ts[i];
+        Vec3 a = vs[t.va];
+        Vec3 b = vs[t.vb];
+        Vec3 c = vs[t.vc];
+        Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
+
+        ns[t.va] = n;
+        ns[t.vb] = n;
+        ns[t.vc] = n;
+
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
+    }
+
+    for (u32 i = 0; i < vsize; ++i) {
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = uvs[i]};
+    }
+
+    LMesh* mesh = &MESHES[MESHES_SIZE];
+    ++MESHES_SIZE;
+    mesh->ibufferidx = ioffset;
+    mesh->ntriangles = tsize;
+}
+
 typedef u32 ShaderId;
 
 typedef struct LShaderData {
@@ -770,184 +948,6 @@ static void Shader2DSetData(LShader* shader, LShaderData* data) {
     glUniform4fv(shader->vucolor_loc, 1, (const f32*)&data->vucolor.f);
     glUniform2fv(shader->vuvoffset_loc, 1, (const f32*)&data->vuvoffset.f);
     glUniform2fv(shader->vuvscale_loc, 1, (const f32*)&data->vuvscale.f);
-}
-
-typedef enum AttLoc {
-    LOC_POS_X = 0,
-    LOC_POS_Y,
-    LOC_POS_Z,
-
-    LOC_COLOR_R,
-    LOC_COLOR_G,
-    LOC_COLOR_B,
-
-    LOC_NORM_X,
-    LOC_NORM_Y,
-    LOC_NORM_Z,
-
-    LOC_COUNT
-} AttLoc;
-
-typedef struct VAtt {
-    f32 atts[LOC_COUNT];
-} VAtt;
-
-typedef struct Vertex {
-    Vec3 pos;
-    Vec3 normal;
-    Vec2 uv;
-} Vertex;
-
-typedef struct Triangle {
-    union {
-        u32 vs[3];
-        struct {
-            u32 va;
-            u32 vb;
-            u32 vc;
-        };
-    };
-} Triangle;
-
-#define TriLit(n0, n1, n2) ((Triangle){.va = (n0), .vb = (n1), .vc = (n2)})
-
-#define MAX_VERTICES 512
-
-static u32 VAO = 0;
-static u32 VBO = 0;
-static u32 VIO = 0;  // Index buffer.
-
-static Vertex VBUFFER[MAX_VERTICES] = {};  // Vertex buffer
-static u32 VBUFFER_SIZE = 0;
-
-#define MAX_TRIANGLES 2048
-static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
-static u32 IBUFFER_SIZE = 0;
-
-typedef struct LMesh {
-    u32 ibufferidx;  // Offset into index buffer
-    u32 ntriangles;
-} LMesh;
-
-#define MAX_MESHES 256
-static LMesh MESHES[MAX_MESHES] = {0};
-static u32 MESHES_SIZE = 0;
-
-typedef enum MID {
-    M_CUBE = 0,
-    M_QUAD,
-    M_ISO_TRIANGLE,
-    M_PYRAMID,
-    M_2S_ISO_TRIANGLE,
-    M_ICOSAHEDRON,
-    M_ICOSPHERE,
-    M_COUNT
-} MID;
-
-typedef u32 TextureId;
-
-typedef struct LTexture {
-    TextureId id;
-    i32 width;
-    i32 height;
-} LTexture;
-
-static LTexture UploadTexture(const char* filename) {
-    LTexture tx = {0};
-    i32 n = 0;
-    stbi_set_flip_vertically_on_load(true);
-    u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
-    Assert(data != NULL);
-
-    glGenTextures(1, &tx.id);
-    glBindTexture(GL_TEXTURE_2D, tx.id);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                    GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-    stbi_image_free(data);
-    return tx;
-}
-
-static LMesh GetMesh(u32 mid) {
-    Assert(mid < MAX_MESHES);
-    return MESHES[mid];
-}
-
-static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
-    u32 voffset = VBUFFER_SIZE;
-    u32 ioffset = IBUFFER_SIZE;
-
-    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
-    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
-
-    Vec3 ns[MAX_VERTICES] = {0};
-    for (u32 i = 0; i < tsize; ++i) {
-        Triangle t = ts[i];
-        Vec3 a = vs[t.va];
-        Vec3 b = vs[t.vb];
-        Vec3 c = vs[t.vc];
-        Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
-
-        ns[t.va] = n;
-        ns[t.vb] = n;
-        ns[t.vc] = n;
-
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
-    }
-
-    for (u32 i = 0; i < vsize; ++i) {
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = Vec2Zero()};
-    }
-
-    LMesh* mesh = &MESHES[MESHES_SIZE];
-    ++MESHES_SIZE;
-    mesh->ibufferidx = ioffset;
-    mesh->ntriangles = tsize;
-}
-
-static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u32 tsize) {
-    Assert(vsize == uvsize);
-
-    u32 voffset = VBUFFER_SIZE;
-    u32 ioffset = IBUFFER_SIZE;
-
-    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
-    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
-
-    Vec3 ns[MAX_VERTICES] = {0};
-    for (u32 i = 0; i < tsize; ++i) {
-        Triangle t = ts[i];
-        Vec3 a = vs[t.va];
-        Vec3 b = vs[t.vb];
-        Vec3 c = vs[t.vc];
-        Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
-
-        ns[t.va] = n;
-        ns[t.vb] = n;
-        ns[t.vc] = n;
-
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
-    }
-
-    for (u32 i = 0; i < vsize; ++i) {
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = uvs[i]};
-    }
-
-    LMesh* mesh = &MESHES[MESHES_SIZE];
-    ++MESHES_SIZE;
-    mesh->ibufferidx = ioffset;
-    mesh->ntriangles = tsize;
 }
 
 static void RenderDataInit() {
