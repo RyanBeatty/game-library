@@ -643,6 +643,7 @@ static LShader GetShader() {
         "#version 330 core\n"
         "layout (location = 0) in vec3 vPos;\n"
         "layout (location = 2) in vec3 vNormal;\n"
+        "layout (location = 3) in vec2 vUV;\n"
         "\n"
         "uniform mat4 vModel;\n"
         "uniform mat4 vView;\n"
@@ -682,6 +683,7 @@ static LShader GetShader() {
         {
             SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
             SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "vNormal");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vUV");
 
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
             SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
@@ -793,6 +795,7 @@ typedef struct VAtt {
 typedef struct Vertex {
     Vec3 pos;
     Vec3 normal;
+    Vec2 uv;
 } Vertex;
 
 typedef struct Triangle {
@@ -902,7 +905,43 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     }
 
     for (u32 i = 0; i < vsize; ++i) {
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i]};
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = Vec2Zero()};
+    }
+
+    LMesh* mesh = &MESHES[MESHES_SIZE];
+    ++MESHES_SIZE;
+    mesh->ibufferidx = ioffset;
+    mesh->ntriangles = tsize;
+}
+
+static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u32 tsize) {
+    Assert(vsize == uvsize);
+
+    u32 voffset = VBUFFER_SIZE;
+    u32 ioffset = IBUFFER_SIZE;
+
+    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
+    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
+
+    Vec3 ns[MAX_VERTICES] = {0};
+    for (u32 i = 0; i < tsize; ++i) {
+        Triangle t = ts[i];
+        Vec3 a = vs[t.va];
+        Vec3 b = vs[t.vb];
+        Vec3 c = vs[t.vc];
+        Vec3 n = Vec3Normalize(Vec3Cross(Vec3Sub(b, a), Vec3Sub(c, a)));
+
+        ns[t.va] = n;
+        ns[t.vb] = n;
+        ns[t.vc] = n;
+
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
+        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
+    }
+
+    for (u32 i = 0; i < vsize; ++i) {
+        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = uvs[i]};
     }
 
     LMesh* mesh = &MESHES[MESHES_SIZE];
@@ -1266,6 +1305,8 @@ static void RenderDataInit() {
     glEnableVertexAttribArray(shader.vpos_loc);
     glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(shader.vnormal_loc);
+    glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    glEnableVertexAttribArray(shader.vtextcoords_loc);
 }
 
 static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
