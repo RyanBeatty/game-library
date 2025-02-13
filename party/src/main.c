@@ -800,8 +800,8 @@ static LShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 2) in vec3 vNormal;\n"
-        "layout (location = 3) in vec2 vUV;\n"
+        "layout (location = 1) in vec3 vNormal;\n"
+        "layout (location = 2) in vec2 vUV;\n"
         "\n"
         "uniform mat4 vModel;\n"
         "uniform mat4 vView;\n"
@@ -857,7 +857,7 @@ static LShader GetShader2D() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 1) in vec2 vTextCoords;\n"
+        "layout (location = 2) in vec2 vTextCoords;\n"
         "\n"
         "uniform mat4 vModel;\n"
         "uniform mat4 vProj;\n"
@@ -1287,12 +1287,12 @@ static void RenderDataInit() {
 
     // TODO: Maybe this should go in GetShader?
     LShader shader = GetShader();
-    glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
-    glEnableVertexAttribArray(shader.vpos_loc);
-    glVertexAttribPointer(shader.vnormal_loc, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-    glEnableVertexAttribArray(shader.vnormal_loc);
-    glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
-    glEnableVertexAttribArray(shader.vtextcoords_loc);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
+    glEnableVertexAttribArray(2);
 }
 
 static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
