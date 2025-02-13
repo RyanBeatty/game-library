@@ -3082,20 +3082,20 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
         LShader shader = GetShader2D();
 
-        glGenVertexArrays(1, &VAO2);
-        glGenBuffers(1, &VBO2);
+        // glGenVertexArrays(1, &VAO2);
+        // glGenBuffers(1, &VBO2);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-        glBindVertexArray(VAO2);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-        glEnableVertexAttribArray(shader.vpos_loc);
-        glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        // glBindVertexArray(VAO2);
+        // glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        // glEnableVertexAttribArray(shader.vpos_loc);
+        // glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 
-        glEnableVertexAttribArray(shader.vtextcoords_loc);
-        glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
-                              (void*)(3 * sizeof(float)));
+        // glEnableVertexAttribArray(shader.vtextcoords_loc);
+        // glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
+        //                       (void*)(3 * sizeof(float)));
 
         T0 = UploadTexture("assets/textures/awesomeface.png");
         T1 = UploadTexture("assets/textures/helloatlas.png");
@@ -3108,7 +3108,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
             BeginDrawing();
             glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindVertexArray(VAO2);
+            glBindVertexArray(VAO);
         }
 
         // Enable/Disable culling.
@@ -3126,6 +3126,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
         Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
 
         LShader shader = GetShader2D();
+        LMesh mesh = GetMesh(M_QUAD);
 
         {
             glUseProgram(shader.pid);
@@ -3150,7 +3151,8 @@ static void SceneTickTextInEngine(GameState* gstate) {
             data.vuvscale = uvscale;
 
             Shader2DSetData(&shader, &data);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
         }
 
         {
@@ -3177,7 +3179,8 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 data.vuvscale = uvscale;
                 Shader2DSetData(&shader, &data);
 
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
             }
 
             pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
@@ -3213,7 +3216,8 @@ static void SceneTickTextInEngine(GameState* gstate) {
                             data.vuvscale = uvscale;
                             Shader2DSetData(&shader, &data);
 
-                            glDrawArrays(GL_TRIANGLES, 0, 6);
+                            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+                                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
                         }
                     }
                 }
