@@ -1285,8 +1285,8 @@ static void RenderDataInit() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
 
-    // TODO: Maybe this should go in GetShader?
-    LShader shader = GetShader();
+    // NOTE: This is very tricky to get right. Don't dynamically set these based on shader attribute
+    // locations. just hardcode and make sure that the shader code specifies the correct layout.
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
@@ -3062,41 +3062,11 @@ static void Scene1Tick(GameState* gstate) {
 }
 
 static void SceneTickTextInEngine(GameState* gstate) {
-    static u32 VAO2 = 0;
-    static u32 VBO2 = 0;
     static LTexture T0 = {0};
     static LTexture T1 = {0};
 
     // Init logic.
     if (!gstate->init) {
-        f32 vertices[] = {
-            // pos            // tex
-            0.0f, 1.0f, 0.0f, 0.0f, 1.0f,  //
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,  //
-            1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  //
-
-            0.0f, 1.0f, 0.0f, 0.0f, 1.0f,  //
-            1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  //
-            1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  //
-        };
-
-        LShader shader = GetShader2D();
-
-        // glGenVertexArrays(1, &VAO2);
-        // glGenBuffers(1, &VBO2);
-
-        // glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-        // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-        // glBindVertexArray(VAO2);
-        // glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-        // glEnableVertexAttribArray(shader.vpos_loc);
-        // glVertexAttribPointer(shader.vpos_loc, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-
-        // glEnableVertexAttribArray(shader.vtextcoords_loc);
-        // glVertexAttribPointer(shader.vtextcoords_loc, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float),
-        //                       (void*)(3 * sizeof(float)));
-
         T0 = UploadTexture("assets/textures/awesomeface.png");
         T1 = UploadTexture("assets/textures/helloatlas.png");
     }
