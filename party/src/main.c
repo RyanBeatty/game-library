@@ -1017,11 +1017,17 @@ static void RenderDataInit() {
             Vec3Lit(0.5f, -0.5f, 0.0f),
             Vec3Lit(0.5f, 0.5f, 0.0f),
         };
+        Vec2 uvs[] = {
+            Vec2Lit(0.0f, 1.0f),
+            Vec2Lit(0.0f, 0.0f),
+            Vec2Lit(1.0f, 0.0f),
+            Vec2Lit(1.0f, 1.0f),
+        };
         Triangle ts[] = {
             TriLit(0, 1, 2),  //
             TriLit(2, 3, 0),  //
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
     // ISO TRIANGLE Mesh.
