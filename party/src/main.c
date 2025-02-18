@@ -3166,12 +3166,12 @@ static void SceneTickTextInEngine(GameState* gstate) {
         LShader shader = GetShader2D();
         LMesh mesh = GetMesh(M_QUAD);
 
-        {
-            ShaderPass pass = {0};
-            ShaderPassInit(&pass);
-            pass.sid = shader.pid;
-            pass.proj = proj;
+        ShaderPass pass = {0};
+        ShaderPassInit(&pass);
+        pass.sid = shader.pid;
+        pass.proj = proj;
 
+        {
             Mat4 scale = Mat4Scale(50.0f);
             Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
             Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
@@ -3187,16 +3187,9 @@ static void SceneTickTextInEngine(GameState* gstate) {
             cmd->uvscale = uvscale;
             cmd->txid = T0.id;
             cmd->meshid = mesh;
-
-            ShaderPassExecute(&pass);
         }
 
         {
-            ShaderPass pass = {0};
-            ShaderPassInit(&pass);
-            pass.sid = shader.pid;
-            pass.proj = proj;
-
             Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
 
             {
@@ -3250,16 +3243,10 @@ static void SceneTickTextInEngine(GameState* gstate) {
                     }
                 }
             }
-            ShaderPassExecute(&pass);
         }
 
         {
             LTexture tx = T2;
-
-            ShaderPass pass = {0};
-            ShaderPassInit(&pass);
-            pass.sid = shader.pid;
-            pass.proj = proj;
 
             Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
 
@@ -3280,9 +3267,9 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 cmd->txid = tx.id;
                 cmd->meshid = mesh;
             }
-
-            ShaderPassExecute(&pass);
         }
+
+        ShaderPassExecute(&pass);
 
         EndDrawing();
         CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
