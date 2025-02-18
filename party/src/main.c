@@ -3215,57 +3215,42 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 cmd->uvscale = uvscale;
                 cmd->txid = T1.id;
                 cmd->meshid = mesh;
-
-                ShaderPassExecute(&pass);
             }
-
-            {
-                glUseProgram(shader.pid);
-                glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-            }
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, T1.id);
 
             pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
 
             {
-                {
-                    LTexture tx = T1;
+                LTexture tx = T1;
 
-                    for (u32 i = 0; i < 2; ++i) {
-                        for (u32 j = 0; j < 2; ++j) {
-                            Vec2 r_src = Vec2Lit(48.0f, 48.0f);
-                            Vec2 p_src = Vec2Lit(r_src.x * i, r_src.y * j);
+                for (u32 i = 0; i < 2; ++i) {
+                    for (u32 j = 0; j < 2; ++j) {
+                        Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+                        Vec2 p_src = Vec2Lit(r_src.x * i, r_src.y * j);
 
-                            Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
-                            Vec2 p_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
+                        Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
+                        Vec2 p_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
 
-                            // TODO: is scale right?
-                            Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-                            Vec2 uvoffset = Vec2Lit(p_src.x / tx.width, p_src.y / tx.height);
+                        // TODO: is scale right?
+                        Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+                        Vec2 uvoffset = Vec2Lit(p_src.x / tx.width, p_src.y / tx.height);
 
-                            Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
-                            Mat4 orient = Mat4Identity();
+                        Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
+                        Mat4 orient = Mat4Identity();
 
-                            Mat4 translate = Mat4TranslateV(Vec3Lit(p_dst.x, p_dst.y, 0.0f));
-                            Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+                        Mat4 translate = Mat4TranslateV(Vec3Lit(p_dst.x, p_dst.y, 0.0f));
+                        Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-                            LShaderData data = {0};
-                            data.txid = T1.id;
-                            data.vproj = proj;
-                            data.vmodel = model;
-                            data.vucolor = LCLEAR;
-                            data.vuvoffset = uvoffset;
-                            data.vuvscale = uvscale;
-                            Shader2DSetData(&shader, &data);
-
-                            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
-                        }
+                        DrawCmd* cmd = ShaderPassAddCmd(&pass);
+                        cmd->modelm = model;
+                        cmd->color = LCLEAR;
+                        cmd->uvoffset = uvoffset;
+                        cmd->uvscale = uvscale;
+                        cmd->txid = T1.id;
+                        cmd->meshid = mesh;
                     }
                 }
             }
+            ShaderPassExecute(&pass);
         }
 
         {
