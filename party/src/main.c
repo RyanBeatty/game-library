@@ -3166,12 +3166,12 @@ static void SceneTickTextInEngine(GameState* gstate) {
         LShader shader = GetShader2D();
         LMesh mesh = GetMesh(M_QUAD);
 
-        ShaderPass pass = {0};
-        ShaderPassInit(&pass);
-        pass.sid = shader.pid;
-        pass.proj = proj;
-
         {
+            ShaderPass pass = {0};
+            ShaderPassInit(&pass);
+            pass.sid = shader.pid;
+            pass.proj = proj;
+
             Mat4 scale = Mat4Scale(50.0f);
             Mat4 orient = Mat4Rotate(gstate->timer, Vec3Lit(0.0f, 0.0f, 1.0f));
             Mat4 translate = Mat4TranslateV(Vec3Lit(300.0f, 300.0f, 0.0f));
@@ -3192,13 +3192,10 @@ static void SceneTickTextInEngine(GameState* gstate) {
         }
 
         {
-            glUseProgram(shader.pid);
-            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-        }
-
-        {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, T1.id);
+            ShaderPass pass = {0};
+            ShaderPassInit(&pass);
+            pass.sid = shader.pid;
+            pass.proj = proj;
 
             Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
 
@@ -3211,18 +3208,24 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 Vec2 uvoffset = Vec2Zero();
                 Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
 
-                LShaderData data = {0};
-                data.txid = T1.id;
-                data.vproj = proj;
-                data.vmodel = model;
-                data.vucolor = LCLEAR;
-                data.vuvoffset = uvoffset;
-                data.vuvscale = uvscale;
-                Shader2DSetData(&shader, &data);
+                DrawCmd* cmd = ShaderPassAddCmd(&pass);
+                cmd->modelm = model;
+                cmd->color = LCLEAR;
+                cmd->uvoffset = uvoffset;
+                cmd->uvscale = uvscale;
+                cmd->txid = T1.id;
+                cmd->meshid = mesh;
 
-                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                ShaderPassExecute(&pass);
             }
+
+            {
+                glUseProgram(shader.pid);
+                glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+            }
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, T1.id);
 
             pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
 
