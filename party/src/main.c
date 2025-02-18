@@ -3255,8 +3255,11 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
         {
             LTexture tx = T2;
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, tx.id);
+
+            ShaderPass pass = {0};
+            ShaderPassInit(&pass);
+            pass.sid = shader.pid;
+            pass.proj = proj;
 
             Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
 
@@ -3269,18 +3272,16 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 Vec2 uvoffset = Vec2Zero();
                 Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
 
-                LShaderData data = {0};
-                data.txid = tx.id;
-                data.vproj = proj;
-                data.vmodel = model;
-                data.vucolor = LCLEAR;
-                data.vuvoffset = uvoffset;
-                data.vuvscale = uvscale;
-                Shader2DSetData(&shader, &data);
-
-                glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                               (void*)(mesh.ibufferidx * sizeof(GLuint)));
+                DrawCmd* cmd = ShaderPassAddCmd(&pass);
+                cmd->modelm = model;
+                cmd->color = LCLEAR;
+                cmd->uvoffset = uvoffset;
+                cmd->uvscale = uvscale;
+                cmd->txid = tx.id;
+                cmd->meshid = mesh;
             }
+
+            ShaderPassExecute(&pass);
         }
 
         EndDrawing();
