@@ -3180,14 +3180,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
             Vec2 uvoffset = Vec2Zero();
             Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
 
-            LShaderData data = {0};
-            data.txid = T0.id;
-            data.vproj = proj;
-            data.vmodel = model;
-            data.vucolor = LRED;
-            data.vuvoffset = uvoffset;
-            data.vuvscale = uvscale;
-
             DrawCmd* cmd = ShaderPassAddCmd(&pass);
             cmd->modelm = model;
             cmd->color = LRED;
@@ -3197,9 +3189,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
             cmd->meshid = mesh;
 
             ShaderPassExecute(&pass);
-            // Shader2DSetData(&shader, &data);
-            // glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-            //                (void*)(mesh.ibufferidx * sizeof(GLuint)));
         }
 
         {
