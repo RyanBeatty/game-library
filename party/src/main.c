@@ -3064,11 +3064,13 @@ static void Scene1Tick(GameState* gstate) {
 static void SceneTickTextInEngine(GameState* gstate) {
     static LTexture T0 = {0};
     static LTexture T1 = {0};
+    static LTexture T2 = {0};
 
     // Init logic.
     if (!gstate->init) {
         T0 = UploadTexture("assets/textures/awesomeface.png");
         T1 = UploadTexture("assets/textures/helloatlas.png");
+        T2 = UploadTexture("assets/textures/LFont.png");
     }
 
     // Drawing
