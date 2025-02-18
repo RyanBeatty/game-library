@@ -3139,37 +3139,18 @@ static void SceneTickTextInEngine(GameState* gstate) {
         T2 = UploadTexture("assets/textures/LFont.png");
     }
 
-    // Drawing
+    Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
+
+    LShader shader = GetShader2D();
+
+    ShaderPass pass = {0};
+    ShaderPassInit(&pass);
+    pass.sid = shader.pid;
+    pass.proj = proj;
+
+    // Update
     {
-        // Begin.
-        {
-            BeginDrawing();
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindVertexArray(VAO);
-        }
-
-        // Enable/Disable culling.
-        // TODO: Make this nicer at some point. Useful for debugging.
-        {
-            if (gstate->debug) {
-                glDisable(GL_CULL_FACE);
-            } else {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-                glFrontFace(GL_CCW);
-            }
-        }
-
-        Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
-
-        LShader shader = GetShader2D();
         LMesh mesh = GetMesh(M_QUAD);
-
-        ShaderPass pass = {0};
-        ShaderPassInit(&pass);
-        pass.sid = shader.pid;
-        pass.proj = proj;
 
         {
             Mat4 scale = Mat4Scale(50.0f);
@@ -3268,11 +3249,32 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 cmd->meshid = mesh;
             }
         }
+    }
+
+    {
+        // Begin.
+        {
+            BeginDrawing();
+            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glBindVertexArray(VAO);
+        }
+
+        // Enable/Disable culling.
+        // TODO: Make this nicer at some point. Useful for debugging.
+        {
+            if (gstate->debug) {
+                glDisable(GL_CULL_FACE);
+            } else {
+                glEnable(GL_CULL_FACE);
+                glCullFace(GL_BACK);
+                glFrontFace(GL_CCW);
+            }
+        }
 
         ShaderPassExecute(&pass);
 
         EndDrawing();
-        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
     }
 }
 
