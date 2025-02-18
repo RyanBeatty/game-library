@@ -1301,12 +1301,78 @@ typedef struct DrawCmd {
     LMesh meshid;
     Mat4 modelm;  // converts from model space to world space.
     Vec4 color;
+    Vec2 uvoffset;
+    Vec2 uvscale;
+    TextureId txid;  // Texture id.
+
+    // TODO: Deprecate.
     bool wireframe;
 } DrawCmd;
 
 #define MAX_CMDS 4092
 static DrawCmd CBUFFER[MAX_CMDS] = {0};
 static u32 CBUFFER_SIZE = 0;
+
+typedef struct ShaderPass {
+    ShaderId sid;
+
+    ///////////////////////
+    // Uniform data that should be set once for a pass here.
+    Mat4 view;
+    Mat4 proj;
+    ///////////////////////
+
+    u32 clen;
+    u32 ccap;
+    DrawCmd cmds[MAX_CMDS];
+} ShaderPass;
+
+static void ShaderPassInit(ShaderPass* pass) {
+    memset(pass, 0, sizeof(ShaderPass));
+    pass->view = Mat4Identity();
+    pass->proj = Mat4Identity();
+
+    pass->clen = 0;
+    pass->ccap = MAX_CMDS;
+}
+
+static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
+    Assert(pass->clen < pass->ccap);
+    DrawCmd* cmd = &pass->cmds[pass->clen++];
+    memset(cmd, 0, sizeof(DrawCmd));
+    return cmd;
+}
+
+static void ShaderPassExecute(ShaderPass* pass) {
+    LShader shader2d = GetShader2D();
+
+    if (pass->sid == shader2d.pid) {
+        LShader shader = shader2d;
+
+        glUseProgram(shader.pid);
+
+        // TODO:
+        // glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
+        glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
+
+        for (u32 i = 0; i < pass->clen; ++i) {
+            DrawCmd* cmd = &pass->cmds[i];
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, cmd->txid);
+
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
+            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
+
+            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+        }
+    } else {
+        Assert(false);
+    }
+}
 
 static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm, Vec4 color) {
     Assert(CBUFFER_SIZE < MAX_CMDS);
@@ -3100,10 +3166,10 @@ static void SceneTickTextInEngine(GameState* gstate) {
         LShader shader = GetShader2D();
         LMesh mesh = GetMesh(M_QUAD);
 
-        {
-            glUseProgram(shader.pid);
-            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-        }
+        ShaderPass pass = {0};
+        ShaderPassInit(&pass);
+        pass.sid = shader.pid;
+        pass.proj = proj;
 
         {
             Mat4 scale = Mat4Scale(50.0f);
@@ -3122,9 +3188,23 @@ static void SceneTickTextInEngine(GameState* gstate) {
             data.vuvoffset = uvoffset;
             data.vuvscale = uvscale;
 
-            Shader2DSetData(&shader, &data);
-            glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(mesh.ibufferidx * sizeof(GLuint)));
+            DrawCmd* cmd = ShaderPassAddCmd(&pass);
+            cmd->modelm = model;
+            cmd->color = LRED;
+            cmd->uvoffset = uvoffset;
+            cmd->uvscale = uvscale;
+            cmd->txid = T0.id;
+            cmd->meshid = mesh;
+
+            ShaderPassExecute(&pass);
+            // Shader2DSetData(&shader, &data);
+            // glDrawElements(GL_TRIANGLES, mesh.ntriangles * 3, GL_UNSIGNED_INT,
+            //                (void*)(mesh.ibufferidx * sizeof(GLuint)));
+        }
+
+        {
+            glUseProgram(shader.pid);
+            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
         }
 
         {
