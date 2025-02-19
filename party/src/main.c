@@ -1340,6 +1340,10 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
     Assert(pass->clen < pass->ccap);
     DrawCmd* cmd = &pass->cmds[pass->clen++];
     memset(cmd, 0, sizeof(DrawCmd));
+    cmd->color = LCLEAR;
+    cmd->modelm = Mat4Identity();
+    cmd->uvoffset = Vec2Lit(0.0f, 0.0f);
+    cmd->uvscale = Vec2Lit(1.0f, 1.0f);
     return cmd;
 }
 
