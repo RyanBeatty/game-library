@@ -723,16 +723,6 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
 
 typedef u32 ShaderId;
 
-typedef struct LShaderData {
-    u32 txid;
-
-    Mat4 vproj;
-    Mat4 vmodel;
-    Vec4 vucolor;
-    Vec2 vuvoffset;
-    Vec2 vuvscale;
-} LShaderData;
-
 typedef struct LShader {
     ShaderId pid;  // program id.
     u32 vid;
@@ -917,17 +907,6 @@ static LShader GetShader2D() {
     }
 
     return SHADER;
-}
-
-static void Shader2DSetData(LShader* shader, LShaderData* data) {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, data->txid);
-
-    glUniformMatrix4fv(shader->vproj_loc, 1, GL_FALSE, (const f32*)&data->vproj.m);
-    glUniformMatrix4fv(shader->vmodel_loc, 1, GL_FALSE, (const f32*)&data->vmodel.m);
-    glUniform4fv(shader->vucolor_loc, 1, (const f32*)&data->vucolor.f);
-    glUniform2fv(shader->vuvoffset_loc, 1, (const f32*)&data->vuvoffset.f);
-    glUniform2fv(shader->vuvscale_loc, 1, (const f32*)&data->vuvscale.f);
 }
 
 static void RenderDataInit() {
