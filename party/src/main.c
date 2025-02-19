@@ -1390,14 +1390,19 @@ static RenderState RSTATE;
 static void BeginRender() {
     RenderState* rstate = &RSTATE;
     rstate->passidx = 0;
-    rstate->passlen = 1;
+    rstate->passlen = 0;
+    rstate->passcap = MAX_SHADER_PASSES;
+}
+
+static ShaderPass* BeginShaderPass(LShader shader) {
+    RenderState* rstate = &RSTATE;
+    Assert(rstate->passlen < rstate->passcap);
+
+    rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
     ShaderPassInit(pass);
-
-    // Set a default shader.
-    pass->sid = GetShader2D().pid;
-    // TODO: Default this to dimensions of screen.
-    pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
+    pass->sid = shader.pid;
+    return pass;
 }
 
 // Execute shader passes and produce render to screen.
@@ -1433,7 +1438,11 @@ static void EndRender() {
     EndDrawing();
 }
 
-static DrawCmd* AddCmd() { return ShaderPassAddCmd(CurShaderPass()); }
+static DrawCmd* AddCmd() {
+    RenderState* rstate = &RSTATE;
+    Assert(rstate->passlen != 0);
+    return ShaderPassAddCmd(CurShaderPass());
+}
 
 ////////////////////////////////////////////////////////////
 // S:Geometry
@@ -3210,8 +3219,11 @@ static void SceneTickTextInEngine(GameState* gstate) {
         T2 = UploadTexture("assets/textures/LFont.png");
     }
 
-    // Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
     BeginRender();
+    {
+        ShaderPass* pass = BeginShaderPass(GetShader2D());
+        pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
+    }
 
     // Update
     {
