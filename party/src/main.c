@@ -1378,7 +1378,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
     }
 }
 
-static DrawCmd* AddCmd(LMesh meshid, Mat4 modelm, Vec4 color) {
+static DrawCmd* AddCmdOld(LMesh meshid, Mat4 modelm, Vec4 color) {
     Assert(CBUFFER_SIZE < MAX_CMDS);
     DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
     ++CBUFFER_SIZE;
@@ -1394,6 +1394,67 @@ static void CmdBufferZero() {
     CBUFFER_SIZE = 0;
     memset(CBUFFER, 0, ArraySizeOf(CBUFFER) * sizeof(CBUFFER[0]));
 }
+
+#define MAX_SHADER_PASSES 10
+typedef struct RenderState {
+    u32 passidx;
+    u32 passlen;
+    u32 passcap;
+    ShaderPass passes[MAX_SHADER_PASSES];
+} RenderState;
+
+static RenderState RSTATE;
+
+#define CurShaderPass() (&RSTATE.passes[RSTATE.passidx])
+
+// Reset render state and allow accumulation of shader passes.
+static void BeginRender() {
+    RenderState* rstate = &RSTATE;
+    rstate->passidx = 0;
+    rstate->passlen = 1;
+    ShaderPass* pass = &rstate->passes[rstate->passidx];
+    ShaderPassInit(pass);
+
+    // Set a default shader.
+    pass->sid = GetShader2D().pid;
+    // TODO: Default this to dimensions of screen.
+    pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
+}
+
+// Execute shader passes and produce render to screen.
+static void EndRender() {
+    RenderState* rstate = &RSTATE;
+
+    // Begin.
+    {
+        BeginDrawing();
+        // TODO: turn this into a draw command using unions.
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // TODO: move this to shader pass data.
+        glBindVertexArray(VAO);
+    }
+
+    // // Enable/Disable culling.
+    // // TODO: Make this nicer at some point. Useful for debugging.
+    // {
+    //     if (gstate->debug) {
+    //         glDisable(GL_CULL_FACE);
+    //     } else {
+    //         glEnable(GL_CULL_FACE);
+    //         glCullFace(GL_BACK);
+    //         glFrontFace(GL_CCW);
+    //     }
+    // }
+
+    for (u32 i = 0; i < rstate->passlen; ++i) {
+        ShaderPassExecute(&rstate->passes[i]);
+    }
+
+    EndDrawing();
+}
+
+static DrawCmd* AddCmd() { return ShaderPassAddCmd(CurShaderPass()); }
 
 ////////////////////////////////////////////////////////////
 // S:Geometry
@@ -2071,7 +2132,7 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
         Mat4 scale = Mat4ScaleV(entity->scale);
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-        AddCmd(entity->mesh, model, entity->color);
+        AddCmdOld(entity->mesh, model, entity->color);
     }
 }
 
@@ -2081,7 +2142,7 @@ static void DrawEntitiesWireFrame(LShader shader, EntityId* entities, u32 size) 
         Mat4 scale = Mat4ScaleV(entity->scale);
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-        DrawCmd* cmd = AddCmd(entity->mesh, model, entity->color);
+        DrawCmd* cmd = AddCmdOld(entity->mesh, model, entity->color);
         cmd->wireframe = true;
     }
 }
@@ -2092,20 +2153,20 @@ static void DrawEntitiesWireFrame(LShader shader, EntityId* entities, u32 size) 
 static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color) {
     forward = Vec3Normalize(forward);
     // tail.
-    AddCmd(GetMesh(M_CUBE), Mat4SRT(scale, orient, pos), color);
+    AddCmdOld(GetMesh(M_CUBE), Mat4SRT(scale, orient, pos), color);
     pos = Vec3Add(pos, Vec3Scale(forward, 1.0f * scale));
     // tip.
-    AddCmd(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
+    AddCmdOld(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
 }
 
 static void DrawSphereWf(Vec3 center, f32 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmd(GetMesh(M_ICOSPHERE), Mat4SRT(radius, Mat4Identity(), center), color);
+    DrawCmd* cmd = AddCmdOld(GetMesh(M_ICOSPHERE), Mat4SRT(radius, Mat4Identity(), center), color);
     cmd->wireframe = true;
 }
 
 static void DrawAABBWf(Vec3 center, Vec3 radius, Vec4 color) {
     // Reminder that radius are the *half* widths, so need to multiply by 2 to scale correctly
-    DrawCmd* cmd = AddCmd(GetMesh(M_CUBE), Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center), color);
+    DrawCmd* cmd = AddCmdOld(GetMesh(M_CUBE), Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center), color);
     cmd->wireframe = true;
 }
 
@@ -2924,7 +2985,7 @@ static void Scene1Tick(GameState* gstate) {
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 Vec3 pos = vs[i];
                                 Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                                AddCmd(GetMesh(M_CUBE), model, LRED);
+                                AddCmdOld(GetMesh(M_CUBE), model, LRED);
                             }
                         }
                         // Draw normals
@@ -3142,7 +3203,7 @@ static void DrawLTexturePro(ShaderPass* pass, LTexture tx, Vec2 c_src, Vec2 r_sr
     Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
     Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-    DrawCmd* cmd = ShaderPassAddCmd(pass);
+    DrawCmd* cmd = AddCmd();  // ShaderPassAddCmd(pass);
     cmd->modelm = model;
     cmd->color = color;
     cmd->uvoffset = uvoffset;
@@ -3182,6 +3243,8 @@ static void SceneTickTextInEngine(GameState* gstate) {
     pass.sid = shader.pid;
     pass.proj = proj;
 
+    BeginRender();
+
     // Update
     {
         {
@@ -3219,31 +3282,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
         }
     }
 
-    {
-        // Begin.
-        {
-            BeginDrawing();
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindVertexArray(VAO);
-        }
-
-        // Enable/Disable culling.
-        // TODO: Make this nicer at some point. Useful for debugging.
-        {
-            if (gstate->debug) {
-                glDisable(GL_CULL_FACE);
-            } else {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-                glFrontFace(GL_CCW);
-            }
-        }
-
-        ShaderPassExecute(&pass);
-
-        EndDrawing();
-    }
+    EndRender();
 }
 
 static void SceneTickTestText(GameState* gstate) {
@@ -3713,8 +3752,8 @@ static void SceneTickItFollows(GameState* gstate) {
                     Mat4 scale = Mat4ScaleV(e->scale);
                     Mat4 translate = Mat4TranslateV(e->pos);
                     Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-                    AddCmd(e->mesh, model, color);
-                    DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
+                    AddCmdOld(e->mesh, model, color);
+                    DrawCmd* cmd2 = AddCmdOld(e->mesh, model, color);
                     cmd2->wireframe = true;
 
                     if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
@@ -4168,8 +4207,8 @@ static void SceneTickTennis(GameState* gstate) {
                         Mat4 scale = Mat4ScaleV(e->scale);
                         Mat4 translate = Mat4TranslateV(e->pos);
                         Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-                        AddCmd(e->mesh, model, color);
-                        DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
+                        AddCmdOld(e->mesh, model, color);
+                        DrawCmd* cmd2 = AddCmdOld(e->mesh, model, color);
                         cmd2->wireframe = true;
                     }
 
@@ -4722,7 +4761,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
             // Draw background
             {
-                AddCmd(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1);
+                AddCmdOld(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1);
             }
 
             // Draw.
@@ -4746,8 +4785,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                     Mat4 scale = Mat4ScaleV(e->scale);
                     Mat4 translate = Mat4TranslateV(e->pos);
                     Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-                    AddCmd(e->mesh, model, color);
-                    DrawCmd* cmd2 = AddCmd(e->mesh, model, color);
+                    AddCmdOld(e->mesh, model, color);
+                    DrawCmd* cmd2 = AddCmdOld(e->mesh, model, color);
                     cmd2->wireframe = true;
                 }
 
