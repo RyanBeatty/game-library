@@ -3184,8 +3184,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
     // Update
     {
-        LMesh mesh = GetMesh(M_QUAD);
-
         {
             DrawLTextureEx(&pass, T0, Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
         }
@@ -3216,27 +3214,8 @@ static void SceneTickTextInEngine(GameState* gstate) {
         }
 
         {
-            LTexture tx = T2;
-
             Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
-
-            {
-                Mat4 scale = Mat4Scale(300.0f);
-                Mat4 orient = Mat4Identity();
-                Mat4 translate = Mat4TranslateV(pos);
-                Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
-
-                Vec2 uvoffset = Vec2Zero();
-                Vec2 uvscale = Vec2Lit(1.0f, 1.0f);
-
-                DrawCmd* cmd = ShaderPassAddCmd(&pass);
-                cmd->modelm = model;
-                cmd->color = LCLEAR;
-                cmd->uvoffset = uvoffset;
-                cmd->uvscale = uvscale;
-                cmd->txid = tx.id;
-                cmd->meshid = mesh;
-            }
+            DrawLTexture(&pass, T2, Vec2Lit(pos.x, pos.y), 300.0f);
         }
     }
 
