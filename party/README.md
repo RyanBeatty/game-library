@@ -3,6 +3,7 @@ Conventions
 * positive rotation is right hand thumb along vector and direction hands curl
 * column vectors (i.e. basis vectors are columns when written down on page)
 * forward, right, up is (-z, +x, +y)
+* 2d/screenspace drawing maps (0, 0) to bottom left corner. +y goes up
 
 
 Engine Features Desired for Gameplay Prototyping
