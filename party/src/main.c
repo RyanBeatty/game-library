@@ -3151,8 +3151,9 @@ static void DrawLTexturePro(ShaderPass* pass, LTexture tx, Vec2 c_src, Vec2 r_sr
     cmd->meshid = GetMesh(M_QUAD);
 }
 
-static void DrawLTexture(ShaderPass* pass, LTexture tx, Vec2 c_dst, Vec2 r_dst) {
-    DrawLTexturePro(pass, tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), c_dst, r_dst, 0.0f, LCLEAR);
+static void DrawLTexture(ShaderPass* pass, LTexture tx, Vec2 pos, f32 scale) {
+    DrawLTexturePro(pass, tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f,
+                    LCLEAR);
 }
 
 static void SceneTickTextInEngine(GameState* gstate) {
@@ -3202,7 +3203,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
             Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
 
             {
-                DrawLTexture(&pass, T1, Vec2Lit(pos.x, pos.y), Vec2Lit(100.0f, 100.0f));
+                DrawLTexture(&pass, T1, Vec2Lit(pos.x, pos.y), 100.0f);
             }
 
             pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
