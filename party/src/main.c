@@ -3192,8 +3192,7 @@ static void Scene1Tick(GameState* gstate) {
     }
 }
 
-static void DrawLTexturePro(ShaderPass* pass, LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation,
-                            Vec4 color) {
+static void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
     // TODO: is scale right?
     Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
     Vec2 uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
@@ -3203,7 +3202,7 @@ static void DrawLTexturePro(ShaderPass* pass, LTexture tx, Vec2 c_src, Vec2 r_sr
     Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
     Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-    DrawCmd* cmd = AddCmd();  // ShaderPassAddCmd(pass);
+    DrawCmd* cmd = AddCmd();
     cmd->modelm = model;
     cmd->color = color;
     cmd->uvoffset = uvoffset;
@@ -3212,14 +3211,12 @@ static void DrawLTexturePro(ShaderPass* pass, LTexture tx, Vec2 c_src, Vec2 r_sr
     cmd->meshid = GetMesh(M_QUAD);
 }
 
-static void DrawLTextureEx(ShaderPass* pass, LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
-    DrawLTexturePro(pass, tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation,
-                    color);
+static void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
+    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation, color);
 }
 
-static void DrawLTexture(ShaderPass* pass, LTexture tx, Vec2 pos, f32 scale) {
-    DrawLTexturePro(pass, tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f,
-                    LCLEAR);
+static void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
+    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
 }
 
 static void SceneTickTextInEngine(GameState* gstate) {
@@ -3234,28 +3231,20 @@ static void SceneTickTextInEngine(GameState* gstate) {
         T2 = UploadTexture("assets/textures/LFont.png");
     }
 
-    Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
-
-    LShader shader = GetShader2D();
-
-    ShaderPass pass = {0};
-    ShaderPassInit(&pass);
-    pass.sid = shader.pid;
-    pass.proj = proj;
-
+    // Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
     BeginRender();
 
     // Update
     {
         {
-            DrawLTextureEx(&pass, T0, Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
+            DrawLTextureEx(T0, Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
         }
 
         {
             Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
 
             {
-                DrawLTexture(&pass, T1, Vec2Lit(pos.x, pos.y), 100.0f);
+                DrawLTexture(T1, Vec2Lit(pos.x, pos.y), 100.0f);
             }
 
             pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
@@ -3270,7 +3259,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
                         Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
                         Vec2 c_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
-                        DrawLTexturePro(&pass, tx, c_src, r_src, c_dst, r_dst, 0.0f, LCLEAR);
+                        DrawLTexturePro(tx, c_src, r_src, c_dst, r_dst, 0.0f, LCLEAR);
                     }
                 }
             }
@@ -3278,7 +3267,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
         {
             Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
-            DrawLTexture(&pass, T2, Vec2Lit(pos.x, pos.y), 300.0f);
+            DrawLTexture(T2, Vec2Lit(pos.x, pos.y), 300.0f);
         }
     }
 
