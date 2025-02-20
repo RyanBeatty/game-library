@@ -655,7 +655,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_NONE = 0, TX_AWESOME_FACE, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_NONE = 0, TX_AWESOME_FACE, TX_HELLO_ATLAS, TX_LFONT, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -678,12 +678,19 @@ static void TexturesInit() {
         ++tcache->txlen;
     }
 
-    // {
-    //     Assert(tcache->txlen < tcache->txcap);
-    //     LTexture tx = UploadTexture("assets/textures/helloatlas.png");
-    //     tcache->textures[TX_AWESOME_FACE] = tx;
-    //     ++tcache->txlen;
-    // }
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        LTexture tx = UploadTexture("assets/textures/helloatlas.png");
+        tcache->textures[TX_HELLO_ATLAS] = tx;
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        LTexture tx = UploadTexture("assets/textures/LFont.png");
+        tcache->textures[TX_LFONT] = tx;
+        ++tcache->txlen;
+    }
 }
 
 static LMesh GetMesh(u32 mid) {
@@ -3262,9 +3269,6 @@ static void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
 }
 
 static void SceneTickTextInEngine(GameState* gstate) {
-    static LTexture T0 = {0};
-    static LTexture T1 = {0};
-    static LTexture T2 = {0};
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -3272,10 +3276,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
     // Init logic.
     if (!gstate->init) {
-        T0 = UploadTexture("assets/textures/awesomeface.png");
-        T1 = UploadTexture("assets/textures/helloatlas.png");
-        T2 = UploadTexture("assets/textures/LFont.png");
-
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
     }
@@ -3346,13 +3346,13 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
 
                 {
-                    DrawLTexture(T1, Vec2Lit(pos.x, pos.y), 100.0f);
+                    DrawLTexture(GetTexture(TX_HELLO_ATLAS), Vec2Lit(pos.x, pos.y), 100.0f);
                 }
 
-                pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
+                pos = Vec3Add(pos, Vec3Lit(GetTexture(TX_HELLO_ATLAS).width + 40.0f, 0.0f, 0.0f));
 
                 {
-                    LTexture tx = T1;
+                    LTexture tx = GetTexture(TX_HELLO_ATLAS);
 
                     for (u32 i = 0; i < 2; ++i) {
                         for (u32 j = 0; j < 2; ++j) {
@@ -3369,7 +3369,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
             {
                 Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
-                DrawLTexture(T2, Vec2Lit(pos.x, pos.y), 300.0f);
+                DrawLTexture(GetTexture(TX_LFONT), Vec2Lit(pos.x, pos.y), 300.0f);
             }
         }
 
@@ -3387,7 +3387,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
         cmd->meshid = GetMesh(M_QUAD);
         cmd->color = LRED;
         cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(0.0f, 0.0f, -10.0f));
-        cmd->txid = T0.id;
+        cmd->txid = GetTexture(TX_LFONT).id;
         EndShaderPass();
     }
 
