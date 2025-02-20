@@ -1375,6 +1375,8 @@ static void CmdBufferZero() {
 }
 
 #define MAX_SHADER_PASSES 10
+static const u32 PASSNULL = MAX_SHADER_PASSES;
+
 typedef struct RenderState {
     u32 passidx;
     u32 passlen;
@@ -1389,14 +1391,15 @@ static RenderState RSTATE;
 // Reset render state and allow accumulation of shader passes.
 static void BeginRender() {
     RenderState* rstate = &RSTATE;
-    rstate->passidx = 0;
+    rstate->passidx = PASSNULL;
     rstate->passlen = 0;
-    rstate->passcap = MAX_SHADER_PASSES;
+    rstate->passcap = MAX_SHADER_PASSES - 1;  // last entry reserved for null idx.
 }
 
 static ShaderPass* BeginShaderPass(LShader shader) {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen < rstate->passcap);
+    Assert(rstate->passidx == PASSNULL);
 
     rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
@@ -1405,9 +1408,17 @@ static ShaderPass* BeginShaderPass(LShader shader) {
     return pass;
 }
 
+static void EndShaderPass() {
+    RenderState* rstate = &RSTATE;
+    Assert(rstate->passidx != PASSNULL);
+    rstate->passidx = PASSNULL;
+}
+
 // Execute shader passes and produce render to screen.
 static void EndRender() {
     RenderState* rstate = &RSTATE;
+
+    Assert(rstate->passidx == PASSNULL);
 
     // Begin.
     {
@@ -3262,6 +3273,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
         }
     }
 
+    EndShaderPass();
     EndRender();
 }
 
