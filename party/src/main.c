@@ -3387,7 +3387,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
         cmd->meshid = GetMesh(M_QUAD);
         cmd->color = LRED;
         cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(0.0f, 0.0f, -10.0f));
-        cmd->txid = GetTexture(TX_LFONT).id;
+        cmd->txid = GetTexture(TX_AWESOME_FACE).id;
         EndShaderPass();
     }
 
