@@ -851,7 +851,7 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
     }
 }
 
-static LShader GetShader() {
+static LShader GetShaderOld() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 vPos;\n"
@@ -908,7 +908,7 @@ static LShader GetShader() {
     return SHADER;
 }
 
-static LShader GetShader2D() {
+static LShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
         "layout (location = 0) in vec3 vPos;\n"
@@ -1399,7 +1399,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 }
 
 static void ShaderPassExecute(ShaderPass* pass) {
-    LShader shader2d = GetShader2D();
+    LShader shader2d = GetShader();
 
     if (pass->sid == shader2d.pid) {
         LShader shader = shader2d;
@@ -2896,7 +2896,7 @@ static void Scene1Tick(GameState* gstate) {
         }
 
         {
-            LShader shader = GetShader();
+            LShader shader = GetShaderOld();
             {
                 EntityId* entities = SPINNING;
                 u32 size = SPINNING_SIZE;
@@ -3228,7 +3228,7 @@ static void Scene1Tick(GameState* gstate) {
         }
 
         // Use shader + setup norm + view + proj matrix.
-        LShader shader = GetShader();
+        LShader shader = GetShaderOld();
         {
             glUseProgram(shader.pid);
             // {
@@ -3353,7 +3353,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
     BeginRender();
     {
         {
-            ShaderPass* pass = BeginShaderPass(GetShader2D());
+            ShaderPass* pass = BeginShaderPass(GetShader());
             pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
         }
 
@@ -3399,7 +3399,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
     {
         {
-            ShaderPass* pass = BeginShaderPass(GetShader2D());
+            ShaderPass* pass = BeginShaderPass(GetShader());
             pass->view = GetCameraMat(viewpos, vieworient);
             pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
         }
@@ -3443,7 +3443,7 @@ static void SceneTickTestText(GameState* gstate) {
             1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  //
         };
 
-        LShader shader = GetShader2D();
+        LShader shader = GetShader();
 
         glGenVertexArrays(1, &VAO2);
         glGenBuffers(1, &VBO2);
@@ -3530,7 +3530,7 @@ static void SceneTickTestText(GameState* gstate) {
 
         Mat4 proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
 
-        LShader shader = GetShader2D();
+        LShader shader = GetShader();
 
         {
             glUseProgram(shader.pid);
@@ -3930,7 +3930,7 @@ static void SceneTickItFollows(GameState* gstate) {
         }
 
         // Use shader + setup norm + view + proj matrix.
-        LShader shader = GetShader();
+        LShader shader = GetShaderOld();
         {
             glUseProgram(shader.pid);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
@@ -4395,7 +4395,7 @@ static void SceneTickTennis(GameState* gstate) {
         }
 
         // Use shader + setup norm + view + proj matrix.
-        LShader shader = GetShader();
+        LShader shader = GetShaderOld();
         {
             glUseProgram(shader.pid);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
@@ -4966,7 +4966,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         }
 
         // Use shader + setup norm + view + proj matrix.
-        LShader shader = GetShader();
+        LShader shader = GetShaderOld();
         {
             glUseProgram(shader.pid);
             glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
