@@ -928,7 +928,7 @@ static LShader GetShader2D() {
         "{\n"
         "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
         // TODO: Incorporate camera at some point.
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
         "   fColor = vUColor;\n"
         "}\0";
 
@@ -3414,7 +3414,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
         {
             DrawCmd* cmd = AddCmd();
-            cmd->meshid = GetMesh(M_QUAD);
+            cmd->meshid = GetMesh(M_ICOSPHERE);
             cmd->color = LBLUE;
             cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(20.0f, 0.0f, -50.0f));
         }
