@@ -850,6 +850,7 @@ static LShader GetShader2D() {
         "layout (location = 2) in vec2 vTextCoords;\n"
         "\n"
         "uniform mat4 vModel;\n"
+        "uniform mat4 vView;\n"
         "uniform mat4 vProj;\n"
         "\n"
         "uniform vec4 vUColor;\n"
@@ -862,7 +863,7 @@ static LShader GetShader2D() {
         "{\n"
         "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
         // TODO: Incorporate camera at some point.
-        "   gl_Position = vProj * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
         "   fColor = vUColor;\n"
         "}\0";
 
@@ -896,6 +897,7 @@ static LShader GetShader2D() {
             SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
 
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
             SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
@@ -1334,8 +1336,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         glUseProgram(shader.pid);
 
-        // TODO:
-        // glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
+        glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
         glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
 
         for (u32 i = 0; i < pass->clen; ++i) {
