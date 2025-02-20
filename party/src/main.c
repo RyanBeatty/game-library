@@ -646,6 +646,46 @@ static LTexture UploadTexture(const char* filename) {
     return tx;
 }
 
+#define MAX_TEXTURES 10
+typedef struct TextureCache {
+    u32 txlen;
+    u32 txcap;
+    LTexture textures[MAX_TEXTURES];
+} TextureCache;
+
+static TextureCache TCACHE;
+
+typedef enum TextureLabel { TX_NONE = 0, TX_AWESOME_FACE, TX_COUNT } TextureLabel;
+
+static LTexture GetTexture(TextureLabel label) {
+    TextureCache* tcache = &TCACHE;
+    return tcache->textures[label];
+}
+
+static void TexturesInit() {
+    TextureCache* tcache = &TCACHE;
+    tcache->txlen = 0;
+    tcache->txcap = MAX_TEXTURES;
+
+    // T0 = UploadTexture("assets/textures/awesomeface.png");
+    // T1 = UploadTexture("assets/textures/helloatlas.png");
+    // T2 = UploadTexture("assets/textures/LFont.png");
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        LTexture tx = UploadTexture("assets/textures/awesomeface.png");
+        tcache->textures[TX_AWESOME_FACE] = tx;
+        ++tcache->txlen;
+    }
+
+    // {
+    //     Assert(tcache->txlen < tcache->txcap);
+    //     LTexture tx = UploadTexture("assets/textures/helloatlas.png");
+    //     tcache->textures[TX_AWESOME_FACE] = tx;
+    //     ++tcache->txlen;
+    // }
+}
+
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
     return MESHES[mid];
@@ -1274,6 +1314,8 @@ static void RenderDataInit() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
     glEnableVertexAttribArray(2);
+
+    TexturesInit();
 }
 
 static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
@@ -3297,7 +3339,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
         // Update
         {
             {
-                DrawLTextureEx(T0, Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
+                DrawLTextureEx(GetTexture(TX_AWESOME_FACE), Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
             }
 
             {
@@ -3346,7 +3388,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
         cmd->color = LRED;
         cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(0.0f, 0.0f, -10.0f));
         cmd->txid = T0.id;
-        // DrawCmd* cmd = AddCmdOld(GetMesh(M_ICOSPHERE), Mat4SRT(radius, Mat4Identity(), center), color);
         EndShaderPass();
     }
 
