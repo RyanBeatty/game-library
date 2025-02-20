@@ -3233,48 +3233,71 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
     BeginRender();
     {
-        ShaderPass* pass = BeginShaderPass(GetShader2D());
-        pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
-    }
-
-    // Update
-    {
         {
-            DrawLTextureEx(T0, Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
+            ShaderPass* pass = BeginShaderPass(GetShader2D());
+            pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
         }
 
+        // Update
         {
-            Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
-
             {
-                DrawLTexture(T1, Vec2Lit(pos.x, pos.y), 100.0f);
+                DrawLTextureEx(T0, Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
             }
 
-            pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
-
             {
-                LTexture tx = T1;
+                Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
 
-                for (u32 i = 0; i < 2; ++i) {
-                    for (u32 j = 0; j < 2; ++j) {
-                        Vec2 r_src = Vec2Lit(48.0f, 48.0f);
-                        Vec2 c_src = Vec2Lit(r_src.x * i, r_src.y * j);
+                {
+                    DrawLTexture(T1, Vec2Lit(pos.x, pos.y), 100.0f);
+                }
 
-                        Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
-                        Vec2 c_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
-                        DrawLTexturePro(tx, c_src, r_src, c_dst, r_dst, 0.0f, LCLEAR);
+                pos = Vec3Add(pos, Vec3Lit(T1.width + 40.0f, 0.0f, 0.0f));
+
+                {
+                    LTexture tx = T1;
+
+                    for (u32 i = 0; i < 2; ++i) {
+                        for (u32 j = 0; j < 2; ++j) {
+                            Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+                            Vec2 c_src = Vec2Lit(r_src.x * i, r_src.y * j);
+
+                            Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
+                            Vec2 c_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
+                            DrawLTexturePro(tx, c_src, r_src, c_dst, r_dst, 0.0f, LCLEAR);
+                        }
                     }
                 }
             }
+
+            {
+                Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
+                DrawLTexture(T2, Vec2Lit(pos.x, pos.y), 300.0f);
+            }
         }
 
-        {
-            Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
-            DrawLTexture(T2, Vec2Lit(pos.x, pos.y), 300.0f);
-        }
+        EndShaderPass();
     }
 
-    EndShaderPass();
+    {
+        {
+            ShaderPass* pass = BeginShaderPass(GetShader2D());
+
+            Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+            Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+            pass->view = GetCameraMat(viewpos, vieworient);
+            pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+        }
+
+        DrawCmd* cmd = AddCmd();
+        cmd->meshid = GetMesh(M_QUAD);
+        cmd->color = LRED;
+        cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(0.0f, 0.0f, -10.0f));
+        cmd->txid = T0.id;
+        // DrawCmd* cmd = AddCmdOld(GetMesh(M_ICOSPHERE), Mat4SRT(radius, Mat4Identity(), center), color);
+        EndShaderPass();
+    }
+
     EndRender();
 }
 
