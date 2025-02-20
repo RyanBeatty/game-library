@@ -655,7 +655,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_NONE = 0, TX_AWESOME_FACE, TX_HELLO_ATLAS, TX_LFONT, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_AWESOME_FACE, TX_HELLO_ATLAS, TX_LFONT, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -667,9 +667,27 @@ static void TexturesInit() {
     tcache->txlen = 0;
     tcache->txcap = MAX_TEXTURES;
 
-    // T0 = UploadTexture("assets/textures/awesomeface.png");
-    // T1 = UploadTexture("assets/textures/helloatlas.png");
-    // T2 = UploadTexture("assets/textures/LFont.png");
+    // Default transparent texture.
+    {
+        Assert(tcache->txlen < tcache->txcap);
+
+        LTexture tx = {0};
+        tx.width = 1;
+        tx.height = 1;
+        glGenTextures(1, &tx.id);
+        glBindTexture(GL_TEXTURE_2D, tx.id);
+
+        GLubyte transparentPixel[] = {0, 0, 0, 0};
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        tcache->textures[TX_DEFAULT] = tx;
+        ++tcache->txlen;
+    }
 
     {
         Assert(tcache->txlen < tcache->txcap);
@@ -926,9 +944,11 @@ static LShader GetShader2D() {
         "\n"
         "void main()\n"
         "{\n"
-        "    FragColor = fColor * texture(texture0, fTextCoords);\n"
-        // "   FragColor = fColor;\n"
+        "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        "   FragColor = mix(fColor, fColor * txColor, txColor.a);\n"
         // useful for debug.
+        // "    FragColor = fColor * texture(texture0, fTextCoords);\n"
+        // "   FragColor = fColor;\n"
         // "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
         "}\0";
     static bool INIT = false;
@@ -1374,6 +1394,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
     cmd->modelm = Mat4Identity();
     cmd->uvoffset = Vec2Lit(0.0f, 0.0f);
     cmd->uvscale = Vec2Lit(1.0f, 1.0f);
+    cmd->txid = GetTexture(TX_DEFAULT).id;
     return cmd;
 }
 
@@ -3383,11 +3404,20 @@ static void SceneTickTextInEngine(GameState* gstate) {
             pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
         }
 
-        DrawCmd* cmd = AddCmd();
-        cmd->meshid = GetMesh(M_QUAD);
-        cmd->color = LRED;
-        cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(0.0f, 0.0f, -10.0f));
-        cmd->txid = GetTexture(TX_AWESOME_FACE).id;
+        {
+            DrawCmd* cmd = AddCmd();
+            cmd->meshid = GetMesh(M_QUAD);
+            cmd->color = LRED;
+            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-20.0f, 0.0f, -50.0f));
+            cmd->txid = GetTexture(TX_AWESOME_FACE).id;
+        }
+
+        {
+            DrawCmd* cmd = AddCmd();
+            cmd->meshid = GetMesh(M_QUAD);
+            cmd->color = LBLUE;
+            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(20.0f, 0.0f, -50.0f));
+        }
         EndShaderPass();
     }
 
