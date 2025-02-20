@@ -3223,12 +3223,68 @@ static void SceneTickTextInEngine(GameState* gstate) {
     static LTexture T0 = {0};
     static LTexture T1 = {0};
     static LTexture T2 = {0};
+    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+    f32 dt = gstate->dt;
 
     // Init logic.
     if (!gstate->init) {
         T0 = UploadTexture("assets/textures/awesomeface.png");
         T1 = UploadTexture("assets/textures/helloatlas.png");
         T2 = UploadTexture("assets/textures/LFont.png");
+
+        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+    }
+
+    // Camera movement.
+    {
+        static const u8 GAMEPAD_ID = 0;
+        static bool FREECAM = false;
+
+        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+            FREECAM = !FREECAM;
+        }
+
+        // Left stick movement.
+        {
+            static const f32 WALK_VEL = 20.0f;
+            static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+            f32 vel = WALK_VEL;
+            if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                vel = RUN_VEL;
+            }
+
+            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+            f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+            Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
+            Vec3 bodyorient = vieworient;
+            // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
+            bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
+            Mat4 rotation = Mat4RotateEuler(bodyorient);
+
+            Vec3 dir_world = Vec3Transform(dir_model, rotation);
+            Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
+            viewpos = Vec3Add(viewpos, mov_world);
+        }
+
+        // Right stick movement.
+        {
+            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+            if (x != 0.0f || y != 0.0f) {
+                static const rad VEL = Deg2Rad(90.0f);
+
+                // rotate orient.
+                vieworient.yaw += -1.0f * x * VEL * dt;
+                vieworient.pitch += y * VEL * dt;
+                // Clamp pitch to avoid looking too high/low which would sign flip things.
+                vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+            }
+        }
     }
 
     BeginRender();
@@ -3281,10 +3337,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
     {
         {
             ShaderPass* pass = BeginShaderPass(GetShader2D());
-
-            Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-            Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
             pass->view = GetCameraMat(viewpos, vieworient);
             pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
         }
