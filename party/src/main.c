@@ -1411,6 +1411,9 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
+            if (cmd->wireframe) {
+                continue;
+            }
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, cmd->txid);
@@ -1423,6 +1426,31 @@ static void ShaderPassExecute(ShaderPass* pass) {
             glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
                            (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
         }
+
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+            for (u32 i = 0; i < pass->clen; ++i) {
+                DrawCmd* cmd = &pass->cmds[i];
+                if (!cmd->wireframe) {
+                    continue;
+                }
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, cmd->txid);
+
+                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+                glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
+                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
+
+                glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                               (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+            }
+
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
     } else {
         Assert(false);
     }
@@ -1449,6 +1477,8 @@ static void CmdBufferZero() {
 static const u32 PASSNULL = MAX_SHADER_PASSES;
 
 typedef struct RenderState {
+    bool wireframe;
+
     u32 passidx;
     u32 passlen;
     u32 passcap;
@@ -1462,6 +1492,7 @@ static RenderState RSTATE;
 // Reset render state and allow accumulation of shader passes.
 static void BeginRender() {
     RenderState* rstate = &RSTATE;
+    rstate->wireframe = false;
     rstate->passidx = PASSNULL;
     rstate->passlen = 0;
     rstate->passcap = MAX_SHADER_PASSES - 1;  // last entry reserved for null idx.
@@ -1489,6 +1520,7 @@ static void EndShaderPass() {
 static void EndRender() {
     RenderState* rstate = &RSTATE;
 
+    Assert(!rstate->wireframe);
     Assert(rstate->passidx == PASSNULL);
 
     // Begin.
@@ -1520,10 +1552,24 @@ static void EndRender() {
     EndDrawing();
 }
 
+static void BeginWireframe() {
+    RenderState* rstate = &RSTATE;
+    Assert(!rstate->wireframe);
+    rstate->wireframe = true;
+}
+
+static void EndWireframe() {
+    RenderState* rstate = &RSTATE;
+    Assert(rstate->wireframe);
+    rstate->wireframe = false;
+}
+
 static DrawCmd* AddCmd() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen != 0);
-    return ShaderPassAddCmd(CurShaderPass());
+    DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
+    cmd->wireframe = rstate->wireframe;
+    return cmd;
 }
 
 ////////////////////////////////////////////////////////////
@@ -3297,7 +3343,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
     // Init logic.
     if (!gstate->init) {
-        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+        viewpos = Vec3Lit(0.0f, 0.0f, 100.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
     }
 
@@ -3312,7 +3358,7 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
         // Left stick movement.
         {
-            static const f32 WALK_VEL = 20.0f;
+            static const f32 WALK_VEL = 50.0f;
             static const f32 RUN_VEL = 2.0f * WALK_VEL;
 
             f32 vel = WALK_VEL;
@@ -3418,6 +3464,16 @@ static void SceneTickTextInEngine(GameState* gstate) {
             cmd->color = LBLUE;
             cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(20.0f, 0.0f, -50.0f));
         }
+
+        BeginWireframe();
+        {
+            DrawCmd* cmd = AddCmd();
+            cmd->meshid = GetMesh(M_CUBE);
+            cmd->color = LBLUE;
+            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-50.0f, 0.0f, -50.0f));
+        }
+        EndWireframe();
+
         EndShaderPass();
     }
 
