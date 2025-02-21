@@ -2297,8 +2297,12 @@ static void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
 }
 
 static void DrawAABBWf(Vec3 center, Vec3 radius, Vec4 color) {
-    // Reminder that radius are the *half* widths, so need to multiply by 2 to scale correctly
-    DrawCmd* cmd = AddCmdOld(GetMesh(M_CUBE), Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center), color);
+    DrawCmd* cmd = AddCmd();
+    cmd->meshid = GetMesh(M_CUBE);
+    cmd->modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
+    cmd->color = color;
+
+    // TODO: remove.
     cmd->wireframe = true;
 }
 
