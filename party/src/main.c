@@ -2266,12 +2266,24 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 // be the upright orientation of the entitie's rotation. Maybe this function here could be the Pro version
 // and the other could be default.
 static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color) {
-    forward = Vec3Normalize(forward);
     // tail.
-    AddCmdOld(GetMesh(M_CUBE), Mat4SRT(scale, orient, pos), color);
+    {
+        DrawCmd* cmd = AddCmd();
+        cmd->meshid = GetMesh(M_CUBE);
+        cmd->modelm = Mat4SRT(scale, orient, pos);
+        cmd->color = color;
+    }
+
+    forward = Vec3Normalize(forward);
     pos = Vec3Add(pos, Vec3Scale(forward, 1.0f * scale));
+
     // tip.
-    AddCmdOld(GetMesh(M_PYRAMID), Mat4SRT(scale, orient, pos), color);
+    {
+        DrawCmd* cmd = AddCmd();
+        cmd->meshid = GetMesh(M_PYRAMID);
+        cmd->modelm = Mat4SRT(scale, orient, pos);
+        cmd->color = color;
+    }
 }
 
 static void DrawSphereWf(Vec3 center, f32 radius, Vec4 color) {
