@@ -3113,8 +3113,11 @@ static void Scene1Tick(GameState* gstate) {
                             Vec3 vs[] = {a, b, c, d, e, f};
                             for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
                                 Vec3 pos = vs[i];
-                                Mat4 model = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                                AddCmdOld(GetMesh(M_CUBE), model, LRED);
+
+                                DrawCmd* cmd = AddCmd();
+                                cmd->meshid = GetMesh(M_CUBE);
+                                cmd->modelm = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
+                                cmd->color = LRED;
                             }
                         }
                         // Draw normals
