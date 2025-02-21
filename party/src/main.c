@@ -2291,19 +2291,13 @@ static void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
     cmd->meshid = GetMesh(M_ICOSPHERE);
     cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
     cmd->color = color;
-
-    // TODO: remove.
-    cmd->wireframe = true;
 }
 
-static void DrawAABBWf(Vec3 center, Vec3 radius, Vec4 color) {
+static void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_CUBE);
     cmd->modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
     cmd->color = color;
-
-    // TODO: remove.
-    cmd->wireframe = true;
 }
 
 #define MAX_ENTITY_BATCH 256
@@ -3060,7 +3054,7 @@ static void Scene1Tick(GameState* gstate) {
                         Sphere sphere = EntityBoundingSphere(entity);
                         DrawLSphere(sphere.c, sphere.r, LYELLOW);
                         AABB aabb = EntityAABB(entity);
-                        DrawAABBWf(aabb.c, aabb.r, LBLUE);
+                        DrawAABB(aabb.c, aabb.r, LBLUE);
 
                         EndWireframe();
                     }
@@ -4210,17 +4204,30 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                     Mat4 scale = Mat4ScaleV(e->scale);
                     Mat4 translate = Mat4TranslateV(e->pos);
                     Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-                    AddCmdOld(e->mesh, model, color);
-                    DrawCmd* cmd2 = AddCmdOld(e->mesh, model, color);
-                    cmd2->wireframe = true;
+
+                    DrawCmd* cmd = AddCmd();
+                    cmd->meshid = e->mesh;
+                    cmd->modelm = model;
+                    cmd->color = color;
+
+                    BeginWireframe();
+                    DrawCmd* cmd2 = AddCmd();
+                    cmd2->meshid = e->mesh;
+                    cmd2->modelm = model;
+                    cmd2->color = color;
+                    EndWireframe();
                 }
 
                 if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+                    BeginWireframe();
+
                     Sphere sphere = EntityBoundingSphere(e);
                     DrawLSphere(sphere.c, sphere.r, LYELLOW);
 
                     AABB aabb = EntityAABB(e);
-                    DrawAABBWf(aabb.c, aabb.r, LBLUE);
+                    DrawAABB(aabb.c, aabb.r, LBLUE);
+
+                    EndWireframe();
                 }
             }
         }
