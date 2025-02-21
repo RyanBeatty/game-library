@@ -2242,13 +2242,12 @@ collideret:
     return collides;
 }
 
-static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
+static void DrawEntities(EntityId* entities, u32 size) {
     for (u32 i = 0; i < size; ++i) {
         Entity* entity = GetEntity(entities[i]);
         Mat4 scale = Mat4ScaleV(entity->scale);
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-        AddCmdOld(entity->mesh, model, entity->color);
 
         DrawCmd* cmd = AddCmd();
         cmd->meshid = entity->mesh;
@@ -2958,14 +2957,14 @@ static void Scene1Tick(GameState* gstate) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                 }
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
             }
 
             // Draw non rotating cube for easier lighting visual debug.
             {
                 EntityId* entities = SHADOW_DEBUG;
                 u32 size = SHADOW_DEBUG_SIZE;
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
             }
 
             if (IsKeyPressed(KEY_R)) {
@@ -3028,7 +3027,7 @@ static void Scene1Tick(GameState* gstate) {
                         }
                     }
                 }
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
                 DrawEntitiesWireFrame(shader, &entities[1], size - 1);
             }
 
@@ -3047,7 +3046,7 @@ static void Scene1Tick(GameState* gstate) {
                         DrawAABBWf(aabb.c, aabb.r, LBLUE);
                     }
                 }
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
                 DrawEntitiesWireFrame(shader, entities, size);
             }
 
@@ -3151,7 +3150,7 @@ static void Scene1Tick(GameState* gstate) {
                     }
                 }
 
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
             }
 
             // COLLISIONS Update.
@@ -3221,7 +3220,7 @@ static void Scene1Tick(GameState* gstate) {
                     }
                 }
 
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
             }
 
             // PYRAMIDS Draw.
@@ -3233,14 +3232,14 @@ static void Scene1Tick(GameState* gstate) {
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
 
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
             }
 
             // Walls.
             {
                 EntityId* entities = WALLS;
                 u32 size = WALLS_SIZE;
-                DrawEntities(shader, entities, size);
+                DrawEntities(entities, size);
             }
 
             if (gstate->debug) {
