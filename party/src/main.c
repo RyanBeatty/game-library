@@ -2286,8 +2286,13 @@ static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color
     }
 }
 
-static void DrawSphereWf(Vec3 center, f32 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmdOld(GetMesh(M_ICOSPHERE), Mat4SRT(radius, Mat4Identity(), center), color);
+static void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    cmd->meshid = GetMesh(M_ICOSPHERE);
+    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
+    cmd->color = color;
+
+    // TODO: remove.
     cmd->wireframe = true;
 }
 
@@ -3046,10 +3051,14 @@ static void Scene1Tick(GameState* gstate) {
                     entity->orient = Mat4Rotate(gstate->timer * 0.5f, Vec3Lit(1.0f, 0.3f, 0.5f));
 
                     if (gstate->debug) {
+                        BeginWireframe();
+
                         Sphere sphere = EntityBoundingSphere(entity);
-                        DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+                        DrawLSphere(sphere.c, sphere.r, LYELLOW);
                         AABB aabb = EntityAABB(entity);
                         DrawAABBWf(aabb.c, aabb.r, LBLUE);
+
+                        EndWireframe();
                     }
                 }
                 DrawEntities(entities, size);
@@ -4198,7 +4207,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
                 if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
                     Sphere sphere = EntityBoundingSphere(e);
-                    DrawSphereWf(sphere.c, sphere.r, LYELLOW);
+                    DrawLSphere(sphere.c, sphere.r, LYELLOW);
 
                     AABB aabb = EntityAABB(e);
                     DrawAABBWf(aabb.c, aabb.r, LBLUE);
