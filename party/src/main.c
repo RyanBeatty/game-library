@@ -851,63 +851,6 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
     }
 }
 
-static LShader GetShaderOld() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 1) in vec3 vNormal;\n"
-        "layout (location = 2) in vec2 vUV;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "uniform vec4 vUColor;\n"
-        "\n"
-        "out vec4 fColor;\n"
-        "void main()\n"
-        "{\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fColor = vUColor;\n"
-        // TODO: This is hacky and doesn't work in all cases (e.g. non uniform scale). come up with
-        // more robust way to do this. also consider moving this calc to CPU.
-        // "   fNormal = mat3(transpose(inverse(vView * vModel))) * vNormal;\n"
-        "}\0";
-
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec4 fColor;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   FragColor = fColor;\n"
-        "}\0";
-    static bool INIT = false;
-    static LShader SHADER = {0};
-
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vnormal_loc = glGetAttribLocation(SHADER.pid, "vNormal");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vUV");
-
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-        }
-    }
-
-    return SHADER;
-}
-
 static LShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
@@ -1454,18 +1397,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
     } else {
         Assert(false);
     }
-}
-
-static DrawCmd* AddCmdOld(LMesh meshid, Mat4 modelm, Vec4 color) {
-    Assert(CBUFFER_SIZE < MAX_CMDS);
-    DrawCmd* cmd = &CBUFFER[CBUFFER_SIZE];
-    ++CBUFFER_SIZE;
-    memset(cmd, 0, sizeof(CBUFFER[0]));
-    cmd->meshid = meshid;
-    cmd->modelm = modelm;
-    cmd->color = color;
-    cmd->wireframe = false;
-    return cmd;
 }
 
 static void CmdBufferZero() {
@@ -4238,56 +4169,6 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     EndShaderPass();
     EndRender();
     CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
-
-    // // Drawing
-    // {
-    //     // Begin.
-    //     {
-    //         BeginDrawing();
-    //         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    //         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //         glBindVertexArray(VAO);
-    //     }
-
-    //     Mat4 view = GetCameraMat(viewpos, vieworient);
-    //     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-
-    //     // Enable/Disable culling.
-    //     // TODO: Make this nicer at some point. Useful for debugging.
-    //     {
-    //         if (gstate->debug) {
-    //             glDisable(GL_CULL_FACE);
-    //         } else {
-    //             glEnable(GL_CULL_FACE);
-    //             glCullFace(GL_BACK);
-    //             glFrontFace(GL_CCW);
-    //         }
-    //     }
-
-    //     // Use shader + setup norm + view + proj matrix.
-    //     LShader shader = GetShaderOld();
-    //     {
-    //         glUseProgram(shader.pid);
-    //         glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-    //         glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-    //     }
-
-    //     for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
-    //         DrawCmd* cmd = &CBUFFER[i];
-    //         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-    //         glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-    //         if (cmd->wireframe) {
-    //             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    //         }
-    //         glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-    //                        (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
-    //         if (cmd->wireframe) {
-    //             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    //         }
-    //     }
-
-    //     EndDrawing();
-    // }
 }
 
 ////////////////////////////////////////////////////////////
