@@ -2256,15 +2256,10 @@ static void DrawEntities(EntityId* entities, u32 size) {
     }
 }
 
-static void DrawEntitiesWireFrame(LShader shader, EntityId* entities, u32 size) {
-    for (u32 i = 0; i < size; ++i) {
-        Entity* entity = GetEntity(entities[i]);
-        Mat4 scale = Mat4ScaleV(entity->scale);
-        Mat4 translate = Mat4TranslateV(entity->pos);
-        Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-        DrawCmd* cmd = AddCmdOld(entity->mesh, model, entity->color);
-        cmd->wireframe = true;
-    }
+static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
+    BeginWireframe();
+    DrawEntities(entities, size);
+    EndWireframe();
 }
 
 // TODO: Consider deriving partial orientation from arrow direction and then having passed in orient
@@ -2949,7 +2944,6 @@ static void Scene1Tick(GameState* gstate) {
         }
 
         {
-            LShader shader = GetShaderOld();
             {
                 EntityId* entities = SPINNING;
                 u32 size = SPINNING_SIZE;
@@ -3028,7 +3022,7 @@ static void Scene1Tick(GameState* gstate) {
                     }
                 }
                 DrawEntities(entities, size);
-                DrawEntitiesWireFrame(shader, &entities[1], size - 1);
+                DrawEntitiesWireFrame(&entities[1], size - 1);
             }
 
             // MESH_TEST update.
@@ -3047,7 +3041,7 @@ static void Scene1Tick(GameState* gstate) {
                     }
                 }
                 DrawEntities(entities, size);
-                DrawEntitiesWireFrame(shader, entities, size);
+                DrawEntitiesWireFrame(entities, size);
             }
 
             // ISO TRIANGLES DRAW Draw.
