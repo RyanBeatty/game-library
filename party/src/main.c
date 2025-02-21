@@ -2249,6 +2249,11 @@ static void DrawEntities(LShader shader, EntityId* entities, u32 size) {
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
         AddCmdOld(entity->mesh, model, entity->color);
+
+        DrawCmd* cmd = AddCmd();
+        cmd->meshid = entity->mesh;
+        cmd->color = entity->color;
+        cmd->modelm = model;
     }
 }
 
@@ -2890,6 +2895,9 @@ static void Scene1Tick(GameState* gstate) {
         }
     }
 
+    BeginRender();
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
     // Update logic.
     {
         // Camera movement.
@@ -3241,71 +3249,66 @@ static void Scene1Tick(GameState* gstate) {
         }
     }
 
-    // Drawing
-    {
-        // Begin.
-        {
-            BeginDrawing();
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindVertexArray(VAO);
-        }
+    pass->view = GetCameraMat(viewpos, vieworient);
+    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+    EndShaderPass();
+    EndRender();
+    CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
 
-        Mat4 view = GetCameraMat(viewpos, vieworient);
-        // Keep this around for debugging for a bit.
-        // Mat4 vieworientm = Mat4RotateEuler(vieworient);
-        // Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
-        // // // Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
-        // // //                            -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
-        // Mat4 view2 = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
-        // Assert(Mat4Eq(view, view2));
-        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+    // // Drawing
+    // {
+    //     // // Begin.
+    //     // {
+    //     //     BeginDrawing();
+    //     //     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    //     //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //     //     glBindVertexArray(VAO);
+    //     // }
 
-        // Enable/Disable culling.
-        // TODO: Make this nicer at some point. Useful for debugging.
-        {
-            if (gstate->debug) {
-                glDisable(GL_CULL_FACE);
-            } else {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-                glFrontFace(GL_CCW);
-            }
-        }
+    //     // Enable/Disable culling.
+    //     // TODO: Make this nicer at some point. Useful for debugging.
+    //     {
+    //         if (gstate->debug) {
+    //             glDisable(GL_CULL_FACE);
+    //         } else {
+    //             glEnable(GL_CULL_FACE);
+    //             glCullFace(GL_BACK);
+    //             glFrontFace(GL_CCW);
+    //         }
+    //     }
 
-        // Use shader + setup norm + view + proj matrix.
-        LShader shader = GetShaderOld();
-        {
-            glUseProgram(shader.pid);
-            // {
-            //     // Calculate the sun direction in view space (only factoring in rotation).
-            //     Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
-            //     // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
-            //     Mat4 norm = Mat4Transpose(Mat4Invert(view));
-            //     norm.v.d = Vec3Zero();
-            //     Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
-            // }
-            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-        }
+    //     // Use shader + setup norm + view + proj matrix.
+    //     LShader shader = GetShaderOld();
+    //     {
+    //         glUseProgram(shader.pid);
+    //         // {
+    //         //     // Calculate the sun direction in view space (only factoring in rotation).
+    //         //     Vec3 lightdir = Vec3Lit(-0.2f, -1.0f, -0.3f);
+    //         //     // Vec3 lightdir = Vec3Lit(0.0f, 0.0f, -1.0f);
+    //         //     Mat4 norm = Mat4Transpose(Mat4Invert(view));
+    //         //     norm.v.d = Vec3Zero();
+    //         //     Vec3 lightdir_eye = Vec3Transform(lightdir, norm);
+    //         // }
+    //         glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
+    //         glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+    //     }
 
-        for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
-            DrawCmd* cmd = &CBUFFER[i];
-            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            if (cmd->wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            }
-            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
-            if (cmd->wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-        }
+    //     for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
+    //         DrawCmd* cmd = &CBUFFER[i];
+    //         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+    //         glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+    //         if (cmd->wireframe) {
+    //             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //         }
+    //         glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+    //                        (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+    //         if (cmd->wireframe) {
+    //             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //         }
+    //     }
 
-        EndDrawing();
-        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
-    }
+    //     EndDrawing();
+    // }
 }
 
 static void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {

@@ -802,3 +802,11 @@
 //         CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
 //     }
 // }
+
+// Keep this around for debugging for a bit.
+// Mat4 vieworientm = Mat4RotateEuler(vieworient);
+// Vec3 viewforward = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), vieworientm);
+// // // Vec3 viewforward = Vec3Lit(f32cos(vieworient.yaw) * f32cos(vieworient.pitch), f32sin(vieworient.pitch),
+// // //                            -f32sin(vieworient.yaw) * f32cos(vieworient.pitch));
+// Mat4 view2 = Mat4LookAt(viewpos, Vec3Add(viewpos, viewforward), Vec3Lit(0.0f, 1.0f, 0.0f));
+// Assert(Mat4Eq(view, view2));
