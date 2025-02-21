@@ -1303,8 +1303,6 @@ typedef struct DrawCmd {
 } DrawCmd;
 
 #define MAX_CMDS 4092
-static DrawCmd CBUFFER[MAX_CMDS] = {0};
-static u32 CBUFFER_SIZE = 0;
 
 typedef struct ShaderPass {
     ShaderId sid;
@@ -1397,11 +1395,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
     } else {
         Assert(false);
     }
-}
-
-static void CmdBufferZero() {
-    CBUFFER_SIZE = 0;
-    memset(CBUFFER, 0, ArraySizeOf(CBUFFER) * sizeof(CBUFFER[0]));
 }
 
 #define MAX_SHADER_PASSES 10
@@ -3565,7 +3558,6 @@ static void SceneTickTestText(GameState* gstate) {
         }
 
         EndDrawing();
-        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
     }
 }
 
@@ -4111,7 +4103,6 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
     EndShaderPass();
     EndRender();
-    CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
 }
 
 ////////////////////////////////////////////////////////////
