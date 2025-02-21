@@ -3833,6 +3833,9 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         }
     }
 
+    BeginRender();
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
     // Scene5 update.
     {
         if (gstate->debug) {
@@ -4180,7 +4183,10 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
             // Draw background
             {
-                AddCmdOld(GetMesh(M_QUAD), Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f)), COLOR1);
+                DrawCmd* cmd = AddCmd();
+                cmd->meshid = GetMesh(M_QUAD);
+                cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
+                cmd->color = COLOR1;
             }
 
             // Draw.
@@ -4220,56 +4226,61 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         }
     }
 
-    // Drawing
-    {
-        // Begin.
-        {
-            BeginDrawing();
-            glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glBindVertexArray(VAO);
-        }
+    pass->view = GetCameraMat(viewpos, vieworient);
+    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+    EndShaderPass();
+    EndRender();
+    CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
 
-        Mat4 view = GetCameraMat(viewpos, vieworient);
-        Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+    // // Drawing
+    // {
+    //     // Begin.
+    //     {
+    //         BeginDrawing();
+    //         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    //         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //         glBindVertexArray(VAO);
+    //     }
 
-        // Enable/Disable culling.
-        // TODO: Make this nicer at some point. Useful for debugging.
-        {
-            if (gstate->debug) {
-                glDisable(GL_CULL_FACE);
-            } else {
-                glEnable(GL_CULL_FACE);
-                glCullFace(GL_BACK);
-                glFrontFace(GL_CCW);
-            }
-        }
+    //     Mat4 view = GetCameraMat(viewpos, vieworient);
+    //     Mat4 proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
-        // Use shader + setup norm + view + proj matrix.
-        LShader shader = GetShaderOld();
-        {
-            glUseProgram(shader.pid);
-            glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
-            glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
-        }
+    //     // Enable/Disable culling.
+    //     // TODO: Make this nicer at some point. Useful for debugging.
+    //     {
+    //         if (gstate->debug) {
+    //             glDisable(GL_CULL_FACE);
+    //         } else {
+    //             glEnable(GL_CULL_FACE);
+    //             glCullFace(GL_BACK);
+    //             glFrontFace(GL_CCW);
+    //         }
+    //     }
 
-        for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
-            DrawCmd* cmd = &CBUFFER[i];
-            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            if (cmd->wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            }
-            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
-            if (cmd->wireframe) {
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            }
-        }
+    //     // Use shader + setup norm + view + proj matrix.
+    //     LShader shader = GetShaderOld();
+    //     {
+    //         glUseProgram(shader.pid);
+    //         glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&view.m);
+    //         glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&proj.m);
+    //     }
 
-        EndDrawing();
-        CmdBufferZero();  // Maybe consider moving this to be at the top of update func.
-    }
+    //     for (u32 i = 0; i < CBUFFER_SIZE; ++i) {
+    //         DrawCmd* cmd = &CBUFFER[i];
+    //         glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+    //         glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+    //         if (cmd->wireframe) {
+    //             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //         }
+    //         glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+    //                        (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+    //         if (cmd->wireframe) {
+    //             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //         }
+    //     }
+
+    //     EndDrawing();
+    // }
 }
 
 ////////////////////////////////////////////////////////////
