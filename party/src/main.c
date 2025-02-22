@@ -399,6 +399,8 @@ static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 fa
     f32 w_inv = 1.0f / (right - left);
     f32 h_inv = 1.0f / (bottom - top);
     f32 d_inv = 1.0f / (far - near);
+    // Most online code has -(near + far) * d_inv instead of just -near * d_inv.
+    // results appear maybe the same?
     return Mat4Lit(2.0f * w_inv, 0.0f, 0.0f, -(right + left) * w_inv,  //
                    0.0f, 2.0f * h_inv, 0.0f, -(bottom + top) * h_inv,  //
                    0.0f, 0.0f, d_inv, -near * d_inv,                   //
