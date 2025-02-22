@@ -2268,7 +2268,7 @@ static void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 c
         Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
 
         Vec2 c_dst = Vec2Lit(pos.x, pos.y);
-        DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, LRED);
+        DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, color);
     }
 }
 
@@ -3600,12 +3600,16 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
     static EntityId playerid;
 
+    static u32 SCORE = 0;
+
     f32 dt = gstate->dt;
 
     // Init logic.
     if (!gstate->init) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+        SCORE = 0;
 
         // Player init.
         {
@@ -4129,6 +4133,17 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     pass->view = GetCameraMat(viewpos, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
     EndShaderPass();
+
+    {
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f,
+                               1.0f);  // Mat4Ortho(0, GetScreenWidth(), 0, GetScreenHeight(), -1.0f, 1.0f);
+
+        DrawLText("HELLO", strlen("HELLO"), Vec3Lit(100.0f, 100.0f, 0.0), 50, LCLEAR);
+
+        EndShaderPass();
+    }
+
     EndRender();
 }
 
