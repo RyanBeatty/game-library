@@ -2223,6 +2223,33 @@ static void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
     cmd->color = color;
 }
 
+static void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
+    // TODO: is scale right?
+    Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+    Vec2 uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
+
+    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
+    Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
+    Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
+    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+    DrawCmd* cmd = AddCmd();
+    cmd->modelm = model;
+    cmd->color = color;
+    cmd->uvoffset = uvoffset;
+    cmd->uvscale = uvscale;
+    cmd->txid = tx.id;
+    cmd->meshid = GetMesh(M_QUAD);
+}
+
+static void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
+    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation, color);
+}
+
+static void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
+    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
+}
+
 #define MAX_ENTITY_BATCH 256
 
 static void Scene1Tick(GameState* gstate) {
@@ -3191,33 +3218,6 @@ static void Scene1Tick(GameState* gstate) {
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
     EndShaderPass();
     EndRender();
-}
-
-static void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
-    // TODO: is scale right?
-    Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-    Vec2 uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
-
-    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
-    Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
-    Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
-    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
-
-    DrawCmd* cmd = AddCmd();
-    cmd->modelm = model;
-    cmd->color = color;
-    cmd->uvoffset = uvoffset;
-    cmd->uvscale = uvscale;
-    cmd->txid = tx.id;
-    cmd->meshid = GetMesh(M_QUAD);
-}
-
-static void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
-    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation, color);
-}
-
-static void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
-    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
 }
 
 static void SceneTickTextInEngine(GameState* gstate) {
