@@ -3327,8 +3327,8 @@ static void SceneTickTextInEngine(GameState* gstate) {
 
                 pos = Vec3Add(pos, Vec3Lit(50.0f, 0.0f, 0.0f));
 
-                const char* msg = "HELLO,CARLY!";
-                u32 size = 12;
+                const char* msg = "HELLOCARLY";
+                u32 size = 10;
                 u32 x = 48;
                 u32 y = 48;
                 Vec2 r_src = Vec2Lit(x, y);
