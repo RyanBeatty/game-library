@@ -888,6 +888,10 @@ static LShader GetShader() {
         "void main()\n"
         "{\n"
         "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        // I should probably texture most of my geometry now.
+        // "   if (txColor.a < 0.1) {\n"
+        // "       discard;\n"
+        // "   }\n"
         "   FragColor = mix(fColor, fColor * txColor, txColor.a);\n"
         // useful for debug.
         // "    FragColor = fColor * texture(texture0, fTextCoords);\n"
