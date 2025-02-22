@@ -3324,18 +3324,26 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 DrawLTexture(GetTexture(TX_LFONT), Vec2Lit(pos.x, pos.y), 300.0f);
 
                 LTexture tx = GetTexture(TX_LFONT);
-                char c = 'A';
-                u32 offset = c - '0';
 
-                pos = Vec3Add(pos, Vec3Lit(200.0f, 0.0f, 0.0f));
+                pos = Vec3Add(pos, Vec3Lit(50.0f, 0.0f, 0.0f));
+
+                const char* msg = "HELLO,CARLY!";
+                u32 size = 12;
                 u32 x = 48;
                 u32 y = 48;
                 Vec2 r_src = Vec2Lit(x, y);
-                Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
 
-                Vec2 r_dst = Vec2Lit(50.0f, 50.0f);
-                Vec2 c_dst = Vec2Lit(pos.x, pos.y);
-                DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, LRED);
+                for (u32 i = 0; i < size; ++i) {
+                    u32 offset = msg[i] - '0';
+
+                    Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
+
+                    Vec2 r_dst = Vec2Lit(50.0f, 50.0f);
+                    Vec2 c_dst = Vec2Lit(pos.x, pos.y);
+                    DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, LRED);
+
+                    pos = Vec3Add(pos, Vec3Lit(r_src.x, 0.0f, 0.0f));
+                }
             }
         }
 
