@@ -3322,6 +3322,14 @@ static void SceneTickTextInEngine(GameState* gstate) {
             {
                 Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
                 DrawLTexture(GetTexture(TX_LFONT), Vec2Lit(pos.x, pos.y), 300.0f);
+
+                pos = Vec3Add(pos, Vec3Lit(200.0f, 0.0f, 0.0f));
+                Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+                Vec2 c_src = Vec2Lit(0.0f, 0.0f);
+
+                Vec2 r_dst = Vec2Lit(50.0f, 50.0f);
+                Vec2 c_dst = Vec2Lit(pos.x, pos.y);
+                DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, LRED);
             }
         }
 
