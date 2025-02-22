@@ -4012,6 +4012,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 if (eblock->health != 0) {
                                     --eblock->health;
                                 }
+
+                                SCORE += 15;
                             }
                         }
 
