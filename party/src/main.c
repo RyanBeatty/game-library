@@ -384,6 +384,7 @@ static Mat4 Mat4Reflect(Vec3 n) {
     );
 }
 
+// gamemath.com 10.3.4
 static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
     f32 zoom = 1.0f / (f32)f32tan(fov * 0.5f);
     f32 depth = far - near;
@@ -396,14 +397,20 @@ static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
 // FoGED 6.3.4
 // maps (left, bottom) -> (-1, -1)
 static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
-    f32 w_inv = 1.0f / (right - left);
-    f32 h_inv = 1.0f / (bottom - top);
-    f32 d_inv = 1.0f / (far - near);
-    // Most online code has -(near + far) * d_inv instead of just -near * d_inv.
-    // results appear maybe the same?
-    return Mat4Lit(2.0f * w_inv, 0.0f, 0.0f, -(right + left) * w_inv,  //
-                   0.0f, 2.0f * h_inv, 0.0f, -(bottom + top) * h_inv,  //
-                   0.0f, 0.0f, d_inv, -near * d_inv,                   //
+    // f32 w_inv = 1.0f / (right - left);
+    // // NOTE: FoGED has bottom - top, but I think I want top - bottom so that +y = up.
+    // f32 h_inv = 1.0f / (bottom - top);
+    // f32 d_inv = 1.0f / (far - near);
+    // // Most online code has -(near + far) * d_inv instead of just -near * d_inv.
+    // // results appear maybe the same?
+    // return Mat4Lit(2.0f * w_inv, 0.0f, 0.0f, -(right + left) * w_inv,  //
+    //                0.0f, 2.0f * h_inv, 0.0f, -(bottom + top) * h_inv,  //
+    //                0.0f, 0.0f, d_inv, -near * d_inv,                   //
+    //                0.0f, 0.0f, 0.0f, 1.0f);
+    // gamemath.com 10.3.4
+    return Mat4Lit(2.0f / (right - left), 0.0f, 0.0f, 0.0f,                         //
+                   0.0f, 2.0f / (top - bottom), 0.0f, 0.0f,                         //
+                   0.0f, 0.0f, -2.0f / (far - near), -(far + near) / (far - near),  //
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
@@ -4136,21 +4143,25 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
     pass->view = GetCameraMat(viewpos, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+    Mat4 ortho = Mat4Ortho(-300, 300, -300, 300, -55.0f, 55.0f);
+    pass->proj = ortho;
+    Vec3 v = Vec3Zero();
+    breakpoint();
     EndShaderPass();
 
-    {
-        ShaderPass* pass = BeginShaderPass(GetShader());
-        breakpoint();
-        u32 width = GetScreenWidth();
-        u32 height = GetScreenHeight();
-        pass->proj = Mat4Ortho(0, width, height, 0, -1.0f, 1.0f);
+    // {
+    //     ShaderPass* pass = BeginShaderPass(GetShader());
+    //     breakpoint();
+    //     u32 width = GetScreenWidth();
+    //     u32 height = GetScreenHeight();
+    //     pass->proj = Mat4Ortho(0, width, height, 0, -1.0f, 1.0f);
 
-        char score[256] = {0};
-        snprintf(score, ArraySizeOf(score), "%d", SCORE);
-        DrawLText(score, strlen(score), Vec3Lit(100.0f, height - 100.0f, 0.0), 50, LCLEAR);
+    //     char score[256] = {0};
+    //     snprintf(score, ArraySizeOf(score), "%d", SCORE);
+    //     DrawLText(score, strlen(score), Vec3Lit(100.0f, height - 100.0f, 0.0), 50, LCLEAR);
 
-        EndShaderPass();
-    }
+    //     EndShaderPass();
+    // }
 
     EndRender();
 }
