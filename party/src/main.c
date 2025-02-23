@@ -395,21 +395,24 @@ static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
 }
 
 // FoGED 6.3.4
+// gamemath.com 10.3.4
 // maps (left, bottom) -> (-1, -1)
 static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
-    // f32 w_inv = 1.0f / (right - left);
-    // // NOTE: FoGED has bottom - top, but I think I want top - bottom so that +y = up.
-    // f32 h_inv = 1.0f / (bottom - top);
-    // f32 d_inv = 1.0f / (far - near);
+    f32 w_inv = 1.0f / (right - left);
+    // NOTE: FoGED has bottom - top, but I think I want top - bottom so that +y = up.
+    f32 h_inv = 1.0f / (top - bottom);
+    f32 d_inv = 1.0f / (far - near);
     // // Most online code has -(near + far) * d_inv instead of just -near * d_inv.
     // // results appear maybe the same?
     // return Mat4Lit(2.0f * w_inv, 0.0f, 0.0f, -(right + left) * w_inv,  //
     //                0.0f, 2.0f * h_inv, 0.0f, -(bottom + top) * h_inv,  //
     //                0.0f, 0.0f, d_inv, -near * d_inv,                   //
     //                0.0f, 0.0f, 0.0f, 1.0f);
-    // gamemath.com 10.3.4
-    return Mat4Lit(2.0f / (right - left), 0.0f, 0.0f, 0.0f,                         //
-                   0.0f, 2.0f / (top - bottom), 0.0f, 0.0f,                         //
+    // NOTE: gamemath doesn't have anything for xy for translation column. but that won't
+    // remap the origin at all. by having the code from FoGED, it will remap origin to be bottom left
+    // screen corner.
+    return Mat4Lit(2.0f / (right - left), 0.0f, 0.0f, -(right + left) * w_inv,      //
+                   0.0f, 2.0f / (top - bottom), 0.0f, -(bottom + top) * h_inv,      //
                    0.0f, 0.0f, -2.0f / (far - near), -(far + near) / (far - near),  //
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
@@ -3316,8 +3319,11 @@ static void SceneTickTextInEngine(GameState* gstate) {
     {
         {
             ShaderPass* pass = BeginShaderPass(GetShader());
-            pass->proj = Mat4Ortho(0, 800, 600, 0, -1.0f, 1.0f);
+            pass->proj = Mat4Ortho(0, 800, 0, 600, -1.0f, 1.0f);
         }
+
+        // Draw something at the origin.
+        DrawLTexture(GetTexture(TX_AWESOME_FACE), Vec2Lit(0.0f, 0.0f), 100);
 
         // Update
         {
