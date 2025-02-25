@@ -48,7 +48,15 @@ int main(void) {
     // SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
 
     // // Must call at least once.
-    CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (FAILED(hr)) return hr;
+
+    IXAudio2 *m_xaudio2{};
+
+    // Create the main audio interface.
+    if (FAILED(XAudio2Create(&m_xaudio2, 0, XAUDIO2_DEFAULT_PROCESSOR))) {
+        printf("Failed to create XAudio2 instance\n");
+    }
 
     // while (!WindowShouldClose())  // Detect window close button or ESC key
     // {

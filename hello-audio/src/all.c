@@ -6,6 +6,7 @@
 // #define WIN32_LEAN_AND_MEAN  // Exclude rarely-used components from Windows headers
 // #define NOMINMAX             // Prevent Windows from defining min and max macros
 #include <windows.h>
+#include <xaudio2.h>
 
 // #define RAYGUI_IMPLEMENTATION  // (If using raygui)
 // #include "raylib.h"
