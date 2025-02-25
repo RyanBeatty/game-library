@@ -8,7 +8,7 @@ SRC_DIRS := src
 LIB_DIR := libs
 
 ifeq ($(IS_WINDOWS), Windows_NT)
-	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm  -L/raylib/raylib/src -I/raylib/raylib/src
+	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm  -L/raylib/raylib/src -I/raylib/raylib/src -lole32
 else
 	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
 endif
