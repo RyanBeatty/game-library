@@ -411,9 +411,9 @@ static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 fa
     // NOTE: gamemath doesn't have anything for xy for translation column. but that won't
     // remap the origin at all. by having the code from FoGED, it will remap origin to be bottom left
     // screen corner.
-    return Mat4Lit(2.0f / (right - left), 0.0f, 0.0f, -(right + left) * w_inv,      //
-                   0.0f, 2.0f / (top - bottom), 0.0f, -(bottom + top) * h_inv,      //
-                   0.0f, 0.0f, -2.0f / (far - near), -(far + near) / (far - near),  //
+    return Mat4Lit(2.0f / (right - left), 0.0f, 0.0f, -(right + left) * w_inv,  //
+                   0.0f, 2.0f / (top - bottom), 0.0f, -(bottom + top) * h_inv,  //
+                   0.0f, 0.0f, -2.0f * d_inv, -(far + near) * d_inv,            //
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
