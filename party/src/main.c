@@ -4149,10 +4149,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
     pass->view = GetCameraMat(viewpos, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-    Mat4 ortho = Mat4Ortho(-300, 300, -300, 300, -55.0f, 55.0f);
-    pass->proj = ortho;
-    Vec3 v = Vec3Zero();
-    breakpoint();
+    // pass->proj = Mat4Ortho(-300, 300, -300, 300, -55.0f, 55.0f);
     EndShaderPass();
 
     // {
