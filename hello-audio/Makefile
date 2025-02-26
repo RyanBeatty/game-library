@@ -7,12 +7,16 @@ BUILD_DIR := build
 SRC_DIRS := src
 LIB_DIR := libs
 
+CPP_LDFLAGS := -lstdc++ -static-libstdc++
+
+
 ifeq ($(IS_WINDOWS), Windows_NT)
-	AUDIO_FLAGS :=  -lole32 -lxaudio2_8
+	AUDIO_FLAGS :=  -lole32 -lxaudio2_8 $(CPP_LDFLAGS)
 	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm  -L/raylib/raylib/src -I/raylib/raylib/src $(AUDIO_FLAGS)
 else
 	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
 endif
+
 
 LIBS := ""
 LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))

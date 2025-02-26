@@ -39,4 +39,4 @@ void __attribute__((noinline)) breakpoint() {}
 
 ///////////////////////////////////////////////
 // Project files below
-#include "main.cpp"
+#include "main.c"
