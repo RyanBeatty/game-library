@@ -84,13 +84,13 @@ int main(void) {
 
     IXAudio2SourceVoice* source_voice = {0};
 
-    u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
-    u32 bsize = 0;
-
     // Create a source voice with that format.
     if (FAILED(xaudio2->CreateSourceVoice(&source_voice, &waveformatex))) {
         return 1;
     }
+
+    u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
+    u32 bsize = 0;
 
     // Fill a buffer.
     double phase = 0.0f;
