@@ -55,6 +55,24 @@ constexpr DWORD SAMPLESPERCYCLE = (DWORD)(SAMPLESPERSEC / CYCLESPERSEC);        
 constexpr DWORD AUDIOBUFFERSIZEINSAMPLES = SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES;     // 2,000 samples per buffer.
 constexpr UINT32 AUDIOBUFFERSIZEINBYTES = AUDIOBUFFERSIZEINSAMPLES * BITSPERSSAMPLE / 8;  // 4,000 bytes per buffer.
 
+class VoiceCallback : public IXAudio2VoiceCallback {
+   public:
+    HANDLE hBufferEndEvent;
+    VoiceCallback() : hBufferEndEvent(CreateEvent(NULL, FALSE, FALSE, NULL)) {}
+    ~VoiceCallback() { CloseHandle(hBufferEndEvent); }
+
+    // Called when the voice has just finished playing a contiguous audio stream.
+    void OnStreamEnd() { SetEvent(hBufferEndEvent); }
+
+    // Unused methods are stubs
+    void OnVoiceProcessingPassEnd() {}
+    void OnVoiceProcessingPassStart(UINT32 SamplesRequired) {}
+    void OnBufferEnd(void* pBufferContext) {}
+    void OnBufferStart(void* pBufferContext) {}
+    void OnLoopEnd(void* pBufferContext) {}
+    void OnVoiceError(void* pBufferContext, HRESULT Error) {}
+};
+
 int main(void) {
     // // Must call at least once.
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -73,19 +91,25 @@ int main(void) {
     }
 
     // Define a format.
-    WAVEFORMATEX waveformatex = {0};
-    waveformatex.wFormatTag = WAVE_FORMAT_PCM;
-    waveformatex.nChannels = 1;  // 1 channel
-    waveformatex.nSamplesPerSec = SAMPLESPERSEC;
-    waveformatex.nBlockAlign = waveformatex.nChannels * BITSPERSSAMPLE / 8;
-    waveformatex.nAvgBytesPerSec = waveformatex.nSamplesPerSec * waveformatex.nBlockAlign;
-    waveformatex.wBitsPerSample = BITSPERSSAMPLE;
-    waveformatex.cbSize = 0;
+    WAVEFORMATEX wfx = {0};
+    wfx.wFormatTag = WAVE_FORMAT_PCM;
+    wfx.nChannels = 1;  // 1 channel
+    wfx.nSamplesPerSec = SAMPLESPERSEC;
+    wfx.nBlockAlign = wfx.nChannels * BITSPERSSAMPLE / 8;
+    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
+    wfx.wBitsPerSample = BITSPERSSAMPLE;
+    wfx.cbSize = 0;
 
     IXAudio2SourceVoice* source_voice = {0};
 
     // Create a source voice with that format.
-    if (FAILED(xaudio2->CreateSourceVoice(&source_voice, &waveformatex))) {
+    if (FAILED(xaudio2->CreateSourceVoice(&source_voice, &wfx))) {
+        return 1;
+    }
+
+    VoiceCallback voice_callback;
+    if (FAILED(hr = xaudio2->CreateSourceVoice(&source_voice, (WAVEFORMATEX*)&wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
+                                               &voice_callback, NULL, NULL))) {
         return 1;
     }
 
