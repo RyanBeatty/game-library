@@ -89,6 +89,8 @@ int main(void) {
         return 1;
     }
 
+    // This buffer needs to live a long life. Needs to be allocated until any sound
+    // data is not reading from it.
     u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
     u32 bsize = 0;
 
@@ -102,14 +104,14 @@ int main(void) {
     }
 
     XAUDIO2_BUFFER xaudio2_buffer{};
-    xaudio2_buffer.Flags = XAUDIO2_END_OF_STREAM;
+    xaudio2_buffer.Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
     xaudio2_buffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
     xaudio2_buffer.pAudioData = buffer;
     xaudio2_buffer.PlayBegin = 0;
     xaudio2_buffer.PlayLength = 0;
     xaudio2_buffer.LoopBegin = 0;
     xaudio2_buffer.LoopLength = 0;
-    xaudio2_buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
+    xaudio2_buffer.LoopCount = 0;  // XAUDIO2_LOOP_INFINITE;
 
     // Submit the buffer to the source voice, and start the voice.
     if (FAILED(source_voice->SubmitSourceBuffer(&xaudio2_buffer))) {
