@@ -62,14 +62,19 @@ class VoiceCallback : public IXAudio2VoiceCallback {
     ~VoiceCallback() { CloseHandle(hBufferEndEvent); }
 
     // Called when the voice has just finished playing a contiguous audio stream.
-    void OnStreamEnd() { SetEvent(hBufferEndEvent); }
+    void OnStreamEnd() {
+        printf("stream ended\n");
+        SetEvent(hBufferEndEvent);
+    }
 
     // Unused methods are stubs
-    void OnVoiceProcessingPassEnd() {}
+    void OnVoiceProcessingPassEnd() {
+        //  printf("void processing pass end\n");
+    }
     void OnVoiceProcessingPassStart(UINT32 SamplesRequired) {}
-    void OnBufferEnd(void* pBufferContext) {}
+    void OnBufferEnd(void* pBufferContext) { printf("buffer ended\n"); }
     void OnBufferStart(void* pBufferContext) {}
-    void OnLoopEnd(void* pBufferContext) {}
+    void OnLoopEnd(void* pBufferContext) { printf("loop end\n"); }
     void OnVoiceError(void* pBufferContext, HRESULT Error) {}
 };
 
@@ -135,7 +140,7 @@ int main(void) {
     xaudio2_buffer.PlayLength = 0;
     xaudio2_buffer.LoopBegin = 0;
     xaudio2_buffer.LoopLength = 0;
-    xaudio2_buffer.LoopCount = 0;  // XAUDIO2_LOOP_INFINITE;
+    xaudio2_buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
 
     // Submit the buffer to the source voice, and start the voice.
     if (FAILED(source_voice->SubmitSourceBuffer(&xaudio2_buffer))) {
