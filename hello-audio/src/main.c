@@ -8,6 +8,14 @@
 
 #endif
 
+#include <unistd.h>
+#include <windows.h>
+#include <xaudio2.h>
+
+#include <array>
+#include <chrono>
+#include <thread>
+
 ////////////////////////////////////////////////////////////
 // Core types.
 
