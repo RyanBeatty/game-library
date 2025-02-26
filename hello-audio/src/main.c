@@ -63,7 +63,7 @@ int main(void) {
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (FAILED(hr)) return hr;
 
-    IXAudio2* m_xaudio2{};
+    IXAudio2* m_xaudio2 = {0};
 
     // Create the main audio interface.
     if (FAILED(XAudio2Create(&m_xaudio2, 0, XAUDIO2_DEFAULT_PROCESSOR))) {
@@ -76,7 +76,7 @@ int main(void) {
     }
 
     // Define a format.
-    WAVEFORMATEX waveFormatEx{};
+    WAVEFORMATEX waveFormatEx = {0};
     waveFormatEx.wFormatTag = WAVE_FORMAT_PCM;
     waveFormatEx.nChannels = 1;  // 1 channel
     waveFormatEx.nSamplesPerSec = SAMPLESPERSEC;
@@ -85,9 +85,9 @@ int main(void) {
     waveFormatEx.wBitsPerSample = BITSPERSSAMPLE;
     waveFormatEx.cbSize = 0;
 
-    IXAudio2SourceVoice* m_pXAudio2SourceVoice{};
+    IXAudio2SourceVoice* m_pXAudio2SourceVoice = {0};
 
-    std::array<byte, AUDIOBUFFERSIZEINBYTES> m_buffer{};
+    u8 m_buffer[AUDIOBUFFERSIZEINBYTES] = {0};
 
     // Create a source voice with that format.
     if (FAILED(m_xaudio2->CreateSourceVoice(&m_pXAudio2SourceVoice, &waveFormatEx))) {
@@ -107,7 +107,7 @@ int main(void) {
     XAUDIO2_BUFFER xAudio2Buffer{};
     xAudio2Buffer.Flags = XAUDIO2_END_OF_STREAM;
     xAudio2Buffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
-    xAudio2Buffer.pAudioData = m_buffer.data();
+    xAudio2Buffer.pAudioData = m_buffer;
     xAudio2Buffer.PlayBegin = 0;
     xAudio2Buffer.PlayLength = 0;
     xAudio2Buffer.LoopBegin = 0;
@@ -127,19 +127,6 @@ int main(void) {
         sleep(1);
         t += 1.0f;
     }
-
-    // while (!WindowShouldClose())  // Detect window close button or ESC key
-    // {
-    //     BeginDrawing();
-
-    //     ClearBackground(RAYWHITE);
-
-    //     DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
-
-    //     EndDrawing();
-    // }
-
-    // CloseWindow();
 
     return 0;
 }
