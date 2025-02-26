@@ -12,10 +12,6 @@
 #include <windows.h>
 #include <xaudio2.h>
 
-#include <array>
-#include <chrono>
-#include <thread>
-
 ////////////////////////////////////////////////////////////
 // Core types.
 
@@ -60,73 +56,66 @@ constexpr DWORD AUDIOBUFFERSIZEINSAMPLES = SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCY
 constexpr UINT32 AUDIOBUFFERSIZEINBYTES = AUDIOBUFFERSIZEINSAMPLES * BITSPERSSAMPLE / 8;  // 4,000 bytes per buffer.
 
 int main(void) {
-    const int screenWidth = 800;
-    const int screenHeight = 450;
-
-    // InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
-
-    // SetTargetFPS(60);  // Set our game to run at 60 frames-per-second
-
     // // Must call at least once.
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (FAILED(hr)) return hr;
 
-    IXAudio2* m_xaudio2 = {0};
+    IXAudio2* xaudio2 = {0};
 
     // Create the main audio interface.
-    if (FAILED(XAudio2Create(&m_xaudio2, 0, XAUDIO2_DEFAULT_PROCESSOR))) {
+    if (FAILED(XAudio2Create(&xaudio2, 0, XAUDIO2_DEFAULT_PROCESSOR))) {
         printf("Failed to create XAudio2 instance\n");
     }
 
     IXAudio2MasteringVoice* m_pXAudio2MasteringVoice{};
-    if (FAILED(m_xaudio2->CreateMasteringVoice(&m_pXAudio2MasteringVoice))) {
+    if (FAILED(xaudio2->CreateMasteringVoice(&m_pXAudio2MasteringVoice))) {
         return 1;
     }
 
     // Define a format.
-    WAVEFORMATEX waveFormatEx = {0};
-    waveFormatEx.wFormatTag = WAVE_FORMAT_PCM;
-    waveFormatEx.nChannels = 1;  // 1 channel
-    waveFormatEx.nSamplesPerSec = SAMPLESPERSEC;
-    waveFormatEx.nBlockAlign = waveFormatEx.nChannels * BITSPERSSAMPLE / 8;
-    waveFormatEx.nAvgBytesPerSec = waveFormatEx.nSamplesPerSec * waveFormatEx.nBlockAlign;
-    waveFormatEx.wBitsPerSample = BITSPERSSAMPLE;
-    waveFormatEx.cbSize = 0;
+    WAVEFORMATEX waveformatex = {0};
+    waveformatex.wFormatTag = WAVE_FORMAT_PCM;
+    waveformatex.nChannels = 1;  // 1 channel
+    waveformatex.nSamplesPerSec = SAMPLESPERSEC;
+    waveformatex.nBlockAlign = waveformatex.nChannels * BITSPERSSAMPLE / 8;
+    waveformatex.nAvgBytesPerSec = waveformatex.nSamplesPerSec * waveformatex.nBlockAlign;
+    waveformatex.wBitsPerSample = BITSPERSSAMPLE;
+    waveformatex.cbSize = 0;
 
-    IXAudio2SourceVoice* m_pXAudio2SourceVoice = {0};
+    IXAudio2SourceVoice* source_voice = {0};
 
-    u8 m_buffer[AUDIOBUFFERSIZEINBYTES] = {0};
+    u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
+    u32 bsize = 0;
 
     // Create a source voice with that format.
-    if (FAILED(m_xaudio2->CreateSourceVoice(&m_pXAudio2SourceVoice, &waveFormatEx))) {
+    if (FAILED(xaudio2->CreateSourceVoice(&source_voice, &waveformatex))) {
         return 1;
     }
 
     // Fill a buffer.
-    double phase{};
-    uint32_t bufferIndex{};
-    while (bufferIndex < AUDIOBUFFERSIZEINBYTES) {
+    double phase = 0.0f;
+    while (bsize < AUDIOBUFFERSIZEINBYTES) {
         phase += (2 * PI) / SAMPLESPERCYCLE;
         int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-        m_buffer[bufferIndex++] = (byte)sample;  // Values are little-endian.
-        m_buffer[bufferIndex++] = (byte)(sample >> 8);
+        buffer[bsize++] = (byte)sample;  // Values are little-endian.
+        buffer[bsize++] = (byte)(sample >> 8);
     }
 
-    XAUDIO2_BUFFER xAudio2Buffer{};
-    xAudio2Buffer.Flags = XAUDIO2_END_OF_STREAM;
-    xAudio2Buffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
-    xAudio2Buffer.pAudioData = m_buffer;
-    xAudio2Buffer.PlayBegin = 0;
-    xAudio2Buffer.PlayLength = 0;
-    xAudio2Buffer.LoopBegin = 0;
-    xAudio2Buffer.LoopLength = 0;
-    xAudio2Buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
+    XAUDIO2_BUFFER xaudio2_buffer{};
+    xaudio2_buffer.Flags = XAUDIO2_END_OF_STREAM;
+    xaudio2_buffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
+    xaudio2_buffer.pAudioData = buffer;
+    xaudio2_buffer.PlayBegin = 0;
+    xaudio2_buffer.PlayLength = 0;
+    xaudio2_buffer.LoopBegin = 0;
+    xaudio2_buffer.LoopLength = 0;
+    xaudio2_buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
 
     // Submit the buffer to the source voice, and start the voice.
-    if (FAILED(m_pXAudio2SourceVoice->SubmitSourceBuffer(&xAudio2Buffer))) {
+    if (FAILED(source_voice->SubmitSourceBuffer(&xaudio2_buffer))) {
         return 1;
     }
-    if (FAILED(m_pXAudio2SourceVoice->Start(0))) {
+    if (FAILED(source_voice->Start(0))) {
         return 1;
     }
 
