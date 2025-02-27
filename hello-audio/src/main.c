@@ -189,6 +189,26 @@ int main(void) {
         return 1;
     }
 
+    u32 idx = 0;
+    for (;;) {
+        XAUDIO2_VOICE_STATE vstate;
+        for (;;) {
+            source_voice->GetState(&vstate);
+            if (vstate.BuffersQueued < 2) {
+                break;
+            }
+
+            WaitForSingleObject(voice_callback.on_buffer_end, INFINITE);
+        }
+
+        if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[idx]))) {
+            return 1;
+        }
+
+        ++idx;
+        idx %= 2;
+    }
+
     // WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
 
     // WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
