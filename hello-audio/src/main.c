@@ -193,10 +193,5 @@ int main(void) {
 
     WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
 
-    // float t = 0.0f;
-    // while (t < 3) {
-    //     sleep(1);
-    //     t += 1;
-    // }
     return 0;
 }
