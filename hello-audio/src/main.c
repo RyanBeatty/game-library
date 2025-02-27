@@ -193,5 +193,14 @@ int main(void) {
 
     WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
 
+    while (true) {
+        for (int key = 0; key < 256; key++) {
+            if (GetAsyncKeyState(key) & 0x8000) {
+                return true;  // A key was pressed
+            }
+        }
+        Sleep(1);  // Reduce CPU usage
+    }
+
     return 0;
 }
