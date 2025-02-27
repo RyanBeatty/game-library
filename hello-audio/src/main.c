@@ -57,14 +57,14 @@ constexpr UINT32 AUDIOBUFFERSIZEINBYTES = AUDIOBUFFERSIZEINSAMPLES * BITSPERSSAM
 
 class VoiceCallback : public IXAudio2VoiceCallback {
    public:
-    HANDLE hBufferEndEvent;
-    VoiceCallback() : hBufferEndEvent(CreateEvent(NULL, FALSE, FALSE, NULL)) {}
-    ~VoiceCallback() { CloseHandle(hBufferEndEvent); }
+    HANDLE on_buffer_end;
+    VoiceCallback() : on_buffer_end(CreateEvent(NULL, FALSE, FALSE, NULL)) {}
+    ~VoiceCallback() { CloseHandle(on_buffer_end); }
 
     // Called when the voice has just finished playing a contiguous audio stream.
     void OnStreamEnd() {
         printf("stream ended\n");
-        SetEvent(hBufferEndEvent);
+        SetEvent(on_buffer_end);
     }
 
     // Unused methods are stubs
@@ -145,7 +145,7 @@ int main(void) {
         xbuffer->PlayLength = 0;
         xbuffer->LoopBegin = 0;
         xbuffer->LoopLength = 0;
-        xbuffer->LoopCount = XAUDIO2_LOOP_INFINITE;
+        xbuffer->LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
     }
 
     // This buffer needs to live a long life. Needs to be allocated until any sound
@@ -173,22 +173,30 @@ int main(void) {
         xbuffer->PlayLength = 0;
         xbuffer->LoopBegin = 0;
         xbuffer->LoopLength = 0;
-        xbuffer->LoopCount = XAUDIO2_LOOP_INFINITE;
+        xbuffer->LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
     }
 
     // Submit the buffer to the source voice, and start the voice.
-    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[1]))) {
+    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[0]))) {
         return 1;
     }
     if (FAILED(source_voice->Start(0))) {
         return 1;
     }
 
-    f32 t = 0.0f;
-    while (t < 3) {
-        sleep(1);
-        t += 1.0f;
+    WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
+
+    // Submit the buffer to the source voice, and start the voice.
+    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[1]))) {
+        return 1;
     }
 
+    WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
+
+    // float t = 0.0f;
+    // while (t < 3) {
+    //     sleep(1);
+    //     t += 1;
+    // }
     return 0;
 }
