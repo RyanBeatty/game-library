@@ -77,8 +77,10 @@ class VoiceCallback : public IXAudio2VoiceCallback {
     void OnVoiceError(void* pBufferContext, HRESULT Error) {}
 };
 
+#define NUM_BUFFERS 2
+
 int main(void) {
-    static XAUDIO2_BUFFER XBUFFERS[2] = {0};
+    static u8 BUFFERS[NUM_BUFFERS][AUDIOBUFFERSIZEINBYTES] = {0};
 
     // // Must call at least once.
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -119,12 +121,10 @@ int main(void) {
         return 1;
     }
 
-    // This buffer needs to live a long life. Needs to be allocated until any sound
-    // data is not reading from it.
-    u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
-    u32 bsize = 0;
-
     {
+        u8* buffer = BUFFERS[0];
+        u32 bsize = 0;
+
         // Fill a buffer.
         double phase = 0.0f;
         while (bsize < AUDIOBUFFERSIZEINBYTES) {
@@ -136,56 +136,20 @@ int main(void) {
     }
 
     {
-        XAUDIO2_BUFFER* xbuffer = &XBUFFERS[0];
-        xbuffer->Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
-        xbuffer->AudioBytes = AUDIOBUFFERSIZEINBYTES;
-        xbuffer->pAudioData = buffer;
-        xbuffer->PlayBegin = 0;
-        xbuffer->PlayLength = 0;
-        xbuffer->LoopBegin = 0;
-        xbuffer->LoopLength = 0;
-        xbuffer->LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
-    }
+        u8* buffer = BUFFERS[1];
+        u32 bsize = 0;
 
-    // This buffer needs to live a long life. Needs to be allocated until any sound
-    // data is not reading from it.
-    u8 buffer2[AUDIOBUFFERSIZEINBYTES] = {0};
-    u32 b2size = 0;
-
-    {
         // Fill a buffer.
         double phase = 0.0f;
-        while (b2size < AUDIOBUFFERSIZEINBYTES) {
+        while (bsize < AUDIOBUFFERSIZEINBYTES) {
             phase += (3 * PI) / SAMPLESPERCYCLE;
             int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-            buffer2[b2size++] = (byte)sample;  // Values are little-endian.
-            buffer2[b2size++] = (byte)(sample >> 8);
+            buffer[bsize++] = (byte)sample;  // Values are little-endian.
+            buffer[bsize++] = (byte)(sample >> 8);
         }
     }
 
-    {
-        XAUDIO2_BUFFER* xbuffer = &XBUFFERS[1];
-        xbuffer->Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
-        xbuffer->AudioBytes = AUDIOBUFFERSIZEINBYTES;
-        xbuffer->pAudioData = buffer2;
-        xbuffer->PlayBegin = 0;
-        xbuffer->PlayLength = 0;
-        xbuffer->LoopBegin = 0;
-        xbuffer->LoopLength = 0;
-        xbuffer->LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
-    }
-
     if (FAILED(source_voice->Start(0))) {
-        return 1;
-    }
-
-    // Submit the buffer to the source voice, and start the voice.
-    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[0]))) {
-        return 1;
-    }
-
-    // Submit the buffer to the source voice, and start the voice.
-    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[1]))) {
         return 1;
     }
 
@@ -201,12 +165,22 @@ int main(void) {
             WaitForSingleObject(voice_callback.on_buffer_end, INFINITE);
         }
 
-        if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[idx]))) {
+        XAUDIO2_BUFFER xbuffer = {0};
+        xbuffer.Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
+        xbuffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
+        xbuffer.pAudioData = BUFFERS[idx];
+        xbuffer.PlayBegin = 0;
+        xbuffer.PlayLength = 0;
+        xbuffer.LoopBegin = 0;
+        xbuffer.LoopLength = 0;
+        xbuffer.LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
+
+        if (FAILED(source_voice->SubmitSourceBuffer(&xbuffer))) {
             return 1;
         }
 
         ++idx;
-        idx %= 2;
+        idx %= NUM_BUFFERS;
     }
 
     // while (true) {
