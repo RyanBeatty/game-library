@@ -62,17 +62,16 @@ class VoiceCallback : public IXAudio2VoiceCallback {
     ~VoiceCallback() { CloseHandle(on_buffer_end); }
 
     // Called when the voice has just finished playing a contiguous audio stream.
-    void OnStreamEnd() {
-        printf("stream ended\n");
-        SetEvent(on_buffer_end);
-    }
+    void OnStreamEnd() { printf("stream ended\n"); }
 
-    // Unused methods are stubs
     void OnVoiceProcessingPassEnd() {
         //  printf("void processing pass end\n");
     }
     void OnVoiceProcessingPassStart(UINT32 SamplesRequired) {}
-    void OnBufferEnd(void* pBufferContext) { printf("buffer ended\n"); }
+    void OnBufferEnd(void* pBufferContext) {
+        printf("buffer ended\n");
+        SetEvent(on_buffer_end);
+    }
     void OnBufferStart(void* pBufferContext) {}
     void OnLoopEnd(void* pBufferContext) { printf("loop end\n"); }
     void OnVoiceError(void* pBufferContext, HRESULT Error) {}
@@ -176,22 +175,23 @@ int main(void) {
         xbuffer->LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
     }
 
-    // Submit the buffer to the source voice, and start the voice.
-    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[0]))) {
-        return 1;
-    }
     if (FAILED(source_voice->Start(0))) {
         return 1;
     }
 
-    WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
+    // Submit the buffer to the source voice, and start the voice.
+    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[0]))) {
+        return 1;
+    }
 
     // Submit the buffer to the source voice, and start the voice.
     if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[1]))) {
         return 1;
     }
 
-    WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
+    // WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
+
+    // WaitForSingleObjectEx(voice_callback.on_buffer_end, INFINITE, TRUE);
 
     while (true) {
         for (int key = 0; key < 256; key++) {
@@ -199,6 +199,7 @@ int main(void) {
                 return true;  // A key was pressed
             }
         }
+
         Sleep(1);  // Reduce CPU usage
     }
 
