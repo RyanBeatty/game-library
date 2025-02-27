@@ -79,6 +79,8 @@ class VoiceCallback : public IXAudio2VoiceCallback {
 };
 
 int main(void) {
+    static XAUDIO2_BUFFER XBUFFERS[2] = {0};
+
     // // Must call at least once.
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     if (FAILED(hr)) return hr;
@@ -132,18 +134,20 @@ int main(void) {
         buffer[bsize++] = (byte)(sample >> 8);
     }
 
-    XAUDIO2_BUFFER xaudio2_buffer{};
-    xaudio2_buffer.Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
-    xaudio2_buffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
-    xaudio2_buffer.pAudioData = buffer;
-    xaudio2_buffer.PlayBegin = 0;
-    xaudio2_buffer.PlayLength = 0;
-    xaudio2_buffer.LoopBegin = 0;
-    xaudio2_buffer.LoopLength = 0;
-    xaudio2_buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
+    {
+        XAUDIO2_BUFFER* xbuffer = &XBUFFERS[0];
+        xbuffer->Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
+        xbuffer->AudioBytes = AUDIOBUFFERSIZEINBYTES;
+        xbuffer->pAudioData = buffer;
+        xbuffer->PlayBegin = 0;
+        xbuffer->PlayLength = 0;
+        xbuffer->LoopBegin = 0;
+        xbuffer->LoopLength = 0;
+        xbuffer->LoopCount = XAUDIO2_LOOP_INFINITE;
+    }
 
     // Submit the buffer to the source voice, and start the voice.
-    if (FAILED(source_voice->SubmitSourceBuffer(&xaudio2_buffer))) {
+    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[0]))) {
         return 1;
     }
     if (FAILED(source_voice->Start(0))) {
