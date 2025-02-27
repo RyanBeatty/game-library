@@ -125,13 +125,15 @@ int main(void) {
     u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
     u32 bsize = 0;
 
-    // Fill a buffer.
-    double phase = 0.0f;
-    while (bsize < AUDIOBUFFERSIZEINBYTES) {
-        phase += (2 * PI) / SAMPLESPERCYCLE;
-        int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-        buffer[bsize++] = (byte)sample;  // Values are little-endian.
-        buffer[bsize++] = (byte)(sample >> 8);
+    {
+        // Fill a buffer.
+        double phase = 0.0f;
+        while (bsize < AUDIOBUFFERSIZEINBYTES) {
+            phase += (2 * PI) / SAMPLESPERCYCLE;
+            int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
+            buffer[bsize++] = (byte)sample;  // Values are little-endian.
+            buffer[bsize++] = (byte)(sample >> 8);
+        }
     }
 
     {
@@ -146,8 +148,36 @@ int main(void) {
         xbuffer->LoopCount = XAUDIO2_LOOP_INFINITE;
     }
 
+    // This buffer needs to live a long life. Needs to be allocated until any sound
+    // data is not reading from it.
+    u8 buffer2[AUDIOBUFFERSIZEINBYTES] = {0};
+    u32 b2size = 0;
+
+    {
+        // Fill a buffer.
+        double phase = 0.0f;
+        while (b2size < AUDIOBUFFERSIZEINBYTES) {
+            phase += (3 * PI) / SAMPLESPERCYCLE;
+            int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
+            buffer2[b2size++] = (byte)sample;  // Values are little-endian.
+            buffer2[b2size++] = (byte)(sample >> 8);
+        }
+    }
+
+    {
+        XAUDIO2_BUFFER* xbuffer = &XBUFFERS[1];
+        xbuffer->Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
+        xbuffer->AudioBytes = AUDIOBUFFERSIZEINBYTES;
+        xbuffer->pAudioData = buffer2;
+        xbuffer->PlayBegin = 0;
+        xbuffer->PlayLength = 0;
+        xbuffer->LoopBegin = 0;
+        xbuffer->LoopLength = 0;
+        xbuffer->LoopCount = XAUDIO2_LOOP_INFINITE;
+    }
+
     // Submit the buffer to the source voice, and start the voice.
-    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[0]))) {
+    if (FAILED(source_voice->SubmitSourceBuffer(&XBUFFERS[1]))) {
         return 1;
     }
     if (FAILED(source_voice->Start(0))) {
