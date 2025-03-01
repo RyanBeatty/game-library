@@ -1,0 +1,135 @@
+#ifndef UNITY_BUILD
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include "raylib.h"
+#include "raymath.h"
+
+#endif
+
+#define WIN32_LEAN_AND_MEAN
+#include <stdbool.h>
+#include <windows.h>
+#include <xaudio2.h>
+
+// #include "../../shared/constants.h"
+// #include "../../shared/data.h"
+// #include "../../shared/debug.h"
+// #include "../../shared/platform-interface.h"
+// #include "../../shared/utils.h"
+// #include "windows-audio.h"
+
+// constexpr WORD BITSPERSSAMPLE = 16;           // 16 bits per sample.
+#define AUDIO_NUM_CHANNELS 1
+static DWORD SAMPLESPERSEC = 44100;  // 44,100 samples per second.
+// constexpr double CYCLESPERSEC = 220.0;        // 220 cycles per second (frequency of the audible tone).
+// constexpr double VOLUME = 0.5;                // 50% volume.
+// constexpr WORD AUDIOBUFFERSIZEINCYCLES = 10;  // 10 cycles per audio buffer.
+// constexpr double PI = 3.14159265358979323846;
+
+// // Calculated constants.
+// constexpr DWORD SAMPLESPERCYCLE = (DWORD)(SAMPLESPERSEC / CYCLESPERSEC);                  // 200 samples per cycle.
+// constexpr DWORD AUDIOBUFFERSIZEINSAMPLES = SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES;     // 2,000 samples per
+// buffer. constexpr UINT32 AUDIOBUFFERSIZEINBYTES = AUDIOBUFFERSIZEINSAMPLES * BITSPERSSAMPLE / 8;  // 4,000 bytes per
+// buffer.
+
+// static WAVEFORMATEX AUDIO_SOURCE_FORMAT = {
+//     .wFormatTag = WAVE_FORMAT_PCM,
+//     .nChannels = AUDIO_NUM_CHANNELS,
+//     .nSamplesPerSec = SAMPLESPERSEC,
+//     .nAvgBytesPerSec = SAMPLESPERSEC * AUDIO_NUM_CHANNELS * (SPACE_SHOOTER_AUDIO_BPS / 8),
+//     .nBlockAlign = 4,
+//     .wBitsPerSample = SPACE_SHOOTER_AUDIO_BPS,
+//     .cbSize = 0};
+
+typedef struct {
+    IXAudio2SourceVoice* voice;
+    XAUDIO2_BUFFER buffer;
+    bool inUse;
+} AudioStream;
+
+void WINAPI OnBufferEnd(IXAudio2VoiceCallback* This, void* pBufferContext) {
+    AudioStream* channel = (AudioStream*)pBufferContext;
+    channel->inUse = false;
+}
+
+void WINAPI OnStreamEnd(IXAudio2VoiceCallback* This) {}
+void WINAPI OnVoiceProcessingPassEnd(IXAudio2VoiceCallback* This) {}
+void WINAPI OnVoiceProcessingPassStart(IXAudio2VoiceCallback* This, UINT32 SamplesRequired) {}
+void WINAPI OnBufferStart(IXAudio2VoiceCallback* This, void* pBufferContext) {}
+void WINAPI OnLoopEnd(IXAudio2VoiceCallback* This, void* pBufferContext) {}
+void WINAPI OnVoiceError(IXAudio2VoiceCallback* This, void* pBufferContext, HRESULT Error) {}
+
+// static struct {
+//     Data_Buffer data[SPACE_SHOOTER_AUDIO_MAX_SOUNDS];
+//     int32_t count;
+// } sounds;
+
+static struct {
+    IXAudio2* xaudio;
+    IXAudio2MasteringVoice* xaudioMasterVoice;
+    AudioStream channels[AUDIO_NUM_CHANNELS];
+    IXAudio2VoiceCallback callbacks;
+} audio = {
+    .callbacks = {.lpVtbl = &(IXAudio2VoiceCallbackVtbl){.OnStreamEnd = OnStreamEnd,
+                                                         .OnVoiceProcessingPassEnd = OnVoiceProcessingPassEnd,
+                                                         .OnVoiceProcessingPassStart = OnVoiceProcessingPassStart,
+                                                         .OnBufferEnd = OnBufferEnd,
+                                                         .OnBufferStart = OnBufferStart,
+                                                         .OnLoopEnd = OnLoopEnd,
+                                                         .OnVoiceError = OnVoiceError}}};
+
+static void InitAudioState() {
+    HRESULT comResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (FAILED(comResult)) {
+        fprintf(stderr, "failed CoInitializeEx\n");
+        exit(1);
+    }
+
+    comResult = XAudio2Create(&audio.xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR);
+    if (FAILED(comResult)) {
+        fprintf(stderr, "failed XAudioCreate\n");
+        exit(1);
+    }
+
+    // comResult =
+    //     IXAudio2_CreateMasteringVoice(audio.xaudio, &audio.xaudioMasterVoice, SPACE_SHOOTER_AUDIO_CHANNELS,
+    //                                   SPACE_SHOOTER_AUDIO_SAMPLE_RATE, 0, NULL, NULL, AudioCategory_GameEffects);
+    // if (FAILED(comResult)) {
+    //     goto ERROR_XAUDIO2;
+    // }
+}
+
+////////////////////////////////////////////////////////////
+// Core types.
+
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+
+typedef float f32;
+typedef double f64;
+
+#define F32_MAX FLT_MAX
+// Min value a float can differ by.
+#define F32_EPSILON FLT_EPSILON
+
+typedef f32 rad;
+typedef f32 deg;
+
+#define LPI ((f32)3.1415926535)
+#define LTAU ((f32)6.2831853071)
+#define LPHI ((f32)1.6180339887)  // golden ratio
+
+#define Deg2Rad(d) ((d) * LTAU / 360.0f)
+#define Rad2Deg(r) ((r) * 360.0f / LTAU)
+#define RGB01(v) ((v) / 255.0f)
+
+int main(void) { return 0; }
