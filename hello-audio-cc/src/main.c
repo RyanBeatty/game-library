@@ -197,8 +197,8 @@ int main(void) {
         xbuffer.LoopLength = 0;
         xbuffer.LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
 
-        AUDIO.channels[0].voice->lpVtbl->SubmitSourceBuffer(AUDIO.channels[0].voice, &xbuffer, NULL);
-
+        SVOICE(0)->SubmitSourceBuffer(AUDIO.channels[0].voice, &xbuffer, NULL);
+        SVOICE(0)->Start(AUDIO.channels[0].voice, 0, 0);
         int i = 0;
         while (i < 3) {
             sleep(1);
