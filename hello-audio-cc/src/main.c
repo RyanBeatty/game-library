@@ -10,6 +10,7 @@
 
 // #define WIN32_LEAN_AND_MEAN
 #include <stdbool.h>
+#include <unistd.h>
 #include <windows.h>
 #include <xaudio2.h>
 
@@ -53,7 +54,17 @@ typedef f32 deg;
 
 // constexpr WORD BITSPERSSAMPLE = 16;           // 16 bits per sample.
 #define AUDIO_NUM_CHANNELS 1
-#define SAMPLESPERSEC 44100  // 44,100 samples per second.
+#define SAMPLESPERSEC 44100         // 44,100 samples per second.
+#define BITSPERSSAMPLE 16           // 16 bits per sample.
+#define CYCLESPERSEC 220            // 220 cycles per second (frequency of the audible tone).
+#define AUDIOBUFFERSIZEINCYCLES 10  // 10 cycles per audio buffer.
+
+#define VOLUME 0.5  // 50% volume.
+
+#define SAMPLESPERCYCLE ((SAMPLESPERSEC / CYCLESPERSEC))                          // 200 samples per cycle.
+#define AUDIOBUFFERSIZEINSAMPLES (SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES)      // 2,000 samples per buffer.
+#define AUDIOBUFFERSIZEINBYTES (AUDIOBUFFERSIZEINSAMPLES * (BITSPERSSAMPLE / 8))  // 4,000 bytes per buffer.
+
 // constexpr double CYCLESPERSEC = 220.0;        // 220 cycles per second (frequency of the audible tone).
 // constexpr double VOLUME = 0.5;                // 50% volume.
 // constexpr WORD AUDIOBUFFERSIZEINCYCLES = 10;  // 10 cycles per audio buffer.
@@ -112,6 +123,7 @@ static struct {
                                                          .OnVoiceError = OnVoiceError}}};
 
 #define IXAUDIO2(func) (AUDIO.xaudio->lpVtbl->func)
+#define SVOICE(i) (AUDIO.channels[(i)].voice->lpVtbl)
 
 static void InitAudio() {
     HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -130,9 +142,69 @@ static void InitAudio() {
         fprintf(stderr, "failed IXAudio2_CreateMasteringVoice\n");
         exit(1);
     }
+
+    // Define a format.
+    WAVEFORMATEX wfx = {0};
+    wfx.wFormatTag = WAVE_FORMAT_PCM;
+    wfx.nChannels = 1;  // 1 channel
+    wfx.nSamplesPerSec = SAMPLESPERSEC;
+    wfx.nBlockAlign = wfx.nChannels * BITSPERSSAMPLE / 8;
+    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
+    wfx.wBitsPerSample = BITSPERSSAMPLE;
+    wfx.cbSize = 0;
+
+    for (int32_t i = 0; i < AUDIO_NUM_CHANNELS; ++i) {
+        AUDIO.channels[i].buffer.Flags = XAUDIO2_END_OF_STREAM;
+        AUDIO.channels[i].buffer.pContext = AUDIO.channels + i;
+
+        res = IXAUDIO2(CreateSourceVoice(AUDIO.xaudio, &AUDIO.channels[i].voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
+                                         &AUDIO.callbacks, NULL, NULL));
+
+        if (FAILED(res)) {
+            fprintf(stderr, "Failed CreateSourceVoice\n");
+            exit(1);
+        }
+    }
 }
 
 int main(void) {
+    static u8 BUFFERS[1][AUDIOBUFFERSIZEINBYTES] = {0};
+
     InitAudio();
+
+    {
+        u8* buffer = BUFFERS[0];
+        u32 bsize = 0;
+
+        // Fill a buffer.
+        double phase = 0.0f;
+        while (bsize < AUDIOBUFFERSIZEINBYTES) {
+            phase += (2 * LPI) / SAMPLESPERCYCLE;
+            int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
+            buffer[bsize++] = (byte)sample;  // Values are little-endian.
+            buffer[bsize++] = (byte)(sample >> 8);
+        }
+    }
+
+    {
+        XAUDIO2_BUFFER xbuffer = {0};
+        xbuffer.Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
+        xbuffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
+        xbuffer.pAudioData = BUFFERS[0];
+        xbuffer.PlayBegin = 0;
+        xbuffer.PlayLength = 0;
+        xbuffer.LoopBegin = 0;
+        xbuffer.LoopLength = 0;
+        xbuffer.LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
+
+        AUDIO.channels[0].voice->lpVtbl->SubmitSourceBuffer(AUDIO.channels[0].voice, &xbuffer, NULL);
+
+        int i = 0;
+        while (i < 3) {
+            sleep(1);
+            i += 1;
+        }
+        // source_voice->Start(0))) { return 1; }
+    }
     return 0;
 }
