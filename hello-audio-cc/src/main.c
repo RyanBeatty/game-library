@@ -13,6 +13,37 @@
 #include <windows.h>
 #include <xaudio2.h>
 
+////////////////////////////////////////////////////////////
+// Core types.
+
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+
+typedef float f32;
+typedef double f64;
+
+#define F32_MAX FLT_MAX
+// Min value a float can differ by.
+#define F32_EPSILON FLT_EPSILON
+
+typedef f32 rad;
+typedef f32 deg;
+
+#define LPI ((f32)3.1415926535)
+#define LTAU ((f32)6.2831853071)
+#define LPHI ((f32)1.6180339887)  // golden ratio
+
+#define Deg2Rad(d) ((d) * LTAU / 360.0f)
+#define Rad2Deg(r) ((r) * 360.0f / LTAU)
+#define RGB01(v) ((v) / 255.0f)
+
 // #include "../../shared/constants.h"
 // #include "../../shared/data.h"
 // #include "../../shared/debug.h"
@@ -100,37 +131,6 @@ static void InitAudio() {
         exit(1);
     }
 }
-
-////////////////////////////////////////////////////////////
-// Core types.
-
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
-typedef int8_t i8;
-typedef int16_t i16;
-typedef int32_t i32;
-typedef int64_t i64;
-
-typedef float f32;
-typedef double f64;
-
-#define F32_MAX FLT_MAX
-// Min value a float can differ by.
-#define F32_EPSILON FLT_EPSILON
-
-typedef f32 rad;
-typedef f32 deg;
-
-#define LPI ((f32)3.1415926535)
-#define LTAU ((f32)6.2831853071)
-#define LPHI ((f32)1.6180339887)  // golden ratio
-
-#define Deg2Rad(d) ((d) * LTAU / 360.0f)
-#define Rad2Deg(r) ((r) * 360.0f / LTAU)
-#define RGB01(v) ((v) / 255.0f)
 
 int main(void) {
     InitAudio();
