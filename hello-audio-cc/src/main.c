@@ -8,7 +8,7 @@
 
 #endif
 
-#define WIN32_LEAN_AND_MEAN
+// #define WIN32_LEAN_AND_MEAN
 #include <stdbool.h>
 #include <windows.h>
 #include <xaudio2.h>
@@ -22,7 +22,7 @@
 
 // constexpr WORD BITSPERSSAMPLE = 16;           // 16 bits per sample.
 #define AUDIO_NUM_CHANNELS 1
-static DWORD SAMPLESPERSEC = 44100;  // 44,100 samples per second.
+#define SAMPLESPERSEC 44100  // 44,100 samples per second.
 // constexpr double CYCLESPERSEC = 220.0;        // 220 cycles per second (frequency of the audible tone).
 // constexpr double VOLUME = 0.5;                // 50% volume.
 // constexpr WORD AUDIOBUFFERSIZEINCYCLES = 10;  // 10 cycles per audio buffer.
@@ -71,7 +71,7 @@ static struct {
     IXAudio2MasteringVoice* xaudioMasterVoice;
     AudioStream channels[AUDIO_NUM_CHANNELS];
     IXAudio2VoiceCallback callbacks;
-} audio = {
+} AUDIO = {
     .callbacks = {.lpVtbl = &(IXAudio2VoiceCallbackVtbl){.OnStreamEnd = OnStreamEnd,
                                                          .OnVoiceProcessingPassEnd = OnVoiceProcessingPassEnd,
                                                          .OnVoiceProcessingPassStart = OnVoiceProcessingPassStart,
@@ -80,25 +80,25 @@ static struct {
                                                          .OnLoopEnd = OnLoopEnd,
                                                          .OnVoiceError = OnVoiceError}}};
 
-static void InitAudioState() {
-    HRESULT comResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-    if (FAILED(comResult)) {
+#define IXAUDIO2(func) (AUDIO.xaudio->lpVtbl->func)
+
+static void InitAudio() {
+    HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (FAILED(res)) {
         fprintf(stderr, "failed CoInitializeEx\n");
         exit(1);
     }
 
-    comResult = XAudio2Create(&audio.xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR);
-    if (FAILED(comResult)) {
-        fprintf(stderr, "failed XAudioCreate\n");
-        exit(1);
+    res = XAudio2Create(&AUDIO.xaudio, 0, XAUDIO2_DEFAULT_PROCESSOR);
+    if (FAILED(res)) {
     }
 
-    // comResult =
-    //     IXAudio2_CreateMasteringVoice(audio.xaudio, &audio.xaudioMasterVoice, SPACE_SHOOTER_AUDIO_CHANNELS,
-    //                                   SPACE_SHOOTER_AUDIO_SAMPLE_RATE, 0, NULL, NULL, AudioCategory_GameEffects);
-    // if (FAILED(comResult)) {
-    //     goto ERROR_XAUDIO2;
-    // }
+    res = IXAUDIO2(CreateMasteringVoice(AUDIO.xaudio, &AUDIO.xaudioMasterVoice, AUDIO_NUM_CHANNELS, SAMPLESPERSEC, 0,
+                                        NULL, NULL, AudioCategory_GameEffects));
+    if (FAILED(res)) {
+        fprintf(stderr, "failed IXAudio2_CreateMasteringVoice\n");
+        exit(1);
+    }
 }
 
 ////////////////////////////////////////////////////////////
@@ -132,4 +132,7 @@ typedef f32 deg;
 #define Rad2Deg(r) ((r) * 360.0f / LTAU)
 #define RGB01(v) ((v) / 255.0f)
 
-int main(void) { return 0; }
+int main(void) {
+    InitAudio();
+    return 0;
+}
