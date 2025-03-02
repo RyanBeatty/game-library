@@ -59,7 +59,7 @@ typedef f32 deg;
 
 typedef struct {
     IXAudio2SourceVoice* voice;
-    XAUDIO2_BUFFER buffer;
+    XAUDIO2_BUFFER xbuffer;
     bool free;
 } AudioStream;
 
@@ -129,8 +129,8 @@ static void InitAudio() {
     AUDIO.cap = NUM_STREAMS;
     for (int32_t i = 0; i < AUDIO.cap; ++i) {
         AudioStream* stream = &AUDIO.streams[i];
-        stream->buffer.Flags = XAUDIO2_END_OF_STREAM;
-        stream->buffer.pContext = &AUDIO.streams[i];
+        stream->xbuffer.Flags = XAUDIO2_END_OF_STREAM;
+        stream->xbuffer.pContext = &AUDIO.streams[i];
         stream->free = true;
 
         res = XAUDIO2()->CreateSourceVoice(AUDIO.xaudio, &stream->voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
@@ -139,6 +139,18 @@ static void InitAudio() {
         if (FAILED(res)) {
             fprintf(stderr, "Failed CreateSourceVoice\n");
             exit(1);
+        }
+    }
+}
+
+typedef u32 SoundId;
+
+static void PlayLSound(SoundId id, u32 flags) {
+    for (u32 i = 0; i < AUDIO.cap; ++i) {
+        AudioStream* stream = &AUDIO.streams[i];
+        if (stream->free) {
+            stream->free = false;
+            return;
         }
     }
 }
