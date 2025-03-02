@@ -75,12 +75,14 @@ void WINAPI OnBufferStart(IXAudio2VoiceCallback* this, void* ctx) {}
 void WINAPI OnLoopEnd(IXAudio2VoiceCallback* this, void* ctx) {}
 void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) {}
 
-static struct {
+typedef struct {
     IXAudio2* xaudio;
     IXAudio2MasteringVoice* xaudioMasterVoice;
-    AudioStream channels[AUDIO_NUM_CHANNELS];
+    AudioStream streams[AUDIO_NUM_CHANNELS];
     IXAudio2VoiceCallback callbacks;
-} AUDIO = {
+} AudioState;
+
+static AudioState AUDIO = {
     .callbacks = {.lpVtbl = &(IXAudio2VoiceCallbackVtbl){.OnStreamEnd = OnStreamEnd,
                                                          .OnVoiceProcessingPassEnd = OnVoiceProcessingPassEnd,
                                                          .OnVoiceProcessingPassStart = OnVoiceProcessingPassStart,
@@ -90,7 +92,7 @@ static struct {
                                                          .OnVoiceError = OnVoiceError}}};
 
 #define IXAUDIO2(func) (AUDIO.xaudio->lpVtbl->func)
-#define SVOICE(i) (AUDIO.channels[(i)].voice->lpVtbl)
+#define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
 static void InitAudio() {
     HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -121,10 +123,10 @@ static void InitAudio() {
     wfx.cbSize = 0;
 
     for (int32_t i = 0; i < AUDIO_NUM_CHANNELS; ++i) {
-        AUDIO.channels[i].buffer.Flags = XAUDIO2_END_OF_STREAM;
-        AUDIO.channels[i].buffer.pContext = AUDIO.channels + i;
+        AUDIO.streams[i].buffer.Flags = XAUDIO2_END_OF_STREAM;
+        AUDIO.streams[i].buffer.pContext = &AUDIO.streams[i];
 
-        res = IXAUDIO2(CreateSourceVoice(AUDIO.xaudio, &AUDIO.channels[i].voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
+        res = IXAUDIO2(CreateSourceVoice(AUDIO.xaudio, &AUDIO.streams[i].voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
                                          &AUDIO.callbacks, NULL, NULL));
 
         if (FAILED(res)) {
@@ -164,8 +166,8 @@ int main(void) {
         xbuffer.LoopLength = 0;
         xbuffer.LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
 
-        SVOICE(0)->SubmitSourceBuffer(AUDIO.channels[0].voice, &xbuffer, NULL);
-        SVOICE(0)->Start(AUDIO.channels[0].voice, 0, 0);
+        SVOICE(0)->SubmitSourceBuffer(AUDIO.streams[0].voice, &xbuffer, NULL);
+        SVOICE(0)->Start(AUDIO.streams[0].voice, 0, 0);
         int i = 0;
         while (i < 3) {
             sleep(1);
