@@ -91,7 +91,7 @@ static AudioState AUDIO = {
                                                          .OnLoopEnd = OnLoopEnd,
                                                          .OnVoiceError = OnVoiceError}}};
 
-#define IXAUDIO2(func) (AUDIO.xaudio->lpVtbl->func)
+#define XAUDIO2() (AUDIO.xaudio->lpVtbl)
 #define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
 static void InitAudio() {
@@ -105,8 +105,8 @@ static void InitAudio() {
     if (FAILED(res)) {
     }
 
-    res = IXAUDIO2(CreateMasteringVoice(AUDIO.xaudio, &AUDIO.xaudioMasterVoice, AUDIO_NUM_CHANNELS, SAMPLESPERSEC, 0,
-                                        NULL, NULL, AudioCategory_GameEffects));
+    res = XAUDIO2()->CreateMasteringVoice(AUDIO.xaudio, &AUDIO.xaudioMasterVoice, AUDIO_NUM_CHANNELS, SAMPLESPERSEC, 0,
+                                          NULL, NULL, AudioCategory_GameEffects);
     if (FAILED(res)) {
         fprintf(stderr, "failed IXAudio2_CreateMasteringVoice\n");
         exit(1);
@@ -126,8 +126,8 @@ static void InitAudio() {
         AUDIO.streams[i].buffer.Flags = XAUDIO2_END_OF_STREAM;
         AUDIO.streams[i].buffer.pContext = &AUDIO.streams[i];
 
-        res = IXAUDIO2(CreateSourceVoice(AUDIO.xaudio, &AUDIO.streams[i].voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
-                                         &AUDIO.callbacks, NULL, NULL));
+        res = XAUDIO2()->CreateSourceVoice(AUDIO.xaudio, &AUDIO.streams[i].voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
+                                           &AUDIO.callbacks, NULL, NULL);
 
         if (FAILED(res)) {
             fprintf(stderr, "Failed CreateSourceVoice\n");
