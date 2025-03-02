@@ -162,16 +162,9 @@ static void PlayLSound(SoundId id, u32 flags) {
         AudioStream* stream = &AUDIO.streams[i];
         if (stream->free) {
             stream->free = false;
-            // stream->xbuffer.AudioBytes = bsize;
-            // stream->xbuffer.pAudioData = buffer;
-            // stream->xbuffer.LoopCount = 6;
-            stream->xbuffer.Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
+
             stream->xbuffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
             stream->xbuffer.pAudioData = buffer;
-            stream->xbuffer.PlayBegin = 0;
-            stream->xbuffer.PlayLength = 0;
-            stream->xbuffer.LoopBegin = 0;
-            stream->xbuffer.LoopLength = 0;
             stream->xbuffer.LoopCount = 6;
 
             stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
