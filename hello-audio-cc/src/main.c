@@ -57,6 +57,16 @@ typedef f32 deg;
 #define AUDIOBUFFERSIZEINSAMPLES (SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES)      // 2,000 samples per buffer.
 #define AUDIOBUFFERSIZEINBYTES (AUDIOBUFFERSIZEINSAMPLES * (BITSPERSSAMPLE / 8))  // 4,000 bytes per buffer.
 
+typedef u32 SoundId;
+
+#define MAX_SOUND_BUFFER_LEN
+
+typedef struct {
+    u32 len;
+    u32 cap;
+    u8 buffer[AUDIOBUFFERSIZEINBYTES];
+} LSound;
+
 typedef struct {
     IXAudio2SourceVoice* voice;
     XAUDIO2_BUFFER xbuffer;
@@ -77,6 +87,8 @@ void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) 
 
 #define NUM_STREAMS 10
 
+#define MAX_SOUNDS 10
+
 typedef struct {
     IXAudio2* xaudio;
     IXAudio2MasteringVoice* xaudioMasterVoice;
@@ -84,6 +96,10 @@ typedef struct {
 
     u32 cap;
     AudioStream streams[AUDIO_NUM_CHANNELS];
+
+    u32 soundlen;
+    u32 soundcap;
+    LSound sounds[MAX_SOUNDS];
 } AudioState;
 
 static AudioState AUDIO = {
@@ -141,17 +157,15 @@ static void InitAudio() {
             exit(1);
         }
     }
+
+    // sound 0 is blank sound sentinal.
+    memset(AUDIO.sounds, 0, sizeof(AUDIO.sounds));
+    AUDIO.soundlen = 1;
+    AUDIO.soundcap = MAX_SOUNDS;
+    for (u32 i = 0; i < AUDIO.soundcap; ++i) {
+        AUDIO.sounds[i].cap = AUDIOBUFFERSIZEINBYTES;
+    }
 }
-
-typedef u32 SoundId;
-
-#define MAX_SOUND_BUFFER_LEN
-
-typedef struct {
-    u32 len;
-    u32 cap;
-    u8 buffer[];
-} LSound;
 
 static void PlayLSound(SoundId id, u32 flags) {
     static u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
@@ -175,6 +189,7 @@ static void PlayLSound(SoundId id, u32 flags) {
             stream->xbuffer.pAudioData = buffer;
             stream->xbuffer.LoopCount = 6;
 
+            printf("fooo\n");
             stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
             stream->voice->lpVtbl->Start(stream->voice, 0, 0);
             return;
@@ -186,7 +201,22 @@ int main(void) {
     InitAudio();
 
     {
-        PlayLSound(0, 0);
+        Assert(AUDIO.soundlen < AUDIO.soundcap);
+        LSound* sound = &AUDIO.sounds[AUDIO.soundlen++];
+
+        // Fill a buffer.
+        double phase = 0.0f;
+        while (sound->len < AUDIOBUFFERSIZEINBYTES) {
+            phase += (2 * LPI) / SAMPLESPERCYCLE;
+            int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
+            sound->buffer[sound->len++] = (byte)sample;  // Values are little-endian.
+            sound->buffer[sound->len++] = (byte)(sample >> 8);
+        }
+        Assert(sound->len <= sound->cap);
+    }
+
+    {
+        PlayLSound(1, 0);
         u32 i = 0;
         while (i < 3) {
             sleep(1);
