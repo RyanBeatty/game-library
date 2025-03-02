@@ -131,6 +131,7 @@ static void InitAudio() {
         AudioStream* stream = &AUDIO.streams[i];
         stream->buffer.Flags = XAUDIO2_END_OF_STREAM;
         stream->buffer.pContext = &AUDIO.streams[i];
+        stream->free = true;
 
         res = XAUDIO2()->CreateSourceVoice(AUDIO.xaudio, &stream->voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
                                            &AUDIO.callbacks, NULL, NULL);
