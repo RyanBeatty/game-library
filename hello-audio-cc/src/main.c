@@ -60,7 +60,7 @@ typedef f32 deg;
 typedef struct {
     IXAudio2SourceVoice* voice;
     XAUDIO2_BUFFER buffer;
-    bool inUse;
+    bool free;
 } AudioStream;
 
 void WINAPI OnBufferEnd(IXAudio2VoiceCallback* this, void* ctx) {
@@ -75,11 +75,15 @@ void WINAPI OnBufferStart(IXAudio2VoiceCallback* this, void* ctx) {}
 void WINAPI OnLoopEnd(IXAudio2VoiceCallback* this, void* ctx) {}
 void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) {}
 
+#define NUM_STREAMS 10
+
 typedef struct {
     IXAudio2* xaudio;
     IXAudio2MasteringVoice* xaudioMasterVoice;
-    AudioStream streams[AUDIO_NUM_CHANNELS];
     IXAudio2VoiceCallback callbacks;
+
+    u32 cap;
+    AudioStream streams[AUDIO_NUM_CHANNELS];
 } AudioState;
 
 static AudioState AUDIO = {
@@ -122,11 +126,13 @@ static void InitAudio() {
     wfx.wBitsPerSample = BITSPERSSAMPLE;
     wfx.cbSize = 0;
 
-    for (int32_t i = 0; i < AUDIO_NUM_CHANNELS; ++i) {
-        AUDIO.streams[i].buffer.Flags = XAUDIO2_END_OF_STREAM;
-        AUDIO.streams[i].buffer.pContext = &AUDIO.streams[i];
+    AUDIO.cap = NUM_STREAMS;
+    for (int32_t i = 0; i < AUDIO.cap; ++i) {
+        AudioStream* stream = &AUDIO.streams[i];
+        stream->buffer.Flags = XAUDIO2_END_OF_STREAM;
+        stream->buffer.pContext = &AUDIO.streams[i];
 
-        res = XAUDIO2()->CreateSourceVoice(AUDIO.xaudio, &AUDIO.streams[i].voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
+        res = XAUDIO2()->CreateSourceVoice(AUDIO.xaudio, &stream->voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
                                            &AUDIO.callbacks, NULL, NULL);
 
         if (FAILED(res)) {
