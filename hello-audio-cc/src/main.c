@@ -45,13 +45,13 @@ typedef f32 deg;
 #define Rad2Deg(r) ((r) * 360.0f / LTAU)
 #define RGB01(v) ((v) / 255.0f)
 
+#define VOLUME 0.5  // 50% volume.
+
 #define AUDIO_NUM_CHANNELS 1
-#define SAMPLESPERSEC 44100         // 44,100 samples per second.
+#define SAMPLESPERSEC 48000         // 44,100 samples per second.
 #define BITSPERSSAMPLE 16           // 16 bits per sample.
 #define CYCLESPERSEC 220            // 220 cycles per second (frequency of the audible tone).
 #define AUDIOBUFFERSIZEINCYCLES 10  // 10 cycles per audio buffer.
-
-#define VOLUME 0.5  // 50% volume.
 
 #define SAMPLESPERCYCLE ((SAMPLESPERSEC / CYCLESPERSEC))                          // 200 samples per cycle.
 #define AUDIOBUFFERSIZEINSAMPLES (SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES)      // 2,000 samples per buffer.
@@ -145,6 +145,14 @@ static void InitAudio() {
 
 typedef u32 SoundId;
 
+#define MAX_SOUND_BUFFER_LEN
+
+typedef struct {
+    u32 len;
+    u32 cap;
+    u8 buffer[];
+} LSound;
+
 static void PlayLSound(SoundId id, u32 flags) {
     static u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
     u32 bsize = 0;
@@ -175,23 +183,7 @@ static void PlayLSound(SoundId id, u32 flags) {
 }
 
 int main(void) {
-    static u8 BUFFERS[1][AUDIOBUFFERSIZEINBYTES] = {0};
-
     InitAudio();
-
-    {
-        u8* buffer = BUFFERS[0];
-        u32 bsize = 0;
-
-        // Fill a buffer.
-        double phase = 0.0f;
-        while (bsize < AUDIOBUFFERSIZEINBYTES) {
-            phase += (2 * LPI) / SAMPLESPERCYCLE;
-            int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-            buffer[bsize++] = (byte)sample;  // Values are little-endian.
-            buffer[bsize++] = (byte)(sample >> 8);
-        }
-    }
 
     {
         PlayLSound(0, 0);
