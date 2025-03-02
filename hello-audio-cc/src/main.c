@@ -146,10 +146,36 @@ static void InitAudio() {
 typedef u32 SoundId;
 
 static void PlayLSound(SoundId id, u32 flags) {
+    static u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
+    u32 bsize = 0;
+
+    // Fill a buffer.
+    double phase = 0.0f;
+    while (bsize < AUDIOBUFFERSIZEINBYTES) {
+        phase += (2 * LPI) / SAMPLESPERCYCLE;
+        int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
+        buffer[bsize++] = (byte)sample;  // Values are little-endian.
+        buffer[bsize++] = (byte)(sample >> 8);
+    }
+
     for (u32 i = 0; i < AUDIO.cap; ++i) {
         AudioStream* stream = &AUDIO.streams[i];
         if (stream->free) {
             stream->free = false;
+            // stream->xbuffer.AudioBytes = bsize;
+            // stream->xbuffer.pAudioData = buffer;
+            // stream->xbuffer.LoopCount = 6;
+            stream->xbuffer.Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
+            stream->xbuffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
+            stream->xbuffer.pAudioData = buffer;
+            stream->xbuffer.PlayBegin = 0;
+            stream->xbuffer.PlayLength = 0;
+            stream->xbuffer.LoopBegin = 0;
+            stream->xbuffer.LoopLength = 0;
+            stream->xbuffer.LoopCount = 6;
+
+            stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
+            stream->voice->lpVtbl->Start(stream->voice, 0, 0);
             return;
         }
     }
@@ -175,19 +201,8 @@ int main(void) {
     }
 
     {
-        XAUDIO2_BUFFER xbuffer = {0};
-        xbuffer.Flags = XAUDIO2_END_OF_STREAM;  // TODO: maybe remove.
-        xbuffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
-        xbuffer.pAudioData = BUFFERS[0];
-        xbuffer.PlayBegin = 0;
-        xbuffer.PlayLength = 0;
-        xbuffer.LoopBegin = 0;
-        xbuffer.LoopLength = 0;
-        xbuffer.LoopCount = 6;  // XAUDIO2_LOOP_INFINITE;
-
-        SVOICE(0)->SubmitSourceBuffer(AUDIO.streams[0].voice, &xbuffer, NULL);
-        SVOICE(0)->Start(AUDIO.streams[0].voice, 0, 0);
-        int i = 0;
+        PlayLSound(0, 0);
+        u32 i = 0;
         while (i < 3) {
             sleep(1);
             i += 1;
