@@ -167,6 +167,23 @@ static void InitAudio() {
     }
 }
 
+static SoundId LoadLSound(const char* filename) {
+    Assert(AUDIO.soundlen < AUDIO.soundcap);
+    SoundId id = AUDIO.soundlen++;
+    LSound* sound = &AUDIO.sounds[id];
+
+    // Fill a buffer.
+    double phase = 0.0f;
+    while (sound->len < AUDIOBUFFERSIZEINBYTES) {
+        phase += (2 * LPI) / SAMPLESPERCYCLE;
+        int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
+        sound->buffer[sound->len++] = (byte)sample;  // Values are little-endian.
+        sound->buffer[sound->len++] = (byte)(sample >> 8);
+    }
+    Assert(sound->len <= sound->cap);
+    return id;
+}
+
 static void PlayLSound(SoundId id, u32 flags) {
     Assert(id < AUDIO.soundlen);
     LSound* sound = &AUDIO.sounds[id];
@@ -190,20 +207,7 @@ static void PlayLSound(SoundId id, u32 flags) {
 int main(void) {
     InitAudio();
 
-    {
-        Assert(AUDIO.soundlen < AUDIO.soundcap);
-        LSound* sound = &AUDIO.sounds[AUDIO.soundlen++];
-
-        // Fill a buffer.
-        double phase = 0.0f;
-        while (sound->len < AUDIOBUFFERSIZEINBYTES) {
-            phase += (2 * LPI) / SAMPLESPERCYCLE;
-            int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-            sound->buffer[sound->len++] = (byte)sample;  // Values are little-endian.
-            sound->buffer[sound->len++] = (byte)(sample >> 8);
-        }
-        Assert(sound->len <= sound->cap);
-    }
+    LoadLSound("foo");
 
     {
         PlayLSound(1, 0);
