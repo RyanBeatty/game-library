@@ -74,8 +74,8 @@ typedef struct {
 } AudioStream;
 
 void WINAPI OnBufferEnd(IXAudio2VoiceCallback* this, void* ctx) {
-    // AudioStream* stream = (AudioStream*)ctx;
-    // stream->inUse = false;
+    AudioStream* stream = (AudioStream*)ctx;
+    stream->free = true;
 }
 
 void WINAPI OnStreamEnd(IXAudio2VoiceCallback* this) {}
@@ -168,28 +168,18 @@ static void InitAudio() {
 }
 
 static void PlayLSound(SoundId id, u32 flags) {
-    static u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
-    u32 bsize = 0;
-
-    // Fill a buffer.
-    double phase = 0.0f;
-    while (bsize < AUDIOBUFFERSIZEINBYTES) {
-        phase += (2 * LPI) / SAMPLESPERCYCLE;
-        int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-        buffer[bsize++] = (byte)sample;  // Values are little-endian.
-        buffer[bsize++] = (byte)(sample >> 8);
-    }
+    Assert(id < AUDIO.soundlen);
+    LSound* sound = &AUDIO.sounds[id];
 
     for (u32 i = 0; i < AUDIO.cap; ++i) {
         AudioStream* stream = &AUDIO.streams[i];
         if (stream->free) {
             stream->free = false;
 
-            stream->xbuffer.AudioBytes = AUDIOBUFFERSIZEINBYTES;
-            stream->xbuffer.pAudioData = buffer;
+            stream->xbuffer.AudioBytes = sound->len;
+            stream->xbuffer.pAudioData = sound->buffer;
             stream->xbuffer.LoopCount = 6;
 
-            printf("fooo\n");
             stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
             stream->voice->lpVtbl->Start(stream->voice, 0, 0);
             return;
