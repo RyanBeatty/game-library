@@ -63,17 +63,17 @@ typedef struct {
     bool inUse;
 } AudioStream;
 
-void WINAPI OnBufferEnd(IXAudio2VoiceCallback* this, void* pBufferContext) {
-    AudioStream* stream = (AudioStream*)pBufferContext;
-    stream->inUse = false;
+void WINAPI OnBufferEnd(IXAudio2VoiceCallback* this, void* ctx) {
+    // AudioStream* stream = (AudioStream*)ctx;
+    // stream->inUse = false;
 }
 
 void WINAPI OnStreamEnd(IXAudio2VoiceCallback* this) {}
 void WINAPI OnVoiceProcessingPassEnd(IXAudio2VoiceCallback* this) {}
-void WINAPI OnVoiceProcessingPassStart(IXAudio2VoiceCallback* this, UINT32 SamplesRequired) {}
-void WINAPI OnBufferStart(IXAudio2VoiceCallback* this, void* pBufferContext) {}
-void WINAPI OnLoopEnd(IXAudio2VoiceCallback* this, void* pBufferContext) {}
-void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* pBufferContext, HRESULT Error) {}
+void WINAPI OnVoiceProcessingPassStart(IXAudio2VoiceCallback* this, UINT32 samples_required) {}
+void WINAPI OnBufferStart(IXAudio2VoiceCallback* this, void* ctx) {}
+void WINAPI OnLoopEnd(IXAudio2VoiceCallback* this, void* ctx) {}
+void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) {}
 
 static struct {
     IXAudio2* xaudio;
