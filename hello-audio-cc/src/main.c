@@ -58,6 +58,7 @@ typedef f32 deg;
 #define AUDIOBUFFERSIZEINBYTES (AUDIOBUFFERSIZEINSAMPLES * (BITSPERSSAMPLE / 8))  // 4,000 bytes per buffer.
 
 typedef u32 SoundId;
+static const SoundId NULLSOUND = 0;
 
 #define MAX_SOUND_BUFFER_LEN
 
@@ -184,6 +185,38 @@ static SoundId LoadLSound(const char* filename) {
     return id;
 }
 
+static SoundId LoadLSound2(const char* filename) {
+    Assert(AUDIO.soundlen < AUDIO.soundcap);
+    SoundId id = AUDIO.soundlen++;
+    LSound* sound = &AUDIO.sounds[id];
+
+    u32 bsize = 0;
+    u32 bcap = AUDIOBUFFERSIZEINBYTES;
+    u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
+
+    FILE* file = fopen(filename, "rb");  // Open file in binary mode
+    if (!file) {
+        perror("Failed to open file");
+        return NULLSOUND;
+    }
+
+    // Seek to the end to determine the file size
+    fseek(file, 0, SEEK_END);
+    bsize = ftell(file);
+    rewind(file);
+
+    // // Fill a buffer.
+    // double phase = 0.0f;
+    // while (sound->len < AUDIOBUFFERSIZEINBYTES) {
+    //     phase += (2 * LPI) / SAMPLESPERCYCLE;
+    //     int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
+    //     sound->buffer[sound->len++] = (byte)sample;  // Values are little-endian.
+    //     sound->buffer[sound->len++] = (byte)(sample >> 8);
+    // }
+    Assert(sound->len <= sound->cap);
+    return id;
+}
+
 static void PlayLSound(SoundId id, u32 flags) {
     Assert(id < AUDIO.soundlen);
     LSound* sound = &AUDIO.sounds[id];
@@ -207,7 +240,12 @@ static void PlayLSound(SoundId id, u32 flags) {
 int main(void) {
     InitAudio();
 
+    // char cwd[PATH_MAX];
+    // getcwd(cwd, sizeof(cwd));
+    // printf("Current working directory: %s\n", cwd);
+
     LoadLSound("foo");
+    LoadLSound2("src/beep.wav");
 
     {
         PlayLSound(1, 0);
