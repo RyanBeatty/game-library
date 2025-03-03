@@ -45,8 +45,6 @@ typedef f32 deg;
 #define Rad2Deg(r) ((r) * 360.0f / LTAU)
 #define RGB01(v) ((v) / 255.0f)
 
-#define VOLUME 0.5  // 50% volume.
-
 #define AUDIO_NUM_CHANNELS 1
 #define SAMPLESPERSEC 44100  // 44,100 samples per second.
 #define BITSPERSSAMPLE 16    // 16 bits per sample.
@@ -166,6 +164,7 @@ static void InitAudio() {
 }
 
 static SoundId LoadLSoundTest(const char* filename) {
+    f32 VOLUME = 0.5;                                        // 50% volume.
     u32 CYCLESPERSEC = 220;                                  // 220 cycles per second (frequency of the audible tone).
     u32 SAMPLESPERCYCLE = ((SAMPLESPERSEC / CYCLESPERSEC));  // 200 samples per cycle.
     u32 AUDIOBUFFERSIZEINCYCLES = 10;                        // 10 cycles per audio buffer.
@@ -336,6 +335,7 @@ int main(void) {
 
     SoundId s1 = LoadLSoundTest("foo");
     SoundId s2 = LoadLSound("src/beep.wav");
+    breakpoint();
 
     {
         PlayLSound(s1, 0);
