@@ -185,6 +185,7 @@ static SoundId LoadLSound(const char* filename) {
     return id;
 }
 
+// Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
 static SoundId LoadLSound2(const char* filename) {
     Assert(AUDIO.soundlen < AUDIO.soundcap);
     SoundId id = AUDIO.soundlen++;
@@ -213,9 +214,7 @@ static SoundId LoadLSound2(const char* filename) {
     u8* end = buffer + bsize;
 
     Assert(end - cur > 4);
-    if (*cur++ != 'R' || *cur++ != 'I' || *cur++ != 'F' || *cur++ != 'F') {
-        perror("Could not find RIFF header in WAV file");
-    }
+    Assert(*cur++ == 'R' && *cur++ == 'I' && *cur++ == 'F' && *cur++ == 'F');
 
     // NOTE: Assumes little endian.
     Assert(end - cur > 4);
@@ -226,9 +225,30 @@ static SoundId LoadLSound2(const char* filename) {
     chunk_size |= ((u32)*cur++) << 24;
 
     Assert(end - cur > 4);
-    if (*cur++ != 'W' || *cur++ != 'A' || *cur++ != 'V' || *cur++ != 'E') {
-        perror("Could not find RIFF header in WAV file");
-    }
+    Assert(*cur++ == 'W' && *cur++ == 'A' && *cur++ == 'V' && *cur++ == 'E');
+
+    Assert(end - cur > 4);
+    Assert(*cur++ == 'f' && *cur++ == 'm' && *cur++ == 't' && *cur++ == ' ');
+
+    Assert(end - cur > 4);
+    u32 subchunk_size = 0;
+    subchunk_size |= ((u32)*cur++) << 0;
+    subchunk_size |= ((u32)*cur++) << 8;
+    subchunk_size |= ((u32)*cur++) << 16;
+    subchunk_size |= ((u32)*cur++) << 24;
+    Assert(subchunk_size == 16 || subchunk_size == 18);
+
+    Assert(end - cur > 2);
+    u16 fmt = 0;
+    fmt |= ((u16)*cur++) << 0;
+    fmt |= ((u16)*cur++) << 8;
+    Assert(fmt == 1);
+
+    Assert(end - cur > 2);
+    u16 nchannels = 0;
+    nchannels |= ((u16)*cur++) << 0;
+    nchannels |= ((u16)*cur++) << 8;
+    Assert(nchannels == 1);
 
     breakpoint();
     // // Fill a buffer.
