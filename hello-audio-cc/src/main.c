@@ -48,7 +48,7 @@ typedef f32 deg;
 #define VOLUME 0.5  // 50% volume.
 
 #define AUDIO_NUM_CHANNELS 1
-#define SAMPLESPERSEC 48000         // 44,100 samples per second.
+#define SAMPLESPERSEC 44100         // 44,100 samples per second.
 #define BITSPERSSAMPLE 16           // 16 bits per sample.
 #define CYCLESPERSEC 220            // 220 cycles per second (frequency of the audible tone).
 #define AUDIOBUFFERSIZEINCYCLES 10  // 10 cycles per audio buffer.
@@ -65,7 +65,7 @@ static const SoundId NULLSOUND = 0;
 typedef struct {
     u32 len;
     u32 cap;
-    u8 buffer[AUDIOBUFFERSIZEINBYTES];
+    u8 buffer[MAX_SOUND_SIZE];
 } LSound;
 
 typedef struct {
@@ -138,9 +138,9 @@ static void InitAudio() {
     wfx.wFormatTag = WAVE_FORMAT_PCM;
     wfx.nChannels = 1;  // 1 channel
     wfx.nSamplesPerSec = SAMPLESPERSEC;
-    wfx.nBlockAlign = wfx.nChannels * BITSPERSSAMPLE / 8;
-    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
     wfx.wBitsPerSample = BITSPERSSAMPLE;
+    wfx.nBlockAlign = wfx.nChannels * (wfx.wBitsPerSample / 8);
+    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nChannels * (wfx.wBitsPerSample / 8);
     wfx.cbSize = 0;
 
     AUDIO.cap = NUM_STREAMS;
@@ -164,7 +164,7 @@ static void InitAudio() {
     AUDIO.soundlen = 1;
     AUDIO.soundcap = MAX_SOUNDS;
     for (u32 i = 0; i < AUDIO.soundcap; ++i) {
-        AUDIO.sounds[i].cap = AUDIOBUFFERSIZEINBYTES;
+        AUDIO.sounds[i].cap = MAX_SOUND_SIZE;
     }
 }
 
@@ -256,6 +256,7 @@ static SoundId LoadLSound2(const char* filename) {
     sample_rate |= ((u32)*cur++) << 8;
     sample_rate |= ((u32)*cur++) << 16;
     sample_rate |= ((u32)*cur++) << 24;
+    Assert(sample_rate == SAMPLESPERSEC);
 
     Assert(end - cur > 4);
     u32 byte_rate = 0;
@@ -283,21 +284,20 @@ static SoundId LoadLSound2(const char* filename) {
     Assert(*cur++ == 'd' && *cur++ == 'a' && *cur++ == 't' && *cur++ == 'a');
 
     Assert(end - cur > 4);
-    u32 subchunk_size2 = 0;
-    subchunk_size2 |= ((u32)*cur++) << 0;
-    subchunk_size2 |= ((u32)*cur++) << 8;
-    subchunk_size2 |= ((u32)*cur++) << 16;
-    subchunk_size2 |= ((u32)*cur++) << 24;
+    u32 subchunk2_size = 0;
+    subchunk2_size |= ((u32)*cur++) << 0;
+    subchunk2_size |= ((u32)*cur++) << 8;
+    subchunk2_size |= ((u32)*cur++) << 16;
+    subchunk2_size |= ((u32)*cur++) << 24;
+    Assert(subchunk2_size < sound->cap);
+
+    u8* subchunk2_end = cur + subchunk2_size;
+    while (cur < subchunk2_end) {
+        sound->buffer[sound->len++] = *cur++;
+    }
 
     breakpoint();
-    // // Fill a buffer.
-    // double phase = 0.0f;
-    // while (sound->len < AUDIOBUFFERSIZEINBYTES) {
-    //     phase += (2 * LPI) / SAMPLESPERCYCLE;
-    //     int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-    //     sound->buffer[sound->len++] = (byte)sample;  // Values are little-endian.
-    //     sound->buffer[sound->len++] = (byte)(sample >> 8);
-    // }
+
     Assert(sound->len <= sound->cap);
     return id;
 }
