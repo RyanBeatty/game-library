@@ -250,6 +250,45 @@ static SoundId LoadLSound2(const char* filename) {
     nchannels |= ((u16)*cur++) << 8;
     Assert(nchannels == 1);
 
+    Assert(end - cur > 4);
+    u32 sample_rate = 0;
+    sample_rate |= ((u32)*cur++) << 0;
+    sample_rate |= ((u32)*cur++) << 8;
+    sample_rate |= ((u32)*cur++) << 16;
+    sample_rate |= ((u32)*cur++) << 24;
+
+    Assert(end - cur > 4);
+    u32 byte_rate = 0;
+    byte_rate |= ((u32)*cur++) << 0;
+    byte_rate |= ((u32)*cur++) << 8;
+    byte_rate |= ((u32)*cur++) << 16;
+    byte_rate |= ((u32)*cur++) << 24;
+
+    Assert(end - cur > 2);
+    u16 block_align = 0;
+    block_align |= ((u16)*cur++) << 0;
+    block_align |= ((u16)*cur++) << 8;
+
+    Assert(end - cur > 2);
+    u16 bits_per_sample = 0;
+    bits_per_sample |= ((u16)*cur++) << 0;
+    bits_per_sample |= ((u16)*cur++) << 8;
+    Assert(bits_per_sample == 16);
+
+    if (subchunk_size == 18) {
+        cur += 2;  // Consume extra 2 bytes of extension data
+    }
+
+    Assert(end - cur > 4);
+    Assert(*cur++ == 'd' && *cur++ == 'a' && *cur++ == 't' && *cur++ == 'a');
+
+    Assert(end - cur > 4);
+    u32 subchunk_size2 = 0;
+    subchunk_size2 |= ((u32)*cur++) << 0;
+    subchunk_size2 |= ((u32)*cur++) << 8;
+    subchunk_size2 |= ((u32)*cur++) << 16;
+    subchunk_size2 |= ((u32)*cur++) << 24;
+
     breakpoint();
     // // Fill a buffer.
     // double phase = 0.0f;
