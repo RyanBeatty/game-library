@@ -209,23 +209,24 @@ static SoundId LoadLSound2(const char* filename) {
     fread(buffer, 1, bsize, file);
     fclose(file);
 
-    u32 idx = 0;
+    u8* cur = buffer;
+    u8* end = buffer + bsize;
 
-    Assert(idx < bsize && bsize - idx > 4);
-    if (buffer[idx++] != 'R' || buffer[idx++] != 'I' || buffer[idx++] != 'F' || buffer[idx++] != 'F') {
+    Assert(end - cur > 4);
+    if (*cur++ != 'R' || *cur++ != 'I' || *cur++ != 'F' || *cur++ != 'F') {
         perror("Could not find RIFF header in WAV file");
     }
 
     // NOTE: Assumes little endian.
-    Assert(idx < bsize && bsize - idx > 4);
+    Assert(end - cur > 4);
     u32 chunk_size = 0;
-    chunk_size |= ((u32)buffer[idx++]) << 0;
-    chunk_size |= ((u32)buffer[idx++]) << 8;
-    chunk_size |= ((u32)buffer[idx++]) << 16;
-    chunk_size |= ((u32)buffer[idx++]) << 24;
+    chunk_size |= ((u32)*cur++) << 0;
+    chunk_size |= ((u32)*cur++) << 8;
+    chunk_size |= ((u32)*cur++) << 16;
+    chunk_size |= ((u32)*cur++) << 24;
 
-    Assert(idx < bsize && bsize - idx > 4);
-    if (buffer[idx++] != 'W' || buffer[idx++] != 'A' || buffer[idx++] != 'V' || buffer[idx++] != 'E') {
+    Assert(end - cur > 4);
+    if (*cur++ != 'W' || *cur++ != 'A' || *cur++ != 'V' || *cur++ != 'E') {
         perror("Could not find RIFF header in WAV file");
     }
 
