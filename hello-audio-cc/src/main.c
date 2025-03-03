@@ -91,7 +91,7 @@ typedef struct {
     IXAudio2VoiceCallback callbacks;
 
     u32 cap;
-    AudioStream streams[AUDIO_NUM_CHANNELS];
+    AudioStream streams[NUM_STREAMS];
 
     u32 soundlen;
     u32 soundcap;
@@ -139,7 +139,7 @@ static void InitAudio() {
     wfx.cbSize = 0;
 
     AUDIO.cap = NUM_STREAMS;
-    for (int32_t i = 0; i < AUDIO.cap; ++i) {
+    for (u32 i = 0; i < AUDIO.cap; ++i) {
         AudioStream* stream = &AUDIO.streams[i];
         stream->xbuffer.Flags = XAUDIO2_END_OF_STREAM;
         stream->xbuffer.pContext = &AUDIO.streams[i];
@@ -154,8 +154,8 @@ static void InitAudio() {
         }
     }
 
-    // sound 0 is blank sound sentinal.
     memset(AUDIO.sounds, 0, sizeof(AUDIO.sounds));
+    // sound 0 is blank sound sentinal.
     AUDIO.soundlen = 1;
     AUDIO.soundcap = MAX_SOUNDS;
     for (u32 i = 0; i < AUDIO.soundcap; ++i) {
@@ -300,8 +300,6 @@ static SoundId LoadLSound(const char* filename) {
         sound->buffer[sound->len++] = *cur++;
     }
 
-    breakpoint();
-
     Assert(sound->len <= sound->cap);
     return id;
 }
@@ -335,7 +333,6 @@ int main(void) {
 
     SoundId s1 = LoadLSoundTest("foo");
     SoundId s2 = LoadLSound("src/beep.wav");
-    breakpoint();
 
     {
         PlayLSound(s1, 0);
