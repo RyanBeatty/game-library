@@ -60,7 +60,7 @@ typedef f32 deg;
 typedef u32 SoundId;
 static const SoundId NULLSOUND = 0;
 
-#define MAX_SOUND_BUFFER_LEN
+#define MAX_SOUND_SIZE (50000)
 
 typedef struct {
     u32 len;
@@ -191,8 +191,8 @@ static SoundId LoadLSound2(const char* filename) {
     LSound* sound = &AUDIO.sounds[id];
 
     u32 bsize = 0;
-    u32 bcap = AUDIOBUFFERSIZEINBYTES;
-    u8 buffer[AUDIOBUFFERSIZEINBYTES] = {0};
+    u32 bcap = MAX_SOUND_SIZE;
+    u8 buffer[MAX_SOUND_SIZE] = {0};
 
     FILE* file = fopen(filename, "rb");  // Open file in binary mode
     if (!file) {
@@ -203,8 +203,33 @@ static SoundId LoadLSound2(const char* filename) {
     // Seek to the end to determine the file size
     fseek(file, 0, SEEK_END);
     bsize = ftell(file);
+    Assert(bsize <= bcap);
     rewind(file);
 
+    fread(buffer, 1, bsize, file);
+    fclose(file);
+
+    u32 idx = 0;
+
+    Assert(idx < bsize && bsize - idx > 4);
+    if (buffer[idx++] != 'R' || buffer[idx++] != 'I' || buffer[idx++] != 'F' || buffer[idx++] != 'F') {
+        perror("Could not find RIFF header in WAV file");
+    }
+
+    // NOTE: Assumes little endian.
+    Assert(idx < bsize && bsize - idx > 4);
+    u32 chunk_size = 0;
+    chunk_size |= ((u32)buffer[idx++]) << 0;
+    chunk_size |= ((u32)buffer[idx++]) << 8;
+    chunk_size |= ((u32)buffer[idx++]) << 16;
+    chunk_size |= ((u32)buffer[idx++]) << 24;
+
+    Assert(idx < bsize && bsize - idx > 4);
+    if (buffer[idx++] != 'W' || buffer[idx++] != 'A' || buffer[idx++] != 'V' || buffer[idx++] != 'E') {
+        perror("Could not find RIFF header in WAV file");
+    }
+
+    breakpoint();
     // // Fill a buffer.
     // double phase = 0.0f;
     // while (sound->len < AUDIOBUFFERSIZEINBYTES) {
