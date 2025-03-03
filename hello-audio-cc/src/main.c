@@ -48,16 +48,11 @@ typedef f32 deg;
 #define VOLUME 0.5  // 50% volume.
 
 #define AUDIO_NUM_CHANNELS 1
-#define SAMPLESPERSEC 44100         // 44,100 samples per second.
-#define BITSPERSSAMPLE 16           // 16 bits per sample.
-#define CYCLESPERSEC 220            // 220 cycles per second (frequency of the audible tone).
-#define AUDIOBUFFERSIZEINCYCLES 10  // 10 cycles per audio buffer.
+#define SAMPLESPERSEC 44100  // 44,100 samples per second.
+#define BITSPERSSAMPLE 16    // 16 bits per sample.
 
 #define AUDIO_BLOCK_ALIGN (AUDIO_NUM_CHANNELS * (BITSPERSSAMPLE / 8))
 #define AUDIO_BYTE_RATE (SAMPLESPERSEC * AUDIO_NUM_CHANNELS * (BITSPERSSAMPLE / 8))
-#define SAMPLESPERCYCLE ((SAMPLESPERSEC / CYCLESPERSEC))                          // 200 samples per cycle.
-#define AUDIOBUFFERSIZEINSAMPLES (SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES)      // 2,000 samples per buffer.
-#define AUDIOBUFFERSIZEINBYTES (AUDIOBUFFERSIZEINSAMPLES * (BITSPERSSAMPLE / 8))  // 4,000 bytes per buffer.
 
 typedef u32 SoundId;
 static const SoundId NULLSOUND = 0;
@@ -171,6 +166,12 @@ static void InitAudio() {
 }
 
 static SoundId LoadLSoundTest(const char* filename) {
+    u32 CYCLESPERSEC = 220;                                  // 220 cycles per second (frequency of the audible tone).
+    u32 SAMPLESPERCYCLE = ((SAMPLESPERSEC / CYCLESPERSEC));  // 200 samples per cycle.
+    u32 AUDIOBUFFERSIZEINCYCLES = 10;                        // 10 cycles per audio buffer.
+    u32 AUDIOBUFFERSIZEINSAMPLES = (SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES);      // 2,000 samples per buffer.
+    u32 AUDIOBUFFERSIZEINBYTES = (AUDIOBUFFERSIZEINSAMPLES * (BITSPERSSAMPLE / 8));  // 4,000 bytes per buffer.
+
     Assert(AUDIO.soundlen < AUDIO.soundcap);
     SoundId id = AUDIO.soundlen++;
     LSound* sound = &AUDIO.sounds[id];
@@ -337,7 +338,7 @@ int main(void) {
     SoundId s2 = LoadLSound("src/beep.wav");
 
     {
-        // PlayLSound(s1, 0);
+        PlayLSound(s1, 0);
         PlayLSound(s2, 0);
         u32 i = 0;
         while (i < 3) {
