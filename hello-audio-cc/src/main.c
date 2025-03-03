@@ -170,7 +170,7 @@ static void InitAudio() {
     }
 }
 
-static SoundId LoadLSound(const char* filename) {
+static SoundId LoadLSoundTest(const char* filename) {
     Assert(AUDIO.soundlen < AUDIO.soundcap);
     SoundId id = AUDIO.soundlen++;
     LSound* sound = &AUDIO.sounds[id];
@@ -188,7 +188,7 @@ static SoundId LoadLSound(const char* filename) {
 }
 
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
-static SoundId LoadLSound2(const char* filename) {
+static SoundId LoadLSound(const char* filename) {
     Assert(AUDIO.soundlen < AUDIO.soundcap);
     SoundId id = AUDIO.soundlen++;
     LSound* sound = &AUDIO.sounds[id];
@@ -333,8 +333,8 @@ int main(void) {
     // getcwd(cwd, sizeof(cwd));
     // printf("Current working directory: %s\n", cwd);
 
-    SoundId s1 = LoadLSound("foo");
-    SoundId s2 = LoadLSound2("src/beep.wav");
+    SoundId s1 = LoadLSoundTest("foo");
+    SoundId s2 = LoadLSound("src/beep.wav");
 
     {
         // PlayLSound(s1, 0);
