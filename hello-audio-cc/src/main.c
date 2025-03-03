@@ -53,6 +53,8 @@ typedef f32 deg;
 #define CYCLESPERSEC 220            // 220 cycles per second (frequency of the audible tone).
 #define AUDIOBUFFERSIZEINCYCLES 10  // 10 cycles per audio buffer.
 
+#define AUDIO_BLOCK_ALIGN (AUDIO_NUM_CHANNELS * (BITSPERSSAMPLE / 8))
+#define AUDIO_BYTE_RATE (SAMPLESPERSEC * AUDIO_NUM_CHANNELS * (BITSPERSSAMPLE / 8))
 #define SAMPLESPERCYCLE ((SAMPLESPERSEC / CYCLESPERSEC))                          // 200 samples per cycle.
 #define AUDIOBUFFERSIZEINSAMPLES (SAMPLESPERCYCLE * AUDIOBUFFERSIZEINCYCLES)      // 2,000 samples per buffer.
 #define AUDIOBUFFERSIZEINBYTES (AUDIOBUFFERSIZEINSAMPLES * (BITSPERSSAMPLE / 8))  // 4,000 bytes per buffer.
@@ -136,11 +138,11 @@ static void InitAudio() {
     // Define a format.
     WAVEFORMATEX wfx = {0};
     wfx.wFormatTag = WAVE_FORMAT_PCM;
-    wfx.nChannels = 1;  // 1 channel
+    wfx.nChannels = AUDIO_NUM_CHANNELS;
     wfx.nSamplesPerSec = SAMPLESPERSEC;
     wfx.wBitsPerSample = BITSPERSSAMPLE;
-    wfx.nBlockAlign = wfx.nChannels * (wfx.wBitsPerSample / 8);
-    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nChannels * (wfx.wBitsPerSample / 8);
+    wfx.nBlockAlign = AUDIO_BLOCK_ALIGN;
+    wfx.nAvgBytesPerSec = AUDIO_BYTE_RATE;
     wfx.cbSize = 0;
 
     AUDIO.cap = NUM_STREAMS;
@@ -264,17 +266,19 @@ static SoundId LoadLSound2(const char* filename) {
     byte_rate |= ((u32)*cur++) << 8;
     byte_rate |= ((u32)*cur++) << 16;
     byte_rate |= ((u32)*cur++) << 24;
+    Assert(byte_rate == AUDIO_BYTE_RATE);
 
     Assert(end - cur > 2);
     u16 block_align = 0;
     block_align |= ((u16)*cur++) << 0;
     block_align |= ((u16)*cur++) << 8;
+    Assert(block_align == AUDIO_BLOCK_ALIGN);
 
     Assert(end - cur > 2);
     u16 bits_per_sample = 0;
     bits_per_sample |= ((u16)*cur++) << 0;
     bits_per_sample |= ((u16)*cur++) << 8;
-    Assert(bits_per_sample == 16);
+    Assert(bits_per_sample == BITSPERSSAMPLE);
 
     if (subchunk_size == 18) {
         cur += 2;  // Consume extra 2 bytes of extension data
@@ -329,11 +333,12 @@ int main(void) {
     // getcwd(cwd, sizeof(cwd));
     // printf("Current working directory: %s\n", cwd);
 
-    LoadLSound("foo");
-    LoadLSound2("src/beep.wav");
+    SoundId s1 = LoadLSound("foo");
+    SoundId s2 = LoadLSound2("src/beep.wav");
 
     {
-        PlayLSound(1, 0);
+        // PlayLSound(s1, 0);
+        PlayLSound(s2, 0);
         u32 i = 0;
         while (i < 3) {
             sleep(1);
