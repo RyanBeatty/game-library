@@ -25,6 +25,6 @@
 
 ///////////////////////////////////////////////
 // Project files below
-#include "shared.c"
+#include "shared.h"
 //
 #include "main.c"
