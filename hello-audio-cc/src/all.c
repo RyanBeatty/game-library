@@ -14,20 +14,12 @@
 // Comment to prevent autolinting
 #include <float.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
-
-#define Assert(expr)        \
-    {                       \
-        if (!(expr)) {      \
-            breakpoint();   \
-            assert((expr)); \
-        }                   \
-    }
-
-void __attribute__((noinline)) breakpoint() {}
+#include <unistd.h>
 
 #define ArraySizeOf(x) (sizeof(x) / sizeof(x[0]))
 
@@ -37,4 +29,7 @@ void __attribute__((noinline)) breakpoint() {}
 
 ///////////////////////////////////////////////
 // Project files below
+//
+#include "audio.h"
+//
 #include "main.c"
