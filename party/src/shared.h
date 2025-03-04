@@ -1,6 +1,13 @@
 #pragma once
 
+#include <assert.h>
+#include <float.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <time.h>
 
 typedef uint8_t u8;
 typedef uint16_t u16;

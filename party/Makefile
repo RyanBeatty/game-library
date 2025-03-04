@@ -8,7 +8,8 @@ SRC_DIRS := src
 LIB_DIR := libs
 
 ifeq ($(IS_WINDOWS), Windows_NT)
-	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm  -L/raylib/raylib/src -I/raylib/raylib/src
+	AUDIO_FLAGS := -lole32 -lxaudio2_8
+	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm  -L/raylib/raylib/src -I/raylib/raylib/src $(AUDIO_FLAGS)
 else
 	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
 endif
@@ -20,7 +21,7 @@ LDFLAGS := $(LDFLAGS) -lraylib -lm -lpthread -lraylib $(PLATFORM_LDFLAGS)
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. Make will incorrectly expand these otherwise.
 # SRCS := $(shell find $(SRC_DIRS) -name '*.cpp' -or -name '*.c' -or -name '*.s')
-SRCS := $(SRC_DIRS)/all.c $(SRC_DIRS)/shared.c ./external/cJSON/cJSON.c
+SRCS := $(SRC_DIRS)/all.c $(SRC_DIRS)/shared.c $(SRC_DIRS)/audio.c
 
 # String substitution for every C/C++ file.
 # As an example, hello.cpp turns into ./build/hello.cpp.o

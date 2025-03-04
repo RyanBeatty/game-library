@@ -16,15 +16,11 @@
 #include "../external/cJSON/cJSON.h"
 //
 #include "glad/glad.h"
-// Comment to prevent autolinting
-#include <float.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
 
 ///////////////////////////////////////////////
 // Project files below
 #include "shared.h"
+//
+#include "audio.h"
 //
 #include "main.c"
