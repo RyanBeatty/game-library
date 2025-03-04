@@ -4149,6 +4149,8 @@ static void GameStateInit(GameState* gstate) {
     SetTargetFPS(60);
     DisableCursor();
 
+    InitAudio();
+
     {
         glEnable(GL_DEPTH_TEST);
     }
