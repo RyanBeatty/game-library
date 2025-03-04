@@ -335,14 +335,11 @@ int main(void) {
     SoundId s2 = LoadLSound("src/beep.wav");
 
     {
-        PlayLSound(s1, 0);
-        PlayLSound(s2, 0);
-        u32 i = 0;
-        while (i < 3) {
-            sleep(1);
-            i += 1;
+        while (true) {
+            PlayLSound(s1, 0);
+            PlayLSound(s2, 0);
+            sleep(3);
         }
-        // source_voice->Start(0))) { return 1; }
     }
     return 0;
 }
