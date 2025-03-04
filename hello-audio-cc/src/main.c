@@ -315,7 +315,6 @@ static void PlayLSound(SoundId id, u32 flags) {
 
             stream->xbuffer.AudioBytes = sound->len;
             stream->xbuffer.pAudioData = sound->buffer;
-            stream->xbuffer.LoopCount = 6;
 
             stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
             stream->voice->lpVtbl->Start(stream->voice, 0, 0);
