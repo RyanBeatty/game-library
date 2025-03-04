@@ -1716,6 +1716,23 @@ static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* norma
 
 ////////////////////////////////////////////////////////////
 
+typedef enum {
+    SOUND_NONE = 0,
+    SOUND_BEEP,
+    SOUND_COUNT,
+} SoundTag;
+
+static SoundId SOUNDS[SOUND_COUNT] = {0};
+
+#define GetSound(sid) (SOUNDS[(sid)])
+
+static void LoadSounds() {
+    SOUNDS[SOUND_NONE] = 0;
+    SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
+}
+
+////////////////////////////////////////////////////////////
+
 const float RenderWidth = 1280;
 const float RenderHeight = 720;
 
@@ -1938,6 +1955,7 @@ static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
 
     EntitySystemInit();
     RenderDataInit();
+    LoadSounds();
 
     // Signal to scene update func to run init.
     gstate->init = false;
@@ -3950,6 +3968,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 }
 
                                 eball->last_hit = eplayer->id;
+                                PlayLSound(GetSound(SOUND_BEEP), 0);
                             }
                         }
 

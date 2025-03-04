@@ -159,10 +159,7 @@ SoundId LoadLSound(const char* filename) {
     u8 buffer[MAX_SOUND_SIZE] = {0};
 
     FILE* file = fopen(filename, "rb");  // Open file in binary mode
-    if (!file) {
-        perror("Failed to open file");
-        return NULLSOUND;
-    }
+    Assert(file);
 
     // Seek to the end to determine the file size
     fseek(file, 0, SEEK_END);

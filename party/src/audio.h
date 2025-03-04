@@ -4,7 +4,7 @@
 
 typedef u32 SoundId;
 
-extern const SoundId NULLSOUND;
+extern const SoundId SOUNDNULL;
 
 void InitAudio();
 SoundId LoadLSoundTest(const char* filename);
