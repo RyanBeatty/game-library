@@ -1,4 +1,6 @@
 #ifndef UNITY_BUILD
+#include <audio.h>
+#include <shared.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -1719,6 +1721,7 @@ static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* norma
 typedef enum {
     SOUND_NONE = 0,
     SOUND_BEEP,
+    SOUND_BREAK,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1729,6 +1732,7 @@ static SoundId SOUNDS[SOUND_COUNT] = {0};
 static void LoadSounds() {
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
+    SOUNDS[SOUND_BREAK] = LoadLSound("assets/sounds/break.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -4017,6 +4021,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 }
 
                                 SCORE += 15;
+                                TraceLog(LOG_INFO, "hit block frame %d", gstate->nframe);
+                                PlayLSound(GetSound(SOUND_BREAK), 0);
                             }
                         }
 
@@ -4055,6 +4061,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 // if (TestPolyhedronVsPolyhedron(&pa, &pb, &c.normal, &c.depth)) {
                                 //     breakpoint();
                                 // }
+                                PlayLSound(GetSound(SOUND_BEEP), 0);
                             }
                         }
 
