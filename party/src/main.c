@@ -1941,7 +1941,7 @@ typedef struct GameState {
     u32 sceneid;
 
     /////////////////////////////////////////
-    // Gameplay fields
+    // Scene fields
 } GameState;
 
 static GameState GState;
@@ -3607,6 +3607,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     static EntityId playerid;
 
     static u32 SCORE = 0;
+    static bool SERVED = false;
 
     f32 dt = gstate->dt;
 
@@ -3616,6 +3617,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
         SCORE = 0;
+        SERVED = false;
 
         // Player init.
         {
@@ -3790,7 +3792,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
             EntityManager* em = GetEntityManager();
             u32 esize = ArraySizeOf(em->entities);
 
-            if (gstate->update) {
+            if (gstate->update && SERVED) {
                 for (u32 i = 0; i < esize; ++i) {
                     Entity* e = GetEntity(i);
                     if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
@@ -4084,6 +4086,10 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                 }
             }
 
+            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                SERVED = true;
+            }
+
             // Draw background
             {
                 DrawCmd* cmd = AddCmd();
@@ -4152,11 +4158,14 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     //     breakpoint();
     //     u32 width = GetScreenWidth();
     //     u32 height = GetScreenHeight();
-    //     pass->proj = Mat4Ortho(0, width, height, 0, -1.0f, 1.0f);
+    //     // pass->proj = Mat4Ortho(0, width, height, 0, -1.0f, 1.0f);
+    //     pass->proj = Mat4Ortho(0, 600, 800, 0, -1.0f, 1.0f);
 
     //     char score[256] = {0};
     //     snprintf(score, ArraySizeOf(score), "%d", SCORE);
-    //     DrawLText(score, strlen(score), Vec3Lit(100.0f, height - 100.0f, 0.0), 50, LCLEAR);
+    //     Vec3 pos = Vec3Zero();
+    //     // Vec3 pos = Vec3Lit(100.0f, height - 100.0f, 0.0);
+    //     DrawLText(score, strlen(score), pos, 50, LRED);
 
     //     EndShaderPass();
     // }
