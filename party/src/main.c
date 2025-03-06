@@ -1761,6 +1761,7 @@ typedef enum EntityFlag {
     EFLAG_BUMPER = 1 << 8,
     EFLAG_BALL = 1 << 9,
     EFLAG_BLOCK = 1 << 10,
+    EFLAG_DEATHZONE = 1 << 11,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -3609,6 +3610,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
     static u32 SCORE = 0;
     static bool SERVED = false;
+    static const Vec3 BALL_START_POS = Vec3Lit(0.0f, -5.0f, 0.0f);
+    static const Vec3 PLAYER_START_POS = Vec3Lit(0.0f, -17.5f, 0.0f);
 
     f32 dt = gstate->dt;
 
@@ -3623,7 +3626,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         // Player init.
         {
             Entity* entity = AllocateEntity();
-            entity->pos = Vec3Lit(0.0f, -17.5f, 0.0f);
+            entity->pos = PLAYER_START_POS;
             entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
             entity->mesh = GetMesh(M_CUBE);
             entity->color = COLOR3;
@@ -3637,7 +3640,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
         // BALLS init
         {
-            Vec3 origin = Vec3Lit(0.0f, -5.0f, 0.0f);
+            Vec3 origin = BALL_START_POS;
 
             {
                 const Vec3 positions[] = {origin};
@@ -3686,6 +3689,9 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                 entity->phtype = PH_AABB;
                 FlagOn(entity->flags, EFLAG_WALL);
                 FlagOn(entity->flags, EFLAG_COLLIDER);
+                if (i == 3) {
+                    FlagOn(entity->flags, EFLAG_DEATHZONE);
+                }
             }
         }
 
@@ -3792,6 +3798,24 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         {
             EntityManager* em = GetEntityManager();
             u32 esize = ArraySizeOf(em->entities);
+
+            if (!SERVED) {
+                Entity* player = GetEntity(playerid);
+                player->pos = PLAYER_START_POS;
+
+                for (u32 i = 0; i < esize; ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_BALL)) {
+                        e->pos = BALL_START_POS;
+                        e->v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, e->pos)), 30.0f);
+                        break;
+                    }
+                }
+            }
 
             if (gstate->update && SERVED) {
                 for (u32 i = 0; i < esize; ++i) {
@@ -4064,7 +4088,11 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 // if (TestPolyhedronVsPolyhedron(&pa, &pb, &c.normal, &c.depth)) {
                                 //     breakpoint();
                                 // }
-                                PlayLSound(GetSound(SOUND_BEEP), 0);
+                                if (TestFlag(ewall->flags, EFLAG_DEATHZONE)) {
+                                    SERVED = false;
+                                } else {
+                                    PlayLSound(GetSound(SOUND_BEEP), 0);
+                                }
                             }
                         }
 
