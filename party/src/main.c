@@ -3673,7 +3673,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
             u32 depth = 10.0f;
 
             Vec3 positions[] = {Vec3Lit(xoffset, 0.0f, 0.0f), Vec3Lit(-xoffset, 0.0f, 0.0f),
-                                Vec3Lit(1.0f, yoffset, 0.0f), Vec3Lit(1.0f, -yoffset, 0.0f)};
+                                Vec3Lit(1.0f, yoffset, 0.0f), Vec3Lit(1.0f, -(yoffset + 4), 0.0f)};
             Vec3 scales[] = {Vec3Lit(width, height, depth), Vec3Lit(width, height, depth),
                              Vec3Lit(height, width, depth), Vec3Lit(height, width, depth)};
 
