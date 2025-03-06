@@ -4160,10 +4160,18 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         u32 height = GetScreenHeight();
         pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-        char score[256] = {0};
-        snprintf(score, ArraySizeOf(score), "SCORE:%d", SCORE);
-        Vec3 pos = Vec3Lit(100.0f, height - 100.0f, 0.0);
-        DrawLText(score, strlen(score), pos, 50, LRED);
+        {
+            char score[256] = {0};
+            snprintf(score, ArraySizeOf(score), "SCORE:%d", SCORE);
+            Vec3 pos = Vec3Lit(100.0f, height - 100.0f, 0.0);
+            DrawLText(score, strlen(score), pos, 50, LCLEAR);
+        }
+
+        if (!SERVED) {
+            const char* text = "PRESSATOSTART";
+            Vec3 pos = Vec3Lit(0.5f * width, 0.5f * height, 0);
+            DrawLText(text, strlen(text), pos, 50, LCLEAR);
+        }
 
         EndShaderPass();
     }
