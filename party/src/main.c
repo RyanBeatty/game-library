@@ -2253,6 +2253,7 @@ static void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 
     DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation, color);
 }
 
+// Remember that pos will be the center of the quad.
 static void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
     DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
 }
@@ -4153,22 +4154,19 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     // pass->proj = Mat4Ortho(-300, 300, -300, 300, -55.0f, 55.0f);
     EndShaderPass();
 
-    // {
-    //     ShaderPass* pass = BeginShaderPass(GetShader());
-    //     breakpoint();
-    //     u32 width = GetScreenWidth();
-    //     u32 height = GetScreenHeight();
-    //     // pass->proj = Mat4Ortho(0, width, height, 0, -1.0f, 1.0f);
-    //     pass->proj = Mat4Ortho(0, 600, 800, 0, -1.0f, 1.0f);
+    {
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        u32 width = GetScreenWidth();
+        u32 height = GetScreenHeight();
+        pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-    //     char score[256] = {0};
-    //     snprintf(score, ArraySizeOf(score), "%d", SCORE);
-    //     Vec3 pos = Vec3Zero();
-    //     // Vec3 pos = Vec3Lit(100.0f, height - 100.0f, 0.0);
-    //     DrawLText(score, strlen(score), pos, 50, LRED);
+        char score[256] = {0};
+        snprintf(score, ArraySizeOf(score), "SCORE:%d", SCORE);
+        Vec3 pos = Vec3Lit(100.0f, height - 100.0f, 0.0);
+        DrawLText(score, strlen(score), pos, 50, LRED);
 
-    //     EndShaderPass();
-    // }
+        EndShaderPass();
+    }
 
     EndRender();
 }
