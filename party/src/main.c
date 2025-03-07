@@ -3417,6 +3417,166 @@ static void SceneTickTextInEngine(GameState* gstate) {
     EndRender();
 }
 
+static void SceneTickBlendTest(GameState* gstate) {
+    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
+    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+
+    f32 dt = gstate->dt;
+
+    // Init logic.
+    if (!gstate->init) {
+        viewpos = Vec3Lit(0.0f, 0.0f, 100.0f);
+        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
+    }
+
+    // Camera movement.
+    {
+        static const u8 GAMEPAD_ID = 0;
+        static bool FREECAM = false;
+
+        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+            FREECAM = !FREECAM;
+        }
+
+        // Left stick movement.
+        {
+            static const f32 WALK_VEL = 50.0f;
+            static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+            f32 vel = WALK_VEL;
+            if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                vel = RUN_VEL;
+            }
+
+            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+            f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+            Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
+            Vec3 bodyorient = vieworient;
+            // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
+            bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
+            Mat4 rotation = Mat4RotateEuler(bodyorient);
+
+            Vec3 dir_world = Vec3Transform(dir_model, rotation);
+            Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
+            viewpos = Vec3Add(viewpos, mov_world);
+        }
+
+        // Right stick movement.
+        {
+            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+            if (x != 0.0f || y != 0.0f) {
+                static const rad VEL = Deg2Rad(90.0f);
+
+                // rotate orient.
+                vieworient.yaw += -1.0f * x * VEL * dt;
+                vieworient.pitch += y * VEL * dt;
+                // Clamp pitch to avoid looking too high/low which would sign flip things.
+                vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+            }
+        }
+    }
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    BeginRender();
+    {
+        {
+            ShaderPass* pass = BeginShaderPass(GetShader());
+            pass->proj = Mat4Ortho(0, 800, 0, 600, -1.0f, 1.0f);
+        }
+
+        // Draw something at the origin.
+        DrawLTexture(GetTexture(TX_AWESOME_FACE), Vec2Lit(0.0f, 0.0f), 200);
+
+        DrawLTextureEx(GetTexture(TX_AWESOME_FACE), Vec2Lit(150.0f, 150.0f), 200, 0.0f, LBLUE);
+        DrawLTextureEx(GetTexture(TX_AWESOME_FACE), Vec2Lit(200.0f, 200.0f), 200, 0.0f, LRED);
+
+        // // Update
+        // {
+        //     {
+        //         DrawLTextureEx(GetTexture(TX_AWESOME_FACE), Vec2Lit(300.0f, 300.0f), 50.0f, gstate->timer, LRED);
+        //     }
+
+        //     {
+        //         Vec3 pos = Vec3Lit(300.0f, 200.0f, 0.0f);
+
+        //         {
+        //             DrawLTexture(GetTexture(TX_HELLO_ATLAS), Vec2Lit(pos.x, pos.y), 100.0f);
+        //         }
+
+        //         pos = Vec3Add(pos, Vec3Lit(GetTexture(TX_HELLO_ATLAS).width + 40.0f, 0.0f, 0.0f));
+
+        //         {
+        //             LTexture tx = GetTexture(TX_HELLO_ATLAS);
+
+        //             for (u32 i = 0; i < 2; ++i) {
+        //                 for (u32 j = 0; j < 2; ++j) {
+        //                     Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+        //                     Vec2 c_src = Vec2Lit(r_src.x * i, r_src.y * j);
+
+        //                     Vec2 r_dst = Vec2Lit(100.0f, 100.0f);
+        //                     Vec2 c_dst = Vec2Lit(pos.x + (r_dst.x * i * 1.3f), pos.y + (r_dst.x * j * 1.3f));
+        //                     DrawLTexturePro(tx, c_src, r_src, c_dst, r_dst, 0.0f, LCLEAR);
+        //                 }
+        //             }
+        //         }
+        //     }
+
+        //     {
+        //         Vec3 pos = Vec3Lit(200.0f, 500.0f, 0.0f);
+        //         DrawLTexture(GetTexture(TX_LFONT), Vec2Lit(pos.x, pos.y), 300.0f);
+
+        //         pos = Vec3Add(pos, Vec3Lit(50.0f, 0.0f, 0.0f));
+
+        //         const char* msg = "HELLOCARLY";
+        //         DrawLText(msg, strlen(msg), pos, 25.0f, LRED);
+        //     }
+        // }
+
+        EndShaderPass();
+    }
+
+    // {
+    //     {
+    //         ShaderPass* pass = BeginShaderPass(GetShader());
+    //         pass->view = GetCameraMat(viewpos, vieworient);
+    //         pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f,
+    //         1000.0f);
+    //     }
+
+    //     {
+    //         DrawCmd* cmd = AddCmd();
+    //         cmd->meshid = GetMesh(M_QUAD);
+    //         cmd->color = LRED;
+    //         cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-20.0f, 0.0f, -50.0f));
+    //         cmd->txid = GetTexture(TX_AWESOME_FACE).id;
+    //     }
+
+    //     {
+    //         DrawCmd* cmd = AddCmd();
+    //         cmd->meshid = GetMesh(M_ICOSPHERE);
+    //         cmd->color = LBLUE;
+    //         cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(20.0f, 0.0f, -50.0f));
+    //     }
+
+    //     BeginWireframe();
+    //     {
+    //         DrawCmd* cmd = AddCmd();
+    //         cmd->meshid = GetMesh(M_CUBE);
+    //         cmd->color = LBLUE;
+    //         cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-50.0f, 0.0f, -50.0f));
+    //     }
+    //     EndWireframe();
+
+    //     EndShaderPass();
+    // }
+
+    EndRender();
+}
+
 static void SceneTickTestText(GameState* gstate) {
     static u32 VAO2 = 0;
     static u32 VBO2 = 0;
@@ -4251,6 +4411,7 @@ static void GameStateInit(GameState* gstate) {
         u32 idx = 0;
         gstate->scenefuncs[idx++] = Scene1Tick;
         gstate->scenefuncs[idx++] = SceneTickTextInEngine;
+        gstate->scenefuncs[idx++] = SceneTickBlendTest;
         gstate->scenefuncs[idx++] = SceneTickTestText;
         gstate->scenefuncs[idx++] = SceneTickBrickBreaker;
         Assert(idx < MAX_SCENES);
