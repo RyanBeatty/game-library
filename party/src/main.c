@@ -612,18 +612,33 @@ static LTexture UploadTexture(const char* filename) {
     stbi_set_flip_vertically_on_load(true);
     u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
     Assert(data != NULL);
+    breakpoint();
+
+    GLenum format;
+    Assert(n == 3 || n == 4);
+    if (n == 3) {
+        format = GL_RGB;
+    } else if (n == 4) {
+        format = GL_RGBA;
+    } else {
+        exit(1);
+    }
 
     glGenTextures(1, &tx.id);
     glBindTexture(GL_TEXTURE_2D, tx.id);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                    GL_REPEAT);  // set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, tx.width, tx.height, 0, format, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    // TODO: Should I always be using GL_CLAMP_TO_EDGE?
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
+                    format == GL_RGBA
+                        ? GL_CLAMP_TO_EDGE
+                        : GL_REPEAT);  // set texture wrapping to GL_CLAMP_TO_EDGE (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_image_free(data);
     return tx;
@@ -688,6 +703,7 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
+        breakpoint();
         LTexture tx = UploadTexture("assets/textures/LFont.png");
         tcache->textures[TX_LFONT] = tx;
         ++tcache->txlen;
@@ -853,7 +869,6 @@ static LShader GetShader() {
         "void main()\n"
         "{\n"
         "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
-        // TODO: Incorporate camera at some point.
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
         "   fColor = vUColor;\n"
         "}\0";
@@ -4225,6 +4240,10 @@ static void GameStateInit(GameState* gstate) {
 
     {
         glEnable(GL_DEPTH_TEST);
+
+        // // Allow blending to support drawing textures with transparency.
+        // glEnable(GL_BLEND);
+        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
     // Register scenes.
