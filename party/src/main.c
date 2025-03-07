@@ -1722,6 +1722,7 @@ typedef enum {
     SOUND_NONE = 0,
     SOUND_BEEP,
     SOUND_BREAK,
+    SOUND_BALL_OUT,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1733,6 +1734,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
     SOUNDS[SOUND_BREAK] = LoadLSound("assets/sounds/break.wav");
+    SOUNDS[SOUND_BALL_OUT] = LoadLSound("assets/sounds/ballout.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -4090,6 +4092,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 // }
                                 if (TestFlag(ewall->flags, EFLAG_DEATHZONE)) {
                                     SERVED = false;
+                                    PlayLSound(GetSound(SOUND_BALL_OUT), 0);
                                 } else {
                                     PlayLSound(GetSound(SOUND_BEEP), 0);
                                 }
