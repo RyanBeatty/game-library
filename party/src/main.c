@@ -4399,8 +4399,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
             // Center text by shifting center forward by half a text cell size and then shifting backward
             // by half the text size.
-            f32 shiftcenterone = 0.5f * fontsize;
-            Vec3 pos = Vec3Lit((0.5f * width) + shiftcenterone - (0.5f * dim.x), 0.5f * height, 0);
+            Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.5f * height, 0);
             DrawLText(text, strlen(text), pos, 50, LCLEAR);
         }
 
