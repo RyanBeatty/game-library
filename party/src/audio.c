@@ -115,6 +115,10 @@ void InitAudio() {
         }
     }
 
+    ClearLSounds();
+}
+
+void ClearLSounds() {
     memset(AUDIO.sounds, 0, sizeof(AUDIO.sounds));
     // sound 0 is blank sound sentinal.
     AUDIO.soundlen = 1;
