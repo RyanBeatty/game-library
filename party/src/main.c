@@ -4059,7 +4059,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                     u32 size = ArraySizeOf(em->entities);
                     for (u32 i = 0; i < size; ++i) {
                         Entity* e0 = GetEntity(i);
-                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER) ||
+                            !(TestFlag(e0->flags, EFLAG_BALL) || TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED))) {
                             continue;
                         }
 
