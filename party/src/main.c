@@ -612,7 +612,6 @@ static LTexture UploadTexture(const char* filename) {
     stbi_set_flip_vertically_on_load(true);
     u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
     Assert(data != NULL);
-    breakpoint();
 
     GLenum format;
     Assert(n == 3 || n == 4);
@@ -703,7 +702,6 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        breakpoint();
         LTexture tx = UploadTexture("assets/textures/LFont.png");
         tcache->textures[TX_LFONT] = tx;
         ++tcache->txlen;
@@ -4015,144 +4013,229 @@ static void SceneTickBrickBreaker(GameState* gstate) {
             }
 
             if (gstate->update && SERVED) {
-                for (u32 i = 0; i < esize; ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                        continue;
-                    }
-
-                    e->ppos = e->pos;
-
-                    if (TestFlag(e->flags, EFLAG_BLOCK)) {
-                        if (e->health == 0) {
-                            // TODO: particles!
-                            FlagOff(e->flags, EFLAG_ACTIVE);
-                        }
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_BALL)) {
-                        Vec3 dx = Vec3Scale(e->v, dt);
-                        e->pos = Vec3Add(e->pos, dx);
-                        // TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
-                        // TraceLog(LOG_INFO, "v: %f %f %f", e->v.x, e->v.y, e->v.z);
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static const f32 MOVE_THRESHOLD = 0.05f;
-                        static const f32 MAX_SPEED = 40.0f;
-                        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                        if (f32abs(x) > MOVE_THRESHOLD) {
-                            Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), x * MAX_SPEED * dt);
-                            e->pos = Vec3Add(e->pos, dx);
-                        }
-
-                        e->straight_shot = IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
-                    }
-                }
-
-                // Collisions.
-                {
-                    CollisionInfo collisions[10] = {0};
-                    u32 csize = 0;
-
-                    // Detection.
-                    u32 size = ArraySizeOf(em->entities);
-                    for (u32 i = 0; i < size; ++i) {
-                        Entity* e0 = GetEntity(i);
-                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER) ||
-                            !(TestFlag(e0->flags, EFLAG_BALL) || TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED))) {
+                // HACKY. sub divide the entity update integration to help with collision detection.
+                // ball shouldn't move too fast per step now and potentially collide with 2 blocks.
+                f32 ndt = 0.1f * dt;
+                for (u32 idt = 0; idt < 10; ++idt) {
+                    dt = ndt;
+                    for (u32 i = 0; i < esize; ++i) {
+                        Entity* e = GetEntity(i);
+                        if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                             continue;
                         }
 
-                        Polyhedron p0 = EntityBoundingVolume(e0);
-                        for (u32 j = i + 1; j < size; ++j) {
-                            Entity* e1 = GetEntity(j);
-                            if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                                continue;
+                        e->ppos = e->pos;
+
+                        if (TestFlag(e->flags, EFLAG_BLOCK)) {
+                            if (e->health == 0) {
+                                // TODO: particles!
+                                FlagOff(e->flags, EFLAG_ACTIVE);
+                            }
+                        }
+
+                        if (TestFlag(e->flags, EFLAG_BALL)) {
+                            Vec3 dx = Vec3Scale(e->v, dt);
+                            e->pos = Vec3Add(e->pos, dx);
+                            // TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
+                            // TraceLog(LOG_INFO, "v: %f %f %f", e->v.x, e->v.y, e->v.z);
+                        }
+
+                        if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                            static const f32 MOVE_THRESHOLD = 0.05f;
+                            static const f32 MAX_SPEED = 40.0f;
+                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                            if (f32abs(x) > MOVE_THRESHOLD) {
+                                Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), x * MAX_SPEED * dt);
+                                e->pos = Vec3Add(e->pos, dx);
                             }
 
-                            Polyhedron p1 = EntityBoundingVolume(e1);
-
-                            CollisionInfo collision = {0};
-                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
-                            if (collides) {
-                                collision.id0 = e0->id;
-                                collision.id1 = e1->id;
-                                collision.toi = 1.0f * dt;
-
-                                // // Time of impact calculation. will back up entities to earliest detected collision
-                                // // point.
-                                // static const u32 ITERATIONS = 3;
-                                // f32 startdt = 0.0f;
-                                // f32 enddt = 1.0f;
-                                // for (u32 itoi = 0; itoi < ITERATIONS; ++itoi) {
-                                //     f32 toi = 0.5f * (startdt + enddt);
-                                //     e0->pos = Vec3Lerp(e0->ppos, e0->pos, toi);
-                                //     e1->pos = Vec3Lerp(e1->ppos, e1->pos, toi);
-
-                                //     Polyhedron pa = EntityBoundingVolume(e0);
-                                //     Polyhedron pb = EntityBoundingVolume(e1);
-                                //     CollisionInfo ci = {0};
-                                //     bool c = TestPolyhedronVsPolyhedron(&pa, &pb, &ci.normal, &ci.depth);
-                                //     if (c) {
-                                //         enddt = toi;
-                                //         collision = ci;  // Keep track of earliest detected collision.
-                                //         collision.toi = toi;
-                                //     } else {
-                                //         startdt = toi;
-                                //     }
-                                // }
-
-                                if (DEBUG_EVER) {
-                                    breakpoint();
-                                }
-
-                                collisions[csize++] = collision;
-                                Assert(csize < 10);
-                            }
+                            e->straight_shot = IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
                         }
                     }
 
-                    // Response.
-                    for (u32 i = 0; i < csize; ++i) {
-                        CollisionInfo* collision = &collisions[i];
-                        Entity* e0 = GetEntity(collision->id0);
-                        Entity* e1 = GetEntity(collision->id1);
+                    // Collisions.
+                    {
+                        CollisionInfo collisions[10] = {0};
+                        u32 csize = 0;
 
-                        bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
-                        bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
-                        bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
-                        bool e0block = TestFlag(e0->flags, EFLAG_BLOCK);
+                        // Detection.
+                        u32 size = ArraySizeOf(em->entities);
+                        for (u32 i = 0; i < size; ++i) {
+                            Entity* e0 = GetEntity(i);
+                            if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER) ||
+                                !(TestFlag(e0->flags, EFLAG_BALL) || TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED))) {
+                                continue;
+                            }
 
-                        bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
-                        bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
-                        bool e1wall = TestFlag(e1->flags, EFLAG_WALL);
-                        bool e1block = TestFlag(e1->flags, EFLAG_BLOCK);
-
-                        {
-                            bool flip = e0player && e1ball;
-                            if ((e0ball && e1player) || flip) {
-                                // static const f32 RETURN_SPEED = 30.0f;
-                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
-
-                                Vec3 normal = collision->normal;
-                                Entity* eball = e0;
-                                Entity* eplayer = e1;
-                                if (flip) {
-                                    eball = e1;
-                                    eplayer = e0;
-                                    normal = Vec3Negate(normal);
+                            Polyhedron p0 = EntityBoundingVolume(e0);
+                            for (u32 j = i + 1; j < size; ++j) {
+                                Entity* e1 = GetEntity(j);
+                                if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                                    continue;
                                 }
 
-                                eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+                                Polyhedron p1 = EntityBoundingVolume(e1);
 
-                                {
-                                    Vec3 vnew = eball->v;
+                                CollisionInfo collision = {0};
+                                bool collides =
+                                    TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
+                                if (collides) {
+                                    collision.id0 = e0->id;
+                                    collision.id1 = e1->id;
+                                    collision.toi = 1.0f * dt;
 
-                                    if (eplayer->straight_shot) {
-                                        f32 ballspeed = Vec3Len(eball->v);
-                                        vnew = Vec3Scale(normal, ballspeed);
-                                    } else {
+                                    // // Time of impact calculation. will back up entities to earliest detected
+                                    // collision
+                                    // // point.
+                                    // static const u32 ITERATIONS = 3;
+                                    // f32 startdt = 0.0f;
+                                    // f32 enddt = 1.0f;
+                                    // for (u32 itoi = 0; itoi < ITERATIONS; ++itoi) {
+                                    //     f32 toi = 0.5f * (startdt + enddt);
+                                    //     e0->pos = Vec3Lerp(e0->ppos, e0->pos, toi);
+                                    //     e1->pos = Vec3Lerp(e1->ppos, e1->pos, toi);
+
+                                    //     Polyhedron pa = EntityBoundingVolume(e0);
+                                    //     Polyhedron pb = EntityBoundingVolume(e1);
+                                    //     CollisionInfo ci = {0};
+                                    //     bool c = TestPolyhedronVsPolyhedron(&pa, &pb, &ci.normal, &ci.depth);
+                                    //     if (c) {
+                                    //         enddt = toi;
+                                    //         collision = ci;  // Keep track of earliest detected collision.
+                                    //         collision.toi = toi;
+                                    //     } else {
+                                    //         startdt = toi;
+                                    //     }
+                                    // }
+
+                                    if (DEBUG_EVER) {
+                                        breakpoint();
+                                    }
+
+                                    collisions[csize++] = collision;
+                                    Assert(csize < 10);
+                                    // HACKY - allows only one collisions per tick.
+                                    break;
+                                }
+                            }
+                        }
+
+                        u32 hitc = 0;
+
+                        // Response.
+                        for (u32 i = 0; i < csize; ++i) {
+                            CollisionInfo* collision = &collisions[i];
+                            Entity* e0 = GetEntity(collision->id0);
+                            Entity* e1 = GetEntity(collision->id1);
+
+                            bool e0ball = TestFlag(e0->flags, EFLAG_BALL);
+                            bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
+                            bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
+                            bool e0block = TestFlag(e0->flags, EFLAG_BLOCK);
+
+                            bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
+                            bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
+                            bool e1wall = TestFlag(e1->flags, EFLAG_WALL);
+                            bool e1block = TestFlag(e1->flags, EFLAG_BLOCK);
+
+                            {
+                                bool flip = e0player && e1ball;
+                                if ((e0ball && e1player) || flip) {
+                                    // static const f32 RETURN_SPEED = 30.0f;
+                                    // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
+
+                                    Vec3 normal = collision->normal;
+                                    Entity* eball = e0;
+                                    Entity* eplayer = e1;
+                                    if (flip) {
+                                        eball = e1;
+                                        eplayer = e0;
+                                        normal = Vec3Negate(normal);
+                                    }
+
+                                    eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+
+                                    {
+                                        Vec3 vnew = eball->v;
+
+                                        if (eplayer->straight_shot) {
+                                            f32 ballspeed = Vec3Len(eball->v);
+                                            vnew = Vec3Scale(normal, ballspeed);
+                                        } else {
+                                            Vec3 vdir = Vec3Normalize(eball->v);
+                                            f32 parallel = Vec3Dot(normal, vdir);
+                                            if (!f32eq(f32abs(parallel), 1.0f)) {
+                                                // Reflect velocity about the contact normal.
+                                                // Remember that to reflect a vec about a normal you add the portion fo
+                                                // the vec in the per to the negative of the portion in the parallel.
+                                                // NOTE: That parallel and perp are in relation to the colission
+                                                // *normal* rather than the surface. some texts treat it the other way
+                                                // around.
+                                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                                Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                                vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+
+                                                // Sphere s = EntityBoundingVolume(eball).sphere;
+                                                // Vec3 normball = Vec3Negate(normal);
+                                                // Vec3 cpball = Vec3Add(s.c, Vec3Scale(normball, s.r));
+
+                                                // AABB aabb = EntityBoundingVolume(eplayer).aabb;
+                                                // Vec3 center = aabb.c;
+                                                // center.x += aabb.r.x * normal.x;
+                                                // center.y += aabb.r.y * normal.y;
+                                                // center.z += aabb.r.z * normal.z;
+
+                                                // f32 dist = Vec3Len(Vec3Sub(cpball, center));
+                                                // breakpoint();
+
+                                                // f32 angle = 0.0f;
+                                                // if (dist > 0.5f) {
+                                                // }
+
+                                                // Vec3 dir =
+                                                //     Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f),
+                                                //     Deg2Rad(angle));
+                                                // vnew = Vec3Scale(dir, Vec3Len(eball->v));
+
+                                            } else {
+                                                // special case dead on collision for now.
+                                                // since we are 2d game logic, just pick the zaxis as the rotation axis.
+                                                Vec3 dir =
+                                                    Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(-45.0f));
+                                                vnew = Vec3Scale(dir, Vec3Len(eball->v));
+                                            }
+                                        }
+
+                                        eball->v = vnew;
+                                    }
+
+                                    eball->last_hit = eplayer->id;
+                                    PlayLSound(GetSound(SOUND_BEEP), 0);
+                                }
+                            }
+
+                            {
+                                bool flip = e0block && e1ball;
+                                if ((e0ball && e1block) || flip) {
+                                    Vec3 normal = collision->normal;
+                                    Entity* eball = e0;
+                                    Entity* eblock = e1;
+                                    if (flip) {
+                                        eball = e1;
+                                        eblock = e0;
+                                        normal = Vec3Negate(normal);
+                                    }
+
+                                    ++hitc;
+                                    if (hitc >= 2) {
+                                        breakpoint();
+                                    }
+
+                                    eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+
+                                    {
+                                        Vec3 vnew = eball->v;
+
                                         Vec3 vdir = Vec3Normalize(eball->v);
                                         f32 parallel = Vec3Dot(normal, vdir);
                                         if (!f32eq(f32abs(parallel), 1.0f)) {
@@ -4163,29 +4246,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                             // the surface. some texts treat it the other way around.
                                             Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
                                             Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+
                                             vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
-
-                                            // Sphere s = EntityBoundingVolume(eball).sphere;
-                                            // Vec3 normball = Vec3Negate(normal);
-                                            // Vec3 cpball = Vec3Add(s.c, Vec3Scale(normball, s.r));
-
-                                            // AABB aabb = EntityBoundingVolume(eplayer).aabb;
-                                            // Vec3 center = aabb.c;
-                                            // center.x += aabb.r.x * normal.x;
-                                            // center.y += aabb.r.y * normal.y;
-                                            // center.z += aabb.r.z * normal.z;
-
-                                            // f32 dist = Vec3Len(Vec3Sub(cpball, center));
-                                            // breakpoint();
-
-                                            // f32 angle = 0.0f;
-                                            // if (dist > 0.5f) {
-                                            // }
-
-                                            // Vec3 dir =
-                                            //     Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(angle));
-                                            // vnew = Vec3Scale(dir, Vec3Len(eball->v));
-
                                         } else {
                                             // special case dead on collision for now.
                                             // since we are 2d game logic, just pick the zaxis as the rotation axis.
@@ -4193,127 +4255,84 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                                 Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(-45.0f));
                                             vnew = Vec3Scale(dir, Vec3Len(eball->v));
                                         }
+
+                                        eball->v = vnew;
                                     }
 
-                                    eball->v = vnew;
-                                }
+                                    eball->last_hit = eblock->id;
+                                    if (eblock->health != 0) {
+                                        --eblock->health;
+                                    }
 
-                                eball->last_hit = eplayer->id;
-                                PlayLSound(GetSound(SOUND_BEEP), 0);
+                                    SCORE += 15;
+                                    TraceLog(LOG_INFO, "hit block frame %d", gstate->nframe);
+                                    PlayLSound(GetSound(SOUND_BREAK), 0);
+                                }
                             }
-                        }
 
-                        {
-                            bool flip = e0block && e1ball;
-                            if ((e0ball && e1block) || flip) {
-                                Vec3 normal = collision->normal;
-                                Entity* eball = e0;
-                                Entity* eblock = e1;
-                                if (flip) {
-                                    eball = e1;
-                                    eblock = e0;
-                                    normal = Vec3Negate(normal);
-                                }
+                            {
+                                bool flip = e0wall && e1ball;
+                                if ((e0ball && e1wall) || flip) {
+                                    // static const f32 RETURN_SPEED = 30.0f;
+                                    // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
 
-                                eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
+                                    Vec3 normal = collision->normal;
+                                    Entity* eball = e0;
+                                    Entity* ewall = e1;
+                                    if (flip) {
+                                        eball = e1;
+                                        ewall = e0;
+                                        normal = Vec3Negate(normal);
+                                    }
 
-                                {
-                                    Vec3 vnew = eball->v;
+                                    eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
 
-                                    Vec3 vdir = Vec3Normalize(eball->v);
-                                    f32 parallel = Vec3Dot(normal, vdir);
-                                    if (!f32eq(f32abs(parallel), 1.0f)) {
-                                        // Reflect velocity about the contact normal.
-                                        // Remember that to reflect a vec about a normal you add the portion fo the vec
-                                        // in the per to the negative of the portion in the parallel. NOTE: That
-                                        // parallel and perp are in relation to the colission *normal* rather than the
-                                        // surface. some texts treat it the other way around.
-                                        Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
-                                        Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                    // Reflect velocity about the contact normal.
+                                    // Remember that to reflect a vec about a normal you add the portion fo the vec in
+                                    // the per to the negative of the portion in the parallel. NOTE: That parallel and
+                                    // perp are in relation to the colission *normal* rather than the surface. some
+                                    // texts treat it the other way around.
+                                    Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
+                                    Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
+                                    eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
 
-                                        vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
+                                    eball->last_hit = ewall->id;
+
+                                    // Polyhedron pa = EntityBoundingVolume(eball);
+                                    // Polyhedron pb = EntityBoundingVolume(ewall);
+                                    // CollisionInfo c = {0};
+                                    // breakpoint();
+                                    // if (TestPolyhedronVsPolyhedron(&pa, &pb, &c.normal, &c.depth)) {
+                                    //     breakpoint();
+                                    // }
+                                    if (TestFlag(ewall->flags, EFLAG_DEATHZONE)) {
+                                        SERVED = false;
+                                        PlayLSound(GetSound(SOUND_BALL_OUT), 0);
                                     } else {
-                                        // special case dead on collision for now.
-                                        // since we are 2d game logic, just pick the zaxis as the rotation axis.
-                                        Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(-45.0f));
-                                        vnew = Vec3Scale(dir, Vec3Len(eball->v));
+                                        PlayLSound(GetSound(SOUND_BEEP), 0);
+                                    }
+                                }
+                            }
+
+                            {
+                                bool flip = e0wall && e1player;
+                                if ((e0player && e1wall) || flip) {
+                                    Vec3 normal = collision->normal;
+                                    Entity* eplayer = e0;
+                                    // Entity* ewall = e1;
+                                    if (flip) {
+                                        eplayer = e1;
+                                        // ewall = e0;
+                                        normal = Vec3Negate(normal);
                                     }
 
-                                    eball->v = vnew;
+                                    eplayer->pos = Vec3Add(eplayer->pos, Vec3Scale(normal, collision->depth));
                                 }
-
-                                eball->last_hit = eblock->id;
-                                if (eblock->health != 0) {
-                                    --eblock->health;
-                                }
-
-                                SCORE += 15;
-                                TraceLog(LOG_INFO, "hit block frame %d", gstate->nframe);
-                                PlayLSound(GetSound(SOUND_BREAK), 0);
-                            }
-                        }
-
-                        {
-                            bool flip = e0wall && e1ball;
-                            if ((e0ball && e1wall) || flip) {
-                                // static const f32 RETURN_SPEED = 30.0f;
-                                // static const f32 RETURN_ANGLE_RAD = Deg2Rad(10.0f);
-
-                                Vec3 normal = collision->normal;
-                                Entity* eball = e0;
-                                Entity* ewall = e1;
-                                if (flip) {
-                                    eball = e1;
-                                    ewall = e0;
-                                    normal = Vec3Negate(normal);
-                                }
-
-                                eball->pos = Vec3Add(eball->pos, Vec3Scale(normal, collision->depth));
-
-                                // Reflect velocity about the contact normal.
-                                // Remember that to reflect a vec about a normal you add the portion fo the vec in the
-                                // per to the negative of the portion in the parallel.
-                                // NOTE: That parallel and perp are in relation to the colission *normal* rather than
-                                // the surface. some texts treat it the other way around.
-                                Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
-                                Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
-                                eball->v = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
-
-                                eball->last_hit = ewall->id;
-
-                                // Polyhedron pa = EntityBoundingVolume(eball);
-                                // Polyhedron pb = EntityBoundingVolume(ewall);
-                                // CollisionInfo c = {0};
-                                // breakpoint();
-                                // if (TestPolyhedronVsPolyhedron(&pa, &pb, &c.normal, &c.depth)) {
-                                //     breakpoint();
-                                // }
-                                if (TestFlag(ewall->flags, EFLAG_DEATHZONE)) {
-                                    SERVED = false;
-                                    PlayLSound(GetSound(SOUND_BALL_OUT), 0);
-                                } else {
-                                    PlayLSound(GetSound(SOUND_BEEP), 0);
-                                }
-                            }
-                        }
-
-                        {
-                            bool flip = e0wall && e1player;
-                            if ((e0player && e1wall) || flip) {
-                                Vec3 normal = collision->normal;
-                                Entity* eplayer = e0;
-                                // Entity* ewall = e1;
-                                if (flip) {
-                                    eplayer = e1;
-                                    // ewall = e0;
-                                    normal = Vec3Negate(normal);
-                                }
-
-                                eplayer->pos = Vec3Add(eplayer->pos, Vec3Scale(normal, collision->depth));
                             }
                         }
                     }
                 }
+                dt = gstate->dt;
             }
 
             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
