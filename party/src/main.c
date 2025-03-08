@@ -4414,9 +4414,9 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
-        gstate->scenefuncs[idx++] = SceneTickBlendTest;
         gstate->scenefuncs[idx++] = Scene1Tick;
         gstate->scenefuncs[idx++] = SceneTickTextInEngine;
+        gstate->scenefuncs[idx++] = SceneTickBlendTest;
         gstate->scenefuncs[idx++] = SceneTickTestText;
         gstate->scenefuncs[idx++] = SceneTickBrickBreaker;
         Assert(idx < MAX_SCENES);
