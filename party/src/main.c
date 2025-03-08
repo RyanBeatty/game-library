@@ -2253,6 +2253,13 @@ static void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
     cmd->color = color;
 }
 
+// Remember
+// (0, 0)
+// * maps to bottom left corner in src texture space
+// * maps to origin in dest world space.
+// radius
+// * need to be full width/height of quad in texture space
+// * need to be half width/height in world space
 static void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
     // TODO: is scale right?
     Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
@@ -2286,18 +2293,24 @@ static void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 c
 
     u32 x = 48;
     u32 y = 48;
+    // (width, height) of the src and dest recs).
+    // misnomer name I think. the center adjusts by the full width each time.
     Vec2 r_src = Vec2Lit(x, y);
     Vec2 r_dst = Vec2Lit(fontsize, fontsize);
 
     for (u32 i = 0; i < size; ++i, pos = Vec3Add(pos, Vec3Lit(r_dst.x, 0.0f, 0.0f))) {
         u32 offset = text[i] - '0';
 
+        // center src and dest.
         Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
-
         Vec2 c_dst = Vec2Lit(pos.x, pos.y);
         DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, color);
     }
 }
+
+// Imagine the texture as a single pre baked one off texture. This will measure the width
+// and height of that texture.
+static Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
 
 #define MAX_ENTITY_BATCH 256
 
@@ -4379,8 +4392,15 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         }
 
         if (!SERVED) {
+            u32 fontsize = 50;
             const char* text = "PRESSATOSTART";
-            Vec3 pos = Vec3Lit(0.5f * width, 0.5f * height, 0);
+            u32 tsize = strlen(text);
+            Vec2 dim = MeasureLText(text, tsize, fontsize);
+
+            // Center text by shifting center forward by half a text cell size and then shifting backward
+            // by half the text size.
+            f32 shiftcenterone = 0.5f * fontsize;
+            Vec3 pos = Vec3Lit((0.5f * width) + shiftcenterone - (0.5f * dim.x), 0.5f * height, 0);
             DrawLText(text, strlen(text), pos, 50, LCLEAR);
         }
 
