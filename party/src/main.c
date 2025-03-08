@@ -886,10 +886,15 @@ static LShader GetShader() {
         "void main()\n"
         "{\n"
         "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        // "   FragColor = (fColor * (1.0 - txColor.a)) + (txColor * (txColor.a));\n"
         // I should probably texture most of my geometry now.
         // "   if (txColor.a < 0.1) {\n"
         // "       discard;\n"
         // "   }\n"
+        // TODO: This breaks blending. Reason is because if transparent texture then,
+        // the frag color will have alpha 1 and show up or occulde. but if texture, then not transparent
+        // need to just texture everything and think about how to still have some sort of runtime color
+        // setting (maybe I just generate color textures)
         "   FragColor = mix(fColor, fColor * txColor, txColor.a);\n"
         // useful for debug.
         // "    FragColor = fColor * texture(texture0, fTextCoords);\n"
@@ -4409,9 +4414,9 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
+        gstate->scenefuncs[idx++] = SceneTickBlendTest;
         gstate->scenefuncs[idx++] = Scene1Tick;
         gstate->scenefuncs[idx++] = SceneTickTextInEngine;
-        gstate->scenefuncs[idx++] = SceneTickBlendTest;
         gstate->scenefuncs[idx++] = SceneTickTestText;
         gstate->scenefuncs[idx++] = SceneTickBrickBreaker;
         Assert(idx < MAX_SCENES);
