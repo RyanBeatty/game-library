@@ -1929,6 +1929,7 @@ typedef struct CollisionInfo {
     EntityId id0;
     EntityId id1;
 
+    f32 toi;
     f32 depth;
     Vec3 normal;
 } CollisionInfo;
@@ -4083,7 +4084,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 // f32 startdt = 0.0f;
                                 // f32 enddt = 1.0f;
                                 // for (u32 itoi = 0; itoi < ITERATIONS; ++itoi) {
-                                //     f32 toi = (startdt + enddt) / 2.0f;
+                                //     f32 toi = 0.5f * (startdt + enddt);
                                 //     e0->pos = Vec3Lerp(e0->ppos, e0->pos, toi);
                                 //     e1->pos = Vec3Lerp(e1->ppos, e1->pos, toi);
 
@@ -4094,6 +4095,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                 //     if (c) {
                                 //         enddt = toi;
                                 //         collision = ci;  // Keep track of earliest detected collision.
+                                //         collision.toi = toi;
                                 //     } else {
                                 //         startdt = toi;
                                 //     }
