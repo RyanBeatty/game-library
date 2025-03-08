@@ -1929,7 +1929,7 @@ typedef struct CollisionInfo {
     EntityId id0;
     EntityId id1;
 
-    f32 toi;
+    f32 toi;  // dt time of detected moment of collision.
     f32 depth;
     Vec3 normal;
 } CollisionInfo;
@@ -4077,6 +4077,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                             if (collides) {
                                 collision.id0 = e0->id;
                                 collision.id1 = e1->id;
+                                collision.toi = 1.0f * dt;
 
                                 // // Time of impact calculation. will back up entities to earliest detected collision
                                 // // point.
