@@ -1781,11 +1781,14 @@ static void ParticleSystemInit() {
 }
 
 static void SpawnBlockDeathParticles(Vec3 pos, Vec3 normal) {
-    ParticleSystemInit();
     ParticleSystem* particles = &PARTICLES;
 
+    Particle empty = {0};
+
     for (u32 i = 0; i < 5; ++i) {
+        Assert(particles->plen < particles->pcap);
         Particle* particle = &particles->particles[particles->plen++];
+        *particle = empty;
         particle->p = pos;
 
         f32 angle = 20.0f;
@@ -1804,12 +1807,15 @@ static void ParticleSystemTick(f32 dt) {
     // static const Vec4 COLOR3 = RGBLit(208.0f, 173.0f, 167.0f);
     static const Vec4 COLOR4 = Vec4Lit(232.0f, 214.0f, 203.0f, 0.6f);
 
+    u32 to_delete[MAX_PARTICLES] = {0};
+    u32 dlen = 0;
+
     ParticleSystem* particles = &PARTICLES;
     for (u32 i = 0; i < particles->plen; ++i) {
         Particle* particle = &particles->particles[i];
         particle->lifetime -= dt;
         if (particle->lifetime <= 0.0f) {
-            particle->lifetime = 0.0f;
+            to_delete[dlen++] = i;
             continue;
         }
 
@@ -1819,6 +1825,15 @@ static void ParticleSystemTick(f32 dt) {
         cmd->modelm = Mat4TranslateV(particle->p);
         cmd->meshid = GetMesh(M_QUAD);
         cmd->color = COLOR4;
+    }
+
+    // Remove particles by swapping with end. NOTE this means we shouldn't be keeping persistent pointers
+    // to these particles around.
+    for (i32 i = dlen - 1; i >= 0; --i) {
+        Particle temp = particles->particles[particles->plen - 1];
+        particles->particles[particles->plen - 1] = particles->particles[to_delete[i]];
+        particles->particles[to_delete[i]] = temp;
+        --particles->plen;
     }
 }
 
@@ -4512,6 +4527,7 @@ static void GameStateInit(GameState* gstate) {
     DisableCursor();
 
     InitAudio();
+    ParticleSystemInit();
 
     {
         glEnable(GL_DEPTH_TEST);
