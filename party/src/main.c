@@ -4026,13 +4026,6 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
                         e->ppos = e->pos;
 
-                        if (TestFlag(e->flags, EFLAG_BLOCK)) {
-                            if (e->health == 0) {
-                                // TODO: particles!
-                                FlagOff(e->flags, EFLAG_ACTIVE);
-                            }
-                        }
-
                         if (TestFlag(e->flags, EFLAG_BALL)) {
                             Vec3 dx = Vec3Scale(e->v, dt);
                             e->pos = Vec3Add(e->pos, dx);
@@ -4264,9 +4257,14 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                         --eblock->health;
                                     }
 
-                                    SCORE += 15;
+                                    if (eblock->health == 0) {
+                                        // TODO: particles!
+                                        FlagOff(eblock->flags, EFLAG_ACTIVE);
+                                        SCORE += 15;
+                                        PlayLSound(GetSound(SOUND_BREAK), 0);
+                                    }
+
                                     TraceLog(LOG_INFO, "hit block frame %d", gstate->nframe);
-                                    PlayLSound(GetSound(SOUND_BREAK), 0);
                                 }
                             }
 
