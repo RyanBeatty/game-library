@@ -1784,18 +1784,26 @@ static void SpawnBlockDeathParticles(Vec3 pos, Vec3 normal) {
     ParticleSystemInit();
     ParticleSystem* particles = &PARTICLES;
 
-    Particle* particle = &particles->particles[particles->plen++];
-    particle->p = pos;
+    for (u32 i = 0; i < 5; ++i) {
+        Particle* particle = &particles->particles[particles->plen++];
+        particle->p = pos;
 
-    f32 angle = 20.0f;
-    f32 rot = ((f32)rand()) / ((f32)RAND_MAX);
-    rot = (rot * angle) + ((1.0f - rot) * -angle);
-    Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
-    particle->v = Vec3Scale(dir, 10.0f);
-    particle->lifetime = 0.5f;
+        f32 angle = 20.0f;
+        f32 rot = ((f32)rand()) / ((f32)RAND_MAX);
+        rot = (rot * angle) + ((1.0f - rot) * -angle);
+        Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
+        particle->v = Vec3Scale(dir, ((f32)rand() / ((f32)RAND_MAX)) * 20.0f);
+        particle->lifetime = 0.5f;
+    }
 }
 
 static void ParticleSystemTick(f32 dt) {
+    // static const Vec4 COLOR0 = RGBLit(181.0f, 141.0f, 182.0f);
+    // static const Vec4 COLOR1 = RGBLit(93.0f, 46.0f, 70.0f);
+    // static const Vec4 COLOR2 = RGBLit(173.0f, 106.0f, 108.0f);
+    // static const Vec4 COLOR3 = RGBLit(208.0f, 173.0f, 167.0f);
+    static const Vec4 COLOR4 = RGBLit(232.0f, 214.0f, 203.0f);
+
     ParticleSystem* particles = &PARTICLES;
     for (u32 i = 0; i < particles->plen; ++i) {
         Particle* particle = &particles->particles[i];
@@ -1810,7 +1818,7 @@ static void ParticleSystemTick(f32 dt) {
         DrawCmd* cmd = AddCmd();
         cmd->modelm = Mat4TranslateV(particle->p);
         cmd->meshid = GetMesh(M_QUAD);
-        cmd->color = LRED;
+        cmd->color = COLOR4;
     }
 }
 
