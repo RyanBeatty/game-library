@@ -1802,7 +1802,7 @@ static void ParticleSystemTick(f32 dt) {
     // static const Vec4 COLOR1 = RGBLit(93.0f, 46.0f, 70.0f);
     // static const Vec4 COLOR2 = RGBLit(173.0f, 106.0f, 108.0f);
     // static const Vec4 COLOR3 = RGBLit(208.0f, 173.0f, 167.0f);
-    static const Vec4 COLOR4 = RGBLit(232.0f, 214.0f, 203.0f);
+    static const Vec4 COLOR4 = Vec4Lit(232.0f, 214.0f, 203.0f, 0.6f);
 
     ParticleSystem* particles = &PARTICLES;
     for (u32 i = 0; i < particles->plen; ++i) {
