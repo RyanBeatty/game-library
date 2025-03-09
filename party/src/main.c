@@ -1786,7 +1786,8 @@ static void SpawnBlockDeathParticles(Vec3 pos) {
 
     Particle* particle = &particles->particles[particles->plen++];
     particle->p = pos;
-    particle->v = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 10.0f);
+    Vec3 dir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), rand());
+    particle->v = Vec3Scale(dir, 10.0f);
     particle->lifetime = 0.5f;
 }
 
@@ -1799,6 +1800,7 @@ static void ParticleSystemTick(f32 dt) {
             particle->lifetime = 0.0f;
             continue;
         }
+
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
 
         DrawCmd* cmd = AddCmd();
