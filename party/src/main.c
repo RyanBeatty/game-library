@@ -1785,13 +1785,15 @@ static void SpawnBlockDeathParticles(Vec3 pos) {
 
     Particle* particle = &particles->particles[particles->plen++];
     particle->p = pos;
-    particle->v = Vec3Zero();
+    particle->v = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 10.0f);
 }
 
-static void ParticleSystemTick() {
+static void ParticleSystemTick(f32 dt) {
     ParticleSystem* particles = &PARTICLES;
     for (u32 i = 0; i < particles->plen; ++i) {
         Particle* particle = &particles->particles[i];
+        particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
+
         DrawCmd* cmd = AddCmd();
         cmd->modelm = Mat4TranslateV(particle->p);
         cmd->meshid = GetMesh(M_QUAD);
@@ -4439,7 +4441,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         }
     }
 
-    ParticleSystemTick();
+    ParticleSystemTick(dt);
 
     pass->view = GetCameraMat(viewpos, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
