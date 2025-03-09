@@ -1796,7 +1796,7 @@ static void SpawnBlockDeathParticles(Vec3 pos, Vec3 normal) {
         rot = (rot * angle) + ((1.0f - rot) * -angle);
         Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
         particle->v = Vec3Scale(dir, ((f32)rand() / ((f32)RAND_MAX)) * 20.0f);
-        particle->lifetime = 0.5f;
+        particle->lifetime = 0.7f;
     }
 }
 
