@@ -1757,6 +1757,29 @@ static void LoadSounds() {
 }
 
 ////////////////////////////////////////////////////////////
+// typedef struct {
+//     Vec3 p;
+//     Vec3 v;
+// } Particle;
+
+// #define MAX_PARTICLES 100
+
+// typedef struct {
+//     Particle particles[MAX_PARTICLES];
+//     u32 plen;
+//     u32 pcap;
+// } ParticleSystem;
+
+// static ParticleSystem PARTICLES;
+
+// static void ParticleSystemInit() {
+//     ParticleSystem* particles = &PARTICLES;
+//     memset(particles, 0, sizeof(*particles));
+//     particles->plen = 0;
+//     particles->pcap = MAX_PARTICLES;
+// }
+
+////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
 const float RenderHeight = 720;
@@ -4397,7 +4420,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
     pass->view = GetCameraMat(viewpos, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-    pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 55.0f);
+    // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 55.0f);
     EndShaderPass();
 
     {

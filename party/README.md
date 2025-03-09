@@ -20,6 +20,12 @@ TODO
 * Collisions
     * Mat4Point
         * handle up x z == 0
+    * Cleanup collision handling:
+        * I need to change the actual positiona and velocity updates to be constraint based. Example problem:
+        If I don't run movement + collision with substeps, then the ball can hit two blocks and fly off in a weird direction. To avoid, I can still have custom resolution code for when to play sounds or increase score, but the actual position and velocity updates should be a constraint solver based. Hitting two blocks would then cause 4 constraints (2 pos + 2 vel) to be created and those can be solved together. Instead of solving them
+        indepdenatly like I am (and not even checking if the constraints are still violated when resolving collision)
+
+    * OLD POTENTIALLY:
     * implement time of impact calculation
     * floating point robustness
     * calculate contact points
@@ -28,11 +34,10 @@ TODO
         point in same normal, then also use those verts to clip.
 * Rendering
     * get lights + lighting working again.
-    * 2d/orthographic rendering 
 * Core
+    * impl particle system
     * impl loading blender scene
     * impl hot reloading
-    * impl audio and sound playback.
     * stop using raylib for input
     * stop using raylib for window creation
 
