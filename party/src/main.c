@@ -1780,13 +1780,17 @@ static void ParticleSystemInit() {
     particles->pcap = MAX_PARTICLES;
 }
 
-static void SpawnBlockDeathParticles(Vec3 pos) {
+static void SpawnBlockDeathParticles(Vec3 pos, Vec3 normal) {
     ParticleSystemInit();
     ParticleSystem* particles = &PARTICLES;
 
     Particle* particle = &particles->particles[particles->plen++];
     particle->p = pos;
-    Vec3 dir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), rand());
+
+    f32 angle = 20.0f;
+    f32 rot = ((f32)rand()) / ((f32)RAND_MAX);
+    rot = (rot * angle) + ((1.0f - rot) * -angle);
+    Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
     particle->v = Vec3Scale(dir, 10.0f);
     particle->lifetime = 0.5f;
 }
@@ -4313,7 +4317,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
                                     if (eblock->health == 0) {
                                         // TODO: particles!
-                                        SpawnBlockDeathParticles(eblock->pos);
+                                        SpawnBlockDeathParticles(eblock->pos, normal);
                                         FlagOff(eblock->flags, EFLAG_ACTIVE);
                                         SCORE += 15;
                                         PlayLSound(GetSound(SOUND_BREAK), 0);
