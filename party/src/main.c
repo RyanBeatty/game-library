@@ -1760,6 +1760,7 @@ static void LoadSounds() {
 typedef struct {
     Vec3 p;
     Vec3 v;
+    f32 lifetime;
 } Particle;
 
 #define MAX_PARTICLES 100
@@ -1786,12 +1787,18 @@ static void SpawnBlockDeathParticles(Vec3 pos) {
     Particle* particle = &particles->particles[particles->plen++];
     particle->p = pos;
     particle->v = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), 10.0f);
+    particle->lifetime = 0.5f;
 }
 
 static void ParticleSystemTick(f32 dt) {
     ParticleSystem* particles = &PARTICLES;
     for (u32 i = 0; i < particles->plen; ++i) {
         Particle* particle = &particles->particles[i];
+        particle->lifetime -= dt;
+        if (particle->lifetime <= 0.0f) {
+            particle->lifetime = 0.0f;
+            continue;
+        }
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
 
         DrawCmd* cmd = AddCmd();
