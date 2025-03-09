@@ -1757,27 +1757,47 @@ static void LoadSounds() {
 }
 
 ////////////////////////////////////////////////////////////
-// typedef struct {
-//     Vec3 p;
-//     Vec3 v;
-// } Particle;
+typedef struct {
+    Vec3 p;
+    Vec3 v;
+} Particle;
 
-// #define MAX_PARTICLES 100
+#define MAX_PARTICLES 100
 
-// typedef struct {
-//     Particle particles[MAX_PARTICLES];
-//     u32 plen;
-//     u32 pcap;
-// } ParticleSystem;
+typedef struct {
+    Particle particles[MAX_PARTICLES];
+    u32 plen;
+    u32 pcap;
+} ParticleSystem;
 
-// static ParticleSystem PARTICLES;
+static ParticleSystem PARTICLES;
 
-// static void ParticleSystemInit() {
-//     ParticleSystem* particles = &PARTICLES;
-//     memset(particles, 0, sizeof(*particles));
-//     particles->plen = 0;
-//     particles->pcap = MAX_PARTICLES;
-// }
+static void ParticleSystemInit() {
+    ParticleSystem* particles = &PARTICLES;
+    memset(particles, 0, sizeof(*particles));
+    particles->plen = 0;
+    particles->pcap = MAX_PARTICLES;
+}
+
+static void SpawnBlockDeathParticles(Vec3 pos) {
+    ParticleSystemInit();
+    ParticleSystem* particles = &PARTICLES;
+
+    Particle* particle = &particles->particles[particles->plen++];
+    particle->p = pos;
+    particle->v = Vec3Zero();
+}
+
+static void ParticleSystemTick() {
+    ParticleSystem* particles = &PARTICLES;
+    for (u32 i = 0; i < particles->plen; ++i) {
+        Particle* particle = &particles->particles[i];
+        DrawCmd* cmd = AddCmd();
+        cmd->modelm = Mat4TranslateV(particle->p);
+        cmd->meshid = GetMesh(M_QUAD);
+        cmd->color = LRED;
+    }
+}
 
 ////////////////////////////////////////////////////////////
 
@@ -4282,6 +4302,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
                                     if (eblock->health == 0) {
                                         // TODO: particles!
+                                        SpawnBlockDeathParticles(eblock->pos);
                                         FlagOff(eblock->flags, EFLAG_ACTIVE);
                                         SCORE += 15;
                                         PlayLSound(GetSound(SOUND_BREAK), 0);
@@ -4417,6 +4438,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
             }
         }
     }
+
+    ParticleSystemTick();
 
     pass->view = GetCameraMat(viewpos, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
