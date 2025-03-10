@@ -1786,19 +1786,22 @@ static void SpawnBlockDeathParticles(Vec3 pos, Vec3 normal) {
 
     Particle empty = {0};
 
-    for (u32 i = 0; i < 5; ++i) {
+    for (u32 i = 0; i < 3; ++i) {
         f32 seed = (f32)rand() / (f32)RAND_MAX;
         f32 jitter = f32lerp(-1.0f, 1.0f, seed);
 
         Assert(particles->plen < particles->pcap);
         Particle* particle = &particles->particles[particles->plen++];
         *particle = empty;
-        particle->p = pos;
 
         f32 angle = 20.0f;
         f32 rot = f32lerp(-angle, angle, ((f32)rand()) / ((f32)RAND_MAX));
         Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
         particle->v = Vec3Scale(dir, 10.0f + (5.0f * jitter));
+
+        // particle->p = Vec3Add(pos, Vec3Scale(particle->v, 0.1f * jitter));
+        particle->p = pos;
+
         particle->lifetime = 0.7f + (0.1f * jitter);
         particle->lifedt = 0.0f;
     }
