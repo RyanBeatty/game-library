@@ -3897,6 +3897,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     static bool SERVED = false;
     static const Vec3 BALL_START_POS = Vec3Lit(0.0f, -5.0f, 0.0f);
     static const Vec3 PLAYER_START_POS = Vec3Lit(0.0f, -17.5f, 0.0f);
+    static f32 SCREEN_SHAKE_DT = 0.0f;
+    static const f32 SCREEN_SHAKE_T = 0.2f;
 
     f32 dt = gstate->dt;
 
@@ -3907,6 +3909,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
         SCORE = 0;
         SERVED = false;
+        SCREEN_SHAKE_DT = SCREEN_SHAKE_T;
 
         // Player init.
         {
@@ -4355,6 +4358,8 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                                         PlayLSound(GetSound(SOUND_BREAK), 0);
                                     }
 
+                                    SCREEN_SHAKE_DT = 0.0f;
+
                                     TraceLog(LOG_INFO, "hit block frame %d", gstate->nframe);
                                 }
                             }
@@ -4488,7 +4493,20 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
     ParticleSystemTick(dt);
 
-    pass->view = GetCameraMat(viewpos, vieworient);
+    // screen shake.
+    Vec3 viewp = viewpos;
+    if (SCREEN_SHAKE_DT < SCREEN_SHAKE_T) {
+        SCREEN_SHAKE_DT += dt;
+
+        // Randomly jitter the camera around points in the unit circle.
+        f32 r = 3.0f;
+        viewp.x += 0.3f * f32cos((f32)rand() / (f32)RAND_MAX);
+        viewp.y += 0.25f * f32sin((f32)rand() / (f32)RAND_MAX);
+    } else {
+        SCREEN_SHAKE_DT = SCREEN_SHAKE_T;
+    }
+
+    pass->view = GetCameraMat(viewp, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 55.0f);
     EndShaderPass();
