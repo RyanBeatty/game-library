@@ -4495,6 +4495,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
 
     ParticleSystemTick(dt);
 
+    // Compute and draw ball tail.
     {
         static const u32 size = 30;
         static Vec3 POSITIONS[30] = {0};
@@ -4508,7 +4509,6 @@ static void SceneTickBrickBreaker(GameState* gstate) {
             ridx = (ridx + 1) % size;
         }
 
-        breakpoint();
         Vec4 color = COLOR4;
         color.a = 0.4f;
         for (u32 i = ridx; i != widx; i = (i + 1) % size) {
