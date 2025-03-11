@@ -2408,11 +2408,6 @@ static void Scene1Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-    static Vec3 LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
-
-    static EntityId LIGHTS[MAX_ENTITY_BATCH] = {0};
-    // static u32 LIGHTS_SIZE = 0;
-
     static EntityId SPINNING[MAX_ENTITY_BATCH] = {0};
     static u32 SPINNING_SIZE = 0;
 
@@ -2428,9 +2423,6 @@ static void Scene1Tick(GameState* gstate) {
     static EntityId ISO_TRIANGLES[MAX_ENTITY_BATCH] = {0};
     static u32 ISO_TRIANGLES_SIZE = 0;
 
-    static EntityId PYRAMIDS[MAX_ENTITY_BATCH] = {0};
-    static u32 PYRAMIDS_SIZE = 0;
-
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
 
@@ -2441,9 +2433,6 @@ static void Scene1Tick(GameState* gstate) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-        LIGHT_POS = Vec3Lit(10.0f, 10.0f, -10.0f);
-
-        memset(LIGHTS, 0, sizeof(LIGHTS));
         memset(SPINNING, 0, sizeof(SPINNING));
         SPINNING_SIZE = 0;
         memset(SHADOW_DEBUG, 0, sizeof(SHADOW_DEBUG));
@@ -2452,27 +2441,10 @@ static void Scene1Tick(GameState* gstate) {
         PHYSICS_SIZE = 0;
         memset(ISO_TRIANGLES, 0, sizeof(ISO_TRIANGLES));
         ISO_TRIANGLES_SIZE = 0;
-        memset(PYRAMIDS, 0, sizeof(PYRAMIDS));
-        PYRAMIDS_SIZE = 0;
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
-
-        {
-            Vec3 positions[] = {LIGHT_POS};
-            Vec4 colors[] = {LBLUE};
-
-            EntityId* entities = LIGHTS;
-            // LIGHTS_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
-                entity->mesh = GetMesh(M_CUBE);
-                entity->color = colors[i];
-                entities[i] = entity->id;
-            }
-        }
 
         {
             Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
@@ -2613,25 +2585,6 @@ static void Scene1Tick(GameState* gstate) {
                 entity->pos = positions[i];
                 entity->mesh = GetMesh(M_2S_ISO_TRIANGLE);
                 entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-                entity->color = colors[i];
-                entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
-                entities[i] = entity->id;
-            }
-        }
-
-        // PYRAMIDS init
-        {
-            static Vec3 positions[] = {Vec3Lit(20.0f, 3.0f, -15.0f)};
-            static f32 rotations[] = {Deg2Rad(0.0f)};
-            Vec4 colors[] = {LORANGE};
-
-            EntityId* entities = PYRAMIDS;
-            PYRAMIDS_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
-                entity->mesh = GetMesh(M_PYRAMID);
-                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(1.0f, 0.0f, 0.0f));
                 entity->color = colors[i];
                 entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
                 entities[i] = entity->id;
@@ -2918,18 +2871,6 @@ static void Scene1Tick(GameState* gstate) {
                             }
                         }
                     }
-                }
-
-                DrawEntities(entities, size);
-            }
-
-            // PYRAMIDS Draw.
-            {
-                EntityId* entities = PYRAMIDS;
-                u32 size = PYRAMIDS_SIZE;
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* e = GetEntity(entities[i]);
-                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
 
                 DrawEntities(entities, size);
