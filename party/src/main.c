@@ -3892,6 +3892,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     static const Vec4 COLOR4 = RGBLit(232.0f, 214.0f, 203.0f);
 
     static EntityId playerid;
+    static EntityId BALLID;
 
     static u32 SCORE = 0;
     static bool SERVED = false;
@@ -3948,6 +3949,7 @@ static void SceneTickBrickBreaker(GameState* gstate) {
                     entity->last_hit = -1;
                     FlagOn(entity->flags, EFLAG_BALL);
                     FlagOn(entity->flags, EFLAG_COLLIDER);
+                    BALLID = entity->id;
                 }
             }
         }
@@ -4492,6 +4494,30 @@ static void SceneTickBrickBreaker(GameState* gstate) {
     }
 
     ParticleSystemTick(dt);
+
+    {
+        static const u32 size = 30;
+        static Vec3 POSITIONS[30] = {0};
+        static u32 ridx = 0;
+        static u32 widx = 0;
+
+        Entity* ball = GetEntity(BALLID);
+        POSITIONS[widx++] = ball->ppos;
+        widx %= size;
+        if (ridx == widx) {
+            ridx = (ridx + 1) % size;
+        }
+
+        breakpoint();
+        Vec4 color = COLOR4;
+        color.a = 0.4f;
+        for (u32 i = ridx; i != widx; i = (i + 1) % size) {
+            DrawCmd* cmd = AddCmd();
+            cmd->modelm = Mat4SRT(0.3f, Mat4Identity(), POSITIONS[i]);
+            cmd->meshid = GetMesh(M_QUAD);
+            cmd->color = color;
+        }
+    }
 
     // screen shake.
     Vec3 viewp = viewpos;
