@@ -2883,7 +2883,7 @@ static void SceneTickTestText(GameState* gstate) {
     }
 }
 
-static void SceneTickBrickBreaker(GameState* gstate) {
+static void SceneTickBreakout(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
@@ -3527,7 +3527,6 @@ static void SceneTickBrickBreaker(GameState* gstate) {
         SCREEN_SHAKE_DT += dt;
 
         // Randomly jitter the camera around points in the unit circle.
-        f32 r = 3.0f;
         viewp.x += 0.3f * f32cos((f32)rand() / (f32)RAND_MAX);
         viewp.y += 0.25f * f32sin((f32)rand() / (f32)RAND_MAX);
     } else {
@@ -3595,11 +3594,11 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
-        gstate->scenefuncs[idx++] = Scene1Tick;
+        gstate->scenefuncs[idx++] = SceneTickBreakout;
         gstate->scenefuncs[idx++] = SceneTickTextInEngine;
         gstate->scenefuncs[idx++] = SceneTickBlendTest;
         gstate->scenefuncs[idx++] = SceneTickTestText;
-        gstate->scenefuncs[idx++] = SceneTickBrickBreaker;
+        gstate->scenefuncs[idx++] = Scene1Tick;
         Assert(idx < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
