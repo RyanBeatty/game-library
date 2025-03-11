@@ -2420,9 +2420,6 @@ static void Scene1Tick(GameState* gstate) {
     static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
     static u32 PHYSICS_SIZE = 0;
 
-    static EntityId ISO_TRIANGLES[MAX_ENTITY_BATCH] = {0};
-    static u32 ISO_TRIANGLES_SIZE = 0;
-
     static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
     static u32 WALLS_SIZE = 0;
 
@@ -2439,8 +2436,6 @@ static void Scene1Tick(GameState* gstate) {
         SHADOW_DEBUG_SIZE = 0;
         memset(PHYSICS, 0, sizeof(PHYSICS));
         PHYSICS_SIZE = 0;
-        memset(ISO_TRIANGLES, 0, sizeof(ISO_TRIANGLES));
-        ISO_TRIANGLES_SIZE = 0;
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
 
@@ -2570,25 +2565,6 @@ static void Scene1Tick(GameState* gstate) {
 
             PHYSICS_SIZE = size;
             Assert(PHYSICS_SIZE < MAX_ENTITY_BATCH);
-        }
-
-        // ISO TRIANGLES Init.
-        {
-            static Vec3 positions[] = {Vec3Lit(-20.0f, 3.0f, 15.0f), Vec3Lit(-20.0f, 3.0f, 20.0f)};
-            static f32 rotations[] = {Deg2Rad(0.0f), Deg2Rad(90.0f)};
-            Vec4 colors[] = {LBLACK, LBLACK};
-
-            EntityId* entities = ISO_TRIANGLES;
-            ISO_TRIANGLES_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
-                entity->mesh = GetMesh(M_2S_ISO_TRIANGLE);
-                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-                entity->color = colors[i];
-                entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
-                entities[i] = entity->id;
-            }
         }
 
         {
@@ -2768,112 +2744,6 @@ static void Scene1Tick(GameState* gstate) {
                 }
                 DrawEntities(entities, size);
                 DrawEntitiesWireFrame(entities, size);
-            }
-
-            // ISO TRIANGLES DRAW Draw.
-            {
-                EntityId* entities = ISO_TRIANGLES;
-                u32 size = ISO_TRIANGLES_SIZE;
-
-                {
-                    Entity* e0 = GetEntity(entities[0]);
-                    Entity* e1 = GetEntity(entities[1]);
-                    Mat4 e0m = EntityGetMat(e0);
-                    Mat4 e1m = EntityGetMat(e1);
-                    Mat4 e1toe0m = Mat4Multiply(Mat4Invert(e0m), e1m);
-
-                    Vec3 a = LMeshGetVertex(e0->mesh, 0).pos;
-                    Vec3 b = LMeshGetVertex(e0->mesh, 1).pos;
-                    Vec3 c = LMeshGetVertex(e0->mesh, 2).pos;
-
-                    Vec3 ab = Vec3Sub(b, a);
-                    Vec3 ac = Vec3Sub(c, a);
-                    Vec3 bc = Vec3Sub(c, b);
-                    Vec3 f0 = Vec3Normalize(Vec3Cross(ab, ac));
-
-                    // Bring other triangle's vertexes into e0's coordinate space.
-                    Vec3 d = Vec3WTransform(LMeshGetVertex(e1->mesh, 0).pos, e1toe0m);
-                    Vec3 e = Vec3WTransform(LMeshGetVertex(e1->mesh, 1).pos, e1toe0m);
-                    Vec3 f = Vec3WTransform(LMeshGetVertex(e1->mesh, 2).pos, e1toe0m);
-
-                    Vec3 de = Vec3Sub(e, d);
-                    Vec3 df = Vec3Sub(f, d);
-                    Vec3 ef = Vec3Sub(f, e);
-                    Vec3 f1 = Vec3Normalize(Vec3Cross(de, df));
-
-                    Vec3 norm_abde = Vec3Normalize(Vec3Cross(ab, de));
-                    Vec3 norm_abdf = Vec3Normalize(Vec3Cross(ab, df));
-                    Vec3 norm_abef = Vec3Normalize(Vec3Cross(ab, ef));
-
-                    Vec3 norm_acde = Vec3Normalize(Vec3Cross(ac, de));
-                    Vec3 norm_acdf = Vec3Normalize(Vec3Cross(ac, df));
-                    Vec3 norm_acef = Vec3Normalize(Vec3Cross(ac, ef));
-
-                    Vec3 norm_bcde = Vec3Normalize(Vec3Cross(bc, de));
-                    Vec3 norm_bcdf = Vec3Normalize(Vec3Cross(bc, df));
-                    Vec3 norm_bcef = Vec3Normalize(Vec3Cross(bc, ef));
-
-                    Vec3 half_ab = Vec3Add(a, Vec3Scale(ab, 0.5f));
-                    Vec3 half_ac = Vec3Add(a, Vec3Scale(ac, 0.5f));
-                    Vec3 half_bc = Vec3Add(b, Vec3Scale(bc, 0.5f));
-
-                    // NOTE: All drawing is done in e0 local coordinate space.
-                    // Do not include translation in normal transform because those are direction vectors
-                    // only.
-                    {
-                        // Draw vertexes of triangles.
-                        {
-                            Mat4 em = e0m;
-                            Vec3 vs[] = {a, b, c, d, e, f};
-                            for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                                Vec3 pos = vs[i];
-
-                                DrawCmd* cmd = AddCmd();
-                                cmd->meshid = GetMesh(M_CUBE);
-                                cmd->modelm = Mat4Multiply(em, Mat4Multiply(Mat4TranslateV(pos), Mat4Scale(0.06f)));
-                                cmd->color = LRED;
-                            }
-                        }
-                        // Draw normals
-                        {
-                            {
-                                Mat4 em = e0m;
-                                Mat4 enormm = e0->orient;
-                                Vec3 vs[] = {Vec3Lit(0.0f, 0.0f, 0.0f),
-                                             Vec3WTransform(Vec3Zero(), e1toe0m),
-                                             half_ab,
-                                             half_ab,
-                                             half_ab,
-                                             half_ac,
-                                             half_ac,
-                                             half_ac,
-                                             half_bc,
-                                             half_bc};
-                                Vec3 ns[] = {f0,        f1,        norm_abde, norm_abdf, norm_abef, norm_acde,
-                                             norm_acdf, norm_acef, norm_bcde, norm_bcdf, norm_bcef};
-                                for (u32 i = 0; i < ArraySizeOf(vs); ++i) {
-                                    // Get rot matrix that will point mesh's forward along the normal. We get this
-                                    // rotation by computing the rotation matrix of the normal direction. Note that we
-                                    // need to calculate what the direction our mesh should point in upright space so we
-                                    // concat the normal rotation matrix by the upright rotation matrix of the e0's
-                                    // orientation.
-                                    Vec3 norm = ns[i];
-                                    Mat4 normrot = Mat4PointAt(norm);
-                                    Mat4 orient_world = Mat4Multiply(enormm, normrot);
-
-                                    // Need to take the model space position and figure out the world coords, that
-                                    // means we need to use the entity model mat to transform into world space
-                                    // (since it will correctly place the point based on scale, rot, translation).
-                                    Vec3 pos_world = Vec3WTransform(vs[i], em);
-
-                                    DrawArrow(ns[i], pos_world, orient_world, 0.3f, LRED);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                DrawEntities(entities, size);
             }
 
             // Walls.
