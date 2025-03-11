@@ -2208,9 +2208,6 @@ static void Scene1Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-    static EntityId SPINNING[MAX_ENTITY_BATCH] = {0};
-    static u32 SPINNING_SIZE = 0;
-
     static EntityId MESH_TEST[MAX_ENTITY_BATCH] = {0};
     static u32 MESH_TEST_SIZE = 0;
 
@@ -2224,28 +2221,10 @@ static void Scene1Tick(GameState* gstate) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
 
-        memset(SPINNING, 0, sizeof(SPINNING));
-        SPINNING_SIZE = 0;
         memset(WALLS, 0, sizeof(WALLS));
         WALLS_SIZE = 0;
 
         vieworient.yaw = Deg2Rad(90.0f);
-
-        {
-            Vec3 positions[] = {Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Lit(-5.0f, -3.0f, -3.0f), Vec3Lit(15.0f, 3.0f, -50.0f),
-                                Vec3Lit(-15.0f, 0.0f, 0.0f)};
-            Vec4 colors[] = {LBLUE, LBLUE, LBLUE, LBLUE};
-
-            EntityId* entities = SPINNING;
-            SPINNING_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
-                entity->mesh = GetMesh(M_CUBE);
-                entity->color = colors[i];
-                entities[i] = entity->id;
-            }
-        }
 
         // MESH_TEST init
         {
@@ -2353,16 +2332,6 @@ static void Scene1Tick(GameState* gstate) {
         }
 
         {
-            {
-                EntityId* entities = SPINNING;
-                u32 size = SPINNING_SIZE;
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* entity = GetEntity(entities[i]);
-                    entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
-                }
-                DrawEntities(entities, size);
-            }
-
             // MESH_TEST update.
             {
                 EntityId* entities = MESH_TEST;
