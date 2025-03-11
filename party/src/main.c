@@ -2414,9 +2414,6 @@ static void Scene1Tick(GameState* gstate) {
     static EntityId MESH_TEST[MAX_ENTITY_BATCH] = {0};
     static u32 MESH_TEST_SIZE = 0;
 
-    static EntityId SHADOW_DEBUG[MAX_ENTITY_BATCH] = {0};
-    static u32 SHADOW_DEBUG_SIZE = 0;
-
     static EntityId PHYSICS[MAX_ENTITY_BATCH] = {0};
     static u32 PHYSICS_SIZE = 0;
 
@@ -2432,8 +2429,6 @@ static void Scene1Tick(GameState* gstate) {
 
         memset(SPINNING, 0, sizeof(SPINNING));
         SPINNING_SIZE = 0;
-        memset(SHADOW_DEBUG, 0, sizeof(SHADOW_DEBUG));
-        SHADOW_DEBUG_SIZE = 0;
         memset(PHYSICS, 0, sizeof(PHYSICS));
         PHYSICS_SIZE = 0;
         memset(WALLS, 0, sizeof(WALLS));
@@ -2486,24 +2481,6 @@ static void Scene1Tick(GameState* gstate) {
 
             MESH_TEST_SIZE = size;
             Assert(MESH_TEST_SIZE < MAX_ENTITY_BATCH);
-        }
-
-        {
-            Vec3 positions[] = {Vec3Lit(10.0f, 3.0f, 0.0f), Vec3Lit(0.0f, 3.0f, 5.0f)};
-            f32 rotations[] = {Deg2Rad(45.0f), Deg2Rad(0.0f)};
-            Vec4 colors[] = {LGREEN, LGREEN};
-
-            EntityId* entities = SHADOW_DEBUG;
-            SHADOW_DEBUG_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
-                entity->mesh = GetMesh(M_CUBE);
-                entity->orient = Mat4Rotate(rotations[i], Vec3Lit(0.0f, 1.0f, 0.0f));
-                entity->color = colors[i];
-                entity->scale = Vec3Lit(3.0f, 3.0f, 3.0f);
-                entities[i] = entity->id;
-            }
         }
 
         // PHYSICS init
@@ -2649,13 +2626,6 @@ static void Scene1Tick(GameState* gstate) {
                     Entity* entity = GetEntity(entities[i]);
                     entity->orient = Mat4Rotate(gstate->timer, Vec3Lit(1.0f, 0.3f, 0.5f));
                 }
-                DrawEntities(entities, size);
-            }
-
-            // Draw non rotating cube for easier lighting visual debug.
-            {
-                EntityId* entities = SHADOW_DEBUG;
-                u32 size = SHADOW_DEBUG_SIZE;
                 DrawEntities(entities, size);
             }
 
