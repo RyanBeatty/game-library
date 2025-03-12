@@ -3456,6 +3456,23 @@ static void SceneTickBreakout(GameState* gstate) {
                             }
 
                             {
+                                bool flip = e0wall && e1powerup;
+                                if ((e0powerup && e1wall) || flip) {
+                                    // Vec3 normal = collision->normal;
+                                    Entity* epowerup = e0;
+                                    // Entity* ewall = e1;
+                                    if (flip) {
+                                        epowerup = e1;
+                                        // ewall = e0;
+                                        // normal = Vec3Negate(normal);
+                                    }
+
+                                    FlagOff(epowerup->flags, EFLAG_ACTIVE);
+                                    PlayLSound(GetSound(SOUND_BALL_OUT), 0);
+                                }
+                            }
+
+                            {
                                 bool flip = e0wall && e1player;
                                 if ((e0player && e1wall) || flip) {
                                     Vec3 normal = collision->normal;
