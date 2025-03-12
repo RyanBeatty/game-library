@@ -1873,6 +1873,7 @@ typedef enum EntityFlag {
     EFLAG_BALL = 1 << 9,
     EFLAG_BLOCK = 1 << 10,
     EFLAG_DEATHZONE = 1 << 11,
+    EFLAG_POWERUP = 1 << 12,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -3123,7 +3124,7 @@ static void SceneTickBreakout(GameState* gstate) {
 
                         e->ppos = e->pos;
 
-                        if (TestFlag(e->flags, EFLAG_BALL)) {
+                        if (TestFlag(e->flags, EFLAG_BALL) || TestFlag(e->flags, EFLAG_POWERUP)) {
                             Vec3 dx = Vec3Scale(e->v, dt);
                             e->pos = Vec3Add(e->pos, dx);
                             // TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
@@ -3355,10 +3356,20 @@ static void SceneTickBreakout(GameState* gstate) {
                                     }
 
                                     if (eblock->health == 0) {
-                                        // TODO: particles!
                                         SpawnBlockDeathParticles(eblock->pos, normal);
-                                        FlagOff(eblock->flags, EFLAG_ACTIVE);
                                         SCORE += 15;
+
+                                        {
+                                            Entity* powerup = AllocateEntity();
+                                            powerup->pos = eblock->pos;
+                                            powerup->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), 10.0f);
+                                            powerup->mesh = GetMesh(M_QUAD);
+                                            powerup->color = LYELLOW;
+                                            FlagOn(powerup->flags, EFLAG_POWERUP);
+                                        }
+
+                                        FlagOff(eblock->flags, EFLAG_ACTIVE);
+
                                         PlayLSound(GetSound(SOUND_BREAK), 0);
                                     }
 
@@ -3523,7 +3534,8 @@ static void SceneTickBreakout(GameState* gstate) {
 
     // screen shake.
     Vec3 viewp = viewpos;
-    if (SCREEN_SHAKE_DT < SCREEN_SHAKE_T) {
+    // if (SCREEN_SHAKE_DT < SCREEN_SHAKE_T) {
+    if (false) {
         SCREEN_SHAKE_DT += dt;
 
         // Randomly jitter the camera around points in the unit circle.
