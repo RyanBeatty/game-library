@@ -2918,6 +2918,8 @@ static void SceneTickBreakout(GameState* gstate) {
     static f32 SCREEN_SHAKE_DT = 0.0f;
     static const f32 SCREEN_SHAKE_T = 0.2f;
 
+    static const f32 BASE_BALL_SPEED = 30.0f;
+
     static const u32 TAIL_POSITIONS_CAP = 30;
     static Vec3 TAIL_POSITIONS[30] = {0};
     static u32 TAIL_POSITIONS_RIDX = 0;
@@ -2957,7 +2959,7 @@ static void SceneTickBreakout(GameState* gstate) {
                 const Vec3 positions[] = {origin};
 
                 Entity* player = GetEntity(playerid);
-                Vec3 v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, origin)), 30.0f);
+                Vec3 v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, origin)), BASE_BALL_SPEED);
                 const Vec3 velocities[] = {v};
 
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -3405,19 +3407,20 @@ static void SceneTickBreakout(GameState* gstate) {
                                 if ((e0powerup && e1player) || flip) {
                                     Vec3 normal = collision->normal;
                                     Entity* epowerup = e0;
-                                    Entity* eplayer = e1;
+                                    // Entity* eplayer = e1;
                                     if (flip) {
                                         epowerup = e1;
-                                        eplayer = e0;
+                                        // eplayer = e0;
                                         normal = Vec3Negate(normal);
                                     }
 
                                     {
                                         // Mult by some slop to be sure the ball is out of the player.
+                                        // TODO: something up with collisions here.
                                         f32 slop = 2.0f;
                                         Vec3 pos = Vec3Add(epowerup->pos, Vec3Scale(normal, slop * collision->depth));
-                                        Entity* entity = SpawnBall(pos, Vec3Zero(), COLOR4);
-                                        FlagOff(entity->flags, EFLAG_COLLIDER);
+                                        Vec3 v = Vec3Scale(normal, 0.5f * BASE_BALL_SPEED);
+                                        SpawnBall(pos, v, COLOR4);
                                     }
 
                                     FlagOff(epowerup->flags, EFLAG_ACTIVE);
