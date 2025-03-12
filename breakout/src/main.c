@@ -2884,6 +2884,20 @@ static void SceneTickTestText(GameState* gstate) {
     }
 }
 
+static Entity* SpawnBall(Vec3 pos, Vec3 v, Vec4 color) {
+    Entity* entity = AllocateEntity();
+    entity->pos = pos;
+    entity->mesh = GetMesh(M_ICOSPHERE);
+    entity->color = color;
+    entity->scale = Vec3Lit(0.5f, 0.5f, 0.5f);
+    entity->v = v;
+    entity->phtype = PH_SPHERE;
+    entity->last_hit = -1;
+    FlagOn(entity->flags, EFLAG_BALL);
+    FlagOn(entity->flags, EFLAG_COLLIDER);
+    return entity;
+}
+
 static void SceneTickBreakout(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -2947,16 +2961,7 @@ static void SceneTickBreakout(GameState* gstate) {
                 const Vec3 velocities[] = {v};
 
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                    Entity* entity = AllocateEntity();
-                    entity->pos = positions[i];
-                    entity->mesh = GetMesh(M_ICOSPHERE);
-                    entity->color = COLOR4;
-                    entity->scale = Vec3Lit(0.5f, 0.5f, 0.5f);
-                    entity->v = velocities[i];
-                    entity->phtype = PH_SPHERE;
-                    entity->last_hit = -1;
-                    FlagOn(entity->flags, EFLAG_BALL);
-                    FlagOn(entity->flags, EFLAG_COLLIDER);
+                    Entity* entity = SpawnBall(positions[i], velocities[i], COLOR4);
                     BALLID = entity->id;
                 }
             }
@@ -3398,9 +3403,21 @@ static void SceneTickBreakout(GameState* gstate) {
                             {
                                 bool flip = e0player && e1powerup;
                                 if ((e0powerup && e1player) || flip) {
+                                    Vec3 normal = collision->normal;
                                     Entity* epowerup = e0;
+                                    Entity* eplayer = e1;
                                     if (flip) {
                                         epowerup = e1;
+                                        eplayer = e0;
+                                        normal = Vec3Negate(normal);
+                                    }
+
+                                    {
+                                        // Mult by some slop to be sure the ball is out of the player.
+                                        f32 slop = 2.0f;
+                                        Vec3 pos = Vec3Add(epowerup->pos, Vec3Scale(normal, slop * collision->depth));
+                                        Entity* entity = SpawnBall(pos, Vec3Zero(), COLOR4);
+                                        FlagOff(entity->flags, EFLAG_COLLIDER);
                                     }
 
                                     FlagOff(epowerup->flags, EFLAG_ACTIVE);
