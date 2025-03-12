@@ -3102,10 +3102,13 @@ static void SceneTickBreakout(GameState* gstate) {
                         continue;
                     }
 
+                    if (TestFlag(e->flags, EFLAG_POWERUP)) {
+                        FlagOff(e->flags, EFLAG_ACTIVE);
+                    }
+
                     if (TestFlag(e->flags, EFLAG_BALL)) {
                         e->pos = BALL_START_POS;
                         e->v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, e->pos)), 30.0f);
-                        break;
                     }
                 }
             }
