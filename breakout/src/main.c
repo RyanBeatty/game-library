@@ -3197,30 +3197,6 @@ static void SceneTickBreakout(GameState* gstate) {
                                     collision.id1 = e1->id;
                                     collision.toi = 1.0f * dt;
 
-                                    // // Time of impact calculation. will back up entities to earliest detected
-                                    // collision
-                                    // // point.
-                                    // static const u32 ITERATIONS = 3;
-                                    // f32 startdt = 0.0f;
-                                    // f32 enddt = 1.0f;
-                                    // for (u32 itoi = 0; itoi < ITERATIONS; ++itoi) {
-                                    //     f32 toi = 0.5f * (startdt + enddt);
-                                    //     e0->pos = Vec3Lerp(e0->ppos, e0->pos, toi);
-                                    //     e1->pos = Vec3Lerp(e1->ppos, e1->pos, toi);
-
-                                    //     Polyhedron pa = EntityBoundingVolume(e0);
-                                    //     Polyhedron pb = EntityBoundingVolume(e1);
-                                    //     CollisionInfo ci = {0};
-                                    //     bool c = TestPolyhedronVsPolyhedron(&pa, &pb, &ci.normal, &ci.depth);
-                                    //     if (c) {
-                                    //         enddt = toi;
-                                    //         collision = ci;  // Keep track of earliest detected collision.
-                                    //         collision.toi = toi;
-                                    //     } else {
-                                    //         startdt = toi;
-                                    //     }
-                                    // }
-
                                     if (DEBUG_EVER) {
                                         breakpoint();
                                     }
@@ -3417,12 +3393,16 @@ static void SceneTickBreakout(GameState* gstate) {
                                         normal = Vec3Negate(normal);
                                     }
 
-                                    if (false) {
+                                    {
                                         // Mult by some slop to be sure the ball is out of the player.
                                         // TODO: something up with collisions here.
                                         f32 slop = 2.0f;
                                         Vec3 pos = Vec3Add(epowerup->pos, Vec3Scale(normal, slop * collision->depth));
-                                        Vec3 v = Vec3Scale(normal, 0.5f * BASE_BALL_SPEED);
+
+                                        f32 rot = f32lerp(-20.0f, 20.0f, (f32)rand() / (f32)RAND_MAX);
+                                        Vec3 v = Vec3Scale(Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), rot),
+                                                           0.5f * BASE_BALL_SPEED);
+                                        breakpoint();
                                         SpawnBall(pos, v, COLOR4);
                                     }
 

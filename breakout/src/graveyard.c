@@ -1410,3 +1410,27 @@
 //     *dout = dmin;
 //     return collides;
 // }
+
+// // Time of impact calculation. will back up entities to earliest detected
+// collision
+// // point.
+// static const u32 ITERATIONS = 3;
+// f32 startdt = 0.0f;
+// f32 enddt = 1.0f;
+// for (u32 itoi = 0; itoi < ITERATIONS; ++itoi) {
+//     f32 toi = 0.5f * (startdt + enddt);
+//     e0->pos = Vec3Lerp(e0->ppos, e0->pos, toi);
+//     e1->pos = Vec3Lerp(e1->ppos, e1->pos, toi);
+
+//     Polyhedron pa = EntityBoundingVolume(e0);
+//     Polyhedron pb = EntityBoundingVolume(e1);
+//     CollisionInfo ci = {0};
+//     bool c = TestPolyhedronVsPolyhedron(&pa, &pb, &ci.normal, &ci.depth);
+//     if (c) {
+//         enddt = toi;
+//         collision = ci;  // Keep track of earliest detected collision.
+//         collision.toi = toi;
+//     } else {
+//         startdt = toi;
+//     }
+// }
