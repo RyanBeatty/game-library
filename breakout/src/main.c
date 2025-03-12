@@ -3171,9 +3171,7 @@ static void SceneTickBreakout(GameState* gstate) {
                         u32 size = ArraySizeOf(em->entities);
                         for (u32 i = 0; i < size; ++i) {
                             Entity* e0 = GetEntity(i);
-                            if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER) ||
-                                !(TestFlag(e0->flags, EFLAG_BALL) || TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED)) ||
-                                TestFlag(e0->flags, EFLAG_POWERUP)) {
+                            if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
                                 continue;
                             }
 
@@ -3181,6 +3179,11 @@ static void SceneTickBreakout(GameState* gstate) {
                             for (u32 j = i + 1; j < size; ++j) {
                                 Entity* e1 = GetEntity(j);
                                 if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                                    continue;
+                                }
+
+                                // Dumb speed hack. dont test block vs block
+                                if (TestFlag(e0->flags, EFLAG_BLOCK) && TestFlag(e1->flags, EFLAG_BLOCK)) {
                                     continue;
                                 }
 
@@ -3414,7 +3417,7 @@ static void SceneTickBreakout(GameState* gstate) {
                                         normal = Vec3Negate(normal);
                                     }
 
-                                    {
+                                    if (false) {
                                         // Mult by some slop to be sure the ball is out of the player.
                                         // TODO: something up with collisions here.
                                         f32 slop = 2.0f;
@@ -3464,7 +3467,7 @@ static void SceneTickBreakout(GameState* gstate) {
                                     //     breakpoint();
                                     // }
                                     if (TestFlag(ewall->flags, EFLAG_DEATHZONE)) {
-                                        SERVED = false;
+                                        // SERVED = false;
                                         PlayLSound(GetSound(SOUND_BALL_OUT), 0);
                                     } else {
                                         PlayLSound(GetSound(SOUND_BEEP), 0);
