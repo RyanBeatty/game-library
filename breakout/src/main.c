@@ -3154,7 +3154,8 @@ static void SceneTickBreakout(GameState* gstate) {
                         for (u32 i = 0; i < size; ++i) {
                             Entity* e0 = GetEntity(i);
                             if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER) ||
-                                !(TestFlag(e0->flags, EFLAG_BALL) || TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED))) {
+                                !(TestFlag(e0->flags, EFLAG_BALL) || TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED)) ||
+                                TestFlag(e0->flags, EFLAG_POWERUP)) {
                                 continue;
                             }
 
@@ -3223,11 +3224,13 @@ static void SceneTickBreakout(GameState* gstate) {
                             bool e0player = TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED);
                             bool e0wall = TestFlag(e0->flags, EFLAG_WALL);
                             bool e0block = TestFlag(e0->flags, EFLAG_BLOCK);
+                            bool e0powerup = TestFlag(e0->flags, EFLAG_POWERUP);
 
                             bool e1ball = TestFlag(e1->flags, EFLAG_BALL);
                             bool e1player = TestFlag(e1->flags, EFLAG_PLAYER_CONTROLLED);
                             bool e1wall = TestFlag(e1->flags, EFLAG_WALL);
                             bool e1block = TestFlag(e1->flags, EFLAG_BLOCK);
+                            bool e1powerup = TestFlag(e1->flags, EFLAG_POWERUP);
 
                             {
                                 bool flip = e0player && e1ball;
@@ -3365,7 +3368,9 @@ static void SceneTickBreakout(GameState* gstate) {
                                             powerup->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), 10.0f);
                                             powerup->mesh = GetMesh(M_QUAD);
                                             powerup->color = LYELLOW;
+                                            powerup->phtype = PH_AABB;
                                             FlagOn(powerup->flags, EFLAG_POWERUP);
+                                            FlagOn(powerup->flags, EFLAG_COLLIDER);
                                         }
 
                                         FlagOff(eblock->flags, EFLAG_ACTIVE);
@@ -3376,6 +3381,19 @@ static void SceneTickBreakout(GameState* gstate) {
                                     SCREEN_SHAKE_DT = 0.0f;
 
                                     TraceLog(LOG_INFO, "hit block frame %d", gstate->nframe);
+                                }
+                            }
+
+                            {
+                                bool flip = e0player && e1powerup;
+                                if ((e0powerup && e1player) || flip) {
+                                    Entity* epowerup = e0;
+                                    if (flip) {
+                                        epowerup = e1;
+                                    }
+
+                                    FlagOff(epowerup->flags, EFLAG_ACTIVE);
+                                    PlayLSound(GetSound(SOUND_BEEP), 0);
                                 }
                             }
 
