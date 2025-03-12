@@ -3116,6 +3116,9 @@ static void SceneTickBreakout(GameState* gstate) {
                         e->v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, e->pos)), 30.0f);
                     }
                 }
+
+                TAIL_POSITIONS_RIDX = 0;
+                TAIL_POSITIONS_WIDX = 0;
             }
 
             if (gstate->update && SERVED) {
