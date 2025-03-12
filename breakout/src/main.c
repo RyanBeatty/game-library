@@ -1592,10 +1592,6 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
 }
 
 static bool TestAABBVsAABB(AABB a, AABB b, Vec3* normal, f32* depth) {
-    if (DEBUG_EVER) {
-        breakpoint();
-    }
-
     f32 dcx = a.c.f[0] - b.c.f[0];
     f32 dx = (a.r.f[0] + b.r.f[0]) - f32abs(dcx);
     if (dx <= 0.0) {
@@ -2997,6 +2993,7 @@ static void SceneTickBreakout(GameState* gstate) {
                 if (i == 3) {
                     FlagOn(entity->flags, EFLAG_DEATHZONE);
                 }
+                TraceLog(LOG_INFO, "wall id %d", entity->id);
             }
         }
 
@@ -3186,9 +3183,12 @@ static void SceneTickBreakout(GameState* gstate) {
                                 if (TestFlag(e0->flags, EFLAG_BLOCK) && TestFlag(e1->flags, EFLAG_BLOCK)) {
                                     continue;
                                 }
+                                // Dumb speed hack. dont test block vs block
+                                if (TestFlag(e0->flags, EFLAG_WALL) && TestFlag(e1->flags, EFLAG_WALL)) {
+                                    continue;
+                                }
 
                                 Polyhedron p1 = EntityBoundingVolume(e1);
-
                                 CollisionInfo collision = {0};
                                 bool collides =
                                     TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
@@ -3197,14 +3197,12 @@ static void SceneTickBreakout(GameState* gstate) {
                                     collision.id1 = e1->id;
                                     collision.toi = 1.0f * dt;
 
-                                    if (DEBUG_EVER) {
-                                        breakpoint();
-                                    }
-
                                     collisions[csize++] = collision;
                                     Assert(csize < 10);
                                     // HACKY - allows only one collisions per tick.
-                                    break;
+                                    if (TestFlag(e0->flags, EFLAG_BALL)) {
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -3265,29 +3263,6 @@ static void SceneTickBreakout(GameState* gstate) {
                                                 Vec3 v_parallel = Vec3Scale(normal, Vec3Dot(eball->v, normal));
                                                 Vec3 v_perp = Vec3Sub(eball->v, v_parallel);
                                                 vnew = Vec3Add(Vec3Scale(v_perp, 1.0f), Vec3Scale(v_parallel, -1.0f));
-
-                                                // Sphere s = EntityBoundingVolume(eball).sphere;
-                                                // Vec3 normball = Vec3Negate(normal);
-                                                // Vec3 cpball = Vec3Add(s.c, Vec3Scale(normball, s.r));
-
-                                                // AABB aabb = EntityBoundingVolume(eplayer).aabb;
-                                                // Vec3 center = aabb.c;
-                                                // center.x += aabb.r.x * normal.x;
-                                                // center.y += aabb.r.y * normal.y;
-                                                // center.z += aabb.r.z * normal.z;
-
-                                                // f32 dist = Vec3Len(Vec3Sub(cpball, center));
-                                                // breakpoint();
-
-                                                // f32 angle = 0.0f;
-                                                // if (dist > 0.5f) {
-                                                // }
-
-                                                // Vec3 dir =
-                                                //     Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f),
-                                                //     Deg2Rad(angle));
-                                                // vnew = Vec3Scale(dir, Vec3Len(eball->v));
-
                                             } else {
                                                 // special case dead on collision for now.
                                                 // since we are 2d game logic, just pick the zaxis as the rotation axis.
@@ -3359,7 +3334,8 @@ static void SceneTickBreakout(GameState* gstate) {
                                         SpawnBlockDeathParticles(eblock->pos, normal);
                                         SCORE += 15;
 
-                                        {
+                                        f32 spawn_powerup_coin_flip = (f32)rand() / (f32)RAND_MAX;
+                                        if (spawn_powerup_coin_flip <= 0.3f) {
                                             Entity* powerup = AllocateEntity();
                                             powerup->pos = eblock->pos;
                                             powerup->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), 10.0f);
@@ -3401,9 +3377,9 @@ static void SceneTickBreakout(GameState* gstate) {
 
                                         f32 rot = f32lerp(-20.0f, 20.0f, (f32)rand() / (f32)RAND_MAX);
                                         Vec3 v = Vec3Scale(Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), rot),
-                                                           0.5f * BASE_BALL_SPEED);
-                                        breakpoint();
-                                        SpawnBall(pos, v, COLOR4);
+                                                           BASE_BALL_SPEED);
+                                        Entity* ball = SpawnBall(pos, v, COLOR4);
+                                        TraceLog(LOG_INFO, "spawned ball id: %d", ball->id);
                                     }
 
                                     FlagOff(epowerup->flags, EFLAG_ACTIVE);
