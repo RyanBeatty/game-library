@@ -2904,6 +2904,11 @@ static void SceneTickBreakout(GameState* gstate) {
     static f32 SCREEN_SHAKE_DT = 0.0f;
     static const f32 SCREEN_SHAKE_T = 0.2f;
 
+    static const u32 TAIL_POSITIONS_CAP = 30;
+    static Vec3 TAIL_POSITIONS[30] = {0};
+    static u32 TAIL_POSITIONS_RIDX = 0;
+    static u32 TAIL_POSITIONS_WIDX = 0;
+
     f32 dt = gstate->dt;
 
     // Init logic.
@@ -3531,26 +3536,29 @@ static void SceneTickBreakout(GameState* gstate) {
 
     // Compute and draw ball tail.
     {
-        static const u32 size = 30;
-        static Vec3 POSITIONS[30] = {0};
-        static u32 ridx = 0;
-        static u32 widx = 0;
+        u32 cap = TAIL_POSITIONS_CAP;
+        Vec3* positions = TAIL_POSITIONS;
+        u32 ridx = TAIL_POSITIONS_RIDX;
+        u32 widx = TAIL_POSITIONS_WIDX;
 
         Entity* ball = GetEntity(BALLID);
-        POSITIONS[widx++] = ball->ppos;
-        widx %= size;
+        positions[widx++] = ball->ppos;
+        widx %= cap;
         if (ridx == widx) {
-            ridx = (ridx + 1) % size;
+            ridx = (ridx + 1) % cap;
         }
 
         Vec4 color = COLOR4;
         color.a = 0.4f;
-        for (u32 i = ridx; i != widx; i = (i + 1) % size) {
+        for (u32 i = ridx; i != widx; i = (i + 1) % cap) {
             DrawCmd* cmd = AddCmd();
-            cmd->modelm = Mat4SRT(0.3f, Mat4Identity(), POSITIONS[i]);
+            cmd->modelm = Mat4SRT(0.3f, Mat4Identity(), positions[i]);
             cmd->meshid = GetMesh(M_QUAD);
             cmd->color = color;
         }
+
+        TAIL_POSITIONS_RIDX = ridx;
+        TAIL_POSITIONS_WIDX = widx;
     }
 
     // screen shake.
