@@ -3492,8 +3492,13 @@ static void SceneTickBreakout(GameState* gstate) {
                         color.a = f32lerp(color.a, LRED.a, t);
                     }
 
+                    Vec3 pos = e->pos;
+                    if (TestFlag(e->flags, EFLAG_POWERUP)) {
+                        pos.x += 0.5f * f32sin(5.0f * gstate->timer);
+                    }
+
                     Mat4 scale = Mat4ScaleV(e->scale);
-                    Mat4 translate = Mat4TranslateV(e->pos);
+                    Mat4 translate = Mat4TranslateV(pos);
                     Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
 
                     DrawCmd* cmd = AddCmd();
