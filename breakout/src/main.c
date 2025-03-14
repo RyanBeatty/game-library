@@ -1738,6 +1738,7 @@ typedef enum {
     SOUND_BREAK,
     SOUND_BALL_OUT,
     SOUND_SPAWN_POWERUP,
+    SOUND_SPAWN_NEW_BALL,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1752,6 +1753,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_BREAK] = LoadLSound("assets/sounds/break.wav");
     SOUNDS[SOUND_BALL_OUT] = LoadLSound("assets/sounds/ballout.wav");
     SOUNDS[SOUND_SPAWN_POWERUP] = LoadLSound("assets/sounds/spawn_powerup.wav");
+    SOUNDS[SOUND_SPAWN_NEW_BALL] = LoadLSound("assets/sounds/spawn_new_ball.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -3369,7 +3371,7 @@ static void SceneTickBreakout(GameState* gstate) {
                                     }
 
                                     FlagOff(epowerup->flags, EFLAG_ACTIVE);
-                                    PlayLSound(GetSound(SOUND_BEEP), 0);
+                                    PlayLSound(GetSound(SOUND_SPAWN_NEW_BALL), 0);
                                 }
                             }
 
