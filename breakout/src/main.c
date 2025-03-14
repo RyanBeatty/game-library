@@ -1737,6 +1737,7 @@ typedef enum {
     SOUND_BEEP,
     SOUND_BREAK,
     SOUND_BALL_OUT,
+    SOUND_SPAWN_POWERUP,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1750,6 +1751,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
     SOUNDS[SOUND_BREAK] = LoadLSound("assets/sounds/break.wav");
     SOUNDS[SOUND_BALL_OUT] = LoadLSound("assets/sounds/ballout.wav");
+    SOUNDS[SOUND_SPAWN_POWERUP] = LoadLSound("assets/sounds/spawn_powerup.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -3325,11 +3327,12 @@ static void SceneTickBreakout(GameState* gstate) {
                                             powerup->phtype = PH_AABB;
                                             FlagOn(powerup->flags, EFLAG_POWERUP);
                                             FlagOn(powerup->flags, EFLAG_COLLIDER);
+                                            PlayLSound(GetSound(SOUND_SPAWN_POWERUP), 0);
+                                        } else {
+                                            PlayLSound(GetSound(SOUND_BREAK), 0);
                                         }
 
                                         FlagOff(eblock->flags, EFLAG_ACTIVE);
-
-                                        PlayLSound(GetSound(SOUND_BREAK), 0);
                                     }
 
                                     SCREEN_SHAKE_DT = 0.0f;
