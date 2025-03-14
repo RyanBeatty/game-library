@@ -2909,6 +2909,7 @@ static void SceneTickBreakout(GameState* gstate) {
 
     static u32 SCORE = 0;
     static bool SERVED = false;
+    static u32 LIVE_BALLS = 0;
     static const Vec3 BALL_START_POS = Vec3Lit(0.0f, -5.0f, 0.0f);
     static const Vec3 PLAYER_START_POS = Vec3Lit(0.0f, -17.5f, 0.0f);
     static f32 SCREEN_SHAKE_DT = 0.0f;
@@ -2930,6 +2931,7 @@ static void SceneTickBreakout(GameState* gstate) {
 
         SCORE = 0;
         SERVED = false;
+        LIVE_BALLS = 0;
         SCREEN_SHAKE_DT = SCREEN_SHAKE_T;
 
         // Player init.
@@ -2945,24 +2947,6 @@ static void SceneTickBreakout(GameState* gstate) {
             FlagOn(entity->flags, EFLAG_COLLIDER);
 
             playerid = entity->id;
-        }
-
-        // BALLS init
-        {
-            Vec3 origin = BALL_START_POS;
-
-            {
-                const Vec3 positions[] = {origin};
-
-                Entity* player = GetEntity(playerid);
-                Vec3 v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, origin)), BASE_BALL_SPEED);
-                const Vec3 velocities[] = {v};
-
-                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                    Entity* entity = SpawnBall(positions[i], velocities[i], COLOR4);
-                    BALLID = entity->id;
-                }
-            }
         }
 
         // walls init.
@@ -3105,6 +3089,13 @@ static void SceneTickBreakout(GameState* gstate) {
                 Entity* player = GetEntity(playerid);
                 player->pos = PLAYER_START_POS;
 
+                if (LIVE_BALLS == 0) {
+                    Entity* ball =
+                        SpawnBall(BALL_START_POS, Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0), BASE_BALL_SPEED), COLOR4);
+                    BALLID = ball->id;
+                    ++LIVE_BALLS;
+                }
+
                 for (u32 i = 0; i < esize; ++i) {
                     Entity* e = GetEntity(i);
                     if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
@@ -3113,11 +3104,6 @@ static void SceneTickBreakout(GameState* gstate) {
 
                     if (TestFlag(e->flags, EFLAG_POWERUP)) {
                         FlagOff(e->flags, EFLAG_ACTIVE);
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_BALL)) {
-                        e->pos = BALL_START_POS;
-                        e->v = Vec3Scale(Vec3Normalize(Vec3Sub(player->pos, e->pos)), 30.0f);
                     }
                 }
 
@@ -3376,9 +3362,11 @@ static void SceneTickBreakout(GameState* gstate) {
                                         Vec3 pos = Vec3Add(epowerup->pos, Vec3Scale(normal, slop * collision->depth));
 
                                         f32 rot = f32lerp(-20.0f, 20.0f, (f32)rand() / (f32)RAND_MAX);
-                                        Vec3 v = Vec3Scale(Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), rot),
-                                                           BASE_BALL_SPEED);
+                                        Vec3 v = Vec3Scale(
+                                            Vec3RotateAxis(Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), rot),
+                                            BASE_BALL_SPEED);
                                         Entity* ball = SpawnBall(pos, v, COLOR4);
+                                        ++LIVE_BALLS;
                                         TraceLog(LOG_INFO, "spawned ball id: %d", ball->id);
                                     }
 
@@ -3424,6 +3412,11 @@ static void SceneTickBreakout(GameState* gstate) {
                                     // }
                                     if (TestFlag(ewall->flags, EFLAG_DEATHZONE)) {
                                         // SERVED = false;
+                                        --LIVE_BALLS;
+                                        if (LIVE_BALLS == 0) {
+                                            SERVED = false;
+                                        }
+                                        FlagOff(eball->flags, EFLAG_ACTIVE);
                                         PlayLSound(GetSound(SOUND_BALL_OUT), 0);
                                     } else {
                                         PlayLSound(GetSound(SOUND_BEEP), 0);
