@@ -1915,6 +1915,10 @@ typedef struct Entity {
         struct Entity* next;
     } monster_link;
 
+    Vec3 tail_positions[30];
+    u32 tridx;
+    u32 twidx;
+
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -2905,7 +2909,6 @@ static void SceneTickBreakout(GameState* gstate) {
     static const Vec4 COLOR4 = RGBLit(232.0f, 214.0f, 203.0f);
 
     static EntityId playerid;
-    static EntityId BALLID;
 
     static u32 SCORE = 0;
     static bool SERVED = false;
@@ -2918,9 +2921,6 @@ static void SceneTickBreakout(GameState* gstate) {
     static const f32 BASE_BALL_SPEED = 30.0f;
 
     static const u32 TAIL_POSITIONS_CAP = 30;
-    static Vec3 TAIL_POSITIONS[30] = {0};
-    static u32 TAIL_POSITIONS_RIDX = 0;
-    static u32 TAIL_POSITIONS_WIDX = 0;
 
     f32 dt = gstate->dt;
 
@@ -3090,9 +3090,7 @@ static void SceneTickBreakout(GameState* gstate) {
                 player->pos = PLAYER_START_POS;
 
                 if (LIVE_BALLS == 0) {
-                    Entity* ball =
-                        SpawnBall(BALL_START_POS, Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0), BASE_BALL_SPEED), COLOR4);
-                    BALLID = ball->id;
+                    SpawnBall(BALL_START_POS, Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0), BASE_BALL_SPEED), COLOR4);
                     ++LIVE_BALLS;
                 }
 
@@ -3106,9 +3104,6 @@ static void SceneTickBreakout(GameState* gstate) {
                         FlagOff(e->flags, EFLAG_ACTIVE);
                     }
                 }
-
-                TAIL_POSITIONS_RIDX = 0;
-                TAIL_POSITIONS_WIDX = 0;
             }
 
             if (gstate->update && SERVED) {
@@ -3529,28 +3524,29 @@ static void SceneTickBreakout(GameState* gstate) {
     // Compute and draw ball tail.
     {
         u32 cap = TAIL_POSITIONS_CAP;
-        Vec3* positions = TAIL_POSITIONS;
-        u32 ridx = TAIL_POSITIONS_RIDX;
-        u32 widx = TAIL_POSITIONS_WIDX;
-
-        Entity* ball = GetEntity(BALLID);
-        positions[widx++] = ball->ppos;
-        widx %= cap;
-        if (ridx == widx) {
-            ridx = (ridx + 1) % cap;
-        }
+        EntityManager* em = GetEntityManager();
 
         Vec4 color = COLOR4;
         color.a = 0.4f;
-        for (u32 i = ridx; i != widx; i = (i + 1) % cap) {
-            DrawCmd* cmd = AddCmd();
-            cmd->modelm = Mat4SRT(0.3f, Mat4Identity(), positions[i]);
-            cmd->meshid = GetMesh(M_QUAD);
-            cmd->color = color;
-        }
+        for (u32 ei = 0; ei < ArraySizeOf(em->entities); ++ei) {
+            Entity* e = GetEntity(ei);
+            if (!TestFlag(e->flags, EFLAG_ACTIVE) || !TestFlag(e->flags, EFLAG_BALL)) {
+                continue;
+            }
 
-        TAIL_POSITIONS_RIDX = ridx;
-        TAIL_POSITIONS_WIDX = widx;
+            e->tail_positions[e->twidx++] = e->ppos;
+            e->twidx %= cap;
+            if (e->tridx == e->twidx) {
+                e->tridx = (e->tridx + 1) % cap;
+            }
+
+            for (u32 i = e->tridx; i != e->twidx; i = (i + 1) % cap) {
+                DrawCmd* cmd = AddCmd();
+                cmd->modelm = Mat4SRT(0.3f, Mat4Identity(), e->tail_positions[i]);
+                cmd->meshid = GetMesh(M_QUAD);
+                cmd->color = color;
+            }
+        }
     }
 
     // screen shake.
