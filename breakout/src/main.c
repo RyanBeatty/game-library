@@ -886,6 +886,8 @@ static LShader GetShader() {
         "void main()\n"
         "{\n"
         "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        // For blending to work here properly, its important that either texture is specified or texture
+        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
         "}\0";
     static bool INIT = false;
@@ -3585,7 +3587,7 @@ static void SceneTickBreakout(GameState* gstate) {
 
             // Center text by shifting center forward by half a text cell size and then shifting backward
             // by half the text size.
-            Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.5f * height, 0);
+            Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.3f * height, 0);
             DrawLText(text, strlen(text), pos, 50, LCLEAR);
         }
 
