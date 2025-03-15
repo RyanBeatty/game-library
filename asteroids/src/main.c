@@ -2261,6 +2261,7 @@ static void SceneTickAsteroids(GameState* gstate) {
             u32 esize = ArraySizeOf(em->entities);
 
             if (gstate->update) {
+                // Movement update.
                 for (u32 i = 0; i < esize; ++i) {
                     Entity* e = GetEntity(i);
                     if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
@@ -2270,15 +2271,20 @@ static void SceneTickAsteroids(GameState* gstate) {
                     e->ppos = e->pos;
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        // static const f32 MOVE_THRESHOLD = 0.05f;
-                        // static const f32 MAX_SPEED = 40.0f;
-                        // f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                        // if (f32abs(x) > MOVE_THRESHOLD) {
-                        //     Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), x * MAX_SPEED * dt);
-                        //     e->pos = Vec3Add(e->pos, dx);
-                        // }
+                        static const f32 MOVE_THRESHOLD = 0.05f;
+                        static const f32 MAX_SPEED = 40.0f;
 
-                        // e->straight_shot = IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
+                        Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
+
+                        Vec3 disp = Vec3Zero();
+
+                        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                        f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                        if (f32abs(x) > MOVE_THRESHOLD || f32abs(y) > MOVE_THRESHOLD) {
+                            Vec3 dir = Vec3Lit(x, y, 0.0f);
+                            dir = Vec3Normalize(Vec3Transform(dir, vieworient));
+                            e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
+                        }
                     }
                 }
             }
