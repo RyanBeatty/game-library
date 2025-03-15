@@ -676,7 +676,7 @@ static void TexturesInit() {
 
         // The texture will be all black. Important to do this so that we can properly blend
         // texture colors and uniform frag color.
-        GLubyte transparentPixel[] = {1.0f, 1.0f, 1.0f, 1.0f};
+        GLubyte transparentPixel[] = {255, 255, 255, 255};
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -887,20 +887,6 @@ static LShader GetShader() {
         "{\n"
         "   vec4 txColor = texture(texture0, fTextCoords);\n"
         "    FragColor = txColor * fColor;\n"
-        // "   FragColor = (fColor * (1.0 - txColor.a)) + (txColor * (txColor.a));\n"
-        // I should probably texture most of my geometry now.
-        // "   if (txColor.a < 0.1) {\n"
-        // "       discard;\n"
-        // "   }\n"
-        // TODO: This breaks blending. Reason is because if transparent texture then,
-        // the frag color will have alpha 1 and show up or occulde. but if texture, then not transparent
-        // need to just texture everything and think about how to still have some sort of runtime color
-        // setting (maybe I just generate color textures)
-        // "   FragColor = mix(fColor, fColor * txColor, txColor.a);\n"
-        // useful for debug.
-        // "    FragColor = fColor * texture(texture0, fTextCoords);\n"
-        // "   FragColor = fColor;\n"
-        // "    FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
@@ -2444,6 +2430,41 @@ static void SceneTickTextInEngine(GameState* gstate) {
     }
 
     BeginRender();
+
+    {
+        {
+            ShaderPass* pass = BeginShaderPass(GetShader());
+            pass->view = GetCameraMat(viewpos, vieworient);
+            pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+        }
+
+        {
+            DrawCmd* cmd = AddCmd();
+            cmd->meshid = GetMesh(M_QUAD);
+            cmd->color = LRED;
+            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-20.0f, 0.0f, -50.0f));
+            cmd->txid = GetTexture(TX_AWESOME_FACE).id;
+        }
+
+        {
+            DrawCmd* cmd = AddCmd();
+            cmd->meshid = GetMesh(M_ICOSPHERE);
+            cmd->color = LBLUE;
+            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(20.0f, 0.0f, -50.0f));
+        }
+
+        BeginWireframe();
+        {
+            DrawCmd* cmd = AddCmd();
+            cmd->meshid = GetMesh(M_CUBE);
+            cmd->color = LBLUE;
+            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-50.0f, 0.0f, -50.0f));
+        }
+        EndWireframe();
+
+        EndShaderPass();
+    }
+
     {
         {
             ShaderPass* pass = BeginShaderPass(GetShader());
@@ -2494,40 +2515,6 @@ static void SceneTickTextInEngine(GameState* gstate) {
                 DrawLText(msg, strlen(msg), pos, 25.0f, LRED);
             }
         }
-
-        EndShaderPass();
-    }
-
-    {
-        {
-            ShaderPass* pass = BeginShaderPass(GetShader());
-            pass->view = GetCameraMat(viewpos, vieworient);
-            pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-        }
-
-        {
-            DrawCmd* cmd = AddCmd();
-            cmd->meshid = GetMesh(M_QUAD);
-            cmd->color = LRED;
-            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-20.0f, 0.0f, -50.0f));
-            cmd->txid = GetTexture(TX_AWESOME_FACE).id;
-        }
-
-        {
-            DrawCmd* cmd = AddCmd();
-            cmd->meshid = GetMesh(M_ICOSPHERE);
-            cmd->color = LBLUE;
-            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(20.0f, 0.0f, -50.0f));
-        }
-
-        BeginWireframe();
-        {
-            DrawCmd* cmd = AddCmd();
-            cmd->meshid = GetMesh(M_CUBE);
-            cmd->color = LBLUE;
-            cmd->modelm = Mat4SRT(20.0f, Mat4Identity(), Vec3Lit(-50.0f, 0.0f, -50.0f));
-        }
-        EndWireframe();
 
         EndShaderPass();
     }
@@ -2595,9 +2582,6 @@ static void SceneTickBlendTest(GameState* gstate) {
             }
         }
     }
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     BeginRender();
     {
@@ -3628,9 +3612,9 @@ static void GameStateInit(GameState* gstate) {
     {
         glEnable(GL_DEPTH_TEST);
 
-        // // Allow blending to support drawing textures with transparency.
-        // glEnable(GL_BLEND);
-        // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        // Allow blending to support drawing textures with transparency.
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
     // Register scenes.
