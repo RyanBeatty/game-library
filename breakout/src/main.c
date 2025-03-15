@@ -664,7 +664,7 @@ static void TexturesInit() {
     tcache->txlen = 0;
     tcache->txcap = MAX_TEXTURES;
 
-    // Default transparent texture.
+    // Default black texture.
     {
         Assert(tcache->txlen < tcache->txcap);
 
@@ -674,7 +674,9 @@ static void TexturesInit() {
         glGenTextures(1, &tx.id);
         glBindTexture(GL_TEXTURE_2D, tx.id);
 
-        GLubyte transparentPixel[] = {0, 0, 0, 0};
+        // The texture will be all black. Important to do this so that we can properly blend
+        // texture colors and uniform frag color.
+        GLubyte transparentPixel[] = {1.0f, 1.0f, 1.0f, 1.0f};
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -884,6 +886,7 @@ static LShader GetShader() {
         "void main()\n"
         "{\n"
         "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        "    FragColor = txColor * fColor;\n"
         // "   FragColor = (fColor * (1.0 - txColor.a)) + (txColor * (txColor.a));\n"
         // I should probably texture most of my geometry now.
         // "   if (txColor.a < 0.1) {\n"
@@ -893,7 +896,7 @@ static LShader GetShader() {
         // the frag color will have alpha 1 and show up or occulde. but if texture, then not transparent
         // need to just texture everything and think about how to still have some sort of runtime color
         // setting (maybe I just generate color textures)
-        "   FragColor = mix(fColor, fColor * txColor, txColor.a);\n"
+        // "   FragColor = mix(fColor, fColor * txColor, txColor.a);\n"
         // useful for debug.
         // "    FragColor = fColor * texture(texture0, fTextCoords);\n"
         // "   FragColor = fColor;\n"
