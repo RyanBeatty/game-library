@@ -652,7 +652,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_AWESOME_FACE, TX_HELLO_ATLAS, TX_LFONT, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_SHIP, TX_LFONT, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -690,15 +690,8 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        LTexture tx = UploadTexture("assets/textures/awesomeface.png");
-        tcache->textures[TX_AWESOME_FACE] = tx;
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        LTexture tx = UploadTexture("assets/textures/helloatlas.png");
-        tcache->textures[TX_HELLO_ATLAS] = tx;
+        LTexture tx = UploadTexture("assets/textures/ship.png");
+        tcache->textures[TX_SHIP] = tx;
         ++tcache->txlen;
     }
 
@@ -2029,6 +2022,17 @@ static Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
 
 ////////////////////////////////////////////////////
 
+typedef struct {
+    Vec3 eye;
+    Vec3 orient;
+} LCamera;
+
+static Mat4 LCameraGetView(LCamera c) {
+    return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
+}
+
+////////////////////////////////////////////////////
+
 #define MAX_SCENES 10
 
 typedef struct GameState {
@@ -2175,6 +2179,232 @@ static void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 c
 static Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
 
 #define MAX_ENTITY_BATCH 256
+
+static void SceneTickAsteroids(GameState* gstate) {
+    static LCamera CAMERA = {0};
+
+    f32 dt = gstate->dt;
+
+    // Init logic.
+    if (!gstate->init) {
+        memset(&CAMERA, 0, sizeof(CAMERA));
+
+        // // Player init.
+        // {
+        //     Entity* entity = AllocateEntity();
+        //     entity->pos = PLAYER_START_POS;
+        //     entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
+        //     entity->mesh = GetMesh(M_CUBE);
+        //     entity->color = COLOR3;
+        //     entity->scale = Vec3Lit(15.0f, 0.5f, 1.0f);
+        //     entity->phtype = PH_AABB;
+        //     FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        //     FlagOn(entity->flags, EFLAG_COLLIDER);
+
+        //     playerid = entity->id;
+        // }
+    }
+
+    BeginRender();
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
+    // Scene5 update.
+    {
+        if (gstate->debug) {
+            static const u8 GAMEPAD_ID = 0;
+            static bool FREECAM = true;
+
+            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
+                FREECAM = !FREECAM;
+            }
+
+            // Left stick movement.
+            {
+                static const f32 WALK_VEL = 20.0f;
+                static const f32 RUN_VEL = 2.0f * WALK_VEL;
+
+                f32 vel = WALK_VEL;
+                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                    vel = RUN_VEL;
+                }
+
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                Vec3 dir_model = Vec3Lit(x, 0.0f, y);
+
+                Vec3 bodyorient = CAMERA.orient;
+                // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
+                bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
+                Mat4 rotation = Mat4RotateEuler(bodyorient);
+
+                Vec3 dir_world = Vec3Transform(dir_model, rotation);
+                Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
+                CAMERA.eye = Vec3Add(CAMERA.eye, mov_world);
+            }
+
+            // Right stick movement.
+            {
+                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                if (x != 0.0f || y != 0.0f) {
+                    static const rad VEL = Deg2Rad(90.0f);
+
+                    // rotate orient.
+                    CAMERA.orient.yaw += -1.0f * x * VEL * dt;
+                    CAMERA.orient.pitch += y * VEL * dt;
+                    // Clamp pitch to avoid looking too high/low which would sign flip things.
+                    CAMERA.orient.pitch = f32clamp(CAMERA.orient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
+                }
+            }
+        } else {
+            CAMERA.eye = Vec3Lit(0.0f, 0.0f, 5.0f);
+            CAMERA.orient = Vec3Zero();
+        }
+
+        {
+            EntityManager* em = GetEntityManager();
+            u32 esize = ArraySizeOf(em->entities);
+
+            if (gstate->update) {
+                for (u32 i = 0; i < esize; ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
+
+                    e->ppos = e->pos;
+
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        // static const f32 MOVE_THRESHOLD = 0.05f;
+                        // static const f32 MAX_SPEED = 40.0f;
+                        // f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                        // if (f32abs(x) > MOVE_THRESHOLD) {
+                        //     Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), x * MAX_SPEED * dt);
+                        //     e->pos = Vec3Add(e->pos, dx);
+                        // }
+
+                        // e->straight_shot = IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
+                    }
+                }
+
+                // // Collisions.
+                // {
+                //     CollisionInfo collisions[10] = {0};
+                //     u32 csize = 0;
+
+                //     // Detection.
+                //     u32 size = ArraySizeOf(em->entities);
+                //     for (u32 i = 0; i < size; ++i) {
+                //         Entity* e0 = GetEntity(i);
+                //         if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                //             continue;
+                //         }
+
+                //         Polyhedron p0 = EntityBoundingVolume(e0);
+                //         for (u32 j = i + 1; j < size; ++j) {
+                //             Entity* e1 = GetEntity(j);
+                //             if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                //                 continue;
+                //             }
+
+                //             // Dumb speed hack. dont test block vs block
+                //             if (TestFlag(e0->flags, EFLAG_BLOCK) && TestFlag(e1->flags, EFLAG_BLOCK)) {
+                //                 continue;
+                //             }
+                //             // Dumb speed hack. dont test block vs block
+                //             if (TestFlag(e0->flags, EFLAG_WALL) && TestFlag(e1->flags, EFLAG_WALL)) {
+                //                 continue;
+                //             }
+
+                //             Polyhedron p1 = EntityBoundingVolume(e1);
+                //             CollisionInfo collision = {0};
+                //             bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal,
+                //             &collision.depth); if (collides) {
+                //                 collision.id0 = e0->id;
+                //                 collision.id1 = e1->id;
+                //                 collision.toi = 1.0f * dt;
+
+                //                 collisions[csize++] = collision;
+                //                 Assert(csize < 10);
+                //                 // HACKY - allows only one collisions per tick.
+                //                 if (TestFlag(e0->flags, EFLAG_BALL)) {
+                //                     break;
+                //                 }
+                //             }
+                //         }
+                //     }
+
+                //     // Response.
+                //     for (u32 i = 0; i < csize; ++i) {
+                //         CollisionInfo* collision = &collisions[i];
+                //         Entity* e0 = GetEntity(collision->id0);
+                //         Entity* e1 = GetEntity(collision->id1);
+                //     }
+                // }
+            }
+
+            // Draw background
+            {
+                DrawCmd* cmd = AddCmd();
+                cmd->meshid = GetMesh(M_QUAD);
+                cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
+                cmd->color = LBLACK;
+            }
+
+            DrawLTexture(GetTexture(TX_SHIP), Vec2Zero(), 2.0f);
+
+            // Draw.
+            for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
+                Entity* e = GetEntity(i);
+                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                    continue;
+                }
+
+                if (TestFlag(e->flags, EFLAG_DRAW)) {
+                    Vec4 color = e->color;
+                    Vec3 pos = e->pos;
+
+                    Mat4 scale = Mat4ScaleV(e->scale);
+                    Mat4 translate = Mat4TranslateV(pos);
+                    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+
+                    DrawCmd* cmd = AddCmd();
+                    cmd->meshid = e->mesh;
+                    cmd->modelm = model;
+                    cmd->color = color;
+
+                    BeginWireframe();
+                    DrawCmd* cmd2 = AddCmd();
+                    cmd2->meshid = e->mesh;
+                    cmd2->modelm = model;
+                    cmd2->color = color;
+                    EndWireframe();
+                }
+
+                if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+                    BeginWireframe();
+
+                    Sphere sphere = EntityBoundingSphere(e);
+                    DrawLSphere(sphere.c, sphere.r, LYELLOW);
+
+                    AABB aabb = EntityAABB(e);
+                    DrawAABB(aabb.c, aabb.r, LBLUE);
+
+                    EndWireframe();
+                }
+            }
+        }
+    }
+
+    ParticleSystemTick(dt);
+
+    pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
+    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+    // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 55.0f);
+    EndShaderPass();
+
+    EndRender();
+}
 
 static void Scene1Tick(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -2343,232 +2573,6 @@ static void Scene1Tick(GameState* gstate) {
     pass->view = GetCameraMat(viewpos, vieworient);
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
     EndShaderPass();
-    EndRender();
-}
-
-static void SceneTickAsteroids(GameState* gstate) {
-    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-    f32 dt = gstate->dt;
-
-    // Init logic.
-    if (!gstate->init) {
-        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-        // // Player init.
-        // {
-        //     Entity* entity = AllocateEntity();
-        //     entity->pos = PLAYER_START_POS;
-        //     entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
-        //     entity->mesh = GetMesh(M_CUBE);
-        //     entity->color = COLOR3;
-        //     entity->scale = Vec3Lit(15.0f, 0.5f, 1.0f);
-        //     entity->phtype = PH_AABB;
-        //     FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        //     FlagOn(entity->flags, EFLAG_COLLIDER);
-
-        //     playerid = entity->id;
-        // }
-    }
-
-    BeginRender();
-    ShaderPass* pass = BeginShaderPass(GetShader());
-
-    // Scene5 update.
-    {
-        if (gstate->debug) {
-            static const u8 GAMEPAD_ID = 0;
-            static bool FREECAM = true;
-
-            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
-                FREECAM = !FREECAM;
-            }
-
-            // Left stick movement.
-            {
-                static const f32 WALK_VEL = 20.0f;
-                static const f32 RUN_VEL = 2.0f * WALK_VEL;
-
-                f32 vel = WALK_VEL;
-                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-                    vel = RUN_VEL;
-                }
-
-                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                Vec3 dir_model = Vec3Lit(x, 0.0f, y);
-
-                Vec3 bodyorient = vieworient;
-                // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
-                bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
-                Mat4 rotation = Mat4RotateEuler(bodyorient);
-
-                Vec3 dir_world = Vec3Transform(dir_model, rotation);
-                Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
-                viewpos = Vec3Add(viewpos, mov_world);
-            }
-
-            // Right stick movement.
-            {
-                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                if (x != 0.0f || y != 0.0f) {
-                    static const rad VEL = Deg2Rad(90.0f);
-
-                    // rotate orient.
-                    vieworient.yaw += -1.0f * x * VEL * dt;
-                    vieworient.pitch += y * VEL * dt;
-                    // Clamp pitch to avoid looking too high/low which would sign flip things.
-                    vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
-                }
-            }
-        } else {
-            viewpos = Vec3Lit(0.0f, 0.0f, 50.0f);
-            vieworient = Vec3Zero();
-        }
-
-        {
-            EntityManager* em = GetEntityManager();
-            u32 esize = ArraySizeOf(em->entities);
-
-            if (gstate->update) {
-                for (u32 i = 0; i < esize; ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                        continue;
-                    }
-
-                    e->ppos = e->pos;
-
-                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        // static const f32 MOVE_THRESHOLD = 0.05f;
-                        // static const f32 MAX_SPEED = 40.0f;
-                        // f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                        // if (f32abs(x) > MOVE_THRESHOLD) {
-                        //     Vec3 dx = Vec3Scale(Vec3Lit(1.0f, 0.0f, 0.0f), x * MAX_SPEED * dt);
-                        //     e->pos = Vec3Add(e->pos, dx);
-                        // }
-
-                        // e->straight_shot = IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
-                    }
-                }
-
-                // // Collisions.
-                // {
-                //     CollisionInfo collisions[10] = {0};
-                //     u32 csize = 0;
-
-                //     // Detection.
-                //     u32 size = ArraySizeOf(em->entities);
-                //     for (u32 i = 0; i < size; ++i) {
-                //         Entity* e0 = GetEntity(i);
-                //         if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
-                //             continue;
-                //         }
-
-                //         Polyhedron p0 = EntityBoundingVolume(e0);
-                //         for (u32 j = i + 1; j < size; ++j) {
-                //             Entity* e1 = GetEntity(j);
-                //             if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                //                 continue;
-                //             }
-
-                //             // Dumb speed hack. dont test block vs block
-                //             if (TestFlag(e0->flags, EFLAG_BLOCK) && TestFlag(e1->flags, EFLAG_BLOCK)) {
-                //                 continue;
-                //             }
-                //             // Dumb speed hack. dont test block vs block
-                //             if (TestFlag(e0->flags, EFLAG_WALL) && TestFlag(e1->flags, EFLAG_WALL)) {
-                //                 continue;
-                //             }
-
-                //             Polyhedron p1 = EntityBoundingVolume(e1);
-                //             CollisionInfo collision = {0};
-                //             bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal,
-                //             &collision.depth); if (collides) {
-                //                 collision.id0 = e0->id;
-                //                 collision.id1 = e1->id;
-                //                 collision.toi = 1.0f * dt;
-
-                //                 collisions[csize++] = collision;
-                //                 Assert(csize < 10);
-                //                 // HACKY - allows only one collisions per tick.
-                //                 if (TestFlag(e0->flags, EFLAG_BALL)) {
-                //                     break;
-                //                 }
-                //             }
-                //         }
-                //     }
-
-                //     // Response.
-                //     for (u32 i = 0; i < csize; ++i) {
-                //         CollisionInfo* collision = &collisions[i];
-                //         Entity* e0 = GetEntity(collision->id0);
-                //         Entity* e1 = GetEntity(collision->id1);
-                //     }
-                // }
-            }
-
-            // Draw background
-            {
-                DrawCmd* cmd = AddCmd();
-                cmd->meshid = GetMesh(M_QUAD);
-                cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
-                cmd->color = LBLACK;
-            }
-
-            // Draw.
-            for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
-                Entity* e = GetEntity(i);
-                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                    continue;
-                }
-
-                if (TestFlag(e->flags, EFLAG_DRAW)) {
-                    Vec4 color = e->color;
-                    Vec3 pos = e->pos;
-
-                    Mat4 scale = Mat4ScaleV(e->scale);
-                    Mat4 translate = Mat4TranslateV(pos);
-                    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-
-                    DrawCmd* cmd = AddCmd();
-                    cmd->meshid = e->mesh;
-                    cmd->modelm = model;
-                    cmd->color = color;
-
-                    BeginWireframe();
-                    DrawCmd* cmd2 = AddCmd();
-                    cmd2->meshid = e->mesh;
-                    cmd2->modelm = model;
-                    cmd2->color = color;
-                    EndWireframe();
-                }
-
-                if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
-                    BeginWireframe();
-
-                    Sphere sphere = EntityBoundingSphere(e);
-                    DrawLSphere(sphere.c, sphere.r, LYELLOW);
-
-                    AABB aabb = EntityAABB(e);
-                    DrawAABB(aabb.c, aabb.r, LBLUE);
-
-                    EndWireframe();
-                }
-            }
-        }
-    }
-
-    ParticleSystemTick(dt);
-
-    pass->view = GetCameraMat(viewpos, vieworient);
-    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
-    // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 55.0f);
-    EndShaderPass();
-
     EndRender();
 }
 
