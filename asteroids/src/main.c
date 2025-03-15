@@ -2101,30 +2101,6 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
     EndWireframe();
 }
 
-// TODO: Consider deriving partial orientation from arrow direction and then having passed in orient
-// be the upright orientation of the entitie's rotation. Maybe this function here could be the Pro version
-// and the other could be default.
-static void DrawArrow(Vec3 forward, Vec3 pos, Mat4 orient, f32 scale, Vec4 color) {
-    // tail.
-    {
-        DrawCmd* cmd = AddCmd();
-        cmd->meshid = GetMesh(M_CUBE);
-        cmd->modelm = Mat4SRT(scale, orient, pos);
-        cmd->color = color;
-    }
-
-    forward = Vec3Normalize(forward);
-    pos = Vec3Add(pos, Vec3Scale(forward, 1.0f * scale));
-
-    // tip.
-    {
-        DrawCmd* cmd = AddCmd();
-        cmd->meshid = GetMesh(M_PYRAMID);
-        cmd->modelm = Mat4SRT(scale, orient, pos);
-        cmd->color = color;
-    }
-}
-
 static void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_ICOSPHERE);
@@ -2370,43 +2346,9 @@ static void Scene1Tick(GameState* gstate) {
     EndRender();
 }
 
-static Entity* SpawnBall(Vec3 pos, Vec3 v, Vec4 color) {
-    Entity* entity = AllocateEntity();
-    entity->pos = pos;
-    entity->mesh = GetMesh(M_ICOSPHERE);
-    entity->color = color;
-    entity->scale = Vec3Lit(0.5f, 0.5f, 0.5f);
-    entity->v = v;
-    entity->phtype = PH_SPHERE;
-    entity->last_hit = -1;
-    FlagOn(entity->flags, EFLAG_BALL);
-    FlagOn(entity->flags, EFLAG_COLLIDER);
-    return entity;
-}
-
-static void SceneTickBreakout(GameState* gstate) {
+static void SceneTickAsteroids(GameState* gstate) {
     static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
     static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-    static const Vec4 COLOR0 = RGBLit(181.0f, 141.0f, 182.0f);
-    static const Vec4 COLOR1 = RGBLit(93.0f, 46.0f, 70.0f);
-    static const Vec4 COLOR2 = RGBLit(173.0f, 106.0f, 108.0f);
-    static const Vec4 COLOR3 = RGBLit(208.0f, 173.0f, 167.0f);
-    static const Vec4 COLOR4 = RGBLit(232.0f, 214.0f, 203.0f);
-
-    static EntityId playerid;
-
-    static u32 SCORE = 0;
-    static bool SERVED = false;
-    static u32 LIVE_BALLS = 0;
-    static const Vec3 BALL_START_POS = Vec3Lit(0.0f, -5.0f, 0.0f);
-    static const Vec3 PLAYER_START_POS = Vec3Lit(0.0f, -17.5f, 0.0f);
-    static f32 SCREEN_SHAKE_DT = 0.0f;
-    static const f32 SCREEN_SHAKE_T = 0.2f;
-
-    static const f32 BASE_BALL_SPEED = 30.0f;
-
-    static const u32 TAIL_POSITIONS_CAP = 30;
 
     f32 dt = gstate->dt;
 
@@ -2414,11 +2356,6 @@ static void SceneTickBreakout(GameState* gstate) {
     if (!gstate->init) {
         viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
         vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-        SCORE = 0;
-        SERVED = false;
-        LIVE_BALLS = 0;
-        SCREEN_SHAKE_DT = SCREEN_SHAKE_T;
 
         // // Player init.
         // {
@@ -2433,81 +2370,6 @@ static void SceneTickBreakout(GameState* gstate) {
         //     FlagOn(entity->flags, EFLAG_COLLIDER);
 
         //     playerid = entity->id;
-        // }
-
-        // // walls init.
-        // {
-        //     i32 xoffset = 35.0f;
-        //     i32 yoffset = 20.0f;
-        //     u32 width = 1.0f;
-        //     u32 height = 200.0f;
-        //     u32 depth = 10.0f;
-
-        //     Vec3 positions[] = {Vec3Lit(xoffset, 0.0f, 0.0f), Vec3Lit(-xoffset, 0.0f, 0.0f),
-        //                         Vec3Lit(1.0f, yoffset, 0.0f), Vec3Lit(1.0f, -(yoffset + 4), 0.0f)};
-        //     Vec3 scales[] = {Vec3Lit(width, height, depth), Vec3Lit(width, height, depth),
-        //                      Vec3Lit(height, width, depth), Vec3Lit(height, width, depth)};
-
-        //     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-        //         Entity* entity = AllocateEntity();
-        //         entity->pos = positions[i];
-        //         entity->mesh = GetMesh(M_CUBE);
-        //         entity->color = COLOR2;
-        //         entity->scale = scales[i];
-        //         entity->phtype = PH_AABB;
-        //         entity->friction = 0.7f;
-        //         entity->restitution = 0.8f;
-        //         entity->phtype = PH_AABB;
-        //         FlagOn(entity->flags, EFLAG_WALL);
-        //         FlagOn(entity->flags, EFLAG_COLLIDER);
-        //         if (i == 3) {
-        //             FlagOn(entity->flags, EFLAG_DEATHZONE);
-        //         }
-        //         TraceLog(LOG_INFO, "wall id %d", entity->id);
-        //     }
-        // }
-
-        // // blocks init.
-        // {
-        //     Vec3 scale = Vec3Lit(2.0f, 2.0f, 2.0f);
-        //     Mat4 m = Mat4ScaleV(scale);
-
-        //     Vec3 vs[MAX_VERTICES] = {0};
-        //     LMesh mesh = GetMesh(M_CUBE);
-        //     u32 vsize = mesh.ntriangles * 3;
-        //     Assert(vsize < MAX_VERTICES);
-        //     for (u32 i = 0; i < vsize; ++i) {
-        //         Vec3 pos = LMeshGetVertex(mesh, i).pos;
-        //         vs[i] = Vec3Transform(pos, m);
-        //     }
-        //     AABB aabb = ComputeAABB(vs, vsize);
-
-        //     Vec3 xoffset = Vec3Lit(2.0f * aabb.r.f[0], 0.0f, 0.0f);
-        //     Vec3 yoffset = Vec3Lit(0.0f, 2.0f * aabb.r.f[1], 0.0f);
-
-        //     u32 rsize = 20;
-        //     Vec3 rowstart = Vec3Lit(-(rsize * aabb.r.f[0]), 0.0f, 0.0f);
-
-        //     for (u32 row = 0; row < 5; ++row) {
-        //         Vec3 pos = rowstart;
-        //         for (u32 i = 0; i < rsize; ++i) {
-        //             Entity* entity = AllocateEntity();
-        //             entity->pos = pos;
-        //             entity->mesh = GetMesh(M_CUBE);
-        //             entity->color = i % 2 == 0 ? COLOR0 : COLOR2;
-        //             entity->scale = scale;
-        //             entity->phtype = PH_AABB;
-        //             entity->friction = 0.7f;
-        //             entity->restitution = 0.8f;
-        //             entity->phtype = PH_AABB;
-        //             FlagOn(entity->flags, EFLAG_BLOCK);
-        //             FlagOn(entity->flags, EFLAG_COLLIDER);
-        //             entity->health = 1;
-
-        //             pos = Vec3Add(pos, xoffset);
-        //         }
-        //         rowstart = Vec3Add(rowstart, yoffset);
-        //     }
         // }
     }
 
@@ -2571,7 +2433,7 @@ static void SceneTickBreakout(GameState* gstate) {
             EntityManager* em = GetEntityManager();
             u32 esize = ArraySizeOf(em->entities);
 
-            if (gstate->update && SERVED) {
+            if (gstate->update) {
                 for (u32 i = 0; i < esize; ++i) {
                     Entity* e = GetEntity(i);
                     if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
@@ -2579,13 +2441,6 @@ static void SceneTickBreakout(GameState* gstate) {
                     }
 
                     e->ppos = e->pos;
-
-                    if (TestFlag(e->flags, EFLAG_BALL) || TestFlag(e->flags, EFLAG_POWERUP)) {
-                        Vec3 dx = Vec3Scale(e->v, dt);
-                        e->pos = Vec3Add(e->pos, dx);
-                        // TraceLog(LOG_INFO, "%f %f %f", e->pos.x, e->pos.y, e->pos.z);
-                        // TraceLog(LOG_INFO, "v: %f %f %f", e->v.x, e->v.y, e->v.z);
-                    }
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         // static const f32 MOVE_THRESHOLD = 0.05f;
@@ -2600,60 +2455,60 @@ static void SceneTickBreakout(GameState* gstate) {
                     }
                 }
 
-                // Collisions.
-                {
-                    CollisionInfo collisions[10] = {0};
-                    u32 csize = 0;
+                // // Collisions.
+                // {
+                //     CollisionInfo collisions[10] = {0};
+                //     u32 csize = 0;
 
-                    // Detection.
-                    u32 size = ArraySizeOf(em->entities);
-                    for (u32 i = 0; i < size; ++i) {
-                        Entity* e0 = GetEntity(i);
-                        if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
-                            continue;
-                        }
+                //     // Detection.
+                //     u32 size = ArraySizeOf(em->entities);
+                //     for (u32 i = 0; i < size; ++i) {
+                //         Entity* e0 = GetEntity(i);
+                //         if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
+                //             continue;
+                //         }
 
-                        Polyhedron p0 = EntityBoundingVolume(e0);
-                        for (u32 j = i + 1; j < size; ++j) {
-                            Entity* e1 = GetEntity(j);
-                            if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                                continue;
-                            }
+                //         Polyhedron p0 = EntityBoundingVolume(e0);
+                //         for (u32 j = i + 1; j < size; ++j) {
+                //             Entity* e1 = GetEntity(j);
+                //             if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
+                //                 continue;
+                //             }
 
-                            // Dumb speed hack. dont test block vs block
-                            if (TestFlag(e0->flags, EFLAG_BLOCK) && TestFlag(e1->flags, EFLAG_BLOCK)) {
-                                continue;
-                            }
-                            // Dumb speed hack. dont test block vs block
-                            if (TestFlag(e0->flags, EFLAG_WALL) && TestFlag(e1->flags, EFLAG_WALL)) {
-                                continue;
-                            }
+                //             // Dumb speed hack. dont test block vs block
+                //             if (TestFlag(e0->flags, EFLAG_BLOCK) && TestFlag(e1->flags, EFLAG_BLOCK)) {
+                //                 continue;
+                //             }
+                //             // Dumb speed hack. dont test block vs block
+                //             if (TestFlag(e0->flags, EFLAG_WALL) && TestFlag(e1->flags, EFLAG_WALL)) {
+                //                 continue;
+                //             }
 
-                            Polyhedron p1 = EntityBoundingVolume(e1);
-                            CollisionInfo collision = {0};
-                            bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal, &collision.depth);
-                            if (collides) {
-                                collision.id0 = e0->id;
-                                collision.id1 = e1->id;
-                                collision.toi = 1.0f * dt;
+                //             Polyhedron p1 = EntityBoundingVolume(e1);
+                //             CollisionInfo collision = {0};
+                //             bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal,
+                //             &collision.depth); if (collides) {
+                //                 collision.id0 = e0->id;
+                //                 collision.id1 = e1->id;
+                //                 collision.toi = 1.0f * dt;
 
-                                collisions[csize++] = collision;
-                                Assert(csize < 10);
-                                // HACKY - allows only one collisions per tick.
-                                if (TestFlag(e0->flags, EFLAG_BALL)) {
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                //                 collisions[csize++] = collision;
+                //                 Assert(csize < 10);
+                //                 // HACKY - allows only one collisions per tick.
+                //                 if (TestFlag(e0->flags, EFLAG_BALL)) {
+                //                     break;
+                //                 }
+                //             }
+                //         }
+                //     }
 
-                    // Response.
-                    for (u32 i = 0; i < csize; ++i) {
-                        CollisionInfo* collision = &collisions[i];
-                        Entity* e0 = GetEntity(collision->id0);
-                        Entity* e1 = GetEntity(collision->id1);
-                    }
-                }
+                //     // Response.
+                //     for (u32 i = 0; i < csize; ++i) {
+                //         CollisionInfo* collision = &collisions[i];
+                //         Entity* e0 = GetEntity(collision->id0);
+                //         Entity* e1 = GetEntity(collision->id1);
+                //     }
+                // }
             }
 
             // Draw background
@@ -2661,7 +2516,7 @@ static void SceneTickBreakout(GameState* gstate) {
                 DrawCmd* cmd = AddCmd();
                 cmd->meshid = GetMesh(M_QUAD);
                 cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
-                cmd->color = COLOR1;
+                cmd->color = LBLACK;
             }
 
             // Draw.
@@ -2742,7 +2597,7 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
-        gstate->scenefuncs[idx++] = SceneTickBreakout;
+        gstate->scenefuncs[idx++] = SceneTickAsteroids;
         gstate->scenefuncs[idx++] = Scene1Tick;
         Assert(idx < MAX_SCENES);
         gstate->scenefuncssize = idx;
