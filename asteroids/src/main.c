@@ -2195,7 +2195,7 @@ static void SceneTickAsteroids(GameState* gstate) {
             entity->pos = Vec3Zero();
             entity->mesh = GetMesh(M_QUAD);
             entity->color = LCLEAR;
-            entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            entity->scale = Vec3Lit(100.0f, 100.0f, 1.0f);
             FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
         }
     }
@@ -2336,20 +2336,22 @@ static void SceneTickAsteroids(GameState* gstate) {
 
     ParticleSystemTick(dt);
 
-    {
-        DrawCmd* cmd = AddCmd();
-        cmd->color = LBLUE;
-        cmd->meshid = GetMesh(M_QUAD);
-        cmd->modelm = Mat4ScaleV(Vec3Lit(100.0f, 100.0f, 1.0f));
-    }
+    // Debug draw blue quad.
+    // {
+    //     DrawCmd* cmd = AddCmd();
+    //     cmd->color = LBLUE;
+    //     cmd->meshid = GetMesh(M_QUAD);
+    //     cmd->modelm = Mat4ScaleV(Vec3Lit(100.0f, 100.0f, 1.0f));
+    // }
 
     // pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
     pass->view = Mat4Identity();
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
-    u32 hwidth = 0.5f * GetScreenWidth();
-    u32 hheight = 0.5f * GetScreenHeight();
-    pass->proj = Mat4Ortho(-10.0f, 10.0f, -10.0f, 10.0f, -3.0f, 3.0f);
+    i32 hwidth = 0.5f * GetScreenWidth();
+    i32 hheight = 0.5f * GetScreenHeight();
+    breakpoint();
+    pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -3.0f, 3.0f);
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
 
