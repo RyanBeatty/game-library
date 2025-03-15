@@ -2189,20 +2189,15 @@ static void SceneTickAsteroids(GameState* gstate) {
     if (!gstate->init) {
         memset(&CAMERA, 0, sizeof(CAMERA));
 
-        // // Player init.
-        // {
-        //     Entity* entity = AllocateEntity();
-        //     entity->pos = PLAYER_START_POS;
-        //     entity->scale = Vec3Lit(15.0f, 15.0f, 15.0f);
-        //     entity->mesh = GetMesh(M_CUBE);
-        //     entity->color = COLOR3;
-        //     entity->scale = Vec3Lit(15.0f, 0.5f, 1.0f);
-        //     entity->phtype = PH_AABB;
-        //     FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
-        //     FlagOn(entity->flags, EFLAG_COLLIDER);
-
-        //     playerid = entity->id;
-        // }
+        // Player init.
+        {
+            Entity* entity = AllocateEntity();
+            entity->pos = Vec3Zero();
+            entity->mesh = GetMesh(M_QUAD);
+            entity->color = LCLEAR;
+            entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+        }
     }
 
     BeginRender();
@@ -2286,61 +2281,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                         // e->straight_shot = IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
                     }
                 }
-
-                // // Collisions.
-                // {
-                //     CollisionInfo collisions[10] = {0};
-                //     u32 csize = 0;
-
-                //     // Detection.
-                //     u32 size = ArraySizeOf(em->entities);
-                //     for (u32 i = 0; i < size; ++i) {
-                //         Entity* e0 = GetEntity(i);
-                //         if (!TestFlag(e0->flags, EFLAG_ACTIVE) || !TestFlag(e0->flags, EFLAG_COLLIDER)) {
-                //             continue;
-                //         }
-
-                //         Polyhedron p0 = EntityBoundingVolume(e0);
-                //         for (u32 j = i + 1; j < size; ++j) {
-                //             Entity* e1 = GetEntity(j);
-                //             if (!TestFlag(e1->flags, EFLAG_ACTIVE) || !TestFlag(e1->flags, EFLAG_COLLIDER)) {
-                //                 continue;
-                //             }
-
-                //             // Dumb speed hack. dont test block vs block
-                //             if (TestFlag(e0->flags, EFLAG_BLOCK) && TestFlag(e1->flags, EFLAG_BLOCK)) {
-                //                 continue;
-                //             }
-                //             // Dumb speed hack. dont test block vs block
-                //             if (TestFlag(e0->flags, EFLAG_WALL) && TestFlag(e1->flags, EFLAG_WALL)) {
-                //                 continue;
-                //             }
-
-                //             Polyhedron p1 = EntityBoundingVolume(e1);
-                //             CollisionInfo collision = {0};
-                //             bool collides = TestPolyhedronVsPolyhedron(&p0, &p1, &collision.normal,
-                //             &collision.depth); if (collides) {
-                //                 collision.id0 = e0->id;
-                //                 collision.id1 = e1->id;
-                //                 collision.toi = 1.0f * dt;
-
-                //                 collisions[csize++] = collision;
-                //                 Assert(csize < 10);
-                //                 // HACKY - allows only one collisions per tick.
-                //                 if (TestFlag(e0->flags, EFLAG_BALL)) {
-                //                     break;
-                //                 }
-                //             }
-                //         }
-                //     }
-
-                //     // Response.
-                //     for (u32 i = 0; i < csize; ++i) {
-                //         CollisionInfo* collision = &collisions[i];
-                //         Entity* e0 = GetEntity(collision->id0);
-                //         Entity* e1 = GetEntity(collision->id1);
-                //     }
-                // }
             }
 
             // Draw background
@@ -2351,7 +2291,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                 cmd->color = LBLACK;
             }
 
-            DrawLTexture(GetTexture(TX_SHIP), Vec2Zero(), 2.0f);
+            // DrawLTexture(GetTexture(TX_SHIP), Vec2Zero(), 2.0f);
 
             // Draw.
             for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
@@ -2372,13 +2312,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                     cmd->meshid = e->mesh;
                     cmd->modelm = model;
                     cmd->color = color;
-
-                    BeginWireframe();
-                    DrawCmd* cmd2 = AddCmd();
-                    cmd2->meshid = e->mesh;
-                    cmd2->modelm = model;
-                    cmd2->color = color;
-                    EndWireframe();
+                    cmd->txid = GetTexture(TX_SHIP).id;
                 }
 
                 if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
