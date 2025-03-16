@@ -2320,6 +2320,10 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                     e->ppos = e->pos;
 
+                    if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    }
+
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
                         static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
@@ -2367,13 +2371,13 @@ static void SceneTickAsteroids(GameState* gstate) {
                 }
 
                 if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                    TraceLog(LOG_INFO, "fire");
+                    static const f32 PROJECTILE_SPEED = 600.0f;
                     Entity* player = GetEntity(PLAYER_ID);
 
                     Entity* bullet = AllocateEntity();
 
                     bullet->pos = player->pos;
-                    bullet->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), player->orient), 20.0f);
+                    bullet->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), player->orient), PROJECTILE_SPEED);
                     bullet->orient = player->orient;
 
                     bullet->graphics.mid = GetMesh(M_QUAD);
