@@ -1833,55 +1833,42 @@ static void ParticleSystemTick(f32 dt) {
 ////////////////////////////////////////////////////////////
 
 typedef struct {
-    LTexture tx;
-    // bottom left of src sprite, in png space (not uv)
-    Vec2 c_src;
-    // width/height of sprite in png space
-    Vec2 r_src;
+    Vec3 pos;
+    Vec3 scale;
+    // Mat4 orient;
+
+    TextureId txid;
+    // // bottom left of src sprite, in png space (not uv)
+    // Vec2 c_src;
+    // // width/height of sprite in png space
+    // Vec2 r_src;
     // // center of the sprite quad in world space.
     // Vec2 c_dst;
     // // half width/height in world space.
     // Vec2 r_dst;
+
+    Vec2 uvscale;
+    Vec2 uvoffset;
+
     Vec4 color;
 } GraphicsInfo;
 
-// static const GraphicsInfo GraphicsInfoZero = {
-//     .txid = TX_DEFAULT,
-//     .uvscale = Vec2Lit(1.0f, 1.0f),
-//     .uvoffset = Vec2Lit(0.0f, 0.0f),
-//     .color = LCLEAR,
-// };
+static const GraphicsInfo GraphicsInfoZero = {
+    .txid = TX_DEFAULT,
+    .uvscale = Vec2Lit(1.0f, 1.0f),
+    .uvoffset = Vec2Lit(0.0f, 0.0f),
+    .color = LCLEAR,
+};
 
-static void GraphicsInfoDefault(GraphicsInfo* graphics) {
-    graphics->tx = GetTexture(TX_DEFAULT);
-    graphics->c_src = Vec2Zero();
-    graphics->r_src = Vec2Lit(graphics->tx.width, graphics->tx.height);
+// c_src - bottom left hand corner of sprite (in png space, not uvspace)
+// r_src - full width/height of sprite in png space not uvspace.
+static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src) {
+    graphics->txid = tx.id;
+    // TODO: its possible we want these to be ints?
+    graphics->uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+    graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
+    graphics->scale = Vec3Lit(0.5f * r_src.x, 0.5f * r_src.y, 1.0f);
 }
-
-// // c_src - bottom left hand corner of sprite (in png space, not uvspace)
-// // r_src - full width/height of sprite in png space not uvspace.
-// static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src) {
-//     graphics->txid = tx;
-//     graphics->c_src = c_src;
-//     graphics->r_src = r_src;
-//     // TODO: its possible we want these to be ints?
-//     graphics->uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-//     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
-//     graphics->c_dst =
-
-//         Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
-//     Mat4 orient = Mat4Identity();
-//     Mat4 translate = Mat4TranslateV(c_dst);
-//     Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
-
-//     DrawCmd* cmd = AddCmd();
-//     cmd->modelm = model;
-//     cmd->color = LCLEAR;
-//     cmd->uvoffset = uvoffset;
-//     cmd->uvscale = uvscale;
-//     cmd->txid = tx.id;
-//     cmd->meshid = GetMesh(M_QUAD);
-// }
 
 ////////////////////////////////////////////////////////////
 
@@ -2004,7 +1991,7 @@ static Entity* AllocateEntity() {
     entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
     entity->color = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
-    GraphicsInfoDefault(&entity->graphics);
+    entity->graphics = GraphicsInfoZero;
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -2247,17 +2234,14 @@ static void SceneTickAsteroids(GameState* gstate) {
 
         // Player init.
         {
-            Entity* entity = AllocateEntity();
-            entity->pos = Vec3Zero();
-            entity->mesh = GetMesh(M_QUAD);
-            entity->color = LCLEAR;
-            entity->scale = Vec3Lit(100.0f, 100.0f, 1.0f);
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Zero();
+            e->mesh = GetMesh(M_QUAD);
+            e->color = LCLEAR;
+            e->scale = Vec3Lit(100.0f, 100.0f, 1.0f);
 
-            entity->graphics.tx = GetTexture(TX_SHIP);
-            entity->graphics.c_src = Vec2Zero();
-            entity->graphics.r_src = Vec2Lit(48.0f, 48.0f);
-            entity->graphics.color = LCLEAR;
-            FlagOn(entity->flags, EFLAG_PLAYER_CONTROLLED);
+            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f));
+            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
     }
 
@@ -2366,24 +2350,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                 }
 
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
-                    Vec2 r_dst = Vec2Scale(e->graphics.r_src, 0.5f);
-                    Vec3 c_dst = e->pos;
-                    Vec2 uvscale = Vec2Lit(e->graphics.r_src.x / e->graphics.tx.width,
-                                           e->graphics.r_src.y / e->graphics.tx.height);
-                    Vec2 uvoffset = Vec2Lit(e->graphics.c_src.x / e->graphics.tx.width,
-                                            e->graphics.c_src.y / e->graphics.tx.height);
-
-                    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
-                    Mat4 orient = Mat4Identity();
-                    Mat4 translate = Mat4TranslateV(c_dst);
-                    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
-
                     DrawCmd* cmd = AddCmd();
-                    cmd->modelm = model;
+                    cmd->modelm = Mat4SVRT(e->graphics.scale, Mat4Identity(), e->pos);
                     cmd->color = LCLEAR;
-                    cmd->uvoffset = uvoffset;
-                    cmd->uvscale = uvscale;
-                    cmd->txid = e->graphics.tx.id;
+                    cmd->uvscale = e->graphics.uvscale;
+                    cmd->uvoffset = e->graphics.uvoffset;
+                    cmd->txid = e->graphics.txid;
                     cmd->meshid = GetMesh(M_QUAD);
                 }
 
@@ -2418,7 +2390,6 @@ static void SceneTickAsteroids(GameState* gstate) {
 
     i32 hwidth = 0.5f * GetScreenWidth();
     i32 hheight = 0.5f * GetScreenHeight();
-    breakpoint();
     pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -3.0f, 3.0f);
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
