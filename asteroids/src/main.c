@@ -2239,10 +2239,6 @@ static void SceneTickAsteroids(GameState* gstate) {
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Zero();
-            e->mesh = GetMesh(M_QUAD);
-            e->color = LCLEAR;
-            e->scale = Vec3Lit(100.0f, 100.0f, 1.0f);
-
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 2.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
@@ -2364,6 +2360,11 @@ static void SceneTickAsteroids(GameState* gstate) {
                     }
                 }
 
+                // if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_1)) {
+                //     Entity* blast = AllocateEntity();
+                //     blast-
+                // }
+
                 // graphics update.
                 for (u32 i = 0; i < esize; ++i) {
                     Entity* e = GetEntity(i);
@@ -2394,7 +2395,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
                     DrawCmd* cmd = AddCmd();
                     cmd->modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
-                    cmd->color = LCLEAR;
+                    cmd->color = e->graphics.color;
                     cmd->uvscale = e->graphics.uvscale;
                     cmd->uvoffset = e->graphics.uvoffset;
                     cmd->txid = e->graphics.txid;
