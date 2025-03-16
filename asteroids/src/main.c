@@ -1853,8 +1853,8 @@ static const GraphicsInfo GraphicsInfoZero = {
 
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
-static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient) {
-    graphics->scale = Vec3Lit(0.5f * r_src.x, 0.5f * r_src.y, 1.0f);
+static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
+    graphics->scale = Vec3Lit(0.5f * r_src.x * scale, 0.5f * r_src.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
     graphics->txid = tx.id;
@@ -2233,7 +2233,7 @@ static void SceneTickAsteroids(GameState* gstate) {
             e->color = LCLEAR;
             e->scale = Vec3Lit(100.0f, 100.0f, 1.0f);
 
-            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f);
+            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 1.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
     }
