@@ -117,7 +117,7 @@ static Vec3 Vec3Normalize(Vec3 v) {
     return v;
 }
 
-// in right handed notation. a is index, b is pointer.
+// in right handed notation. a is pointer, b is index. results points towards thumb.
 static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
@@ -192,6 +192,9 @@ typedef struct Mat4 {
 #define Mat4Lit(m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33)                     \
     ((Mat4){.m = {(m00), (m10), (m20), (m30), (m01), (m11), (m21), (m31), (m02), (m12), (m22), (m32), (m03), (m13), \
                   (m23), (m33)}})
+
+#define Mat4VLit(e0, e1, e2, e3) \
+    ((Mat4){.v.a = (e0), .v.x = 0.0f, .v.b = (e1), .v.y = 0.0f, .v.c = (e2), .v.z = 0.0f, .v.d = (e3), .v.w = 1.0f})
 
 #define Mat4ToRMatrix(m)                                                                                      \
     ((Matrix){(m).mm.m00, (m).mm.m10, (m).mm.m20, (m).mm.m30, (m).mm.m01, (m).mm.m11, (m).mm.m21, (m).mm.m31, \
@@ -2309,8 +2312,9 @@ static void SceneTickAsteroids(GameState* gstate) {
                     e->ppos = e->pos;
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static const f32 MOVE_THRESHOLD = 0.05f;
-                        static const f32 MAX_SPEED = 40.0f;
+                        static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
+                        static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
+                        static const f32 MAX_SPEED = 100.0f;
 
                         Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
 
@@ -2319,7 +2323,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                         {
                             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
                             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                            if (f32abs(x) > MOVE_THRESHOLD || f32abs(y) > MOVE_THRESHOLD) {
+                            if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
                                 Vec3 dir = Vec3Lit(x, y, 0.0f);
                                 dir = Vec3Normalize(Vec3Transform(dir, vieworient));
                                 e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
@@ -2329,19 +2333,25 @@ static void SceneTickAsteroids(GameState* gstate) {
                         {
                             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
                             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                            if (f32abs(x) > MOVE_THRESHOLD || f32abs(y) > MOVE_THRESHOLD) {
-                                TraceLog(LOG_INFO, "x %f y %f", x, y);
+                            if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
+                                // TraceLog(LOG_INFO, "x %f y %f", x, y);
                                 Vec3 wishdir = Vec3Lit(x, y, 0.0f);
+                                // wishdir = Vec3Lit(1.0f, 0.0f, 0.0f);
                                 wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
 
-                                Vec3 dir = Vec3Normalize(e->orient.v.b);
-
-                                f32 turndir = Vec3Angle(wishdir, dir) < 0.0f ? -1.0f : 1.0f;
-
+                                Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
+                                Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
                                 breakpoint();
+                                e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
 
-                                Mat4 rot = Mat4Rotate(turndir * Deg2Rad(45.0f) * dt, Vec3Lit(0.0f, 0.0f, 1.0f));
-                                e->orient = Mat4Multiply(rot, e->orient);
+                                // Vec3 dir = Vec3Normalize(e->orient.v.b);
+
+                                // f32 turndir = Vec3Angle(wishdir, dir) < 0.0f ? -1.0f : 1.0f;
+
+                                // breakpoint();
+
+                                // Mat4 rot = Mat4Rotate(turndir * Deg2Rad(45.0f) * dt, Vec3Lit(0.0f, 0.0f, 1.0f));
+                                // e->orient = Mat4Multiply(rot, e->orient);
                             }
                         }
                     }
