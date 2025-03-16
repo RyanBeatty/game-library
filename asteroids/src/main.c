@@ -2347,24 +2347,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
                             f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
                             if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
-                                // TraceLog(LOG_INFO, "x %f y %f", x, y);
                                 Vec3 wishdir = Vec3Lit(x, y, 0.0f);
-                                // wishdir = Vec3Lit(1.0f, 0.0f, 0.0f);
                                 wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
 
                                 Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
                                 Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
-                                breakpoint();
                                 e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
-
-                                // Vec3 dir = Vec3Normalize(e->orient.v.b);
-
-                                // f32 turndir = Vec3Angle(wishdir, dir) < 0.0f ? -1.0f : 1.0f;
-
-                                // breakpoint();
-
-                                // Mat4 rot = Mat4Rotate(turndir * Deg2Rad(45.0f) * dt, Vec3Lit(0.0f, 0.0f, 1.0f));
-                                // e->orient = Mat4Multiply(rot, e->orient);
                             }
                         }
                     }
@@ -2443,14 +2431,6 @@ static void SceneTickAsteroids(GameState* gstate) {
     }
 
     ParticleSystemTick(dt);
-
-    // Debug draw blue quad.
-    // {
-    //     DrawCmd* cmd = AddCmd();
-    //     cmd->color = LBLUE;
-    //     cmd->meshid = GetMesh(M_QUAD);
-    //     cmd->modelm = Mat4ScaleV(Vec3Lit(100.0f, 100.0f, 1.0f));
-    // }
 
     // pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
     pass->view = Mat4Identity();
