@@ -2151,6 +2151,13 @@ static void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
     cmd->color = color;
 }
 
+static void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    cmd->meshid = GetMesh(M_QUAD);
+    cmd->modelm = Mat4SVRT(Vec3Lit(hwidth, hheight, 1.0f), orient, center);
+    cmd->color = color;
+}
+
 static void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_CUBE);
