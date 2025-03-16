@@ -2305,18 +2305,39 @@ static void SceneTickAsteroids(GameState* gstate) {
                 }
 
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
-                    Vec4 color = e->color;
-                    Vec3 pos = e->pos;
+                    // Vec4 color = e->color;
+                    // Vec3 pos = e->pos;
 
-                    Mat4 scale = Mat4ScaleV(e->scale);
-                    Mat4 translate = Mat4TranslateV(pos);
-                    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+                    // Mat4 scale = Mat4ScaleV(e->scale);
+                    // Mat4 translate = Mat4TranslateV(pos);
+                    // Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
+
+                    // DrawCmd* cmd = AddCmd();
+                    // cmd->meshid = e->mesh;
+                    // cmd->modelm = model;
+                    // cmd->color = color;
+                    // cmd->txid = GetTexture(TX_SHIP).id;
+                    LTexture tx = GetTexture(TX_SHIP);
+
+                    Vec2 r_src = Vec2Lit(48.0f, 48.0f);
+                    Vec2 c_src = Vec2Zero();
+                    Vec2 r_dst = Vec2Scale(r_src, 0.5f);
+                    Vec3 c_dst = e->pos;
+                    Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+                    Vec2 uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
+
+                    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
+                    Mat4 orient = Mat4Identity();
+                    Mat4 translate = Mat4TranslateV(c_dst);
+                    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
                     DrawCmd* cmd = AddCmd();
-                    cmd->meshid = e->mesh;
                     cmd->modelm = model;
-                    cmd->color = color;
-                    cmd->txid = GetTexture(TX_SHIP).id;
+                    cmd->color = LCLEAR;
+                    cmd->uvoffset = uvoffset;
+                    cmd->uvscale = uvscale;
+                    cmd->txid = tx.id;
+                    cmd->meshid = GetMesh(M_QUAD);
                 }
 
                 if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
