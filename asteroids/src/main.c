@@ -2233,7 +2233,7 @@ static void SceneTickAsteroids(GameState* gstate) {
             e->color = LCLEAR;
             e->scale = Vec3Lit(100.0f, 100.0f, 1.0f);
 
-            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 1.0f);
+            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 2.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
     }
@@ -2316,12 +2316,33 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                         Vec3 disp = Vec3Zero();
 
-                        f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                        f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                        if (f32abs(x) > MOVE_THRESHOLD || f32abs(y) > MOVE_THRESHOLD) {
-                            Vec3 dir = Vec3Lit(x, y, 0.0f);
-                            dir = Vec3Normalize(Vec3Transform(dir, vieworient));
-                            e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
+                        {
+                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                            if (f32abs(x) > MOVE_THRESHOLD || f32abs(y) > MOVE_THRESHOLD) {
+                                Vec3 dir = Vec3Lit(x, y, 0.0f);
+                                dir = Vec3Normalize(Vec3Transform(dir, vieworient));
+                                e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
+                            }
+                        }
+
+                        {
+                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                            if (f32abs(x) > MOVE_THRESHOLD || f32abs(y) > MOVE_THRESHOLD) {
+                                TraceLog(LOG_INFO, "x %f y %f", x, y);
+                                Vec3 wishdir = Vec3Lit(x, y, 0.0f);
+                                wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
+
+                                Vec3 dir = Vec3Normalize(e->orient.v.b);
+
+                                f32 turndir = Vec3Angle(wishdir, dir) < 0.0f ? -1.0f : 1.0f;
+
+                                breakpoint();
+
+                                Mat4 rot = Mat4Rotate(turndir * Deg2Rad(45.0f) * dt, Vec3Lit(0.0f, 0.0f, 1.0f));
+                                e->orient = Mat4Multiply(rot, e->orient);
+                            }
                         }
                     }
                 }
@@ -2334,7 +2355,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                     }
 
                     e->graphics.pos = e->pos;
-                    e->graphics.orient = e->graphics.orient;
+                    e->graphics.orient = e->orient;
                 }
             }
 
