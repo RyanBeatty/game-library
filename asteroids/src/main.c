@@ -2325,6 +2325,17 @@ static void SceneTickAsteroids(GameState* gstate) {
                         }
                     }
                 }
+
+                // graphics update.
+                for (u32 i = 0; i < esize; ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
+
+                    e->graphics.pos = e->pos;
+                    e->graphics.orient = e->graphics.orient;
+                }
             }
 
             // Draw background
@@ -2344,7 +2355,7 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
                     DrawCmd* cmd = AddCmd();
-                    cmd->modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->pos);
+                    cmd->modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                     cmd->color = LCLEAR;
                     cmd->uvscale = e->graphics.uvscale;
                     cmd->uvoffset = e->graphics.uvoffset;
