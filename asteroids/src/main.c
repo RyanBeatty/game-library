@@ -1840,6 +1840,8 @@ typedef struct {
     Vec3 scale;
     Mat4 orient;
 
+    LMesh mid;
+
     TextureId txid;
     Vec2 uvscale;
     Vec2 uvoffset;
@@ -1847,18 +1849,24 @@ typedef struct {
     Vec4 color;
 } GraphicsInfo;
 
-static const GraphicsInfo GraphicsInfoZero = {
-    .txid = TX_DEFAULT,
-    .uvscale = Vec2Lit(1.0f, 1.0f),
-    .uvoffset = Vec2Lit(0.0f, 0.0f),
-    .color = LCLEAR,
-};
+static void GraphicsInfoMemset(GraphicsInfo* graphics) {
+    memset(graphics, 0, sizeof(GraphicsInfo));
+    graphics->orient = Mat4Identity();
+    graphics->pos = Vec3Zero();
+    graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+    graphics->txid = GetTexture(TX_DEFAULT).id;
+    graphics->uvscale = Vec2Lit(1.0f, 1.0f);
+    graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
+    graphics->color = LCLEAR;
+}
 
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
 static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(0.5f * r_src.x * scale, 0.5f * r_src.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+
+    graphics->mid = GetMesh(M_QUAD);
 
     graphics->txid = tx.id;
     // TODO: its possible we want these to be ints?
@@ -1884,16 +1892,11 @@ typedef enum EntityFlag {
     EFLAG_ACTIVE = 1 << 0,
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
-    EFLAG_PHYSICS_ON = 1 << 3,
-    EFLAG_COLLIDER = 1 << 4,
-    EFLAG_MOB = 1 << 5,
-    EFLAG_PROJECTILE = 1 << 6,
-    EFLAG_WALL = 1 << 7,
-    EFLAG_BUMPER = 1 << 8,
-    EFLAG_BALL = 1 << 9,
-    EFLAG_BLOCK = 1 << 10,
-    EFLAG_DEATHZONE = 1 << 11,
-    EFLAG_POWERUP = 1 << 12,
+    EFLAG_COLLIDER = 1 << 3,
+    EFLAG_PROJECTILE = 1 << 4,
+    EFLAG_WALL = 1 << 5,
+    EFLAG_DEATHZONE = 1 << 6,
+    EFLAG_POWERUP = 1 << 7,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -1987,7 +1990,7 @@ static Entity* AllocateEntity() {
     entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
     entity->color = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
-    entity->graphics = GraphicsInfoZero;
+    GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -2360,10 +2363,14 @@ static void SceneTickAsteroids(GameState* gstate) {
                     }
                 }
 
-                // if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_1)) {
-                //     Entity* blast = AllocateEntity();
-                //     blast-
-                // }
+                if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
+                    TraceLog(LOG_INFO, "fire");
+                    Entity* bullet = AllocateEntity();
+                    bullet->graphics.mid = GetMesh(M_QUAD);
+                    bullet->graphics.scale = Vec3Lit(10.0f, 10.0f, 1.0f);
+                    bullet->graphics.color = LRED;
+                    FlagOn(bullet->flags, EFLAG_PROJECTILE);
+                }
 
                 // graphics update.
                 for (u32 i = 0; i < esize; ++i) {
@@ -2382,7 +2389,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                 DrawCmd* cmd = AddCmd();
                 cmd->meshid = GetMesh(M_QUAD);
                 cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
-                cmd->color = LBLACK;
+                cmd->color = LBLUE;
             }
 
             // Draw.
@@ -2399,7 +2406,11 @@ static void SceneTickAsteroids(GameState* gstate) {
                     cmd->uvscale = e->graphics.uvscale;
                     cmd->uvoffset = e->graphics.uvoffset;
                     cmd->txid = e->graphics.txid;
-                    cmd->meshid = GetMesh(M_QUAD);
+
+                    cmd->meshid = e->graphics.mid;
+                    if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                        breakpoint();
+                    }
                 }
 
                 if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
