@@ -1835,18 +1835,9 @@ static void ParticleSystemTick(f32 dt) {
 typedef struct {
     Vec3 pos;
     Vec3 scale;
-    // Mat4 orient;
+    Mat4 orient;
 
     TextureId txid;
-    // // bottom left of src sprite, in png space (not uv)
-    // Vec2 c_src;
-    // // width/height of sprite in png space
-    // Vec2 r_src;
-    // // center of the sprite quad in world space.
-    // Vec2 c_dst;
-    // // half width/height in world space.
-    // Vec2 r_dst;
-
     Vec2 uvscale;
     Vec2 uvoffset;
 
@@ -1862,12 +1853,14 @@ static const GraphicsInfo GraphicsInfoZero = {
 
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
-static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src) {
+static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient) {
+    graphics->scale = Vec3Lit(0.5f * r_src.x, 0.5f * r_src.y, 1.0f);
+    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+
     graphics->txid = tx.id;
     // TODO: its possible we want these to be ints?
     graphics->uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
-    graphics->scale = Vec3Lit(0.5f * r_src.x, 0.5f * r_src.y, 1.0f);
 }
 
 ////////////////////////////////////////////////////////////
@@ -2240,7 +2233,7 @@ static void SceneTickAsteroids(GameState* gstate) {
             e->color = LCLEAR;
             e->scale = Vec3Lit(100.0f, 100.0f, 1.0f);
 
-            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f));
+            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
     }
@@ -2351,7 +2344,7 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
                     DrawCmd* cmd = AddCmd();
-                    cmd->modelm = Mat4SVRT(e->graphics.scale, Mat4Identity(), e->pos);
+                    cmd->modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->pos);
                     cmd->color = LCLEAR;
                     cmd->uvscale = e->graphics.uvscale;
                     cmd->uvoffset = e->graphics.uvoffset;
