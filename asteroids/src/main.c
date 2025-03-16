@@ -2231,6 +2231,7 @@ static Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2
 
 static void SceneTickAsteroids(GameState* gstate) {
     static LCamera CAMERA = {0};
+    static EntityId PLAYER_ID = 0;
 
     f32 dt = gstate->dt;
 
@@ -2244,6 +2245,8 @@ static void SceneTickAsteroids(GameState* gstate) {
             e->pos = Vec3Zero();
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 2.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+
+            PLAYER_ID = e->id;
         }
     }
 
@@ -2365,9 +2368,16 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                 if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
                     TraceLog(LOG_INFO, "fire");
+                    Entity* player = GetEntity(PLAYER_ID);
+
                     Entity* bullet = AllocateEntity();
+
+                    bullet->pos = player->pos;
+                    bullet->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), player->orient), 20.0f);
+                    bullet->orient = player->orient;
+
                     bullet->graphics.mid = GetMesh(M_QUAD);
-                    bullet->graphics.scale = Vec3Lit(10.0f, 10.0f, 1.0f);
+                    bullet->graphics.scale = Vec3Lit(5.0f, 20.0f, 1.0f);
                     bullet->graphics.color = LRED;
                     FlagOn(bullet->flags, EFLAG_PROJECTILE);
                 }
