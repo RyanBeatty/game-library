@@ -540,7 +540,7 @@ static const Vec4 LBLUE = Vec4Lit(0.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LBLACK = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LPURPLE = Vec4Lit(1.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
-static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255.0f, 0.16f);
+static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255.0f, 1.0f);
 static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 
 #define RGBALit(r, g, b, a) (Vec4Lit((r) / 255.0f, (g) / 255.0f, (b) / 255.0f, (a)))
@@ -2358,6 +2358,25 @@ static void SceneTickAsteroids(GameState* gstate) {
                     }
                 }
 
+                // {
+                //     static f32 SPAWN_DT = 0.0f;
+                //     static const f32 SPAWN_TIME = 1.0f;
+
+                //     SPAWN_DT += dt;
+                //     if (SPAWN_DT >= SPAWN_TIME) {
+                //         SPAWN_DT = 0.0f;
+                //         Entity* asteroid = AllocateEntity();
+
+                //         asteroid->pos = Vec3Zero();
+                //         asteroid->v = Vec3Zero();
+                //         asteroid->orient = Mat4Identity();
+
+                //         asteroid->graphics.mid = GetMesh(M_QUAD);
+                //         asteroid->graphics.scale = Vec3Lit(20.0f, 20.0f, 1.0f);
+                //         asteroid->graphics.color = LGRAY;
+                //     }
+                // }
+
                 if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
                     static const f32 PROJECTILE_SPEED = 600.0f;
                     Entity* player = GetEntity(PLAYER_ID);
@@ -2369,7 +2388,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                     bullet->orient = player->orient;
 
                     bullet->graphics.mid = GetMesh(M_QUAD);
-                    bullet->graphics.scale = Vec3Lit(5.0f, 20.0f, 1.0f);
+                    bullet->graphics.scale = Vec3Lit(5.0f, 5.0f, 1.0f);
                     bullet->graphics.color = LRED;
                     FlagOn(bullet->flags, EFLAG_PROJECTILE);
                 }
