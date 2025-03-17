@@ -1897,6 +1897,7 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 5,
     EFLAG_DEATHZONE = 1 << 6,
     EFLAG_POWERUP = 1 << 7,
+    EFLAG_ASTEROID = 1 << 8,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2248,6 +2249,29 @@ static void SceneTickAsteroids(GameState* gstate) {
 
             PLAYER_ID = e->id;
         }
+
+        // asteroids init.
+        {
+            for (u32 i = 0; i < 10; ++i) {
+                Entity* asteroid = AllocateEntity();
+
+                // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
+                f32 seed = (f32)rand() / (f32)RAND_MAX;
+                f32 seed2 = (f32)rand() / (f32)RAND_MAX;
+
+                asteroid->pos = Vec3RotateAxis(Vec3Lit(500.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), seed * LPI);
+                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2 * LPI);
+                asteroid->v = Vec3Scale(vdir, 20.0f);
+                asteroid->orient = Mat4Identity();
+
+                asteroid->graphics.mid = GetMesh(M_QUAD);
+                asteroid->graphics.scale = Vec3Lit(100.0f, 100.0f, 1.0f);
+                Vec4 color = LGRAY;
+                color.a = 0.5f;
+                asteroid->graphics.color = color;
+                FlagOn(asteroid->flags, EFLAG_ASTEROID);
+            }
+        }
     }
 
     BeginRender();
@@ -2324,14 +2348,16 @@ static void SceneTickAsteroids(GameState* gstate) {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
 
+                    if (TestFlag(e->flags, EFLAG_ASTEROID)) {
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    }
+
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
                         static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
                         static const f32 MAX_SPEED = 100.0f;
 
                         Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
-
-                        Vec3 disp = Vec3Zero();
 
                         {
                             f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
@@ -2357,25 +2383,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                         }
                     }
                 }
-
-                // {
-                //     static f32 SPAWN_DT = 0.0f;
-                //     static const f32 SPAWN_TIME = 1.0f;
-
-                //     SPAWN_DT += dt;
-                //     if (SPAWN_DT >= SPAWN_TIME) {
-                //         SPAWN_DT = 0.0f;
-                //         Entity* asteroid = AllocateEntity();
-
-                //         asteroid->pos = Vec3Zero();
-                //         asteroid->v = Vec3Zero();
-                //         asteroid->orient = Mat4Identity();
-
-                //         asteroid->graphics.mid = GetMesh(M_QUAD);
-                //         asteroid->graphics.scale = Vec3Lit(20.0f, 20.0f, 1.0f);
-                //         asteroid->graphics.color = LGRAY;
-                //     }
-                // }
 
                 if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
                     static const f32 PROJECTILE_SPEED = 600.0f;
