@@ -99,14 +99,14 @@ static Vec3 Vec3Zero() {
     return v;
 }
 
-static Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
+LCORE Vec3 Vec3Add(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z); }
 // Remember end - start gives you start -> end.
 // formula v1 - v2
-static Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
-static Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
+LCORE Vec3 Vec3Sub(Vec3 v1, Vec3 v2) { return Vec3Lit(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z); }
+LCORE Vec3 Vec3Scale(Vec3 v, f32 n) { return Vec3Lit(v.x * n, v.y * n, v.z * n); }
 // Inverts a vector.
-static Vec3 Vec3Negate(Vec3 v) { return Vec3Lit(-1.0f * v.x, -1.0f * v.y, -1.0f * v.z); }
-static Vec3 Vec3Normalize(Vec3 v) {
+LCORE Vec3 Vec3Negate(Vec3 v) { return Vec3Lit(-1.0f * v.x, -1.0f * v.y, -1.0f * v.z); }
+LCORE Vec3 Vec3Normalize(Vec3 v) {
     f32 len = f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
     if (len > 0.0f) {
         f32 inv_len = 1.0f / len;
@@ -118,24 +118,24 @@ static Vec3 Vec3Normalize(Vec3 v) {
 }
 
 // in right handed notation. a is pointer, b is index. results points towards thumb.
-static Vec3 Vec3Cross(Vec3 a, Vec3 b) {
+LCORE Vec3 Vec3Cross(Vec3 a, Vec3 b) {
     return Vec3Lit((a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x));
 }
-static Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
+LCORE Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
     return Vec3Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t));
 }
 
-static f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
-static f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
+LCORE f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
+LCORE f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 // Returns the angle between a and b in radians. Assumes a and b are normalized.
-static f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
-static bool Vec3Eq(Vec3 a, Vec3 b) {
+LCORE f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
+LCORE bool Vec3Eq(Vec3 a, Vec3 b) {
     return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL) && (f32abs(a.z - b.z) < TOL));
 }
-static bool Vec3EqPro(Vec3 a, Vec3 b, f32 tol) {
+LCORE bool Vec3EqPro(Vec3 a, Vec3 b, f32 tol) {
     return ((f32abs(a.x - b.x) < tol) && (f32abs(a.y - b.y) < tol) && (f32abs(a.z - b.z) < tol));
 }
-static Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
+LCORE Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
     axis = Vec3Normalize(axis);
     f32 cosr = f32cos(rot);
     f32 sinr = f32sin(rot);
@@ -145,7 +145,7 @@ static Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
     return Vec3Add(vcos, Vec3Add(axv, kk));
 }
 
-static Vec3 Vec3Project(Vec3 v, Vec3 axis) { return Vec3Scale(axis, Vec3Dot(v, axis)); }
+LCORE Vec3 Vec3Project(Vec3 v, Vec3 axis) { return Vec3Scale(axis, Vec3Dot(v, axis)); }
 
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
@@ -200,7 +200,7 @@ typedef struct Mat4 {
     ((Matrix){(m).mm.m00, (m).mm.m10, (m).mm.m20, (m).mm.m30, (m).mm.m01, (m).mm.m11, (m).mm.m21, (m).mm.m31, \
               (m).mm.m02, (m).mm.m12, (m).mm.m22, (m).mm.m32, (m).mm.m03, (m).mm.m13, (m).mm.m23, (m).mm.m33})
 
-static Mat4 MatrixToMat4(Matrix mx) {
+LCORE Mat4 MatrixToMat4(Matrix mx) {
     return Mat4Lit(mx.m0, mx.m1, mx.m2, mx.m3,    //
                    mx.m4, mx.m5, mx.m6, mx.m7,    //
                    mx.m8, mx.m9, mx.m10, mx.m11,  //
@@ -208,7 +208,7 @@ static Mat4 MatrixToMat4(Matrix mx) {
 }
 
 // Print in col maj order.
-static void Mat4Print(Mat4 m) {
+LCORE void Mat4Print(Mat4 m) {
     printf(
         "mat4\n"
         "%f %f %f %f\n"
@@ -229,7 +229,7 @@ static Mat4 Mat4Identity() {
     return m;
 }
 
-static Mat4 Mat4Scale(f32 n) {
+LCORE Mat4 Mat4Scale(f32 n) {
     // TODO: Should this scale the w component? doing that throws off normal calcs, but thats probably
     // because I'm hackily making the normal matrix at the moment.
     return Mat4Lit(n, 0.0f, 0.0f, 0.0f,  //
@@ -238,21 +238,21 @@ static Mat4 Mat4Scale(f32 n) {
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-static Mat4 Mat4ScaleV(Vec3 v) {
+LCORE Mat4 Mat4ScaleV(Vec3 v) {
     return Mat4Lit(v.x, 0.0f, 0.0f, 0.0f,  //
                    0.0f, v.y, 0.0f, 0.0f,  //
                    0.0f, 0.0f, v.z, 0.0f,  //
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-static Mat4 Mat4ScaleXYZ(f32 x, f32 y, f32 z) {
+LCORE Mat4 Mat4ScaleXYZ(f32 x, f32 y, f32 z) {
     return Mat4Lit(x, 0.0f, 0.0f, 0.0f,  //
                    0.0f, y, 0.0f, 0.0f,  //
                    0.0f, 0.0f, z, 0.0f,  //
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-static Mat4 Mat4TranslateV(Vec3 v) {
+LCORE Mat4 Mat4TranslateV(Vec3 v) {
     return Mat4Lit(1.0f, 0.0f, 0.0f, v.x,  //
                    0.0f, 1.0f, 0.0f, v.y,  //
                    0.0f, 0.0f, 1.0f, v.z,  //
@@ -260,7 +260,7 @@ static Mat4 Mat4TranslateV(Vec3 v) {
     );
 }
 
-static Mat4 Mat4Transpose(Mat4 m) {
+LCORE Mat4 Mat4Transpose(Mat4 m) {
     return Mat4Lit(m.mm.m00, m.mm.m10, m.mm.m20, m.mm.m30,  //
                    m.mm.m01, m.mm.m11, m.mm.m21, m.mm.m31,  //
                    m.mm.m02, m.mm.m12, m.mm.m22, m.mm.m32,  //
@@ -268,7 +268,7 @@ static Mat4 Mat4Transpose(Mat4 m) {
     );
 }
 
-static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
+LCORE Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
     return Mat4Lit(
         // Row 0.
         (a.mm.m00 * b.mm.m00) + (a.mm.m01 * b.mm.m10) + (a.mm.m02 * b.mm.m20) + (a.mm.m03 * b.mm.m30),  //
@@ -293,21 +293,21 @@ static Mat4 Mat4Multiply(Mat4 a, Mat4 b) {
     );
 }
 
-static Mat4 Mat4RotateX(rad r) {
+LCORE Mat4 Mat4RotateX(rad r) {
     return Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f,             //
                    0.0f, f32cos(r), -f32sin(r), 0.0f,  //
                    0.0f, f32sin(r), f32cos(r), 0.0f,   //
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-static Mat4 Mat4RotateY(rad r) {
+LCORE Mat4 Mat4RotateY(rad r) {
     return Mat4Lit(f32cos(r), 0.0f, f32sin(r), 0.0f,   //
                    0.0f, 1.0f, 0.0f, 0.0f,             //
                    -f32sin(r), 0.0f, f32cos(r), 0.0f,  //
                    0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-static Mat4 Mat4RotateZ(rad r) {
+LCORE Mat4 Mat4RotateZ(rad r) {
     return Mat4Lit(f32cos(r), -f32sin(r), 0.0f, 0.0f,  //
                    f32sin(r), f32cos(r), 0.0f, 0.0f,   //
                    0.0f, 0.0f, 1.0f, 0.0f,             //
@@ -316,11 +316,11 @@ static Mat4 Mat4RotateZ(rad r) {
 
 // Construct rotation matrix for the euler angle rotation representation. angles in radians.
 // Will rotate from model to upright.
-static Mat4 Mat4RotateEuler(Vec3 v) {
+LCORE Mat4 Mat4RotateEuler(Vec3 v) {
     return Mat4Multiply(Mat4RotateY(v.yaw), Mat4Multiply(Mat4RotateX(v.pitch), Mat4RotateZ(v.roll)));
 }
 
-static Mat4 Mat4Rotate(rad t, Vec3 axis) {
+LCORE Mat4 Mat4Rotate(rad t, Vec3 axis) {
     axis = Vec3Normalize(axis);
 
     f32 c = f32cos(t);
@@ -342,7 +342,7 @@ static Mat4 Mat4Rotate(rad t, Vec3 axis) {
 
 // Contstruct matrix that reflects vectors around the plane defined by n. n doesn't need to be unit.
 // useful for 3d reflections. see FOGB 2.3
-static Mat4 Mat4Reflect(Vec3 n) {
+LCORE Mat4 Mat4Reflect(Vec3 n) {
     n = Vec3Normalize(n);
 
     f32 x = n.x * -2.0f;
@@ -359,7 +359,7 @@ static Mat4 Mat4Reflect(Vec3 n) {
 }
 
 // gamemath.com 10.3.4
-static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
+LCORE Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
     f32 zoom = 1.0f / (f32)f32tan(fov * 0.5f);
     f32 depth = far - near;
     return Mat4Lit(zoom / aspect, 0.0f, 0.0f, 0.0f,                                  //
@@ -371,7 +371,7 @@ static Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
 // FoGED 6.3.4
 // gamemath.com 10.3.4
 // maps (left, bottom) -> (-1, -1)
-static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
+LCORE Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
     f32 w_inv = 1.0f / (right - left);
     // NOTE: FoGED has bottom - top, but I think I want top - bottom so that +y = up.
     f32 h_inv = 1.0f / (top - bottom);
@@ -394,7 +394,7 @@ static Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 fa
 // Eye is world space pos of camera. Target is what it is looking at in worldspace.
 // Up just needs to be pointing somewhere along the plane between the +z and where you want the +y
 // axis to be.
-static Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
+LCORE Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
     // We need target -> eye direction vec because we assueme +z is towards the viewer.
     Vec3 z = Vec3Normalize(Vec3Sub(eye, target));
 
@@ -413,7 +413,7 @@ static Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
 // Construct a rotation matrix such that will point along the forward vector (model->upright space).
 // Forward is in upright space. Up can be any arbitrary axis in forward space. We will construct the
 // true up vector inside. Normally up will be (0, 1, 0).
-static Mat4 Mat4PointAt(Vec3 forward) {
+LCORE Mat4 Mat4PointAt(Vec3 forward) {
     static const Vec3 UP = Vec3Lit(0.0f, 1.0f, 0.0);
 
     // We assume the forward vector points in the opposite direction of the z axis of the coordinate
@@ -441,7 +441,7 @@ static Mat4 Mat4PointAt(Vec3 forward) {
     return m;
 }
 
-static Mat4 Mat4Invert(Mat4 m) {
+LCORE Mat4 Mat4Invert(Mat4 m) {
     Vec3 s = Vec3Cross(m.v.a, m.v.b);
     Vec3 t = Vec3Cross(m.v.c, m.v.d);
     // TODO: Something about this is giving the wrong sign. not sure. instead assume
@@ -470,15 +470,15 @@ static Mat4 Mat4Invert(Mat4 m) {
     return m2;
 }
 
-static Mat4 Mat4SRT(f32 scale, Mat4 rotate, Vec3 pos) {
+LCORE Mat4 Mat4SRT(f32 scale, Mat4 rotate, Vec3 pos) {
     return Mat4Multiply(Mat4TranslateV(pos), Mat4Multiply(rotate, Mat4Scale(scale)));
 }
 
-static Mat4 Mat4SVRT(Vec3 scale, Mat4 rotate, Vec3 pos) {
+LCORE Mat4 Mat4SVRT(Vec3 scale, Mat4 rotate, Vec3 pos) {
     return Mat4Multiply(Mat4TranslateV(pos), Mat4Multiply(rotate, Mat4ScaleV(scale)));
 }
 
-static bool Mat4Eq(Mat4 a, Mat4 b) {
+LCORE bool Mat4Eq(Mat4 a, Mat4 b) {
     bool result = Vec3Eq(a.v.a, b.v.a) && Vec3Eq(a.v.b, b.v.b) && Vec3Eq(a.v.c, b.v.c) && Vec3Eq(a.v.d, b.v.d) &&
                   f32eq(a.v.x, b.v.x) && f32eq(a.v.y, b.v.y) && f32eq(a.v.z, b.v.z) && f32eq(a.v.w, b.v.w);
     // #ifdef L_TEST
@@ -1508,6 +1508,27 @@ static Vec3 ComputeCentroid(Vec3* vs, u32 vsize) {
     return center;
 }
 
+typedef struct {
+    Vec2 c;
+    f32 r;
+} Circle;
+
+// Returns normal pointing from b to a if there is a collision. Assumes both
+// circles are in same coordinate space.
+static bool TestCircleCircle(Circle a, Circle b, Vec2* normal, f32* depth) {
+    Vec2 ba = Vec2Sub(b.c, a.c);
+    f32 dsquared = (ba.x * ba.x) + (ba.y * ba.y);
+    f32 r = a.r + b.r;
+    if (r * r > dsquared) {
+        return false;
+    }
+
+    f32 d = f32sqrt(dsquared);
+    *normal = Vec2Scale(ba, 1.0f / d);
+    *depth = d - r;
+    return true;
+}
+
 typedef struct Sphere {
     Vec3 c;  // center
     f32 r;   // radius
@@ -1528,22 +1549,23 @@ static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
     return (Sphere){.c = center, .r = radius};
 }
 
-// Returns normal pointing from b to a if there is a collision.
-static bool TestSphereVsSphere(Sphere a, Sphere b, Vec3* normal, f32* depth) {
-    bool hit = false;
-    Vec3 dir = Vec3Sub(b.c, a.c);
-    f32 d = Vec3Dot(dir, dir);
-    f32 rr = a.r + b.r;
-    if (d <= rr * rr) {
-        hit = true;
-        d = f32sqrt(d);
-        dir = Vec3Normalize(dir);
-    }
+// // Returns normal pointing from b to a if there is a collision.
+// static bool TestSphereVsSphere(Sphere a, Sphere b, Vec3* normal, f32* depth) {
+//     bool hit = false;
+//     Vec3 dir = Vec3Sub(b.c, a.c);
+//     f32 d = Vec3Dot(dir, dir);
+//     f32 rr = a.r + b.r;
+//     if (d <= rr * rr) {
+//         hit = true;
+//         // TODO: is this correct? shouldn't it be the diff between the dist between centers and the radius?
+//         d = f32sqrt(d);
+//         dir = Vec3Normalize(dir);
+//     }
 
-    *normal = dir;
-    *depth = d;
-    return hit;
-}
+//     *normal = dir;
+//     *depth = d;
+//     return hit;
+// }
 
 typedef struct AABB {
     Vec3 c;  // center.
@@ -1578,117 +1600,120 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
     return aabb;
 }
 
-static bool TestAABBVsAABB(AABB a, AABB b, Vec3* normal, f32* depth) {
-    f32 dcx = a.c.f[0] - b.c.f[0];
-    f32 dx = (a.r.f[0] + b.r.f[0]) - f32abs(dcx);
-    if (dx <= 0.0) {
-        return false;
-    }
+// static bool TestAABBVsAABB(AABB a, AABB b, Vec3* normal, f32* depth) {
+//     f32 dcx = a.c.f[0] - b.c.f[0];
+//     f32 dx = (a.r.f[0] + b.r.f[0]) - f32abs(dcx);
+//     if (dx <= 0.0) {
+//         return false;
+//     }
 
-    f32 dcy = a.c.f[1] - b.c.f[1];
-    f32 dy = (a.r.f[1] + b.r.f[1]) - f32abs(dcy);
-    if (dy <= 0.0f) {
-        return false;
-    }
+//     f32 dcy = a.c.f[1] - b.c.f[1];
+//     f32 dy = (a.r.f[1] + b.r.f[1]) - f32abs(dcy);
+//     if (dy <= 0.0f) {
+//         return false;
+//     }
 
-    f32 dcz = a.c.f[2] - b.c.f[2];
-    f32 dz = (a.r.f[2] + b.r.f[2]) - f32abs(dcz);
-    if (dz <= 0.0f) {
-        return false;
-    }
+//     f32 dcz = a.c.f[2] - b.c.f[2];
+//     f32 dz = (a.r.f[2] + b.r.f[2]) - f32abs(dcz);
+//     if (dz <= 0.0f) {
+//         return false;
+//     }
 
-    Vec3 n = Vec3Lit(1.0f * (dcx < 0.0f ? -1.0f : 1.0f), 0.0f, 0.0f);
-    f32 d = dx;
-    if (dy < d || dz < d) {
-        if (dy < dz) {
-            n = Vec3Lit(0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f), 0.0f);
-            d = dy;
-        } else {
-            n = Vec3Lit(0.0f, 0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f));
-            d = dz;
-        }
-    }
+//     Vec3 n = Vec3Lit(1.0f * (dcx < 0.0f ? -1.0f : 1.0f), 0.0f, 0.0f);
+//     f32 d = dx;
+//     if (dy < d || dz < d) {
+//         if (dy < dz) {
+//             n = Vec3Lit(0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f), 0.0f);
+//             d = dy;
+//         } else {
+//             n = Vec3Lit(0.0f, 0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f));
+//             d = dz;
+//         }
+//     }
 
-    *normal = n;
-    *depth = d;
-    return true;
-}
+//     *normal = n;
+//     *depth = d;
+//     return true;
+// }
 
-// Returns normal pointing from aabb to sphere if there is a collision.
-static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
-    Vec3 max = Vec3Add(aabb.c, aabb.r);
-    Vec3 min = Vec3Sub(aabb.c, aabb.r);
+// // Returns normal pointing from aabb to sphere if there is a collision.
+// static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
+//     Vec3 max = Vec3Add(aabb.c, aabb.r);
+//     Vec3 min = Vec3Sub(aabb.c, aabb.r);
 
-    // Find closest point from sphere center to the space bounded by aabb (which might be inside of) aabb.
-    Vec3 cp = Vec3Zero();
-    for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
-        f32 v = s.c.f[i];
-        if (v < min.f[i]) {
-            v = min.f[i];
-        }
-        if (v > max.f[i]) {
-            v = max.f[i];
-        }
-        cp.f[i] = v;
-    }
+//     // Find closest point from sphere center to the space bounded by aabb (which might be inside of) aabb.
+//     Vec3 cp = Vec3Zero();
+//     for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
+//         f32 v = s.c.f[i];
+//         if (v < min.f[i]) {
+//             v = min.f[i];
+//         }
+//         if (v > max.f[i]) {
+//             v = max.f[i];
+//         }
+//         cp.f[i] = v;
+//     }
 
-    bool hit = false;
-    Vec3 dir = Vec3Sub(cp, s.c);
-    f32 d = Vec3Dot(dir, dir);
-    if (d <= s.r * s.r) {
-        // if (DEBUG_EVER) {
-        //     breakpoint();
-        // }
-        hit = true;
-        d = f32sqrt(d);
-        // TODO: Add SLOP.
-        d = (s.r - d);
-        // Want to point normal towards sphere so negate.
-        dir = Vec3Normalize(Vec3Negate(dir));
-    }
+//     bool hit = false;
+//     Vec3 dir = Vec3Sub(cp, s.c);
+//     f32 d = Vec3Dot(dir, dir);
+//     if (d <= s.r * s.r) {
+//         // if (DEBUG_EVER) {
+//         //     breakpoint();
+//         // }
+//         hit = true;
+//         d = f32sqrt(d);
+//         // TODO: Add SLOP.
+//         d = (s.r - d);
+//         // Want to point normal towards sphere so negate.
+//         dir = Vec3Normalize(Vec3Negate(dir));
+//     }
 
-    *normal = dir;
-    *depth = d;
-    return hit;
-}
+//     *normal = dir;
+//     *depth = d;
+//     return hit;
+// }
 
-typedef enum PolyhedronType { PH_NONE = 0, PH_SPHERE, PH_AABB, PH_COUNT } PolyhedronType;
+typedef enum PolyhedronType { PH_NONE = 0, PH_CIRCLE, PH_SPHERE, PH_AABB, PH_COUNT } PolyhedronType;
 
 typedef struct Polyhedron {
     PolyhedronType type;
 
     union {
+        Circle circle;
         Sphere sphere;
         AABB aabb;
     };
 } Polyhedron;
 
-static Polyhedron ComputePolyhedron(Vec3* vs, u32 vsize, PolyhedronType type) {
-    Polyhedron p = {0};
-    p.type = type;
-    switch (type) {
-        case PH_SPHERE: {
-            p.sphere = BoundingSphere(vs, vsize);
-            break;
-        }
-        case PH_AABB: {
-            p.aabb = ComputeAABB(vs, vsize);
-            break;
-        }
-        default: {
-            TraceLog(LOG_ERROR,
-                     "ComputePolyhedron: Unknown polyhedron type=%d. Most likely entity needs bounding volume type set",
-                     type);
-            exit(1);
-        }
-    }
-    return p;
-}
+// static Polyhedron ComputePolyhedron(Vec3* vs, u32 vsize, PolyhedronType type) {
+//     Polyhedron p = {0};
+//     p.type = type;
+//     switch (type) {
+//         case PH_SPHERE: {
+//             p.sphere = BoundingSphere(vs, vsize);
+//             break;
+//         }
+//         case PH_AABB: {
+//             p.aabb = ComputeAABB(vs, vsize);
+//             break;
+//         }
+//         default: {
+//             TraceLog(LOG_ERROR,
+//                      "ComputePolyhedron: Unknown polyhedron type=%d. Most likely entity needs bounding volume type
+//                      set", type);
+//             exit(1);
+//         }
+//     }
+//     return p;
+// }
 
 // Returns true if both polyhedrons collide. normal will point from b to a.
-static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal, f32* depth) {
+// Assumes polyhedrons are both in the same coordinate space.
+LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal, f32* depth) {
     bool collides = false;
     Vec3 n = Vec3Zero();
+    Vec2 n2d = Vec2Zero();
     f32 d = 0.0f;
 
     // Collision table. if we don't have an entry in the collision table set up between two
@@ -1698,17 +1723,36 @@ static bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* norma
     // TODO: Can we make this nicer? Could we literally turn this into a table and just make reverse
     // functions? ex. Take TestSphereVsAABB. we could make TestAABBVsSphere and have it call the former function
     // and add negation to the collision normal.
-    if (a->type == PH_SPHERE) {
-        if (b->type == PH_AABB) {
-            collides = TestSphereVsAABB(a->sphere, b->aabb, &n, &d);
+    // if (a->type == PH_SPHERE) {
+    //     if (b->type == PH_AABB) {
+    //         collides = TestSphereVsAABB(a->sphere, b->aabb, &n, &d);
+    //     }
+    // } else if (a->type == PH_AABB) {
+    //     if (b->type == PH_AABB) {
+    //         collides = TestAABBVsAABB(a->aabb, b->aabb, &n, &d);
+    //     } else if (b->type == PH_SPHERE) {
+    //         collides = TestSphereVsAABB(b->sphere, a->aabb, &n, &d);
+    //         // point normal from b to a.
+    //         n = Vec3Negate(n);
+    //     }
+    // }
+    switch (a->type) {
+        case PH_CIRCLE: {
+            switch (b->type) {
+                case PH_CIRCLE: {
+                    collides = TestCircleCircle(a->circle, b->circle, &n2d, &d);
+                    n = Vec3Lit(n2d.x, n2d.y, 0.0f);
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+            break;
         }
-    } else if (a->type == PH_AABB) {
-        if (b->type == PH_AABB) {
-            collides = TestAABBVsAABB(a->aabb, b->aabb, &n, &d);
-        } else if (b->type == PH_SPHERE) {
-            collides = TestSphereVsAABB(b->sphere, a->aabb, &n, &d);
-            // point normal from b to a.
-            n = Vec3Negate(n);
+        default: {
+            // Collision not supported.
+            break;
         }
     }
 
@@ -1919,7 +1963,9 @@ typedef struct Entity {
     f32 friction;
     f32 restitution;
 
+    // TODO: Deprecate
     LMesh mesh;
+
     Vec4 color;
 
     // TODO: At some point it might make more sense to store a polyhedron struct itself here.
@@ -2031,18 +2077,18 @@ static AABB EntityAABB(Entity* e) {
     return ComputeAABB(vs, vsize);
 }
 
-static Polyhedron EntityBoundingVolume(Entity* e) {
-    Mat4 m = EntityGetMat(e);
-    Vec3 vs[MAX_VERTICES] = {0};
-    u32 vsize = e->mesh.ntriangles * 3;
-    Assert(vsize < MAX_VERTICES);
-    for (u32 i = 0; i < vsize; ++i) {
-        Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
-        vs[i] = Vec3WTransform(pos, m);
-    }
+// static Polyhedron EntityBoundingVolume(Entity* e) {
+//     Mat4 m = EntityGetMat(e);
+//     Vec3 vs[MAX_VERTICES] = {0};
+//     u32 vsize = e->mesh.ntriangles * 3;
+//     Assert(vsize < MAX_VERTICES);
+//     for (u32 i = 0; i < vsize; ++i) {
+//         Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
+//         vs[i] = Vec3WTransform(pos, m);
+//     }
 
-    return ComputePolyhedron(vs, vsize, e->phtype);
-}
+//     return ComputePolyhedron(vs, vsize, e->phtype);
+// }
 
 ////////////////////////////////////////////////////
 typedef struct CollisionInfo {
@@ -2070,9 +2116,9 @@ typedef struct {
     Vec3 orient;
 } LCamera;
 
-static Mat4 LCameraGetView(LCamera c) {
-    return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
-}
+// static Mat4 LCameraGetView(LCamera c) {
+//     return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
+// }
 
 ////////////////////////////////////////////////////
 
@@ -2148,21 +2194,21 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
     EndWireframe();
 }
 
-static void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
+LCORE void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_ICOSPHERE);
     cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
     cmd->color = color;
 }
 
-static void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
+LCORE void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_QUAD);
     cmd->modelm = Mat4SVRT(Vec3Lit(hwidth, hheight, 1.0f), orient, center);
     cmd->color = color;
 }
 
-static void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
+LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_CUBE);
     cmd->modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
@@ -2176,7 +2222,7 @@ static void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
 // radius
 // * need to be full width/height of quad in texture space
 // * need to be half width/height in world space
-static void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
+LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
     // TODO: is scale right?
     Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
     Vec2 uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
@@ -2195,16 +2241,16 @@ static void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec
     cmd->meshid = GetMesh(M_QUAD);
 }
 
-static void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
+LCORE void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
     DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation, color);
 }
 
 // Remember that pos will be the center of the quad.
-static void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
+LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
     DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
 }
 
-static void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
+LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
     LTexture tx = GetTexture(TX_LFONT);
 
     u32 x = 48;
@@ -2226,7 +2272,7 @@ static void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 c
 
 // Imagine the texture as a single pre baked one off texture. This will measure the width
 // and height of that texture.
-static Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
+LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
 
 #define MAX_ENTITY_BATCH 256
 

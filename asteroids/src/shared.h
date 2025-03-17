@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <time.h>
 
+#define LCORE static __attribute__((unused))
+
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
