@@ -2490,6 +2490,8 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                 if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
                     static const f32 PROJECTILE_SPEED = 600.0f;
+                    static const f32 PROJECTILE_SCALE = 5.0f;
+
                     Entity* player = GetEntity(PLAYER_ID);
 
                     Entity* bullet = AllocateEntity();
@@ -2498,10 +2500,15 @@ static void SceneTickAsteroids(GameState* gstate) {
                     bullet->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), player->orient), PROJECTILE_SPEED);
                     bullet->orient = player->orient;
 
+                    bullet->shape.type = PH_CIRCLE;
+                    bullet->shape.circle.c = Vec2Zero();
+                    bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
+
                     bullet->graphics.mid = GetMesh(M_QUAD);
-                    bullet->graphics.scale = Vec3Lit(5.0f, 5.0f, 1.0f);
+                    bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
                     bullet->graphics.color = LYELLOW;
                     FlagOn(bullet->flags, EFLAG_PROJECTILE);
+                    FlagOn(bullet->flags, EFLAG_COLLIDER);
                 }
 
                 // graphics update.
