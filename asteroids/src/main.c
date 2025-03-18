@@ -1774,6 +1774,28 @@ typedef struct Polyhedron {
     };
 } Polyhedron;
 
+static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 m) {
+    switch (shape.type) {
+        case PH_NONE: {
+            break;
+        }
+        case PH_CIRCLE: {
+            // This might be a bit jank. but I transform the center with translation and then
+            // transform the radius vector (no translation) and take the length.
+            Vec3 c = Vec2ToVec3(shape.circle.c);
+            c = Vec3WTransform(c, m);
+            // I might actually want to project this vector onto the xy plane.
+            shape.circle.c = Vec2Lit(c.x, c.y);
+            shape.circle.r = Vec3Len(Vec3Transform(Vec3Lit(shape.circle.r, 0.0f, 0.0f), m));
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+    return shape;
+}
+
 // static Polyhedron ComputePolyhedron(Vec3* vs, u32 vsize, PolyhedronType type) {
 //     Polyhedron p = {0};
 //     p.type = type;
@@ -1856,7 +1878,7 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
             break;
         }
         case PH_CIRCLE: {
-            // DrawLCircle(Vec3Lit(shape->circle.c.x, shape->circle.c.y, 0.0f), shape->circle.r, color);
+            DrawLCircle(Vec3Lit(shape->circle.c.x, shape->circle.c.y, 0.0f), shape->circle.r, color);
             break;
         }
         default: {
@@ -2523,9 +2545,11 @@ static void SceneTickAsteroids(GameState* gstate) {
                     // }
 
                     if (gstate->debug) {
-                        BeginWireframe();
-                        DrawPolyhedron(&e->shape, LRED);
-                        EndWireframe();
+                        // BeginWireframe();
+
+                        Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
+                        DrawPolyhedron(&shape, LRED);
+                        // EndWireframe();
                     }
                 }
             }
