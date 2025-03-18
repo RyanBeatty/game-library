@@ -1784,7 +1784,7 @@ static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 m) {
             // transform the radius vector (no translation) and take the length.
             Vec3 c = Vec2ToVec3(shape.circle.c);
             c = Vec3WTransform(c, m);
-            // I might actually want to project this vector onto the xy plane.
+            // TODO: I might actually want to project this vector onto the xy plane.
             shape.circle.c = Vec2Lit(c.x, c.y);
             shape.circle.r = Vec3Len(Vec3Transform(Vec3Lit(shape.circle.r, 0.0f, 0.0f), m));
             break;
@@ -2540,16 +2540,10 @@ static void SceneTickAsteroids(GameState* gstate) {
                     cmd->txid = e->graphics.txid;
 
                     cmd->meshid = e->graphics.mid;
-                    // if (TestFlag(e->flags, EFLAG_ASTEROID)) {
-                    //     DrawLCircle(e->graphics.pos, 20.0f, LRED);
-                    // }
 
                     if (gstate->debug) {
-                        // BeginWireframe();
-
                         Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
                         DrawPolyhedron(&shape, LRED);
-                        // EndWireframe();
                     }
                 }
             }
