@@ -1762,6 +1762,21 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
     return collides;
 }
 
+LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
+    switch (shape->type) {
+        case PH_NONE: {
+            break;
+        }
+        case PH_CIRCLE: {
+            // DrawLCircle(Vec3Lit(shape->circle.c.x, shape->circle.c.y, 0.0f), shape->circle.r, color);
+            break;
+        }
+        default: {
+            exit(1);
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////
 
 typedef enum {
@@ -1972,7 +1987,10 @@ typedef struct Entity {
     // TODO: At some point it might make more sense to store a polyhedron struct itself here.
     // Might only make sense if we ever need to incrementally recompute bounding volumes.
     // Right now we always do on the fly.
+    // TODO: Deprecate.
     PolyhedronType phtype;
+
+    Polyhedron shape;
 
     GraphicsInfo graphics;
 
@@ -2323,12 +2341,17 @@ static void SceneTickAsteroids(GameState* gstate) {
                 asteroid->v = Vec3Scale(vdir, 20.0f);
                 asteroid->orient = Mat4Identity();
 
+                asteroid->shape.type = PH_CIRCLE;
+                asteroid->shape.circle.c = Vec2Zero();
+                asteroid->shape.circle.r = 20.0f;
+
                 asteroid->graphics.mid = GetMesh(M_QUAD);
                 asteroid->graphics.scale = Vec3Lit(100.0f, 100.0f, 1.0f);
                 Vec4 color = LGRAY;
                 color.a = 0.5f;
                 asteroid->graphics.color = color;
                 FlagOn(asteroid->flags, EFLAG_ASTEROID);
+                FlagOn(asteroid->flags, EFLAG_COLLIDER);
             }
         }
     }
@@ -2495,20 +2518,14 @@ static void SceneTickAsteroids(GameState* gstate) {
                     cmd->txid = e->graphics.txid;
 
                     cmd->meshid = e->graphics.mid;
-                    if (TestFlag(e->flags, EFLAG_ASTEROID)) {
-                        DrawLCircle(e->graphics.pos, 20.0f, LRED);
-                    }
+                    // if (TestFlag(e->flags, EFLAG_ASTEROID)) {
+                    //     DrawLCircle(e->graphics.pos, 20.0f, LRED);
+                    // }
                 }
 
-                if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+                if (gstate->debug) {
                     BeginWireframe();
-
-                    Sphere sphere = EntityBoundingSphere(e);
-                    DrawLSphere(sphere.c, sphere.r, LYELLOW);
-
-                    AABB aabb = EntityAABB(e);
-                    DrawAABB(aabb.c, aabb.r, LBLUE);
-
+                    DrawPolyhedron(&e->shape, LRED);
                     EndWireframe();
                 }
             }
