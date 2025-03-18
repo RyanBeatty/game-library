@@ -1745,6 +1745,7 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                     break;
                 }
                 default: {
+                    // Collision not supported.
                     break;
                 }
             }
@@ -2201,6 +2202,14 @@ LCORE void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
     cmd->color = color;
 }
 
+LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    // We cheat and just use an icosphere. assumes ortho projection which should chop it into a circle.
+    cmd->meshid = GetMesh(M_ICOSPHERE);
+    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
+    cmd->color = color;
+}
+
 LCORE void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_QUAD);
@@ -2466,6 +2475,8 @@ static void SceneTickAsteroids(GameState* gstate) {
                 cmd->color = LBLUE;
             }
 
+            DrawLCircle(Vec3Zero(), 20.0f, LRED);
+
             // Draw.
             for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
                 Entity* e = GetEntity(i);
@@ -2510,7 +2521,7 @@ static void SceneTickAsteroids(GameState* gstate) {
 
     i32 hwidth = 0.5f * GetScreenWidth();
     i32 hheight = 0.5f * GetScreenHeight();
-    pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -3.0f, 3.0f);
+    pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -100.0f, 100.0f);
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
 
