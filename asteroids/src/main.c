@@ -2440,51 +2440,57 @@ static void SceneTickAsteroids(GameState* gstate) {
 
             if (gstate->update) {
                 // Movement update.
-                for (u32 i = 0; i < esize; ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                        continue;
-                    }
-
-                    e->ppos = e->pos;
-
-                    if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_ASTEROID)) {
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
-                        static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
-                        static const f32 MAX_SPEED = 100.0f;
-
-                        Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
-
-                        {
-                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                            if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
-                                Vec3 dir = Vec3Lit(x, y, 0.0f);
-                                dir = Vec3Normalize(Vec3Transform(dir, vieworient));
-                                e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
-                            }
+                {
+                    for (u32 i = 0; i < esize; ++i) {
+                        Entity* e = GetEntity(i);
+                        if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                            continue;
                         }
 
-                        {
-                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                            if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
-                                Vec3 wishdir = Vec3Lit(x, y, 0.0f);
-                                wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
+                        e->ppos = e->pos;
 
-                                Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
-                                Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
-                                e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
+                        if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        }
+
+                        if (TestFlag(e->flags, EFLAG_ASTEROID)) {
+                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        }
+
+                        if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                            static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
+                            static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
+                            static const f32 MAX_SPEED = 100.0f;
+
+                            Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
+
+                            {
+                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                                if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
+                                    Vec3 dir = Vec3Lit(x, y, 0.0f);
+                                    dir = Vec3Normalize(Vec3Transform(dir, vieworient));
+                                    e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
+                                }
+                            }
+
+                            {
+                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                                if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
+                                    Vec3 wishdir = Vec3Lit(x, y, 0.0f);
+                                    wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
+
+                                    Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
+                                    Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
+                                    e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
+                                }
                             }
                         }
+                    }
+
+                    // Collision detection.
+                    {
                     }
                 }
 
