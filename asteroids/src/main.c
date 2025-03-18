@@ -1828,26 +1828,7 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
     Vec2 n2d = Vec2Zero();
     f32 d = 0.0f;
 
-    // Collision table. if we don't have an entry in the collision table set up between two
-    // polyedron types, then we just say they never collide.
-    // IMPORTANT: If you are adding new entries here, you need to handle a vs b and b vs a
-    // comparisons.
-    // TODO: Can we make this nicer? Could we literally turn this into a table and just make reverse
-    // functions? ex. Take TestSphereVsAABB. we could make TestAABBVsSphere and have it call the former function
-    // and add negation to the collision normal.
-    // if (a->type == PH_SPHERE) {
-    //     if (b->type == PH_AABB) {
-    //         collides = TestSphereVsAABB(a->sphere, b->aabb, &n, &d);
-    //     }
-    // } else if (a->type == PH_AABB) {
-    //     if (b->type == PH_AABB) {
-    //         collides = TestAABBVsAABB(a->aabb, b->aabb, &n, &d);
-    //     } else if (b->type == PH_SPHERE) {
-    //         collides = TestSphereVsAABB(b->sphere, a->aabb, &n, &d);
-    //         // point normal from b to a.
-    //         n = Vec3Negate(n);
-    //     }
-    // }
+    // Collision shape table.
     switch (a->type) {
         case PH_CIRCLE: {
             switch (b->type) {
