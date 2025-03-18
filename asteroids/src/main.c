@@ -2500,7 +2500,7 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                     bullet->graphics.mid = GetMesh(M_QUAD);
                     bullet->graphics.scale = Vec3Lit(5.0f, 5.0f, 1.0f);
-                    bullet->graphics.color = LRED;
+                    bullet->graphics.color = LYELLOW;
                     FlagOn(bullet->flags, EFLAG_PROJECTILE);
                 }
 
@@ -2541,7 +2541,7 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                     cmd->meshid = e->graphics.mid;
 
-                    if (gstate->debug) {
+                    if (gstate->debug || true) {
                         Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
                         DrawPolyhedron(&shape, LRED);
                     }
