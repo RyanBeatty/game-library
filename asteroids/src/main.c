@@ -2305,17 +2305,21 @@ static void SceneTickAsteroids(GameState* gstate) {
             PLAYER_ID = e->id;
         }
 
-        // asteroids init.
+        // asteroids init. spawn randomly on screen.
         {
-            for (u32 i = 0; i < 10; ++i) {
+            u32 width = GetScreenWidth();
+            u32 height = GetScreenHeight();
+            for (u32 i = 0; i < 20; ++i) {
                 Entity* asteroid = AllocateEntity();
 
                 // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
                 f32 seed = (f32)rand() / (f32)RAND_MAX;
                 f32 seed2 = (f32)rand() / (f32)RAND_MAX;
+                f32 seed3 = (f32)rand() / (f32)RAND_MAX;
 
-                asteroid->pos = Vec3RotateAxis(Vec3Lit(500.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), seed * LPI);
-                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2 * LPI);
+                // Something off about this, way fewer asteroids appear.
+                asteroid->pos = Vec3Lit(seed * width, seed2 * height, 0.0f);
+                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed3 * LPI);
                 asteroid->v = Vec3Scale(vdir, 20.0f);
                 asteroid->orient = Mat4Identity();
 
@@ -2475,8 +2479,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                 cmd->color = LBLUE;
             }
 
-            DrawLCircle(Vec3Zero(), 20.0f, LRED);
-
             // Draw.
             for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
                 Entity* e = GetEntity(i);
@@ -2493,8 +2495,8 @@ static void SceneTickAsteroids(GameState* gstate) {
                     cmd->txid = e->graphics.txid;
 
                     cmd->meshid = e->graphics.mid;
-                    if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                        breakpoint();
+                    if (TestFlag(e->flags, EFLAG_ASTEROID)) {
+                        DrawLCircle(e->graphics.pos, 20.0f, LRED);
                     }
                 }
 
