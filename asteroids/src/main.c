@@ -1488,6 +1488,94 @@ static DrawCmd* AddCmd() {
     return cmd;
 }
 
+LCORE void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    cmd->meshid = GetMesh(M_ICOSPHERE);
+    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
+    cmd->color = color;
+}
+
+LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    // We cheat and just use an icosphere. assumes ortho projection which should chop it into a circle.
+    cmd->meshid = GetMesh(M_ICOSPHERE);
+    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
+    cmd->color = color;
+}
+
+LCORE void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    cmd->meshid = GetMesh(M_QUAD);
+    cmd->modelm = Mat4SVRT(Vec3Lit(hwidth, hheight, 1.0f), orient, center);
+    cmd->color = color;
+}
+
+LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    cmd->meshid = GetMesh(M_CUBE);
+    cmd->modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
+    cmd->color = color;
+}
+
+// Remember
+// (0, 0)
+// * maps to bottom left corner in src texture space
+// * maps to origin in dest world space.
+// radius
+// * need to be full width/height of quad in texture space
+// * need to be half width/height in world space
+LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
+    // TODO: is scale right?
+    Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
+    Vec2 uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
+
+    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
+    Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
+    Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
+    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+    DrawCmd* cmd = AddCmd();
+    cmd->modelm = model;
+    cmd->color = color;
+    cmd->uvoffset = uvoffset;
+    cmd->uvscale = uvscale;
+    cmd->txid = tx.id;
+    cmd->meshid = GetMesh(M_QUAD);
+}
+
+LCORE void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
+    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation, color);
+}
+
+// Remember that pos will be the center of the quad.
+LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
+    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
+}
+
+LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
+    LTexture tx = GetTexture(TX_LFONT);
+
+    u32 x = 48;
+    u32 y = 48;
+    // (width, height) of the src and dest recs).
+    // misnomer name I think. the center adjusts by the full width each time.
+    Vec2 r_src = Vec2Lit(x, y);
+    Vec2 r_dst = Vec2Lit(fontsize, fontsize);
+
+    for (u32 i = 0; i < size; ++i, pos = Vec3Add(pos, Vec3Lit(r_dst.x, 0.0f, 0.0f))) {
+        u32 offset = text[i] - '0';
+
+        // center src and dest.
+        Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
+        Vec2 c_dst = Vec2Lit(pos.x, pos.y);
+        DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, color);
+    }
+}
+
+// Imagine the texture as a single pre baked one off texture. This will measure the width
+// and height of that texture.
+LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
+
 ////////////////////////////////////////////////////////////
 // S:Geometry
 
@@ -2213,94 +2301,6 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
     EndWireframe();
 }
 
-LCORE void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
-    cmd->meshid = GetMesh(M_ICOSPHERE);
-    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
-    cmd->color = color;
-}
-
-LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
-    // We cheat and just use an icosphere. assumes ortho projection which should chop it into a circle.
-    cmd->meshid = GetMesh(M_ICOSPHERE);
-    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
-    cmd->color = color;
-}
-
-LCORE void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
-    cmd->meshid = GetMesh(M_QUAD);
-    cmd->modelm = Mat4SVRT(Vec3Lit(hwidth, hheight, 1.0f), orient, center);
-    cmd->color = color;
-}
-
-LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
-    cmd->meshid = GetMesh(M_CUBE);
-    cmd->modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
-    cmd->color = color;
-}
-
-// Remember
-// (0, 0)
-// * maps to bottom left corner in src texture space
-// * maps to origin in dest world space.
-// radius
-// * need to be full width/height of quad in texture space
-// * need to be half width/height in world space
-LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
-    // TODO: is scale right?
-    Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-    Vec2 uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
-
-    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
-    Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
-    Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
-    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
-
-    DrawCmd* cmd = AddCmd();
-    cmd->modelm = model;
-    cmd->color = color;
-    cmd->uvoffset = uvoffset;
-    cmd->uvscale = uvscale;
-    cmd->txid = tx.id;
-    cmd->meshid = GetMesh(M_QUAD);
-}
-
-LCORE void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
-    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), rotation, color);
-}
-
-// Remember that pos will be the center of the quad.
-LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
-    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
-}
-
-LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
-    LTexture tx = GetTexture(TX_LFONT);
-
-    u32 x = 48;
-    u32 y = 48;
-    // (width, height) of the src and dest recs).
-    // misnomer name I think. the center adjusts by the full width each time.
-    Vec2 r_src = Vec2Lit(x, y);
-    Vec2 r_dst = Vec2Lit(fontsize, fontsize);
-
-    for (u32 i = 0; i < size; ++i, pos = Vec3Add(pos, Vec3Lit(r_dst.x, 0.0f, 0.0f))) {
-        u32 offset = text[i] - '0';
-
-        // center src and dest.
-        Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
-        Vec2 c_dst = Vec2Lit(pos.x, pos.y);
-        DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, color);
-    }
-}
-
-// Imagine the texture as a single pre baked one off texture. This will measure the width
-// and height of that texture.
-LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
-
 #define MAX_ENTITY_BATCH 256
 
 static void SceneTickAsteroids(GameState* gstate) {
@@ -2521,12 +2521,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                     // if (TestFlag(e->flags, EFLAG_ASTEROID)) {
                     //     DrawLCircle(e->graphics.pos, 20.0f, LRED);
                     // }
-                }
 
-                if (gstate->debug) {
-                    BeginWireframe();
-                    DrawPolyhedron(&e->shape, LRED);
-                    EndWireframe();
+                    if (gstate->debug) {
+                        BeginWireframe();
+                        DrawPolyhedron(&e->shape, LRED);
+                        EndWireframe();
+                    }
                 }
             }
         }
