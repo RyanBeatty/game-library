@@ -1607,7 +1607,9 @@ static bool TestCircleCircle(Circle a, Circle b, Vec2* normal, f32* depth) {
     Vec2 ba = Vec2Sub(b.c, a.c);
     f32 dsquared = (ba.x * ba.x) + (ba.y * ba.y);
     f32 r = a.r + b.r;
-    if (r * r > dsquared) {
+    // if (squared) distance between a and b is greater than the (squared) distance of the
+    // combined radii, then no collision.
+    if (r * r < dsquared) {
         return false;
     }
 
@@ -2491,6 +2493,35 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                     // Collision detection.
                     {
+                        for (u32 i = 0; i < esize; ++i) {
+                            Entity* ea = GetEntity(i);
+                            if (!TestFlag(ea->flags, EFLAG_ACTIVE) || !TestFlag(ea->flags, EFLAG_COLLIDER)) {
+                                continue;
+                            }
+
+                            Polyhedron shapea = PolyhedronTransform(ea->shape, EntityGetMat(ea));
+                            for (u32 j = i + 1; j < esize; ++j) {
+                                Entity* eb = GetEntity(j);
+                                if (!TestFlag(eb->flags, EFLAG_ACTIVE) || !TestFlag(eb->flags, EFLAG_COLLIDER)) {
+                                    continue;
+                                }
+
+                                // HACK FOR DEBUGGING.
+                                if (TestFlag(ea->flags, EFLAG_ASTEROID) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                    continue;
+                                }
+
+                                Polyhedron shapeb = PolyhedronTransform(eb->shape, EntityGetMat(eb));
+
+                                CollisionInfo collision = {0};
+                                bool collides =
+                                    TestPolyhedronVsPolyhedron(&shapea, &shapeb, &collision.normal, &collision.depth);
+                                if (collides) {
+                                    FlagOff(ea->flags, EFLAG_ACTIVE);
+                                    FlagOff(eb->flags, EFLAG_ACTIVE);
+                                }
+                            }
+                        }
                     }
                 }
 
