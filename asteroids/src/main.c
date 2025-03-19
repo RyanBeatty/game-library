@@ -2310,7 +2310,7 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 
 static void SceneTickAsteroids(GameState* gstate) {
     static LCamera CAMERA = {0};
-    static EntityId PLAYER_ID = 0;
+    // static EntityId PLAYER_ID = 0;
 
     f32 dt = gstate->dt;
 
@@ -2325,7 +2325,7 @@ static void SceneTickAsteroids(GameState* gstate) {
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 2.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
-            PLAYER_ID = e->id;
+            // PLAYER_ID = e->id;
         }
 
         // asteroids init. spawn randomly on screen.
@@ -2422,7 +2422,68 @@ static void SceneTickAsteroids(GameState* gstate) {
             u32 esize = ArraySizeOf(em->entities);
 
             if (gstate->update) {
-                // Movement update.
+                // React to input.
+                for (u32 i = 0; i < esize; ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
+                        static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
+                        static const f32 MAX_SPEED = 100.0f;
+
+                        Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
+
+                        {
+                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                            if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
+                                Vec3 dir = Vec3Lit(x, y, 0.0f);
+                                dir = Vec3Normalize(Vec3Transform(dir, vieworient));
+                                e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
+                            }
+                        }
+
+                        {
+                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                            if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
+                                Vec3 wishdir = Vec3Lit(x, y, 0.0f);
+                                wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
+
+                                Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
+                                Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
+                                e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
+                            }
+                        }
+
+                        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
+                            static const f32 PROJECTILE_SPEED = 600.0f;
+                            static const f32 PROJECTILE_SCALE = 5.0f;
+
+                            Entity* bullet = AllocateEntity();
+
+                            bullet->pos = e->pos;
+                            bullet->v =
+                                Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient), PROJECTILE_SPEED);
+                            bullet->orient = e->orient;
+
+                            bullet->shape.type = PH_CIRCLE;
+                            bullet->shape.circle.c = Vec2Zero();
+                            bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
+
+                            bullet->graphics.mid = GetMesh(M_QUAD);
+                            bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
+                            bullet->graphics.color = LYELLOW;
+                            FlagOn(bullet->flags, EFLAG_PROJECTILE);
+                            FlagOn(bullet->flags, EFLAG_COLLIDER);
+                        }
+                    }
+                }
+
+                // physics update.
                 {
                     for (u32 i = 0; i < esize; ++i) {
                         Entity* e = GetEntity(i);
@@ -2431,45 +2492,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                         }
 
                         e->ppos = e->pos;
-
-                        if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                        }
-
-                        if (TestFlag(e->flags, EFLAG_ASTEROID)) {
-                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                        }
-
-                        if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                            static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
-                            static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
-                            static const f32 MAX_SPEED = 100.0f;
-
-                            Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
-
-                            {
-                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                                if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
-                                    Vec3 dir = Vec3Lit(x, y, 0.0f);
-                                    dir = Vec3Normalize(Vec3Transform(dir, vieworient));
-                                    e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
-                                }
-                            }
-
-                            {
-                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                                if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
-                                    Vec3 wishdir = Vec3Lit(x, y, 0.0f);
-                                    wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
-
-                                    Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
-                                    Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
-                                    e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
-                                }
-                            }
-                        }
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
 
                     // Collision detection.
@@ -2504,29 +2527,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                             }
                         }
                     }
-                }
-
-                if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                    static const f32 PROJECTILE_SPEED = 600.0f;
-                    static const f32 PROJECTILE_SCALE = 5.0f;
-
-                    Entity* player = GetEntity(PLAYER_ID);
-
-                    Entity* bullet = AllocateEntity();
-
-                    bullet->pos = player->pos;
-                    bullet->v = Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), player->orient), PROJECTILE_SPEED);
-                    bullet->orient = player->orient;
-
-                    bullet->shape.type = PH_CIRCLE;
-                    bullet->shape.circle.c = Vec2Zero();
-                    bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
-
-                    bullet->graphics.mid = GetMesh(M_QUAD);
-                    bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
-                    bullet->graphics.color = LYELLOW;
-                    FlagOn(bullet->flags, EFLAG_PROJECTILE);
-                    FlagOn(bullet->flags, EFLAG_COLLIDER);
                 }
 
                 // graphics update.
