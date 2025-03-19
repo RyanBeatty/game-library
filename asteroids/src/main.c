@@ -2110,16 +2110,24 @@ typedef struct Entity {
 } Entity;
 
 #define ENTITY_CAP 1024
+#define ENTITY_INACTIVE_TO_BE_CAP 20
 
 typedef struct EntityManager {
     Entity entities[ENTITY_CAP];
+
+    EntityId inactive_to_be[ENTITY_INACTIVE_TO_BE_CAP];
+    u32 inactive_cap;
+    u32 inactive_len;
 } EntityManager;
 
 static EntityManager EntityM = {0};
 
 #define GetEntityManager() &EntityM
 
-static void EntitySystemInit() { memset(&EntityM, 0, sizeof(EntityM)); }
+static void EntitySystemInit() {
+    memset(&EntityM, 0, sizeof(EntityM));
+    EntityM.inactive_cap = ENTITY_INACTIVE_TO_BE_CAP;
+}
 
 static Entity* GetEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
@@ -2152,6 +2160,21 @@ static Entity* AllocateEntity() {
     GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
+}
+
+static void SoftDeactivateEntity(EntityId id) {
+    EntityManager* em = GetEntityManager();
+    Assert(em->inactive_len < em->inactive_cap);
+    em->inactive_to_be[em->inactive_len++] = id;
+}
+
+static void DeactivateEntities() {
+    EntityManager* em = GetEntityManager();
+    for (u32 i = 0; i < em->inactive_len; ++i) {
+        Entity* e = &em->entities[em->inactive_to_be[i]];
+        FlagOff(e->flags, EFLAG_ACTIVE);
+    }
+    em->inactive_len = 0;
 }
 
 static Mat4 EntityGetMat(Entity* e) {
@@ -2557,8 +2580,8 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 Entity* eb = GetEntity(collision.id1);
 
                                 if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
-                                    FlagOff(ea->flags, EFLAG_ACTIVE);
-                                    FlagOff(eb->flags, EFLAG_ACTIVE);
+                                    SoftDeactivateEntity(ea->id);
+                                    SoftDeactivateEntity(eb->id);
                                 }
                             }
                         }
@@ -2624,6 +2647,8 @@ static void SceneTickAsteroids(GameState* gstate) {
     EndShaderPass();
 
     EndRender();
+
+    DeactivateEntities();
 }
 
 static void Scene1Tick(GameState* gstate) {
