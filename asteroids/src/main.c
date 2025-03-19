@@ -2555,8 +2555,11 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                                 Entity* ea = GetEntity(collision.id0);
                                 Entity* eb = GetEntity(collision.id1);
-                                FlagOff(ea->flags, EFLAG_ACTIVE);
-                                FlagOff(eb->flags, EFLAG_ACTIVE);
+
+                                if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                    FlagOff(ea->flags, EFLAG_ACTIVE);
+                                    FlagOff(eb->flags, EFLAG_ACTIVE);
+                                }
                             }
                         }
                     }
