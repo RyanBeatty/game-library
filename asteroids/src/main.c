@@ -2497,6 +2497,10 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                     // Collision detection.
                     {
+                        CollisionInfo collisions[10] = {0};
+                        u32 ccap = 10;
+                        u32 clen = 0;
+
                         for (u32 i = 0; i < esize; ++i) {
                             Entity* ea = GetEntity(i);
                             if (!TestFlag(ea->flags, EFLAG_ACTIVE) || !TestFlag(ea->flags, EFLAG_COLLIDER)) {
@@ -2521,10 +2525,21 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 bool collides =
                                     TestPolyhedronVsPolyhedron(&shapea, &shapeb, &collision.normal, &collision.depth);
                                 if (collides) {
-                                    FlagOff(ea->flags, EFLAG_ACTIVE);
-                                    FlagOff(eb->flags, EFLAG_ACTIVE);
+                                    collision.id0 = ea->id;
+                                    collision.id1 = eb->id;
+
+                                    Assert(clen < ccap);
+                                    collisions[clen++] = collision;
                                 }
                             }
+                        }
+
+                        for (u32 i = 0; i < clen; ++i) {
+                            CollisionInfo* collision = &collisions[i];
+                            Entity* ea = GetEntity(collision->id0);
+                            Entity* eb = GetEntity(collision->id1);
+                            FlagOff(ea->flags, EFLAG_ACTIVE);
+                            FlagOff(eb->flags, EFLAG_ACTIVE);
                         }
                     }
                 }
