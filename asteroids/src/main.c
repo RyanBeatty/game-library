@@ -2535,11 +2535,29 @@ static void SceneTickAsteroids(GameState* gstate) {
                         }
 
                         for (u32 i = 0; i < clen; ++i) {
-                            CollisionInfo* collision = &collisions[i];
-                            Entity* ea = GetEntity(collision->id0);
-                            Entity* eb = GetEntity(collision->id1);
-                            FlagOff(ea->flags, EFLAG_ACTIVE);
-                            FlagOff(eb->flags, EFLAG_ACTIVE);
+                            CollisionInfo c = collisions[i];
+
+                            CollisionInfo cs[2] = {0};
+                            cs[0] = c;
+
+                            EntityId temp = c.id0;
+                            c.id0 = c.id1;
+                            c.id1 = temp;
+                            c.normal = Vec3Negate(c.normal);
+                            cs[1] = c;
+                            // A bit hacky but to make sure we react to collisions properly, we run the collision
+                            // react code against "both sides" of the collision (the original and the flipped version)
+                            // this is so that we can just write collision reaction code in the form of
+                            // if IsPlayer(ea) and IsWall(eb), then do something(). We can't be guaranteed that this
+                            // order will be the only order the collision system gives us, so we check both sides.
+                            for (u32 j = 0; j < ArraySizeOf(cs); ++j) {
+                                CollisionInfo collision = cs[j];
+
+                                Entity* ea = GetEntity(collision.id0);
+                                Entity* eb = GetEntity(collision.id1);
+                                FlagOff(ea->flags, EFLAG_ACTIVE);
+                                FlagOff(eb->flags, EFLAG_ACTIVE);
+                            }
                         }
                     }
                 }
