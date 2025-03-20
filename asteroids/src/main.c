@@ -2589,8 +2589,21 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 Entity* eb = GetEntity(collision.id1);
 
                                 if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
-                                    SoftDeactivateEntity(ea->id);
-                                    SoftDeactivateEntity(eb->id);
+                                    Entity* bullet = ea;
+                                    Entity* asteroid = eb;
+
+                                    f32 new_speed = 3.0f * Vec3Len(asteroid->v);
+                                    Vec3 vdir0 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
+                                                                f32randab(0.0f, LPI));
+                                    Vec3 v0 = Vec3Scale(vdir0, new_speed);
+                                    SpawnAsteroid(asteroid->pos, v0, Vec3Scale(asteroid->graphics.scale, 0.5f));
+                                    Vec3 vdir1 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
+                                                                f32randab(0.0f, LPI));
+                                    Vec3 v1 = Vec3Scale(vdir1, new_speed);
+                                    SpawnAsteroid(asteroid->pos, v1, Vec3Scale(asteroid->graphics.scale, 0.5f));
+
+                                    SoftDeactivateEntity(bullet->id);
+                                    SoftDeactivateEntity(asteroid->id);
                                 }
                             }
                         }
