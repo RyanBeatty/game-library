@@ -28,6 +28,8 @@ static f32 TOL = 0.001;
 #define f32atan atan
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
 #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
+#define f32rand01() ((f32)rand() / (f32)RAND_MAX)
+#define f32randab(a, b) (f32lerp((a), (b), (f32rand01())))
 
 static f32 f32clamp(f32 v, f32 min, f32 max) { return f32min(f32max(v, min), max); }
 
@@ -2331,6 +2333,26 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 
 #define MAX_ENTITY_BATCH 256
 
+static Entity* SpawnAsteroid(Vec3 pos, Vec3 v, Vec3 scale) {
+    Entity* asteroid = AllocateEntity();
+    asteroid->pos = pos;
+    asteroid->v = v;
+    asteroid->orient = Mat4Identity();
+
+    asteroid->shape.type = PH_CIRCLE;
+    asteroid->shape.circle.c = Vec2Zero();
+    asteroid->shape.circle.r = 20.0f;
+
+    asteroid->graphics.mid = GetMesh(M_QUAD);
+    asteroid->graphics.scale = scale;
+    Vec4 color = LGRAY;
+    color.a = 0.5f;
+    asteroid->graphics.color = color;
+    FlagOn(asteroid->flags, EFLAG_ASTEROID);
+    FlagOn(asteroid->flags, EFLAG_COLLIDER);
+    return asteroid;
+}
+
 static void SceneTickAsteroids(GameState* gstate) {
     static LCamera CAMERA = {0};
     // static EntityId PLAYER_ID = 0;
@@ -2356,30 +2378,17 @@ static void SceneTickAsteroids(GameState* gstate) {
             u32 width = GetScreenWidth();
             u32 height = GetScreenHeight();
             for (u32 i = 0; i < 20; ++i) {
-                Entity* asteroid = AllocateEntity();
-
                 // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
-                f32 seed = (f32)rand() / (f32)RAND_MAX;
-                f32 seed2 = (f32)rand() / (f32)RAND_MAX;
-                f32 seed3 = (f32)rand() / (f32)RAND_MAX;
+                f32 seed0 = f32randab(-0.5f * width, 0.5f * width);
+                f32 seed1 = f32randab(-0.5f * height, 0.5f * height);
+                f32 seed2 = f32randab(0.0f, LPI);
 
                 // Something off about this, way fewer asteroids appear.
-                asteroid->pos = Vec3Lit(seed * width, seed2 * height, 0.0f);
-                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed3 * LPI);
-                asteroid->v = Vec3Scale(vdir, 20.0f);
-                asteroid->orient = Mat4Identity();
-
-                asteroid->shape.type = PH_CIRCLE;
-                asteroid->shape.circle.c = Vec2Zero();
-                asteroid->shape.circle.r = 20.0f;
-
-                asteroid->graphics.mid = GetMesh(M_QUAD);
-                asteroid->graphics.scale = Vec3Lit(100.0f, 100.0f, 1.0f);
-                Vec4 color = LGRAY;
-                color.a = 0.5f;
-                asteroid->graphics.color = color;
-                FlagOn(asteroid->flags, EFLAG_ASTEROID);
-                FlagOn(asteroid->flags, EFLAG_COLLIDER);
+                Vec3 pos = Vec3Lit(seed0, seed1, 0.0f);
+                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2);
+                Vec3 v = Vec3Scale(vdir, 20.0f);
+                Vec3 scale = Vec3Lit(100.0f, 100.0f, 1.0f);
+                SpawnAsteroid(pos, v, scale);
             }
         }
     }
