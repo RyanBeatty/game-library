@@ -2367,6 +2367,9 @@ static void SceneTickAsteroids(GameState* gstate) {
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Zero();
+            e->shape.type = PH_CIRCLE;
+            e->shape.circle.c = Vec2Zero();
+            e->shape.circle.r = 12.0f;
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 2.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
