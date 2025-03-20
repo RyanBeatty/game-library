@@ -2353,14 +2353,24 @@ static Entity* SpawnAsteroid(Vec3 pos, Vec3 v, Vec3 scale) {
     return asteroid;
 }
 
+typedef enum {
+    SS_NONE = 0,
+    SS_RESPAWN,
+    SS_SPAWNED,
+    SS_PLAYING,
+    SS_COUNT,
+} SceneState;
+
 static void SceneTickAsteroids(GameState* gstate) {
     static LCamera CAMERA = {0};
+    static SceneState STATE = SS_RESPAWN;
     // static EntityId PLAYER_ID = 0;
 
     f32 dt = gstate->dt;
 
     // Init logic.
     if (!gstate->init) {
+        STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
 
         // Player init.
@@ -2456,7 +2466,13 @@ static void SceneTickAsteroids(GameState* gstate) {
             EntityManager* em = GetEntityManager();
             u32 esize = ArraySizeOf(em->entities);
 
-            if (gstate->update) {
+            // TODO: Refactor into a switch statement based on the STATE
+            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                STATE = SS_PLAYING;
+            }
+
+            // TODO: Refactor into a switch statement based on the STATE
+            if (gstate->update && STATE == SS_PLAYING) {
                 // React to input.
                 for (u32 i = 0; i < esize; ++i) {
                     Entity* e = GetEntity(i);
@@ -2612,17 +2628,17 @@ static void SceneTickAsteroids(GameState* gstate) {
                         }
                     }
                 }
+            }
 
-                // graphics update.
-                for (u32 i = 0; i < esize; ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                        continue;
-                    }
-
-                    e->graphics.pos = e->pos;
-                    e->graphics.orient = e->orient;
+            // graphics update.
+            for (u32 i = 0; i < esize; ++i) {
+                Entity* e = GetEntity(i);
+                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                    continue;
                 }
+
+                e->graphics.pos = e->pos;
+                e->graphics.orient = e->orient;
             }
 
             // Draw background
@@ -2670,6 +2686,18 @@ static void SceneTickAsteroids(GameState* gstate) {
     pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -100.0f, 100.0f);
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
+
+    if (STATE == SS_RESPAWN) {
+        TraceLog(LOG_INFO, "hello");
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        u32 width = GetScreenWidth();
+        u32 height = GetScreenHeight();
+        pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+        char msg[] = "PRESSATOSTART";
+        DrawLText(msg, strlen(msg), Vec3Lit(0.5f * width, 0.5f * height, 0.0f), 30.0f, LYELLOW);
+        EndShaderPass();
+    }
 
     EndRender();
 
