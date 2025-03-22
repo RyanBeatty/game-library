@@ -1003,7 +1003,8 @@ static void RenderDataInit() {
 
     // Quad.
     {
-        // quad is aligned with the xy plane.
+        // quad is aligned with the xy plane. the full width of the quad is 1.0f so scaling by 2 will
+        // make the width 2
         Vec3 vs[] = {
             Vec3Lit(-0.5f, 0.5f, 0.0f),
             Vec3Lit(-0.5f, -0.5f, 0.0f),
@@ -2026,7 +2027,7 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
 static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
-    graphics->scale = Vec3Lit(0.5f * r_src.x * scale, 0.5f * r_src.y * scale, 1.0f);
+    graphics->scale = Vec3Lit(r_src.x * scale, r_src.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
     graphics->mid = GetMesh(M_QUAD);
