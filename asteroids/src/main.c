@@ -2589,11 +2589,11 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     Entity* ea = GetEntity(collision.id0);
                                     Entity* eb = GetEntity(collision.id1);
 
-                                    if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                    if (TestFlag(ea->flags, EFLAG_ASTEROID) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
                                         static const f32 SPEED_JITTER = 0.5f;
 
-                                        Entity* bullet = ea;
-                                        Entity* asteroid = eb;
+                                        Entity* asteroid = ea;
+                                        Entity* bullet = eb;
 
                                         f32 rrot0 = f32randab(0.0f, LPI);
                                         f32 rspeed0 = f32randab(-1.0f, 1.0f);
