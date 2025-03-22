@@ -658,7 +658,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_SHIP, TX_LFONT, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_SHIP, TX_LFONT, TX_ASTEROID_LARGE, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -705,6 +705,13 @@ static void TexturesInit() {
         Assert(tcache->txlen < tcache->txcap);
         LTexture tx = UploadTexture("assets/textures/LFont.png");
         tcache->textures[TX_LFONT] = tx;
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        LTexture tx = UploadTexture("assets/textures/asteroid-large.png");
+        tcache->textures[TX_ASTEROID_LARGE] = tx;
         ++tcache->txlen;
     }
 }
@@ -2324,7 +2331,7 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 
 static Entity* SpawnAsteroid(u32 generation, Vec3 pos, Vec3 v, f32 gscale, f32 sscale, bool spawns_debree) {
     static const f32 R = 50.f;
-    static const Vec3 GSCALE = Vec3Lit(100.0f, 100.0f, 1.0f);
+    static const Vec3 GSCALE = Vec3Lit(96.0f, 96.0f, 1.0f);
 
     Entity* asteroid = AllocateEntity();
     asteroid->generation = generation;
@@ -2338,11 +2345,14 @@ static Entity* SpawnAsteroid(u32 generation, Vec3 pos, Vec3 v, f32 gscale, f32 s
     asteroid->shape.circle.c = Vec2Zero();
     asteroid->shape.circle.r = R * sscale;
 
-    asteroid->graphics.mid = GetMesh(M_QUAD);
-    asteroid->graphics.scale = Vec3Scale(GSCALE, gscale);
-    Vec4 color = LGRAY;
-    color.a = 0.5f;
-    asteroid->graphics.color = color;
+    LTexture tx = GetTexture(TX_ASTEROID_LARGE);
+    GraphicsInfoSetSprite(&asteroid->graphics, GetTexture(TX_ASTEROID_LARGE), Vec2Zero(), Vec2Lit(tx.width, tx.height),
+                          0.0f, gscale);
+    // asteroid->graphics.mid = GetMesh(M_QUAD);
+    // asteroid->graphics.scale = Vec3Scale(GSCALE, gscale);
+    // Vec4 color = LGRAY;
+    // color.a = 0.5f;
+    // asteroid->graphics.color = color;
     FlagOn(asteroid->flags, EFLAG_ASTEROID);
     FlagOn(asteroid->flags, EFLAG_COLLIDER);
     return asteroid;
@@ -2706,7 +2716,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                 DrawCmd* cmd = AddCmd();
                 cmd->meshid = GetMesh(M_QUAD);
                 cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
-                cmd->color = LBLUE;
+                cmd->color = LBLUE;  // RGBLit(5, 5, 20);
             }
 
             // Draw.
@@ -2726,10 +2736,10 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                     cmd->meshid = e->graphics.mid;
 
-                    if (gstate->debug || true) {
-                        Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
-                        DrawPolyhedron(&shape, LRED);
-                    }
+                    // if (gstate->debug || true) {
+                    //     Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
+                    //     DrawPolyhedron(&shape, LRED);
+                    // }
                 }
             }
         }
