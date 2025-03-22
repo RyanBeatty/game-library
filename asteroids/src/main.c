@@ -2091,16 +2091,11 @@ typedef struct Entity {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-
-    bool hit;
-    f32 hit_timer;
-    i32 last_hit;  // entity id. signed to set to -1 for sentinel val.
-
-    bool straight_shot;
-
     u32 health;
     u32 generation;
     bool spawns_debree;
+
+    f32 alive_dt;
 
 } Entity;
 
@@ -2510,6 +2505,13 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 bullet->graphics.color = LYELLOW;
                                 FlagOn(bullet->flags, EFLAG_PROJECTILE);
                                 FlagOn(bullet->flags, EFLAG_COLLIDER);
+                            }
+                        }
+
+                        if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                            e->alive_dt += dt;
+                            if (e->alive_dt > 1.5f) {
+                                SoftDeactivateEntity(e->id);
                             }
                         }
                     }
