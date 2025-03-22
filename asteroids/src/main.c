@@ -2453,7 +2453,6 @@ static void SceneTickAsteroids(GameState* gstate) {
             EntityManager* em = GetEntityManager();
             u32 esize = ArraySizeOf(em->entities);
 
-            // TODO: Refactor into a switch statement based on the STATE
             if (gstate->update) {
                 if (STATE == SS_PLAYING) {
                     // React to input.
@@ -2619,7 +2618,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                         }
                     }
                 } else if (STATE == SS_SPAWNED) {
-                    // TODO: Refactor into a switch statement based on the STATE
                     if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
                         STATE = SS_PLAYING;
                     }
