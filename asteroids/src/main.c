@@ -2736,10 +2736,12 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                     cmd->meshid = e->graphics.mid;
 
-                    // if (gstate->debug || true) {
-                    //     Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
-                    //     DrawPolyhedron(&shape, LRED);
-                    // }
+                    if (gstate->debug) {
+                        BeginWireframe();
+                        Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
+                        DrawPolyhedron(&shape, LRED);
+                        EndWireframe();
+                    }
                 }
             }
         }
