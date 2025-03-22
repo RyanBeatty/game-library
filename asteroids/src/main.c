@@ -2333,7 +2333,10 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 
 #define MAX_ENTITY_BATCH 256
 
-static Entity* SpawnAsteroid(Vec3 pos, Vec3 v, Vec3 scale) {
+static Entity* SpawnAsteroid(Vec3 pos, Vec3 v, f32 gscale) {
+    static const f32 R = 20.f;
+    static const Vec3 GSCALE = Vec3Lit(100.0f, 100.0f, 1.0f);
+
     Entity* asteroid = AllocateEntity();
     asteroid->pos = pos;
     asteroid->v = v;
@@ -2341,10 +2344,10 @@ static Entity* SpawnAsteroid(Vec3 pos, Vec3 v, Vec3 scale) {
 
     asteroid->shape.type = PH_CIRCLE;
     asteroid->shape.circle.c = Vec2Zero();
-    asteroid->shape.circle.r = 20.0f;
+    asteroid->shape.circle.r = R;
 
     asteroid->graphics.mid = GetMesh(M_QUAD);
-    asteroid->graphics.scale = scale;
+    asteroid->graphics.scale = Vec3Scale(GSCALE, gscale);
     Vec4 color = LGRAY;
     color.a = 0.5f;
     asteroid->graphics.color = color;
@@ -2387,8 +2390,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                 Vec3 pos = Vec3Lit(seed0, seed1, 0.0f);
                 Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2);
                 Vec3 v = Vec3Scale(vdir, 20.0f);
-                Vec3 scale = Vec3Lit(100.0f, 100.0f, 1.0f);
-                SpawnAsteroid(pos, v, scale);
+                SpawnAsteroid(pos, v, 1.0f);
             }
         }
     }
@@ -2605,13 +2607,13 @@ static void SceneTickAsteroids(GameState* gstate) {
                                         {
                                             Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), rot);
                                             Vec3 v = Vec3Scale(vdir, new_speed);
-                                            SpawnAsteroid(asteroid->pos, v, Vec3Scale(asteroid->graphics.scale, 0.5f));
+                                            SpawnAsteroid(asteroid->pos, v, 0.5f);
                                         }
 
                                         {
                                             Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), -rot);
                                             Vec3 v = Vec3Scale(vdir, new_speed);
-                                            SpawnAsteroid(asteroid->pos, v, Vec3Scale(asteroid->graphics.scale, 0.5f));
+                                            SpawnAsteroid(asteroid->pos, v, 0.5f);
                                         }
 
                                         SoftDeactivateEntity(bullet->id);
