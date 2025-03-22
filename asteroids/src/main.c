@@ -2373,19 +2373,6 @@ static void SceneTickAsteroids(GameState* gstate) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
 
-        // Player init.
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Zero();
-            e->shape.type = PH_CIRCLE;
-            e->shape.circle.c = Vec2Zero();
-            e->shape.circle.r = 12.0f;
-            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f, 2.0f);
-            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
-
-            // PLAYER_ID = e->id;
-        }
-
         // asteroids init. spawn randomly on screen.
         {
             u32 width = GetScreenWidth();
@@ -2467,166 +2454,182 @@ static void SceneTickAsteroids(GameState* gstate) {
             u32 esize = ArraySizeOf(em->entities);
 
             // TODO: Refactor into a switch statement based on the STATE
-            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-                STATE = SS_PLAYING;
-            }
-
-            // TODO: Refactor into a switch statement based on the STATE
-            if (gstate->update && STATE == SS_PLAYING) {
-                // React to input.
-                for (u32 i = 0; i < esize; ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                        continue;
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
-                        static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
-                        static const f32 MAX_SPEED = 100.0f;
-
-                        Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
-
-                        {
-                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                            if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
-                                Vec3 dir = Vec3Lit(x, y, 0.0f);
-                                dir = Vec3Normalize(Vec3Transform(dir, vieworient));
-                                e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
-                            }
-                        }
-
-                        {
-                            f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                            f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                            if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
-                                Vec3 wishdir = Vec3Lit(x, y, 0.0f);
-                                wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
-
-                                Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
-                                Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
-                                e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
-                            }
-                        }
-
-                        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                            static const f32 PROJECTILE_SPEED = 600.0f;
-                            static const f32 PROJECTILE_SCALE = 5.0f;
-
-                            Entity* bullet = AllocateEntity();
-
-                            bullet->pos = e->pos;
-                            bullet->v =
-                                Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient), PROJECTILE_SPEED);
-                            bullet->orient = e->orient;
-
-                            bullet->shape.type = PH_CIRCLE;
-                            bullet->shape.circle.c = Vec2Zero();
-                            bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
-
-                            bullet->graphics.mid = GetMesh(M_QUAD);
-                            bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
-                            bullet->graphics.color = LYELLOW;
-                            FlagOn(bullet->flags, EFLAG_PROJECTILE);
-                            FlagOn(bullet->flags, EFLAG_COLLIDER);
-                        }
-                    }
-                }
-
-                // physics update.
-                {
+            if (gstate->update) {
+                if (STATE == SS_PLAYING) {
+                    // React to input.
                     for (u32 i = 0; i < esize; ++i) {
                         Entity* e = GetEntity(i);
                         if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                             continue;
                         }
 
-                        e->ppos = e->pos;
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                            static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
+                            static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
+                            static const f32 MAX_SPEED = 100.0f;
+
+                            Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
+
+                            {
+                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                                if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
+                                    Vec3 dir = Vec3Lit(x, y, 0.0f);
+                                    dir = Vec3Normalize(Vec3Transform(dir, vieworient));
+                                    e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
+                                }
+                            }
+
+                            {
+                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
+                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
+                                if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
+                                    Vec3 wishdir = Vec3Lit(x, y, 0.0f);
+                                    wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
+
+                                    Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
+                                    Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
+                                    e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
+                                }
+                            }
+
+                            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
+                                static const f32 PROJECTILE_SPEED = 600.0f;
+                                static const f32 PROJECTILE_SCALE = 5.0f;
+
+                                Entity* bullet = AllocateEntity();
+
+                                bullet->pos = e->pos;
+                                bullet->v =
+                                    Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient), PROJECTILE_SPEED);
+                                bullet->orient = e->orient;
+
+                                bullet->shape.type = PH_CIRCLE;
+                                bullet->shape.circle.c = Vec2Zero();
+                                bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
+
+                                bullet->graphics.mid = GetMesh(M_QUAD);
+                                bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
+                                bullet->graphics.color = LYELLOW;
+                                FlagOn(bullet->flags, EFLAG_PROJECTILE);
+                                FlagOn(bullet->flags, EFLAG_COLLIDER);
+                            }
+                        }
                     }
 
-                    // Collision detection.
+                    // physics update.
                     {
-                        CollisionInfo collisions[10] = {0};
-                        u32 ccap = 10;
-                        u32 clen = 0;
-
                         for (u32 i = 0; i < esize; ++i) {
-                            Entity* ea = GetEntity(i);
-                            if (!TestFlag(ea->flags, EFLAG_ACTIVE) || !TestFlag(ea->flags, EFLAG_COLLIDER)) {
+                            Entity* e = GetEntity(i);
+                            if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                                 continue;
                             }
 
-                            Polyhedron shapea = PolyhedronTransform(ea->shape, EntityGetMat(ea));
-                            for (u32 j = i + 1; j < esize; ++j) {
-                                Entity* eb = GetEntity(j);
-                                if (!TestFlag(eb->flags, EFLAG_ACTIVE) || !TestFlag(eb->flags, EFLAG_COLLIDER)) {
-                                    continue;
-                                }
-
-                                // HACK FOR DEBUGGING.
-                                if (TestFlag(ea->flags, EFLAG_ASTEROID) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
-                                    continue;
-                                }
-
-                                Polyhedron shapeb = PolyhedronTransform(eb->shape, EntityGetMat(eb));
-
-                                CollisionInfo collision = {0};
-                                bool collides =
-                                    TestPolyhedronVsPolyhedron(&shapea, &shapeb, &collision.normal, &collision.depth);
-                                if (collides) {
-                                    collision.id0 = ea->id;
-                                    collision.id1 = eb->id;
-
-                                    Assert(clen < ccap);
-                                    collisions[clen++] = collision;
-                                }
-                            }
+                            e->ppos = e->pos;
+                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         }
 
-                        for (u32 i = 0; i < clen; ++i) {
-                            CollisionInfo c = collisions[i];
+                        // Collision detection.
+                        {
+                            CollisionInfo collisions[10] = {0};
+                            u32 ccap = 10;
+                            u32 clen = 0;
 
-                            CollisionInfo cs[2] = {0};
-                            cs[0] = c;
+                            for (u32 i = 0; i < esize; ++i) {
+                                Entity* ea = GetEntity(i);
+                                if (!TestFlag(ea->flags, EFLAG_ACTIVE) || !TestFlag(ea->flags, EFLAG_COLLIDER)) {
+                                    continue;
+                                }
 
-                            EntityId temp = c.id0;
-                            c.id0 = c.id1;
-                            c.id1 = temp;
-                            c.normal = Vec3Negate(c.normal);
-                            cs[1] = c;
-                            // A bit hacky but to make sure we react to collisions properly, we run the collision
-                            // react code against "both sides" of the collision (the original and the flipped version)
-                            // this is so that we can just write collision reaction code in the form of
-                            // if IsPlayer(ea) and IsWall(eb), then do something(). We can't be guaranteed that this
-                            // order will be the only order the collision system gives us, so we check both sides.
-                            for (u32 j = 0; j < ArraySizeOf(cs); ++j) {
-                                CollisionInfo collision = cs[j];
+                                Polyhedron shapea = PolyhedronTransform(ea->shape, EntityGetMat(ea));
+                                for (u32 j = i + 1; j < esize; ++j) {
+                                    Entity* eb = GetEntity(j);
+                                    if (!TestFlag(eb->flags, EFLAG_ACTIVE) || !TestFlag(eb->flags, EFLAG_COLLIDER)) {
+                                        continue;
+                                    }
 
-                                Entity* ea = GetEntity(collision.id0);
-                                Entity* eb = GetEntity(collision.id1);
+                                    // HACK FOR DEBUGGING.
+                                    if (TestFlag(ea->flags, EFLAG_ASTEROID) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                        continue;
+                                    }
 
-                                if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
-                                    Entity* bullet = ea;
-                                    Entity* asteroid = eb;
+                                    Polyhedron shapeb = PolyhedronTransform(eb->shape, EntityGetMat(eb));
 
-                                    f32 new_speed = 3.0f * Vec3Len(asteroid->v);
-                                    Vec3 vdir0 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
-                                                                f32randab(0.0f, LPI));
-                                    Vec3 v0 = Vec3Scale(vdir0, new_speed);
-                                    SpawnAsteroid(asteroid->pos, v0, Vec3Scale(asteroid->graphics.scale, 0.5f));
-                                    Vec3 vdir1 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
-                                                                f32randab(0.0f, LPI));
-                                    Vec3 v1 = Vec3Scale(vdir1, new_speed);
-                                    SpawnAsteroid(asteroid->pos, v1, Vec3Scale(asteroid->graphics.scale, 0.5f));
+                                    CollisionInfo collision = {0};
+                                    bool collides = TestPolyhedronVsPolyhedron(&shapea, &shapeb, &collision.normal,
+                                                                               &collision.depth);
+                                    if (collides) {
+                                        collision.id0 = ea->id;
+                                        collision.id1 = eb->id;
 
-                                    SoftDeactivateEntity(bullet->id);
-                                    SoftDeactivateEntity(asteroid->id);
+                                        Assert(clen < ccap);
+                                        collisions[clen++] = collision;
+                                    }
+                                }
+                            }
+
+                            for (u32 i = 0; i < clen; ++i) {
+                                CollisionInfo c = collisions[i];
+
+                                CollisionInfo cs[2] = {0};
+                                cs[0] = c;
+
+                                EntityId temp = c.id0;
+                                c.id0 = c.id1;
+                                c.id1 = temp;
+                                c.normal = Vec3Negate(c.normal);
+                                cs[1] = c;
+                                // A bit hacky but to make sure we react to collisions properly, we run the collision
+                                // react code against "both sides" of the collision (the original and the flipped
+                                // version) this is so that we can just write collision reaction code in the form of if
+                                // IsPlayer(ea) and IsWall(eb), then do something(). We can't be guaranteed that this
+                                // order will be the only order the collision system gives us, so we check both sides.
+                                for (u32 j = 0; j < ArraySizeOf(cs); ++j) {
+                                    CollisionInfo collision = cs[j];
+
+                                    Entity* ea = GetEntity(collision.id0);
+                                    Entity* eb = GetEntity(collision.id1);
+
+                                    if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                        Entity* bullet = ea;
+                                        Entity* asteroid = eb;
+
+                                        f32 new_speed = 3.0f * Vec3Len(asteroid->v);
+                                        Vec3 vdir0 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f),
+                                                                    Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(0.0f, LPI));
+                                        Vec3 v0 = Vec3Scale(vdir0, new_speed);
+                                        SpawnAsteroid(asteroid->pos, v0, Vec3Scale(asteroid->graphics.scale, 0.5f));
+                                        Vec3 vdir1 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f),
+                                                                    Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(0.0f, LPI));
+                                        Vec3 v1 = Vec3Scale(vdir1, new_speed);
+                                        SpawnAsteroid(asteroid->pos, v1, Vec3Scale(asteroid->graphics.scale, 0.5f));
+
+                                        SoftDeactivateEntity(bullet->id);
+                                        SoftDeactivateEntity(asteroid->id);
+                                    }
                                 }
                             }
                         }
                     }
+                } else if (STATE == SS_SPAWNED) {
+                    // TODO: Refactor into a switch statement based on the STATE
+                    if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                        STATE = SS_PLAYING;
+                    }
+                } else if (STATE == SS_RESPAWN) {
+                    // Player init.
+                    Entity* e = AllocateEntity();
+                    e->pos = Vec3Zero();
+                    e->shape.type = PH_CIRCLE;
+                    e->shape.circle.c = Vec2Zero();
+                    e->shape.circle.r = 12.0f;
+                    GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f,
+                                          2.0f);
+                    FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+                    // PLAYER_ID = e->id;
+                    STATE = SS_SPAWNED;
+                } else {
+                    exit(1);
                 }
             }
 
@@ -2687,8 +2690,7 @@ static void SceneTickAsteroids(GameState* gstate) {
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
 
-    if (STATE == SS_RESPAWN) {
-        TraceLog(LOG_INFO, "hello");
+    if (STATE == SS_SPAWNED) {
         ShaderPass* pass = BeginShaderPass(GetShader());
         u32 width = GetScreenWidth();
         u32 height = GetScreenHeight();
