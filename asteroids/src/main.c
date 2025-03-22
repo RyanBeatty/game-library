@@ -2634,6 +2634,33 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     }
                                 }
                             }
+
+                            f32 hwidth = 0.5f * GetScreenWidth();
+                            f32 left = -hwidth;
+                            f32 right = hwidth;
+
+                            f32 hheight = 0.5f * GetScreenHeight();
+                            f32 bottom = -hheight;
+                            f32 top = hheight;
+                            for (u32 i = 0; i < esize; ++i) {
+                                Entity* e = GetEntity(i);
+                                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                                    continue;
+                                }
+
+                                // TODO: Might want to add some "slop" here on the bounds check
+                                if (e->pos.x > right) {
+                                    e->pos.x = left;
+                                } else if (e->pos.x < left) {
+                                    e->pos.x = right;
+                                }
+
+                                if (e->pos.y > top) {
+                                    e->pos.y = bottom;
+                                } else if (e->pos.y < bottom) {
+                                    e->pos.y = top;
+                                }
+                            }
                         }
                     }
                 } else if (STATE == SS_SPAWNED) {
