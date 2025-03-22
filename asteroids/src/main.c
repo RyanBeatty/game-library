@@ -2607,6 +2607,13 @@ static void SceneTickAsteroids(GameState* gstate) {
                                         SoftDeactivateEntity(bullet->id);
                                         SoftDeactivateEntity(asteroid->id);
                                     }
+
+                                    if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
+                                        TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                        Entity* player = ea;
+                                        SoftDeactivateEntity(player->id);
+                                        STATE = SS_RESPAWN;
+                                    }
                                 }
                             }
                         }
@@ -2626,6 +2633,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                     GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f,
                                           2.0f);
                     FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+                    FlagOn(e->flags, EFLAG_COLLIDER);
                     // PLAYER_ID = e->id;
                     STATE = SS_SPAWNED;
                 } else {
