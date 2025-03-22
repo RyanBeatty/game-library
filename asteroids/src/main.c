@@ -2649,15 +2649,15 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 }
 
                                 // TODO: Might want to add some "slop" here on the bounds check
-                                if (e->pos.x > right) {
+                                if (e->pos.x > right + SLOP) {
                                     e->pos.x = left;
-                                } else if (e->pos.x < left) {
+                                } else if (e->pos.x < left - SLOP) {
                                     e->pos.x = right;
                                 }
 
-                                if (e->pos.y > top) {
+                                if (e->pos.y > top + SLOP) {
                                     e->pos.y = bottom;
-                                } else if (e->pos.y < bottom) {
+                                } else if (e->pos.y < bottom - SLOP) {
                                     e->pos.y = top;
                                 }
                             }
