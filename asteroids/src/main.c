@@ -2716,7 +2716,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                 DrawCmd* cmd = AddCmd();
                 cmd->meshid = GetMesh(M_QUAD);
                 cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
-                cmd->color = LBLUE;  // RGBLit(5, 5, 20);
+                cmd->color = LBLACK;  // RGBLit(5, 5, 20);
             }
 
             // Draw.
