@@ -2590,17 +2590,24 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     Entity* eb = GetEntity(collision.id1);
 
                                     if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                        static const f32 SPEED_JITTER = 0.5f;
+
                                         Entity* bullet = ea;
                                         Entity* asteroid = eb;
 
+                                        f32 rrot0 = f32randab(0.0f, LPI);
+                                        f32 rspeed0 = f32randab(-1.0f, 1.0f);
+                                        f32 rrot1 = f32randab(0.0f, LPI);
+                                        f32 rspeed1 = f32randab(-1.0f, 1.0f);
+
                                         f32 new_speed = 3.0f * Vec3Len(asteroid->v);
-                                        Vec3 vdir0 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f),
-                                                                    Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(0.0f, LPI));
-                                        Vec3 v0 = Vec3Scale(vdir0, new_speed);
+                                        Vec3 vdir0 =
+                                            Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), rrot0);
+                                        Vec3 v0 = Vec3Scale(vdir0, new_speed + (new_speed * SPEED_JITTER * rspeed0));
                                         SpawnAsteroid(asteroid->pos, v0, Vec3Scale(asteroid->graphics.scale, 0.5f));
                                         Vec3 vdir1 = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f),
-                                                                    Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(0.0f, LPI));
-                                        Vec3 v1 = Vec3Scale(vdir1, new_speed);
+                                                                    Vec3Lit(0.0f, 0.0f, 1.0f), -rrot1);
+                                        Vec3 v1 = Vec3Scale(vdir1, (new_speed * SPEED_JITTER * rspeed1));
                                         SpawnAsteroid(asteroid->pos, v1, Vec3Scale(asteroid->graphics.scale, 0.5f));
 
                                         SoftDeactivateEntity(bullet->id);
