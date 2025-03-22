@@ -20,6 +20,7 @@ static f32 TOL = 0.001;
 #define f32max fmaxf
 #define f32sqrt sqrtf
 #define fhalf(x) ((x) * 0.5f)
+#define f32round(a) (roundf((a)))
 #define f32sin sin
 #define f32cos cos
 #define f32tan tan
@@ -2476,12 +2477,14 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
                                 f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
                                 if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
+                                    Vec3 forward = Mat4Identity().v.b;
                                     Vec3 wishdir = Vec3Lit(x, y, 0.0f);
                                     wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
-
-                                    Vec3 z = Vec3Lit(0.0f, 0.0f, 1.0f);
-                                    Vec3 xdir = Vec3Normalize(Vec3Cross(wishdir, z));
-                                    e->orient = Mat4VLit(xdir, wishdir, z, Vec3Zero());
+                                    f32 wishangle = Vec3Angle(wishdir, forward);
+                                    f32 rotangle = f32round(wishangle / Deg2Rad(15.0f)) * Deg2Rad(15.0f);
+                                    Vec3 rotaxis = Vec3Cross(forward, wishdir);
+                                    Mat4 orient = Mat4Rotate(rotangle, rotaxis);
+                                    e->orient = orient;
                                 }
                             }
 
