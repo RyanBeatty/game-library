@@ -2322,7 +2322,7 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 #define MAX_ENTITY_BATCH 256
 
 static Entity* SpawnAsteroid(u32 generation, Vec3 pos, Vec3 v, f32 gscale, f32 sscale, bool spawns_debree) {
-    static const f32 R = 20.f;
+    static const f32 R = 50.f;
     static const Vec3 GSCALE = Vec3Lit(100.0f, 100.0f, 1.0f);
 
     Entity* asteroid = AllocateEntity();
