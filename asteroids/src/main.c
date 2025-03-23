@@ -1887,6 +1887,7 @@ typedef enum {
     SOUND_NONE = 0,
     SOUND_SHIP_SHOT,
     SOUND_ASTEROID_LARGE_EXPLOSION,
+    SOUND_SHIP_EXPLOSION,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1899,6 +1900,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_SHIP_SHOT] = LoadLSound("assets/sounds/ship_shot.wav");
     SOUNDS[SOUND_ASTEROID_LARGE_EXPLOSION] = LoadLSound("assets/sounds/asteroid_large_explosion.wav");
+    SOUNDS[SOUND_SHIP_EXPLOSION] = LoadLSound("assets/sounds/ship_explosion.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -2639,6 +2641,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                                         Entity* player = ea;
                                         SoftDeactivateEntity(player->id);
                                         STATE = SS_RESPAWN;
+                                        PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
                                     }
                                 }
                             }
