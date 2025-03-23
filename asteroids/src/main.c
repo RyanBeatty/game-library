@@ -2224,9 +2224,6 @@ typedef struct CollisionInfo {
     Vec3 normal;
 } CollisionInfo;
 
-// L Check And Flip
-#define LCAF(e0, e1, f0, f1, cinfo)
-
 ////////////////////////////////////////////////////
 
 static Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
