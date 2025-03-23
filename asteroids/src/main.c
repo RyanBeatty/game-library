@@ -1886,6 +1886,7 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
 typedef enum {
     SOUND_NONE = 0,
     SOUND_SHIP_SHOT,
+    SOUND_ASTEROID_LARGE_EXPLOSION,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1897,6 +1898,7 @@ static void LoadSounds() {
     ClearLSounds();
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_SHIP_SHOT] = LoadLSound("assets/sounds/ship_shot.wav");
+    SOUNDS[SOUND_ASTEROID_LARGE_EXPLOSION] = LoadLSound("assets/sounds/asteroid_large_explosion.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -2629,6 +2631,7 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                                         SoftDeactivateEntity(bullet->id);
                                         SoftDeactivateEntity(asteroid->id);
+                                        PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
                                     }
 
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
