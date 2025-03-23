@@ -2076,6 +2076,7 @@ typedef struct Entity {
     Mat4 orient;
 
     Vec3 v;
+    Vec3 forces;
     f32 friction;
     f32 restitution;
 
@@ -2083,12 +2084,6 @@ typedef struct Entity {
     LMesh mesh;
 
     Vec4 color;
-
-    // TODO: At some point it might make more sense to store a polyhedron struct itself here.
-    // Might only make sense if we ever need to incrementally recompute bounding volumes.
-    // Right now we always do on the fly.
-    // TODO: Deprecate.
-    PolyhedronType phtype;
 
     Polyhedron shape;
 
