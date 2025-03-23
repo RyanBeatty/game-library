@@ -2220,7 +2220,6 @@ typedef struct CollisionInfo {
     EntityId id0;
     EntityId id1;
 
-    f32 toi;  // dt time of detected moment of collision.
     f32 depth;
     Vec3 normal;
 } CollisionInfo;
