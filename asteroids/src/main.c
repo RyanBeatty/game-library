@@ -1885,11 +1885,7 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
 
 typedef enum {
     SOUND_NONE = 0,
-    SOUND_BEEP,
-    SOUND_BREAK,
-    SOUND_BALL_OUT,
-    SOUND_SPAWN_POWERUP,
-    SOUND_SPAWN_NEW_BALL,
+    SOUND_SHIP_SHOT,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1900,11 +1896,7 @@ static SoundId SOUNDS[SOUND_COUNT] = {0};
 static void LoadSounds() {
     ClearLSounds();
     SOUNDS[SOUND_NONE] = 0;
-    SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
-    SOUNDS[SOUND_BREAK] = LoadLSound("assets/sounds/break.wav");
-    SOUNDS[SOUND_BALL_OUT] = LoadLSound("assets/sounds/ballout.wav");
-    SOUNDS[SOUND_SPAWN_POWERUP] = LoadLSound("assets/sounds/spawn_powerup.wav");
-    SOUNDS[SOUND_SPAWN_NEW_BALL] = LoadLSound("assets/sounds/spawn_new_ball.wav");
+    SOUNDS[SOUND_SHIP_SHOT] = LoadLSound("assets/sounds/ship_shot.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -2332,7 +2324,6 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 
 static Entity* SpawnAsteroid(u32 generation, Vec3 pos, Vec3 v, f32 gscale, f32 sscale, bool spawns_debree) {
     static const f32 R = 50.f;
-    static const Vec3 GSCALE = Vec3Lit(96.0f, 96.0f, 1.0f);
 
     Entity* asteroid = AllocateEntity();
     asteroid->generation = generation;
@@ -2349,11 +2340,7 @@ static Entity* SpawnAsteroid(u32 generation, Vec3 pos, Vec3 v, f32 gscale, f32 s
     LTexture tx = GetTexture(TX_ASTEROID_LARGE);
     GraphicsInfoSetSprite(&asteroid->graphics, GetTexture(TX_ASTEROID_LARGE), Vec2Zero(), Vec2Lit(tx.width, tx.height),
                           0.0f, gscale);
-    // asteroid->graphics.mid = GetMesh(M_QUAD);
-    // asteroid->graphics.scale = Vec3Scale(GSCALE, gscale);
-    // Vec4 color = LGRAY;
-    // color.a = 0.5f;
-    // asteroid->graphics.color = color;
+
     FlagOn(asteroid->flags, EFLAG_ASTEROID);
     FlagOn(asteroid->flags, EFLAG_COLLIDER);
     return asteroid;
@@ -2519,6 +2506,8 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 bullet->graphics.color = LYELLOW;
                                 FlagOn(bullet->flags, EFLAG_PROJECTILE);
                                 FlagOn(bullet->flags, EFLAG_COLLIDER);
+
+                                PlayLSound(GetSound(SOUND_SHIP_SHOT), 0);
                             }
                         }
 
