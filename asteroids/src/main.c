@@ -2488,15 +2488,24 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     Vec3 adir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
                                     Vec3 acc = Vec3Scale(adir, 200.0f * dt);
                                     e->v = Vec3Add(e->v, acc);
-                                } else {
-                                    Vec3 dir = Vec3Normalize(e->v);
-                                    f32 speed = Vec3Len(e->v);
-                                    speed -= 0.9f * dt * speed;
-                                    if (speed < 0.1f) {
-                                        speed = 0.0f;
-                                    }
-                                    e->v = Vec3Scale(dir, speed);
                                 }
+                                // else {
+                                //     Vec3 dir = Vec3Normalize(e->v);
+                                //     f32 speed = Vec3Len(e->v);
+                                //     speed -= 0.9f * dt * speed;
+                                //     if (speed < 0.01f) {
+                                //         speed = 0.0f;
+                                //     }
+                                //     e->v = Vec3Scale(dir, speed);
+                                // }
+
+                                Vec3 dir = Vec3Normalize(e->v);
+                                f32 speed = Vec3Len(e->v);
+                                speed -= 0.9f * dt * speed;
+                                if (speed < 0.01f) {
+                                    speed = 0.0f;
+                                }
+                                e->v = Vec3Scale(dir, speed);
                                 TraceLog(LOG_INFO, "vel %f %f %f", e->v.x, e->v.y, e->v.z);
                             }
 
