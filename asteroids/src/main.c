@@ -2361,23 +2361,23 @@ static void SceneTickAsteroids(GameState* gstate) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
 
-        // asteroids init. spawn randomly on screen.
-        {
-            u32 width = GetScreenWidth();
-            u32 height = GetScreenHeight();
-            for (u32 i = 0; i < 20; ++i) {
-                // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
-                f32 seed0 = f32randab(-0.5f * width, 0.5f * width);
-                f32 seed1 = f32randab(-0.5f * height, 0.5f * height);
-                f32 seed2 = f32randab(0.0f, LPI);
+        // // asteroids init. spawn randomly on screen.
+        // {
+        //     u32 width = GetScreenWidth();
+        //     u32 height = GetScreenHeight();
+        //     for (u32 i = 0; i < 20; ++i) {
+        //         // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
+        //         f32 seed0 = f32randab(-0.5f * width, 0.5f * width);
+        //         f32 seed1 = f32randab(-0.5f * height, 0.5f * height);
+        //         f32 seed2 = f32randab(0.0f, LPI);
 
-                // Something off about this, way fewer asteroids appear.
-                Vec3 pos = Vec3Lit(seed0, seed1, 0.0f);
-                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2);
-                Vec3 v = Vec3Scale(vdir, 20.0f);
-                SpawnAsteroid(0, pos, v, 1.0f, 1.0f, true);
-            }
-        }
+        //         // Something off about this, way fewer asteroids appear.
+        //         Vec3 pos = Vec3Lit(seed0, seed1, 0.0f);
+        //         Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2);
+        //         Vec3 v = Vec3Scale(vdir, 20.0f);
+        //         SpawnAsteroid(0, pos, v, 1.0f, 1.0f, true);
+        //     }
+        // }
     }
 
     BeginRender();
@@ -2482,12 +2482,22 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 }
                             }
 
+                            // Thrust + accerlation + velocity update.
                             {
                                 if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
                                     Vec3 adir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
-                                    Vec3 acc = Vec3Scale(adir, 50.0f * dt);
+                                    Vec3 acc = Vec3Scale(adir, 200.0f * dt);
                                     e->v = Vec3Add(e->v, acc);
+                                } else {
+                                    Vec3 dir = Vec3Normalize(e->v);
+                                    f32 speed = Vec3Len(e->v);
+                                    speed -= 0.9f * dt * speed;
+                                    if (speed < 0.1f) {
+                                        speed = 0.0f;
+                                    }
+                                    e->v = Vec3Scale(dir, speed);
                                 }
+                                TraceLog(LOG_INFO, "vel %f %f %f", e->v.x, e->v.y, e->v.z);
                             }
 
                             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
