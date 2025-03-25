@@ -2484,11 +2484,10 @@ static void SceneTickAsteroids(GameState* gstate) {
                             {
                                 f32 speed = Vec3Len(e->v);
                                 if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
-                                    // Add acceleration.
-                                    speed += (50.0f * dt);
+                                    Vec3 adir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
+                                    Vec3 acc = Vec3Scale(adir, 50.0f * dt);
+                                    e->v = Vec3Add(e->v, acc);
                                 }
-                                Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
-                                e->v = Vec3Scale(dir, speed);
                             }
 
                             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
