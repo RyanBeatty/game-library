@@ -2450,13 +2450,14 @@ static void SceneTickAsteroids(GameState* gstate) {
                         }
 
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                            static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
                             static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
-                            static const f32 MAX_SPEED = 100.0f;
 
                             Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
 
                             // {
+                            //     static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
+                            //     static const f32 MAX_SPEED = 100.0f;
+
                             //     f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
                             //     f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
                             //     if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
@@ -2482,7 +2483,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                             }
 
                             {
-                                f32 speed = Vec3Len(e->v);
                                 if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
                                     Vec3 adir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
                                     Vec3 acc = Vec3Scale(adir, 50.0f * dt);
