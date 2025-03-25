@@ -2456,15 +2456,15 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                             Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
 
-                            {
-                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                                if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
-                                    Vec3 dir = Vec3Lit(x, y, 0.0f);
-                                    dir = Vec3Normalize(Vec3Transform(dir, vieworient));
-                                    e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
-                                }
-                            }
+                            // {
+                            //     f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
+                            //     f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
+                            //     if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
+                            //         Vec3 dir = Vec3Lit(x, y, 0.0f);
+                            //         dir = Vec3Normalize(Vec3Transform(dir, vieworient));
+                            //         e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
+                            //     }
+                            // }
 
                             {
                                 f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
@@ -2479,6 +2479,16 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     Mat4 orient = Mat4Rotate(rotangle, rotaxis);
                                     e->orient = orient;
                                 }
+                            }
+
+                            {
+                                f32 speed = Vec3Len(e->v);
+                                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
+                                    // Add acceleration.
+                                    speed += (50.0f * dt);
+                                }
+                                Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
+                                e->v = Vec3Scale(dir, speed);
                             }
 
                             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
