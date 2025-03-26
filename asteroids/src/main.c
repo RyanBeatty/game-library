@@ -2484,11 +2484,14 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                             // Thrust + accerlation + velocity update.
                             {
+                                f32 slowdown_perp = 0.0f;
                                 f32 slowdown_parallel = 0.0f;
                                 if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
                                     Vec3 adir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
                                     Vec3 acc = Vec3Scale(adir, 200.0f * dt);
                                     e->v = Vec3Add(e->v, acc);
+
+                                    slowdown_perp = 200.0f;
                                 } else {
                                     slowdown_parallel = 200.0f;
                                 }
@@ -2501,7 +2504,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 if (DEBUG_EVER) {
                                     breakpoint();
                                 }
-                                speed_perp = f32max(0.0f, speed_perp - (200.0f * dt));
+                                speed_perp = f32max(0.0f, speed_perp - (slowdown_perp * dt));
                                 TraceLog(LOG_INFO, "speed perp %f", speed_perp);
                                 v_perp = Vec3Scale(Vec3Normalize(v_perp), speed_perp);
 
