@@ -2484,15 +2484,30 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                             // Thrust + accerlation + velocity update.
                             {
+                                f32 slowdown_parallel = 0.0f;
                                 if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
                                     Vec3 adir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
                                     Vec3 acc = Vec3Scale(adir, 200.0f * dt);
                                     e->v = Vec3Add(e->v, acc);
+                                } else {
+                                    slowdown_parallel = 200.0f;
                                 }
 
                                 Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
-                                Vec3 v_parallel = Vec3Scale(Vec3Normalize(e->v), Vec3Dot(forward, e->v));
+                                Vec3 v_parallel = Vec3Scale(forward, Vec3Dot(forward, e->v));
                                 Vec3 v_perp = Vec3Sub(e->v, v_parallel);
+
+                                f32 speed_perp = Vec3Len(v_perp);
+                                if (DEBUG_EVER) {
+                                    breakpoint();
+                                }
+                                speed_perp = f32max(0.0f, speed_perp - (200.0f * dt));
+                                TraceLog(LOG_INFO, "speed perp %f", speed_perp);
+                                v_perp = Vec3Scale(Vec3Normalize(v_perp), speed_perp);
+
+                                f32 speed_parallel = Vec3Len(v_parallel);
+                                speed_parallel = f32max(0.0f, speed_parallel - slowdown_parallel * dt);
+                                v_parallel = Vec3Scale(Vec3Normalize(v_parallel), speed_parallel);
 
                                 e->v = Vec3Add(v_parallel, v_perp);
 
@@ -2513,7 +2528,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 //     speed = 0.0f;
                                 // }
                                 // e->v = Vec3Scale(dir, speed);
-                                TraceLog(LOG_INFO, "vel %f %f %f", e->v.x, e->v.y, e->v.z);
+                                // TraceLog(LOG_INFO, "vel %f %f %f", e->v.x, e->v.y, e->v.z);
                             }
 
                             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
