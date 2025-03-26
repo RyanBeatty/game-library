@@ -2484,35 +2484,42 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                             // Thrust + accerlation + velocity update.
                             {
-                                f32 slowdown_perp = 0.0f;
-                                f32 slowdown_parallel = 0.0f;
+                                // f32 slowdown_perp = 0.0f;
+                                // f32 slowdown_parallel = 0.0f;
+                                f32 friction = 150.0f;
                                 if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
                                     Vec3 adir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
-                                    Vec3 acc = Vec3Scale(adir, 200.0f * dt);
+                                    Vec3 acc = Vec3Scale(adir, 300.0f * dt);
                                     e->v = Vec3Add(e->v, acc);
 
-                                    slowdown_perp = 200.0f;
+                                    friction = 0.0f;
+                                    // slowdown_perp = 200.0f;
                                 } else {
-                                    slowdown_parallel = 200.0f;
+                                    // slowdown_parallel = 200.0f;
                                 }
 
-                                Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
-                                Vec3 v_parallel = Vec3Scale(forward, Vec3Dot(forward, e->v));
-                                Vec3 v_perp = Vec3Sub(e->v, v_parallel);
+                                f32 speed = Vec3Len(e->v);
+                                speed -= friction * dt;
+                                speed = f32clamp(speed, 0.0f, 700.0f);
+                                e->v = Vec3Scale(Vec3Normalize(e->v), speed);
 
-                                f32 speed_perp = Vec3Len(v_perp);
-                                if (DEBUG_EVER) {
-                                    breakpoint();
-                                }
-                                speed_perp = f32max(0.0f, speed_perp - (slowdown_perp * dt));
-                                TraceLog(LOG_INFO, "speed perp %f", speed_perp);
-                                v_perp = Vec3Scale(Vec3Normalize(v_perp), speed_perp);
+                                // Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
+                                // Vec3 v_parallel = Vec3Scale(forward, Vec3Dot(forward, e->v));
+                                // Vec3 v_perp = Vec3Sub(e->v, v_parallel);
 
-                                f32 speed_parallel = Vec3Len(v_parallel);
-                                speed_parallel = f32max(0.0f, speed_parallel - slowdown_parallel * dt);
-                                v_parallel = Vec3Scale(Vec3Normalize(v_parallel), speed_parallel);
+                                // f32 speed_perp = Vec3Len(v_perp);
+                                // if (DEBUG_EVER) {
+                                //     breakpoint();
+                                // }
+                                // speed_perp = f32max(0.0f, speed_perp - (slowdown_perp * dt));
+                                // TraceLog(LOG_INFO, "speed perp %f", speed_perp);
+                                // v_perp = Vec3Scale(Vec3Normalize(v_perp), speed_perp);
 
-                                e->v = Vec3Add(v_parallel, v_perp);
+                                // f32 speed_parallel = Vec3Len(v_parallel);
+                                // speed_parallel = f32max(0.0f, speed_parallel - slowdown_parallel * dt);
+                                // v_parallel = Vec3Scale(Vec3Normalize(v_parallel), speed_parallel);
+
+                                // e->v = Vec3Add(v_parallel, v_perp);
 
                                 // else {
                                 //     Vec3 dir = Vec3Normalize(e->v);
