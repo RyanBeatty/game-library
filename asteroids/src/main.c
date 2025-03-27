@@ -2466,8 +2466,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                             Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), f32rand01() * LTAU);
                         f32 dx = f32abs(dir.x);
                         f32 dy = f32abs(dir.y);
+                        // find toi with x and y boundary. because aabb is symetric, handling +- direction is the same.
+                        // just need to ensure we abs the d to be able to combine equations. We also check that
+                        // the displacement in either direciton is not parallel with edges. If parallel, set toi to max.
                         f32 tx = dx >= F32_EPSILON ? (0.5f * width) / dx : F32_MAX;
                         f32 ty = dy >= F32_EPSILON ? (0.5f * height) / dy : F32_MAX;
+                        // Find minimal toi which will yield point on aabb edge.
                         f32 t = f32min(tx, ty);
                         Vec3 pos = Vec3Scale(dir, t);
 
