@@ -2034,6 +2034,12 @@ static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_sr
     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
 }
 
+static void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
+    graphics->mid = mesh;
+    graphics->scale = scale;
+    graphics->color = color;
+}
+
 ////////////////////////////////////////////////////////////
 
 const float RenderWidth = 1280;
@@ -2058,6 +2064,7 @@ typedef enum EntityFlag {
     EFLAG_DEATHZONE = 1 << 6,
     EFLAG_POWERUP = 1 << 7,
     EFLAG_ASTEROID = 1 << 8,
+    EFLAG_ALIEN = 1 << 9,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2352,6 +2359,7 @@ typedef enum {
 static void SceneTickAsteroids(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
+    static f32 ALIEN_SPAWN_DT = 0.0f;
     // static EntityId PLAYER_ID = 0;
 
     f32 dt = gstate->dt;
@@ -2360,6 +2368,8 @@ static void SceneTickAsteroids(GameState* gstate) {
     if (!gstate->init) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
+
+        ALIEN_SPAWN_DT = 0.0f;
 
         // // asteroids init. spawn randomly on screen.
         // {
@@ -2442,6 +2452,16 @@ static void SceneTickAsteroids(GameState* gstate) {
 
             if (gstate->update) {
                 if (STATE == SS_PLAYING) {
+                    ALIEN_SPAWN_DT += dt;
+                    if (ALIEN_SPAWN_DT >= 2.0f) {
+                        ALIEN_SPAWN_DT = -1000.0f;
+
+                        Entity* alien = AllocateEntity();
+                        alien->pos = Vec3Zero();
+
+                        GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD), Vec3Lit(96.0f, 48.0f, 1.0f), LRED);
+                    }
+
                     // React to input.
                     for (u32 i = 0; i < esize; ++i) {
                         Entity* e = GetEntity(i);
