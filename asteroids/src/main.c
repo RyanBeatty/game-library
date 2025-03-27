@@ -2454,12 +2454,28 @@ static void SceneTickAsteroids(GameState* gstate) {
                 if (STATE == SS_PLAYING) {
                     ALIEN_SPAWN_DT += dt;
                     if (ALIEN_SPAWN_DT >= 2.0f) {
+                        static const f32 ALIEN_WIDTH = 96.0f;
+                        static const f32 ALIEN_HEIGHT = 48.0f;
+
                         ALIEN_SPAWN_DT = -1000.0f;
 
-                        Entity* alien = AllocateEntity();
-                        alien->pos = Vec3Zero();
+                        // Spawn point is random point on edge of screen.
+                        u32 width = GetScreenWidth();
+                        u32 height = GetScreenHeight();
+                        Vec3 dir =
+                            Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), f32rand01() * LTAU);
+                        f32 dx = f32abs(dir.x);
+                        f32 dy = f32abs(dir.y);
+                        f32 tx = dx >= F32_EPSILON ? (0.5f * width) / dx : F32_MAX;
+                        f32 ty = dy >= F32_EPSILON ? (0.5f * height) / dy : F32_MAX;
+                        f32 t = f32min(tx, ty);
+                        Vec3 pos = Vec3Scale(dir, t);
 
-                        GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD), Vec3Lit(96.0f, 48.0f, 1.0f), LRED);
+                        Entity* alien = AllocateEntity();
+                        alien->pos = pos;
+
+                        GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD),
+                                             Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LRED);
                     }
 
                     // React to input.
