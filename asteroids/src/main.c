@@ -2471,8 +2471,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                         f32 t = f32min(tx, ty);
                         Vec3 pos = Vec3Scale(dir, t);
 
+                        Vec3 vdir = Vec3Normalize(Vec3Sub(Vec3Zero(), pos));
+                        Vec3 v = Vec3Scale(vdir, 30.0f);
+
                         Entity* alien = AllocateEntity();
                         alien->pos = pos;
+                        alien->v = v;
 
                         GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD),
                                              Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LRED);
