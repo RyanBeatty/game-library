@@ -46,7 +46,6 @@ typedef struct Vec2 {
 } Vec2;
 
 #define Vec2Lit(a, b) ((Vec2){.x = (a), .y = (b)})
-#define Vec2ToRVector2(v) ((Vector2){.x = (v).x, .y = (v).y})
 
 static Vec2 Vec2Zero() {
     static Vec2 v = Vec2Lit(0.0f, 0.0f);
@@ -1521,10 +1520,10 @@ LCORE void DrawLCube(Vec3 center, Vec3 scale, Vec4 color) {
     cmd->color = color;
 }
 
-LCORE void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
+LCORE void DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_QUAD);
-    cmd->modelm = Mat4SVRT(Vec3Lit(hwidth, hheight, 1.0f), orient, center);
+    cmd->modelm = Mat4SVRT(Vec3Lit(width, height, 1.0f), orient, center);
     cmd->color = color;
 }
 
@@ -1675,6 +1674,35 @@ static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
 //     return hit;
 // }
 
+typedef struct {
+    Vec2 c;  // center.
+    Vec2 r;  // half width extents along each axis.
+} AABB2D;
+
+// Normal will point from aabb to circle.
+LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec3* normal, f32* depth) {
+    Vec2 min = Vec2Sub(aabb.c, aabb.r);
+    Vec2 max = Vec2Add(aabb.c, aabb.r);
+
+    // Find closest point from circle center to aabb (which might be inside the aabb).
+    Vec2 p = circle.c;
+    for (u32 i = 0; i < 2; ++i) {
+        p.x = f32clamp(p.f[i], min.f[i], max.f[i]);
+    }
+
+    // If squared distance from closest point to circle on aabb to circle center is greater
+    // than the squared radius of the circle, then we don't have a collision.
+    Vec2 disp = Vec2Sub(aabb.c, p);
+    f32 d = (disp.x * disp.x) + (disp.y * disp.y);
+    if (circle.r * circle.r < d) {
+        return false;
+    }
+
+    *depth = f32sqrt(d) - circle.r;
+    *normal = Vec2ToVec3(Vec2Normalize(disp));
+    return true;
+}
+
 typedef struct AABB {
     Vec3 c;  // center.
     Vec3 r;  // half width extents along each axis.
@@ -1782,13 +1810,14 @@ static AABB ComputeAABB(Vec3* vs, u32 size) {
 //     return hit;
 // }
 
-typedef enum PolyhedronType { PH_NONE = 0, PH_CIRCLE, PH_SPHERE, PH_AABB, PH_COUNT } PolyhedronType;
+typedef enum PolyhedronType { PH_NONE = 0, PH_CIRCLE, PH_SPHERE, PH_AABB2D, PH_AABB, PH_COUNT } PolyhedronType;
 
 typedef struct Polyhedron {
     PolyhedronType type;
 
     union {
         Circle circle;
+        AABB2D aabb2d;
         Sphere sphere;
         AABB aabb;
     };
@@ -1807,6 +1836,17 @@ static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 m) {
             // TODO: I might actually want to project this vector onto the xy plane.
             shape.circle.c = Vec2Lit(c.x, c.y);
             shape.circle.r = Vec3Len(Vec3Transform(Vec3Lit(shape.circle.r, 0.0f, 0.0f), m));
+            break;
+        }
+        case PH_AABB2D: {
+            // This might be a bit jank. but I transform the center with translation and then
+            // transform the radius vector (no translation) and take the length.
+            Vec3 c = Vec2ToVec3(shape.aabb2d.c);
+            c = Vec3WTransform(c, m);
+            // TODO: I might actually want to project this vector onto the xy plane.
+            shape.aabb2d.c = Vec2Lit(c.x, c.y);
+            Vec3 r = Vec3Transform(Vec2ToVec3(shape.aabb2d.r), m);
+            shape.aabb2d.r = Vec2Lit(r.x, r.y);
             break;
         }
         case PH_AABB: {
@@ -1885,6 +1925,12 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
         }
         case PH_CIRCLE: {
             DrawLCircle(Vec3Lit(shape->circle.c.x, shape->circle.c.y, 0.0f), shape->circle.r, color);
+            break;
+        }
+        case PH_AABB2D: {
+            // Because we store half extents, scale them up by 2x to get the proper visual scaling factor.
+            DrawQuad(Vec3Lit(shape->aabb2d.c.x, shape->aabb2d.c.y, 0.0f), 2.0f * shape->aabb2d.r.x,
+                     2.0f * shape->aabb2d.r.y, Mat4Identity(), color);
             break;
         }
         case PH_AABB: {
@@ -2499,9 +2545,9 @@ static void SceneTickAsteroids(GameState* gstate) {
                         alien->pos = pos;
                         alien->v = v;
 
-                        alien->shape.type = PH_AABB;
-                        alien->shape.aabb.c = Vec3Zero();
-                        alien->shape.aabb.r = Vec3Lit(0.5f * ALIEN_WIDTH, 0.5f * ALIEN_HEIGHT, 1.0f);
+                        alien->shape.type = PH_AABB2D;
+                        alien->shape.aabb2d.c = Vec2Zero();
+                        alien->shape.aabb2d.r = Vec2Lit(0.5f * ALIEN_WIDTH, 0.5f * ALIEN_HEIGHT);
 
                         GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD),
                                              Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LGREEN);
@@ -2767,6 +2813,14 @@ static void SceneTickAsteroids(GameState* gstate) {
                                         SoftDeactivateEntity(player->id);
                                         STATE = SS_RESPAWN;
                                         PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
+                                    }
+
+                                    if (TestFlag(ea->flags, EFLAG_ALIEN) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+                                        Entity* alien = ea;
+                                        Entity* bullet = eb;
+                                        SoftDeactivateEntity(alien->id);
+                                        SoftDeactivateEntity(bullet->id);
+                                        PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
                                     }
                                 }
                             }
