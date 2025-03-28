@@ -626,7 +626,7 @@ static LTexture UploadTexture(const char* filename) {
     } else if (n == 4) {
         format = GL_RGBA;
     } else {
-        exit(1);
+        Assert(false);
     }
 
     glGenTextures(1, &tx.id);
@@ -1514,6 +1514,13 @@ LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
     cmd->color = color;
 }
 
+LCORE void DrawLCube(Vec3 center, Vec3 scale, Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    cmd->meshid = GetMesh(M_CUBE);
+    cmd->modelm = Mat4SVRT(scale, Mat4Identity(), center);
+    cmd->color = color;
+}
+
 LCORE void DrawQuad(Vec3 center, f32 hwidth, f32 hheight, Mat4 orient, Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->meshid = GetMesh(M_QUAD);
@@ -1802,8 +1809,13 @@ static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 m) {
             shape.circle.r = Vec3Len(Vec3Transform(Vec3Lit(shape.circle.r, 0.0f, 0.0f), m));
             break;
         }
+        case PH_AABB: {
+            shape.aabb.c = Vec3WTransform(shape.aabb.c, m);
+            shape.aabb.r = Vec3Transform(shape.aabb.r, m);
+            break;
+        }
         default: {
-            exit(1);
+            Assert(false);
         }
     }
     return shape;
@@ -1825,7 +1837,7 @@ static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 m) {
 //             TraceLog(LOG_ERROR,
 //                      "ComputePolyhedron: Unknown polyhedron type=%d. Most likely entity needs bounding volume type
 //                      set", type);
-//             exit(1);
+//             Assert(false);
 //         }
 //     }
 //     return p;
@@ -1875,8 +1887,13 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
             DrawLCircle(Vec3Lit(shape->circle.c.x, shape->circle.c.y, 0.0f), shape->circle.r, color);
             break;
         }
+        case PH_AABB: {
+            // Because we store half extents, scale them up by 2x to get the proper visual scaling factor.
+            DrawLCube(shape->aabb.c, Vec3Scale(shape->aabb.r, 2.0f), color);
+            break;
+        }
         default: {
-            exit(1);
+            Assert(false);
         }
     }
 }
@@ -2482,8 +2499,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                         alien->pos = pos;
                         alien->v = v;
 
+                        alien->shape.type = PH_AABB;
+                        alien->shape.aabb.c = Vec3Zero();
+                        alien->shape.aabb.r = Vec3Lit(0.5f * ALIEN_WIDTH, 0.5f * ALIEN_HEIGHT, 1.0f);
+
                         GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD),
-                                             Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LRED);
+                                             Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LGREEN);
                     }
 
                     // React to input.
@@ -2796,7 +2817,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                     // PLAYER_ID = e->id;
                     STATE = SS_SPAWNED;
                 } else {
-                    exit(1);
+                    Assert(false);
                 }
             }
 
