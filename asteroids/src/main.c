@@ -1680,26 +1680,28 @@ typedef struct {
 } AABB2D;
 
 // Normal will point from aabb to circle.
-LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec3* normal, f32* depth) {
+LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* depth) {
     Vec2 min = Vec2Sub(aabb.c, aabb.r);
     Vec2 max = Vec2Add(aabb.c, aabb.r);
 
     // Find closest point from circle center to aabb (which might be inside the aabb).
     Vec2 p = circle.c;
     for (u32 i = 0; i < 2; ++i) {
-        p.x = f32clamp(p.f[i], min.f[i], max.f[i]);
+        p.f[i] = f32clamp(p.f[i], min.f[i], max.f[i]);
     }
 
     // If squared distance from closest point to circle on aabb to circle center is greater
     // than the squared radius of the circle, then we don't have a collision.
-    Vec2 disp = Vec2Sub(aabb.c, p);
+    Vec2 disp = Vec2Sub(circle.c, p);
     f32 d = (disp.x * disp.x) + (disp.y * disp.y);
     if (circle.r * circle.r < d) {
         return false;
     }
 
+    // If the center is inside of the aabb, then the normal and depth will not be correct, since the
+    // closest point will be the center itself. But at least we will report the collision happened.
     *depth = f32sqrt(d) - circle.r;
-    *normal = Vec2ToVec3(Vec2Normalize(disp));
+    *normal = Vec2Normalize(disp);
     return true;
 }
 
@@ -1898,6 +1900,24 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                 case PH_CIRCLE: {
                     collides = TestCircleCircle(a->circle, b->circle, &n2d, &d);
                     n = Vec3Lit(n2d.x, n2d.y, 0.0f);
+                    break;
+                }
+                case PH_AABB2D: {
+                    collides = TestCircleVsAABB2D(a->circle, b->aabb2d, &n2d, &d);
+                    n = Vec3Lit(n2d.x, n2d.y, 0.0f);
+                }
+                default: {
+                    // Collision not supported.
+                    break;
+                }
+            }
+            break;
+        }
+        case PH_AABB2D: {
+            switch (b->type) {
+                case PH_CIRCLE: {
+                    collides = TestCircleVsAABB2D(b->circle, a->aabb2d, &n2d, &d);
+                    n = Vec3Negate(Vec3Lit(n2d.x, n2d.y, 0.0f));
                     break;
                 }
                 default: {
@@ -2551,6 +2571,8 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                         GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD),
                                              Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LGREEN);
+                        FlagOn(alien->flags, EFLAG_COLLIDER);
+                        FlagOn(alien->flags, EFLAG_ALIEN);
                     }
 
                     // React to input.
@@ -2662,7 +2684,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                             }
 
                             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                                static const f32 PROJECTILE_SPEED = 600.0f;
+                                static const f32 PROJECTILE_SPEED = 100.0f;  // 600.0f;
                                 static const f32 PROJECTILE_SCALE = 5.0f;
 
                                 Entity* bullet = AllocateEntity();
