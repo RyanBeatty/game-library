@@ -2883,18 +2883,43 @@ static void SceneTickAsteroids(GameState* gstate) {
                         STATE = SS_PLAYING;
                     }
                 } else if (STATE == SS_RESPAWN) {
-                    // Player init.
-                    Entity* e = AllocateEntity();
-                    e->pos = Vec3Zero();
-                    e->shape.type = PH_CIRCLE;
-                    e->shape.circle.c = Vec2Zero();
-                    e->shape.circle.r = 12.0f;
-                    GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f), 0.0f,
-                                          1.0f);
-                    FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
-                    FlagOn(e->flags, EFLAG_COLLIDER);
-                    // PLAYER_ID = e->id;
-                    STATE = SS_SPAWNED;
+                    bool spawn_area_is_clear = true;
+                    Polyhedron spawnph = {.type = PH_CIRCLE, .circle = {.c = Vec2Lit(0.0f, 0.0f), .r = 20.0f}};
+
+                    // Bit of a hacky way to ensure the spawn area is clear before spawning the player. we'll just
+                    // update physics until the area is clear. works well for ensuring initial spawn is good. sometimes
+                    // have to wait if ship dies to large asteroid.
+                    for (u32 i = 0; i < esize; ++i) {
+                        Entity* e = GetEntity(i);
+                        if (!TestFlag(e->flags, EFLAG_ACTIVE) || !TestFlag(e->flags, EFLAG_COLLIDER)) {
+                            continue;
+                        }
+
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        Polyhedron eph = PolyhedronTransform(e->shape, EntityGetMat(e));
+
+                        Vec3 normal = Vec3Zero();
+                        f32 depth = 0.0f;
+                        bool collides = TestPolyhedronVsPolyhedron(&spawnph, &eph, &normal, &depth);
+                        if (collides) {
+                            spawn_area_is_clear = false;
+                        }
+                    }
+
+                    if (spawn_area_is_clear) {
+                        // Player init.
+                        Entity* e = AllocateEntity();
+                        e->pos = Vec3Zero();
+                        e->shape.type = PH_CIRCLE;
+                        e->shape.circle.c = Vec2Zero();
+                        e->shape.circle.r = 12.0f;
+                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f),
+                                              0.0f, 1.0f);
+                        FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+                        FlagOn(e->flags, EFLAG_COLLIDER);
+                        // PLAYER_ID = e->id;
+                        STATE = SS_SPAWNED;
+                    }
                 } else {
                     Assert(false);
                 }
