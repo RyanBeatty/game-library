@@ -2443,6 +2443,7 @@ static void SceneTickAsteroids(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
     static f32 ALIEN_SPAWN_DT = 0.0f;
+    static f32 ALIEN_SPAWN_TIME = 0.0f;
     // static EntityId PLAYER_ID = 0;
 
     f32 dt = gstate->dt;
@@ -2453,24 +2454,25 @@ static void SceneTickAsteroids(GameState* gstate) {
         memset(&CAMERA, 0, sizeof(CAMERA));
 
         ALIEN_SPAWN_DT = 0.0f;
+        ALIEN_SPAWN_TIME = f32randab(30.0f, 60.0f);
 
-        // // asteroids init. spawn randomly on screen.
-        // {
-        //     u32 width = GetScreenWidth();
-        //     u32 height = GetScreenHeight();
-        //     for (u32 i = 0; i < 20; ++i) {
-        //         // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
-        //         f32 seed0 = f32randab(-0.5f * width, 0.5f * width);
-        //         f32 seed1 = f32randab(-0.5f * height, 0.5f * height);
-        //         f32 seed2 = f32randab(0.0f, LPI);
+        // asteroids init. spawn randomly on screen.
+        {
+            u32 width = GetScreenWidth();
+            u32 height = GetScreenHeight();
+            for (u32 i = 0; i < 7; ++i) {
+                // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
+                f32 seed0 = f32randab(-0.5f * width, 0.5f * width);
+                f32 seed1 = f32randab(-0.5f * height, 0.5f * height);
+                f32 seed2 = f32randab(0.0f, LPI);
 
-        //         // Something off about this, way fewer asteroids appear.
-        //         Vec3 pos = Vec3Lit(seed0, seed1, 0.0f);
-        //         Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2);
-        //         Vec3 v = Vec3Scale(vdir, 20.0f);
-        //         SpawnAsteroid(0, pos, v, 1.0f, 1.0f, true);
-        //     }
-        // }
+                // Something off about this, way fewer asteroids appear.
+                Vec3 pos = Vec3Lit(seed0, seed1, 0.0f);
+                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2);
+                Vec3 v = Vec3Scale(vdir, 20.0f);
+                SpawnAsteroid(0, pos, v, 1.0f, 1.0f, true);
+            }
+        }
     }
 
     BeginRender();
@@ -2536,11 +2538,9 @@ static void SceneTickAsteroids(GameState* gstate) {
             if (gstate->update) {
                 if (STATE == SS_PLAYING) {
                     ALIEN_SPAWN_DT += dt;
-                    if (ALIEN_SPAWN_DT >= 2.0f) {
+                    if (ALIEN_SPAWN_DT >= ALIEN_SPAWN_TIME) {
                         static const f32 ALIEN_WIDTH = 96.0f;
                         static const f32 ALIEN_HEIGHT = 48.0f;
-
-                        ALIEN_SPAWN_DT = -1000.0f;
 
                         // Spawn point is random point on edge of screen.
                         u32 width = GetScreenWidth();
@@ -2573,6 +2573,9 @@ static void SceneTickAsteroids(GameState* gstate) {
                                              Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LGREEN);
                         FlagOn(alien->flags, EFLAG_COLLIDER);
                         FlagOn(alien->flags, EFLAG_ALIEN);
+
+                        ALIEN_SPAWN_TIME = f32randab(30.0f, 60.0f);
+                        ALIEN_SPAWN_DT = 0.0f;
                     }
 
                     // React to input.
