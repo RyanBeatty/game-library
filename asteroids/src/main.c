@@ -2431,6 +2431,37 @@ static Entity* SpawnAsteroid(u32 generation, Vec3 pos, Vec3 v, f32 gscale, f32 s
     return asteroid;
 }
 
+static void SpawnAsteroidsForGeneration(Entity* asteroid) {
+    static const f32 ROTS[] = {Deg2Rad(15.0f), Deg2Rad(30.0f), Deg2Rad(45.0f)};
+
+    u32 generation = asteroid->generation + 1;
+    bool new_spawns_debree = generation < 2.0f;
+    if (asteroid->spawns_debree) {
+        f32 gscale = 1.0f / (2.0f * generation);
+        f32 sscale = 1.0f / (2.0f * generation);
+        TraceLog(LOG_INFO, "generation %d gscale %f", generation, gscale);
+
+        Vec3 vdirstart = Vec3Normalize(asteroid->v);
+        f32 new_speed = 3.0f * Vec3Len(asteroid->v);
+
+        f32 rotseed = f32randab(0.0f, 3.0f);
+        f32 rot = ROTS[(u32)rotseed];
+        TraceLog(LOG_INFO, "rot %f rotseed", Rad2Deg(rot), rotseed);
+
+        {
+            Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), rot);
+            Vec3 v = Vec3Scale(vdir, new_speed);
+            SpawnAsteroid(generation, asteroid->pos, v, gscale, sscale, new_spawns_debree);
+        }
+
+        {
+            Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), -rot);
+            Vec3 v = Vec3Scale(vdir, new_speed);
+            SpawnAsteroid(generation, asteroid->pos, v, gscale, sscale, new_spawns_debree);
+        }
+    }
+}
+
 typedef enum {
     SS_NONE = 0,
     SS_RESPAWN,
@@ -2793,39 +2824,10 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     Entity* eb = GetEntity(collision.id1);
 
                                     if (TestFlag(ea->flags, EFLAG_ASTEROID) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                                        static const f32 ROTS[] = {Deg2Rad(15.0f), Deg2Rad(30.0f), Deg2Rad(45.0f)};
-
                                         Entity* asteroid = ea;
                                         Entity* bullet = eb;
 
-                                        u32 generation = asteroid->generation + 1;
-                                        bool new_spawns_debree = generation < 2.0f;
-                                        if (asteroid->spawns_debree) {
-                                            f32 gscale = 1.0f / (2.0f * generation);
-                                            f32 sscale = 1.0f / (2.0f * generation);
-                                            TraceLog(LOG_INFO, "generation %d gscale %f", generation, gscale);
-
-                                            Vec3 vdirstart = Vec3Normalize(asteroid->v);
-                                            f32 new_speed = 3.0f * Vec3Len(asteroid->v);
-
-                                            f32 rotseed = f32randab(0.0f, 3.0f);
-                                            f32 rot = ROTS[(u32)rotseed];
-                                            TraceLog(LOG_INFO, "rot %f rotseed", Rad2Deg(rot), rotseed);
-
-                                            {
-                                                Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), rot);
-                                                Vec3 v = Vec3Scale(vdir, new_speed);
-                                                SpawnAsteroid(generation, asteroid->pos, v, gscale, sscale,
-                                                              new_spawns_debree);
-                                            }
-
-                                            {
-                                                Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), -rot);
-                                                Vec3 v = Vec3Scale(vdir, new_speed);
-                                                SpawnAsteroid(generation, asteroid->pos, v, gscale, sscale,
-                                                              new_spawns_debree);
-                                            }
-                                        }
+                                        SpawnAsteroidsForGeneration(asteroid);
 
                                         SoftDeactivateEntity(bullet->id);
                                         SoftDeactivateEntity(asteroid->id);
@@ -2835,7 +2837,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
                                         TestFlag(eb->flags, EFLAG_ASTEROID)) {
                                         Entity* player = ea;
+                                        Entity* asteroid = eb;
+
+                                        SpawnAsteroidsForGeneration(asteroid);
+
                                         SoftDeactivateEntity(player->id);
+                                        SoftDeactivateEntity(asteroid->id);
                                         STATE = SS_RESPAWN;
                                         PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
                                     }
