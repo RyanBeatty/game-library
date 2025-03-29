@@ -2684,7 +2684,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                             }
 
                             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                                static const f32 PROJECTILE_SPEED = 100.0f;  // 600.0f;
+                                static const f32 PROJECTILE_SPEED = 600.0f;
                                 static const f32 PROJECTILE_SCALE = 5.0f;
 
                                 Entity* bullet = AllocateEntity();
