@@ -2608,7 +2608,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                         FlagOn(alien->flags, EFLAG_COLLIDER);
                         FlagOn(alien->flags, EFLAG_ALIEN);
 
-                        ALIEN_SPAWN_TIME = f32randab(30.0f, 60.0f);
+                        ALIEN_SPAWN_TIME = 3.0f;  // f32randab(30.0f, 60.0f);
                         ALIEN_SPAWN_DT = 0.0f;
                     }
 
@@ -2880,6 +2880,18 @@ static void SceneTickAsteroids(GameState* gstate) {
                                         SoftDeactivateEntity(asteroid->id);
                                         STATE = SS_RESPAWN;
                                         PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
+                                    }
+
+                                    if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
+                                        TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+                                        Entity* player = ea;
+                                        Entity* bullet = eb;
+                                        if (bullet->parentid != player->id) {
+                                            SoftDeactivateEntity(player->id);
+                                            SoftDeactivateEntity(bullet->id);
+                                            STATE = SS_RESPAWN;
+                                            PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
+                                        }
                                     }
 
                                     if (TestFlag(ea->flags, EFLAG_ALIEN) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
