@@ -2453,7 +2453,7 @@ static void SpawnAsteroidsForGeneration(Entity* asteroid) {
         particle->p = pos;
         particle->scale = Vec3Lit(20.0f, 20.0f, 1.0f);
         particle->color = LRED;
-        particle->lifetime = 1.0f;
+        particle->lifetime = 0.3f;
         // for (u32 i = 0; i < 3; ++i) {
         //     f32 seed = (f32)rand() / (f32)RAND_MAX;
         //     f32 jitter = f32lerp(-1.0f, 1.0f, seed);
