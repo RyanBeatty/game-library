@@ -2004,6 +2004,8 @@ typedef struct {
 
 static ParticleSystem PARTICLES;
 
+#define GetParticleSystem() (&PARTICLES)
+
 static void ParticleSystemInit() {
     ParticleSystem* particles = &PARTICLES;
     memset(particles, 0, sizeof(*particles));
@@ -2011,30 +2013,12 @@ static void ParticleSystemInit() {
     particles->pcap = MAX_PARTICLES;
 }
 
-static void SpawnBlockDeathParticles(Vec3 pos, Vec3 normal) {
-    ParticleSystem* particles = &PARTICLES;
-
-    Particle empty = {0};
-
-    for (u32 i = 0; i < 3; ++i) {
-        f32 seed = (f32)rand() / (f32)RAND_MAX;
-        f32 jitter = f32lerp(-1.0f, 1.0f, seed);
-
-        Assert(particles->plen < particles->pcap);
-        Particle* particle = &particles->particles[particles->plen++];
-        *particle = empty;
-
-        f32 angle = 20.0f;
-        f32 rot = f32lerp(-angle, angle, ((f32)rand()) / ((f32)RAND_MAX));
-        Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
-        particle->v = Vec3Scale(dir, 10.0f + (5.0f * jitter));
-
-        // particle->p = Vec3Add(pos, Vec3Scale(particle->v, 0.1f * jitter));
-        particle->p = pos;
-
-        particle->lifetime = 0.7f + (0.1f * jitter);
-        particle->lifedt = 0.0f;
-    }
+static Particle* AllocateParticle() {
+    ParticleSystem* particles = GetParticleSystem();
+    Assert(particles->plen < particles->pcap);
+    Particle* particle = &particles->particles[particles->plen++];
+    memset(particle, 0, sizeof(Particle));
+    return particle;
 }
 
 static void ParticleSystemTick(f32 dt) {
@@ -2059,7 +2043,7 @@ static void ParticleSystemTick(f32 dt) {
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
 
         DrawCmd* cmd = AddCmd();
-        cmd->modelm = Mat4TranslateV(particle->p);
+        cmd->modelm = Mat4SVRT(Vec3Lit(20.0f, 20.0f, 1.0f), Mat4Identity(), particle->p);
         cmd->meshid = GetMesh(M_QUAD);
         Vec4 color = COLOR4;
         color.a = f32lerp(color.a, 0.1f, particle->lifedt / particle->lifetime);
@@ -2462,6 +2446,30 @@ static void SpawnAsteroidsForGeneration(Entity* asteroid) {
             Vec3 v = Vec3Scale(vdir, new_speed);
             SpawnAsteroid(generation, asteroid->pos, v, gscale, sscale, new_spawns_debree);
         }
+    }
+
+    {
+        Vec3 pos = asteroid->pos;
+        Particle* particle = AllocateParticle();
+        particle->p = pos;
+        particle->lifetime = 1.0f;
+        // for (u32 i = 0; i < 3; ++i) {
+        //     f32 seed = (f32)rand() / (f32)RAND_MAX;
+        //     f32 jitter = f32lerp(-1.0f, 1.0f, seed);
+
+        //     Particle* particle = AllocateParticle();
+
+        //     f32 angle = 20.0f;
+        //     f32 rot = f32lerp(-angle, angle, ((f32)rand()) / ((f32)RAND_MAX));
+        //     Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
+        //     particle->v = Vec3Scale(dir, 10.0f + (5.0f * jitter));
+
+        //     // particle->p = Vec3Add(pos, Vec3Scale(particle->v, 0.1f * jitter));
+        //     particle->p = pos;
+
+        //     particle->lifetime = 0.7f + (0.1f * jitter);
+        //     particle->lifedt = 0.0f;
+        // }
     }
 }
 
