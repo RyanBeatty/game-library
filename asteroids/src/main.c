@@ -2187,6 +2187,9 @@ typedef struct Entity {
 
     f32 alive_dt;
 
+    f32 shot_dt;
+
+    EntityId parentid;  // used for shot damage.
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -2485,7 +2488,7 @@ static void SceneTickAsteroids(GameState* gstate) {
         memset(&CAMERA, 0, sizeof(CAMERA));
 
         ALIEN_SPAWN_DT = 0.0f;
-        ALIEN_SPAWN_TIME = f32randab(30.0f, 60.0f);
+        ALIEN_SPAWN_TIME = 3.0f;  // f32randab(30.0f, 60.0f);
 
         // asteroids init. spawn randomly on screen.
         {
@@ -2616,6 +2619,37 @@ static void SceneTickAsteroids(GameState* gstate) {
                             continue;
                         }
 
+                        if (TestFlag(e->flags, EFLAG_ALIEN)) {
+                            e->shot_dt += dt;
+                            if (e->shot_dt >= 1.0f) {
+                                static const f32 PROJECTILE_SPEED = 600.0f;
+                                static const f32 PROJECTILE_SCALE = 5.0f;
+
+                                e->shot_dt = 0.0f;
+
+                                Entity* bullet = AllocateEntity();
+
+                                bullet->pos = e->pos;
+                                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
+                                                           f32rand01() * LTAU);
+                                bullet->v = Vec3Scale(Vec3Transform(vdir, e->orient), PROJECTILE_SPEED);
+                                bullet->orient = e->orient;
+
+                                bullet->shape.type = PH_CIRCLE;
+                                bullet->shape.circle.c = Vec2Zero();
+                                bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
+
+                                bullet->graphics.mid = GetMesh(M_QUAD);
+                                bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
+                                bullet->graphics.color = LYELLOW;
+                                bullet->parentid = e->id;
+                                FlagOn(bullet->flags, EFLAG_PROJECTILE);
+                                FlagOn(bullet->flags, EFLAG_COLLIDER);
+
+                                PlayLSound(GetSound(SOUND_SHIP_SHOT), 0);
+                            }
+                        }
+
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                             static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
 
@@ -2735,6 +2769,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 bullet->graphics.mid = GetMesh(M_QUAD);
                                 bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
                                 bullet->graphics.color = LYELLOW;
+                                bullet->parentid = e->id;
                                 FlagOn(bullet->flags, EFLAG_PROJECTILE);
                                 FlagOn(bullet->flags, EFLAG_COLLIDER);
 
@@ -2861,9 +2896,12 @@ static void SceneTickAsteroids(GameState* gstate) {
                                     if (TestFlag(ea->flags, EFLAG_ALIEN) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
                                         Entity* alien = ea;
                                         Entity* bullet = eb;
-                                        SoftDeactivateEntity(alien->id);
-                                        SoftDeactivateEntity(bullet->id);
-                                        PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
+
+                                        if (bullet->parentid != alien->id) {
+                                            SoftDeactivateEntity(alien->id);
+                                            SoftDeactivateEntity(bullet->id);
+                                            PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
+                                        }
                                     }
                                 }
                             }
