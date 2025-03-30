@@ -1990,6 +1990,10 @@ static void LoadSounds() {
 typedef struct {
     Vec3 p;
     Vec3 v;
+    Vec3 scale;
+    Vec4 color;
+    Mat4 orient;
+
     f32 lifetime;
     f32 lifedt;
 } Particle;
@@ -2018,16 +2022,12 @@ static Particle* AllocateParticle() {
     Assert(particles->plen < particles->pcap);
     Particle* particle = &particles->particles[particles->plen++];
     memset(particle, 0, sizeof(Particle));
+    particle->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+    particle->orient = Mat4Identity();
     return particle;
 }
 
 static void ParticleSystemTick(f32 dt) {
-    // static const Vec4 COLOR0 = RGBLit(181.0f, 141.0f, 182.0f);
-    // static const Vec4 COLOR1 = RGBLit(93.0f, 46.0f, 70.0f);
-    // static const Vec4 COLOR2 = RGBLit(173.0f, 106.0f, 108.0f);
-    // static const Vec4 COLOR3 = RGBLit(208.0f, 173.0f, 167.0f);
-    static const Vec4 COLOR4 = Vec4Lit(232.0f, 214.0f, 203.0f, 0.9f);
-
     u32 to_delete[MAX_PARTICLES] = {0};
     u32 dlen = 0;
 
@@ -2041,13 +2041,12 @@ static void ParticleSystemTick(f32 dt) {
         }
 
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
+        particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
         DrawCmd* cmd = AddCmd();
-        cmd->modelm = Mat4SVRT(Vec3Lit(20.0f, 20.0f, 1.0f), Mat4Identity(), particle->p);
+        cmd->modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
         cmd->meshid = GetMesh(M_QUAD);
-        Vec4 color = COLOR4;
-        color.a = f32lerp(color.a, 0.1f, particle->lifedt / particle->lifetime);
-        cmd->color = color;
+        cmd->color = particle->color;
     }
 
     // Remove particles by swapping with end. NOTE this means we shouldn't be keeping persistent pointers
@@ -2452,6 +2451,8 @@ static void SpawnAsteroidsForGeneration(Entity* asteroid) {
         Vec3 pos = asteroid->pos;
         Particle* particle = AllocateParticle();
         particle->p = pos;
+        particle->scale = Vec3Lit(20.0f, 20.0f, 1.0f);
+        particle->color = LRED;
         particle->lifetime = 1.0f;
         // for (u32 i = 0; i < 3; ++i) {
         //     f32 seed = (f32)rand() / (f32)RAND_MAX;
