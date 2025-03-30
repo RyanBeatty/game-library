@@ -2847,6 +2847,17 @@ static void SceneTickAsteroids(GameState* gstate) {
                                         PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
                                     }
 
+                                    if (TestFlag(ea->flags, EFLAG_ALIEN) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
+                                        Entity* alien = ea;
+                                        Entity* asteroid = eb;
+
+                                        SpawnAsteroidsForGeneration(asteroid);
+
+                                        SoftDeactivateEntity(alien->id);
+                                        SoftDeactivateEntity(asteroid->id);
+                                        PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
+                                    }
+
                                     if (TestFlag(ea->flags, EFLAG_ALIEN) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
                                         Entity* alien = ea;
                                         Entity* bullet = eb;
