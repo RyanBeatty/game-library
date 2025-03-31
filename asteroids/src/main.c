@@ -2041,7 +2041,7 @@ static void ParticleSystemTick(f32 dt) {
         }
 
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
-        particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
+        // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
         DrawCmd* cmd = AddCmd();
         cmd->modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
@@ -2449,6 +2449,8 @@ static void SpawnAsteroidsForGeneration(Entity* asteroid) {
 
     {
         Vec3 pos = asteroid->pos;
+        Vec4 color = LGRAY;
+        color.a = 0.35f;
 
         Vec3 dir = Vec3Lit(10.0f, 0.0f, 0.0f);
         for (u32 i = 0; i < 5; ++i) {
@@ -2458,8 +2460,8 @@ static void SpawnAsteroidsForGeneration(Entity* asteroid) {
             particle->p = Vec3Add(pos, d);
             particle->v = Vec3Scale(d, 20.0f);
             particle->scale = Vec3Lit(5.0f, 5.0f, 1.0f);
-            particle->color = LRED;
-            particle->lifetime = 0.3f;
+            particle->color = color;
+            particle->lifetime = f32randab(0.1f, 0.5f);
         }
     }
 }
