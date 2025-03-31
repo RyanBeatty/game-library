@@ -2449,28 +2449,18 @@ static void SpawnAsteroidsForGeneration(Entity* asteroid) {
 
     {
         Vec3 pos = asteroid->pos;
-        Particle* particle = AllocateParticle();
-        particle->p = pos;
-        particle->scale = Vec3Lit(20.0f, 20.0f, 1.0f);
-        particle->color = LRED;
-        particle->lifetime = 0.3f;
-        // for (u32 i = 0; i < 3; ++i) {
-        //     f32 seed = (f32)rand() / (f32)RAND_MAX;
-        //     f32 jitter = f32lerp(-1.0f, 1.0f, seed);
 
-        //     Particle* particle = AllocateParticle();
+        Vec3 dir = Vec3Lit(10.0f, 0.0f, 0.0f);
+        for (u32 i = 0; i < 5; ++i) {
+            Vec3 d = Vec3RotateAxis(dir, Vec3Lit(0.0f, 0.0f, 1.0f), f32rand01() * LTAU);
 
-        //     f32 angle = 20.0f;
-        //     f32 rot = f32lerp(-angle, angle, ((f32)rand()) / ((f32)RAND_MAX));
-        //     Vec3 dir = Vec3RotateAxis(normal, Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(rot));
-        //     particle->v = Vec3Scale(dir, 10.0f + (5.0f * jitter));
-
-        //     // particle->p = Vec3Add(pos, Vec3Scale(particle->v, 0.1f * jitter));
-        //     particle->p = pos;
-
-        //     particle->lifetime = 0.7f + (0.1f * jitter);
-        //     particle->lifedt = 0.0f;
-        // }
+            Particle* particle = AllocateParticle();
+            particle->p = Vec3Add(pos, d);
+            particle->v = Vec3Scale(d, 20.0f);
+            particle->scale = Vec3Lit(5.0f, 5.0f, 1.0f);
+            particle->color = LRED;
+            particle->lifetime = 0.3f;
+        }
     }
 }
 
