@@ -679,7 +679,7 @@ static void TexturesInit() {
         glGenTextures(1, &tx.id);
         glBindTexture(GL_TEXTURE_2D, tx.id);
 
-        // The texture will be all black. Important to do this so that we can properly blend
+        // The texture will be all white. Important to do this so that we can properly blend
         // texture colors and uniform frag color.
         GLubyte transparentPixel[] = {255, 255, 255, 255};
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
@@ -1572,15 +1572,15 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
 LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
     LTexture tx = GetTexture(TX_LFONT);
 
-    u32 x = 48;
-    u32 y = 48;
+    u32 x = 28;
+    u32 y = 52;
     // (width, height) of the src and dest recs).
     // misnomer name I think. the center adjusts by the full width each time.
     Vec2 r_src = Vec2Lit(x, y);
     Vec2 r_dst = Vec2Lit(fontsize, fontsize);
 
     for (u32 i = 0; i < size; ++i, pos = Vec3Add(pos, Vec3Lit(r_dst.x, 0.0f, 0.0f))) {
-        u32 offset = text[i] - '0';
+        u32 offset = text[i] - ' ';
 
         // center src and dest.
         Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
@@ -3059,7 +3059,7 @@ static void SceneTickAsteroids(GameState* gstate) {
         u32 height = GetScreenHeight();
         pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-        char msg[] = "PRESSATOSTART";
+        char msg[] = "Press A To Start";
         DrawLText(msg, strlen(msg), Vec3Lit(0.5f * width, 0.5f * height, 0.0f), 30.0f, LYELLOW);
         EndShaderPass();
     }
