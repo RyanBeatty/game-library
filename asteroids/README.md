@@ -13,6 +13,12 @@ Engine Features Desired for Gameplay Prototyping
 * Basic Model Loading (Possibly not even necessary as I can try to use procedural geometry for as long as possible)
 
 
+TODO Asteroids
+* Tune alien spawn time
+* Alien sprite art
+* Tune asteroid particle speed (should be a bit slower/more floaty. maybe with some decelartion)
+* Maybe add some asteroid sprite rotation?
+
 TODO
 * Bugs
     * segfault when switching scenes with icosphere with too many subdivisions. sometimes segfaults on program
