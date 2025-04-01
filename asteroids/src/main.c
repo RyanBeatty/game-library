@@ -2642,7 +2642,7 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                                 bullet->graphics.mid = GetMesh(M_QUAD);
                                 bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
-                                bullet->graphics.color = LYELLOW;
+                                bullet->graphics.color = LGREEN;
                                 bullet->parentid = e->id;
                                 FlagOn(bullet->flags, EFLAG_PROJECTILE);
                                 FlagOn(bullet->flags, EFLAG_COLLIDER);
@@ -3060,7 +3060,15 @@ static void SceneTickAsteroids(GameState* gstate) {
         pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
         char msg[] = "Press A To Start";
-        DrawLText(msg, strlen(msg), Vec3Lit(0.5f * width, 0.5f * height, 0.0f), 30.0f, LYELLOW);
+        u32 size = strlen(msg);
+
+        u32 fontsize = 30.0f;
+        Vec2 dim = MeasureLText(msg, size, fontsize);
+
+        // Center text by shifting center forward by half a text cell size and then shifting backward
+        // by half the text size.
+        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.7f * height, 0);
+        DrawLText(msg, size, pos, fontsize, LYELLOW);
         EndShaderPass();
     }
 
