@@ -657,7 +657,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_SHIP, TX_LFONT, TX_ASTEROID_LARGE, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_SHIP, TX_LFONT, TX_ASTEROID_LARGE, TX_ALIEN, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -695,22 +695,25 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        LTexture tx = UploadTexture("assets/textures/ship.png");
-        tcache->textures[TX_SHIP] = tx;
+        tcache->textures[TX_SHIP] = UploadTexture("assets/textures/ship.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        LTexture tx = UploadTexture("assets/textures/LFont.png");
-        tcache->textures[TX_LFONT] = tx;
+        tcache->textures[TX_LFONT] = UploadTexture("assets/textures/LFont.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        LTexture tx = UploadTexture("assets/textures/asteroid-large.png");
-        tcache->textures[TX_ASTEROID_LARGE] = tx;
+        tcache->textures[TX_ASTEROID_LARGE] = UploadTexture("assets/textures/asteroid-large.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_ALIEN] = UploadTexture("assets/textures/alien.png");
         ++tcache->txlen;
     }
 }
@@ -2100,6 +2103,10 @@ static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_sr
     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
 }
 
+static void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
+    GraphicsInfoSetSprite(graphics, tx, Vec2Zero(), Vec2Lit(tx.width, tx.height), orient, scale);
+}
+
 static void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
     graphics->mid = mesh;
     graphics->scale = scale;
@@ -2604,8 +2611,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                         alien->shape.aabb2d.c = Vec2Zero();
                         alien->shape.aabb2d.r = Vec2Lit(0.5f * ALIEN_WIDTH, 0.5f * ALIEN_HEIGHT);
 
-                        GraphicsInfoSetShape(&alien->graphics, GetMesh(M_QUAD),
-                                             Vec3Lit(ALIEN_WIDTH, ALIEN_HEIGHT, 1.0f), LGREEN);
+                        GraphicsInfoSetTexture(&alien->graphics, GetTexture(TX_ALIEN), 0.0f, 1.0f);
                         FlagOn(alien->flags, EFLAG_COLLIDER);
                         FlagOn(alien->flags, EFLAG_ALIEN);
 
