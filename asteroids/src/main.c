@@ -2107,7 +2107,7 @@ static void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orie
     GraphicsInfoSetSprite(graphics, tx, Vec2Zero(), Vec2Lit(tx.width, tx.height), orient, scale);
 }
 
-static void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
+LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
     graphics->mid = mesh;
     graphics->scale = scale;
     graphics->color = color;
@@ -2498,7 +2498,7 @@ static void SceneTickAsteroids(GameState* gstate) {
         memset(&CAMERA, 0, sizeof(CAMERA));
 
         ALIEN_SPAWN_DT = 0.0f;
-        ALIEN_SPAWN_TIME = 3.0f;  // f32randab(30.0f, 60.0f);
+        ALIEN_SPAWN_TIME = f32randab(15.0f, 30.0f);
 
         // asteroids init. spawn randomly on screen.
         {
@@ -2617,7 +2617,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                         FlagOn(alien->flags, EFLAG_COLLIDER);
                         FlagOn(alien->flags, EFLAG_ALIEN);
 
-                        ALIEN_SPAWN_TIME = 3.0f;  // f32randab(30.0f, 60.0f);
+                        ALIEN_SPAWN_TIME = f32randab(15.0f, 30.0f);
                         ALIEN_SPAWN_DT = 0.0f;
                     }
 

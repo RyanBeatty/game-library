@@ -14,10 +14,11 @@ Engine Features Desired for Gameplay Prototyping
 
 
 TODO Asteroids
-* Tune alien spawn time
-* Tune asteroid particle speed (should be a bit slower/more floaty. maybe with some decelartion)
+* Improve player movement.
 * Maybe add some asteroid sprite rotation?
 * done - Alien sprite art
+* done - Tune asteroid particle speed (should be a bit slower/more floaty. maybe with some decelartion)
+* done - Tune alien spawn time
 
 TODO
 * Bugs
