@@ -2502,7 +2502,7 @@ static void SceneTickAsteroids(GameState* gstate) {
         {
             u32 width = GetScreenWidth();
             u32 height = GetScreenHeight();
-            for (u32 i = 0; i < 7; ++i) {
+            for (u32 i = 0; i < 5; ++i) {
                 // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
                 f32 seed0 = f32randab(-0.5f * width, 0.5f * width);
                 f32 seed1 = f32randab(-0.5f * height, 0.5f * height);
