@@ -2694,27 +2694,23 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                             // Thrust + accerlation + velocity update.
                             {
-                                // f32 slowdown_perp = 0.0f;
-                                // f32 slowdown_parallel = 0.0f;
                                 f32 friction = 150.0f;
+                                f32 thrust = 300.0f;
                                 if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
                                     Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
                                     Vec3 vdir = Vec3Normalize(e->v);
 
-                                    f32 angle = Vec3Angle(forward, vdir);
-                                    f32 extra_thrust = 0.0f;
-                                    if (angle >= Deg2Rad(160.0f)) {
-                                        extra_thrust = 0.8f * Vec3Len(e->v);
+                                    // If we are accelerating in opposite direction or if we are accelerating from
+                                    // stop, then increase acceleration for a bit.
+                                    if (Vec3Dot(vdir, forward) < 0.0f || Vec3Len(e->v) < 50.0f) {
+                                        thrust *= 1.7f;
                                     }
-                                    // TraceLog(LOG_INFO, "extra thrust %f", extra_thrust);
+                                    // TraceLog(LOG_INFO, "thrust %f", thrust);
 
-                                    Vec3 acc = Vec3Scale(forward, (300.0f + extra_thrust) * dt);
+                                    Vec3 acc = Vec3Scale(forward, thrust * dt);
                                     e->v = Vec3Add(e->v, acc);
 
                                     friction = 0.0f;
-                                    // slowdown_perp = 200.0f;
-                                } else {
-                                    // slowdown_parallel = 200.0f;
                                 }
 
                                 f32 speed = Vec3Len(e->v);
