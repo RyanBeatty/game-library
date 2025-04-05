@@ -2093,8 +2093,8 @@ LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, 
 
 ////////////////////////////////////////////////////////////
 
-const float RenderWidth = 1280;
-const float RenderHeight = 720;
+const f32 RenderWidth = 224;
+const f32 RenderHeight = 256;
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
@@ -2297,6 +2297,12 @@ typedef struct {
 // static Mat4 LCameraGetView(LCamera c) {
 //     return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
 // }
+
+#define Grid2WorldEx(pos, w, h, d) (Vec3Lit((pos).x * (w), (pos).y * (h), (pos).z * (d)))
+
+static const f32 GRID_WIDTH = 16.0f;
+static const f32 GRID_HEIGHT = 16.0f;
+#define Grid2World(pos) (Grid2WorldEx(pos, GRID_WIDTH, GRID_HEIGHT, 0.0f))
 
 ////////////////////////////////////////////////////
 
@@ -2509,36 +2515,6 @@ static void SceneTickFrogger(GameState* gstate) {
                                 speed = f32clamp(speed, 0.0f, 700.0f);
                                 e->v = Vec3Scale(Vec3Normalize(e->v), speed);
                             }
-
-                            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
-                                static const f32 PROJECTILE_SPEED = 600.0f;
-                                static const f32 PROJECTILE_SCALE = 5.0f;
-
-                                Entity* bullet = AllocateEntity();
-
-                                bullet->pos = e->pos;
-                                bullet->v =
-                                    Vec3Scale(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient), PROJECTILE_SPEED);
-                                bullet->orient = e->orient;
-
-                                bullet->shape.type = PH_CIRCLE;
-                                bullet->shape.circle.c = Vec2Zero();
-                                bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
-
-                                bullet->graphics.mid = GetMesh(M_QUAD);
-                                bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
-                                bullet->graphics.color = LYELLOW;
-                                bullet->parentid = e->id;
-                                FlagOn(bullet->flags, EFLAG_PROJECTILE);
-                                FlagOn(bullet->flags, EFLAG_COLLIDER);
-                            }
-                        }
-
-                        if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                            e->alive_dt += dt;
-                            if (e->alive_dt > 1.5f) {
-                                SoftDeactivateEntity(e->id);
-                            }
                         }
                     }
 
@@ -2670,6 +2646,20 @@ static void SceneTickFrogger(GameState* gstate) {
                 cmd->color = LBLACK;  // RGBLit(5, 5, 20);
             }
 
+            // Draw Board.
+            {
+                Vec4 colors[] = {LRED, LBLUE};
+                u32 cidx = 0;
+                u32 width = 16;
+                u32 height = 16;
+                for (u32 r = 0; r < 16; ++r) {
+                    for (u32 c = 0; c < 14; ++c, ++cidx) {
+                        DrawQuad(Grid2World(Vec3Lit(c, r, 0.0f)), width, height, Mat4Identity(), colors[cidx % 2]);
+                    }
+                    ++cidx;
+                }
+            }
+
             // Draw.
             for (u32 i = 0; i < ArraySizeOf(em->entities); ++i) {
                 Entity* e = GetEntity(i);
@@ -2701,7 +2691,10 @@ static void SceneTickFrogger(GameState* gstate) {
     ParticleSystemTick(dt);
 
     // pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
-    pass->view = Mat4Identity();
+    Vec3 eye = Vec3Lit(0.5f * GetScreenWidth(), 0.5f * GetScreenHeight(), 0.0f);
+    // subtract offset to ensure first grid cell bottom left is (0, 0)
+    eye = Vec3Add(eye, Vec3Lit(-0.5f * GRID_WIDTH, -0.5f * GRID_HEIGHT, 0.0f));
+    pass->view = GetCameraMat(eye, Vec3Zero());
     pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
     i32 hwidth = 0.5f * GetScreenWidth();
