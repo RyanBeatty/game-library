@@ -2020,7 +2020,7 @@ static void ParticleSystemInit() {
     particles->pcap = MAX_PARTICLES;
 }
 
-static Particle* AllocateParticle() {
+LCORE Particle* AllocateParticle() {
     ParticleSystem* particles = GetParticleSystem();
     Assert(particles->plen < particles->pcap);
     Particle* particle = &particles->particles[particles->plen++];
@@ -2091,7 +2091,7 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
-static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
+LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(r_src.x * scale, r_src.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
@@ -2103,7 +2103,7 @@ static void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_sr
     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
 }
 
-static void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
+LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
     GraphicsInfoSetSprite(graphics, tx, Vec2Zero(), Vec2Lit(tx.width, tx.height), orient, scale);
 }
 
@@ -2400,81 +2400,6 @@ static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
 
 #define MAX_ENTITY_BATCH 256
 
-static Entity* SpawnAsteroid(u32 generation, Vec3 pos, Vec3 v, f32 gscale, f32 sscale, bool spawns_debree) {
-    static const f32 R = 50.f;
-
-    Entity* asteroid = AllocateEntity();
-    asteroid->generation = generation;
-    asteroid->spawns_debree = spawns_debree;
-
-    asteroid->pos = pos;
-    asteroid->v = v;
-    asteroid->orient = Mat4Identity();
-
-    asteroid->shape.type = PH_CIRCLE;
-    asteroid->shape.circle.c = Vec2Zero();
-    asteroid->shape.circle.r = R * sscale;
-
-    LTexture tx = GetTexture(TX_ASTEROID_LARGE);
-    GraphicsInfoSetSprite(&asteroid->graphics, GetTexture(TX_ASTEROID_LARGE), Vec2Zero(), Vec2Lit(tx.width, tx.height),
-                          0.0f, gscale);
-
-    FlagOn(asteroid->flags, EFLAG_ASTEROID);
-    FlagOn(asteroid->flags, EFLAG_COLLIDER);
-    return asteroid;
-}
-
-static void SpawnAsteroidsForGeneration(Entity* asteroid) {
-    static const f32 ROTS[] = {Deg2Rad(15.0f), Deg2Rad(30.0f), Deg2Rad(45.0f)};
-
-    u32 generation = asteroid->generation + 1;
-    bool new_spawns_debree = generation < 2.0f;
-    if (asteroid->spawns_debree) {
-        f32 gscale = 1.0f / (2.0f * generation);
-        f32 sscale = 1.0f / (2.0f * generation);
-        TraceLog(LOG_INFO, "generation %d gscale %f", generation, gscale);
-
-        Vec3 vdirstart = Vec3Normalize(asteroid->v);
-        f32 new_speed = 3.0f * Vec3Len(asteroid->v);
-
-        f32 rotseed = f32randab(0.0f, 3.0f);
-        f32 rot = ROTS[(u32)rotseed];
-        TraceLog(LOG_INFO, "rot %f rotseed", Rad2Deg(rot), rotseed);
-
-        {
-            Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), rot);
-            Vec3 v = Vec3Scale(vdir, new_speed);
-            SpawnAsteroid(generation, asteroid->pos, v, gscale, sscale, new_spawns_debree);
-        }
-
-        {
-            Vec3 vdir = Vec3RotateAxis(vdirstart, Vec3Lit(0.0f, 0.0f, 1.0f), -rot);
-            Vec3 v = Vec3Scale(vdir, new_speed);
-            SpawnAsteroid(generation, asteroid->pos, v, gscale, sscale, new_spawns_debree);
-        }
-    }
-
-    {
-        Vec3 pos = asteroid->pos;
-        Vec4 color = LGRAY;
-        color.a = 0.35f;
-
-        Vec3 dir = Vec3Lit(10.0f, 0.0f, 0.0f);
-
-        u32 num_to_spawn = (u32)f32randab(3, 5);
-        for (u32 i = 0; i < num_to_spawn; ++i) {
-            Vec3 d = Vec3RotateAxis(dir, Vec3Lit(0.0f, 0.0f, 1.0f), f32rand01() * LTAU);
-
-            Particle* particle = AllocateParticle();
-            particle->p = Vec3Add(pos, d);
-            particle->v = Vec3Scale(d, 10.0f);
-            particle->scale = Vec3Lit(5.0f, 5.0f, 1.0f);
-            particle->color = color;
-            particle->lifetime = f32randab(0.5f, 1.5f);
-        }
-    }
-}
-
 typedef enum {
     SS_NONE = 0,
     SS_RESPAWN,
@@ -2486,9 +2411,6 @@ typedef enum {
 static void SceneTickAsteroids(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
-    static f32 ALIEN_SPAWN_DT = 0.0f;
-    static f32 ALIEN_SPAWN_TIME = 0.0f;
-    // static EntityId PLAYER_ID = 0;
 
     f32 dt = gstate->dt;
 
@@ -2496,27 +2418,6 @@ static void SceneTickAsteroids(GameState* gstate) {
     if (!gstate->init) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
-
-        ALIEN_SPAWN_DT = 0.0f;
-        ALIEN_SPAWN_TIME = f32randab(15.0f, 30.0f);
-
-        // asteroids init. spawn randomly on screen.
-        {
-            u32 width = GetScreenWidth();
-            u32 height = GetScreenHeight();
-            for (u32 i = 0; i < 5; ++i) {
-                // TODO: spawning algo needs A LOT of work. doesn't lead to fun behavior.
-                f32 seed0 = f32randab(-0.5f * width, 0.5f * width);
-                f32 seed1 = f32randab(-0.5f * height, 0.5f * height);
-                f32 seed2 = f32randab(0.0f, LPI);
-
-                // Something off about this, way fewer asteroids appear.
-                Vec3 pos = Vec3Lit(seed0, seed1, 0.0f);
-                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0, 0.0), Vec3Lit(0.0f, 0.0f, 1.0f), seed2);
-                Vec3 v = Vec3Scale(vdir, 20.0f);
-                SpawnAsteroid(0, pos, v, 1.0f, 1.0f, true);
-            }
-        }
     }
 
     BeginRender();
@@ -2581,46 +2482,6 @@ static void SceneTickAsteroids(GameState* gstate) {
 
             if (gstate->update) {
                 if (STATE == SS_PLAYING) {
-                    ALIEN_SPAWN_DT += dt;
-                    if (ALIEN_SPAWN_DT >= ALIEN_SPAWN_TIME) {
-                        static const f32 ALIEN_WIDTH = 96.0f;
-                        static const f32 ALIEN_HEIGHT = 48.0f;
-
-                        // Spawn point is random point on edge of screen.
-                        u32 width = GetScreenWidth();
-                        u32 height = GetScreenHeight();
-                        Vec3 dir =
-                            Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), f32rand01() * LTAU);
-                        f32 dx = f32abs(dir.x);
-                        f32 dy = f32abs(dir.y);
-                        // find toi with x and y boundary. because aabb is symetric, handling +- direction is the same.
-                        // just need to ensure we abs the d to be able to combine equations. We also check that
-                        // the displacement in either direciton is not parallel with edges. If parallel, set toi to max.
-                        f32 tx = dx >= F32_EPSILON ? (0.5f * width) / dx : F32_MAX;
-                        f32 ty = dy >= F32_EPSILON ? (0.5f * height) / dy : F32_MAX;
-                        // Find minimal toi which will yield point on aabb edge.
-                        f32 t = f32min(tx, ty);
-                        Vec3 pos = Vec3Scale(dir, t);
-
-                        Vec3 vdir = Vec3Normalize(Vec3Sub(Vec3Zero(), pos));
-                        Vec3 v = Vec3Scale(vdir, 30.0f);
-
-                        Entity* alien = AllocateEntity();
-                        alien->pos = pos;
-                        alien->v = v;
-
-                        alien->shape.type = PH_AABB2D;
-                        alien->shape.aabb2d.c = Vec2Zero();
-                        alien->shape.aabb2d.r = Vec2Lit(0.5f * ALIEN_WIDTH, 0.5f * ALIEN_HEIGHT);
-
-                        GraphicsInfoSetTexture(&alien->graphics, GetTexture(TX_ALIEN), 0.0f, 1.0f);
-                        FlagOn(alien->flags, EFLAG_COLLIDER);
-                        FlagOn(alien->flags, EFLAG_ALIEN);
-
-                        ALIEN_SPAWN_TIME = f32randab(15.0f, 30.0f);
-                        ALIEN_SPAWN_DT = 0.0f;
-                    }
-
                     // React to input.
                     for (u32 i = 0; i < esize; ++i) {
                         Entity* e = GetEntity(i);
@@ -2628,54 +2489,10 @@ static void SceneTickAsteroids(GameState* gstate) {
                             continue;
                         }
 
-                        if (TestFlag(e->flags, EFLAG_ALIEN)) {
-                            e->shot_dt += dt;
-                            if (e->shot_dt >= 1.0f) {
-                                static const f32 PROJECTILE_SPEED = 600.0f;
-                                static const f32 PROJECTILE_SCALE = 5.0f;
-
-                                e->shot_dt = 0.0f;
-
-                                Entity* bullet = AllocateEntity();
-
-                                bullet->pos = e->pos;
-                                Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
-                                                           f32rand01() * LTAU);
-                                bullet->v = Vec3Scale(Vec3Transform(vdir, e->orient), PROJECTILE_SPEED);
-                                bullet->orient = e->orient;
-
-                                bullet->shape.type = PH_CIRCLE;
-                                bullet->shape.circle.c = Vec2Zero();
-                                bullet->shape.circle.r = PROJECTILE_SCALE - 1.0f;
-
-                                bullet->graphics.mid = GetMesh(M_QUAD);
-                                bullet->graphics.scale = Vec3Lit(PROJECTILE_SCALE, PROJECTILE_SCALE, 1.0f);
-                                bullet->graphics.color = LGREEN;
-                                bullet->parentid = e->id;
-                                FlagOn(bullet->flags, EFLAG_PROJECTILE);
-                                FlagOn(bullet->flags, EFLAG_COLLIDER);
-
-                                PlayLSound(GetSound(SOUND_SHIP_SHOT), 0);
-                            }
-                        }
-
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                             static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
 
                             Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
-
-                            // {
-                            //     static const f32 LEFT_MOVE_THRESHOLD = 0.05f;
-                            //     static const f32 MAX_SPEED = 100.0f;
-
-                            //     f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                            //     f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                            //     if (f32abs(x) > LEFT_MOVE_THRESHOLD || f32abs(y) > LEFT_MOVE_THRESHOLD) {
-                            //         Vec3 dir = Vec3Lit(x, y, 0.0f);
-                            //         dir = Vec3Normalize(Vec3Transform(dir, vieworient));
-                            //         e->pos = Vec3Add(e->pos, Vec3Scale(dir, MAX_SPEED * dt));
-                            //     }
-                            // }
 
                             {
                                 f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
@@ -2717,43 +2534,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 speed -= friction * dt;
                                 speed = f32clamp(speed, 0.0f, 700.0f);
                                 e->v = Vec3Scale(Vec3Normalize(e->v), speed);
-
-                                // Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
-                                // Vec3 v_parallel = Vec3Scale(forward, Vec3Dot(forward, e->v));
-                                // Vec3 v_perp = Vec3Sub(e->v, v_parallel);
-
-                                // f32 speed_perp = Vec3Len(v_perp);
-                                // if (DEBUG_EVER) {
-                                //     breakpoint();
-                                // }
-                                // speed_perp = f32max(0.0f, speed_perp - (slowdown_perp * dt));
-                                // TraceLog(LOG_INFO, "speed perp %f", speed_perp);
-                                // v_perp = Vec3Scale(Vec3Normalize(v_perp), speed_perp);
-
-                                // f32 speed_parallel = Vec3Len(v_parallel);
-                                // speed_parallel = f32max(0.0f, speed_parallel - slowdown_parallel * dt);
-                                // v_parallel = Vec3Scale(Vec3Normalize(v_parallel), speed_parallel);
-
-                                // e->v = Vec3Add(v_parallel, v_perp);
-
-                                // else {
-                                //     Vec3 dir = Vec3Normalize(e->v);
-                                //     f32 speed = Vec3Len(e->v);
-                                //     speed -= 0.9f * dt * speed;
-                                //     if (speed < 0.01f) {
-                                //         speed = 0.0f;
-                                //     }
-                                //     e->v = Vec3Scale(dir, speed);
-                                // }
-
-                                // Vec3 dir = Vec3Normalize(e->v);
-                                // f32 speed = Vec3Len(e->v);
-                                // speed -= 0.9f * dt * speed;
-                                // if (speed < 0.01f) {
-                                //     speed = 0.0f;
-                                // }
-                                // e->v = Vec3Scale(dir, speed);
-                                // TraceLog(LOG_INFO, "vel %f %f %f", e->v.x, e->v.y, e->v.z);
                             }
 
                             if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2)) {
@@ -2821,11 +2601,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                                         continue;
                                     }
 
-                                    // HACK FOR DEBUGGING.
-                                    if (TestFlag(ea->flags, EFLAG_ASTEROID) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
-                                        continue;
-                                    }
-
                                     Polyhedron shapeb = PolyhedronTransform(eb->shape, EntityGetMat(eb));
 
                                     CollisionInfo collision = {0};
@@ -2841,6 +2616,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 }
                             }
 
+                            // Collision response.
                             for (u32 i = 0; i < clen; ++i) {
                                 CollisionInfo c = collisions[i];
 
@@ -2862,91 +2638,9 @@ static void SceneTickAsteroids(GameState* gstate) {
 
                                     Entity* ea = GetEntity(collision.id0);
                                     Entity* eb = GetEntity(collision.id1);
-
-                                    if (TestFlag(ea->flags, EFLAG_ASTEROID) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                                        Entity* asteroid = ea;
-                                        Entity* bullet = eb;
-
-                                        SpawnAsteroidsForGeneration(asteroid);
-
-                                        SoftDeactivateEntity(bullet->id);
-                                        SoftDeactivateEntity(asteroid->id);
-                                        PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
+                                    if (ea == eb) {
+                                        continue;
                                     }
-
-                                    if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
-                                        TestFlag(eb->flags, EFLAG_ASTEROID)) {
-                                        Entity* player = ea;
-                                        Entity* asteroid = eb;
-
-                                        SpawnAsteroidsForGeneration(asteroid);
-
-                                        SoftDeactivateEntity(player->id);
-                                        SoftDeactivateEntity(asteroid->id);
-                                        STATE = SS_RESPAWN;
-                                        PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
-                                    }
-
-                                    if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
-                                        TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                                        Entity* player = ea;
-                                        Entity* bullet = eb;
-                                        if (bullet->parentid != player->id) {
-                                            SoftDeactivateEntity(player->id);
-                                            SoftDeactivateEntity(bullet->id);
-                                            STATE = SS_RESPAWN;
-                                            PlayLSound(GetSound(SOUND_SHIP_EXPLOSION), 0);
-                                        }
-                                    }
-
-                                    if (TestFlag(ea->flags, EFLAG_ALIEN) && TestFlag(eb->flags, EFLAG_ASTEROID)) {
-                                        Entity* alien = ea;
-                                        Entity* asteroid = eb;
-
-                                        SpawnAsteroidsForGeneration(asteroid);
-
-                                        SoftDeactivateEntity(alien->id);
-                                        SoftDeactivateEntity(asteroid->id);
-                                        PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
-                                    }
-
-                                    if (TestFlag(ea->flags, EFLAG_ALIEN) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                                        Entity* alien = ea;
-                                        Entity* bullet = eb;
-
-                                        if (bullet->parentid != alien->id) {
-                                            SoftDeactivateEntity(alien->id);
-                                            SoftDeactivateEntity(bullet->id);
-                                            PlayLSound(GetSound(SOUND_ASTEROID_LARGE_EXPLOSION), 0);
-                                        }
-                                    }
-                                }
-                            }
-
-                            f32 hwidth = 0.5f * GetScreenWidth();
-                            f32 left = -hwidth;
-                            f32 right = hwidth;
-
-                            f32 hheight = 0.5f * GetScreenHeight();
-                            f32 bottom = -hheight;
-                            f32 top = hheight;
-                            for (u32 i = 0; i < esize; ++i) {
-                                Entity* e = GetEntity(i);
-                                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                                    continue;
-                                }
-
-                                // TODO: Might want to add some "slop" here on the bounds check
-                                if (e->pos.x > right + SLOP) {
-                                    e->pos.x = left;
-                                } else if (e->pos.x < left - SLOP) {
-                                    e->pos.x = right;
-                                }
-
-                                if (e->pos.y > top + SLOP) {
-                                    e->pos.y = bottom;
-                                } else if (e->pos.y < bottom - SLOP) {
-                                    e->pos.y = top;
                                 }
                             }
                         }
@@ -2957,8 +2651,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                     }
                 } else if (STATE == SS_RESPAWN) {
                     bool spawn_area_is_clear = true;
-                    Polyhedron spawnph = {.type = PH_CIRCLE, .circle = {.c = Vec2Lit(0.0f, 0.0f), .r = 20.0f}};
-
                     // Bit of a hacky way to ensure the spawn area is clear before spawning the player. we'll just
                     // update physics until the area is clear. works well for ensuring initial spawn is good. sometimes
                     // have to wait if ship dies to large asteroid.
@@ -2966,16 +2658,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                         Entity* e = GetEntity(i);
                         if (!TestFlag(e->flags, EFLAG_ACTIVE) || !TestFlag(e->flags, EFLAG_COLLIDER)) {
                             continue;
-                        }
-
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                        Polyhedron eph = PolyhedronTransform(e->shape, EntityGetMat(e));
-
-                        Vec3 normal = Vec3Zero();
-                        f32 depth = 0.0f;
-                        bool collides = TestPolyhedronVsPolyhedron(&spawnph, &eph, &normal, &depth);
-                        if (collides) {
-                            spawn_area_is_clear = false;
                         }
                     }
 
