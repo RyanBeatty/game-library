@@ -2209,7 +2209,7 @@ static Entity* AllocateEntity() {
     return entity;
 }
 
-static void SoftDeactivateEntity(EntityId id) {
+LCORE void SoftDeactivateEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
     Assert(em->inactive_len < em->inactive_cap);
     em->inactive_to_be[em->inactive_len++] = id;
@@ -2695,7 +2695,6 @@ static void SceneTickFrogger(GameState* gstate) {
     // subtract offset to ensure first grid cell bottom left is (0, 0)
     eye = Vec3Add(eye, Vec3Lit(-0.5f * GRID_WIDTH, -0.5f * GRID_HEIGHT, 0.0f));
     pass->view = GetCameraMat(eye, Vec3Zero());
-    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
 
     i32 hwidth = 0.5f * GetScreenWidth();
     i32 hheight = 0.5f * GetScreenHeight();
