@@ -2112,10 +2112,6 @@ typedef enum EntityFlag {
     EFLAG_COLLIDER = 1 << 3,
     EFLAG_PROJECTILE = 1 << 4,
     EFLAG_WALL = 1 << 5,
-    EFLAG_DEATHZONE = 1 << 6,
-    EFLAG_POWERUP = 1 << 7,
-    EFLAG_ASTEROID = 1 << 8,
-    EFLAG_ALIEN = 1 << 9,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2386,7 +2382,7 @@ typedef enum {
     SS_COUNT,
 } SceneState;
 
-static void SceneTickAsteroids(GameState* gstate) {
+static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
 
@@ -2933,7 +2929,7 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
-        gstate->scenefuncs[idx++] = SceneTickAsteroids;
+        gstate->scenefuncs[idx++] = SceneTickFrogger;
         gstate->scenefuncs[idx++] = Scene1Tick;
         Assert(idx < MAX_SCENES);
         gstate->scenefuncssize = idx;
