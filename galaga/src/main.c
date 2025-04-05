@@ -657,7 +657,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_SHIP, TX_LFONT, TX_ASTEROID_LARGE, TX_ALIEN, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -695,25 +695,7 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_SHIP] = UploadTexture("assets/textures/ship.png");
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_LFONT] = UploadTexture("assets/textures/LFont.png");
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_ASTEROID_LARGE] = UploadTexture("assets/textures/asteroid-large.png");
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_ALIEN] = UploadTexture("assets/textures/alien.png");
         ++tcache->txlen;
     }
 }
@@ -1971,9 +1953,7 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
 
 typedef enum {
     SOUND_NONE = 0,
-    SOUND_SHIP_SHOT,
-    SOUND_ASTEROID_LARGE_EXPLOSION,
-    SOUND_SHIP_EXPLOSION,
+    SOUND_BEEP,
     SOUND_COUNT,
 } SoundTag;
 
@@ -1984,9 +1964,7 @@ static SoundId SOUNDS[SOUND_COUNT] = {0};
 static void LoadSounds() {
     ClearLSounds();
     SOUNDS[SOUND_NONE] = 0;
-    SOUNDS[SOUND_SHIP_SHOT] = LoadLSound("assets/sounds/ship_shot.wav");
-    SOUNDS[SOUND_ASTEROID_LARGE_EXPLOSION] = LoadLSound("assets/sounds/asteroid_large_explosion.wav");
-    SOUNDS[SOUND_SHIP_EXPLOSION] = LoadLSound("assets/sounds/ship_explosion.wav");
+    SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -2557,8 +2535,6 @@ static void SceneTickAsteroids(GameState* gstate) {
                                 bullet->parentid = e->id;
                                 FlagOn(bullet->flags, EFLAG_PROJECTILE);
                                 FlagOn(bullet->flags, EFLAG_COLLIDER);
-
-                                PlayLSound(GetSound(SOUND_SHIP_SHOT), 0);
                             }
                         }
 
@@ -2668,8 +2644,7 @@ static void SceneTickAsteroids(GameState* gstate) {
                         e->shape.type = PH_CIRCLE;
                         e->shape.circle.c = Vec2Zero();
                         e->shape.circle.r = 12.0f;
-                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_SHIP), Vec2Zero(), Vec2Lit(48.0f, 48.0f),
-                                              0.0f, 1.0f);
+                        GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(1.0f, 1.0f, 1.0f), LRED);
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
                         FlagOn(e->flags, EFLAG_COLLIDER);
                         // PLAYER_ID = e->id;
