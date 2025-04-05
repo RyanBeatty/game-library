@@ -2302,7 +2302,7 @@ typedef struct {
 
 static const f32 GRID_WIDTH = 16.0f;
 static const f32 GRID_HEIGHT = 16.0f;
-#define Grid2World(pos) (Grid2WorldEx(pos, GRID_WIDTH, GRID_HEIGHT, 0.0f))
+#define Grid2World(pos) (Grid2WorldEx(pos, GRID_WIDTH, GRID_HEIGHT, 1.0f))
 
 ////////////////////////////////////////////////////
 
@@ -2638,14 +2638,6 @@ static void SceneTickFrogger(GameState* gstate) {
                 e->graphics.orient = e->orient;
             }
 
-            // Draw background
-            {
-                DrawCmd* cmd = AddCmd();
-                cmd->meshid = GetMesh(M_QUAD);
-                cmd->modelm = Mat4ScaleV(Vec3Lit(10000.0f, 10000.0f, 1.0f));
-                cmd->color = LBLACK;  // RGBLit(5, 5, 20);
-            }
-
             // Draw Board.
             {
                 Vec4 colors[] = {LRED, LBLUE};
@@ -2654,7 +2646,7 @@ static void SceneTickFrogger(GameState* gstate) {
                 u32 height = 16;
                 for (u32 r = 0; r < 16; ++r) {
                     for (u32 c = 0; c < 14; ++c, ++cidx) {
-                        DrawQuad(Grid2World(Vec3Lit(c, r, 0.0f)), width, height, Mat4Identity(), colors[cidx % 2]);
+                        DrawQuad(Grid2World(Vec3Lit(c, r, -1.0f)), width, height, Mat4Identity(), colors[cidx % 2]);
                     }
                     ++cidx;
                 }
