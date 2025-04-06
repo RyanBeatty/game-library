@@ -2093,9 +2093,6 @@ LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, 
 
 ////////////////////////////////////////////////////////////
 
-const f32 RenderWidth = 224;
-const f32 RenderHeight = 256;
-
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 
@@ -2319,6 +2316,11 @@ typedef struct GameState {
     bool update;
     bool game_over;
     bool init;  // False on first frame of scene load. Used to tell update function to perform init.
+
+    u32 renderw;
+    u32 renderh;
+    u32 screenw;
+    u32 screenh;
 
     bool debug_ever;
 
@@ -2647,21 +2649,21 @@ static void SceneTickFrogger(GameState* gstate) {
     ParticleSystemTick(dt);
 
     // pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
-    Vec3 eye = Vec3Lit(0.5f * GetScreenWidth(), 0.5f * GetScreenHeight(), 0.0f);
+    Vec3 eye = Vec3Lit(0.5f * gstate->screenw, 0.5f * gstate->screenh, 0.0f);
     // subtract offset to ensure first grid cell bottom left is (0, 0)
     eye = Vec3Add(eye, Vec3Lit(-0.5f * GRID_WIDTH, -0.5f * GRID_HEIGHT, 0.0f));
     pass->view = GetCameraMat(eye, Vec3Zero());
 
-    i32 hwidth = 0.5f * GetScreenWidth();
-    i32 hheight = 0.5f * GetScreenHeight();
+    i32 hwidth = 0.5f * gstate->screenw;
+    i32 hheight = 0.5f * gstate->screenh;
     pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -100.0f, 100.0f);
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
 
     if (STATE == SS_SPAWNED) {
         ShaderPass* pass = BeginShaderPass(GetShader());
-        u32 width = GetScreenWidth();
-        u32 height = GetScreenHeight();
+        u32 width = gstate->screenw;
+        u32 height = gstate->screenh;
         pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
         char msg[] = "Press ENTER To Start";
@@ -2847,7 +2849,7 @@ static void Scene1Tick(GameState* gstate) {
     }
 
     pass->view = GetCameraMat(viewpos, vieworient);
-    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)GetScreenWidth() / (f32)GetScreenHeight(), 0.1f, 1000.0f);
+    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)gstate->screenw / (f32)gstate->screenh, 0.1f, 1000.0f);
     EndShaderPass();
     EndRender();
 }
@@ -2857,7 +2859,10 @@ static void Scene1Tick(GameState* gstate) {
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
 
-    InitWindow(RenderWidth, RenderHeight, "Game");
+    gstate->renderw = 224.0f;
+    gstate->renderh = 256.0f;
+
+    InitWindow(gstate->renderw, gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
@@ -2888,6 +2893,9 @@ static void GameStateInit(GameState* gstate) {
 static void GameStateTick(GameState* gstate) {
     gstate->dt = GetFrameTime();
     f32 dt = gstate->dt;
+
+    gstate->screenw = GetScreenWidth();
+    gstate->screenh = GetScreenHeight();
 
     // Check if scene needs to be changed.
     {
