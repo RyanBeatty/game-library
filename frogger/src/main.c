@@ -2126,7 +2126,6 @@ typedef struct Entity {
     // Decomposition of model matrix.
     Vec3 pos;
     Vec3 ppos;  // prev pos.
-    Vec3 gpos;  // grid pos. int only.
     Vec3 scale;
     Mat4 orient;
 
@@ -2475,51 +2474,18 @@ static void SceneTickFrogger(GameState* gstate) {
                         }
 
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                            static const f32 RIGHT_MOVE_THRESHOLD = 0.3f;
-
-                            Mat4 vieworient = Mat4RotateEuler(CAMERA.orient);
-
-                            {
-                                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                                if (f32abs(x) > RIGHT_MOVE_THRESHOLD || f32abs(y) > RIGHT_MOVE_THRESHOLD) {
-                                    Vec3 forward = Mat4Identity().v.b;
-                                    Vec3 wishdir = Vec3Lit(x, y, 0.0f);
-                                    wishdir = Vec3Normalize(Vec3Transform(wishdir, vieworient));
-                                    f32 wishangle = Vec3Angle(wishdir, forward);
-                                    f32 rotangle = f32round(wishangle / Deg2Rad(15.0f)) * Deg2Rad(15.0f);
-                                    Vec3 rotaxis = Vec3Cross(forward, wishdir);
-                                    Mat4 orient = Mat4Rotate(rotangle, rotaxis);
-                                    e->orient = orient;
-                                }
+                            Vec3 move = Vec3Zero();
+                            if (IsKeyPressed(KEY_UP)) {
+                                move.y = 1;
+                            } else if (IsKeyPressed(KEY_DOWN)) {
+                                move.y = -1;
+                            } else if (IsKeyPressed(KEY_LEFT)) {
+                                move.x = -1;
+                            } else if (IsKeyPressed(KEY_RIGHT)) {
+                                move.x = 1;
                             }
 
-                            // Thrust + accerlation + velocity update.
-                            {
-                                f32 friction = 150.0f;
-                                f32 thrust = 300.0f;
-                                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2)) {
-                                    Vec3 forward = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), e->orient);
-                                    Vec3 vdir = Vec3Normalize(e->v);
-
-                                    // If we are accelerating in opposite direction or if we are accelerating from
-                                    // stop, then increase acceleration for a bit.
-                                    if (Vec3Dot(vdir, forward) < 0.0f || Vec3Len(e->v) < 50.0f) {
-                                        thrust *= 1.7f;
-                                    }
-                                    // TraceLog(LOG_INFO, "thrust %f", thrust);
-
-                                    Vec3 acc = Vec3Scale(forward, thrust * dt);
-                                    e->v = Vec3Add(e->v, acc);
-
-                                    friction = 0.0f;
-                                }
-
-                                f32 speed = Vec3Len(e->v);
-                                speed -= friction * dt;
-                                speed = f32clamp(speed, 0.0f, 700.0f);
-                                e->v = Vec3Scale(Vec3Normalize(e->v), speed);
-                            }
+                            e->pos = Vec3Add(e->pos, move);
                         }
                     }
 
@@ -2530,9 +2496,6 @@ static void SceneTickFrogger(GameState* gstate) {
                             if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                                 continue;
                             }
-
-                            e->ppos = e->pos;
-                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         }
 
                         // Collision detection.
@@ -2617,8 +2580,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     if (spawn_area_is_clear) {
                         // Player init.
                         Entity* e = AllocateEntity();
-                        e->gpos = Vec3Lit(4.0f, 0.0f, 0.0f);
-                        e->pos = Grid2World(e->gpos);
+                        e->pos = Vec3Lit(4.0f, 0.0f, 0.0f);
                         GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f),
                                              LGREEN);
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
@@ -2636,7 +2598,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     continue;
                 }
 
-                e->graphics.pos = e->pos;
+                e->graphics.pos = Grid2World(e->pos);
                 e->graphics.orient = e->orient;
             }
 
