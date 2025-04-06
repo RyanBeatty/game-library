@@ -2126,6 +2126,7 @@ typedef struct Entity {
     // Decomposition of model matrix.
     Vec3 pos;
     Vec3 ppos;  // prev pos.
+    Vec3 gpos;  // grid pos. int only.
     Vec3 scale;
     Mat4 orient;
 
@@ -2302,7 +2303,11 @@ typedef struct {
 
 static const f32 GRID_WIDTH = 16.0f;
 static const f32 GRID_HEIGHT = 16.0f;
-#define Grid2World(pos) (Grid2WorldEx(pos, GRID_WIDTH, GRID_HEIGHT, 1.0f))
+static const f32 GRID_DEPTH = 1.0f;
+#define Grid2World(pos) (Grid2WorldEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
+
+#define World2GridEx(pos, w, h, d) (Vec3Lit((u32)((pos).x / (w)), (u32)((pos).y / (h)), (u32)((pos).z) / (d)))
+#define World2Grid(pos) (World2GridEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
 
 ////////////////////////////////////////////////////
 
@@ -2612,14 +2617,11 @@ static void SceneTickFrogger(GameState* gstate) {
                     if (spawn_area_is_clear) {
                         // Player init.
                         Entity* e = AllocateEntity();
-                        e->pos = Vec3Zero();
-                        e->shape.type = PH_CIRCLE;
-                        e->shape.circle.c = Vec2Zero();
-                        e->shape.circle.r = 12.0f;
-                        GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(1.0f, 1.0f, 1.0f), LRED);
+                        e->gpos = Vec3Lit(4.0f, 0.0f, 0.0f);
+                        e->pos = Grid2World(e->gpos);
+                        GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f),
+                                             LGREEN);
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
-                        FlagOn(e->flags, EFLAG_COLLIDER);
-                        // PLAYER_ID = e->id;
                         STATE = SS_SPAWNED;
                     }
                 } else {
