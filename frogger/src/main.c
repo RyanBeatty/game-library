@@ -2599,7 +2599,7 @@ static void SceneTickFrogger(GameState* gstate) {
                         }
                     }
                 } else if (STATE == SS_SPAWNED) {
-                    if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+                    if (IsKeyPressed(KEY_ENTER)) {
                         STATE = SS_PLAYING;
                     }
                 } else if (STATE == SS_RESPAWN) {
@@ -2702,7 +2702,7 @@ static void SceneTickFrogger(GameState* gstate) {
         u32 height = GetScreenHeight();
         pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-        char msg[] = "Press A To Start";
+        char msg[] = "Press ENTER To Start";
         u32 size = strlen(msg);
 
         u32 fontsize = 30.0f;
