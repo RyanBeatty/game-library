@@ -700,6 +700,42 @@ static void TexturesInit() {
     }
 }
 
+typedef struct {
+    u32 fbid;        // framebuffer id
+    TextureId txid;  // texture id
+    u32 width;
+    u32 height;
+} RenderTarget;
+
+static RenderTarget CreateRenderTarget(u32 width, u32 height) {
+    u32 fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    u32 txid;
+    glGenTextures(1, &txid);
+    glBindTexture(GL_TEXTURE_2D, txid);
+
+    // Init blank texture and add as the color attachment to the framebuffer
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, txid, 0);
+
+    // Create a render buffer for our framebuffer for stencil/depth testing.
+    u32 rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    Assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
+    // Bind default framebuffer.
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return (RenderTarget){.fbid = fbo, .txid = txid, .width = width, .height = height};
+}
+
 static LMesh GetMesh(u32 mid) {
     Assert(mid < MAX_MESHES);
     return MESHES[mid];
@@ -898,6 +934,53 @@ static LShader GetShader() {
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
             SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
+        }
+    }
+
+    return SHADER;
+}
+
+// Renders a RenderTarget texture to screen.
+static LShader GetShaderRenderTargetToScreen() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 1) in vec2 vTextCoords;\n"
+        "\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vTextCoords;\n"
+        "   gl_Position = vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = texture(texture0, fTextCoords);\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
 
             glUseProgram(SHADER.pid);
             glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
@@ -1305,8 +1388,9 @@ typedef struct ShaderPass {
     DrawCmd cmds[MAX_CMDS];
 } ShaderPass;
 
-static void ShaderPassInit(ShaderPass* pass) {
+static void ShaderPassInit(ShaderPass* pass, ShaderId sid) {
     memset(pass, 0, sizeof(ShaderPass));
+    pass->sid = sid;
     pass->view = Mat4Identity();
     pass->proj = Mat4Identity();
 
@@ -1328,6 +1412,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader2d = GetShader();
+    LShader shader_render_target_to_screen = GetShaderRenderTargetToScreen();
 
     if (pass->sid == shader2d.pid) {
         LShader shader = shader2d;
@@ -1379,6 +1464,26 @@ static void ShaderPassExecute(ShaderPass* pass) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
+    } else if (pass->sid == shader_render_target_to_screen.pid) {
+        LShader shader = shader_render_target_to_screen;
+
+        glUseProgram(shader.pid);
+
+        for (u32 i = 0; i < pass->clen; ++i) {
+            DrawCmd* cmd = &pass->cmds[i];
+            Assert(!cmd->wireframe);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, cmd->txid);
+
+            // glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+            // glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+            // glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
+            // glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
+
+            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+        }
     } else {
         Assert(false);
     }
@@ -1394,11 +1499,20 @@ typedef struct RenderState {
     u32 passlen;
     u32 passcap;
     ShaderPass passes[MAX_SHADER_PASSES];
+
+    RenderTarget target;
 } RenderState;
 
 static RenderState RSTATE;
 
 #define CurShaderPass() (&RSTATE.passes[RSTATE.passidx])
+
+static void RenderStateInit(u32 width, u32 height) {
+    RenderState* rstate = &RSTATE;
+
+    memset(rstate, 0, sizeof(RenderTarget));
+    rstate->target = CreateRenderTarget(width, height);
+}
 
 // Reset render state and allow accumulation of shader passes.
 static void BeginRender() {
@@ -1416,8 +1530,7 @@ static ShaderPass* BeginShaderPass(LShader shader) {
 
     rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
-    ShaderPassInit(pass);
-    pass->sid = shader.pid;
+    ShaderPassInit(pass, shader.pid);
     return pass;
 }
 
@@ -1437,6 +1550,11 @@ static void EndRender() {
     // Begin.
     {
         BeginDrawing();
+
+        // // Render draw commands to render target.
+        // glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
+        // glEnable(GL_DEPTH_TEST);
+
         // TODO: turn this into a draw command using unions.
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1458,6 +1576,20 @@ static void EndRender() {
 
     for (u32 i = 0; i < rstate->passlen; ++i) {
         ShaderPassExecute(&rstate->passes[i]);
+    }
+
+    {
+        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // glDisable(GL_DEPTH_TEST);
+        // glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        // glClear(GL_COLOR_BUFFER_BIT);
+
+        // ShaderPass pass;
+        // ShaderPassInit(&pass, GetShaderRenderTargetToScreen().pid);
+        // DrawCmd* cmd = ShaderPassAddCmd(&pass);
+        // cmd->meshid = GetMesh(M_QUAD);
+        // cmd->txid = rstate->target.txid;
+        // ShaderPassExecute(&pass);
     }
 
     EndDrawing();
@@ -2317,6 +2449,8 @@ typedef struct GameState {
     bool game_over;
     bool init;  // False on first frame of scene load. Used to tell update function to perform init.
 
+    // TODO: Move this to RenderState and move a reference to RSTATE here. Or just get rid of this and have a
+    // GetScreen/RenderWidth() function that reads RSTATE.
     u32 renderw;
     u32 renderh;
     u32 screenw;
@@ -2871,8 +3005,10 @@ static void GameStateInit(GameState* gstate) {
     InitAudio();
     ParticleSystemInit();
 
+    RenderStateInit(gstate->renderw, gstate->renderh);
+
     {
-        glEnable(GL_DEPTH_TEST);
+        // glEnable(GL_DEPTH_TEST);
 
         // Allow blending to support drawing textures with transparency.
         glEnable(GL_BLEND);
