@@ -2815,22 +2815,15 @@ static void SceneTickFrogger(GameState* gstate) {
         char msg[] = "Press ENTER To Start";
         u32 size = strlen(msg);
 
-        u32 fontsize = 30.0f;
+        u32 fontsize = 10.0f;
         Vec2 dim = MeasureLText(msg, size, fontsize);
 
         // Center text by shifting center forward by half a text cell size and then shifting backward
         // by half the text size.
-        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.7f * height, 0);
+        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
         DrawLText(msg, size, pos, fontsize, LYELLOW);
         EndShaderPass();
     }
-
-    // {
-    //     BeginShaderPass(GetShader());
-
-    //     DrawQuad(Vec3Zero(), 2.0f, 2.0f, Mat4Identity(), LRED);
-    //     EndShaderPass();
-    // }
 
     EndRender();
 
