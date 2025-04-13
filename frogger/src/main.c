@@ -943,53 +943,6 @@ static LShader GetShader() {
     return SHADER;
 }
 
-// Renders a RenderTarget texture to screen.
-static LShader GetShaderRenderTargetToScreen() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 1) in vec2 vTextCoords;\n"
-        "\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vTextCoords;\n"
-        "   gl_Position = vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
-        "}\0";
-
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   FragColor = texture(texture0, fTextCoords);\n"
-        "}\0";
-    static bool INIT = false;
-    static LShader SHADER = {0};
-
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
-    }
-
-    return SHADER;
-}
-
 static void RenderDataInit() {
     VAO = 0;
     VBO = 0;
@@ -1412,7 +1365,6 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader2d = GetShader();
-    LShader shader_render_target_to_screen = GetShaderRenderTargetToScreen();
 
     if (pass->sid == shader2d.pid) {
         LShader shader = shader2d;
@@ -1464,26 +1416,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
-    } else if (pass->sid == shader_render_target_to_screen.pid) {
-        LShader shader = shader_render_target_to_screen;
-
-        glUseProgram(shader.pid);
-
-        for (u32 i = 0; i < pass->clen; ++i) {
-            DrawCmd* cmd = &pass->cmds[i];
-            Assert(!cmd->wireframe);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, cmd->txid);
-
-            // glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-            // glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            // glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
-            // glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
-
-            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
-        }
     } else {
         Assert(false);
     }
@@ -1551,9 +1483,9 @@ static void EndRender() {
     {
         BeginDrawing();
 
-        // // Render draw commands to render target.
-        // glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
-        // glEnable(GL_DEPTH_TEST);
+        // Render draw commands to render target.
+        glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
+        glEnable(GL_DEPTH_TEST);
 
         // TODO: turn this into a draw command using unions.
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1578,18 +1510,21 @@ static void EndRender() {
         ShaderPassExecute(&rstate->passes[i]);
     }
 
+    // Draw the render target texture to screen as a quad.
     {
-        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // glDisable(GL_DEPTH_TEST);
-        // glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        // glClear(GL_COLOR_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDisable(GL_DEPTH_TEST);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-        // ShaderPass pass;
-        // ShaderPassInit(&pass, GetShaderRenderTargetToScreen().pid);
-        // DrawCmd* cmd = ShaderPassAddCmd(&pass);
-        // cmd->meshid = GetMesh(M_QUAD);
-        // cmd->txid = rstate->target.txid;
-        // ShaderPassExecute(&pass);
+        ShaderPass pass;
+        ShaderPassInit(&pass, GetShader().pid);
+        DrawCmd* cmd = ShaderPassAddCmd(&pass);
+        cmd->meshid = GetMesh(M_QUAD);
+        cmd->modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+        // cmd->color = LRED;  // For debug.
+        cmd->txid = rstate->target.txid;
+        ShaderPassExecute(&pass);
     }
 
     EndDrawing();
@@ -2812,6 +2747,13 @@ static void SceneTickFrogger(GameState* gstate) {
         DrawLText(msg, size, pos, fontsize, LYELLOW);
         EndShaderPass();
     }
+
+    // {
+    //     BeginShaderPass(GetShader());
+
+    //     DrawQuad(Vec3Zero(), 2.0f, 2.0f, Mat4Identity(), LRED);
+    //     EndShaderPass();
+    // }
 
     EndRender();
 
