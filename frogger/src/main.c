@@ -943,6 +943,53 @@ static LShader GetShader() {
     return SHADER;
 }
 
+// Renders a RenderTarget texture to screen.
+static LShader GetShaderRenderTargetToScreen() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 1) in vec2 vTextCoords;\n"
+        "\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vTextCoords;\n"
+        "   gl_Position = vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = texture(texture0, fTextCoords);\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
+        }
+    }
+
+    return SHADER;
+}
+
 static void RenderDataInit() {
     VAO = 0;
     VBO = 0;
@@ -1317,8 +1364,8 @@ typedef struct DrawCmd {
     LMesh meshid;
     Mat4 modelm;  // converts from model space to world space.
     Vec4 color;
-    Vec2 uvoffset;
-    Vec2 uvscale;
+    Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
+    Vec2 uvscale;    // width/height in texture space of the rect to sample inside the texture [0, 1]
     TextureId txid;  // Texture id.
 
     // TODO: Deprecate.
@@ -1365,6 +1412,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader2d = GetShader();
+    LShader shader_render_target_to_screen = GetShaderRenderTargetToScreen();
 
     if (pass->sid == shader2d.pid) {
         LShader shader = shader2d;
@@ -1416,6 +1464,26 @@ static void ShaderPassExecute(ShaderPass* pass) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
+    } else if (pass->sid == shader_render_target_to_screen.pid) {
+        LShader shader = shader_render_target_to_screen;
+
+        glUseProgram(shader.pid);
+
+        for (u32 i = 0; i < pass->clen; ++i) {
+            DrawCmd* cmd = &pass->cmds[i];
+            Assert(!cmd->wireframe);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, cmd->txid);
+
+            // glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
+            // glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
+            // glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
+            // glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
+
+            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+        }
     } else {
         Assert(false);
     }
@@ -1485,6 +1553,8 @@ static void EndRender() {
 
         // Render draw commands to render target.
         glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
+        // IMPORTANT.
+        glViewport(0, 0, rstate->target.width, rstate->target.height);
         glEnable(GL_DEPTH_TEST);
 
         // TODO: turn this into a draw command using unions.
@@ -1511,8 +1581,15 @@ static void EndRender() {
     }
 
     // Draw the render target texture to screen as a quad.
+    // TODO: This is very messy. I should be able to do this using draw commands to change framebuffers.
+    // This would require an inversion of how framebuffers work though. They would need to also contain shader
+    // pass commands. Or maybe I should just have every shader pass store what framebuffer they are drawing to
+    // But this would require some duplication in code. If I have two shaders that process draw commands
+    // I'd need to duplicate ClearBuffer() draw command logic.
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // IMPORTANT.
+        glViewport(0, 0, GetScreenWidth(), GetScreenHeight());
         glDisable(GL_DEPTH_TEST);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -2718,21 +2795,21 @@ static void SceneTickFrogger(GameState* gstate) {
     ParticleSystemTick(dt);
 
     // pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
-    Vec3 eye = Vec3Lit(0.5f * gstate->screenw, 0.5f * gstate->screenh, 0.0f);
+    Vec3 eye = Vec3Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh, 0.0f);
     // subtract offset to ensure first grid cell bottom left is (0, 0)
     eye = Vec3Add(eye, Vec3Lit(-0.5f * GRID_WIDTH, -0.5f * GRID_HEIGHT, 0.0f));
     pass->view = GetCameraMat(eye, Vec3Zero());
 
-    i32 hwidth = 0.5f * gstate->screenw;
-    i32 hheight = 0.5f * gstate->screenh;
+    i32 hwidth = 0.5f * gstate->renderw;
+    i32 hheight = 0.5f * gstate->renderh;
     pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -100.0f, 100.0f);
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
 
     if (STATE == SS_SPAWNED) {
         ShaderPass* pass = BeginShaderPass(GetShader());
-        u32 width = gstate->screenw;
-        u32 height = gstate->screenh;
+        u32 width = gstate->renderw;
+        u32 height = gstate->renderh;
         pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
         char msg[] = "Press ENTER To Start";
@@ -2925,7 +3002,7 @@ static void Scene1Tick(GameState* gstate) {
     }
 
     pass->view = GetCameraMat(viewpos, vieworient);
-    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)gstate->screenw / (f32)gstate->screenh, 0.1f, 1000.0f);
+    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 1000.0f);
     EndShaderPass();
     EndRender();
 }
@@ -2938,7 +3015,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 224.0f;
     gstate->renderh = 256.0f;
 
-    InitWindow(gstate->renderw, gstate->renderh, "Game");
+    InitWindow(2 * gstate->renderw, 2 * gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
