@@ -2763,6 +2763,7 @@ static void SceneTickFrogger(GameState* gstate) {
             {
                 Vec2 road = Vec2Lit(0.0f, 4.0f * GRID_HEIGHT);
                 Vec2 grass = Vec2Lit(0.0f, 2.0f * GRID_HEIGHT);
+                Vec2 water = Vec2Lit(0.0f, 5.0f * GRID_HEIGHT);
                 // Bottom of level is top here.
                 Vec2 srcs[][16] = {
                     // clang-format off
@@ -2776,11 +2777,21 @@ static void SceneTickFrogger(GameState* gstate) {
                     // clang-format off
                     {grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass},
                     // clang-format on
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    // clang-format off
+                    {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    // clang-format on
+                    // clang-format off
+                     {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    // clang-format on
+                    // clang-format off
+                    {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    // clang-format on
+                    // clang-format off
+                     {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    // clang-format on
+                    // clang-format off
+                    {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    // clang-format on
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
