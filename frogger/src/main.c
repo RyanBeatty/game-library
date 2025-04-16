@@ -2735,7 +2735,9 @@ static void SceneTickFrogger(GameState* gstate) {
                         // Player init.
                         Entity* e = AllocateEntity();
                         e->pos = Vec3Lit(4.0f, 0.0f, 0.0f);
-                        GraphicsInfoSetTexture(&e->graphics, GetTexture(TX_FROG), 0.0f, 1.0f);
+                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), Vec2Zero(),
+                                              Vec2Lit(GRID_WIDTH, GRID_HEIGHT), 0.0f, 1.0f);
+                        // GraphicsInfoSetTexture(&e->graphics, GetTexture(TX_FROG), 0.0f, 1.0f);
                         //  GraphicsInfoSetShape(
                         //     &e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f), LGREEN);
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
