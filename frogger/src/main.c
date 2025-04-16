@@ -2773,7 +2773,9 @@ static void SceneTickFrogger(GameState* gstate) {
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    // clang-format off
+                    {grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass},
+                    // clang-format on
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
                     {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
