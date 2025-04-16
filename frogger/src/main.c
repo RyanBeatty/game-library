@@ -2761,15 +2761,36 @@ static void SceneTickFrogger(GameState* gstate) {
 
             // Draw Board.
             {
-                Vec4 colors[] = {LRED, LBLUE};
-                u32 cidx = 0;
-                u32 width = 16;
-                u32 height = 16;
+                Vec2 road = Vec2Lit(0.0f, 4.0f * GRID_HEIGHT);
+                Vec2 grass = Vec2Lit(0.0f, 2.0f * GRID_HEIGHT);
+                // Bottom of level is top here.
+                Vec2 srcs[][16] = {
+                    // clang-format off
+                    {grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass},
+                    // clang-format on
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                };
+                Vec2 grid_r = Vec2Lit(GRID_WIDTH, GRID_HEIGHT);
+                LTexture tx = GetTexture(TX_FROG);
                 for (u32 r = 0; r < 16; ++r) {
-                    for (u32 c = 0; c < 14; ++c, ++cidx) {
-                        DrawQuad(Grid2World(Vec3Lit(c, r, -1.0f)), width, height, Mat4Identity(), colors[cidx % 2]);
+                    for (u32 c = 0; c < 14; ++c) {
+                        DrawLTexturePro(tx, srcs[r][c], grid_r, Vec3ToVec2(Grid2World(Vec3Lit(c, r, -1.0f))), grid_r,
+                                        0.0f, LCLEAR);
                     }
-                    ++cidx;
                 }
             }
 
