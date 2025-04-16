@@ -657,7 +657,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_FROG, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -696,6 +696,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_LFONT] = UploadTexture("assets/textures/LFont.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_FROG] = UploadTexture("assets/textures/frog.png");
         ++tcache->txlen;
     }
 }
@@ -2729,8 +2735,9 @@ static void SceneTickFrogger(GameState* gstate) {
                         // Player init.
                         Entity* e = AllocateEntity();
                         e->pos = Vec3Lit(4.0f, 0.0f, 0.0f);
-                        GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f),
-                                             LGREEN);
+                        GraphicsInfoSetTexture(&e->graphics, GetTexture(TX_FROG), 0.0f, 1.0f);
+                        //  GraphicsInfoSetShape(
+                        //     &e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f), LGREEN);
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
                         STATE = SS_SPAWNED;
                     }
