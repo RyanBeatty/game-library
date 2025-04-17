@@ -2570,6 +2570,9 @@ static void SceneTickFrogger(GameState* gstate) {
             e->pos = Grid2World(Vec3Lit(6.0f, 12.0f, 0.0f));
 
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), WATER, GRIDR, 0.0f, 1.0f);
+            e->shape.type = PH_AABB2D;
+            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = GRIDR};
+            FlagOn(e->flags, EFLAG_COLLIDER);
         }
     }
 
@@ -3125,7 +3128,7 @@ static void GameStateTick(GameState* gstate) {
     gstate->timer += dt;
 
     {
-        static bool ENABLE_DEBUG_KEYMAP = false;
+        static bool ENABLE_DEBUG_KEYMAP = true;
 
         if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
             ENABLE_DEBUG_KEYMAP = !ENABLE_DEBUG_KEYMAP;
@@ -3139,6 +3142,7 @@ static void GameStateTick(GameState* gstate) {
                 gstate->update = !gstate->debug;
                 gstate->debug_ever = true;
                 DEBUG_EVER = true;
+                TraceLog(LOG_INFO, "Debug %s", gstate->debug ? "On" : "Off");
             }
             if (gstate->debug) {
                 bool updatekey = IsKeyPressed(KEY_U);
