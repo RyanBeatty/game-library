@@ -2546,6 +2546,8 @@ typedef enum {
     SS_COUNT,
 } SceneState;
 
+static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
+static const Vec2 FROG = {.x = 0.0f * GRID_WIDTH, 0.0f * GRID_HEIGHT};
 static const Vec2 ROAD = {.x = 0.0f * GRID_WIDTH, .y = 4.0f * GRID_HEIGHT};
 static const Vec2 GRASS = {.x = 0.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT};
 static const Vec2 WATER = {.x = 0.0f * GRID_WIDTH, .y = 5.0f * GRID_HEIGHT};
@@ -2561,6 +2563,14 @@ static void SceneTickFrogger(GameState* gstate) {
     if (!gstate->init) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
+
+        // Goals
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Lit(6.0f, 12.0f, 0.0f);
+
+            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), WATER, GRIDR, 0.0f, 1.0f);
+        }
     }
 
     BeginRender();
@@ -2795,7 +2805,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     {WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER},
                     // clang-format on
                     // clang-format off
-                    {HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, WATER, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE},
+                    {HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE},
                     // clang-format on
                     {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
                     {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
