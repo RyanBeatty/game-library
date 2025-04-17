@@ -2571,7 +2571,7 @@ static void SceneTickFrogger(GameState* gstate) {
 
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), WATER, GRIDR, 0.0f, 1.0f);
             e->shape.type = PH_AABB2D;
-            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = GRIDR};
+            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(GRIDR, 0.5f)};
             FlagOn(e->flags, EFLAG_COLLIDER);
         }
     }
