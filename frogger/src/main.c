@@ -2546,6 +2546,11 @@ typedef enum {
     SS_COUNT,
 } SceneState;
 
+static const Vec2 ROAD = {.x = 0.0f * GRID_WIDTH, .y = 4.0f * GRID_HEIGHT};
+static const Vec2 GRASS = {.x = 0.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT};
+static const Vec2 WATER = {.x = 0.0f * GRID_WIDTH, .y = 5.0f * GRID_HEIGHT};
+static const Vec2 HEDGE = {.x = 3.0f * GRID_WIDTH, .y = 3.0f * GRID_HEIGHT};
+
 static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
@@ -2761,41 +2766,40 @@ static void SceneTickFrogger(GameState* gstate) {
 
             // Draw Board.
             {
-                Vec2 road = Vec2Lit(0.0f, 4.0f * GRID_HEIGHT);
-                Vec2 grass = Vec2Lit(0.0f, 2.0f * GRID_HEIGHT);
-                Vec2 water = Vec2Lit(0.0f, 5.0f * GRID_HEIGHT);
                 // Bottom of level is top here.
                 Vec2 srcs[][16] = {
                     // clang-format off
-                    {grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass},
+                    {GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS},
                     // clang-format on
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
                     // clang-format off
-                    {grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass, grass},
-                    // clang-format on
-                    // clang-format off
-                    {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    {GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS},
                     // clang-format on
                     // clang-format off
-                     {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    {WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER},
                     // clang-format on
                     // clang-format off
-                    {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                     {WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER},
                     // clang-format on
                     // clang-format off
-                     {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                    {WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER},
                     // clang-format on
                     // clang-format off
-                    {water, water, water, water, water, water, water, water, water, water, water, water, water, water, water, water},
+                     {WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER},
                     // clang-format on
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
-                    {road, road, road, road, road, road, road, road, road, road, road, road, road, road, road, road},
+                    // clang-format off
+                    {WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER, WATER},
+                    // clang-format on
+                    // clang-format off
+                    {HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, WATER, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE, HEDGE},
+                    // clang-format on
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
+                    {ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD, ROAD},
                 };
                 Vec2 grid_r = Vec2Lit(GRID_WIDTH, GRID_HEIGHT);
                 LTexture tx = GetTexture(TX_FROG);
