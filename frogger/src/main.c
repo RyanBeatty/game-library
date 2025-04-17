@@ -2567,7 +2567,7 @@ static void SceneTickFrogger(GameState* gstate) {
         // Goals
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(6.0f, 12.0f, 0.0f);
+            e->pos = Grid2World(Vec3Lit(6.0f, 12.0f, 0.0f));
 
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), WATER, GRIDR, 0.0f, 1.0f);
         }
@@ -2654,6 +2654,8 @@ static void SceneTickFrogger(GameState* gstate) {
                                 move.x = 1;
                             }
 
+                            move.x *= GRID_WIDTH;
+                            move.y *= GRID_HEIGHT;
                             e->pos = Vec3Add(e->pos, move);
                         }
                     }
@@ -2749,7 +2751,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     if (spawn_area_is_clear) {
                         // Player init.
                         Entity* e = AllocateEntity();
-                        e->pos = Vec3Lit(4.0f, 0.0f, 0.0f);
+                        e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 0.0f));
                         GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), Vec2Zero(),
                                               Vec2Lit(GRID_WIDTH, GRID_HEIGHT), 0.0f, 1.0f);
                         // GraphicsInfoSetTexture(&e->graphics, GetTexture(TX_FROG), 0.0f, 1.0f);
@@ -2770,7 +2772,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     continue;
                 }
 
-                e->graphics.pos = Grid2World(e->pos);
+                e->graphics.pos = e->pos;
                 e->graphics.orient = e->orient;
             }
 
