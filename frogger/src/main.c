@@ -2755,12 +2755,14 @@ static void SceneTickFrogger(GameState* gstate) {
                         // Player init.
                         Entity* e = AllocateEntity();
                         e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 0.0f));
-                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), Vec2Zero(),
-                                              Vec2Lit(GRID_WIDTH, GRID_HEIGHT), 0.0f, 1.0f);
+                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), FROG, GRIDR, 0.0f, 1.0f);
                         // GraphicsInfoSetTexture(&e->graphics, GetTexture(TX_FROG), 0.0f, 1.0f);
                         //  GraphicsInfoSetShape(
                         //     &e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f), LGREEN);
+                        e->shape.type = PH_AABB2D;
+                        e->shape.aabb2d = (AABB2D){Vec2Zero(), Vec2Scale(GRIDR, 0.5f)};
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+                        FlagOn(e->flags, EFLAG_COLLIDER);
                         STATE = SS_SPAWNED;
                     }
                 } else {
