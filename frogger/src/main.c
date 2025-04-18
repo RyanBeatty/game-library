@@ -2773,7 +2773,9 @@ static void SceneTickFrogger(GameState* gstate) {
 
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
                                         TestFlag(eb->flags, EFLAG_GOAL)) {
-                                        TraceLog(LOG_INFO, "hit goal");
+                                        Entity* player = ea;
+                                        SoftDeactivateEntity(player->id);
+                                        STATE = SS_RESPAWN;
                                     }
                                 }
                             }
