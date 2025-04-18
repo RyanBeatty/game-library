@@ -2295,6 +2295,7 @@ typedef enum EntityFlag {
     EFLAG_PROJECTILE = 1 << 4,
     EFLAG_WALL = 1 << 5,
     EFLAG_GOAL = 1 << 6,
+    EFLAG_DEATH = 1 << 7,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2613,6 +2614,23 @@ static void SceneTickFrogger(GameState* gstate) {
             FlagOn(e->flags, EFLAG_COLLIDER);
             FlagOn(e->flags, EFLAG_GOAL);
         }
+
+        // Water
+        {
+            for (u32 r = 7; r < 12; ++r) {
+                for (u32 c = 0; c < 16; ++c) {
+                    Entity* e = AllocateEntity();
+                    e->pos = Grid2World(Vec3Lit(c, r, 0.0f));
+
+                    e->shape.type = PH_AABB2D;
+                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                    // a square to the side of us.
+                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(GRIDR, 0.5f * 0.9f)};
+                    FlagOn(e->flags, EFLAG_COLLIDER);
+                    FlagOn(e->flags, EFLAG_DEATH);
+                }
+            }
+        }
     }
 
     BeginRender();
@@ -2773,6 +2791,13 @@ static void SceneTickFrogger(GameState* gstate) {
 
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
                                         TestFlag(eb->flags, EFLAG_GOAL)) {
+                                        Entity* player = ea;
+                                        SoftDeactivateEntity(player->id);
+                                        STATE = SS_RESPAWN;
+                                    }
+
+                                    if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
+                                        TestFlag(eb->flags, EFLAG_DEATH)) {
                                         Entity* player = ea;
                                         SoftDeactivateEntity(player->id);
                                         STATE = SS_RESPAWN;
