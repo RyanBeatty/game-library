@@ -2252,6 +2252,11 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->color = LCLEAR;
 }
 
+typedef struct {
+    Vec2 c;  // bottom left corner.
+    Vec2 r;  // width + height.
+} Rect;
+
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
 LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
@@ -2264,6 +2269,18 @@ LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src
     // TODO: its possible we want these to be ints?
     graphics->uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
+}
+
+LCORE void GraphicsInfoSetSpriteRect(GraphicsInfo* graphics, LTexture tx, Rect src, f32 orient, f32 scale) {
+    graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
+    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+
+    graphics->mid = GetMesh(M_QUAD);
+
+    graphics->txid = tx.id;
+    // TODO: its possible we want these to be ints?
+    graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
+    graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
 }
 
 LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
@@ -2584,11 +2601,12 @@ typedef enum {
 } SceneState;
 
 static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
-static const Vec2 FROG = {.x = 0.0f * GRID_WIDTH, 0.0f * GRID_HEIGHT};
-static const Vec2 ROAD = {.x = 0.0f * GRID_WIDTH, .y = 4.0f * GRID_HEIGHT};
-static const Vec2 GRASS = {.x = 0.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT};
-static const Vec2 WATER = {.x = 0.0f * GRID_WIDTH, .y = 5.0f * GRID_HEIGHT};
-static const Vec2 HEDGE = {.x = 3.0f * GRID_WIDTH, .y = 3.0f * GRID_HEIGHT};
+static const Rect FROG = {.c = {.x = 0.0f * GRID_WIDTH, 0.0f * GRID_HEIGHT}, .r = GRIDR};
+static const Rect ROAD = {.c = {.x = 0.0f * GRID_WIDTH, .y = 4.0f * GRID_HEIGHT}, .r = GRIDR};
+static const Rect GRASS = {.c = {.x = 0.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT}, .r = GRIDR};
+static const Rect WATER = {.c = {.x = 0.0f * GRID_WIDTH, .y = 5.0f * GRID_HEIGHT}, .r = GRIDR};
+static const Rect TURTLE3 = {.c = {.x = 0.0f * GRID_WIDTH, .y = 6.0f * GRID_HEIGHT}, .r = GRIDR};
+static const Rect HEDGE = {.c = {.x = 3.0f * GRID_WIDTH, .y = 3.0f * GRID_HEIGHT}, .r = GRIDR};
 
 static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
@@ -2606,7 +2624,7 @@ static void SceneTickFrogger(GameState* gstate) {
             Entity* e = AllocateEntity();
             e->pos = Grid2World(Vec3Lit(6.0f, 12.0f, 0.0f));
 
-            GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), WATER, GRIDR, 0.0f, 1.0f);
+            GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), WATER, 0.0f, 1.0f);
             e->shape.type = PH_AABB2D;
             // Make the collision box a bit smaller than a cell so that we don't hit things that are
             // a square to the side of us.
@@ -2826,7 +2844,7 @@ static void SceneTickFrogger(GameState* gstate) {
                         // Player init.
                         Entity* e = AllocateEntity();
                         e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 0.0f));
-                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), FROG, GRIDR, 0.0f, 1.0f);
+                        GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
                         // GraphicsInfoSetTexture(&e->graphics, GetTexture(TX_FROG), 0.0f, 1.0f);
                         //  GraphicsInfoSetShape(
                         //     &e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f), LGREEN);
@@ -2855,7 +2873,7 @@ static void SceneTickFrogger(GameState* gstate) {
             // Draw Board.
             {
                 // Bottom of level is top here.
-                Vec2 srcs[][16] = {
+                Rect srcs[][16] = {
                     // clang-format off
                     {GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS, GRASS},
                     // clang-format on
@@ -2893,8 +2911,9 @@ static void SceneTickFrogger(GameState* gstate) {
                 LTexture tx = GetTexture(TX_FROG);
                 for (u32 r = 0; r < 16; ++r) {
                     for (u32 c = 0; c < 14; ++c) {
-                        DrawLTexturePro(tx, srcs[r][c], grid_r, Vec3ToVec2(Grid2World(Vec3Lit(c, r, -1.0f))), grid_r,
-                                        0.0f, LCLEAR);
+                        Rect src = srcs[r][c];
+                        DrawLTexturePro(tx, src.c, src.r, Vec3ToVec2(Grid2World(Vec3Lit(c, r, -1.0f))), grid_r, 0.0f,
+                                        LCLEAR);
                     }
                 }
             }
