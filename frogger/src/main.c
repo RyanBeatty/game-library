@@ -2313,6 +2313,7 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 5,
     EFLAG_GOAL = 1 << 6,
     EFLAG_HAZARD = 1 << 7,
+    EFLAG_PLATFORM = 1 << 8,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2346,15 +2347,8 @@ typedef struct Entity {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    u32 health;
-    u32 generation;
-    bool spawns_debree;
-
-    f32 alive_dt;
-
-    f32 shot_dt;
-
-    EntityId parentid;  // used for shot damage.
+    bool on_water;
+    bool on_platform;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -2662,7 +2656,7 @@ static void SceneTickFrogger(GameState* gstate) {
             // a square to the side of us.
             e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TURTLE3.r, 0.5f * 0.9f)};
             FlagOn(e->flags, EFLAG_COLLIDER);
-            FlagOn(e->flags, EFLAG_GOAL);
+            FlagOn(e->flags, EFLAG_PLATFORM);
         }
     }
 
@@ -2736,20 +2730,25 @@ static void SceneTickFrogger(GameState* gstate) {
                         }
 
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                            Vec3 move = Vec3Zero();
-                            if (IsKeyPressed(KEY_UP)) {
-                                move.y = 1;
-                            } else if (IsKeyPressed(KEY_DOWN)) {
-                                move.y = -1;
-                            } else if (IsKeyPressed(KEY_LEFT)) {
-                                move.x = -1;
-                            } else if (IsKeyPressed(KEY_RIGHT)) {
-                                move.x = 1;
-                            }
+                            if (e->on_water) {
+                                SoftDeactivateEntity(e->id);
+                                STATE = SS_RESPAWN;
+                            } else {
+                                Vec3 move = Vec3Zero();
+                                if (IsKeyPressed(KEY_UP)) {
+                                    move.y = 1;
+                                } else if (IsKeyPressed(KEY_DOWN)) {
+                                    move.y = -1;
+                                } else if (IsKeyPressed(KEY_LEFT)) {
+                                    move.x = -1;
+                                } else if (IsKeyPressed(KEY_RIGHT)) {
+                                    move.x = 1;
+                                }
 
-                            move.x *= GRID_WIDTH;
-                            move.y *= GRID_HEIGHT;
-                            e->pos = Vec3Add(e->pos, move);
+                                move.x *= GRID_WIDTH;
+                                move.y *= GRID_HEIGHT;
+                                e->pos = Vec3Add(e->pos, move);
+                            }
                         }
                     }
 
@@ -2832,8 +2831,9 @@ static void SceneTickFrogger(GameState* gstate) {
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
                                         TestFlag(eb->flags, EFLAG_HAZARD)) {
                                         Entity* player = ea;
-                                        SoftDeactivateEntity(player->id);
-                                        STATE = SS_RESPAWN;
+                                        player->on_water = true;
+                                        // SoftDeactivateEntity(player->id);
+                                        // STATE = SS_RESPAWN;
                                     }
                                 }
                             }
