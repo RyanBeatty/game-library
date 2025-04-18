@@ -1829,22 +1829,12 @@ LCORE bool TestAABB2DVsAABB2D(AABB2D a, AABB2D b, Vec2* normal, f32* depth) {
     f32 rx = a.r.x + b.r.x;
     if (dx > rx) {
         return false;
-        // collides = true;
-        // *normal = Vec2Lit(1.0f * (ba.x < 0 ? -1.0f : 1.0f), 0.0f);
-        // *depth = rx - depthx;
     }
     f32 depthx = rx - dx;
 
     f32 ry = a.r.y + b.r.y;
     if (dy > ry) {
         return false;
-        // collides = true;
-
-        // f32 newdepth = ry - dy;
-        // if (newdepth < *depth) {
-        //     *normal = Vec2Lit(0.0f, 1.0f * (ba.y < 0 ? -1.0f : 1.0f));
-        //     *depth = newdepth;
-        // }
     }
     f32 depthy = ry - dy;
 
