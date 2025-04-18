@@ -2749,6 +2749,13 @@ static void SceneTickFrogger(GameState* gstate) {
                                 move.x *= GRID_WIDTH;
                                 move.y *= GRID_HEIGHT;
                                 e->pos = Vec3Add(e->pos, move);
+
+                                // When we move we need to reevaluate if we should get platform velocity.
+                                // TODO: Maybe we should inherit velocity by following a pointer to the platform
+                                // we are on?
+                                if (!Vec3Eq(move, Vec3Zero())) {
+                                    e->v = Vec3Zero();
+                                }
                             }
                             // Need to reevaluate each tick.
                             e->on_water = false;
@@ -2843,7 +2850,9 @@ static void SceneTickFrogger(GameState* gstate) {
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
                                         TestFlag(eb->flags, EFLAG_PLATFORM)) {
                                         Entity* player = ea;
+                                        Entity* platform = eb;
                                         player->on_platform = true;
+                                        player->v = platform->v;
                                     }
                                 }
                             }
