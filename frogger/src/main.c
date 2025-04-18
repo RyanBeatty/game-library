@@ -2649,6 +2649,7 @@ static void SceneTickFrogger(GameState* gstate) {
         {
             Entity* e = AllocateEntity();
             e->pos = Grid2World(Vec3Lit(6.0f, 7.0f, 0.0f));
+            e->v = Vec3Lit(-30.0f, 0.0f, 0.0f);
 
             GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE3, 0.0f, 1.0f);
             e->shape.type = PH_AABB2D;
@@ -2762,6 +2763,8 @@ static void SceneTickFrogger(GameState* gstate) {
                             if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                                 continue;
                             }
+
+                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         }
 
                         // Collision detection.
