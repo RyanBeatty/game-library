@@ -1820,23 +1820,17 @@ LCORE bool TestAABB2DVsAABB2D(AABB2D a, AABB2D b, Vec2* normal, f32* depth) {
     *normal = Vec2Zero();
     *depth = F32_MAX;
 
-    // Get magnitude along each world axis.
-    f32 dx = f32abs(ba.x);
-    f32 dy = f32abs(ba.y);
-
     // Remember that r is half extents, so we don't need to divide by 2 to find minimum distance allowed
-    // between centers along a given axis.
-    f32 rx = a.r.x + b.r.x;
-    if (dx > rx) {
+    // between centers along a given axis. Take abs because we just want magnitude.
+    f32 depthx = (a.r.x + b.r.x) - f32abs(ba.x);
+    if (depthx < 0.0f) {
         return false;
     }
-    f32 depthx = rx - dx;
 
-    f32 ry = a.r.y + b.r.y;
-    if (dy > ry) {
+    f32 depthy = (a.r.y + b.r.y) - f32abs(ba.y);
+    if (depthy < 0.0f) {
         return false;
     }
-    f32 depthy = ry - dy;
 
     if (depthx <= depthy) {
         *normal = Vec2Lit(1.0f * (ba.x < 0 ? -1.0f : 1.0f), 0.0f);
