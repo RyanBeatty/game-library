@@ -1814,6 +1814,51 @@ typedef struct {
     Vec2 r;  // half width extents along each axis.
 } AABB2D;
 
+LCORE bool TestAABB2DVsAABB2D(AABB2D a, AABB2D b, Vec2* normal, f32* depth) {
+    Vec2 ba = Vec2Sub(a.c, b.c);
+
+    *normal = Vec2Zero();
+    *depth = F32_MAX;
+
+    // Get magnitude along each world axis.
+    f32 dx = f32abs(ba.x);
+    f32 dy = f32abs(ba.y);
+
+    // Remember that r is half extents, so we don't need to divide by 2 to find minimum distance allowed
+    // between centers along a given axis.
+    f32 rx = a.r.x + b.r.x;
+    if (dx > rx) {
+        return false;
+        // collides = true;
+        // *normal = Vec2Lit(1.0f * (ba.x < 0 ? -1.0f : 1.0f), 0.0f);
+        // *depth = rx - depthx;
+    }
+    f32 depthx = rx - dx;
+
+    f32 ry = a.r.y + b.r.y;
+    if (dy > ry) {
+        return false;
+        // collides = true;
+
+        // f32 newdepth = ry - dy;
+        // if (newdepth < *depth) {
+        //     *normal = Vec2Lit(0.0f, 1.0f * (ba.y < 0 ? -1.0f : 1.0f));
+        //     *depth = newdepth;
+        // }
+    }
+    f32 depthy = ry - dy;
+
+    if (depthx <= depthy) {
+        *normal = Vec2Lit(1.0f * (ba.x < 0 ? -1.0f : 1.0f), 0.0f);
+        *depth = depthx;
+    } else {
+        *normal = Vec2Lit(0.0f, 1.0f * (ba.y < 0 ? -1.0f : 1.0f));
+        *depth = depthy;
+    }
+
+    return true;
+}
+
 // Normal will point from aabb to circle.
 LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* depth) {
     Vec2 min = Vec2Sub(aabb.c, aabb.r);
@@ -2055,6 +2100,11 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                     n = Vec3Negate(Vec3Lit(n2d.x, n2d.y, 0.0f));
                     break;
                 }
+                case PH_AABB2D: {
+                    collides = TestAABB2DVsAABB2D(a->aabb2d, b->aabb2d, &n2d, &d);
+                    n = Vec3Lit(n2d.x, n2d.y, 0.0f);
+                    break;
+                }
                 default: {
                     // Collision not supported.
                     break;
@@ -2259,6 +2309,7 @@ typedef enum EntityFlag {
     EFLAG_COLLIDER = 1 << 3,
     EFLAG_PROJECTILE = 1 << 4,
     EFLAG_WALL = 1 << 5,
+    EFLAG_GOAL = 1 << 6,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2571,8 +2622,11 @@ static void SceneTickFrogger(GameState* gstate) {
 
             GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG), WATER, GRIDR, 0.0f, 1.0f);
             e->shape.type = PH_AABB2D;
-            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(GRIDR, 0.5f)};
+            // Make the collision box a bit smaller than a cell so that we don't hit things that are
+            // a square to the side of us.
+            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(GRIDR, 0.5f * 0.9f)};
             FlagOn(e->flags, EFLAG_COLLIDER);
+            FlagOn(e->flags, EFLAG_GOAL);
         }
     }
 
@@ -2730,6 +2784,11 @@ static void SceneTickFrogger(GameState* gstate) {
                                     Entity* eb = GetEntity(collision.id1);
                                     if (ea == eb) {
                                         continue;
+                                    }
+
+                                    if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
+                                        TestFlag(eb->flags, EFLAG_GOAL)) {
+                                        TraceLog(LOG_INFO, "hit goal");
                                     }
                                 }
                             }
