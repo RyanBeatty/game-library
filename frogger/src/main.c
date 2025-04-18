@@ -1814,6 +1814,7 @@ typedef struct {
     Vec2 r;  // half width extents along each axis.
 } AABB2D;
 
+// Normal from b -> a if there is a collision.
 LCORE bool TestAABB2DVsAABB2D(AABB2D a, AABB2D b, Vec2* normal, f32* depth) {
     Vec2 ba = Vec2Sub(a.c, b.c);
 
