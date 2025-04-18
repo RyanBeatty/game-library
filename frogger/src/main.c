@@ -2730,7 +2730,7 @@ static void SceneTickFrogger(GameState* gstate) {
                         }
 
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                            if (e->on_water) {
+                            if (e->on_water && !e->on_platform) {
                                 SoftDeactivateEntity(e->id);
                                 STATE = SS_RESPAWN;
                             } else {
@@ -2749,6 +2749,9 @@ static void SceneTickFrogger(GameState* gstate) {
                                 move.y *= GRID_HEIGHT;
                                 e->pos = Vec3Add(e->pos, move);
                             }
+                            // Need to reevaluate each tick.
+                            e->on_water = false;
+                            e->on_platform = false;
                         }
                     }
 
@@ -2832,8 +2835,12 @@ static void SceneTickFrogger(GameState* gstate) {
                                         TestFlag(eb->flags, EFLAG_HAZARD)) {
                                         Entity* player = ea;
                                         player->on_water = true;
-                                        // SoftDeactivateEntity(player->id);
-                                        // STATE = SS_RESPAWN;
+                                    }
+
+                                    if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
+                                        TestFlag(eb->flags, EFLAG_PLATFORM)) {
+                                        Entity* player = ea;
+                                        player->on_platform = true;
                                     }
                                 }
                             }
