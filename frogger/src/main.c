@@ -2601,6 +2601,8 @@ static const Rect GRASS = {.c = {.x = 0.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT
 static const Rect WATER = {.c = {.x = 0.0f * GRID_WIDTH, .y = 5.0f * GRID_HEIGHT}, .r = GRIDR};
 static const Rect TURTLE3 = {.c = {.x = 0.0f * GRID_WIDTH, .y = 6.0f * GRID_HEIGHT},
                              .r = {.x = 3.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
+static const Rect TURTLE2 = {.c = {.x = 0.0f * GRID_WIDTH, .y = 6.0f * GRID_HEIGHT},
+                             .r = {.x = 2.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
 static const Rect LOG3 = {.c = {.x = 0.0f * GRID_WIDTH, .y = 7.0f * GRID_HEIGHT},
                           .r = {.x = 3.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
 static const Rect HEDGE = {.c = {.x = 3.0f * GRID_WIDTH, .y = 3.0f * GRID_HEIGHT}, .r = GRIDR};
@@ -2655,17 +2657,35 @@ static void SceneTickFrogger(GameState* gstate) {
 
         // Turtles
         {
-            Entity* e = AllocateEntity();
-            e->pos = Grid2World(Vec3Lit(10.0f, 7.0f, 0.0f));
-            e->v = Vec3Lit(-30.0f, 0.0f, 0.0f);
+            // Turtle 3.
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Grid2World(Vec3Lit(10.0f, 7.0f, 0.0f));
+                e->v = Vec3Lit(-30.0f, 0.0f, 0.0f);
 
-            GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE3, 0.0f, 1.0f);
-            e->shape.type = PH_AABB2D;
-            // Make the collision box a bit smaller than a cell so that we don't hit things that are
-            // a square to the side of us.
-            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TURTLE3.r, 0.5f * 0.9f)};
-            FlagOn(e->flags, EFLAG_COLLIDER);
-            FlagOn(e->flags, EFLAG_PLATFORM);
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE3, 0.0f, 1.0f);
+                e->shape.type = PH_AABB2D;
+                // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                // a square to the side of us.
+                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TURTLE3.r, 0.5f * 0.9f)};
+                FlagOn(e->flags, EFLAG_COLLIDER);
+                FlagOn(e->flags, EFLAG_PLATFORM);
+            }
+
+            // Turtle 2.
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Grid2World(Vec3Lit(11.0f, 9.0f, 0.0f));
+                e->v = Vec3Lit(-30.0f, 0.0f, 0.0f);
+
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE2, 0.0f, 1.0f);
+                e->shape.type = PH_AABB2D;
+                // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                // a square to the side of us.
+                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TURTLE2.r, 0.5f * 0.9f)};
+                FlagOn(e->flags, EFLAG_COLLIDER);
+                FlagOn(e->flags, EFLAG_PLATFORM);
+            }
         }
 
         // logs
