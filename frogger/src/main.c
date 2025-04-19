@@ -2807,6 +2807,7 @@ static void SceneTickFrogger(GameState* gstate) {
                             e->ppos = e->pos;
                             e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
+                            // Platform screen wrap.
                             if (TestFlag(e->flags, EFLAG_PLATFORM)) {
                                 if (e->pos.x + e->shape.aabb2d.r.x + SLOP < left.x) {
                                     e->pos.x = right.x + e->shape.aabb2d.r.x - SLOP;
