@@ -2781,9 +2781,9 @@ static void SceneTickFrogger(GameState* gstate) {
                             e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
                             if (TestFlag(e->flags, EFLAG_PLATFORM)) {
-                                f32 leftx = 0.0f - 10.0f * SLOP;
+                                f32 leftx = 0.0f;
                                 f32 rightx = gstate->renderw;
-                                if (e->pos.x + e->shape.aabb2d.r.x <= leftx) {
+                                if (e->pos.x + e->shape.aabb2d.r.x + 5.0f <= leftx) {
                                     e->pos.x = rightx - SLOP;
                                 }
                             }
