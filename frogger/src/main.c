@@ -2637,6 +2637,7 @@ static void SceneTickFrogger(GameState* gstate) {
 
         // Water
         {
+            // TODO: Consider making a giant single water entity.
             for (u32 r = 7; r < 12; ++r) {
                 for (u32 c = 0; c < 16; ++c) {
                     Entity* e = AllocateEntity();
@@ -2667,7 +2668,7 @@ static void SceneTickFrogger(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PLATFORM);
         }
 
-        // Turtles
+        // logs
         {
             Entity* e = AllocateEntity();
             e->pos = Grid2World(Vec3Lit(2.0f, 8.0f, 0.0f));
@@ -2788,6 +2789,15 @@ static void SceneTickFrogger(GameState* gstate) {
 
                     // physics update.
                     {
+                        Mat4 view = GetCameraMat(EYE, Vec3Zero());
+                        i32 hwidth = 0.5f * gstate->renderw;
+                        i32 hheight = 0.5f * gstate->renderh;
+                        Mat4 proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -100.0f, 100.0f);
+                        Mat4 ivp = Mat4Invert(Mat4Multiply(proj, view));
+
+                        Vec3 left = Vec3WTransform(Vec3Lit(-1.0f, 0.0f, 0.0f), ivp);
+                        Vec3 right = Vec3WTransform(Vec3Lit(1.0f, 0.0f, 0.0f), ivp);
+
                         for (u32 i = 0; i < esize; ++i) {
                             Entity* e = GetEntity(i);
                             if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
@@ -2798,10 +2808,10 @@ static void SceneTickFrogger(GameState* gstate) {
                             e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
                             if (TestFlag(e->flags, EFLAG_PLATFORM)) {
-                                f32 leftx = 0.0f;
-                                f32 rightx = gstate->renderw;
-                                if (e->pos.x + e->shape.aabb2d.r.x + 5.0f <= leftx) {
-                                    e->pos.x = rightx - SLOP;
+                                if (e->pos.x + e->shape.aabb2d.r.x + SLOP < left.x) {
+                                    e->pos.x = right.x + e->shape.aabb2d.r.x - SLOP;
+                                } else if (e->pos.x - e->shape.aabb2d.r.x - SLOP > right.x) {
+                                    e->pos.x = left.x - e->shape.aabb2d.r.x + SLOP;
                                 }
                             }
                         }
