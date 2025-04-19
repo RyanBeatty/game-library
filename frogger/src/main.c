@@ -2606,6 +2606,7 @@ static const Rect HEDGE = {.c = {.x = 3.0f * GRID_WIDTH, .y = 3.0f * GRID_HEIGHT
 static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
+    static Vec3 EYE = {0};
 
     f32 dt = gstate->dt;
 
@@ -2613,6 +2614,10 @@ static void SceneTickFrogger(GameState* gstate) {
     if (!gstate->init) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
+
+        EYE = Vec3Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh, 0.0f);
+        // subtract offset to ensure first grid cell bottom left is (0, 0)
+        EYE = Vec3Add(EYE, Vec3Lit(-0.5f * GRID_WIDTH, -0.5f * GRID_HEIGHT, 0.0f));
 
         // Goals
         {
@@ -2748,6 +2753,7 @@ static void SceneTickFrogger(GameState* gstate) {
 
                                 move.x *= GRID_WIDTH;
                                 move.y *= GRID_HEIGHT;
+                                e->ppos = e->pos;
                                 e->pos = Vec3Add(e->pos, move);
 
                                 // When we move we need to reevaluate if we should get platform velocity.
@@ -2771,7 +2777,16 @@ static void SceneTickFrogger(GameState* gstate) {
                                 continue;
                             }
 
+                            e->ppos = e->pos;
                             e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                            if (TestFlag(e->flags, EFLAG_PLATFORM)) {
+                                f32 leftx = 0.0f - 10.0f * SLOP;
+                                f32 rightx = gstate->renderw;
+                                if (e->pos.x + e->shape.aabb2d.r.x <= leftx) {
+                                    e->pos.x = rightx - SLOP;
+                                }
+                            }
                         }
 
                         // Collision detection.
@@ -2983,10 +2998,7 @@ static void SceneTickFrogger(GameState* gstate) {
     ParticleSystemTick(dt);
 
     // pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
-    Vec3 eye = Vec3Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh, 0.0f);
-    // subtract offset to ensure first grid cell bottom left is (0, 0)
-    eye = Vec3Add(eye, Vec3Lit(-0.5f * GRID_WIDTH, -0.5f * GRID_HEIGHT, 0.0f));
-    pass->view = GetCameraMat(eye, Vec3Zero());
+    pass->view = GetCameraMat(EYE, Vec3Zero());
 
     i32 hwidth = 0.5f * gstate->renderw;
     i32 hheight = 0.5f * gstate->renderh;
