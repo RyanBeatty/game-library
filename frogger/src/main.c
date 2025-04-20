@@ -2605,6 +2605,10 @@ static const Rect TURTLE2 = {.c = {.x = 0.0f * GRID_WIDTH, .y = 6.0f * GRID_HEIG
                              .r = {.x = 2.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
 static const Rect LOG3 = {.c = {.x = 0.0f * GRID_WIDTH, .y = 7.0f * GRID_HEIGHT},
                           .r = {.x = 3.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
+static const Rect LOG4 = {.c = {.x = 3.0f * GRID_WIDTH, .y = 7.0f * GRID_HEIGHT},
+                          .r = {.x = 4.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
+static const Rect LOG6 = {.c = {.x = 2.0f * GRID_WIDTH, .y = 4.0f * GRID_HEIGHT},
+                          .r = {.x = 6.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
 static const Rect HEDGE = {.c = {.x = 3.0f * GRID_WIDTH, .y = 3.0f * GRID_HEIGHT}, .r = GRIDR};
 
 static void SceneTickFrogger(GameState* gstate) {
@@ -2675,7 +2679,7 @@ static void SceneTickFrogger(GameState* gstate) {
             // Turtle 2.
             {
                 Entity* e = AllocateEntity();
-                e->pos = Grid2World(Vec3Lit(11.0f, 9.0f, 0.0f));
+                e->pos = Grid2World(Vec3Lit(11.0f, 10.0f, 0.0f));
                 e->v = Vec3Lit(-30.0f, 0.0f, 0.0f);
 
                 GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE2, 0.0f, 1.0f);
@@ -2690,17 +2694,50 @@ static void SceneTickFrogger(GameState* gstate) {
 
         // logs
         {
-            Entity* e = AllocateEntity();
-            e->pos = Grid2World(Vec3Lit(2.0f, 8.0f, 0.0f));
-            e->v = Vec3Lit(15.0f, 0.0f, 0.0f);
+            // Log 3
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Grid2World(Vec3Lit(2.0f, 8.0f, 0.0f));
+                e->v = Vec3Lit(15.0f, 0.0f, 0.0f);
 
-            GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LOG3, 0.0f, 1.0f);
-            e->shape.type = PH_AABB2D;
-            // Make the collision box a bit smaller than a cell so that we don't hit things that are
-            // a square to the side of us.
-            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(LOG3.r, 0.5f * 0.9f)};
-            FlagOn(e->flags, EFLAG_COLLIDER);
-            FlagOn(e->flags, EFLAG_PLATFORM);
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LOG3, 0.0f, 1.0f);
+                e->shape.type = PH_AABB2D;
+                // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                // a square to the side of us.
+                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(LOG3.r, 0.5f * 0.9f)};
+                FlagOn(e->flags, EFLAG_COLLIDER);
+                FlagOn(e->flags, EFLAG_PLATFORM);
+            }
+
+            // Log 6
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Grid2World(Vec3Lit(4.0f, 9.0f, 0.0f));
+                e->v = Vec3Lit(45.0f, 0.0f, 0.0f);
+
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LOG6, 0.0f, 1.0f);
+                e->shape.type = PH_AABB2D;
+                // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                // a square to the side of us.
+                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(LOG6.r, 0.5f * 0.9f)};
+                FlagOn(e->flags, EFLAG_COLLIDER);
+                FlagOn(e->flags, EFLAG_PLATFORM);
+            }
+
+            // Log 4
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Grid2World(Vec3Lit(1.0f, 11.0f, 0.0f));
+                e->v = Vec3Lit(20.0f, 0.0f, 0.0f);
+
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LOG4, 0.0f, 1.0f);
+                e->shape.type = PH_AABB2D;
+                // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                // a square to the side of us.
+                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(LOG4.r, 0.5f * 0.9f)};
+                FlagOn(e->flags, EFLAG_COLLIDER);
+                FlagOn(e->flags, EFLAG_PLATFORM);
+            }
         }
     }
 
