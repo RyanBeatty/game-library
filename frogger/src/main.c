@@ -2612,6 +2612,7 @@ static const Rect LOG6 = {.c = {.x = 2.0f * GRID_WIDTH, .y = 4.0f * GRID_HEIGHT}
 static const Rect HEDGE = {.c = {.x = 3.0f * GRID_WIDTH, .y = 3.0f * GRID_HEIGHT}, .r = GRIDR};
 static const Rect CARA = {.c = {.x = 3.0f * GRID_WIDTH, .y = 1.0f * GRID_HEIGHT}, .r = GRIDR};
 static const Rect CARB = {.c = {.x = 4.0f * GRID_WIDTH, .y = 1.0f * GRID_HEIGHT}, .r = GRIDR};
+static const Rect TRUCKA = {.c = {.x = 3.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT}, .r = GRIDR};
 
 static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
@@ -2656,6 +2657,21 @@ static void SceneTickFrogger(GameState* gstate) {
                 // Make the collision box a bit smaller than a cell so that we don't hit things that are
                 // a square to the side of us.
                 e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(CARA.r, 0.5f * 0.9f)};
+                FlagOn(e->flags, EFLAG_COLLIDER);
+                FlagOn(e->flags, EFLAG_HAZARD);
+            }
+
+            // Truck A.
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Grid2World(Vec3Lit(6.0f, 2.0f, 0.0f));
+                e->v = Vec3Lit(25.0f, 0.0f, 0.0f);
+
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TRUCKA, 0.0f, 1.0f);
+                e->shape.type = PH_AABB2D;
+                // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                // a square to the side of us.
+                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TRUCKA.r, 0.5f * 0.9f)};
                 FlagOn(e->flags, EFLAG_COLLIDER);
                 FlagOn(e->flags, EFLAG_HAZARD);
             }
