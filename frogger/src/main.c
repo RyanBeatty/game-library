@@ -2811,13 +2811,31 @@ static void SceneTickFrogger(GameState* gstate) {
             // Turtle 2.
             {
                 Vec3 pos[] = {
-                    Vec3Lit(11.0f, 10.0f, 0.0f), Vec3Lit(2.0f, 10.0f, 0.0f),
-                    // Vec3Lit(5.0f, 10.0f, 0.0f),
+                    Vec3Lit(2.0f, 10.0f, 0.0f),
+                    Vec3Lit(5.0f, 10.0f, 0.0f),
+                    Vec3Lit(8.0f, 10.0f, 0.0f),
+                    Vec3Lit(11.0f, 10.0f, 0.0f),
+                };
+                bool submergable[] = {
+                    true,
+                    false,
+                    false,
+                    false,
+                };
+                f32 dt[][2] = {
+                    {2.5f, 2.5f},
+                    {0.0f, 0.0f},
+                    {0.0f, 0.0f},
+                    {0.0f, 0.0f},
                 };
                 for (u32 i = 0; i < ArraySizeOf(pos); ++i) {
                     Entity* e = AllocateEntity();
                     e->pos = Grid2World(pos[i]);
                     e->v = Vec3Lit(-20.0f, 0.0f, 0.0f);
+
+                    e->surfaced = true;
+                    e->surfaced_time = dt[i][0];
+                    e->submerged_time = dt[i][1];
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE2, 0.0f, 1.0f);
                     e->shape.type = PH_AABB2D;
@@ -2826,6 +2844,9 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TURTLE2.r, 0.5f * 0.9f)};
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_PLATFORM);
+                    if (submergable[i]) {
+                        FlagOn(e->flags, EFLAG_SUBMERGABLE);
+                    }
                 }
             }
         }
