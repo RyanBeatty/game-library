@@ -1724,6 +1724,17 @@ LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 co
     }
 }
 
+LCORE void DrawLTextF(Vec3 pos, u32 fontsize, Vec4 color, const char* format, ...) {
+    char buffer[1024];
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    DrawLText(buffer, strlen(buffer), pos, fontsize, color);
+}
+
 // Imagine the texture as a single pre baked one off texture. This will measure the width
 // and height of that texture.
 LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
@@ -3289,6 +3300,24 @@ static void SceneTickFrogger(GameState* gstate) {
         u32 width = gstate->renderw;
         u32 height = gstate->renderh;
         pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+        // lives
+        {
+            char msg[] = "Lives:";
+            u32 len = strlen(msg);
+            u32 fontsize = 10.0f;
+            Vec2 dim = MeasureLText(msg, len, fontsize);
+
+            Vec3 pos = Vec3Lit(10.0f, height - 32.0f, 0.0f);
+            DrawLText(msg, len, pos, 10.0f, LYELLOW);
+            pos.x += dim.x + 5.0f;
+
+            LTexture tx = GetTexture(TX_FROG);
+            for (u32 i = 0; i < 3; ++i) {
+                DrawLTexturePro(tx, FROG.c, FROG.r, Vec2Lit(pos.x, pos.y), FROG.r, 0.0f, LCLEAR);
+                pos.x += FROG.r.x;
+            }
+        }
 
         if (STATE == SS_SPAWNED) {
             char msg[] = "Press ENTER To Start";
