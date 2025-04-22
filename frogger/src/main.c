@@ -2637,6 +2637,7 @@ static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
     static Vec3 EYE = {0};
+    static u32 LIVES = 3;
 
     f32 dt = gstate->dt;
 
@@ -2644,6 +2645,8 @@ static void SceneTickFrogger(GameState* gstate) {
     if (!gstate->init) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
+
+        LIVES = 3;
 
         EYE = Vec3Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh, 0.0f);
         // subtract offset to ensure first grid cell bottom left is (0, 0)
@@ -3011,6 +3014,9 @@ static void SceneTickFrogger(GameState* gstate) {
 
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                             if (e->on_water && !e->on_platform) {
+                                if (LIVES > 0) {
+                                    --LIVES;
+                                }
                                 SoftDeactivateEntity(e->id);
                                 STATE = SS_RESPAWN;
                             } else {
@@ -3313,7 +3319,7 @@ static void SceneTickFrogger(GameState* gstate) {
             pos.x += dim.x + 5.0f;
 
             LTexture tx = GetTexture(TX_FROG);
-            for (u32 i = 0; i < 3; ++i) {
+            for (u32 i = 0; i < LIVES; ++i) {
                 DrawLTexturePro(tx, FROG.c, FROG.r, Vec2Lit(pos.x, pos.y), FROG.r, 0.0f, LCLEAR);
                 pos.x += FROG.r.x;
             }
