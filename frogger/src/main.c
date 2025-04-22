@@ -3283,22 +3283,26 @@ static void SceneTickFrogger(GameState* gstate) {
     // pass->proj = Mat4Ortho(-35, 35, -20, 20, -3.0f, 3.0f);
     EndShaderPass();
 
-    if (STATE == SS_SPAWNED) {
+    // HUD/2D text overlay shader pass
+    {
         ShaderPass* pass = BeginShaderPass(GetShader());
         u32 width = gstate->renderw;
         u32 height = gstate->renderh;
         pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-        char msg[] = "Press ENTER To Start";
-        u32 size = strlen(msg);
+        if (STATE == SS_SPAWNED) {
+            char msg[] = "Press ENTER To Start";
+            u32 size = strlen(msg);
 
-        u32 fontsize = 10.0f;
-        Vec2 dim = MeasureLText(msg, size, fontsize);
+            u32 fontsize = 10.0f;
+            Vec2 dim = MeasureLText(msg, size, fontsize);
 
-        // Center text by shifting center forward by half a text cell size and then shifting backward
-        // by half the text size.
-        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-        DrawLText(msg, size, pos, fontsize, LYELLOW);
+            // Center text by shifting center forward by half a text cell size and then shifting backward
+            // by half the text size.
+            Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+            DrawLText(msg, size, pos, fontsize, LYELLOW);
+        }
+
         EndShaderPass();
     }
 
