@@ -2638,6 +2638,7 @@ static void SceneTickFrogger(GameState* gstate) {
     static SceneState STATE = SS_RESPAWN;
     static Vec3 EYE = {0};
     static u32 LIVES = 3;
+    static u32 SCORE = 0;
 
     f32 dt = gstate->dt;
 
@@ -2647,6 +2648,7 @@ static void SceneTickFrogger(GameState* gstate) {
         memset(&CAMERA, 0, sizeof(CAMERA));
 
         LIVES = 3;
+        SCORE = 0;
 
         EYE = Vec3Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh, 0.0f);
         // subtract offset to ensure first grid cell bottom left is (0, 0)
@@ -3145,6 +3147,7 @@ static void SceneTickFrogger(GameState* gstate) {
 
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
                                         TestFlag(eb->flags, EFLAG_GOAL)) {
+                                        SCORE += 15;
                                         Entity* player = ea;
                                         SoftDeactivateEntity(player->id);
                                         STATE = SS_RESPAWN;
@@ -3323,6 +3326,13 @@ static void SceneTickFrogger(GameState* gstate) {
                 DrawLTexturePro(tx, FROG.c, FROG.r, Vec2Lit(pos.x, pos.y), FROG.r, 0.0f, LCLEAR);
                 pos.x += FROG.r.x;
             }
+        }
+
+        // score
+        {
+            u32 fontsize = 10.0f;
+            Vec3 pos = Vec3Lit(10.0f, height - 17.0f, 0.0f);
+            DrawLTextF(pos, fontsize, LYELLOW, "Score: %d", SCORE);
         }
 
         if (STATE == SS_SPAWNED) {
