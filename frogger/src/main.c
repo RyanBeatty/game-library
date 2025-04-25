@@ -3191,11 +3191,12 @@ static void SceneTickFrogger(GameState* gstate) {
                         Entity* e = AllocateEntity();
                         e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 0.0f));
                         GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
-                        // GraphicsInfoSetTexture(&e->graphics, GetTexture(TX_FROG), 0.0f, 1.0f);
-                        //  GraphicsInfoSetShape(
-                        //     &e->graphics, GetMesh(M_QUAD), Vec3Lit(GRID_WIDTH, GRID_HEIGHT, 1.0f), LGREEN);
                         e->shape.type = PH_AABB2D;
-                        e->shape.aabb2d = (AABB2D){Vec2Zero(), Vec2Scale(GRIDR, 0.5f)};
+                        Vec2 c = Vec2Lit(0.0f, 0.0f);
+                        Vec2 r = GRIDR;
+                        r.x -= 4.0f;
+                        r.y -= 4.0f;
+                        e->shape.aabb2d = (AABB2D){c, Vec2Scale(r, 0.5f)};
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
                         FlagOn(e->flags, EFLAG_COLLIDER);
                         STATE = SS_SPAWNED;
@@ -3284,7 +3285,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     if (gstate->debug) {
                         BeginWireframe();
                         Polyhedron shape = PolyhedronTransform(e->shape, EntityGetMat(e));
-                        DrawPolyhedron(&shape, LRED);
+                        DrawPolyhedron(&shape, LYELLOW);
                         EndWireframe();
                     }
                 }
@@ -3534,7 +3535,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 224.0f;
     gstate->renderh = 256.0f;
 
-    InitWindow(2 * gstate->renderw, 2 * gstate->renderh, "Game");
+    InitWindow(3 * gstate->renderw, 3 * gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
