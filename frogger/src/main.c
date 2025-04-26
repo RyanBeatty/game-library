@@ -3236,7 +3236,8 @@ static void SceneTickFrogger(GameState* gstate) {
                 }
 
                 if (e->leaping > 0) {
-                    e->graphics.pos = Vec3Lerp(e->graphics.posa, e->graphics.posb, e->graphics.posdt);
+                    e->graphics.pos =
+                        Vec3Lerp(e->graphics.posa, e->graphics.posb, f32clamp(e->graphics.posdt, 0.0f, 1.0f));
                 } else {
                     e->graphics.pos = e->pos;
                 }
