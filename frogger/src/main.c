@@ -2365,7 +2365,7 @@ typedef struct Entity {
     // Gameplay fields.
     bool on_water;
     bool on_platform;
-    u32 leaping;
+    f32 leaping;
 
     bool surfaced;
     f32 surfaced_time;
@@ -3020,6 +3020,8 @@ static void SceneTickFrogger(GameState* gstate) {
                         }
 
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                            static const f32 LEAPING_DURATION_TIME = 8.0f / 60.0f;
+
                             if (e->on_water && !e->on_platform) {
                                 if (LIVES > 0) {
                                     --LIVES;
@@ -3027,7 +3029,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                 SoftDeactivateEntity(e->id);
                                 STATE = SS_RESPAWN;
                             } else {
-                                if (e->leaping == 0) {
+                                if (e->leaping == 0.0f) {
                                     Vec3 move = Vec3Zero();
                                     if (IsKeyPressed(KEY_UP)) {
                                         move.y = 1;
@@ -3049,17 +3051,19 @@ static void SceneTickFrogger(GameState* gstate) {
                                     // we are on?
                                     if (!Vec3Eq(move, Vec3Zero())) {
                                         e->v = Vec3Zero();
-                                        e->leaping = 1;
+                                        e->leaping = dt;
                                         e->graphics.posa = e->ppos;
                                         e->graphics.posb = e->pos;
-                                        // e->posdt = ((8.0f * 60.0f) - dt) / (8.0f * 60.0f);
                                     }
-                                } else {
-                                    e->leaping += 1;
-                                    if (e->leaping >= 8) {
+                                }
+
+                                if (e->leaping != 0.0f) {
+                                    e->leaping += dt;
+                                    if (e->leaping >= LEAPING_DURATION_TIME) {
                                         e->leaping = 0;
+                                    } else {
+                                        e->graphics.posdt = e->leaping / LEAPING_DURATION_TIME;
                                     }
-                                    // e->posdt = ((8.0f * 60.0f) - dt) / (8.0f * 60.0f);
                                 }
                             }
                             // Need to reevaluate each tick.
@@ -3231,7 +3235,7 @@ static void SceneTickFrogger(GameState* gstate) {
                 }
 
                 if (e->leaping > 0) {
-                    e->graphics.pos = Vec3Lerp(e->graphics.posa, e->graphics.posb, e->leaping / 8.0f);
+                    e->graphics.pos = Vec3Lerp(e->graphics.posa, e->graphics.posb, e->graphics.posdt);
                 } else {
                     e->graphics.pos = e->pos;
                 }
