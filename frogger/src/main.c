@@ -3064,6 +3064,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                     } else {
                                         e->graphics.posdt = e->leaping / LEAPING_DURATION_TIME;
                                     }
+                                    e->graphics.posb = e->pos;
                                 }
                             }
                             // Need to reevaluate each tick.
