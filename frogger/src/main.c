@@ -2614,6 +2614,7 @@ typedef enum {
     SS_RESPAWN,
     SS_SPAWNED,
     SS_PLAYING,
+    SS_GAMEOVER,
     SS_COUNT,
 } SceneState;
 
@@ -2645,6 +2646,7 @@ static void SceneTickFrogger(GameState* gstate) {
     static Vec3 EYE = {0};
     static u32 LIVES = 3;
     static u32 SCORE = 0;
+    static f32 GAMEOVER_DT = 0.0f;
 
     f32 dt = gstate->dt;
 
@@ -2652,6 +2654,8 @@ static void SceneTickFrogger(GameState* gstate) {
     if (!gstate->init) {
         STATE = SS_RESPAWN;
         memset(&CAMERA, 0, sizeof(CAMERA));
+
+        GAMEOVER_DT = 0.0f;
 
         LIVES = 3;
         SCORE = 0;
@@ -3028,7 +3032,12 @@ static void SceneTickFrogger(GameState* gstate) {
                                     --LIVES;
                                 }
                                 SoftDeactivateEntity(e->id);
-                                STATE = SS_RESPAWN;
+                                if (LIVES == 0) {
+                                    STATE = SS_GAMEOVER;
+                                    GAMEOVER_DT = dt;
+                                } else {
+                                    STATE = SS_RESPAWN;
+                                }
                             } else {
                                 bool moved = IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_LEFT) ||
                                              IsKeyPressed(KEY_RIGHT);
@@ -3239,6 +3248,12 @@ static void SceneTickFrogger(GameState* gstate) {
                         FlagOn(e->flags, EFLAG_COLLIDER);
                         STATE = SS_SPAWNED;
                     }
+                } else if (STATE == SS_GAMEOVER) {
+                    static const f32 GAMEOVER_TIME = 2.0f;
+                    GAMEOVER_DT += dt;
+                    if (GAMEOVER_DT >= GAMEOVER_TIME) {
+                        STATE = SS_RESPAWN;
+                    }
                 } else {
                     Assert(false);
                 }
@@ -3381,6 +3396,17 @@ static void SceneTickFrogger(GameState* gstate) {
 
         if (STATE == SS_SPAWNED) {
             char msg[] = "Press ENTER To Start";
+            u32 size = strlen(msg);
+
+            u32 fontsize = 10.0f;
+            Vec2 dim = MeasureLText(msg, size, fontsize);
+
+            // Center text by shifting center forward by half a text cell size and then shifting backward
+            // by half the text size.
+            Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+            DrawLText(msg, size, pos, fontsize, LYELLOW);
+        } else if (STATE == SS_GAMEOVER) {
+            char msg[] = "GAME OVER";
             u32 size = strlen(msg);
 
             u32 fontsize = 10.0f;
