@@ -3060,6 +3060,13 @@ static void SceneTickFrogger(GameState* gstate) {
                                     e->leaping = dt;
                                     e->graphics.posa = e->ppos;
                                     e->graphics.posb = e->pos;
+
+                                    if (move.y != 0.0f) {
+                                        // If we are moving in Y direction, reset platform id. We DONT do this for
+                                        // movement in X direction to prevent hopping from one platform to another
+                                        // on the same level (e.g. hopping from one group of 3 turtles to another).
+                                        e->platformid = NULLID;
+                                    }
                                 }
 
                                 if (e->leaping) {
@@ -3074,7 +3081,6 @@ static void SceneTickFrogger(GameState* gstate) {
                             }
                             // Need to reevaluate each tick.
                             e->on_water = false;
-                            e->platformid = NULLID;
                         }
                     }
 
@@ -3190,7 +3196,12 @@ static void SceneTickFrogger(GameState* gstate) {
                                         TestFlag(eb->flags, EFLAG_PLATFORM)) {
                                         Entity* player = ea;
                                         Entity* platform = eb;
-                                        player->platformid = platform->id;
+                                        if (player->platformid != NULLID && player->platformid != platform->id) {
+                                            player->on_water = true;
+                                            player->platformid = NULLID;
+                                        } else {
+                                            player->platformid = platform->id;
+                                        }
                                         player->v = platform->v;
                                     }
                                 }
