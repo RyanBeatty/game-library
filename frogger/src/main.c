@@ -2243,6 +2243,10 @@ typedef struct {
     Vec3 scale;
     Mat4 orient;
 
+    Vec3 posa;
+    Vec3 posb;
+    f32 posdt;
+
     LMesh mid;
 
     TextureId txid;
@@ -2361,6 +2365,7 @@ typedef struct Entity {
     // Gameplay fields.
     bool on_water;
     bool on_platform;
+    u32 leaping;
 
     bool surfaced;
     f32 surfaced_time;
@@ -3022,27 +3027,39 @@ static void SceneTickFrogger(GameState* gstate) {
                                 SoftDeactivateEntity(e->id);
                                 STATE = SS_RESPAWN;
                             } else {
-                                Vec3 move = Vec3Zero();
-                                if (IsKeyPressed(KEY_UP)) {
-                                    move.y = 1;
-                                } else if (IsKeyPressed(KEY_DOWN)) {
-                                    move.y = -1;
-                                } else if (IsKeyPressed(KEY_LEFT)) {
-                                    move.x = -1;
-                                } else if (IsKeyPressed(KEY_RIGHT)) {
-                                    move.x = 1;
-                                }
+                                if (e->leaping == 0) {
+                                    Vec3 move = Vec3Zero();
+                                    if (IsKeyPressed(KEY_UP)) {
+                                        move.y = 1;
+                                    } else if (IsKeyPressed(KEY_DOWN)) {
+                                        move.y = -1;
+                                    } else if (IsKeyPressed(KEY_LEFT)) {
+                                        move.x = -1;
+                                    } else if (IsKeyPressed(KEY_RIGHT)) {
+                                        move.x = 1;
+                                    }
 
-                                move.x *= GRID_WIDTH;
-                                move.y *= GRID_HEIGHT;
-                                e->ppos = e->pos;
-                                e->pos = Vec3Add(e->pos, move);
+                                    move.x *= GRID_WIDTH;
+                                    move.y *= GRID_HEIGHT;
+                                    e->ppos = e->pos;
+                                    e->pos = Vec3Add(e->pos, move);
 
-                                // When we move we need to reevaluate if we should get platform velocity.
-                                // TODO: Maybe we should inherit velocity by following a pointer to the platform
-                                // we are on?
-                                if (!Vec3Eq(move, Vec3Zero())) {
-                                    e->v = Vec3Zero();
+                                    // When we move we need to reevaluate if we should get platform velocity.
+                                    // TODO: Maybe we should inherit velocity by following a pointer to the platform
+                                    // we are on?
+                                    if (!Vec3Eq(move, Vec3Zero())) {
+                                        e->v = Vec3Zero();
+                                        e->leaping = 1;
+                                        e->graphics.posa = e->ppos;
+                                        e->graphics.posb = e->pos;
+                                        // e->posdt = ((8.0f * 60.0f) - dt) / (8.0f * 60.0f);
+                                    }
+                                } else {
+                                    e->leaping += 1;
+                                    if (e->leaping >= 8) {
+                                        e->leaping = 0;
+                                    }
+                                    // e->posdt = ((8.0f * 60.0f) - dt) / (8.0f * 60.0f);
                                 }
                             }
                             // Need to reevaluate each tick.
@@ -3213,7 +3230,11 @@ static void SceneTickFrogger(GameState* gstate) {
                     continue;
                 }
 
-                e->graphics.pos = e->pos;
+                if (e->leaping > 0) {
+                    e->graphics.pos = Vec3Lerp(e->graphics.posa, e->graphics.posb, e->leaping / 8.0f);
+                } else {
+                    e->graphics.pos = e->pos;
+                }
                 e->graphics.orient = e->orient;
             }
 
