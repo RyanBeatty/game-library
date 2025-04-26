@@ -3029,7 +3029,9 @@ static void SceneTickFrogger(GameState* gstate) {
                                 SoftDeactivateEntity(e->id);
                                 STATE = SS_RESPAWN;
                             } else {
-                                if (e->leaping == 0.0f) {
+                                bool moved = IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_LEFT) ||
+                                             IsKeyPressed(KEY_RIGHT);
+                                if (!e->leaping && moved) {
                                     Vec3 move = Vec3Zero();
                                     if (IsKeyPressed(KEY_UP)) {
                                         move.y = 1;
@@ -3046,18 +3048,13 @@ static void SceneTickFrogger(GameState* gstate) {
                                     e->ppos = e->pos;
                                     e->pos = Vec3Add(e->pos, move);
 
-                                    // When we move we need to reevaluate if we should get platform velocity.
-                                    // TODO: Maybe we should inherit velocity by following a pointer to the platform
-                                    // we are on?
-                                    if (!Vec3Eq(move, Vec3Zero())) {
-                                        e->v = Vec3Zero();
-                                        e->leaping = dt;
-                                        e->graphics.posa = e->ppos;
-                                        e->graphics.posb = e->pos;
-                                    }
+                                    e->v = Vec3Zero();
+                                    e->leaping = dt;
+                                    e->graphics.posa = e->ppos;
+                                    e->graphics.posb = e->pos;
                                 }
 
-                                if (e->leaping != 0.0f) {
+                                if (e->leaping) {
                                     e->leaping += dt;
                                     if (e->leaping >= LEAPING_DURATION_TIME) {
                                         e->leaping = 0;
