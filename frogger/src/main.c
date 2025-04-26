@@ -3043,6 +3043,13 @@ static void SceneTickFrogger(GameState* gstate) {
                                         move.x = 1;
                                     }
 
+                                    // Has problems. doesn't consider if directions are opposite in which case
+                                    // the dot product will be 0
+                                    // Vec3 wishdir = Vec3Normalize(move);
+                                    // Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0), e->orient);
+                                    // f32 angle = Vec3Angle(dir, wishdir);
+                                    // e->orient = Mat4Multiply(Mat4RotateZ(angle), e->orient);
+
                                     move.x *= GRID_WIDTH;
                                     move.y *= GRID_HEIGHT;
                                     e->ppos = e->pos;
