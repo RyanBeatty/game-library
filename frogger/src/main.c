@@ -2333,6 +2333,7 @@ typedef enum EntityFlag {
 } EntityFlag;
 
 typedef u32 EntityId;
+static const EntityId NULLID = 0;
 
 typedef struct Entity {
     /////////////////////////////////////////////////////////////////
@@ -2364,7 +2365,7 @@ typedef struct Entity {
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
     bool on_water;
-    bool on_platform;
+    EntityId platformid;
     f32 leaping;
 
     bool surfaced;
@@ -3022,7 +3023,7 @@ static void SceneTickFrogger(GameState* gstate) {
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                             static const f32 LEAPING_DURATION_TIME = 8.0f / 60.0f;
 
-                            if (e->on_water && !e->on_platform) {
+                            if (e->on_water && e->platformid == NULLID) {
                                 if (LIVES > 0) {
                                     --LIVES;
                                 }
@@ -3073,7 +3074,7 @@ static void SceneTickFrogger(GameState* gstate) {
                             }
                             // Need to reevaluate each tick.
                             e->on_water = false;
-                            e->on_platform = false;
+                            e->platformid = NULLID;
                         }
                     }
 
@@ -3189,7 +3190,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                         TestFlag(eb->flags, EFLAG_PLATFORM)) {
                                         Entity* player = ea;
                                         Entity* platform = eb;
-                                        player->on_platform = true;
+                                        player->platformid = platform->id;
                                         player->v = platform->v;
                                     }
                                 }
