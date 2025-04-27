@@ -13,12 +13,16 @@ Engine Features Desired for Gameplay Prototyping
 * Basic Model Loading (Possibly not even necessary as I can try to use procedural geometry for as long as possible)
 
 
-TODO Asteroids
-* Improve player movement.
-* Maybe add some asteroid sprite rotation?
-* done - Alien sprite art
-* done - Tune asteroid particle speed (should be a bit slower/more floaty. maybe with some decelartion)
-* done - Tune alien spawn time
+TODO FROGGER
+* feature
+    * Implement Quaternions + interpolation for rotating the frog.
+    * sounds
+    * animations
+    * exhaust smoke particle effects on the cars
+* bug
+    * draw order issue. once frog clears a goal, it will appear under logs after respawn. I should implement z sorting. But when to know how to do this in the renderer?
+    * I think there are still some issues where if I'm on a platform and go to water, you don't die. this is from
+    the fix for preventing players from moving between turtle platforms on same level.
 
 TODO
 * Bugs
