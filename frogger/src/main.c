@@ -3217,7 +3217,9 @@ static void SceneTickFrogger(GameState* gstate) {
                                         TestFlag(eb->flags, EFLAG_GOAL)) {
                                         SCORE += 15;
                                         Entity* player = ea;
+                                        Entity* goal = eb;
                                         SoftDeactivateEntity(player->id);
+                                        SoftDeactivateEntity(goal->id);
                                         STATE = SS_RESPAWN;
                                     }
 
