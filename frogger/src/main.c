@@ -2666,14 +2666,28 @@ static void SceneTickFrogger(GameState* gstate) {
 
         // Goals
         {
-            f32 l = 0.0f - (0.5f * GRIDR.x);
-            f32 r = gstate->renderw - (0.5f * GRIDR.x);  //+ (0.5f * GRIDR.x);
+            Mat4 view = GetCameraMat(EYE, Vec3Zero());
+            i32 hwidth = 0.5f * gstate->renderw;
+            i32 hheight = 0.5f * gstate->renderh;
+            Mat4 proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -100.0f, 100.0f);
+            Mat4 ivp = Mat4Invert(Mat4Multiply(proj, view));
+
+            Vec3 left = Vec3WTransform(Vec3Lit(-1.0f, 0.0f, 0.0f), ivp);
+            Vec3 right = Vec3WTransform(Vec3Lit(1.0f, 0.0f, 0.0f), ivp);
+
+            f32 margin = 20.0f;
+            f32 l = left.x + margin;
+            f32 r = right.x - margin;
             f32 width = r - l;
 
             f32 y = 12.0f * GRIDR.y;
 
             f32 offsets[] = {
-                f32lerp(0.0f, width, 0.5f),
+                f32lerp(0.0f, width, 0.5f),   //
+                f32lerp(0.0f, width, 0.25f),  //
+                f32lerp(0.0f, width, 0.75f),  //
+                f32lerp(0.0f, width, 0.0f),   //
+                f32lerp(0.0f, width, 1.0f),   //
             };
 
             for (u32 i = 0; i < ArraySizeOf(offsets); ++i) {
@@ -3287,7 +3301,7 @@ static void SceneTickFrogger(GameState* gstate) {
                 e->graphics.orient = e->orient;
             }
 
-            // Draw Board.
+            // Draw background.
             {
                 // Bottom of level is top here.
                 Rect srcs[][16] = {
