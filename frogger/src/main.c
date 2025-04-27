@@ -2666,16 +2666,28 @@ static void SceneTickFrogger(GameState* gstate) {
 
         // Goals
         {
-            Entity* e = AllocateEntity();
-            e->pos = Grid2World(Vec3Lit(6.0f, 12.0f, 0.0f));
+            f32 l = 0.0f - (0.5f * GRIDR.x);
+            f32 r = gstate->renderw - (0.5f * GRIDR.x);  //+ (0.5f * GRIDR.x);
+            f32 width = r - l;
 
-            GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), WATER, 0.0f, 1.0f);
-            e->shape.type = PH_AABB2D;
-            // Make the collision box a bit smaller than a cell so that we don't hit things that are
-            // a square to the side of us.
-            e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(GRIDR, 0.5f * 0.9f)};
-            FlagOn(e->flags, EFLAG_COLLIDER);
-            FlagOn(e->flags, EFLAG_GOAL);
+            f32 y = 12.0f * GRIDR.y;
+
+            f32 offsets[] = {
+                f32lerp(0.0f, width, 0.5f),
+            };
+
+            for (u32 i = 0; i < ArraySizeOf(offsets); ++i) {
+                Entity* e = AllocateEntity();
+                e->pos = Vec3Lit(l + offsets[i], y, 0.0f);
+
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), WATER, 0.0f, 1.0f);
+                e->shape.type = PH_AABB2D;
+                // Make the collision box a bit smaller than a cell so that we don't hit things that are
+                // a square to the side of us.
+                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(GRIDR, 0.5f * 0.9f)};
+                FlagOn(e->flags, EFLAG_COLLIDER);
+                FlagOn(e->flags, EFLAG_GOAL);
+            }
         }
 
         // Cars
