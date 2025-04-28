@@ -532,6 +532,7 @@ static Vec3 Vec3WTransform(Vec3 v, Mat4 m) {
                    (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22) + (1.0f * m.mm.m23));
 }
 
+// Quaternion. assume unit quaternion use throughout code.
 typedef struct {
     f32 x;
     f32 y;
@@ -540,7 +541,9 @@ typedef struct {
 } Quat;
 
 #define QuatLit(a, b, c, d) ((Quat){.x = (a), .y = (b), .z = (c), .w = (d)})
+#define QuatZero() (QuatLit(0.0f, 0.0f, 0.0f, 1.0f))
 
+// r in radians.
 LCORE Quat QuatFromAxisAngle(Vec3 n, f32 r) {
     f32 hr = 0.5f * r;
     f32 sinhr = f32sin(hr);
@@ -548,6 +551,8 @@ LCORE Quat QuatFromAxisAngle(Vec3 n, f32 r) {
 }
 
 LCORE bool QuatEq(Quat a, Quat b) { return f32eq(a.x, b.x) && f32eq(a.y, b.y) && f32eq(a.z, b.z) && f32eq(a.w, b.w); }
+// Magnitude
+LCORE f32 QuatLen(Quat q) { return f32sqrt((q.x * q.x) + (q.y * q.y) + (q.z * q.z) + (q.w * q.w)); }
 
 ////////////////////////////////////////////////////////////
 // S:Color
@@ -4160,6 +4165,14 @@ static void TestMath() {
                 Quat res = QuatFromAxisAngle(Vec3Lit(0.57735027f, 0.57735027f, 0.57735027f), Deg2Rad(45.0f));
                 Quat expected = QuatLit(0.2214466f, 0.2214466f, 0.2214466f, 0.9238795f);
                 TAssert(QuatEq(res, expected), "QuatFromAxisAngle 45 degrees about diagonal axis");
+            }
+        }
+
+        // QuatLen
+        {
+            {
+                f32 res = QuatLen(QuatLit(1.0f, 2.0f, 3.0f, 4.0f));
+                TAssert(f32eq(res, 5.4772256f), "QuatLen");
             }
         }
     }
