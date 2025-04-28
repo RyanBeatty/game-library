@@ -587,7 +587,7 @@ LCORE Mat4 Quat2Mat4(Quat q) {
     f32 wz = q.w * q.z;
 
     return Mat4Lit(1.0f - 2.0f * (y2 + z2), 2.0f * (xy - wz), 2.0f * (xz + wy), 0.0f,  //
-                   /////////////////////////////////
+                                                                                       /////////////////////////////////
                    2.0f * (xy + wz), 1.0f - 2.0f * (x2 + z2), 2.0f * (yz - wx), 0.0f,  //
                    /////////////////////////////////
                    2.0f * (xz - wy), 2.0f * (yz + wx), 1.0f - 2.0f * (x2 + y2), 0.0f,  //
@@ -4284,6 +4284,20 @@ static void TestMath() {
                 Mat4 expected = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
                                         0.0f, 0.0f, 1.0f);
                 TAssert(Mat4Eq(res, expected), "Quat2Mat4 identity");
+            }
+            {
+                Quat q = QuatLit(1.0f, 0.0f, 0.0f, 0.0f);  // 180 around x
+                Mat4 res = Quat2Mat4(q);
+                Mat4 expected = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+                                        0.0f, 0.0f, 1.0f);
+                TAssert(Mat4Eq(res, expected), "Quat2Mat4 180 around x-axis");
+            }
+            {
+                Quat q = QuatLit(0.2971f, 0.4952f, 0.1981f, 0.7924f);
+                Mat4 res = Quat2Mat4(q);
+                Mat4 expected = Mat4Lit(0.4312f, -0.0196f, 0.9022f, 0.0f, 0.6084f, 0.7450f, -0.2744f, 0.0f, -0.6666f,
+                                        0.6668f, 0.3330f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                TAssert(Mat4Eq(res, expected), "Quat2Mat4 complicated");
             }
         }
     }
