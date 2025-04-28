@@ -567,6 +567,14 @@ LCORE Quat QuatMult(Quat q2, Quat q1) {
     };
 }
 
+// FoGED 2.11
+LCORE Vec3 QuatTransform(Quat q, Vec3 v) {
+    Vec3 b = Vec3Lit(q.x, q.y, q.z);
+    f32 b2 = b.x * b.x + b.y * b.y + b.z * b.z;
+    return Vec3Add(Vec3Add(Vec3Scale(v, q.w * q.w - b2), Vec3Scale(b, 2.0f * Vec3Dot(v, b))),
+                   Vec3Scale(Vec3Cross(b, v), 2.0f * q.w));
+}
+
 ////////////////////////////////////////////////////////////
 // S:Color
 
@@ -4202,7 +4210,6 @@ static void TestMath() {
                 Quat q2 = QuatLit(0.0f, 0.7071f, 0.0f, 0.7071f);  // 90° rotation around Y
                 Quat res = QuatMult(q2, q1);
                 Quat expected = QuatLit(0.5f, 0.5f, 0.5f, 0.5f);  // 120° rotation around (1,1,1)
-                breakpoint();
                 TAssert(QuatEq(res, expected), "QuatMult multiple rotations");
             }
             {
@@ -4220,6 +4227,17 @@ static void TestMath() {
                 Quat expected = QuatLit(0.84f, -0.08f, 0.35f, 0.31f);
                 breakpoint();
                 TAssert(QuatEq(res, expected), "QuatMult non trivial");
+            }
+        }
+
+        // QuatTransform
+        {
+            {
+                Quat q = QuatLit(0.0f, 0.0f, 0.0f, 1.0f);  // Identity quaternion
+                Vec3 v = Vec3Lit(1.0f, 2.0f, 3.0f);
+                Vec3 res = QuatTransform(q, v);
+                Vec3 expected = Vec3Lit(1.0f, 2.0f, 3.0f);
+                TAssert(Vec3Eq(res, expected), "QuatTransform identity");
             }
         }
     }
