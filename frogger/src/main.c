@@ -532,6 +532,23 @@ static Vec3 Vec3WTransform(Vec3 v, Mat4 m) {
                    (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22) + (1.0f * m.mm.m23));
 }
 
+typedef struct {
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 w;
+} Quat;
+
+#define QuatLit(a, b, c, d) ((Quat){.x = (a), .y = (b), .z = (c), .w = (d)})
+
+LCORE Quat QuatFromAxisAngle(Vec3 n, f32 r) {
+    f32 hr = 0.5f * r;
+    f32 sinhr = f32sin(hr);
+    return QuatLit(sinhr * n.x, sinhr * n.y, sinhr * n.z, f32cos(hr));
+}
+
+LCORE bool QuatEq(Quat a, Quat b) { return f32eq(a.x, b.x) && f32eq(a.y, b.y) && f32eq(a.z, b.z) && f32eq(a.w, b.w); }
+
 ////////////////////////////////////////////////////////////
 // S:Color
 
@@ -4122,6 +4139,18 @@ static void TestMath() {
                 orient = Mat4Multiply(r, orient);
             }
             TAssert(Mat4Eq(orient, expected), "Integration Turn Left");
+        }
+    }
+
+    // Test Quat
+    {
+        // QuatFromAxisAngle
+        {
+            {
+                Quat res = QuatFromAxisAngle(Vec3Lit(1.0f, 0.0f, 0.0f), Deg2Rad(90.0f));
+                Quat expected = QuatLit(0.7071068f, 0.0f, 0.0f, 0.7071068f);
+                TAssert(QuatEq(res, expected), "QuatFromAxisAngle 90 degrees about x axis");
+            }
         }
     }
 }
