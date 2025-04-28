@@ -4239,6 +4239,20 @@ static void TestMath() {
                 Vec3 expected = Vec3Lit(1.0f, 2.0f, 3.0f);
                 TAssert(Vec3Eq(res, expected), "QuatTransform identity");
             }
+            {
+                Quat q = QuatLit(0.0f, 0.0f, 0.7071f, 0.7071f);  // rotate 90 about z
+                Vec3 v = Vec3Lit(1.0f, 0.0f, 0.0f);
+                Vec3 res = QuatTransform(q, v);
+                Vec3 expected = Vec3Lit(0.0f, 1.0f, 0.0f);
+                TAssert(Vec3Eq(res, expected), "QuatTransform 90 deg about z axis");
+            }
+            {
+                Quat q = QuatLit(0.0f, 0.3827f, 0.0f, 0.9239f);  // rotate about y axis by 45 deg
+                Vec3 v = Vec3Lit(1.0f, 2.0f, 3.0f);
+                Vec3 res = QuatTransform(q, v);
+                Vec3 expected = Vec3Lit(2.8284f, 2.0f, 1.4142f);
+                TAssert(Vec3Eq(res, expected), "QuatTransform 45 deg about y axis");
+            }
         }
     }
 }
