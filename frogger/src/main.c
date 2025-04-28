@@ -4151,6 +4151,16 @@ static void TestMath() {
                 Quat expected = QuatLit(0.7071068f, 0.0f, 0.0f, 0.7071068f);
                 TAssert(QuatEq(res, expected), "QuatFromAxisAngle 90 degrees about x axis");
             }
+            {
+                Quat res = QuatFromAxisAngle(Vec3Lit(0.0f, 1.0f, 0.0f), Deg2Rad(180.0f));
+                Quat expected = QuatLit(0.0f, 1.0f, 0.0f, 0.0f);
+                TAssert(QuatEq(res, expected), "QuatFromAxisAngle 180 degrees about y axis");
+            }
+            {
+                Quat res = QuatFromAxisAngle(Vec3Lit(0.57735027f, 0.57735027f, 0.57735027f), Deg2Rad(45.0f));
+                Quat expected = QuatLit(0.2214466f, 0.2214466f, 0.2214466f, 0.9238795f);
+                TAssert(QuatEq(res, expected), "QuatFromAxisAngle 45 degrees about diagonal axis");
+            }
         }
     }
 }
