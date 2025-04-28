@@ -575,6 +575,27 @@ LCORE Vec3 QuatTransform(Quat q, Vec3 v) {
                    Vec3Scale(Vec3Cross(b, v), 2.0f * q.w));
 }
 
+LCORE Mat4 Quat2Mat4(Quat q) {
+    f32 x2 = q.x * q.x;
+    f32 y2 = q.y * q.y;
+    f32 z2 = q.z * q.z;
+    f32 xy = q.x * q.y;
+    f32 xz = q.x * q.z;
+    f32 yz = q.y * q.z;
+    f32 wx = q.w * q.x;
+    f32 wy = q.w * q.y;
+    f32 wz = q.w * q.z;
+
+    return Mat4Lit(1.0f - 2.0f * (y2 + z2), 2.0f * (xy - wz), 2.0f * (xz + wy), 0.0f,  //
+                   /////////////////////////////////
+                   2.0f * (xy + wz), 1.0f - 2.0f * (x2 + z2), 2.0f * (yz - wx), 0.0f,  //
+                   /////////////////////////////////
+                   2.0f * (xz - wy), 2.0f * (yz + wx), 1.0f - 2.0f * (x2 + y2), 0.0f,  //
+                   /////////////////////////////////
+                   0.0f, 0.0f, 0.0f, 1.0f  //
+    );
+}
+
 ////////////////////////////////////////////////////////////
 // S:Color
 
@@ -4252,6 +4273,17 @@ static void TestMath() {
                 Vec3 res = QuatTransform(q, v);
                 Vec3 expected = Vec3Lit(2.8284f, 2.0f, 1.4142f);
                 TAssert(Vec3Eq(res, expected), "QuatTransform 45 deg about y axis");
+            }
+        }
+
+        // Quat2Mat4
+        {
+            {
+                Quat q = QuatLit(0.0f, 0.0f, 0.0f, 1.0f);  // Identity quaternion
+                Mat4 res = Quat2Mat4(q);
+                Mat4 expected = Mat4Lit(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+                                        0.0f, 0.0f, 1.0f);
+                TAssert(Mat4Eq(res, expected), "Quat2Mat4 identity");
             }
         }
     }
