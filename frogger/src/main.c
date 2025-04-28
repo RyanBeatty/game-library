@@ -553,6 +553,18 @@ LCORE Quat QuatFromAxisAngle(Vec3 n, f32 r) {
 LCORE bool QuatEq(Quat a, Quat b) { return f32eq(a.x, b.x) && f32eq(a.y, b.y) && f32eq(a.z, b.z) && f32eq(a.w, b.w); }
 // Magnitude
 LCORE f32 QuatLen(Quat q) { return f32sqrt((q.x * q.x) + (q.y * q.y) + (q.z * q.z) + (q.w * q.w)); }
+// Conjugate
+LCORE Quat QuatConj(Quat q) { return QuatLit(-q.x, -q.y, -q.z, q.w); }
+
+//  rotations compose from right to left (so q1 gets applied first).
+LCORE Quat QuatMult(Quat q2, Quat q1) {
+    return (Quat){
+        q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,  //
+        q1.w * q2.y - q1.x * q2.z + q1.y * q2.w + q1.z * q2.x,  //
+        q1.w * q2.z + q1.x * q2.y - q1.y * q2.x + q1.z * q2.w,  //
+        q1.w * q2.w - q1.x * q2.x - q1.y * q2.y - q1.z * q2.z,  //
+    };
+}
 
 ////////////////////////////////////////////////////////////
 // S:Color
@@ -4173,6 +4185,24 @@ static void TestMath() {
             {
                 f32 res = QuatLen(QuatLit(1.0f, 2.0f, 3.0f, 4.0f));
                 TAssert(f32eq(res, 5.4772256f), "QuatLen");
+            }
+        }
+
+        // QuatMult
+        {
+            {
+                Quat q1 = QuatLit(0.0f, 0.0f, 0.0f, 1.0f);        // Identity quaternion
+                Quat q2 = QuatLit(0.7071f, 0.0f, 0.0f, 0.7071f);  // 90° rotation around X
+                Quat res = QuatMult(q1, q2);
+                TAssert(QuatEq(res, q2), "QuatMult with identity");
+            }
+            {
+                Quat q1 = QuatLit(0.7071f, 0.0f, 0.0f, 0.7071f);  // 90° rotation around X
+                Quat q2 = QuatLit(0.0f, 0.7071f, 0.0f, 0.7071f);  // 90° rotation around Y
+                Quat res = QuatMult(q2, q1);
+                Quat expected = QuatLit(0.5f, 0.5f, 0.5f, 0.5f);  // 120° rotation around (1,1,1)
+                breakpoint();
+                TAssert(QuatEq(res, expected), "QuatMult multiple rotations");
             }
         }
     }
