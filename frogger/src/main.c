@@ -557,6 +557,7 @@ LCORE f32 QuatLen(Quat q) { return f32sqrt((q.x * q.x) + (q.y * q.y) + (q.z * q.
 LCORE Quat QuatConj(Quat q) { return QuatLit(-q.x, -q.y, -q.z, q.w); }
 
 //  rotations compose from right to left (so q1 gets applied first).
+// FoGED 2.10
 LCORE Quat QuatMult(Quat q2, Quat q1) {
     return (Quat){
         q1.w * q2.x + q1.x * q2.w + q1.y * q2.z - q1.z * q2.y,  //
@@ -4203,6 +4204,22 @@ static void TestMath() {
                 Quat expected = QuatLit(0.5f, 0.5f, 0.5f, 0.5f);  // 120° rotation around (1,1,1)
                 breakpoint();
                 TAssert(QuatEq(res, expected), "QuatMult multiple rotations");
+            }
+            {
+                Quat q1 = QuatLit(0.0f, 0.7071f, 0.0f, 0.7071f);   // 90° rotation around Y
+                Quat q2 = QuatLit(0.0f, -0.7071f, 0.0f, 0.7071f);  // Inverse of q1
+                Quat res = QuatMult(q2, q1);
+                Quat expected = QuatLit(0.0f, 0.0f, 0.0f, 1.0f);  // identity
+                breakpoint();
+                TAssert(QuatEq(res, expected), "QuatMult qq^-1 = Identity");
+            }
+            {
+                Quat q1 = QuatLit(0.3f, 0.5f, 0.1f, 0.8f);
+                Quat q2 = QuatLit(0.4f, -0.2f, 0.7f, 0.5f);
+                Quat res = QuatMult(q2, q1);
+                Quat expected = QuatLit(0.84f, -0.08f, 0.35f, 0.31f);
+                breakpoint();
+                TAssert(QuatEq(res, expected), "QuatMult non trivial");
             }
         }
     }
