@@ -15,7 +15,6 @@ Engine Features Desired for Gameplay Prototyping
 
 TODO FROGGER
 * feature
-    * Implement Quaternions + interpolation for rotating the frog.
     * sounds
     * animations
     * exhaust smoke particle effects on the cars
