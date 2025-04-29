@@ -21,7 +21,6 @@ TODO FROGGER
     * exhaust smoke particle effects on the cars
 * bug
     * draw order issue. once frog clears a goal, it will appear under logs after respawn. I should implement z sorting. But when to know how to do this in the renderer?
-    * Rotating an entity causes issues with AABB2D??
 
 TODO
 * Bugs

@@ -2068,13 +2068,15 @@ typedef struct Polyhedron {
 
 // Important to pass decomposed transformation matrix (scale, rot, translate) because some polyhedron
 // like world axis-aligned shapes do not rotate for instance.
-static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 s, Mat4 r, Mat4 t) {
+// TODO: Consider making an interface where I get the correct polyhedron transformation matrix as a separate
+// function (maybe take an entity as an arg) and then I can just take a single matrix here
+static Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
     switch (shape.type) {
         case PH_NONE: {
             break;
         }
         case PH_CIRCLE: {
-            Mat4 m = Mat4Multiply(t, s);
+            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
 
             // This might be a bit jank. but I transform the center with translation and then
             // transform the radius vector (no translation) and take the length.
@@ -2086,7 +2088,7 @@ static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 s, Mat4 r, Mat4 t) 
             break;
         }
         case PH_AABB2D: {
-            Mat4 m = Mat4Multiply(t, s);
+            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
 
             // This might be a bit jank. but I transform the center with translation and then
             // transform the radius vector (no translation) and take the length.
@@ -2099,7 +2101,7 @@ static Polyhedron PolyhedronTransform(Polyhedron shape, Mat4 s, Mat4 r, Mat4 t) 
             break;
         }
         case PH_AABB: {
-            Mat4 m = Mat4Multiply(t, s);
+            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
 
             shape.aabb.c = Vec3WTransform(shape.aabb.c, m);
             shape.aabb.r = Vec3Transform(shape.aabb.r, m);
@@ -3236,8 +3238,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                     continue;
                                 }
 
-                                Polyhedron shapea = PolyhedronTransform(ea->shape, Mat4ScaleV(ea->scale), ea->orient,
-                                                                        Mat4TranslateV(ea->pos));
+                                Polyhedron shapea = PolyhedronTransform(ea->shape, ea->scale, ea->orient, ea->pos);
                                 for (u32 j = i + 1; j < esize; ++j) {
                                     Entity* eb = GetEntity(j);
                                     if (!TestFlag(eb->flags, EFLAG_ACTIVE) || !TestFlag(eb->flags, EFLAG_COLLIDER)) {
@@ -3248,8 +3249,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                         continue;
                                     }
 
-                                    Polyhedron shapeb = PolyhedronTransform(eb->shape, Mat4ScaleV(eb->scale),
-                                                                            eb->orient, Mat4TranslateV(eb->pos));
+                                    Polyhedron shapeb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
 
                                     CollisionInfo collision = {0};
                                     bool collides = TestPolyhedronVsPolyhedron(&shapea, &shapeb, &collision.normal,
@@ -3451,8 +3451,7 @@ static void SceneTickFrogger(GameState* gstate) {
 
                     if (gstate->debug) {
                         BeginWireframe();
-                        Polyhedron shape =
-                            PolyhedronTransform(e->shape, Mat4ScaleV(e->scale), e->orient, Mat4TranslateV(e->pos));
+                        Polyhedron shape = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
                         DrawPolyhedron(&shape, LYELLOW);
                         EndWireframe();
                     }
