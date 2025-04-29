@@ -545,6 +545,7 @@ typedef struct {
 
 // r in radians.
 LCORE Quat QuatFromAxisAngle(Vec3 n, f32 r) {
+    n = Vec3Normalize(n);
     f32 hr = 0.5f * r;
     f32 sinhr = f32sin(hr);
     return QuatLit(sinhr * n.x, sinhr * n.y, sinhr * n.z, f32cos(hr));
