@@ -541,7 +541,7 @@ typedef struct {
 } Quat;
 
 #define QuatLit(a, b, c, d) ((Quat){.x = (a), .y = (b), .z = (c), .w = (d)})
-#define QuatZero() (QuatLit(0.0f, 0.0f, 0.0f, 1.0f))
+#define QuatIdentity() (QuatLit(0.0f, 0.0f, 0.0f, 1.0f))
 
 // r in radians.
 LCORE Quat QuatFromAxisAngle(Vec3 n, f32 r) {
@@ -3135,22 +3135,21 @@ static void SceneTickFrogger(GameState* gstate) {
                                              IsKeyPressed(KEY_RIGHT);
                                 if (!e->leaping && moved) {
                                     Vec3 move = Vec3Zero();
+                                    Quat rot = QuatIdentity();
                                     if (IsKeyPressed(KEY_UP)) {
                                         move.y = 1;
                                     } else if (IsKeyPressed(KEY_DOWN)) {
                                         move.y = -1;
+                                        rot = QuatFromAxisAngle(Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(180.0f));
                                     } else if (IsKeyPressed(KEY_LEFT)) {
                                         move.x = -1;
+                                        rot = QuatFromAxisAngle(Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(90.0f));
                                     } else if (IsKeyPressed(KEY_RIGHT)) {
                                         move.x = 1;
+                                        rot = QuatFromAxisAngle(Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(-90.0f));
                                     }
 
-                                    // Has problems. doesn't consider if directions are opposite in which case
-                                    // the dot product will be 0
-                                    // Vec3 wishdir = Vec3Normalize(move);
-                                    // Vec3 dir = Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0), e->orient);
-                                    // f32 angle = Vec3Angle(dir, wishdir);
-                                    // e->orient = Mat4Multiply(Mat4RotateZ(angle), e->orient);
+                                    e->orient = Quat2Mat4(rot);
 
                                     move.x *= GRID_WIDTH;
                                     move.y *= GRID_HEIGHT;
