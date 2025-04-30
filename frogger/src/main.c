@@ -983,6 +983,11 @@ static LShader GetShader() {
         "void main()\n"
         "{\n"
         "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+        "   if (txColor.a < 0.01) {\n"
+        "       discard;\n"
+        "   }\n"
         // For blending to work here properly, its important that either texture is specified or texture
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
@@ -3345,7 +3350,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     if (spawn_area_is_clear) {
                         // Player init.
                         Entity* e = AllocateEntity();
-                        e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 0.0f));
+                        e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 1.0f));
                         GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
                         e->shape.type = PH_AABB2D;
                         Vec2 c = Vec2Lit(0.0f, 0.0f);
