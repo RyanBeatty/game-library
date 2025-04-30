@@ -2701,6 +2701,7 @@ typedef enum {
 
 static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
 static const Rect FROG = {.c = {.x = 0.0f * GRID_WIDTH, 0.0f * GRID_HEIGHT}, .r = GRIDR};
+static const Rect LEAPING = {.c = {.x = 1.0f * GRID_WIDTH, 0.0f * GRID_HEIGHT}, .r = GRIDR};
 static const Rect ROAD = {.c = {.x = 0.0f * GRID_WIDTH, .y = 4.0f * GRID_HEIGHT}, .r = GRIDR};
 static const Rect GRASS = {.c = {.x = 0.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT}, .r = GRIDR};
 static const Rect WATER = {.c = {.x = 0.0f * GRID_WIDTH, .y = 5.0f * GRID_HEIGHT}, .r = GRIDR};
@@ -3176,6 +3177,8 @@ static void SceneTickFrogger(GameState* gstate) {
                                     e->graphics.posa = e->ppos;
                                     e->graphics.posb = e->pos;
 
+                                    GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LEAPING, 0.0f, 1.0f);
+
                                     if (move.y != 0.0f) {
                                         // If we are moving in Y direction, reset platform id. We DONT do this for
                                         // movement in X direction to prevent hopping from one platform to another
@@ -3188,6 +3191,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                     e->leaping += dt;
                                     if (e->leaping >= LEAPING_DURATION_TIME) {
                                         e->leaping = 0;
+                                        GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
                                     } else {
                                         e->graphics.posdt = e->leaping / LEAPING_DURATION_TIME;
                                     }
