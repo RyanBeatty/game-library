@@ -19,6 +19,7 @@ static f32 TOL = 0.001;
 #define f32min fminf
 #define f32max fmaxf
 #define f32sqrt sqrtf
+#define f32mod fmodf
 #define fhalf(x) ((x) * 0.5f)
 #define f32round(a) (roundf((a)))
 #define f32sin sin
@@ -727,6 +728,17 @@ typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_FROG, TX_COUNT } Textur
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
     return tcache->textures[label];
+}
+
+static LTexture GetTextureById(TextureId txid) {
+    LTexture tx = GetTexture(TX_DEFAULT);
+    for (u32 i = 0; i < TCACHE.txlen; ++i) {
+        if (TCACHE.textures[i].id == txid) {
+            tx = TCACHE.textures[i];
+            break;
+        }
+    }
+    return tx;
 }
 
 static void TexturesInit() {
@@ -2333,6 +2345,18 @@ typedef struct {
     Vec2 uvscale;
     Vec2 uvoffset;
 
+    // Animation related fields. Below vec2s should be integer. Maybe I'm just being paranoid about float
+    // precision issues.
+    Vec2 c;  // bottom left of rect in texture space
+    Vec2 r;  // full width and height of rect in texture space
+    // Vec2 step;  // How far along each axis to move to the next frame.
+    u32 nframes;
+    f32 frames_dt;    // Amount of time we've currently gone through the animation.
+    f32 frames_time;  // total time for one loop of the animation.
+    // u32 frame;
+    // f32 frame_dt;
+    // f32 frame_time;  // How long the animation is supposed to take.
+
     Vec4 color;
 } GraphicsInfo;
 
@@ -2345,6 +2369,12 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
     graphics->color = LCLEAR;
+
+    graphics->c = Vec2Zero();
+    graphics->r = Vec2Lit(1.0f, 1.0f);
+    // graphics->nframes = 1;
+    graphics->frames_dt = 0.0f;
+    graphics->frames_time = 0.0f;
 }
 
 typedef struct {
@@ -2374,6 +2404,27 @@ LCORE void GraphicsInfoSetSpriteRect(GraphicsInfo* graphics, LTexture tx, Rect s
 
     graphics->txid = tx.id;
     // TODO: its possible we want these to be ints?
+    graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
+    graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
+}
+
+LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, Rect src, u32 nframes, f32 frames_time,
+                                          f32 orient, f32 scale) {
+    graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
+    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+
+    graphics->mid = GetMesh(M_QUAD);
+
+    graphics->txid = tx.id;
+    graphics->c = src.c;
+    graphics->r = src.r;
+    graphics->nframes = nframes;
+    graphics->frames_dt = 0.0f;
+    graphics->frames_time = frames_time;
+
+    // TODO: its possible we want these to be ints?
+    // I need to set uvscale, since that does not change over the animation. But possible don't need to set uvoffset
+    // since that can be calculated from the animation frame time.
     graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
     graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
 }
@@ -2929,7 +2980,9 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->submerged_time = dts[i][1];
                     e->surfaced = true;
 
-                    GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE3, 0.0f, 1.0f);
+                    // GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE3, 0.0f, 1.0f);
+                    GraphicsInfoSetSpriteAnimation(&e->graphics, GetTexture(TX_FROG), TURTLE3, 3, 1.5f, 0.0f, 1.0f);
+
                     e->shape.type = PH_AABB2D;
                     // Make the collision box a bit smaller than a cell so that we don't hit things that are
                     // a square to the side of us.
@@ -3384,13 +3437,31 @@ static void SceneTickFrogger(GameState* gstate) {
                     continue;
                 }
 
+                GraphicsInfo* graphics = &e->graphics;
+
                 if (e->leaping > 0) {
-                    e->graphics.pos =
-                        Vec3Lerp(e->graphics.posa, e->graphics.posb, f32clamp(e->graphics.posdt, 0.0f, 1.0f));
+                    graphics->pos = Vec3Lerp(graphics->posa, graphics->posb, f32clamp(graphics->posdt, 0.0f, 1.0f));
                 } else {
-                    e->graphics.pos = e->pos;
+                    graphics->pos = e->pos;
                 }
-                e->graphics.orient = e->orient;
+
+                if (graphics->nframes != 0) {
+                    f32 time_per_frame = graphics->frames_time / ((f32)graphics->nframes);
+                    u32 frame = graphics->frames_dt / time_per_frame;
+                    Assert(frame < graphics->nframes);
+
+                    // Step along x axis.
+                    Vec2 c = graphics->c;
+                    c.x += graphics->r.x * frame;
+
+                    LTexture tx = GetTextureById(graphics->txid);
+                    graphics->uvoffset.x = c.x / tx.width;
+                    graphics->uvoffset.y = c.y / tx.height;
+
+                    // Need to update after or else we'll never show first frame.
+                    graphics->frames_dt = f32mod(graphics->frames_dt + dt, graphics->frames_time);
+                }
+                graphics->orient = e->orient;
             }
 
             // Draw background.
@@ -4257,7 +4328,6 @@ static void TestMath() {
                 Quat q2 = QuatLit(0.0f, -0.7071f, 0.0f, 0.7071f);  // Inverse of q1
                 Quat res = QuatMult(q2, q1);
                 Quat expected = QuatLit(0.0f, 0.0f, 0.0f, 1.0f);  // identity
-                breakpoint();
                 TAssert(QuatEq(res, expected), "QuatMult qq^-1 = Identity");
             }
             {
@@ -4265,7 +4335,6 @@ static void TestMath() {
                 Quat q2 = QuatLit(0.4f, -0.2f, 0.7f, 0.5f);
                 Quat res = QuatMult(q2, q1);
                 Quat expected = QuatLit(0.84f, -0.08f, 0.35f, 0.31f);
-                breakpoint();
                 TAssert(QuatEq(res, expected), "QuatMult non trivial");
             }
         }
