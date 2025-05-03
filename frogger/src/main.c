@@ -3797,7 +3797,7 @@ static void GameStateInit(GameState* gstate) {
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
-    DisableCursor();
+    // DisableCursor();
 
     InitAudio();
     ParticleSystemInit();
