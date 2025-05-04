@@ -15,10 +15,11 @@ Engine Features Desired for Gameplay Prototyping
 
 TODO FROGGER
 * feature
-    * animations
+    * Tune collision areas.
     * sounds
     * exhaust smoke particle effects on the cars
 * bug
+    * Have a visual glitch. slight texture bleeding on Car b (blue car) where left side of red truck bleeds in on some frames. Possibly need to consider doing a half texel offset, but that causes some jiterring when moving at low speeds. Maybe look up pixel perfect rendering? or fat pixel shaders?
     * (ADDRESSED WITH POTENTIAL SOLUTION FOR NOW) draw order issue. once frog clears a goal, it will appear under logs after respawn. I should implement z sorting. But when to know how to do this in the renderer?
 
 TODO
