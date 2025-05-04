@@ -698,7 +698,8 @@ static LTexture UploadTexture(const char* filename) {
     glBindTexture(GL_TEXTURE_2D, tx.id);
 
     glTexImage2D(GL_TEXTURE_2D, 0, format, tx.width, tx.height, 0, format, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    // I don't think I want to mipmap since that can apparently cause texture bleeding when atlasing in 2d.
+    // glGenerateMipmap(GL_TEXTURE_2D);
 
     // TODO: Should I always be using GL_CLAMP_TO_EDGE?
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
