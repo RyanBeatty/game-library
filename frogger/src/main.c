@@ -3028,7 +3028,6 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->surfaced_time = dt[i][0];
                     e->submerged_time = dt[i][1];
 
-                    // GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE2, 0.0f, 1.0f);
                     GraphicsInfoSetSpriteAnimation(&e->graphics, GetTexture(TX_FROG), TURTLE2,
                                                    Vec2Lit(TURTLE3.r.x, 0.0f), 3, 1.5f, 0.0f, 1.0f);
 
