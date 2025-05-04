@@ -2348,9 +2348,9 @@ typedef struct {
 
     // Animation related fields. Below vec2s should be integer. Maybe I'm just being paranoid about float
     // precision issues.
-    Vec2 c;  // bottom left of rect in texture space
-    Vec2 r;  // full width and height of rect in texture space
-    // Vec2 step;  // How far along each axis to move to the next frame.
+    Vec2 c;     // bottom left of rect in texture space
+    Vec2 r;     // full width and height of rect in texture space
+    Vec2 step;  // How far along each axis to move to the next frame.
     u32 nframes;
     f32 frames_dt;    // Amount of time we've currently gone through the animation.
     f32 frames_time;  // total time for one loop of the animation.
@@ -2373,6 +2373,7 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 
     graphics->c = Vec2Zero();
     graphics->r = Vec2Lit(1.0f, 1.0f);
+    graphics->step = Vec2Zero();
     // graphics->nframes = 1;
     graphics->frames_dt = 0.0f;
     graphics->frames_time = 0.0f;
@@ -2409,8 +2410,8 @@ LCORE void GraphicsInfoSetSpriteRect(GraphicsInfo* graphics, LTexture tx, Rect s
     graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
 }
 
-LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, Rect src, u32 nframes, f32 frames_time,
-                                          f32 orient, f32 scale) {
+LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, Rect src, Vec2 step, u32 nframes,
+                                          f32 frames_time, f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
@@ -2419,6 +2420,7 @@ LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, R
     graphics->txid = tx.id;
     graphics->c = src.c;
     graphics->r = src.r;
+    graphics->step = step;
     graphics->nframes = nframes;
     graphics->frames_dt = 0.0f;
     graphics->frames_time = frames_time;
@@ -2982,7 +2984,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->surfaced = true;
 
                     // GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE3, 0.0f, 1.0f);
-                    GraphicsInfoSetSpriteAnimation(&e->graphics, GetTexture(TX_FROG), TURTLE3, 3, 1.5f, 0.0f, 1.0f);
+                    GraphicsInfoSetSpriteAnimation(&e->graphics, GetTexture(TX_FROG), TURTLE3,
+                                                   Vec2Lit(TURTLE3.r.x, 0.0f), 3, 1.5f, 0.0f, 1.0f);
 
                     e->shape.type = PH_AABB2D;
                     // Make the collision box a bit smaller than a cell so that we don't hit things that are
@@ -3451,9 +3454,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     u32 frame = graphics->frames_dt / time_per_frame;
                     Assert(frame < graphics->nframes);
 
-                    // Step along x axis.
-                    Vec2 c = graphics->c;
-                    c.x += graphics->r.x * frame;
+                    // Step along the animation frames.
+                    Vec2 c = Vec2Add(graphics->c, Vec2Scale(graphics->step, frame));
 
                     LTexture tx = GetTextureById(graphics->txid);
                     graphics->uvoffset.x = c.x / tx.width;
