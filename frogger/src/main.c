@@ -724,7 +724,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_FROG, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_FROG, TX_FROG_SOLO, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -780,6 +780,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_FROG] = UploadTexture("assets/textures/frog.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_FROG_SOLO] = UploadTexture("assets/textures/frog-solo.png");
         ++tcache->txlen;
     }
 }
@@ -3414,13 +3420,11 @@ static void SceneTickFrogger(GameState* gstate) {
                         // Player init.
                         Entity* e = AllocateEntity();
                         e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 1.0f));
-                        GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
+                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG_SOLO), Vec2Zero(), GRIDR, 0.0f, 1.0f);
+                        // GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
+
                         e->shape.type = PH_AABB2D;
-                        Vec2 c = Vec2Lit(0.0f, 0.0f);
-                        Vec2 r = GRIDR;
-                        r.x -= 4.0f;
-                        r.y -= 4.0f;
-                        e->shape.aabb2d = (AABB2D){c, Vec2Scale(r, 0.5f)};
+                        e->shape.aabb2d = (AABB2D){Vec2Lit(0.0f, 0.0f), Vec2Scale(FROG.r, 0.5f)};
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
                         FlagOn(e->flags, EFLAG_COLLIDER);
                         STATE = SS_SPAWNED;
@@ -3524,8 +3528,11 @@ static void SceneTickFrogger(GameState* gstate) {
                     continue;
                 }
 
+                bool foo_debug = TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED);
+
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
                     DrawCmd* cmd = AddCmd();
+
                     cmd->modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                     cmd->color = e->graphics.color;
                     cmd->uvscale = e->graphics.uvscale;
@@ -3534,9 +3541,19 @@ static void SceneTickFrogger(GameState* gstate) {
 
                     cmd->meshid = e->graphics.mid;
 
+                    if (foo_debug) {
+                        breakpoint();
+                        TraceLog(LOG_INFO, "player pos %f %f %f", e->graphics.pos.x, e->graphics.pos.y,
+                                 e->graphics.pos.z);
+                    }
+
                     if (gstate->debug) {
                         BeginWireframe();
                         Polyhedron shape = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
+                        if (foo_debug) {
+                            TraceLog(LOG_INFO, "shape pos %f %f %f", shape.aabb2d.c.x, shape.aabb2d.c.y,
+                                     shape.aabb2d.c);
+                        }
                         DrawPolyhedron(&shape, LYELLOW);
                         EndWireframe();
                     }
@@ -3798,7 +3815,8 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 224.0f;
     gstate->renderh = 256.0f;
 
-    InitWindow(3 * gstate->renderw, 3 * gstate->renderh, "Game");
+    u32 scale = 5;
+    InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
