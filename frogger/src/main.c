@@ -2390,6 +2390,12 @@ typedef struct {
     Vec2 r;  // width + height.
 } Rect;
 
+typedef struct {
+    Rect start;  // Start rect of the animation.
+    Vec2 step;
+    u32 nframes;
+} AnimationRect;
+
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
 LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
@@ -2436,6 +2442,11 @@ LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, R
     // since that can be calculated from the animation frame time.
     graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
     graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
+}
+
+LCORE void GraphicsInfoSetSpriteAnimationRect(GraphicsInfo* graphics, LTexture tx, AnimationRect rect, f32 frames_time,
+                                              f32 orient, f32 scale) {
+    GraphicsInfoSetSpriteAnimation(graphics, tx, rect.start, rect.step, rect.nframes, frames_time, orient, scale);
 }
 
 LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
@@ -2756,6 +2767,7 @@ typedef enum {
     SS_SPAWNED,
     SS_PLAYING,
     SS_GAMEOVER,
+    SS_DYING,
     SS_COUNT,
 } SceneState;
 
@@ -2782,6 +2794,17 @@ static const Rect CARC = {.c = {.x = 4.0f * GRID_WIDTH, .y = 1.0f * GRID_HEIGHT}
 static const Rect TRUCKA = {.c = {.x = 3.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGHT}, .r = GRIDR};
 static const Rect TRUCKB = {.c = {.x = 2.0f * GRID_WIDTH, .y = 0.0f * GRID_HEIGHT},
                             .r = {.x = 2.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
+
+static const AnimationRect DEATH_CAR_ANIMATION = {
+    .start =
+        {
+            .c = {.x = 5.0f * GRID_WIDTH, 0.0f * GRID_HEIGHT},
+            .r = GRIDR,
+        },
+    .step = {.x = GRIDR.x, .y = 0.0f},
+    .nframes = 3,
+};
+
 static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
     static SceneState STATE = SS_RESPAWN;
@@ -3204,13 +3227,9 @@ static void SceneTickFrogger(GameState* gstate) {
                                 if (LIVES > 0) {
                                     --LIVES;
                                 }
-                                SoftDeactivateEntity(e->id);
-                                if (LIVES == 0) {
-                                    STATE = SS_GAMEOVER;
-                                    GAMEOVER_DT = dt;
-                                } else {
-                                    STATE = SS_RESPAWN;
-                                }
+                                STATE = SS_DYING;
+                                GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG),
+                                                                   DEATH_CAR_ANIMATION, 0.8f, 0.0f, 1.0f);
                             } else {
                                 bool moved = IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_LEFT) ||
                                              IsKeyPressed(KEY_RIGHT);
@@ -3435,6 +3454,14 @@ static void SceneTickFrogger(GameState* gstate) {
                     if (GAMEOVER_DT >= GAMEOVER_TIME) {
                         STATE = SS_RESPAWN;
                     }
+                } else if (STATE == SS_DYING) {
+                    // SoftDeactivateEntity(e->id);
+                    // if (LIVES == 0) {
+                    //     STATE = SS_GAMEOVER;
+                    //     GAMEOVER_DT = dt;
+                    // } else {
+                    //     STATE = SS_RESPAWN;
+                    // }
                 } else {
                     Assert(false);
                 }
