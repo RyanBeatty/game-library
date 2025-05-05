@@ -2516,6 +2516,7 @@ typedef struct Entity {
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
     bool on_water;
+    EntityId hazardid;
     EntityId platformid;
     EntityId prev_platformid;
     f32 leaping;
@@ -2795,10 +2796,20 @@ static const Rect TRUCKA = {.c = {.x = 3.0f * GRID_WIDTH, .y = 2.0f * GRID_HEIGH
 static const Rect TRUCKB = {.c = {.x = 2.0f * GRID_WIDTH, .y = 0.0f * GRID_HEIGHT},
                             .r = {.x = 2.0f * GRID_WIDTH, .y = GRID_HEIGHT}};
 
-static const AnimationRect DEATH_CAR_ANIMATION = {
+static const AnimationRect CAR_DEATH_ANIMATION = {
     .start =
         {
             .c = {.x = 5.0f * GRID_WIDTH, 0.0f * GRID_HEIGHT},
+            .r = GRIDR,
+        },
+    .step = {.x = GRIDR.x, .y = 0.0f},
+    .nframes = 4,
+};
+
+static const AnimationRect WATER_DEATH_ANIMATION = {
+    .start =
+        {
+            .c = {.x = 5.0f * GRID_WIDTH, 1.0f * GRID_HEIGHT},
             .r = GRIDR,
         },
     .step = {.x = GRIDR.x, .y = 0.0f},
@@ -3223,13 +3234,13 @@ static void SceneTickFrogger(GameState* gstate) {
                         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                             static const f32 LEAPING_DURATION_TIME = 8.0f / 60.0f;
 
-                            if (e->on_water && e->platformid == NULLID) {
+                            if (e->hazardid != NULLID && e->platformid == NULLID) {
                                 if (LIVES > 0) {
                                     --LIVES;
                                 }
                                 STATE = SS_DYING;
                                 GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG),
-                                                                   DEATH_CAR_ANIMATION, 1.2f, 0.0f, 1.0f);
+                                                                   CAR_DEATH_ANIMATION, 1.2f, 0.0f, 1.0f);
                             } else {
                                 bool moved = IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_LEFT) ||
                                              IsKeyPressed(KEY_RIGHT);
@@ -3283,7 +3294,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                 }
                             }
                             // Need to reevaluate each tick.
-                            e->on_water = false;
+                            e->hazardid = NULLID;
                             e->prev_platformid = e->platformid;
                             e->platformid = NULLID;
                         }
@@ -3396,7 +3407,9 @@ static void SceneTickFrogger(GameState* gstate) {
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
                                         TestFlag(eb->flags, EFLAG_HAZARD)) {
                                         Entity* player = ea;
-                                        player->on_water = true;
+                                        Entity* hazard = eb;
+                                        // player->on_water = true;
+                                        player->hazardid = hazard->id;
                                     }
 
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
@@ -3408,7 +3421,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                         // have tried hopping across water laterally which is not allowed.
                                         if (player->prev_platformid != NULLID &&
                                             player->prev_platformid != platform->id) {
-                                            player->on_water = true;
+                                            // player->on_water = true;
                                             player->platformid = NULLID;
                                         } else {
                                             player->platformid = platform->id;
