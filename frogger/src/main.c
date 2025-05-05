@@ -2802,7 +2802,7 @@ static const AnimationRect DEATH_CAR_ANIMATION = {
             .r = GRIDR,
         },
     .step = {.x = GRIDR.x, .y = 0.0f},
-    .nframes = 3,
+    .nframes = 4,
 };
 
 static void SceneTickFrogger(GameState* gstate) {
@@ -3229,7 +3229,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                 }
                                 STATE = SS_DYING;
                                 GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG),
-                                                                   DEATH_CAR_ANIMATION, 0.8f, 0.0f, 1.0f);
+                                                                   DEATH_CAR_ANIMATION, 1.2f, 0.0f, 1.0f);
                             } else {
                                 bool moved = IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_LEFT) ||
                                              IsKeyPressed(KEY_RIGHT);
@@ -3455,13 +3455,27 @@ static void SceneTickFrogger(GameState* gstate) {
                         STATE = SS_RESPAWN;
                     }
                 } else if (STATE == SS_DYING) {
-                    // SoftDeactivateEntity(e->id);
-                    // if (LIVES == 0) {
-                    //     STATE = SS_GAMEOVER;
-                    //     GAMEOVER_DT = dt;
-                    // } else {
-                    //     STATE = SS_RESPAWN;
-                    // }
+                    Entity* player = NULL;
+                    for (u32 i = 0; i < esize; ++i) {
+                        Entity* e = GetEntity(i);
+                        if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                            player = e;
+                            break;
+                        }
+                    }
+                    Assert(player != NULL);
+
+                    // If death animation complete this frame, then soft delete and transition to respawn or game
+                    // over for next frame.
+                    if (player->graphics.frames_dt + dt >= player->graphics.frames_time) {
+                        SoftDeactivateEntity(player->id);
+                        if (LIVES == 0) {
+                            STATE = SS_GAMEOVER;
+                            GAMEOVER_DT = dt;
+                        } else {
+                            STATE = SS_RESPAWN;
+                        }
+                    }
                 } else {
                     Assert(false);
                 }
