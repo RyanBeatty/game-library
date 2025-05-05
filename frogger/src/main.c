@@ -2515,7 +2515,6 @@ typedef struct Entity {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    bool on_water;
     EntityId hazardid;
     EntityId platformid;
     EntityId prev_platformid;
@@ -3299,7 +3298,6 @@ static void SceneTickFrogger(GameState* gstate) {
                                 }
                             }
                             // Need to reevaluate each tick.
-                            e->on_water = false;
                             e->hazardid = NULLID;
                             e->prev_platformid = e->platformid;
                             e->platformid = NULLID;
@@ -3414,7 +3412,6 @@ static void SceneTickFrogger(GameState* gstate) {
                                         TestFlag(eb->flags, EFLAG_HAZARD)) {
                                         Entity* player = ea;
                                         Entity* hazard = eb;
-                                        // player->on_water = true;
                                         player->hazardid = hazard->id;
                                     }
 
@@ -3427,7 +3424,6 @@ static void SceneTickFrogger(GameState* gstate) {
                                         // have tried hopping across water laterally which is not allowed.
                                         if (player->prev_platformid != NULLID &&
                                             player->prev_platformid != platform->id) {
-                                            // player->on_water = true;
                                             player->platformid = NULLID;
                                         } else {
                                             player->platformid = platform->id;
