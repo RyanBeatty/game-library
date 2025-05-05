@@ -3528,8 +3528,6 @@ static void SceneTickFrogger(GameState* gstate) {
                     continue;
                 }
 
-                bool foo_debug = TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED);
-
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
                     DrawCmd* cmd = AddCmd();
 
@@ -3541,19 +3539,9 @@ static void SceneTickFrogger(GameState* gstate) {
 
                     cmd->meshid = e->graphics.mid;
 
-                    if (foo_debug) {
-                        breakpoint();
-                        TraceLog(LOG_INFO, "player pos %f %f %f", e->graphics.pos.x, e->graphics.pos.y,
-                                 e->graphics.pos.z);
-                    }
-
                     if (gstate->debug) {
                         BeginWireframe();
                         Polyhedron shape = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
-                        if (foo_debug) {
-                            TraceLog(LOG_INFO, "shape pos %f %f %f", shape.aabb2d.c.x, shape.aabb2d.c.y,
-                                     shape.aabb2d.c);
-                        }
                         DrawPolyhedron(&shape, LYELLOW);
                         EndWireframe();
                     }
