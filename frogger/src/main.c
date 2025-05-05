@@ -3239,8 +3239,13 @@ static void SceneTickFrogger(GameState* gstate) {
                                     --LIVES;
                                 }
                                 STATE = SS_DYING;
-                                GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG),
-                                                                   CAR_DEATH_ANIMATION, 1.2f, 0.0f, 1.0f);
+
+                                Entity* hazard = GetEntity(e->hazardid);
+                                Assert(hazard != NULL);
+                                bool is_water = Vec3Eq(hazard->v, Vec3Zero());
+                                AnimationRect r = is_water ? WATER_DEATH_ANIMATION : CAR_DEATH_ANIMATION;
+                                GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG), r, 1.2f, 0.0f,
+                                                                   1.0f);
                             } else {
                                 bool moved = IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_LEFT) ||
                                              IsKeyPressed(KEY_RIGHT);
@@ -3294,6 +3299,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                 }
                             }
                             // Need to reevaluate each tick.
+                            e->on_water = false;
                             e->hazardid = NULLID;
                             e->prev_platformid = e->platformid;
                             e->platformid = NULLID;
