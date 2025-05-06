@@ -3454,11 +3454,11 @@ static void SceneTickFrogger(GameState* gstate) {
                         // Player init.
                         Entity* e = AllocateEntity();
                         e->pos = Grid2World(Vec3Lit(4.0f, 0.0f, 1.0f));
-                        GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG_SOLO), Vec2Zero(), GRIDR, 0.0f, 1.0f);
-                        // GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
+                        // GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG_SOLO), Vec2Zero(), GRIDR, 0.0f, 1.0f);
+                        GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
 
                         e->shape.type = PH_AABB2D;
-                        e->shape.aabb2d = (AABB2D){Vec2Lit(0.0f, 0.0f), Vec2Scale(FROG.r, 0.5f)};
+                        e->shape.aabb2d = (AABB2D){Vec2Lit(0.0f, 1.0f), Vec2Lit(4.0f, 4.0f)};
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
                         FlagOn(e->flags, EFLAG_COLLIDER);
                         STATE = SS_SPAWNED;
@@ -3596,15 +3596,46 @@ static void SceneTickFrogger(GameState* gstate) {
                     cmd->meshid = e->graphics.mid;
 
                     if (gstate->debug) {
-                        BeginWireframe();
-                        Polyhedron shape = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
-                        DrawPolyhedron(&shape, LYELLOW);
-                        EndWireframe();
+                        // TODO: Wireframe rasterization can lead to looking like the quad is offset. For now
+                        // Draw filled quads for debugging collisions.
+                        // BeginWireframe();
+                        Vec3 pos = e->pos;
+                        pos.z += 1;  // give it something high so that it will draw over the entity.
+                        Polyhedron shape = PolyhedronTransform(e->shape, e->scale, e->orient, pos);
+                        Vec4 color = LYELLOW;
+                        // color.a = 0.5f;
+
+                        DrawPolyhedron(&shape, color);
+                        // EndWireframe();
+
+                        // Vec3 pos = Vec2ToVec3(shape.aabb2d.c);
+                        // pos.z = 2.0f;
+                        // DrawQuad(pos, 8.0f, 8.0f, Mat4Identity(), LBLUE);
+                        // if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        //     breakpoint();
+                        // }
+                        // BeginWireframe();
+                        // DrawQuad(pos, 8.0f, 8.0f, Mat4Identity(), LRED);
+
+                        // EndWireframe();
                     }
                 }
             }
         }
     }
+
+    // {
+    //     DrawQuad(Grid2World(Vec3Lit(1, 1, 0)), 16, 16, Mat4Identity(), LRED);
+    //     BeginWireframe();
+    //     DrawQuad(Grid2World(Vec3Lit(1, 1, 0)), 16, 16, Mat4Identity(), LBLUE);
+    //     EndWireframe();
+
+    //     Vec4 color = LBLUE;
+    //     color.a = 0.5f;
+    //     Vec3 pos = Grid2World(Vec3Lit(4.0f, 0.0f, 1.0f));
+    //     pos.y += 1.0f;
+    //     DrawQuad(pos, 8.0f, 8.0f, Mat4Identity(), color);
+    // }
 
     ParticleSystemTick(dt);
 
@@ -3859,7 +3890,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 224.0f;
     gstate->renderh = 256.0f;
 
-    u32 scale = 3;
+    u32 scale = 5;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
