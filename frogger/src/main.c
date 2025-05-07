@@ -2917,8 +2917,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->v = Vec3Lit(-10.0f, 0.0f, 0.0f);
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), CARA, 0.0f, 1.0f);
-
                     PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(2.0f, 2.0f), Vec2Lit(14.0f, 12.0f), CARA.r);
+
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_HAZARD);
                 }
@@ -2933,8 +2933,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->v = Vec3Lit(25.0f, 0.0f, 0.0f);
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TRUCKA, 0.0f, 1.0f);
-
                     PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(2.0f, 2.0f), Vec2Lit(14.0f, 12.0f), TRUCKA.r);
+
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_HAZARD);
                 }
@@ -2947,10 +2947,8 @@ static void SceneTickFrogger(GameState* gstate) {
                 e->v = Vec3Lit(-40.0f, 0.0f, 0.0f);
 
                 GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), CARB, 0.0f, 1.0f);
-                e->shape.type = PH_AABB2D;
-                // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                // a square to the side of us.
-                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(CARB.r, 0.5f * 0.9f)};
+                PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(1.0f, 5.0f), Vec2Lit(14.0f, 6.0f), CARB.r);
+
                 FlagOn(e->flags, EFLAG_COLLIDER);
                 FlagOn(e->flags, EFLAG_HAZARD);
             }
@@ -2963,10 +2961,8 @@ static void SceneTickFrogger(GameState* gstate) {
                 e->orient = Mat4RotateZ(Deg2Rad(180.0f));
 
                 GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), CARC, 0.0f, 1.0f);
-                e->shape.type = PH_AABB2D;
-                // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                // a square to the side of us.
-                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(CARC.r, 0.5f * 0.9f)};
+                PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(2.0f, 2.0f), Vec2Lit(14.0f, 12.0f), CARC.r);
+
                 FlagOn(e->flags, EFLAG_COLLIDER);
                 FlagOn(e->flags, EFLAG_HAZARD);
             }
@@ -2985,10 +2981,7 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->v = Vec3Lit(-10.0f, 0.0f, 0.0f);
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TRUCKB, 0.0f, 1.0f);
-                    e->shape.type = PH_AABB2D;
-                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                    // a square to the side of us.
-                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TRUCKB.r, 0.5f * 0.9f)};
+                    PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(8.0f, 4.0f), Vec2Lit(24.0f, 8.0f), TRUCKB.r);
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_HAZARD);
                 }
