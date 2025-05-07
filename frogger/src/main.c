@@ -2094,8 +2094,9 @@ typedef struct Polyhedron {
 // dims: full width/height of bbox
 // grid_dims: width x height of sprite
 // Useful for setting collision info based on visually drawn box in programs like aseprite.
-// We assume that (0, 0) is the bottom left *corner* (not the center of the bottom left pixel)
-// so to translate from aseprite to code find the offset in pixels to the bottom left corner of collider.
+// We assume that (0, 0) is the bottom left *corner* (not the center of the bottom left pixel).
+// To translate from aseprite, count the number of pixels (where bottom left pixel counts as 1) until the first
+// pixel of the collider, then subtract (-1, -1) to get the lc.
 LCORE void PolyhedronSetAABB2DFromGridRect(Polyhedron* shape, Vec2 lc, Vec2 dims, Vec2 grid_dims) {
     shape->type = PH_AABB2D;
 
@@ -2916,10 +2917,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->v = Vec3Lit(-10.0f, 0.0f, 0.0f);
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), CARA, 0.0f, 1.0f);
-                    e->shape.type = PH_AABB2D;
-                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                    // a square to the side of us.
-                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(CARA.r, 0.5f * 0.9f)};
+
+                    PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(2.0f, 2.0f), Vec2Lit(14.0f, 12.0f), CARA.r);
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_HAZARD);
                 }
