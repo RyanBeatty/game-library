@@ -3037,11 +3037,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     // GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TURTLE3, 0.0f, 1.0f);
                     GraphicsInfoSetSpriteAnimation(&e->graphics, GetTexture(TX_FROG), TURTLE3,
                                                    Vec2Lit(TURTLE3.r.x, 0.0f), 3, 1.5f, 0.0f, 1.0f);
+                    PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(2.0f, 5.0f), Vec2Lit(41.0f, 5.0f), TURTLE3.r);
 
-                    e->shape.type = PH_AABB2D;
-                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                    // a square to the side of us.
-                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TURTLE3.r, 0.5f * 0.9f)};
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_PLATFORM);
                     if (submergable[i]) {
@@ -3081,11 +3078,8 @@ static void SceneTickFrogger(GameState* gstate) {
 
                     GraphicsInfoSetSpriteAnimation(&e->graphics, GetTexture(TX_FROG), TURTLE2,
                                                    Vec2Lit(TURTLE3.r.x, 0.0f), 3, 1.5f, 0.0f, 1.0f);
+                    PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(2.0f, 5.0f), Vec2Lit(26.0f, 5.0f), TURTLE2.r);
 
-                    e->shape.type = PH_AABB2D;
-                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                    // a square to the side of us.
-                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TURTLE2.r, 0.5f * 0.9f)};
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_PLATFORM);
                     if (submergable[i]) {
