@@ -2933,10 +2933,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->v = Vec3Lit(25.0f, 0.0f, 0.0f);
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), TRUCKA, 0.0f, 1.0f);
-                    e->shape.type = PH_AABB2D;
-                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                    // a square to the side of us.
-                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(TRUCKA.r, 0.5f * 0.9f)};
+
+                    PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(2.0f, 2.0f), Vec2Lit(14.0f, 12.0f), TRUCKA.r);
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_HAZARD);
                 }
