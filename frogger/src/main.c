@@ -2971,9 +2971,9 @@ static void SceneTickFrogger(GameState* gstate) {
             {
                 Vec3 pos[] = {
                     Vec3Lit(2.0f, 5.0f, 0.0f),
-                    Vec3Lit(5.0f, 5.0f, 0.0f),
+                    Vec3Lit(4.0f, 5.0f, 0.0f),
                     Vec3Lit(11.0f, 5.0f, 0.0f),
-                    Vec3Lit(14.0f, 5.0f, 0.0f),
+                    Vec3Lit(13.0f, 5.0f, 0.0f),
                 };
                 for (u32 i = 0; i < ArraySizeOf(pos); ++i) {
                     Entity* e = AllocateEntity();
