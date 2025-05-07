@@ -3104,10 +3104,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->v = Vec3Lit(15.0f, 0.0f, 0.0f);
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LOG3, 0.0f, 1.0f);
-                    e->shape.type = PH_AABB2D;
-                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                    // a square to the side of us.
-                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(LOG3.r, 0.5f * 0.9f)};
+                    PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(4.0f, 6.0f), Vec2Lit(37.0f, 5.0f), LOG3.r);
+
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_PLATFORM);
                 }
@@ -3120,10 +3118,8 @@ static void SceneTickFrogger(GameState* gstate) {
                 e->v = Vec3Lit(45.0f, 0.0f, 0.0f);
 
                 GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LOG6, 0.0f, 1.0f);
-                e->shape.type = PH_AABB2D;
-                // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                // a square to the side of us.
-                e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(LOG6.r, 0.5f * 0.9f)};
+                PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(4.0f, 6.0f), Vec2Lit(69.0f, 5.0f), LOG6.r);
+
                 FlagOn(e->flags, EFLAG_COLLIDER);
                 FlagOn(e->flags, EFLAG_PLATFORM);
             }
@@ -3137,10 +3133,8 @@ static void SceneTickFrogger(GameState* gstate) {
                     e->v = Vec3Lit(20.0f, 0.0f, 0.0f);
 
                     GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), LOG4, 0.0f, 1.0f);
-                    e->shape.type = PH_AABB2D;
-                    // Make the collision box a bit smaller than a cell so that we don't hit things that are
-                    // a square to the side of us.
-                    e->shape.aabb2d = (AABB2D){.c = Vec2Zero(), .r = Vec2Scale(LOG4.r, 0.5f * 0.9f)};
+                    PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(4.0f, 6.0f), Vec2Lit(53.0f, 5.0f), LOG4.r);
+
                     FlagOn(e->flags, EFLAG_COLLIDER);
                     FlagOn(e->flags, EFLAG_PLATFORM);
                 }
@@ -3897,7 +3891,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 224.0f;
     gstate->renderh = 256.0f;
 
-    u32 scale = 5;
+    u32 scale = 3;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
