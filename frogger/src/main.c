@@ -2090,6 +2090,28 @@ typedef struct Polyhedron {
     };
 } Polyhedron;
 
+// lc: bottom left corner
+// dims: full width/height of bbox
+// grid_dims: width x height of sprite
+// Useful for setting collision info based on visually drawn box in programs like aseprite.
+// We assume that (0, 0) is the bottom left *corner* (not the center of the bottom left pixel)
+// so to translate from aseprite to code find the offset in pixels to the bottom left corner of collider.
+LCORE void PolyhedronSetAABB2DFromGridRect(Polyhedron* shape, Vec2 lc, Vec2 dims, Vec2 grid_dims) {
+    shape->type = PH_AABB2D;
+
+    // The input params assume that the min and max are given as if the origin is the bottom left
+    // corner of the sprite, but our collision system assumes that the center of the bounding box is relative
+    // to the center of the sprite/entity so we need to offset.
+    Vec2 offset = Vec2Scale(grid_dims, -0.5f);
+
+    // Compute half width/height.
+    Vec2 r = Vec2Scale(dims, 0.5f);
+    Vec2 c = Vec2Add(Vec2Add(lc, r), offset);
+
+    shape->aabb2d.r = r;
+    shape->aabb2d.c = c;
+}
+
 // Important to pass decomposed transformation matrix (scale, rot, translate) because some polyhedron
 // like world axis-aligned shapes do not rotate for instance.
 // TODO: Consider making an interface where I get the correct polyhedron transformation matrix as a separate
@@ -3457,8 +3479,9 @@ static void SceneTickFrogger(GameState* gstate) {
                         // GraphicsInfoSetSprite(&e->graphics, GetTexture(TX_FROG_SOLO), Vec2Zero(), GRIDR, 0.0f, 1.0f);
                         GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
 
-                        e->shape.type = PH_AABB2D;
-                        e->shape.aabb2d = (AABB2D){Vec2Lit(0.0f, 1.0f), Vec2Lit(4.0f, 4.0f)};
+                        PolyhedronSetAABB2DFromGridRect(&e->shape, Vec2Lit(4.0f, 5.0f), Vec2Lit(8.0f, 8.0f), FROG.r);
+                        // e->shape.type = PH_AABB2D;
+                        // e->shape.aabb2d = (AABB2D){Vec2Lit(0.0f, 1.0f), Vec2Lit(4.0f, 4.0f)};
                         FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
                         FlagOn(e->flags, EFLAG_COLLIDER);
                         STATE = SS_SPAWNED;
