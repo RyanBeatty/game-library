@@ -15,7 +15,6 @@ Engine Features Desired for Gameplay Prototyping
 
 TODO FROGGER
 * feature
-    * death animation position corrected.
     * sounds
     * exhaust smoke particle effects on the cars
     * more levels 

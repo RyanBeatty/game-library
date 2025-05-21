@@ -3238,17 +3238,21 @@ static void SceneTickFrogger(GameState* gstate) {
                             static const f32 LEAPING_DURATION_TIME = 8.0f / 60.0f;
 
                             if (e->hazardid != NULLID && e->platformid == NULLID) {
-                                if (LIVES > 0) {
-                                    --LIVES;
-                                }
-                                STATE = SS_DYING;
+                                // We have died but need to wait for the visuals to catch up so that we can play
+                                // the death animation in the right location.
+                                if (!e->leaping) {
+                                    if (LIVES > 0) {
+                                        --LIVES;
+                                    }
+                                    STATE = SS_DYING;
 
-                                Entity* hazard = GetEntity(e->hazardid);
-                                Assert(hazard != NULL);
-                                bool is_water = Vec3Eq(hazard->v, Vec3Zero());
-                                AnimationRect r = is_water ? WATER_DEATH_ANIMATION : CAR_DEATH_ANIMATION;
-                                GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG), r, 1.2f, 0.0f,
-                                                                   1.0f);
+                                    Entity* hazard = GetEntity(e->hazardid);
+                                    Assert(hazard != NULL);
+                                    bool is_water = Vec3Eq(hazard->v, Vec3Zero());
+                                    AnimationRect r = is_water ? WATER_DEATH_ANIMATION : CAR_DEATH_ANIMATION;
+                                    GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG), r, 1.2f, 0.0f,
+                                                                       1.0f);
+                                }
                             } else {
                                 bool moved = IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_LEFT) ||
                                              IsKeyPressed(KEY_RIGHT);
@@ -3289,18 +3293,19 @@ static void SceneTickFrogger(GameState* gstate) {
                                         e->platformid = NULLID;
                                     }
                                 }
-
-                                if (e->leaping) {
-                                    e->leaping += dt;
-                                    if (e->leaping >= LEAPING_DURATION_TIME) {
-                                        e->leaping = 0;
-                                        GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
-                                    } else {
-                                        e->graphics.posdt = e->leaping / LEAPING_DURATION_TIME;
-                                    }
-                                    e->graphics.posb = e->pos;
-                                }
                             }
+
+                            if (e->leaping) {
+                                e->leaping += dt;
+                                if (e->leaping >= LEAPING_DURATION_TIME) {
+                                    e->leaping = 0;
+                                    GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_FROG), FROG, 0.0f, 1.0f);
+                                } else {
+                                    e->graphics.posdt = e->leaping / LEAPING_DURATION_TIME;
+                                }
+                                e->graphics.posb = e->pos;
+                            }
+
                             // Need to reevaluate each tick.
                             e->hazardid = NULLID;
                             e->prev_platformid = e->platformid;
