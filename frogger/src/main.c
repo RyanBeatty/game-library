@@ -2276,6 +2276,8 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
 typedef enum {
     SOUND_NONE = 0,
     SOUND_BEEP,
+    SOUND_JUMP,
+    SOUND_HIT_GOAL,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2287,6 +2289,8 @@ static void LoadSounds() {
     ClearLSounds();
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
+    SOUNDS[SOUND_JUMP] = LoadLSound("assets/sounds/jump.wav");
+    SOUNDS[SOUND_HIT_GOAL] = LoadLSound("assets/sounds/hit_goal.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -3292,6 +3296,10 @@ static void SceneTickFrogger(GameState* gstate) {
                                         // on the same level (e.g. hopping from one group of 3 turtles to another).
                                         e->platformid = NULLID;
                                     }
+
+                                    if (move.x != 0.0f || move.y != 0.0f) {
+                                        PlayLSound(GetSound(SOUND_JUMP), 0);
+                                    }
                                 }
                             }
 
@@ -3415,6 +3423,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                         SoftDeactivateEntity(player->id);
                                         SoftDeactivateEntity(goal->id);
                                         STATE = SS_RESPAWN;
+                                        PlayLSound(GetSound(SOUND_HIT_GOAL), 0);
                                     }
 
                                     if (TestFlag(ea->flags, EFLAG_PLAYER_CONTROLLED) &&
