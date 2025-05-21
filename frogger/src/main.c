@@ -29,6 +29,9 @@ static f32 TOL = 0.001;
 #define f32acos acos
 #define f32atan atan
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
+// Prefer this lerp forumulation as at t=0 we will have exactly start and at t=1 we will have exactly end.
+// The other formulation is subject to floating point precision issues where we might not get exactly
+// end at t=1.
 #define f32lerp(s, e, t) (((1.0f - (t)) * (s)) + ((t) * (e)))
 // #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
 #define f32rand01() ((f32)rand() / (f32)RAND_MAX)
