@@ -2280,6 +2280,7 @@ typedef enum {
     SOUND_HIT_GOAL,
     SOUND_START_LEVEL,
     SOUND_WATER_DEATH,
+    SOUND_CAR_DEATH,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2295,6 +2296,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_HIT_GOAL] = LoadLSound("assets/sounds/hit_goal.wav");
     SOUNDS[SOUND_START_LEVEL] = LoadLSound("assets/sounds/start_level.wav");
     SOUNDS[SOUND_WATER_DEATH] = LoadLSound("assets/sounds/water_death.wav");
+    SOUNDS[SOUND_CAR_DEATH] = LoadLSound("assets/sounds/car_death.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -3260,7 +3262,7 @@ static void SceneTickFrogger(GameState* gstate) {
                                     AnimationRect r = is_water ? WATER_DEATH_ANIMATION : CAR_DEATH_ANIMATION;
                                     GraphicsInfoSetSpriteAnimationRect(&e->graphics, GetTexture(TX_FROG), r, 1.2f, 0.0f,
                                                                        1.0f);
-                                    SoundId sound = GetSound(SOUND_WATER_DEATH);
+                                    SoundId sound = GetSound(is_water ? SOUND_WATER_DEATH : SOUND_CAR_DEATH);
                                     PlayLSound(sound, 0);
                                 }
                             } else {
