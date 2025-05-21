@@ -2278,6 +2278,7 @@ typedef enum {
     SOUND_BEEP,
     SOUND_JUMP,
     SOUND_HIT_GOAL,
+    SOUND_START_LEVEL,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2291,6 +2292,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
     SOUNDS[SOUND_JUMP] = LoadLSound("assets/sounds/jump.wav");
     SOUNDS[SOUND_HIT_GOAL] = LoadLSound("assets/sounds/hit_goal.wav");
+    SOUNDS[SOUND_START_LEVEL] = LoadLSound("assets/sounds/start_level.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -3455,6 +3457,7 @@ static void SceneTickFrogger(GameState* gstate) {
                 } else if (STATE == SS_SPAWNED) {
                     if (IsKeyPressed(KEY_ENTER)) {
                         STATE = SS_PLAYING;
+                        PlayLSound(GetSound(SOUND_START_LEVEL), 0);
                     }
                 } else if (STATE == SS_RESPAWN) {
                     bool spawn_area_is_clear = true;
