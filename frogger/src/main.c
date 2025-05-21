@@ -29,7 +29,8 @@ static f32 TOL = 0.001;
 #define f32acos acos
 #define f32atan atan
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
-#define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
+#define f32lerp(s, e, t) (((1.0f - (t)) * (s)) + ((t) * (e)))
+// #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
 #define f32rand01() ((f32)rand() / (f32)RAND_MAX)
 #define f32randab(a, b) (f32lerp((a), (b), (f32rand01())))
 
