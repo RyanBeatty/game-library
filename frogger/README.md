@@ -14,6 +14,8 @@ Engine Features Desired for Gameplay Prototyping
 
 
 TODO FROGGER
+* next
+    * consider expanding DrawCmd struct with union for handling multiple different types of commands (like clearing background color). This will allow me to set title screen background basically.
 * feature
     * sounds
     * exhaust smoke particle effects on the cars
