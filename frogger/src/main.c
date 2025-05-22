@@ -2864,15 +2864,6 @@ static const AnimationRect WATER_DEATH_ANIMATION = {
 };
 
 static void SceneTickTitleScreen(GameState* gstate) {
-    static LCamera CAMERA = {0};
-
-    f32 dt = gstate->dt;
-
-    // Init logic.
-    if (!gstate->init) {
-        memset(&CAMERA, 0, sizeof(CAMERA));
-    }
-
     if (IsKeyPressed(KEY_ENTER)) {
         gstate->nextsceneid = SCENE_FROGGER;
     }
