@@ -2721,6 +2721,13 @@ static const f32 GRID_DEPTH = 1.0f;
 
 #define MAX_SCENES 10
 
+typedef enum {
+    SCENE_DEFAULT = 0,
+    SCENE_TITLE_SCREEN,
+    SCENE_FROGGER,
+    SCENE_COUNT,
+} SceneId;
+
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
@@ -2744,7 +2751,8 @@ typedef struct GameState {
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*);
     u32 scenefuncssize;
-    u32 sceneid;
+    SceneId sceneid;
+    SceneId nextsceneid;
 
     /////////////////////////////////////////
     // Scene fields
@@ -2760,7 +2768,7 @@ typedef void (*SceneTickFunc)(GameState* gstate);
 // for use in scene switching as opposed to putting all this state into GameState object
 // and passing that around. The globalness of these systems is kind of convenient at the
 // moment.
-static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
+static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
     Assert(sceneid < MAX_SCENES);
 
     EntitySystemInit();
@@ -2776,6 +2784,7 @@ static void GameStateLoadScene(GameState* gstate, u32 sceneid) {
     gstate->nframe = 0;
 
     gstate->sceneid = sceneid;
+    gstate->nextsceneid = gstate->sceneid;
 }
 
 static void DrawEntities(EntityId* entities, u32 size) {
@@ -2853,6 +2862,39 @@ static const AnimationRect WATER_DEATH_ANIMATION = {
     .step = {.x = GRIDR.x, .y = 0.0f},
     .nframes = 4,
 };
+
+static void SceneTickTitleScreen(GameState* gstate) {
+    static LCamera CAMERA = {0};
+
+    f32 dt = gstate->dt;
+
+    // Init logic.
+    if (!gstate->init) {
+        memset(&CAMERA, 0, sizeof(CAMERA));
+    }
+
+    BeginRender();
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    char msg[] = "Press ENTER To Start";
+    u32 size = strlen(msg);
+
+    u32 fontsize = 10.0f;
+    Vec2 dim = MeasureLText(msg, size, fontsize);
+
+    // Center text by shifting center forward by half a text cell size and then shifting backward
+    // by half the text size.
+    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    DrawLText(msg, size, pos, fontsize, LYELLOW);
+
+    EndShaderPass();
+
+    EndRender();
+}
 
 static void SceneTickFrogger(GameState* gstate) {
     static LCamera CAMERA = {0};
@@ -3944,12 +3986,13 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
-        gstate->scenefuncs[idx++] = SceneTickFrogger;
-        gstate->scenefuncs[idx++] = Scene1Tick;
-        Assert(idx < MAX_SCENES);
+        gstate->scenefuncs[SCENE_DEFAULT] = Scene1Tick;
+        gstate->scenefuncs[SCENE_FROGGER] = SceneTickFrogger;
+        gstate->scenefuncs[SCENE_TITLE_SCREEN] = SceneTickTitleScreen;
+        Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, 0);
+    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
 }
 
 static void GameStateTick(GameState* gstate) {
@@ -4008,6 +4051,10 @@ static void GameStateTick(GameState* gstate) {
 
     // Tick scene.
     gstate->scenefuncs[gstate->sceneid](gstate);
+
+    if (gstate->nextsceneid != gstate->sceneid) {
+        GameStateLoadScene(gstate, gstate->nextsceneid);
+    }
 
     gstate->init = true;
     ++gstate->nframe;
