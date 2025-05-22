@@ -2873,6 +2873,10 @@ static void SceneTickTitleScreen(GameState* gstate) {
         memset(&CAMERA, 0, sizeof(CAMERA));
     }
 
+    if (IsKeyPressed(KEY_ENTER)) {
+        gstate->nextsceneid = SCENE_FROGGER;
+    }
+
     BeginRender();
 
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -4049,12 +4053,14 @@ static void GameStateTick(GameState* gstate) {
         }
     }
 
-    // Tick scene.
-    gstate->scenefuncs[gstate->sceneid](gstate);
-
+    // Important this happens before the scene tick as we set init=false here and need to make sure the first
+    // tick of the scene is with init=false.
     if (gstate->nextsceneid != gstate->sceneid) {
         GameStateLoadScene(gstate, gstate->nextsceneid);
     }
+
+    // Tick scene.
+    gstate->scenefuncs[gstate->sceneid](gstate);
 
     gstate->init = true;
     ++gstate->nframe;
