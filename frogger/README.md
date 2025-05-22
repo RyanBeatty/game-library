@@ -20,6 +20,7 @@ TODO FROGGER
     * more levels 
     * title screen
     * game over screen
+    * screen space shader for crunchy retro look
 * bug
     * Have a visual glitch. slight texture bleeding on Car b (blue car) where left side of red truck bleeds in on some frames. Possibly need to consider doing a half texel offset, but that causes some jiterring when moving at low speeds. Maybe look up pixel perfect rendering? or fat pixel shaders?
     * FIXED BY JUST USING FILLED QUADS FOR COLLISION VISUAL DEBUG INFO. wireframes are slightly offset from filled quad
