@@ -1457,8 +1457,6 @@ static void RenderDataInit() {
     TexturesInit();
 }
 
-static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
-
 typedef enum {
     CMD_NONE = 0,
     CMD_DRAW_MESH,
@@ -1475,9 +1473,6 @@ typedef struct {
         Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
         Vec2 uvscale;    // width/height in texture space of the rect to sample inside the texture [0, 1]
         TextureId txid;  // Texture id.
-
-        // TODO: Deprecate.
-        bool wireframe;
     } meshcmd;
 } DrawCmd;
 
@@ -1556,7 +1551,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
-            Assert(!cmd->meshcmd.wireframe);
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.txid);
@@ -1578,8 +1572,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
 static const u32 PASSNULL = MAX_SHADER_PASSES;
 
 typedef struct RenderState {
-    bool wireframe;
-
     u32 passidx;
     u32 passlen;
     u32 passcap;
@@ -1602,7 +1594,6 @@ static void RenderStateInit(u32 width, u32 height) {
 // Reset render state and allow accumulation of shader passes.
 static void BeginRender() {
     RenderState* rstate = &RSTATE;
-    rstate->wireframe = false;
     rstate->passidx = PASSNULL;
     rstate->passlen = 0;
     rstate->passcap = MAX_SHADER_PASSES - 1;  // last entry reserved for null idx.
@@ -1629,7 +1620,6 @@ static void EndShaderPass() {
 static void EndRender() {
     RenderState* rstate = &RSTATE;
 
-    Assert(!rstate->wireframe);
     Assert(rstate->passidx == PASSNULL);
 
     // Begin.
@@ -1693,18 +1683,6 @@ static void EndRender() {
     EndDrawing();
 }
 
-static void BeginWireframe() {
-    RenderState* rstate = &RSTATE;
-    Assert(!rstate->wireframe);
-    rstate->wireframe = true;
-}
-
-static void EndWireframe() {
-    RenderState* rstate = &RSTATE;
-    Assert(rstate->wireframe);
-    rstate->wireframe = false;
-}
-
 static DrawCmd* AddCmd() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen != 0);
@@ -1713,10 +1691,8 @@ static DrawCmd* AddCmd() {
 }
 
 static DrawCmd* AddDrawMeshCmd() {
-    RenderState* rstate = &RSTATE;
     DrawCmd* cmd = AddCmd();
     DrawMeshCmdInit(cmd);
-    cmd->meshcmd.wireframe = rstate->wireframe;
     return cmd;
 }
 
@@ -1835,7 +1811,7 @@ static const f32 SLOP = 2.0f * F32_EPSILON;
 
 static const Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
 
-static Vec3 ComputeCentroid(Vec3* vs, u32 vsize) {
+LCORE Vec3 ComputeCentroid(Vec3* vs, u32 vsize) {
     Vec3 center = {0};
     for (u32 i = 0; i < vsize; ++i) {
         center = Vec3Add(center, vs[i]);
@@ -1874,20 +1850,20 @@ typedef struct Sphere {
     f32 r;   // radius
 } Sphere;
 
-// Computes a sphere in the coord space of the passed in verts.
-static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
-    Vec3 center = ComputeCentroid(vs, vsize);
+// // Computes a sphere in the coord space of the passed in verts.
+// static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
+//     Vec3 center = ComputeCentroid(vs, vsize);
 
-    f32 radius = 0.0f;
-    for (u32 i = 0; i < vsize; ++i) {
-        f32 len = Vec3Len(Vec3Sub(vs[i], center));
-        if (len > radius) {
-            radius = len;
-        }
-    }
+//     f32 radius = 0.0f;
+//     for (u32 i = 0; i < vsize; ++i) {
+//         f32 len = Vec3Len(Vec3Sub(vs[i], center));
+//         if (len > radius) {
+//             radius = len;
+//         }
+//     }
 
-    return (Sphere){.c = center, .r = radius};
-}
+//     return (Sphere){.c = center, .r = radius};
+// }
 
 // // Returns normal pointing from b to a if there is a collision.
 // static bool TestSphereVsSphere(Sphere a, Sphere b, Vec3* normal, f32* depth) {
@@ -1973,33 +1949,33 @@ typedef struct AABB {
     Vec3 r;  // half width extents along each axis.
 } AABB;
 
-// Computes the axis aligned bounding box in the coordinate space of passed in vertices.
-static AABB ComputeAABB(Vec3* vs, u32 size) {
-    AABB aabb = {0};
-    for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
-        Vec3 dir = AXIS[i];
+// // Computes the axis aligned bounding box in the coordinate space of passed in vertices.
+// static AABB ComputeAABB(Vec3* vs, u32 size) {
+//     AABB aabb = {0};
+//     for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
+//         Vec3 dir = AXIS[i];
 
-        f32 dmin = F32_MAX;
-        f32 dmax = -F32_MAX;
-        for (u32 j = 0; j < size; ++j) {
-            f32 d = Vec3Dot(vs[j], dir);
-            if (d < dmin) {
-                dmin = d;
-            }
-            if (d > dmax) {
-                dmax = d;
-            }
-        }
+//         f32 dmin = F32_MAX;
+//         f32 dmax = -F32_MAX;
+//         for (u32 j = 0; j < size; ++j) {
+//             f32 d = Vec3Dot(vs[j], dir);
+//             if (d < dmin) {
+//                 dmin = d;
+//             }
+//             if (d > dmax) {
+//                 dmax = d;
+//             }
+//         }
 
-        // compute the half width extent of the dimension of the axis.
-        // the center can be found by adding the radius to the min distance.
-        // value in the correct coordinate.
-        aabb.r.f[i] = 0.5f * (dmax - dmin);
-        aabb.c.f[i] = aabb.r.f[i] + dmin;
-    }
+//         // compute the half width extent of the dimension of the axis.
+//         // the center can be found by adding the radius to the min distance.
+//         // value in the correct coordinate.
+//         aabb.r.f[i] = 0.5f * (dmax - dmin);
+//         aabb.c.f[i] = aabb.r.f[i] + dmin;
+//     }
 
-    return aabb;
-}
+//     return aabb;
+// }
 
 // static bool TestAABBVsAABB(AABB a, AABB b, Vec3* normal, f32* depth) {
 //     f32 dcx = a.c.f[0] - b.c.f[0];
@@ -2627,54 +2603,6 @@ static void DeactivateEntities() {
     em->inactive_len = 0;
 }
 
-static Mat4 EntityGetMat(Entity* e) {
-    Mat4 scale = Mat4ScaleV(e->scale);
-    Mat4 translate = Mat4TranslateV(e->pos);
-    Mat4 model = Mat4Multiply(translate, Mat4Multiply(e->orient, scale));
-    return model;
-}
-
-// Returns the bounding sphere in world space.
-static Sphere EntityBoundingSphere(Entity* e) {
-    Mat4 m = EntityGetMat(e);
-    Vec3 vs[MAX_VERTICES] = {0};
-    u32 vsize = e->mesh.ntriangles * 3;
-    Assert(vsize < MAX_VERTICES);
-    for (u32 i = 0; i < vsize; ++i) {
-        Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
-        vs[i] = Vec3WTransform(pos, m);
-    }
-
-    return BoundingSphere(vs, vsize);
-}
-
-// Returns the AABB in world sphere.
-static AABB EntityAABB(Entity* e) {
-    Mat4 m = EntityGetMat(e);
-    Vec3 vs[MAX_VERTICES] = {0};
-    u32 vsize = e->mesh.ntriangles * 3;
-    Assert(vsize < MAX_VERTICES);
-    for (u32 i = 0; i < vsize; ++i) {
-        Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
-        vs[i] = Vec3WTransform(pos, m);
-    }
-
-    return ComputeAABB(vs, vsize);
-}
-
-// static Polyhedron EntityBoundingVolume(Entity* e) {
-//     Mat4 m = EntityGetMat(e);
-//     Vec3 vs[MAX_VERTICES] = {0};
-//     u32 vsize = e->mesh.ntriangles * 3;
-//     Assert(vsize < MAX_VERTICES);
-//     for (u32 i = 0; i < vsize; ++i) {
-//         Vec3 pos = LMeshGetVertex(e->mesh, i).pos;
-//         vs[i] = Vec3WTransform(pos, m);
-//     }
-
-//     return ComputePolyhedron(vs, vsize, e->phtype);
-// }
-
 ////////////////////////////////////////////////////
 typedef struct CollisionInfo {
     EntityId id0;
@@ -2781,28 +2709,6 @@ static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
     gstate->nextsceneid = gstate->sceneid;
 }
 
-static void DrawEntities(EntityId* entities, u32 size) {
-    for (u32 i = 0; i < size; ++i) {
-        Entity* entity = GetEntity(entities[i]);
-        Mat4 scale = Mat4ScaleV(entity->scale);
-        Mat4 translate = Mat4TranslateV(entity->pos);
-        Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
-
-        DrawCmd* cmd = AddDrawMeshCmd();
-        cmd->meshcmd.meshid = entity->mesh;
-        cmd->meshcmd.color = entity->color;
-        cmd->meshcmd.modelm = model;
-    }
-}
-
-static void DrawEntitiesWireFrame(EntityId* entities, u32 size) {
-    BeginWireframe();
-    DrawEntities(entities, size);
-    EndWireframe();
-}
-
-#define MAX_ENTITY_BATCH 256
-
 typedef enum {
     SS_NONE = 0,
     SS_RESPAWN,
@@ -2856,6 +2762,34 @@ static const AnimationRect WATER_DEATH_ANIMATION = {
     .step = {.x = GRIDR.x, .y = 0.0f},
     .nframes = 4,
 };
+
+static void SceneDefaultTick(GameState* gstate) {
+    if (IsKeyPressed(KEY_ENTER)) {
+        gstate->nextsceneid = SCENE_FROGGER;
+    }
+
+    BeginRender();
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    char msg[] = "DEFAULT SCENE";
+    u32 size = strlen(msg);
+
+    u32 fontsize = 10.0f;
+    Vec2 dim = MeasureLText(msg, size, fontsize);
+
+    // Center text by shifting center forward by half a text cell size and then shifting backward
+    // by half the text size.
+    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    DrawLText(msg, size, pos, fontsize, LYELLOW);
+
+    EndShaderPass();
+
+    EndRender();
+}
 
 static void SceneTickTitleScreen(GameState* gstate) {
     if (IsKeyPressed(KEY_ENTER)) {
@@ -3774,176 +3708,6 @@ static void SceneTickFrogger(GameState* gstate) {
     DeactivateEntities();
 }
 
-static void Scene1Tick(GameState* gstate) {
-    static Vec3 viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-    static Vec3 vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-    static EntityId MESH_TEST[MAX_ENTITY_BATCH] = {0};
-    static u32 MESH_TEST_SIZE = 0;
-
-    static EntityId WALLS[MAX_ENTITY_BATCH] = {0};
-    static u32 WALLS_SIZE = 0;
-
-    f32 dt = gstate->dt;
-
-    // Init logic.
-    if (!gstate->init) {
-        viewpos = Vec3Lit(0.0f, 0.0f, 0.0f);
-        vieworient = Vec3Lit(0.0f, 0.0f, 0.0f);
-
-        memset(WALLS, 0, sizeof(WALLS));
-        WALLS_SIZE = 0;
-
-        vieworient.yaw = Deg2Rad(90.0f);
-
-        // MESH_TEST init
-        {
-            EntityId* entities = MESH_TEST;
-            u32 size = 0;
-
-            const Vec3 origin = Vec3Lit(-40.0f, 0.0f, 0.0f);
-
-            // Colliders
-            {
-                Vec4 color = LGRAY;
-                color.a = 0.5f;
-
-                Vec3 pos = origin;
-
-                for (u32 i = 0; i < M_COUNT; ++i, ++size) {
-                    Entity* entity = AllocateEntity();
-                    entity->pos = pos;
-                    entity->mesh = GetMesh(i);
-                    entity->orient = Mat4Identity();
-                    entity->color = color;
-                    entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-                    entities[size] = entity->id;
-
-                    pos = Vec3Add(pos, Vec3Lit(0, 0, 5.0f));
-                }
-            }
-
-            MESH_TEST_SIZE = size;
-            Assert(MESH_TEST_SIZE < MAX_ENTITY_BATCH);
-        }
-
-        {
-            static Vec3 positions[] = {Vec3Lit(0.0f, -10.0f, 0.0f)};
-            static f32 rotations[] = {Deg2Rad(-90.0f)};
-            static Vec3 axis[] = {Vec3Lit(1.0f, 0.0f, 0.0f)};
-            Vec4 colors[] = {Vec4Lit(1.0f, 0.5f, 0.31f, 1.0f)};
-
-            EntityId* entities = WALLS;
-            WALLS_SIZE = ArraySizeOf(positions);
-            for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
-                Entity* entity = AllocateEntity();
-                entity->pos = positions[i];
-                entity->mesh = GetMesh(M_QUAD);
-                entity->orient = Mat4Rotate(rotations[i], axis[i]);
-                entity->color = colors[i];
-                entity->scale = Vec3Lit(10000.0f, 10000.0f, 10000.0f);
-                entities[i] = entity->id;
-            }
-        }
-    }
-
-    BeginRender();
-    ShaderPass* pass = BeginShaderPass(GetShader());
-
-    // Update logic.
-    {
-        // Camera movement.
-        {
-            static const u8 GAMEPAD_ID = 0;
-            static bool FREECAM = false;
-
-            if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_UP)) {
-                FREECAM = !FREECAM;
-            }
-
-            // Left stick movement.
-            {
-                static const f32 WALK_VEL = 20.0f;
-                static const f32 RUN_VEL = 2.0f * WALK_VEL;
-
-                f32 vel = WALK_VEL;
-                if (IsGamepadButtonDown(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-                    vel = RUN_VEL;
-                }
-
-                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_X);
-                f32 y = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_LEFT_Y);
-                Vec3 dir_model = Vec3Lit(x, 0.0f, y);
-
-                Vec3 bodyorient = vieworient;
-                // If not freecam, then limiting pitch to 0 will do fps style movement along current plane.
-                bodyorient.pitch = FREECAM ? bodyorient.pitch : 0.0f;
-                Mat4 rotation = Mat4RotateEuler(bodyorient);
-
-                Vec3 dir_world = Vec3Transform(dir_model, rotation);
-                Vec3 mov_world = Vec3Scale(dir_world, vel * dt);
-                viewpos = Vec3Add(viewpos, mov_world);
-            }
-
-            // Right stick movement.
-            {
-                f32 x = GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_X);
-                f32 y = -1.0f * GetGamepadAxisMovement(GAMEPAD_ID, GAMEPAD_AXIS_RIGHT_Y);
-                if (x != 0.0f || y != 0.0f) {
-                    static const rad VEL = Deg2Rad(90.0f);
-
-                    // rotate orient.
-                    vieworient.yaw += -1.0f * x * VEL * dt;
-                    vieworient.pitch += y * VEL * dt;
-                    // Clamp pitch to avoid looking too high/low which would sign flip things.
-                    vieworient.pitch = f32clamp(vieworient.pitch, Deg2Rad(-89.0f), Deg2Rad(89.0f));
-                }
-            }
-        }
-
-        {
-            // MESH_TEST update.
-            {
-                EntityId* entities = MESH_TEST;
-                u32 size = MESH_TEST_SIZE;
-                for (u32 i = 0; i < size; ++i) {
-                    Entity* entity = GetEntity(entities[i]);
-                    entity->orient = Mat4Rotate(gstate->timer * 0.5f, Vec3Lit(1.0f, 0.3f, 0.5f));
-
-                    if (gstate->debug) {
-                        BeginWireframe();
-
-                        Sphere sphere = EntityBoundingSphere(entity);
-                        DrawLSphere(sphere.c, sphere.r, LYELLOW);
-                        AABB aabb = EntityAABB(entity);
-                        DrawAABB(aabb.c, aabb.r, LBLUE);
-
-                        EndWireframe();
-                    }
-                }
-                DrawEntities(entities, size);
-                DrawEntitiesWireFrame(entities, size);
-            }
-
-            // Walls.
-            {
-                EntityId* entities = WALLS;
-                u32 size = WALLS_SIZE;
-                DrawEntities(entities, size);
-            }
-
-            if (gstate->debug) {
-                DrawFPS(5, 5);
-            }
-        }
-    }
-
-    pass->view = GetCameraMat(viewpos, vieworient);
-    pass->proj = Mat4Perspective(Deg2Rad(45.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 1000.0f);
-    EndShaderPass();
-    EndRender();
-}
-
 ////////////////////////////////////////////////////////////
 
 static void GameStateInit(GameState* gstate) {
@@ -3975,7 +3739,7 @@ static void GameStateInit(GameState* gstate) {
     // Register scenes.
     {
         u32 idx = 0;
-        gstate->scenefuncs[SCENE_DEFAULT] = Scene1Tick;
+        gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_FROGGER] = SceneTickFrogger;
         gstate->scenefuncs[SCENE_TITLE_SCREEN] = SceneTickTitleScreen;
         Assert(SCENE_COUNT < MAX_SCENES);
