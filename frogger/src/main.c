@@ -1460,20 +1460,29 @@ static void RenderDataInit() {
 typedef enum {
     CMD_NONE = 0,
     CMD_DRAW_MESH,
+    CMD_CLEAR,
     CMD_COUNT,
 } DrawCmdType;
 
 typedef struct {
     DrawCmdType type;
 
-    struct {
-        LMesh meshid;
-        Mat4 modelm;  // converts from model space to world space.
-        Vec4 color;
-        Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
-        Vec2 uvscale;    // width/height in texture space of the rect to sample inside the texture [0, 1]
-        TextureId txid;  // Texture id.
-    } meshcmd;
+    union {
+        // Draws a mesh.
+        struct {
+            LMesh meshid;
+            Mat4 modelm;  // converts from model space to world space.
+            Vec4 color;
+            Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
+            Vec2 uvscale;    // width/height in texture space of the rect to sample inside the texture [0, 1]
+            TextureId txid;  // Texture id.
+        } meshcmd;
+
+        // Clears buffer with color.
+        struct {
+            Vec4 color;
+        } clearcmd;
+    };
 } DrawCmd;
 
 // Assumes the struct has been memset already.
@@ -1533,16 +1542,26 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.txid);
+            switch (cmd->type) {
+                case CMD_DRAW_MESH: {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.txid);
 
-            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
-            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+                    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+                    glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
+                    glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+                    glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
 
-            glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
+                    glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                                   (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
+                    break;
+                };
+
+                default: {
+                    Assert(false);
+                    break;
+                };
+            }
         }
     } else if (pass->sid == shader_render_target_to_screen.pid) {
         LShader shader = shader_render_target_to_screen;
