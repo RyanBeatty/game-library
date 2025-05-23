@@ -1557,6 +1557,13 @@ static void ShaderPassExecute(ShaderPass* pass) {
                     break;
                 };
 
+                case CMD_CLEAR: {
+                    Vec4 color = cmd->clearcmd.color;
+                    glClearColor(color.r, color.g, color.b, color.a);
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                    break;
+                }
+
                 default: {
                     Assert(false);
                     break;
@@ -1712,6 +1719,13 @@ static DrawCmd* AddCmd() {
 static DrawCmd* AddDrawMeshCmd() {
     DrawCmd* cmd = AddCmd();
     DrawMeshCmdInit(cmd);
+    return cmd;
+}
+
+static DrawCmd* ClearBuffer(Vec4 color) {
+    DrawCmd* cmd = AddCmd();
+    cmd->type = CMD_CLEAR;
+    cmd->clearcmd.color = color;
     return cmd;
 }
 
@@ -2818,6 +2832,9 @@ static void SceneTickTitleScreen(GameState* gstate) {
     BeginRender();
 
     ShaderPass* pass = BeginShaderPass(GetShader());
+
+    ClearBuffer(LBLACK);
+
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
