@@ -1468,25 +1468,27 @@ typedef enum {
 typedef struct {
     DrawCmdType type;
 
-    LMesh meshid;
-    Mat4 modelm;  // converts from model space to world space.
-    Vec4 color;
-    Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
-    Vec2 uvscale;    // width/height in texture space of the rect to sample inside the texture [0, 1]
-    TextureId txid;  // Texture id.
+    struct {
+        LMesh meshid;
+        Mat4 modelm;  // converts from model space to world space.
+        Vec4 color;
+        Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
+        Vec2 uvscale;    // width/height in texture space of the rect to sample inside the texture [0, 1]
+        TextureId txid;  // Texture id.
 
-    // TODO: Deprecate.
-    bool wireframe;
+        // TODO: Deprecate.
+        bool wireframe;
+    } meshcmd;
 } DrawCmd;
 
 // Assumes the struct has been memset already.
 LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
     cmd->type = CMD_DRAW_MESH;
-    cmd->color = LCLEAR;
-    cmd->modelm = Mat4Identity();
-    cmd->uvoffset = Vec2Lit(0.0f, 0.0f);
-    cmd->uvscale = Vec2Lit(1.0f, 1.0f);
-    cmd->txid = GetTexture(TX_DEFAULT).id;
+    cmd->meshcmd.color = LCLEAR;
+    cmd->meshcmd.modelm = Mat4Identity();
+    cmd->meshcmd.uvoffset = Vec2Lit(0.0f, 0.0f);
+    cmd->meshcmd.uvscale = Vec2Lit(1.0f, 1.0f);
+    cmd->meshcmd.txid = GetTexture(TX_DEFAULT).id;
 }
 
 #define MAX_CMDS 4092
@@ -1536,46 +1538,17 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
-            if (cmd->wireframe) {
-                continue;
-            }
-
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, cmd->txid);
+            glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.txid);
 
-            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
-            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
+            glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+            glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
+            glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+            glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
 
-            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+            glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
         }
-
-        {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-            for (u32 i = 0; i < pass->clen; ++i) {
-                DrawCmd* cmd = &pass->cmds[i];
-                if (!cmd->wireframe) {
-                    continue;
-                }
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, cmd->txid);
-
-                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-                glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
-                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
-
-                glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                               (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
-            }
-
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
     } else if (pass->sid == shader_render_target_to_screen.pid) {
         LShader shader = shader_render_target_to_screen;
 
@@ -1583,18 +1556,18 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
-            Assert(!cmd->wireframe);
+            Assert(!cmd->meshcmd.wireframe);
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, cmd->txid);
+            glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.txid);
 
-            // glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->modelm.m);
-            // glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->color.f);
-            // glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->uvoffset.f);
-            // glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->uvscale.f);
+            // glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+            // glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
+            // glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+            // glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
 
-            glDrawElements(GL_TRIANGLES, cmd->meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshid.ibufferidx * sizeof(GLuint)));
+            glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
         }
     } else {
         Assert(false);
@@ -1710,10 +1683,10 @@ static void EndRender() {
         ShaderPassInit(&pass, GetShader().pid);
         DrawCmd* cmd = ShaderPassAddCmd(&pass);
         DrawMeshCmdInit(cmd);
-        cmd->meshid = GetMesh(M_QUAD);
-        cmd->modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
-        // cmd->color = LRED;  // For debug.
-        cmd->txid = rstate->target.txid;
+        cmd->meshcmd.meshid = GetMesh(M_QUAD);
+        cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+        // cmd->meshcmd.color = LRED;  // For debug.
+        cmd->meshcmd.txid = rstate->target.txid;
         ShaderPassExecute(&pass);
     }
 
@@ -1743,44 +1716,44 @@ static DrawCmd* AddDrawMeshCmd() {
     RenderState* rstate = &RSTATE;
     DrawCmd* cmd = AddCmd();
     DrawMeshCmdInit(cmd);
-    cmd->wireframe = rstate->wireframe;
+    cmd->meshcmd.wireframe = rstate->wireframe;
     return cmd;
 }
 
 LCORE void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
-    cmd->meshid = GetMesh(M_ICOSPHERE);
-    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
-    cmd->color = color;
+    cmd->meshcmd.meshid = GetMesh(M_ICOSPHERE);
+    cmd->meshcmd.modelm = Mat4SRT(radius, Mat4Identity(), center);
+    cmd->meshcmd.color = color;
 }
 
 LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
     // We cheat and just use an icosphere. assumes ortho projection which should chop it into a circle.
-    cmd->meshid = GetMesh(M_ICOSPHERE);
-    cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
-    cmd->color = color;
+    cmd->meshcmd.meshid = GetMesh(M_ICOSPHERE);
+    cmd->meshcmd.modelm = Mat4SRT(radius, Mat4Identity(), center);
+    cmd->meshcmd.color = color;
 }
 
 LCORE void DrawLCube(Vec3 center, Vec3 scale, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
-    cmd->meshid = GetMesh(M_CUBE);
-    cmd->modelm = Mat4SVRT(scale, Mat4Identity(), center);
-    cmd->color = color;
+    cmd->meshcmd.meshid = GetMesh(M_CUBE);
+    cmd->meshcmd.modelm = Mat4SVRT(scale, Mat4Identity(), center);
+    cmd->meshcmd.color = color;
 }
 
 LCORE void DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
-    cmd->meshid = GetMesh(M_QUAD);
-    cmd->modelm = Mat4SVRT(Vec3Lit(width, height, 1.0f), orient, center);
-    cmd->color = color;
+    cmd->meshcmd.meshid = GetMesh(M_QUAD);
+    cmd->meshcmd.modelm = Mat4SVRT(Vec3Lit(width, height, 1.0f), orient, center);
+    cmd->meshcmd.color = color;
 }
 
 LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
-    cmd->meshid = GetMesh(M_CUBE);
-    cmd->modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
-    cmd->color = color;
+    cmd->meshcmd.meshid = GetMesh(M_CUBE);
+    cmd->meshcmd.modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
+    cmd->meshcmd.color = color;
 }
 
 // Remember
@@ -1801,12 +1774,12 @@ LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2
     Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
     DrawCmd* cmd = AddDrawMeshCmd();
-    cmd->modelm = model;
-    cmd->color = color;
-    cmd->uvoffset = uvoffset;
-    cmd->uvscale = uvscale;
-    cmd->txid = tx.id;
-    cmd->meshid = GetMesh(M_QUAD);
+    cmd->meshcmd.modelm = model;
+    cmd->meshcmd.color = color;
+    cmd->meshcmd.uvoffset = uvoffset;
+    cmd->meshcmd.uvscale = uvscale;
+    cmd->meshcmd.txid = tx.id;
+    cmd->meshcmd.meshid = GetMesh(M_QUAD);
 }
 
 LCORE void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
@@ -2380,9 +2353,9 @@ static void ParticleSystemTick(f32 dt) {
         // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
         DrawCmd* cmd = AddDrawMeshCmd();
-        cmd->modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
-        cmd->meshid = GetMesh(M_QUAD);
-        cmd->color = particle->color;
+        cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
+        cmd->meshcmd.meshid = GetMesh(M_QUAD);
+        cmd->meshcmd.color = particle->color;
     }
 
     // Remove particles by swapping with end. NOTE this means we shouldn't be keeping persistent pointers
@@ -2816,9 +2789,9 @@ static void DrawEntities(EntityId* entities, u32 size) {
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
 
         DrawCmd* cmd = AddDrawMeshCmd();
-        cmd->meshid = entity->mesh;
-        cmd->color = entity->color;
-        cmd->modelm = model;
+        cmd->meshcmd.meshid = entity->mesh;
+        cmd->meshcmd.color = entity->color;
+        cmd->meshcmd.modelm = model;
     }
 }
 
@@ -3676,13 +3649,13 @@ static void SceneTickFrogger(GameState* gstate) {
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
                     DrawCmd* cmd = AddDrawMeshCmd();
 
-                    cmd->modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
-                    cmd->color = e->graphics.color;
-                    cmd->uvscale = e->graphics.uvscale;
-                    cmd->uvoffset = e->graphics.uvoffset;
-                    cmd->txid = e->graphics.txid;
+                    cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
+                    cmd->meshcmd.color = e->graphics.color;
+                    cmd->meshcmd.uvscale = e->graphics.uvscale;
+                    cmd->meshcmd.uvoffset = e->graphics.uvoffset;
+                    cmd->meshcmd.txid = e->graphics.txid;
 
-                    cmd->meshid = e->graphics.mid;
+                    cmd->meshcmd.meshid = e->graphics.mid;
 
                     if (gstate->debug) {
                         // TODO: Wireframe rasterization can lead to looking like the quad is offset. For now
