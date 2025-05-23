@@ -1459,7 +1459,15 @@ static void RenderDataInit() {
 
 static Vertex LMeshGetVertex(LMesh mid, u32 vid) { return VBUFFER[IBUFFER[mid.ibufferidx + vid]]; }
 
-typedef struct DrawCmd {
+typedef enum {
+    CMD_NONE = 0,
+    CMD_DRAW_MESH,
+    CMD_COUNT,
+} DrawCmdType;
+
+typedef struct {
+    DrawCmdType type;
+
     LMesh meshid;
     Mat4 modelm;  // converts from model space to world space.
     Vec4 color;
@@ -1470,6 +1478,16 @@ typedef struct DrawCmd {
     // TODO: Deprecate.
     bool wireframe;
 } DrawCmd;
+
+// Assumes the struct has been memset already.
+LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
+    cmd->type = CMD_DRAW_MESH;
+    cmd->color = LCLEAR;
+    cmd->modelm = Mat4Identity();
+    cmd->uvoffset = Vec2Lit(0.0f, 0.0f);
+    cmd->uvscale = Vec2Lit(1.0f, 1.0f);
+    cmd->txid = GetTexture(TX_DEFAULT).id;
+}
 
 #define MAX_CMDS 4092
 
@@ -1501,11 +1519,6 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
     Assert(pass->clen < pass->ccap);
     DrawCmd* cmd = &pass->cmds[pass->clen++];
     memset(cmd, 0, sizeof(DrawCmd));
-    cmd->color = LCLEAR;
-    cmd->modelm = Mat4Identity();
-    cmd->uvoffset = Vec2Lit(0.0f, 0.0f);
-    cmd->uvscale = Vec2Lit(1.0f, 1.0f);
-    cmd->txid = GetTexture(TX_DEFAULT).id;
     return cmd;
 }
 
@@ -1696,6 +1709,7 @@ static void EndRender() {
         ShaderPass pass;
         ShaderPassInit(&pass, GetShader().pid);
         DrawCmd* cmd = ShaderPassAddCmd(&pass);
+        DrawMeshCmdInit(cmd);
         cmd->meshid = GetMesh(M_QUAD);
         cmd->modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->color = LRED;  // For debug.
@@ -1722,19 +1736,26 @@ static DrawCmd* AddCmd() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen != 0);
     DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
+    return cmd;
+}
+
+static DrawCmd* AddDrawMeshCmd() {
+    RenderState* rstate = &RSTATE;
+    DrawCmd* cmd = AddCmd();
+    DrawMeshCmdInit(cmd);
     cmd->wireframe = rstate->wireframe;
     return cmd;
 }
 
 LCORE void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
+    DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshid = GetMesh(M_ICOSPHERE);
     cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
     cmd->color = color;
 }
 
 LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
+    DrawCmd* cmd = AddDrawMeshCmd();
     // We cheat and just use an icosphere. assumes ortho projection which should chop it into a circle.
     cmd->meshid = GetMesh(M_ICOSPHERE);
     cmd->modelm = Mat4SRT(radius, Mat4Identity(), center);
@@ -1742,21 +1763,21 @@ LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
 }
 
 LCORE void DrawLCube(Vec3 center, Vec3 scale, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
+    DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshid = GetMesh(M_CUBE);
     cmd->modelm = Mat4SVRT(scale, Mat4Identity(), center);
     cmd->color = color;
 }
 
 LCORE void DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
+    DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshid = GetMesh(M_QUAD);
     cmd->modelm = Mat4SVRT(Vec3Lit(width, height, 1.0f), orient, center);
     cmd->color = color;
 }
 
 LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
-    DrawCmd* cmd = AddCmd();
+    DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshid = GetMesh(M_CUBE);
     cmd->modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
     cmd->color = color;
@@ -1779,7 +1800,7 @@ LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2
     Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
     Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
 
-    DrawCmd* cmd = AddCmd();
+    DrawCmd* cmd = AddDrawMeshCmd();
     cmd->modelm = model;
     cmd->color = color;
     cmd->uvoffset = uvoffset;
@@ -2358,7 +2379,7 @@ static void ParticleSystemTick(f32 dt) {
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
         // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
-        DrawCmd* cmd = AddCmd();
+        DrawCmd* cmd = AddDrawMeshCmd();
         cmd->modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
         cmd->meshid = GetMesh(M_QUAD);
         cmd->color = particle->color;
@@ -2794,7 +2815,7 @@ static void DrawEntities(EntityId* entities, u32 size) {
         Mat4 translate = Mat4TranslateV(entity->pos);
         Mat4 model = Mat4Multiply(translate, Mat4Multiply(entity->orient, scale));
 
-        DrawCmd* cmd = AddCmd();
+        DrawCmd* cmd = AddDrawMeshCmd();
         cmd->meshid = entity->mesh;
         cmd->color = entity->color;
         cmd->modelm = model;
@@ -3653,7 +3674,7 @@ static void SceneTickFrogger(GameState* gstate) {
                 }
 
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
-                    DrawCmd* cmd = AddCmd();
+                    DrawCmd* cmd = AddDrawMeshCmd();
 
                     cmd->modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                     cmd->color = e->graphics.color;
