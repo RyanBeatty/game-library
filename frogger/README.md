@@ -6,21 +6,21 @@ Conventions
 * 2d/screenspace drawing maps (0, 0) to bottom left corner. +y goes up
 
 
-Engine Features Desired for Gameplay Prototyping
-* Directional Lighting (i.e. the sun)
-    * (Optional bonus) basic shadows
-* Basic Text Rendering
-* Basic Model Loading (Possibly not even necessary as I can try to use procedural geometry for as long as possible)
-
+Engine Improvments/Thoughts
+* We need to improve text rendering. Fonts clip a bit when upscaled. Maybe this can be fixed by rasterizing a larger font size
+* The way shader passes work with multiple shaders is kind of clunky. Especially the render to texture and then to sreen bit. Seems like I don't have great support for switching framebuffers between shader passes. I'm not sure what the right structure here is at this time tbh.
+* At some point we need to tackle memory allocation.
+* Stop using raylib for input handling
+* Stop using raylib for window + opengl context creation.
 
 TODO FROGGER
 * next
-    * consider expanding DrawCmd struct with union for handling multiple different types of commands (like clearing background color). This will allow me to set title screen background basically.
+    * Have game start automatically after title screen (no press enter)
+    * Dithering?
 * feature
     * sounds
     * exhaust smoke particle effects on the cars
     * more levels 
-    * title screen
     * game over screen
     * screen space shader for crunchy retro look
 * bug
