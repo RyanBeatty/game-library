@@ -772,6 +772,12 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_LFONT2] = UploadTexture("assets/textures/lfont2.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_FROG] = UploadTexture("assets/textures/frog.png");
         ++tcache->txlen;
     }
@@ -779,12 +785,6 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_FROG_SOLO] = UploadTexture("assets/textures/frog-solo.png");
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LFONT2] = UploadTexture("assets/textures/lfont2.png");
         ++tcache->txlen;
     }
 }
@@ -1822,8 +1822,10 @@ LCORE void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 c
 }
 
 // Remember that pos will be the center of the quad.
+// Scale will control the multiple of original size of the texture.
 LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
-    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos, Vec2Lit(scale, scale), 0.0f, LCLEAR);
+    DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), pos,
+                    Vec2Lit(tx.width * scale, tx.height * scale), 0.0f, LCLEAR);
 }
 
 LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
@@ -2864,8 +2866,14 @@ static void SceneTickTitleScreen(GameState* gstate) {
     u32 fontsize = 10.0f;
     Vec2 dim = MeasureLText(msg, size, fontsize);
 
-    DrawLText(msg, size, POS, fontsize, LYELLOW);
-    // DrawLTexture(GetTexture(TX_DEFAULT), Vec3ToVec2(POS), 1.0f);
+    // DrawLText(msg, size, POS, fontsize, LYELLOW);
+    DrawLTexture(GetTexture(TX_FROG), Vec3ToVec2(POS), 1.0f);
+
+    LTexture tx = GetTexture(TX_LFONT2);
+
+    // DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), Vec3ToVec2(POS), Vec2Lit(100, 100), 0.0f,
+    //                 LYELLOW);
+    DrawLTexture(GetTexture(TX_FROG), Vec3ToVec2(POS), 1.0f);
 
     EndShaderPass();
 
