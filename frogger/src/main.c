@@ -3464,10 +3464,8 @@ static void SceneTickFrogger(GameState* gstate) {
                         }
                     }
                 } else if (STATE == SS_SPAWNED) {
-                    if (IsKeyPressed(KEY_ENTER)) {
-                        STATE = SS_PLAYING;
-                        PlayLSound(GetSound(SOUND_START_LEVEL), 0);
-                    }
+                    STATE = SS_PLAYING;
+                    PlayLSound(GetSound(SOUND_START_LEVEL), 0);
                 } else if (STATE == SS_RESPAWN) {
                     bool spawn_area_is_clear = true;
                     // Bit of a hacky way to ensure the spawn area is clear before spawning the player. we'll just
@@ -3712,18 +3710,7 @@ static void SceneTickFrogger(GameState* gstate) {
             DrawLTextF(pos, fontsize, LYELLOW, "Score: %d", SCORE);
         }
 
-        if (STATE == SS_SPAWNED) {
-            char msg[] = "Press ENTER To Start";
-            u32 size = strlen(msg);
-
-            u32 fontsize = 10.0f;
-            Vec2 dim = MeasureLText(msg, size, fontsize);
-
-            // Center text by shifting center forward by half a text cell size and then shifting backward
-            // by half the text size.
-            Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-            DrawLText(msg, size, pos, fontsize, LYELLOW);
-        } else if (STATE == SS_GAMEOVER) {
+        if (STATE == SS_GAMEOVER) {
             char msg[] = "GAME OVER";
             u32 size = strlen(msg);
 
