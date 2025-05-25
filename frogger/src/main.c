@@ -1042,6 +1042,72 @@ static LShader GetShader() {
     return SHADER;
 }
 
+static LShader GetPostProcessingShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 2) in vec2 vTextCoords;\n"
+        "\n"
+        "uniform mat4 vModel;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
+        "\n"
+        "uniform vec4 vUColor;\n"
+        "uniform vec2 vUVOffset;\n"
+        "uniform vec2 vUVScale;\n"
+        "\n"
+        "out vec4 fColor;\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   fColor = vUColor;\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec4 fColor;\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        "   float grayscale = max(txColor.r, max(txColor.g, txColor.b));\n"
+        "   FragColor = vec4(grayscale, grayscale, grayscale, 1.0);\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
+
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
+            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
+        }
+    }
+
+    return SHADER;
+}
+
 // Renders a RenderTarget texture to screen.
 static LShader GetShaderRenderTargetToScreen() {
     static const char* VSRC =
@@ -1531,9 +1597,11 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader2d = GetShader();
     LShader shader_render_target_to_screen = GetShaderRenderTargetToScreen();
+    LShader effects_shader = GetPostProcessingShader();
 
-    if (pass->sid == shader2d.pid) {
-        LShader shader = shader2d;
+    if (pass->sid == shader2d.pid || pass->sid == effects_shader.pid) {
+        // Need a better way to map shaders.
+        LShader shader = pass->sid == shader2d.pid ? shader2d : effects_shader;
 
         glUseProgram(shader.pid);
 
@@ -1696,13 +1764,14 @@ static void EndRender() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         ShaderPass pass;
-        ShaderPassInit(&pass, GetShader().pid);
+        ShaderPassInit(&pass, GetPostProcessingShader().pid);
         DrawCmd* cmd = ShaderPassAddCmd(&pass);
         DrawMeshCmdInit(cmd);
         cmd->meshcmd.meshid = GetMesh(M_QUAD);
         cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->meshcmd.color = LRED;  // For debug.
         cmd->meshcmd.txid = rstate->target.txid;
+        breakpoint();
         ShaderPassExecute(&pass);
     }
 
