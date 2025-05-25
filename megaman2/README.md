@@ -16,6 +16,12 @@ Engine Improvments/Thoughts
 MEGAMAN GOALS
 * at least 1 stage + boss fight
 * ideally 1 new stage + boss fight
+* colors
+    * choose a color pallete to import into aseprite. ONLY USE THESE COLORS
+    * 3 color character sprites
+* sound
+    * make a stage track that loops
+
 
 TODO MEGAMAN
 * cleanup everything not used from frogger
@@ -25,7 +31,10 @@ TODO MEGAMAN
     * stage scene
     * boss scene
 * better text rendering
-* 
+
+BUGS
+* Trying to render rasterized text at different sizes is awful. I should either pre render multiple
+sizes or bite the bullet and try to implement true type fonts.
 
 
 TODO

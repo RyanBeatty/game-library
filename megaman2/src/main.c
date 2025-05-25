@@ -728,7 +728,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_FROG, TX_FROG_SOLO, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_FROG, TX_FROG_SOLO, TX_LFONT2, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -779,6 +779,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_FROG_SOLO] = UploadTexture("assets/textures/frog-solo.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_LFONT2] = UploadTexture("assets/textures/lfont2.png");
         ++tcache->txlen;
     }
 }
@@ -1828,6 +1834,7 @@ LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 co
     // (width, height) of the src and dest recs).
     // misnomer name I think. the center adjusts by the full width each time.
     Vec2 r_src = Vec2Lit(x, y);
+    // Vec2 r_dst = Vec2Lit(8, 8);
     Vec2 r_dst = Vec2Lit(fontsize, fontsize);
 
     for (u32 i = 0; i < size; ++i, pos = Vec3Add(pos, Vec3Lit(r_dst.x, 0.0f, 0.0f))) {
@@ -1836,7 +1843,8 @@ LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 co
         // center src and dest.
         Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
         Vec2 c_dst = Vec2Lit(pos.x, pos.y);
-        DrawLTexturePro(GetTexture(TX_LFONT), c_src, r_src, c_dst, r_dst, 0.0f, color);
+        breakpoint();
+        DrawLTexturePro(tx, c_src, r_src, c_dst, r_dst, 0.0f, color);
     }
 }
 
@@ -2803,30 +2811,61 @@ static void SceneDefaultTick(GameState* gstate) {
 }
 
 static void SceneTickTitleScreen(GameState* gstate) {
+    static Vec3 POS = {0};
+
+    if (!gstate->init) {
+        u32 width = gstate->renderw;
+        u32 height = gstate->renderh;
+
+        // char msg[] = "Press ENTER To Start";
+        char msg[] = "E";
+        u32 size = strlen(msg);
+
+        u32 fontsize = 10.0f;
+        Vec2 dim = MeasureLText(msg, size, fontsize);
+
+        // Center text by shifting center forward by half a text cell size and then shifting backward
+        // by half the text size.
+        POS = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    }
+
     if (IsKeyPressed(KEY_ENTER)) {
-        gstate->nextsceneid = SCENE_FROGGER;
+        // gstate->nextsceneid = SCENE_FROGGER;
+    }
+
+    // Debug text positioning + rendering.
+    if (true) {
+        float dx = 1.0f;
+        if (IsKeyPressed(KEY_UP)) {
+            POS.y += dx;
+        } else if (IsKeyPressed(KEY_DOWN)) {
+            POS.y -= dx;
+        } else if (IsKeyPressed(KEY_LEFT)) {
+            POS.x -= dx;
+        } else if (IsKeyPressed(KEY_RIGHT)) {
+            POS.x += dx;
+        }
     }
 
     BeginRender();
 
     ShaderPass* pass = BeginShaderPass(GetShader());
 
-    ClearBuffer(LBLACK);
+    // ClearBuffer(LBLACK);
 
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    char msg[] = "Press ENTER To Start";
+    // char msg[] = "Press ENTER To Start";
+    char msg[] = "E";
     u32 size = strlen(msg);
 
     u32 fontsize = 10.0f;
     Vec2 dim = MeasureLText(msg, size, fontsize);
 
-    // Center text by shifting center forward by half a text cell size and then shifting backward
-    // by half the text size.
-    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-    DrawLText(msg, size, pos, fontsize, LYELLOW);
+    DrawLText(msg, size, POS, fontsize, LYELLOW);
+    // DrawLTexture(GetTexture(TX_DEFAULT), Vec3ToVec2(POS), 1.0f);
 
     EndShaderPass();
 
@@ -2840,8 +2879,8 @@ static void SceneTickFrogger(GameState* gstate) {}
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
 
-    gstate->renderw = 224.0f;
-    gstate->renderh = 256.0f;
+    gstate->renderw = 256.0f;
+    gstate->renderh = 240.0f;
 
     u32 scale = 3;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
