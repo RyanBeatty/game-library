@@ -2867,13 +2867,13 @@ static void SceneTickTitleScreen(GameState* gstate) {
     Vec2 dim = MeasureLText(msg, size, fontsize);
 
     // DrawLText(msg, size, POS, fontsize, LYELLOW);
-    DrawLTexture(GetTexture(TX_FROG), Vec3ToVec2(POS), 1.0f);
+    // DrawLTexture(GetTexture(TX_FROG), Vec3ToVec2(POS), 1.0f);
 
     LTexture tx = GetTexture(TX_LFONT2);
 
     // DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), Vec3ToVec2(POS), Vec2Lit(100, 100), 0.0f,
     //                 LYELLOW);
-    DrawLTexture(GetTexture(TX_FROG), Vec3ToVec2(POS), 1.0f);
+    DrawLTexture(GetTexture(TX_LFONT2), Vec3ToVec2(POS), 1.0f);
 
     EndShaderPass();
 
