@@ -1108,53 +1108,6 @@ static LShader GetPostProcessingShader() {
     return SHADER;
 }
 
-// Renders a RenderTarget texture to screen.
-static LShader GetShaderRenderTargetToScreen() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 1) in vec2 vTextCoords;\n"
-        "\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vTextCoords;\n"
-        "   gl_Position = vec4(vPos.x, vPos.y, 0.0, 1.0);\n"
-        "}\0";
-
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   FragColor = texture(texture0, fTextCoords);\n"
-        "}\0";
-    static bool INIT = false;
-    static LShader SHADER = {0};
-
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
-    }
-
-    return SHADER;
-}
-
 static void RenderDataInit() {
     VAO = 0;
     VBO = 0;
@@ -1596,7 +1549,6 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader2d = GetShader();
-    LShader shader_render_target_to_screen = GetShaderRenderTargetToScreen();
     LShader effects_shader = GetPostProcessingShader();
 
     if (pass->sid == shader2d.pid || pass->sid == effects_shader.pid) {
@@ -1637,25 +1589,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
                     break;
                 };
             }
-        }
-    } else if (pass->sid == shader_render_target_to_screen.pid) {
-        LShader shader = shader_render_target_to_screen;
-
-        glUseProgram(shader.pid);
-
-        for (u32 i = 0; i < pass->clen; ++i) {
-            DrawCmd* cmd = &pass->cmds[i];
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.txid);
-
-            // glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-            // glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
-            // glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-            // glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
-
-            glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
         }
     } else {
         Assert(false);
@@ -1771,7 +1704,6 @@ static void EndRender() {
         cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->meshcmd.color = LRED;  // For debug.
         cmd->meshcmd.txid = rstate->target.txid;
-        breakpoint();
         ShaderPassExecute(&pass);
     }
 
