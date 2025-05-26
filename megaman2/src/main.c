@@ -2713,6 +2713,7 @@ typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_TITLE_SCREEN,
     SCENE_STAGE_SELECT,
+    SCENE_STAGE,
     SCENE_COUNT,
 } SceneId;
 
@@ -2879,7 +2880,7 @@ static void TitleScreenTick(GameState* gstate) {
 
 static void StageSelectTick(GameState* gstate) {
     if (IsKeyPressed(KEY_ENTER)) {
-        // gstate->nextsceneid = SCENE_FROGGER;
+        gstate->nextsceneid = SCENE_STAGE;
     }
 
     BeginRender();
@@ -2893,6 +2894,37 @@ static void StageSelectTick(GameState* gstate) {
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
     char msg[] = "Stage Select";
+    u32 size = strlen(msg);
+
+    u32 fontsize = 10.0f;
+    Vec2 dim = MeasureLText(msg, size, fontsize);
+
+    // Center text by shifting center forward by half a text cell size and then shifting backward
+    // by half the text size.
+    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    DrawLText(msg, size, pos, fontsize, LYELLOW);
+
+    EndShaderPass();
+
+    EndRender();
+}
+
+static void StageTick(GameState* gstate) {
+    if (IsKeyPressed(KEY_ENTER)) {
+        // gstate->nextsceneid = SCENE_FROGGER;
+    }
+
+    BeginRender();
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
+    ClearBuffer(LBLUE);
+
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    char msg[] = "Stage 1";
     u32 size = strlen(msg);
 
     u32 fontsize = 10.0f;
@@ -2942,6 +2974,7 @@ static void GameStateInit(GameState* gstate) {
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_TITLE_SCREEN] = TitleScreenTick;
         gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
+        gstate->scenefuncs[SCENE_STAGE] = StageTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
