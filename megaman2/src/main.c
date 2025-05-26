@@ -728,7 +728,7 @@ typedef struct TextureCache {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_FROG, TX_FROG_SOLO, TX_LFONT2, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_LFONT2, TX_WOODMAN_STAGE, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -778,13 +778,7 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_FROG] = UploadTexture("assets/textures/frog.png");
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_FROG_SOLO] = UploadTexture("assets/textures/frog-solo.png");
+        tcache->textures[TX_WOODMAN_STAGE] = UploadTexture("assets/textures/woodman-stage.png");
         ++tcache->txlen;
     }
 }
@@ -2687,8 +2681,8 @@ LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
 ////////////////////////////////////////////////////
 
 typedef struct {
-    Vec3 eye;
-    Vec3 orient;
+    Vec3 eye;     // world space position of the camera.
+    Vec3 orient;  // vector containing euler angle rotation vector. for identity rotation, set to Vec3Zero
 } LCamera;
 
 // static Mat4 LCameraGetView(LCamera c) {
@@ -2745,6 +2739,7 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
+    TextureId background;
 } GameState;
 
 static GameState GState;
@@ -2912,11 +2907,39 @@ static void StageSelectTick(GameState* gstate) {
 }
 
 static void StageTick(GameState* gstate) {
+    static LCamera CAMERA = {0};
+
+    if (!gstate->init) {
+        gstate->background = TX_WOODMAN_STAGE;
+        CAMERA.eye = Vec3Zero();
+        CAMERA.orient = Vec3Zero();
+    }
+
+    // Debug text positioning + rendering.
+    if (true) {
+        float dx = 100.0f;
+        if (IsKeyPressed(KEY_UP)) {
+            CAMERA.eye.y += dx;
+        } else if (IsKeyPressed(KEY_DOWN)) {
+            CAMERA.eye.y -= dx;
+        } else if (IsKeyPressed(KEY_LEFT)) {
+            CAMERA.eye.x -= dx;
+        } else if (IsKeyPressed(KEY_RIGHT)) {
+            CAMERA.eye.x += dx;
+        }
+    }
+
     BeginRender();
 
     ShaderPass* pass = BeginShaderPass(GetShader());
+    pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
 
     ClearBuffer(LBLUE);
+
+    {
+        LTexture tx = GetTexture(gstate->background);
+        DrawLTexture(tx, Vec2Zero(), 1.0f);
+    }
 
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
