@@ -1828,6 +1828,9 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
                     Vec2Lit(tx.width * scale, tx.height * scale), 0.0f, LCLEAR);
 }
 
+// Assumes the font texture contains the ascii printable characters on a single line.
+// Characters (note the space beginning the sequence is included):
+// !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
     LTexture tx = GetTexture(TX_LFONT);
 
@@ -2709,7 +2712,7 @@ static const f32 GRID_DEPTH = 1.0f;
 typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_TITLE_SCREEN,
-    SCENE_FROGGER,
+    SCENE_STAGE_SELECT,
     SCENE_COUNT,
 } SceneId;
 
@@ -2785,10 +2788,6 @@ typedef enum {
 static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
 
 static void SceneDefaultTick(GameState* gstate) {
-    if (IsKeyPressed(KEY_ENTER)) {
-        gstate->nextsceneid = SCENE_FROGGER;
-    }
-
     BeginRender();
 
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -2812,7 +2811,7 @@ static void SceneDefaultTick(GameState* gstate) {
     EndRender();
 }
 
-static void SceneTickTitleScreen(GameState* gstate) {
+static void TitleScreenTick(GameState* gstate) {
     static Vec3 POS = {0};
 
     if (!gstate->init) {
@@ -2832,7 +2831,7 @@ static void SceneTickTitleScreen(GameState* gstate) {
     }
 
     if (IsKeyPressed(KEY_ENTER)) {
-        // gstate->nextsceneid = SCENE_FROGGER;
+        gstate->nextsceneid = SCENE_STAGE_SELECT;
     }
 
     // Debug text positioning + rendering.
@@ -2853,34 +2852,61 @@ static void SceneTickTitleScreen(GameState* gstate) {
 
     ShaderPass* pass = BeginShaderPass(GetShader());
 
-    // ClearBuffer(LBLACK);
+    ClearBuffer(LBLACK);
 
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    // char msg[] = "Press ENTER To Start";
-    char msg[] = "E";
+    char msg[] = "Press ENTER To Start";
     u32 size = strlen(msg);
 
     u32 fontsize = 10.0f;
     Vec2 dim = MeasureLText(msg, size, fontsize);
 
-    // DrawLText(msg, size, POS, fontsize, LYELLOW);
-    // DrawLTexture(GetTexture(TX_FROG), Vec3ToVec2(POS), 1.0f);
+    // Center text by shifting center forward by half a text cell size and then shifting backward
+    // by half the text size.
+    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    DrawLText(msg, size, pos, fontsize, LYELLOW);
 
-    LTexture tx = GetTexture(TX_LFONT2);
-
-    // DrawLTexturePro(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(tx.width, tx.height), Vec3ToVec2(POS), Vec2Lit(100, 100), 0.0f,
-    //                 LYELLOW);
-    DrawLTexture(GetTexture(TX_LFONT2), Vec3ToVec2(POS), 1.0f);
+    // LTexture tx = GetTexture(TX_LFONT2);
+    // DrawLTexture(GetTexture(TX_LFONT2), Vec3ToVec2(POS), 1.0f);
 
     EndShaderPass();
 
     EndRender();
 }
 
-static void SceneTickFrogger(GameState* gstate) {}
+static void StageSelectTick(GameState* gstate) {
+    if (IsKeyPressed(KEY_ENTER)) {
+        // gstate->nextsceneid = SCENE_FROGGER;
+    }
+
+    BeginRender();
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
+    ClearBuffer(LRED);
+
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    char msg[] = "Stage Select";
+    u32 size = strlen(msg);
+
+    u32 fontsize = 10.0f;
+    Vec2 dim = MeasureLText(msg, size, fontsize);
+
+    // Center text by shifting center forward by half a text cell size and then shifting backward
+    // by half the text size.
+    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    DrawLText(msg, size, pos, fontsize, LYELLOW);
+
+    EndShaderPass();
+
+    EndRender();
+}
 
 ////////////////////////////////////////////////////////////
 
@@ -2914,8 +2940,8 @@ static void GameStateInit(GameState* gstate) {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
-        gstate->scenefuncs[SCENE_FROGGER] = SceneTickFrogger;
-        gstate->scenefuncs[SCENE_TITLE_SCREEN] = SceneTickTitleScreen;
+        gstate->scenefuncs[SCENE_TITLE_SCREEN] = TitleScreenTick;
+        gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
