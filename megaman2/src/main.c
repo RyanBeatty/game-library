@@ -2760,6 +2760,8 @@ typedef void (*SceneTickFunc)(GameState* gstate);
 static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
     Assert(sceneid < MAX_SCENES);
 
+    // TODO: Big todo here. Need to come up with a more elegant way to load/unload scene data.
+    // Luckily for megaman I don't think there will be entities that persist across scenes.
     EntitySystemInit();
     RenderDataInit();
     LoadSounds();
@@ -2910,10 +2912,6 @@ static void StageSelectTick(GameState* gstate) {
 }
 
 static void StageTick(GameState* gstate) {
-    if (IsKeyPressed(KEY_ENTER)) {
-        // gstate->nextsceneid = SCENE_FROGGER;
-    }
-
     BeginRender();
 
     ShaderPass* pass = BeginShaderPass(GetShader());
