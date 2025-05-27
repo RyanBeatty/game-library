@@ -737,6 +737,15 @@ static LTexture GetTexture(TextureLabel label) {
 
 #define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
 
+static Vec3 TextureAsepritePosToWorlPos(LTexture tx, Vec3 aseprite_pos) {
+    Vec3 offset_aseprite = aseprite_pos;
+    Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
+
+    Vec3 pos = TextureBottomLeft(tx);
+    pos = Vec3Add(pos, offset);
+    return pos;
+}
+
 static void TexturesInit() {
     TextureCache* tcache = &TCACHE;
     tcache->txlen = 0;
@@ -2706,7 +2715,9 @@ typedef struct {
     TextureId background;
     // How to find. make a 128 x 120 selection in aseprite. the pixel value that is 1, 1 off from the
     // corner you finish selecting is the start.
-    Vec3 start;
+    // This will end up being the origin in worldspace.
+    Vec3 camera_start;
+    Vec3 player_start;
 } Stage;
 
 typedef enum {
@@ -2717,7 +2728,7 @@ typedef enum {
 
 static const Stage WOODMAN_STAGE = {
     .background = TX_WOODMAN_STAGE,
-    .start = Vec3Lit(129, 121, 0.0f),
+    .camera_start = Vec3Lit(129, 121, 0.0f),
 };
 
 static Stage STAGES[STAGE_COUNT] = {
@@ -2976,11 +2987,13 @@ static void StageTick(GameState* gstate) {
         {
             LTexture tx = GetTexture(gstate->stage.background);
 
-            Vec3 offset_aseprite = gstate->stage.start;
-            Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
+            //     Vec3 offset_aseprite = gstate->stage.camera_start;
+            //     Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
 
-            Vec3 pos = TextureBottomLeft(tx);
-            pos = Vec3Add(pos, offset);
+            //     Vec3 pos = TextureBottomLeft(tx);
+            //     pos = Vec3Add(pos, offset);
+
+            Vec3 pos = TextureAsepritePosToWorlPos(tx, gstate->stage.camera_start);
             // Remember we have to negate all these offsets to get the origin of the quad to be the
             // start position.
             pos = Vec3Negate(pos);
