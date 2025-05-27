@@ -735,6 +735,8 @@ static LTexture GetTexture(TextureLabel label) {
     return tcache->textures[label];
 }
 
+#define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
+
 static void TexturesInit() {
     TextureCache* tcache = &TCACHE;
     tcache->txlen = 0;
@@ -2701,6 +2703,31 @@ static const f32 GRID_DEPTH = 1.0f;
 
 ////////////////////////////////////////////////////
 
+typedef struct {
+    TextureId background;
+    Vec3 start;
+} Stage;
+
+typedef enum {
+    STAGE_NONE = 0,
+    STAGE_WOODMAN,
+    STAGE_COUNT,
+} StageId;
+
+static const Stage WOODMAN_STAGE = {
+    .background = TX_WOODMAN_STAGE,
+    .start = Vec3Lit(113, 1153, 0.0f),
+};
+
+static Stage STAGES[STAGE_COUNT] = {
+    {0},
+    WOODMAN_STAGE,
+};
+
+#define GetStage(sid) (STAGES[(sid)])
+
+////////////////////////////////////////////////////
+
 #define MAX_SCENES 10
 
 typedef enum {
@@ -2739,7 +2766,7 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
-    TextureId background;
+    Stage stage;
 } GameState;
 
 static GameState GState;
@@ -2908,16 +2935,23 @@ static void StageSelectTick(GameState* gstate) {
 
 static void StageTick(GameState* gstate) {
     static LCamera CAMERA = {0};
+    static bool SPAWNED = false;
 
     if (!gstate->init) {
-        gstate->background = TX_WOODMAN_STAGE;
+        gstate->stage = GetStage(STAGE_WOODMAN);
         CAMERA.eye = Vec3Zero();
         CAMERA.orient = Vec3Zero();
+        SPAWNED = false;
     }
+
+    // if (!SPAWNED) {
+    //     CAMERA.eye = Vec3Lit(113, 0.0, 0.0f);  // gstate->stage.start;
+    //     SPAWNED = true;
+    // }
 
     // Debug text positioning + rendering.
     if (true) {
-        float dx = 100.0f;
+        float dx = 1.0f;
         if (IsKeyPressed(KEY_UP)) {
             CAMERA.eye.y += dx;
         } else if (IsKeyPressed(KEY_DOWN)) {
@@ -2931,32 +2965,61 @@ static void StageTick(GameState* gstate) {
 
     BeginRender();
 
-    ShaderPass* pass = BeginShaderPass(GetShader());
-    pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
-
-    ClearBuffer(LBLUE);
-
     {
-        LTexture tx = GetTexture(gstate->background);
-        DrawLTexture(tx, Vec2Zero(), 1.0f);
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
+        // ClearBuffer(LBLUE);
+
+        u32 width = gstate->renderw;
+        u32 height = gstate->renderh;
+        f32 hwidth = 0.5f * width;
+        f32 hheight = 0.5f * height;
+        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+
+        {
+            LTexture tx = GetTexture(gstate->stage.background);
+
+            // Vec3 offset_aseprite = Vec3Lit(0.0f, 1281, 0.0f);
+            // Vec3 offset_aseprite = Vec3Lit(136.0f, 128.0f, 0.0f);
+            Vec3 offset_aseprite = Vec3Lit(0.0f, 0.0f, 0.0f);
+            Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y + 1, 0.0f);
+
+            Vec3 pos = TextureBottomLeft(tx);
+            pos = Vec3Add(pos, offset);
+            // Remember we have to negate all these offsets to get the origin of the quad to be the
+            // start position.
+            pos = Vec3Negate(pos);
+            // pos = Vec3Add(pos, Vec3Lit(-113, -1153, 0.0f));
+            DrawLTexture(tx, Vec3ToVec2(pos), 1.0f);
+        }
+
+        DrawQuad(Vec3Zero(), 10, 10, Mat4Identity(), LRED);
+
+        EndShaderPass();
     }
 
-    u32 width = gstate->renderw;
-    u32 height = gstate->renderh;
-    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+    // UI. origin at bottom left hand of screen.
+    {
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
 
-    char msg[] = "Stage 1";
-    u32 size = strlen(msg);
+        u32 width = gstate->renderw;
+        u32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    u32 fontsize = 10.0f;
-    Vec2 dim = MeasureLText(msg, size, fontsize);
+        char msg[] = "Stage 1";
+        u32 size = strlen(msg);
 
-    // Center text by shifting center forward by half a text cell size and then shifting backward
-    // by half the text size.
-    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-    DrawLText(msg, size, pos, fontsize, LYELLOW);
+        u32 fontsize = 10.0f;
+        Vec2 dim = MeasureLText(msg, size, fontsize);
 
-    EndShaderPass();
+        // Center text by shifting center forward by half a text cell size and then shifting backward
+        // by half the text size.
+        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+        DrawLText(msg, size, pos, fontsize, LYELLOW);
+
+        EndShaderPass();
+    }
 
     EndRender();
 }
@@ -2969,7 +3032,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
 
-    u32 scale = 3;
+    u32 scale = 1;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
