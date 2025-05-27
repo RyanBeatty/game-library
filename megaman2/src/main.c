@@ -2712,7 +2712,7 @@ static const f32 GRID_DEPTH = 1.0f;
 ////////////////////////////////////////////////////
 
 typedef struct {
-    TextureId background;
+    LTexture background;
     // How to find. make a 128 x 120 selection in aseprite. the pixel value that is 1, 1 off from the
     // corner you finish selecting is the start.
     // This will end up being the origin in worldspace.
@@ -2726,17 +2726,34 @@ typedef enum {
     STAGE_COUNT,
 } StageId;
 
-static const Stage WOODMAN_STAGE = {
-    .background = TX_WOODMAN_STAGE,
-    .camera_start = Vec3Lit(129, 121, 0.0f),
-};
+// static const Stage WOODMAN_STAGE = {
+//     .background = TX_WOODMAN_STAGE,
+//     .camera_start = Vec3Lit(129, 121, 0.0f),
+// };
 
-static Stage STAGES[STAGE_COUNT] = {
-    {0},
-    WOODMAN_STAGE,
-};
+// static Stage STAGES[STAGE_COUNT] = {
+//     {0},
+//     WOODMAN_STAGE,
+// };
 
-#define GetStage(sid) (STAGES[(sid)])
+static Stage GetStage(StageId sid) {
+    static Stage STAGES[STAGE_COUNT] = {0};
+    static bool INIT = false;
+
+    if (!INIT) {
+        INIT = true;
+
+        {
+            LTexture tx = GetTexture(TX_WOODMAN_STAGE);
+            Stage stage = {0};
+            stage.background = tx;
+            stage.camera_start = Vec3Lit(129, 121, 0.0f);
+            STAGES[STAGE_WOODMAN] = stage;
+        }
+    }
+
+    return STAGES[sid];
+}
 
 ////////////////////////////////////////////////////
 
@@ -2985,7 +3002,7 @@ static void StageTick(GameState* gstate) {
 
         // Draw background. shift its position until the stage start is the world space origin.
         {
-            LTexture tx = GetTexture(gstate->stage.background);
+            LTexture tx = gstate->stage.background;
 
             //     Vec3 offset_aseprite = gstate->stage.camera_start;
             //     Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
