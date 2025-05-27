@@ -2726,16 +2726,6 @@ typedef enum {
     STAGE_COUNT,
 } StageId;
 
-// static const Stage WOODMAN_STAGE = {
-//     .background = TX_WOODMAN_STAGE,
-//     .camera_start = Vec3Lit(129, 121, 0.0f),
-// };
-
-// static Stage STAGES[STAGE_COUNT] = {
-//     {0},
-//     WOODMAN_STAGE,
-// };
-
 static Stage GetStage(StageId sid) {
     static Stage STAGES[STAGE_COUNT] = {0};
     static bool INIT = false;
@@ -2747,7 +2737,7 @@ static Stage GetStage(StageId sid) {
             LTexture tx = GetTexture(TX_WOODMAN_STAGE);
             Stage stage = {0};
             stage.background = tx;
-            stage.camera_start = Vec3Lit(129, 121, 0.0f);
+            stage.camera_start = TextureAsepritePosToWorlPos(tx, Vec3Lit(129, 121, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
         }
     }
@@ -3002,19 +2992,9 @@ static void StageTick(GameState* gstate) {
 
         // Draw background. shift its position until the stage start is the world space origin.
         {
-            LTexture tx = gstate->stage.background;
-
-            //     Vec3 offset_aseprite = gstate->stage.camera_start;
-            //     Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
-
-            //     Vec3 pos = TextureBottomLeft(tx);
-            //     pos = Vec3Add(pos, offset);
-
-            Vec3 pos = TextureAsepritePosToWorlPos(tx, gstate->stage.camera_start);
             // Remember we have to negate all these offsets to get the origin of the quad to be the
             // start position.
-            pos = Vec3Negate(pos);
-            DrawLTexture(tx, Vec3ToVec2(pos), 1.0f);
+            DrawLTexture(gstate->stage.background, Vec3ToVec2(Vec3Negate(gstate->stage.camera_start)), 1.0f);
         }
 
         EndShaderPass();
