@@ -1844,7 +1844,6 @@ LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 co
         // center src and dest.
         Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
         Vec2 c_dst = Vec2Lit(pos.x, pos.y);
-        breakpoint();
         DrawLTexturePro(tx, c_src, r_src, c_dst, r_dst, 0.0f, color);
     }
 }
@@ -2705,6 +2704,8 @@ static const f32 GRID_DEPTH = 1.0f;
 
 typedef struct {
     TextureId background;
+    // How to find. make a 128 x 120 selection in aseprite. the pixel value that is 1, 1 off from the
+    // corner you finish selecting is the start.
     Vec3 start;
 } Stage;
 
@@ -2716,7 +2717,7 @@ typedef enum {
 
 static const Stage WOODMAN_STAGE = {
     .background = TX_WOODMAN_STAGE,
-    .start = Vec3Lit(113, 1153, 0.0f),
+    .start = Vec3Lit(129, 121, 0.0f),
 };
 
 static Stage STAGES[STAGE_COUNT] = {
@@ -2944,11 +2945,6 @@ static void StageTick(GameState* gstate) {
         SPAWNED = false;
     }
 
-    // if (!SPAWNED) {
-    //     CAMERA.eye = Vec3Lit(113, 0.0, 0.0f);  // gstate->stage.start;
-    //     SPAWNED = true;
-    // }
-
     // Debug text positioning + rendering.
     if (true) {
         float dx = 1.0f;
@@ -2976,24 +2972,20 @@ static void StageTick(GameState* gstate) {
         f32 hheight = 0.5f * height;
         pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
 
+        // Draw background. shift its position until the stage start is the world space origin.
         {
             LTexture tx = GetTexture(gstate->stage.background);
 
-            // Vec3 offset_aseprite = Vec3Lit(0.0f, 1281, 0.0f);
-            // Vec3 offset_aseprite = Vec3Lit(136.0f, 128.0f, 0.0f);
-            Vec3 offset_aseprite = Vec3Lit(0.0f, 0.0f, 0.0f);
-            Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y + 1, 0.0f);
+            Vec3 offset_aseprite = gstate->stage.start;
+            Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
 
             Vec3 pos = TextureBottomLeft(tx);
             pos = Vec3Add(pos, offset);
             // Remember we have to negate all these offsets to get the origin of the quad to be the
             // start position.
             pos = Vec3Negate(pos);
-            // pos = Vec3Add(pos, Vec3Lit(-113, -1153, 0.0f));
             DrawLTexture(tx, Vec3ToVec2(pos), 1.0f);
         }
-
-        DrawQuad(Vec3Zero(), 10, 10, Mat4Identity(), LRED);
 
         EndShaderPass();
     }
@@ -3032,7 +3024,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
 
-    u32 scale = 1;
+    u32 scale = 3;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
