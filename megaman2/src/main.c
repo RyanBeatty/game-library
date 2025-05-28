@@ -741,9 +741,6 @@ static LTexture GetTexture(TextureLabel label) {
 // (with +x right and +y down). This will convert to a position that is properly offset from the
 // quad center/origin.
 static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 aseprite_pos) {
-    Vec3 offset_aseprite = aseprite_pos;
-    Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
-
     // Flip y. origin now in bottom left corner.
     aseprite_pos.y = tx.height - aseprite_pos.y;
 
@@ -2629,6 +2626,7 @@ typedef struct Entity {
 
 typedef struct EntityManager {
     Entity entities[ENTITY_CAP];
+    u32 cap;
 
     EntityId inactive_to_be[ENTITY_INACTIVE_TO_BE_CAP];
     u32 inactive_cap;
@@ -2639,8 +2637,11 @@ static EntityManager EntityM = {0};
 
 #define GetEntityManager() &EntityM
 
+#define GetNumEntities() (EntityM.cap)
+
 static void EntitySystemInit() {
     memset(&EntityM, 0, sizeof(EntityM));
+    EntityM.cap = ENTITY_CAP;
     EntityM.inactive_cap = ENTITY_INACTIVE_TO_BE_CAP;
 }
 
@@ -2756,7 +2757,7 @@ static Stage GetStage(StageId sid) {
             LTexture tx = GetTexture(TX_WOODMAN_STAGE);
             Stage stage = {0};
             stage.background = tx;
-            stage.camera_start = AsepritePosToWorldPos(tx, Vec3Lit(129, 121, 0.0f));
+            stage.camera_start = AsepritePosToWorldPos(tx, Vec3Lit(129, 121, 1.0f));
             stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(127.0f, 181.0f, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
         }
@@ -2997,6 +2998,30 @@ static void StageTick(GameState* gstate) {
         }
     }
 
+    if (gstate->update) {
+        if (!SPAWNED) {
+            SPAWNED = true;
+            Entity* e = AllocateEntity();
+            e->pos = gstate->stage.player_start;
+            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
+            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+        }
+
+        // Update graphics.
+        for (u32 i = 0; i < GetNumEntities(); ++i) {
+            Entity* e = GetEntity(i);
+            if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                continue;
+            }
+
+            if (TestFlag(e->flags, EFLAG_DRAW)) {
+                GraphicsInfo* graphics = &e->graphics;
+                graphics->pos = e->pos;
+                graphics->orient = e->orient;
+            }
+        }
+    }
+
     BeginRender();
 
     {
@@ -3015,7 +3040,24 @@ static void StageTick(GameState* gstate) {
             DrawLTexture(gstate->stage.background, Vec2Zero(), 1.0f);
         }
 
-        DrawQuad(gstate->stage.player_start, 24.0f, 24.0f, Mat4Identity(), LBLUE);
+        for (u32 i = 0; i < GetNumEntities(); ++i) {
+            Entity* e = GetEntity(i);
+            if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                continue;
+            }
+
+            if (TestFlag(e->flags, EFLAG_DRAW)) {
+                DrawCmd* cmd = AddDrawMeshCmd();
+
+                cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
+                cmd->meshcmd.color = e->graphics.color;
+                cmd->meshcmd.uvscale = e->graphics.uvscale;
+                cmd->meshcmd.uvoffset = e->graphics.uvoffset;
+                cmd->meshcmd.txid = e->graphics.txid;
+                breakpoint();
+                cmd->meshcmd.meshid = e->graphics.mid;
+            }
+        }
 
         EndShaderPass();
     }
