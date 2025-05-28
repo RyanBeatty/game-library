@@ -2757,6 +2757,7 @@ static Stage GetStage(StageId sid) {
             Stage stage = {0};
             stage.background = tx;
             stage.camera_start = AsepritePosToWorldPos(tx, Vec3Lit(129, 121, 0.0f));
+            stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(127.0f, 181.0f, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
         }
     }
@@ -3013,6 +3014,8 @@ static void StageTick(GameState* gstate) {
         {
             DrawLTexture(gstate->stage.background, Vec2Zero(), 1.0f);
         }
+
+        DrawQuad(gstate->stage.player_start, 24.0f, 24.0f, Mat4Identity(), LBLUE);
 
         EndShaderPass();
     }
