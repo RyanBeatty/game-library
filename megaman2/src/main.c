@@ -737,12 +737,31 @@ static LTexture GetTexture(TextureLabel label) {
 
 #define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
 
-static Vec3 TextureAsepritePosToWorlPos(LTexture tx, Vec3 aseprite_pos) {
+// We assume that a quad's center is the origin. aseprite assumes that a quads top left is the origin
+// (with +x right and +y down). This will convert to a position that is properly offset from the
+// quad center/origin.
+static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 aseprite_pos) {
     Vec3 offset_aseprite = aseprite_pos;
     Vec3 offset = Vec3Lit(offset_aseprite.x, tx.height - offset_aseprite.y, 0.0f);
 
-    Vec3 pos = TextureBottomLeft(tx);
-    pos = Vec3Add(pos, offset);
+    // Flip y. origin now in bottom left corner.
+    aseprite_pos.y = tx.height - aseprite_pos.y;
+
+    // We want to shift the origin to the center but find the offset from the origin to
+    // our aseprite pos hence the negative. Think about it in vectors. if my aseprite_pos
+    // is a vector from origin (bottom left) to pos. then I shift my origin to the right. I now need
+    // to find a vector from origin to bottom left (hence the negative) then add to that the
+    // aseprite offset. the resulting vector is my new vector pos.
+    //
+    /*
+
+             apos
+             ^  ^
+            /    \
+           /       \
+        bl <-------center
+    */
+    Vec3 pos = Vec3Add(aseprite_pos, Vec3Lit(-0.5f * tx.width, -0.5f * tx.height, 0.0f));
     return pos;
 }
 
@@ -2737,7 +2756,7 @@ static Stage GetStage(StageId sid) {
             LTexture tx = GetTexture(TX_WOODMAN_STAGE);
             Stage stage = {0};
             stage.background = tx;
-            stage.camera_start = TextureAsepritePosToWorlPos(tx, Vec3Lit(129, 121, 0.0f));
+            stage.camera_start = AsepritePosToWorldPos(tx, Vec3Lit(129, 121, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
         }
     }
@@ -2958,7 +2977,7 @@ static void StageTick(GameState* gstate) {
 
     if (!gstate->init) {
         gstate->stage = GetStage(STAGE_WOODMAN);
-        CAMERA.eye = Vec3Zero();
+        CAMERA.eye = gstate->stage.camera_start;
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
     }
@@ -2990,11 +3009,9 @@ static void StageTick(GameState* gstate) {
         f32 hheight = 0.5f * height;
         pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
 
-        // Draw background. shift its position until the stage start is the world space origin.
+        // Draw background. Assumption is that origin is at center of background texture.
         {
-            // Remember we have to negate all these offsets to get the origin of the quad to be the
-            // start position.
-            DrawLTexture(gstate->stage.background, Vec3ToVec2(Vec3Negate(gstate->stage.camera_start)), 1.0f);
+            DrawLTexture(gstate->stage.background, Vec2Zero(), 1.0f);
         }
 
         EndShaderPass();
