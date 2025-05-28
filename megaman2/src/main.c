@@ -2984,19 +2984,19 @@ static void StageTick(GameState* gstate) {
         SPAWNED = false;
     }
 
-    // Debug text positioning + rendering.
-    if (true) {
-        float dx = 1.0f;
-        if (IsKeyPressed(KEY_UP)) {
-            CAMERA.eye.y += dx;
-        } else if (IsKeyPressed(KEY_DOWN)) {
-            CAMERA.eye.y -= dx;
-        } else if (IsKeyPressed(KEY_LEFT)) {
-            CAMERA.eye.x -= dx;
-        } else if (IsKeyPressed(KEY_RIGHT)) {
-            CAMERA.eye.x += dx;
-        }
-    }
+    // // Debug text positioning + rendering.
+    // if (true) {
+    //     float dx = 1.0f;
+    //     if (IsKeyPressed(KEY_UP)) {
+    //         CAMERA.eye.y += dx;
+    //     } else if (IsKeyPressed(KEY_DOWN)) {
+    //         CAMERA.eye.y -= dx;
+    //     } else if (IsKeyPressed(KEY_LEFT)) {
+    //         CAMERA.eye.x -= dx;
+    //     } else if (IsKeyPressed(KEY_RIGHT)) {
+    //         CAMERA.eye.x += dx;
+    //     }
+    // }
 
     if (gstate->update) {
         if (!SPAWNED) {
@@ -3005,6 +3005,27 @@ static void StageTick(GameState* gstate) {
             e->pos = gstate->stage.player_start;
             GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+        }
+
+        // Update.
+        for (u32 i = 0; i < GetNumEntities(); ++i) {
+            Entity* e = GetEntity(i);
+            if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                continue;
+            }
+
+            if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                float dx = 1.0f;
+                if (IsKeyPressed(KEY_UP)) {
+                    e->pos.y += dx;
+                } else if (IsKeyPressed(KEY_DOWN)) {
+                    e->pos.y -= dx;
+                } else if (IsKeyPressed(KEY_LEFT)) {
+                    e->pos.x -= dx;
+                } else if (IsKeyPressed(KEY_RIGHT)) {
+                    e->pos.x += dx;
+                }
+            }
         }
 
         // Update graphics.
