@@ -2758,7 +2758,7 @@ static Stage GetStage(StageId sid) {
             Stage stage = {0};
             stage.background = tx;
             stage.camera_start = AsepritePosToWorldPos(tx, Vec3Lit(129, 121, 1.0f));
-            stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(127.0f, 181.0f, 0.0f));
+            stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(129.0f, 181.0f, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
         }
     }
@@ -3026,6 +3026,25 @@ static void StageTick(GameState* gstate) {
                     e->pos.x += dx;
                 }
             }
+        }
+
+        // Update camera.
+        {
+            Entity* player = NULL;
+            for (u32 i = 0; i < GetNumEntities(); ++i) {
+                Entity* e = GetEntity(i);
+                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                    continue;
+                }
+
+                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                    player = e;
+                    break;
+                }
+            }
+            Assert(player);
+
+            CAMERA.eye.x = player->pos.x;
         }
 
         // Update graphics.
