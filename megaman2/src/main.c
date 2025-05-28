@@ -3054,7 +3054,6 @@ static void StageTick(GameState* gstate) {
                 cmd->meshcmd.uvscale = e->graphics.uvscale;
                 cmd->meshcmd.uvoffset = e->graphics.uvoffset;
                 cmd->meshcmd.txid = e->graphics.txid;
-                breakpoint();
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
         }
