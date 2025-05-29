@@ -24,11 +24,7 @@ MEGAMAN GOALS
 
 
 TODO MEGAMAN
-* cleanup everything not used from frogger
 * scenes
-    * title scene
-    * stage select scene
-    * stage scene
     * boss scene
 * better text rendering
 
