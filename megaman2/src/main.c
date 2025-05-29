@@ -2877,40 +2877,11 @@ static void SceneDefaultTick(GameState* gstate) {
 }
 
 static void TitleScreenTick(GameState* gstate) {
-    static Vec3 POS = {0};
-
     if (!gstate->init) {
-        u32 width = gstate->renderw;
-        u32 height = gstate->renderh;
-
-        // char msg[] = "Press ENTER To Start";
-        char msg[] = "E";
-        u32 size = strlen(msg);
-
-        u32 fontsize = 10.0f;
-        Vec2 dim = MeasureLText(msg, size, fontsize);
-
-        // Center text by shifting center forward by half a text cell size and then shifting backward
-        // by half the text size.
-        POS = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
     }
 
     if (IsKeyPressed(KEY_ENTER)) {
         gstate->nextsceneid = SCENE_STAGE_SELECT;
-    }
-
-    // Debug text positioning + rendering.
-    if (true) {
-        float dx = 1.0f;
-        if (IsKeyPressed(KEY_UP)) {
-            POS.y += dx;
-        } else if (IsKeyPressed(KEY_DOWN)) {
-            POS.y -= dx;
-        } else if (IsKeyPressed(KEY_LEFT)) {
-            POS.x -= dx;
-        } else if (IsKeyPressed(KEY_RIGHT)) {
-            POS.x += dx;
-        }
     }
 
     BeginRender();
@@ -2977,26 +2948,14 @@ static void StageTick(GameState* gstate) {
     static LCamera CAMERA = {0};
     static bool SPAWNED = false;
 
+    f32 dt = gstate->dt;
+
     if (!gstate->init) {
         gstate->stage = GetStage(STAGE_WOODMAN);
         CAMERA.eye = gstate->stage.camera_start;
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
     }
-
-    // // Debug text positioning + rendering.
-    // if (true) {
-    //     float dx = 1.0f;
-    //     if (IsKeyPressed(KEY_UP)) {
-    //         CAMERA.eye.y += dx;
-    //     } else if (IsKeyPressed(KEY_DOWN)) {
-    //         CAMERA.eye.y -= dx;
-    //     } else if (IsKeyPressed(KEY_LEFT)) {
-    //         CAMERA.eye.x -= dx;
-    //     } else if (IsKeyPressed(KEY_RIGHT)) {
-    //         CAMERA.eye.x += dx;
-    //     }
-    // }
 
     if (gstate->update) {
         if (!SPAWNED) {
@@ -3015,16 +2974,18 @@ static void StageTick(GameState* gstate) {
             }
 
             if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                float dx = 1.0f;
-                if (IsKeyPressed(KEY_UP)) {
-                    e->pos.y += dx;
-                } else if (IsKeyPressed(KEY_DOWN)) {
-                    e->pos.y -= dx;
-                } else if (IsKeyPressed(KEY_LEFT)) {
-                    e->pos.x -= dx;
-                } else if (IsKeyPressed(KEY_RIGHT)) {
-                    e->pos.x += dx;
+                static const f32 MOVE_SPEED = 1.0f;
+                bool moved = false;
+                Vec3 move = Vec3Zero();
+                if (IsKeyDown(KEY_LEFT)) {
+                    e->pos.x -= MOVE_SPEED;
+                    moved = true;
+                } else if (IsKeyDown(KEY_RIGHT)) {
+                    e->pos.x += MOVE_SPEED;
+                    moved = true;
                 }
+
+                e->pos = Vec3Add(e->pos, Vec3Scale(move, dt));
             }
         }
 
