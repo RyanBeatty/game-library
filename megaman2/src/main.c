@@ -737,6 +737,14 @@ static LTexture GetTexture(TextureLabel label) {
 
 #define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
 
+// Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
+// given in the UI to be the center of the pixel.
+#define AspritePxCtr(px) (px)
+#define AsepritePxBL(px) (Vec3Lit((px).x - 0.5f, (px).y + 0.5f, (px).z))
+#define AsepritePxBR(px) (Vec3Lit((px).x + 0.5f, (px).y + 0.5f, (px).z))
+#define AsepritePxTL(px) (Vec3Lit((px).x - 0.5f, (px).y - 0.5f, (px).z))
+#define AsepritePxTR(px) (Vec3Lit((px).x + 0.5f, (px).y - 0.5f, (px).z))
+
 // We assume that a quad's center is the origin. aseprite assumes that a quads top left pixel center
 // is the origin (with +x right and +y down). This will convert to a position that is properly offset from the
 // quad center/origin. Note that coord 0, 0 in aseprite represents the center of the pixel in top left corner.
@@ -2989,6 +2997,7 @@ static void StageTick(GameState* gstate) {
             e->shape.aabb2d.c = Vec2Zero();
 
             GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * box.r.x, 2.0f * box.r.y, 1.0f), LRED);
+            Mat4 m = Mat4Multiply(Mat4TranslateV(Vec3Lit(0.0f, 1281.0f, 0.0f)), Mat4ScaleV(Vec3Lit(1.0f, -1.0f, 1.0f)));
             breakpoint();
             FlagOn(e->flags, EFLAG_COLLIDER);
         }
@@ -2996,8 +3005,8 @@ static void StageTick(GameState* gstate) {
 
     if (gstate->update) {
         if (!SPAWNED) {
-            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(118.0f, 192.0f, 0.0f));
-            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(141.0f, 169.0f, 0.0f));
+            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, AsepritePxBL(Vec3Lit(118.0f, 192.0f, 0.0f)));
+            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, AsepritePxTR(Vec3Lit(141.0f, 169.0f, 0.0f)));
             breakpoint();
             Vec3 pos = Vec3Lerp(bl, tr, 0.5f);
 
