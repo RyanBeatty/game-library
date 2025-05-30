@@ -737,12 +737,14 @@ static LTexture GetTexture(TextureLabel label) {
 
 #define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
 
-// We assume that a quad's center is the origin. aseprite assumes that a quads top left is the origin
-// (with +x right and +y down). This will convert to a position that is properly offset from the
-// quad center/origin.
+// We assume that a quad's center is the origin. aseprite assumes that a quads top left pixel center
+// is the origin (with +x right and +y down). This will convert to a position that is properly offset from the
+// quad center/origin. Note that coord 0, 0 in aseprite represents the center of the pixel in top left corner.
 static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 aseprite_pos) {
-    // Flip y. origin now in bottom left corner.
-    aseprite_pos.y = tx.height - aseprite_pos.y;
+    // Flip y. origin now in bottom left corner. Note that aseprite 0 indexes pixels
+    // so we need to subtract by 1. example if texture is 10 height, the last pixel will be
+    // 9 so to map 9 -> 0 we need 10 - 9 - 1 = 0.
+    aseprite_pos.y = tx.height - aseprite_pos.y - 1.0f;
 
     // We want to shift the origin to the center but find the offset from the origin to
     // our aseprite pos hence the negative. Think about it in vectors. if my aseprite_pos
@@ -758,7 +760,7 @@ static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 aseprite_pos) {
            /       \
         bl <-------center
     */
-    Vec3 pos = Vec3Add(aseprite_pos, Vec3Lit(-0.5f * tx.width, -0.5f * tx.height, 0.0f));
+    Vec3 pos = Vec3Add(aseprite_pos, Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f));
     return pos;
 }
 
@@ -1974,6 +1976,20 @@ typedef struct {
     Vec2 r;  // half width extents along each axis.
 } AABB2D;
 
+// Returns a aabb2d from a bottom left and top right
+LCORE AABB2D AABB2DFromBLTR(Vec2 bl, Vec2 tr) {
+    Vec2 r = Vec2Sub(tr, bl);
+    // If we just subtract the right and left coords, we'll be off of the width by 1, so we need to add
+    // that back in. similar logic for top and bottom.
+    r.x = 0.5f * (r.x + 1.0f);
+    r.y = 0.5f * (r.y + 1.0f);
+
+    AABB2D box = {0};
+    box.r = r;
+    box.c = Vec2Add(bl, r);
+    return box;
+}
+
 // Normal from b -> a if there is a collision.
 LCORE bool TestAABB2DVsAABB2D(AABB2D a, AABB2D b, Vec2* normal, f32* depth) {
     Vec2 ba = Vec2Sub(a.c, b.c);
@@ -2955,13 +2971,40 @@ static void StageTick(GameState* gstate) {
         CAMERA.eye = gstate->stage.camera_start;
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
+
+        // Colliders.
+        // TODO: This should be moved onto stage data.
+        {
+            // Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(1.0f, 256.0f, 0.0f));
+            // Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(256.0f, 193.0f, 0.0f));
+            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(118.0f, 192.0f, 0.0f));
+            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(141.0f, 169.0f, 0.0f));
+            AABB2D box = AABB2DFromBLTR(Vec3ToVec2(bl), Vec3ToVec2(tr));
+
+            Entity* e = AllocateEntity();
+            e->pos = Vec2ToVec3(box.c);
+
+            e->shape.type = PH_AABB2D;
+            e->shape.aabb2d = box;
+            e->shape.aabb2d.c = Vec2Zero();
+
+            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * box.r.x, 2.0f * box.r.y, 1.0f), LRED);
+            breakpoint();
+            FlagOn(e->flags, EFLAG_COLLIDER);
+        }
     }
 
     if (gstate->update) {
         if (!SPAWNED) {
+            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(118.0f, 192.0f, 0.0f));
+            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(141.0f, 169.0f, 0.0f));
+            breakpoint();
+            Vec3 pos = Vec3Lerp(bl, tr, 0.5f);
+
             SPAWNED = true;
             Entity* e = AllocateEntity();
-            e->pos = gstate->stage.player_start;
+            // e->pos = gstate->stage.player_start;
+            e->pos = pos;
             GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
