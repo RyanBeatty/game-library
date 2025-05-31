@@ -1936,39 +1936,6 @@ typedef struct Sphere {
     f32 r;   // radius
 } Sphere;
 
-// // Computes a sphere in the coord space of the passed in verts.
-// static Sphere BoundingSphere(Vec3* vs, u32 vsize) {
-//     Vec3 center = ComputeCentroid(vs, vsize);
-
-//     f32 radius = 0.0f;
-//     for (u32 i = 0; i < vsize; ++i) {
-//         f32 len = Vec3Len(Vec3Sub(vs[i], center));
-//         if (len > radius) {
-//             radius = len;
-//         }
-//     }
-
-//     return (Sphere){.c = center, .r = radius};
-// }
-
-// // Returns normal pointing from b to a if there is a collision.
-// static bool TestSphereVsSphere(Sphere a, Sphere b, Vec3* normal, f32* depth) {
-//     bool hit = false;
-//     Vec3 dir = Vec3Sub(b.c, a.c);
-//     f32 d = Vec3Dot(dir, dir);
-//     f32 rr = a.r + b.r;
-//     if (d <= rr * rr) {
-//         hit = true;
-//         // TODO: is this correct? shouldn't it be the diff between the dist between centers and the radius?
-//         d = f32sqrt(d);
-//         dir = Vec3Normalize(dir);
-//     }
-
-//     *normal = dir;
-//     *depth = d;
-//     return hit;
-// }
-
 typedef struct {
     Vec2 c;  // center.
     Vec2 r;  // half width extents along each axis.
@@ -2056,108 +2023,6 @@ typedef struct AABB {
     Vec3 c;  // center.
     Vec3 r;  // half width extents along each axis.
 } AABB;
-
-// // Computes the axis aligned bounding box in the coordinate space of passed in vertices.
-// static AABB ComputeAABB(Vec3* vs, u32 size) {
-//     AABB aabb = {0};
-//     for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
-//         Vec3 dir = AXIS[i];
-
-//         f32 dmin = F32_MAX;
-//         f32 dmax = -F32_MAX;
-//         for (u32 j = 0; j < size; ++j) {
-//             f32 d = Vec3Dot(vs[j], dir);
-//             if (d < dmin) {
-//                 dmin = d;
-//             }
-//             if (d > dmax) {
-//                 dmax = d;
-//             }
-//         }
-
-//         // compute the half width extent of the dimension of the axis.
-//         // the center can be found by adding the radius to the min distance.
-//         // value in the correct coordinate.
-//         aabb.r.f[i] = 0.5f * (dmax - dmin);
-//         aabb.c.f[i] = aabb.r.f[i] + dmin;
-//     }
-
-//     return aabb;
-// }
-
-// static bool TestAABBVsAABB(AABB a, AABB b, Vec3* normal, f32* depth) {
-//     f32 dcx = a.c.f[0] - b.c.f[0];
-//     f32 dx = (a.r.f[0] + b.r.f[0]) - f32abs(dcx);
-//     if (dx <= 0.0) {
-//         return false;
-//     }
-
-//     f32 dcy = a.c.f[1] - b.c.f[1];
-//     f32 dy = (a.r.f[1] + b.r.f[1]) - f32abs(dcy);
-//     if (dy <= 0.0f) {
-//         return false;
-//     }
-
-//     f32 dcz = a.c.f[2] - b.c.f[2];
-//     f32 dz = (a.r.f[2] + b.r.f[2]) - f32abs(dcz);
-//     if (dz <= 0.0f) {
-//         return false;
-//     }
-
-//     Vec3 n = Vec3Lit(1.0f * (dcx < 0.0f ? -1.0f : 1.0f), 0.0f, 0.0f);
-//     f32 d = dx;
-//     if (dy < d || dz < d) {
-//         if (dy < dz) {
-//             n = Vec3Lit(0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f), 0.0f);
-//             d = dy;
-//         } else {
-//             n = Vec3Lit(0.0f, 0.0f, 1.0f * (dcy < 0.0f ? -1.0f : 1.0f));
-//             d = dz;
-//         }
-//     }
-
-//     *normal = n;
-//     *depth = d;
-//     return true;
-// }
-
-// // Returns normal pointing from aabb to sphere if there is a collision.
-// static bool TestSphereVsAABB(Sphere s, AABB aabb, Vec3* normal, f32* depth) {
-//     Vec3 max = Vec3Add(aabb.c, aabb.r);
-//     Vec3 min = Vec3Sub(aabb.c, aabb.r);
-
-//     // Find closest point from sphere center to the space bounded by aabb (which might be inside of) aabb.
-//     Vec3 cp = Vec3Zero();
-//     for (u32 i = 0; i < ArraySizeOf(AXIS); ++i) {
-//         f32 v = s.c.f[i];
-//         if (v < min.f[i]) {
-//             v = min.f[i];
-//         }
-//         if (v > max.f[i]) {
-//             v = max.f[i];
-//         }
-//         cp.f[i] = v;
-//     }
-
-//     bool hit = false;
-//     Vec3 dir = Vec3Sub(cp, s.c);
-//     f32 d = Vec3Dot(dir, dir);
-//     if (d <= s.r * s.r) {
-//         // if (DEBUG_EVER) {
-//         //     breakpoint();
-//         // }
-//         hit = true;
-//         d = f32sqrt(d);
-//         // TODO: Add SLOP.
-//         d = (s.r - d);
-//         // Want to point normal towards sphere so negate.
-//         dir = Vec3Normalize(Vec3Negate(dir));
-//     }
-
-//     *normal = dir;
-//     *depth = d;
-//     return hit;
-// }
 
 typedef enum PolyhedronType { PH_NONE = 0, PH_CIRCLE, PH_SPHERE, PH_AABB2D, PH_AABB, PH_COUNT } PolyhedronType;
 
@@ -3230,7 +3095,6 @@ LCORE void Stage2Tick(GameState* gstate) {
         Vec3 max_world = Vec3Add(max_aseprite, origin_offset);
 
         Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
-        breakpoint();
 
         CAMERA.eye = mid;
         CAMERA.orient = Vec3Zero();
