@@ -762,17 +762,6 @@ static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 pos_aseprite) {
     return pos_world;
 }
 
-// We assume that a quad's center is the origin. aseprite assumes that a quads top left pixel center
-// is the origin (with +x right and +y down). This will convert to a position that is properly offset from the
-// quad center/origin. Note that coord 0, 0 in aseprite represents the center of the pixel in top left corner.
-static Vec3 AsepritePosToWorldPos2(LTexture tx, Vec3 aseprite_pos) {
-    Vec3 origin_offset = Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f);
-    Mat4 m = Mat4Multiply(Mat4TranslateV(origin_offset), Mat4ScaleV(Vec3Lit(1.0f, -1.0f, 1.0f)));
-    Vec3 v = Vec3WTransform(aseprite_pos, m);
-    breakpoint();
-    return v;
-}
-
 static void TexturesInit() {
     TextureCache* tcache = &TCACHE;
     tcache->txlen = 0;
@@ -3004,8 +2993,6 @@ static void StageTick(GameState* gstate) {
             e->shape.aabb2d.c = Vec2Zero();
 
             GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * box.r.x, 2.0f * box.r.y, 1.0f), LRED);
-            Mat4 m = Mat4Multiply(Mat4TranslateV(Vec3Lit(0.0f, 1281.0f, 0.0f)), Mat4ScaleV(Vec3Lit(1.0f, -1.0f, 1.0f)));
-            breakpoint();
             FlagOn(e->flags, EFLAG_COLLIDER);
         }
     }
@@ -3034,14 +3021,11 @@ static void StageTick(GameState* gstate) {
 
             if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                 static const f32 MOVE_SPEED = 1.0f;
-                bool moved = false;
                 Vec3 move = Vec3Zero();
                 if (IsKeyDown(KEY_LEFT)) {
                     e->pos.x -= MOVE_SPEED;
-                    moved = true;
                 } else if (IsKeyDown(KEY_RIGHT)) {
                     e->pos.x += MOVE_SPEED;
-                    moved = true;
                 }
 
                 e->pos = Vec3Add(e->pos, Vec3Scale(move, dt));
@@ -3147,11 +3131,9 @@ static void StageTick(GameState* gstate) {
     EndRender();
 }
 
-static void Stage2Tick(GameState* gstate) {
+// TODO; Remove
+LCORE void Stage2Tick(GameState* gstate) {
     static LCamera CAMERA = {0};
-    static bool SPAWNED = false;
-
-    f32 dt = gstate->dt;
 
     if (!gstate->init) {
         gstate->stage = GetStage(STAGE_WOODMAN);
