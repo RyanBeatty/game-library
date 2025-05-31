@@ -2792,7 +2792,23 @@ static Stage GetStage(StageId sid) {
             LTexture tx = GetTexture(TX_WOODMAN_STAGE);
             Stage stage = {0};
             stage.background = tx;
-            stage.camera_start = AsepritePosToWorldPos(tx, Vec3Lit(129, 121, 1.0f));
+            {
+                Vec3 origin_offset = Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f);
+
+                Vec3 min_aseprite = Vec3Lit(1, 1, 0);
+                // Flip y.
+                min_aseprite.y = tx.height - 1.0f - min_aseprite.y;
+                Vec3 min_world = Vec3Add(min_aseprite, origin_offset);
+
+                Vec3 max_aseprite = Vec3Lit(256, 240, 0);
+                // Flip y.
+                max_aseprite.y = tx.height - 1.0f - max_aseprite.y;
+                Vec3 max_world = Vec3Add(max_aseprite, origin_offset);
+
+                Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
+
+                stage.camera_start = Vec3Lit(mid.x, mid.y, 1.0f);
+            }
             stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(129.0f, 181.0f, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
         }
@@ -3016,10 +3032,10 @@ static void StageTick(GameState* gstate) {
 
     if (gstate->update) {
         if (!SPAWNED) {
-            Vec3 bl = AsepritePosToWorldPos2(gstate->stage.background, AsepritePxBL(Vec3Lit(118.0f, 192.0f, 0.0f)));
-            Vec3 tr = AsepritePosToWorldPos2(gstate->stage.background, AsepritePxTR(Vec3Lit(141.0f, 169.0f, 0.0f)));
-            breakpoint();
+            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, AsepritePxBL(Vec3Lit(118.0f, 192.0f, 0.0f)));
+            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, AsepritePxTR(Vec3Lit(141.0f, 169.0f, 0.0f)));
             Vec3 pos = Vec3Lerp(bl, tr, 0.5f);
+            breakpoint();
 
             SPAWNED = true;
             Entity* e = AllocateEntity();
@@ -3276,7 +3292,7 @@ static void GameStateInit(GameState* gstate) {
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_TITLE_SCREEN] = TitleScreenTick;
         gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
-        gstate->scenefuncs[SCENE_STAGE] = Stage2Tick;
+        gstate->scenefuncs[SCENE_STAGE] = StageTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
