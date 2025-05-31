@@ -1891,8 +1891,6 @@ LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2L
 ////////////////////////////////////////////////////////////
 // S:Geometry
 
-static bool DEBUG_EVER = false;
-
 static const f32 SLOP = 2.0f * F32_EPSILON;
 
 static const Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
@@ -3242,7 +3240,6 @@ static void GameStateTick(GameState* gstate) {
                 gstate->debug = !gstate->debug;
                 gstate->update = !gstate->debug;
                 gstate->debug_ever = true;
-                DEBUG_EVER = true;
                 TraceLog(LOG_INFO, "Debug %s", gstate->debug ? "On" : "Off");
             }
             if (gstate->debug) {
