@@ -2594,10 +2594,7 @@ typedef enum EntityFlag {
     EFLAG_COLLIDER = 1 << 3,
     EFLAG_PROJECTILE = 1 << 4,
     EFLAG_WALL = 1 << 5,
-    EFLAG_GOAL = 1 << 6,
-    EFLAG_HAZARD = 1 << 7,
-    EFLAG_PLATFORM = 1 << 8,
-    EFLAG_SUBMERGABLE = 1 << 9,
+    EFLAG_PHYSICS = 1 << 6,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -3021,15 +3018,16 @@ static void StageTick(GameState* gstate) {
             e->ppos = e->pos;
 
             if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                static const f32 MOVE_SPEED = 1.0f;
+                static const f32 MOVE_SPEED = 50.0f;
                 Vec3 move = Vec3Zero();
                 if (IsKeyDown(KEY_LEFT)) {
-                    e->pos.x -= MOVE_SPEED;
+                    move.x -= MOVE_SPEED;
                 } else if (IsKeyDown(KEY_RIGHT)) {
-                    e->pos.x += MOVE_SPEED;
+                    move.x += MOVE_SPEED;
                 }
 
-                e->pos = Vec3Add(e->pos, Vec3Scale(move, dt));
+                Vec3 v = Vec3Add(move, Vec3Lit(0.0f, 0.0f * dt, 0.0f));
+                e->pos = Vec3Add(e->pos, Vec3Scale(v, dt));
             }
         }
 
