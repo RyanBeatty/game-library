@@ -2634,7 +2634,7 @@ typedef enum {
     STAGE_COUNT,
 } StageId;
 
-static Stage GetStage(StageId sid) {
+static Stage* GetStage(StageId sid) {
     static Stage STAGES[STAGE_COUNT] = {0};
     static bool INIT = false;
 
@@ -2657,7 +2657,7 @@ static Stage GetStage(StageId sid) {
         }
     }
 
-    return STAGES[sid];
+    return &STAGES[sid];
 }
 
 ////////////////////////////////////////////////////
@@ -2700,7 +2700,7 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
-    Stage stage;
+    Stage* stage;
 } GameState;
 
 static GameState GState;
@@ -2846,14 +2846,14 @@ static void StageTick(GameState* gstate) {
 
     if (!gstate->init) {
         gstate->stage = GetStage(STAGE_WOODMAN);
-        CAMERA.eye = gstate->stage.camera_start;
+        CAMERA.eye = gstate->stage->camera_start;
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
 
         // Colliders.
         // TODO: This should be moved onto stage data.
         {
-            AABB2D bb = AABB2DFromAsepriteBB(gstate->stage.background, AsepritePxBL(Vec2Lit(1.0f, 256.0f)),
+            AABB2D bb = AABB2DFromAsepriteBB(gstate->stage->background, AsepritePxBL(Vec2Lit(1.0f, 256.0f)),
                                              AsepritePxTR(Vec2Lit(256.0f, 193.0f)));
 
             Entity* e = AllocateEntity();
@@ -2871,7 +2871,7 @@ static void StageTick(GameState* gstate) {
         if (!SPAWNED) {
             SPAWNED = true;
             Entity* e = AllocateEntity();
-            e->pos = gstate->stage.player_start;
+            e->pos = gstate->stage->player_start;
 
             e->shape.type = PH_AABB2D;
             e->shape.aabb2d.c = Vec2Zero();
@@ -3010,7 +3010,7 @@ static void StageTick(GameState* gstate) {
 
         // Draw background. Assumption is that origin is at center of background texture.
         {
-            DrawLTexture(gstate->stage.background, Vec2Zero(), 1.0f);
+            DrawLTexture(gstate->stage->background, Vec2Zero(), 1.0f);
         }
 
         for (u32 i = 0; i < GetNumEntities(); ++i) {
@@ -3079,17 +3079,17 @@ LCORE void Stage2Tick(GameState* gstate) {
 
         TraceLog(LOG_INFO, "fooo");
 
-        Vec3 origin_offset = Vec3Lit(-0.5f * (gstate->stage.background.width - 1.0f),
-                                     -0.5f * (gstate->stage.background.height - 1.0f), 0.0f);
+        Vec3 origin_offset = Vec3Lit(-0.5f * (gstate->stage->background.width - 1.0f),
+                                     -0.5f * (gstate->stage->background.height - 1.0f), 0.0f);
 
         Vec3 min_aseprite = Vec3Lit(1, 1, 0);
         // Flip y.
-        min_aseprite.y = gstate->stage.background.height - 1.0f - min_aseprite.y;
+        min_aseprite.y = gstate->stage->background.height - 1.0f - min_aseprite.y;
         Vec3 min_world = Vec3Add(min_aseprite, origin_offset);
 
         Vec3 max_aseprite = Vec3Lit(256, 240, 0);
         // Flip y.
-        max_aseprite.y = gstate->stage.background.height - 1.0f - max_aseprite.y;
+        max_aseprite.y = gstate->stage->background.height - 1.0f - max_aseprite.y;
         Vec3 max_world = Vec3Add(max_aseprite, origin_offset);
 
         Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
@@ -3126,7 +3126,7 @@ LCORE void Stage2Tick(GameState* gstate) {
 
         // Draw background. Assumption is that origin is at center of background texture.
         {
-            DrawLTexture(gstate->stage.background, Vec2Zero(), 1.0f);
+            DrawLTexture(gstate->stage->background, Vec2Zero(), 1.0f);
         }
 
         EndShaderPass();
