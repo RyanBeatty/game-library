@@ -2997,7 +2997,7 @@ static void StageTick(GameState* gstate) {
             e->shape.aabb2d.c = Vec2Zero();
             e->shape.aabb2d.r = bb.r;
 
-            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * bb.r.x, 2.0f * bb.r.y, 1.0f), LRED);
+            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * bb.r.x, 2.0f * bb.r.y, 1.0f), LRED);
             FlagOn(e->flags, EFLAG_COLLIDER);
         }
     }
@@ -3098,6 +3098,16 @@ static void StageTick(GameState* gstate) {
                 cmd->meshcmd.uvoffset = e->graphics.uvoffset;
                 cmd->meshcmd.txid = e->graphics.txid;
                 cmd->meshcmd.meshid = e->graphics.mid;
+            }
+
+            if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+                // TODO: Wireframe rasterization can lead to looking like the quad is offset. For now
+                // Draw filled quads for debugging collisions.
+                Vec3 pos = e->pos;
+                pos.z += 1;  // give it something high so that it will draw over the entity.
+                Polyhedron shape = PolyhedronTransform(e->shape, e->scale, e->orient, pos);
+                Vec4 color = LYELLOW;
+                DrawPolyhedron(&shape, color);
             }
         }
 
