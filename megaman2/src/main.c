@@ -3018,6 +3018,8 @@ static void StageTick(GameState* gstate) {
                 continue;
             }
 
+            e->ppos = e->pos;
+
             if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                 static const f32 MOVE_SPEED = 1.0f;
                 Vec3 move = Vec3Zero();
