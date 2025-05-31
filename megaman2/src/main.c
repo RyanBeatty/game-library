@@ -2990,24 +2990,24 @@ static void StageTick(GameState* gstate) {
             }
         }
 
-        // // Update camera.
-        // {
-        //     Entity* player = NULL;
-        //     for (u32 i = 0; i < GetNumEntities(); ++i) {
-        //         Entity* e = GetEntity(i);
-        //         if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-        //             continue;
-        //         }
+        // Update camera.
+        {
+            Entity* player = NULL;
+            for (u32 i = 0; i < GetNumEntities(); ++i) {
+                Entity* e = GetEntity(i);
+                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                    continue;
+                }
 
-        //         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-        //             player = e;
-        //             break;
-        //         }
-        //     }
-        //     Assert(player);
+                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                    player = e;
+                    break;
+                }
+            }
+            Assert(player);
 
-        //     CAMERA.eye.x = player->pos.x;
-        // }
+            CAMERA.eye.x = player->pos.x;
+        }
 
         // Update graphics.
         for (u32 i = 0; i < GetNumEntities(); ++i) {
