@@ -3178,8 +3178,21 @@ static void Stage2Tick(GameState* gstate) {
         Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
         breakpoint();
 
-        CAMERA.eye = gstate->stage.camera_start;
+        CAMERA.eye = mid;
         CAMERA.orient = Vec3Zero();
+    }
+
+    float dx = 1.0f;
+    if (IsKeyPressed(KEY_UP)) {
+        CAMERA.eye.y += dx;
+    } else if (IsKeyPressed(KEY_DOWN)) {
+        CAMERA.eye.y -= dx;
+
+    } else if (IsKeyPressed(KEY_LEFT)) {
+        CAMERA.eye.x -= dx;
+
+    } else if (IsKeyPressed(KEY_RIGHT)) {
+        CAMERA.eye.x += dx;
     }
 
     BeginRender();
@@ -3263,7 +3276,7 @@ static void GameStateInit(GameState* gstate) {
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_TITLE_SCREEN] = TitleScreenTick;
         gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
-        gstate->scenefuncs[SCENE_STAGE] = StageTick;
+        gstate->scenefuncs[SCENE_STAGE] = Stage2Tick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
