@@ -747,7 +747,7 @@ static LTexture GetTexture(TextureLabel label) {
 
 // Conver the position in aseprite space to world space. aseprite space is the coordinate given by
 // aseprite UI.
-static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 pos_aseprite) {
+static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
     // This essentially moves the origin from aseprite top left corner to bottom right corner. Why do we do this?
     // Its because when we import the texture/png we flip the Y axis there. subtract 1 from height so that the
     // max height aseprite pixel coords get mapped to 0
@@ -757,8 +757,8 @@ static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 pos_aseprite) {
     // aseprite space (which is the center of the bottom left pixel since we flip the Y coords) to the center of
     // the texture itself. Subtract 1 from width/height because we want to find the midpoint between the bottem left
     // pixel's center and the top right pixel's center.
-    Vec3 origin_offset = Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f);
-    Vec3 pos_world = Vec3Add(pos_aseprite, origin_offset);
+    Vec2 origin_offset = Vec2Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f));
+    Vec2 pos_world = Vec2Add(pos_aseprite, origin_offset);
     return pos_world;
 }
 
@@ -1989,10 +1989,10 @@ LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
 // Convert an aseprite bb on a marked up png to a world position bb.
 // The aseprite bb min will be the bottom left corner of the box THAT I SEE ON THE SCREEN. Not the bottom
 // left according to the pixel coords in the UI. The Top right will be similar.
-LCORE AABB2D AABB2DFromAsepriteBB(LTexture tx, Vec3 min_aseprite, Vec3 max_aseprite) {
-    Vec3 min_world = AsepritePosToWorldPos(tx, min_aseprite);
-    Vec3 max_world = AsepritePosToWorldPos(tx, max_aseprite);
-    AABB2D bb = AABB2DFromMinMax(Vec3ToVec2(min_world), Vec3ToVec2(max_world));
+LCORE AABB2D AABB2DFromAsepriteBB(LTexture tx, Vec2 min_aseprite, Vec2 max_aseprite) {
+    Vec2 min_world = AsepritePosToWorldPos(tx, min_aseprite);
+    Vec2 max_world = AsepritePosToWorldPos(tx, max_aseprite);
+    AABB2D bb = AABB2DFromMinMax(min_world, max_world);
     return bb;
 }
 
@@ -2780,11 +2780,11 @@ static Stage GetStage(StageId sid) {
             Stage stage = {0};
             stage.background = tx;
             {
-                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec3Lit(1.0f, 1.0f, 0), Vec3Lit(256.0f, 240.0f, 0));
+                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(1.0f, 1.0f), Vec2Lit(256.0f, 240.0f));
                 stage.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
             }
             {
-                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec3Lit(118.0f, 192.0f, 0), Vec3Lit(141.0f, 169.0f, 0));
+                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(118.0f, 192.0f), Vec2Lit(141.0f, 169.0f));
                 stage.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
             }
             STAGES[STAGE_WOODMAN] = stage;
