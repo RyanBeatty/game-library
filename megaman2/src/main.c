@@ -39,7 +39,7 @@ static f32 TOL = 0.001;
 
 static f32 f32clamp(f32 v, f32 min, f32 max) { return f32min(f32max(v, min), max); }
 
-typedef struct Vec2 {
+typedef struct {
     union {
         struct {
             f32 x;
@@ -78,7 +78,7 @@ static f32 Vec2Len(Vec2 v) { return f32sqrt((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 static bool Vec2Eq(Vec2 a, Vec2 b) { return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL)); }
 
-typedef struct Vec3 {
+typedef struct {
     union {
         struct {
             f32 x;
@@ -157,7 +157,7 @@ LCORE Vec3 Vec3Project(Vec3 v, Vec3 axis) { return Vec3Scale(axis, Vec3Dot(v, ax
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
 // For matrix mult notation wise we will compose from right to left. i.e. X = CBAv.
-typedef struct Mat4 {
+typedef struct {
     union {
         f32 m[4 * 4];
 
@@ -500,7 +500,7 @@ LCORE bool Mat4Eq(Mat4 a, Mat4 b) {
 }
 
 // Used for debug.
-typedef struct Vec4 {
+typedef struct {
     union {
         struct {
             f32 x;
@@ -621,13 +621,13 @@ static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 ////////////////////////////////////////////////////////////
 // S:Render Data
 
-typedef struct Vertex {
+typedef struct {
     Vec3 pos;
     Vec3 normal;
     Vec2 uv;
 } Vertex;
 
-typedef struct Triangle {
+typedef struct {
     union {
         u32 vs[3];
         struct {
@@ -653,7 +653,7 @@ static u32 VBUFFER_SIZE = 0;
 static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
 static u32 IBUFFER_SIZE = 0;
 
-typedef struct LMesh {
+typedef struct {
     u32 ibufferidx;  // Offset into index buffer
     u32 ntriangles;
 } LMesh;
@@ -675,7 +675,7 @@ typedef enum MID {
 
 typedef u32 TextureId;
 
-typedef struct LTexture {
+typedef struct {
     TextureId id;
     i32 width;
     i32 height;
@@ -720,7 +720,7 @@ static LTexture UploadTexture(const char* filename) {
 }
 
 #define MAX_TEXTURES 10
-typedef struct TextureCache {
+typedef struct {
     u32 txlen;
     u32 txcap;
     LTexture textures[MAX_TEXTURES];
@@ -923,7 +923,7 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
 
 typedef u32 ShaderId;
 
-typedef struct LShader {
+typedef struct {
     ShaderId pid;  // program id.
     u32 vid;
     u32 fid;
@@ -1562,7 +1562,7 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
 
 #define MAX_CMDS 4092
 
-typedef struct ShaderPass {
+typedef struct {
     ShaderId sid;
 
     ///////////////////////
@@ -1644,7 +1644,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
 #define MAX_SHADER_PASSES 10
 static const u32 PASSNULL = MAX_SHADER_PASSES;
 
-typedef struct RenderState {
+typedef struct {
     u32 passidx;
     u32 passlen;
     u32 passcap;
@@ -1929,7 +1929,7 @@ static bool TestCircleCircle(Circle a, Circle b, Vec2* normal, f32* depth) {
     return true;
 }
 
-typedef struct Sphere {
+typedef struct {
     Vec3 c;  // center
     f32 r;   // radius
 } Sphere;
@@ -2017,14 +2017,14 @@ LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* dep
     return true;
 }
 
-typedef struct AABB {
+typedef struct {
     Vec3 c;  // center.
     Vec3 r;  // half width extents along each axis.
 } AABB;
 
 typedef enum PolyhedronType { PH_NONE = 0, PH_CIRCLE, PH_SPHERE, PH_AABB2D, PH_AABB, PH_COUNT } PolyhedronType;
 
-typedef struct Polyhedron {
+typedef struct {
     PolyhedronType type;
 
     union {
@@ -2504,7 +2504,7 @@ typedef struct {
 #define ENTITY_CAP 1024
 #define ENTITY_INACTIVE_TO_BE_CAP 20
 
-typedef struct EntityManager {
+typedef struct {
     Entity entities[ENTITY_CAP];
     u32 cap;
 
@@ -2575,7 +2575,7 @@ LCORE void DeactivateEntities() {
 }
 
 ////////////////////////////////////////////////////
-typedef struct CollisionInfo {
+typedef struct {
     EntityId id0;
     EntityId id1;
 
