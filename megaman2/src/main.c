@@ -2619,6 +2619,12 @@ static const f32 GRID_DEPTH = 1.0f;
 
 ////////////////////////////////////////////////////
 
+// A blueprint containing all info necessary to create an entity.
+typedef struct {
+    Vec3 pos;
+    Polyhedron shape;
+} EntitySpec;
+
 typedef struct {
     LTexture background;
     // How to find. make a 128 x 120 selection in aseprite. the pixel value that is 1, 1 off from the
@@ -2626,6 +2632,9 @@ typedef struct {
     // This will end up being the origin in worldspace.
     Vec3 camera_start;
     Vec3 player_start;
+
+    EntitySpec walls[10];
+    u32 wlen;
 } Stage;
 
 typedef enum {
@@ -2653,6 +2662,22 @@ static Stage* GetStage(StageId sid) {
                 AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(118.0f, 192.0f), Vec2Lit(141.0f, 169.0f));
                 stage.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
             }
+
+            // Walls
+            {
+                {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(1.0f, 256.0f)),
+                                                     AsepritePxTR(Vec2Lit(256.0f, 193.0f)));
+                    EntitySpec spec = {0};
+                    spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    spec.shape.type = PH_AABB2D;
+                    spec.shape.aabb2d.c = Vec2Zero();
+                    spec.shape.aabb2d.r = bb.r;
+                    stage.walls[stage.wlen++] = spec;
+                }
+                Assert(stage.wlen < ArraySizeOf(stage.walls));
+            }
+
             STAGES[STAGE_WOODMAN] = stage;
         }
     }
@@ -2850,19 +2875,13 @@ static void StageTick(GameState* gstate) {
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
 
-        // Colliders.
-        // TODO: This should be moved onto stage data.
-        {
-            AABB2D bb = AABB2DFromAsepriteBB(gstate->stage->background, AsepritePxBL(Vec2Lit(1.0f, 256.0f)),
-                                             AsepritePxTR(Vec2Lit(256.0f, 193.0f)));
+        // walls.
+        for (u32 i = 0; i < gstate->stage->wlen; ++i) {
+            EntitySpec* spec = &gstate->stage->walls[i];
 
             Entity* e = AllocateEntity();
-            e->pos = Vec2ToVec3(bb.c);
-
-            e->shape.type = PH_AABB2D;
-            e->shape.aabb2d.c = Vec2Zero();
-            e->shape.aabb2d.r = bb.r;
-
+            e->pos = spec->pos;
+            e->shape = spec->shape;
             FlagOn(e->flags, EFLAG_WALL);
         }
     }
