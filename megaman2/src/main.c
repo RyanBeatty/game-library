@@ -3026,7 +3026,9 @@ static void StageTick(GameState* gstate) {
                     move.x += MOVE_SPEED;
                 }
 
-                Vec3 v = Vec3Add(move, Vec3Lit(0.0f, 0.0f * dt, 0.0f));
+                // Note that for gravity we don't multiply by dt because its just a constant gravity.
+                // TODO: I might need to change this.
+                Vec3 v = Vec3Add(move, Vec3Lit(0.0f, -50.0f, 0.0f));
                 e->pos = Vec3Add(e->pos, Vec3Scale(v, dt));
             }
         }
