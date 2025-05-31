@@ -2468,7 +2468,7 @@ typedef enum EntityFlag {
 typedef u32 EntityId;
 static const EntityId NULLID = 0;
 
-typedef struct Entity {
+typedef struct {
     /////////////////////////////////////////////////////////////////
     // Core field.
     EntityId id;
@@ -2497,15 +2497,8 @@ typedef struct Entity {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    EntityId hazardid;
-    EntityId platformid;
-    EntityId prev_platformid;
-    f32 leaping;
+    bool jumping;
 
-    bool surfaced;
-    f32 surfaced_time;
-    f32 submerged_time;
-    f32 surfaced_dt;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -2920,17 +2913,26 @@ static void StageTick(GameState* gstate) {
             e->ppos = e->pos;
 
             if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                static const f32 MOVE_SPEED = 50.0f;
-                Vec3 move = Vec3Zero();
+                static const f32 DX_SPEED = 50.0f;
+                static const f32 GRAVITY_SPEED = 50.0f;
+
+                Vec3 dx = Vec3Zero();
                 if (IsKeyDown(KEY_LEFT)) {
-                    move.x -= MOVE_SPEED;
+                    dx.x -= DX_SPEED;
                 } else if (IsKeyDown(KEY_RIGHT)) {
-                    move.x += MOVE_SPEED;
+                    dx.x += DX_SPEED;
+                }
+
+                Vec3 dy = Vec3Zero();
+                if (IsKeyPressed(KEY_SPACE)) {
+                    dy.y += 50.0f;
+                } else {
+                    dy.y -= GRAVITY_SPEED;
                 }
 
                 // Note that for gravity we don't multiply by dt because its just a constant gravity.
                 // TODO: I might need to change this.
-                Vec3 v = Vec3Add(move, Vec3Lit(0.0f, -50.0f, 0.0f));
+                Vec3 v = Vec3Add(dx, dy);
                 e->pos = Vec3Add(e->pos, Vec3Scale(v, dt));
             }
         }
