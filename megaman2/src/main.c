@@ -740,10 +740,10 @@ static LTexture GetTexture(TextureLabel label) {
 // Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
 // given in the UI to be the center of the pixel.
 #define AspritePxCtr(px) (px)
-#define AsepritePxBL(px) (Vec3Lit((px).x - 0.5f, (px).y + 0.5f, (px).z))
-#define AsepritePxBR(px) (Vec3Lit((px).x + 0.5f, (px).y + 0.5f, (px).z))
-#define AsepritePxTL(px) (Vec3Lit((px).x - 0.5f, (px).y - 0.5f, (px).z))
-#define AsepritePxTR(px) (Vec3Lit((px).x + 0.5f, (px).y - 0.5f, (px).z))
+#define AsepritePxBL(px) (Vec2Lit((px).x - 0.5f, (px).y + 0.5f))
+#define AsepritePxBR(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
+#define AsepritePxTL(px) (Vec2Lit((px).x - 0.5f, (px).y - 0.5f))
+#define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
 
 // Conver the position in aseprite space to world space. aseprite space is the coordinate given by
 // aseprite UI.
@@ -2984,25 +2984,22 @@ static void StageTick(GameState* gstate) {
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
 
-        // // Colliders.
-        // // TODO: This should be moved onto stage data.
-        // {
-        //     // Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(1.0f, 256.0f, 0.0f));
-        //     // Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(256.0f, 193.0f, 0.0f));
-        //     Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(118.0f, 192.0f, 0.0f));
-        //     Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(141.0f, 169.0f, 0.0f));
-        //     AABB2D box = AABB2DFromMinMax(Vec3ToVec2(bl), Vec3ToVec2(tr));
+        // Colliders.
+        // TODO: This should be moved onto stage data.
+        {
+            AABB2D bb = AABB2DFromAsepriteBB(gstate->stage.background, AsepritePxBL(Vec2Lit(1.0f, 256.0f)),
+                                             AsepritePxTR(Vec2Lit(256.0f, 193.0f)));
 
-        //     Entity* e = AllocateEntity();
-        //     e->pos = Vec2ToVec3(box.c);
+            Entity* e = AllocateEntity();
+            e->pos = Vec2ToVec3(bb.c);
 
-        //     e->shape.type = PH_AABB2D;
-        //     e->shape.aabb2d = box;
-        //     e->shape.aabb2d.c = Vec2Zero();
+            e->shape.type = PH_AABB2D;
+            e->shape.aabb2d.c = Vec2Zero();
+            e->shape.aabb2d.r = bb.r;
 
-        //     GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * box.r.x, 2.0f * box.r.y, 1.0f), LRED);
-        //     FlagOn(e->flags, EFLAG_COLLIDER);
-        // }
+            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * bb.r.x, 2.0f * bb.r.y, 1.0f), LRED);
+            FlagOn(e->flags, EFLAG_COLLIDER);
+        }
     }
 
     if (gstate->update) {
