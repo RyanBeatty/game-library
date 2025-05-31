@@ -745,31 +745,21 @@ static LTexture GetTexture(TextureLabel label) {
 #define AsepritePxTL(px) (Vec3Lit((px).x - 0.5f, (px).y - 0.5f, (px).z))
 #define AsepritePxTR(px) (Vec3Lit((px).x + 0.5f, (px).y - 0.5f, (px).z))
 
-// We assume that a quad's center is the origin. aseprite assumes that a quads top left pixel center
-// is the origin (with +x right and +y down). This will convert to a position that is properly offset from the
-// quad center/origin. Note that coord 0, 0 in aseprite represents the center of the pixel in top left corner.
-static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 aseprite_pos) {
-    // Flip y. origin now in bottom left corner. Note that aseprite 0 indexes pixels
-    // so we need to subtract by 1. example if texture is 10 height, the last pixel will be
-    // 9 so to map 9 -> 0 we need 10 - 9 - 1 = 0.
-    aseprite_pos.y = tx.height - aseprite_pos.y - 1.0f;
+// Conver the position in aseprite space to world space. aseprite space is the coordinate given by
+// aseprite UI.
+static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 pos_aseprite) {
+    // This essentially moves the origin from aseprite top left corner to bottom right corner. Why do we do this?
+    // Its because when we import the texture/png we flip the Y axis there. subtract 1 from height so that the
+    // max height aseprite pixel coords get mapped to 0
+    pos_aseprite.y = tx.height - 1.0f - pos_aseprite.y;
 
-    // We want to shift the origin to the center but find the offset from the origin to
-    // our aseprite pos hence the negative. Think about it in vectors. if my aseprite_pos
-    // is a vector from origin (bottom left) to pos. then I shift my origin to the right. I now need
-    // to find a vector from origin to bottom left (hence the negative) then add to that the
-    // aseprite offset. the resulting vector is my new vector pos.
-    //
-    /*
-
-             apos
-             ^  ^
-            /    \
-           /       \
-        bl <-------center
-    */
-    Vec3 pos = Vec3Add(aseprite_pos, Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f));
-    return pos;
+    // The origin in world space of the texture is at its center. We want to find the offset from the origin in
+    // aseprite space (which is the center of the bottom left pixel since we flip the Y coords) to the center of
+    // the texture itself. Subtract 1 from width/height because we want to find the midpoint between the bottem left
+    // pixel's center and the top right pixel's center.
+    Vec3 origin_offset = Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f);
+    Vec3 pos_world = Vec3Add(pos_aseprite, origin_offset);
+    return pos_world;
 }
 
 // We assume that a quad's center is the origin. aseprite assumes that a quads top left pixel center
@@ -2793,21 +2783,11 @@ static Stage GetStage(StageId sid) {
             Stage stage = {0};
             stage.background = tx;
             {
-                Vec3 origin_offset = Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f);
-
-                Vec3 min_aseprite = Vec3Lit(1, 1, 0);
-                // Flip y.
-                min_aseprite.y = tx.height - 1.0f - min_aseprite.y;
-                Vec3 min_world = Vec3Add(min_aseprite, origin_offset);
-
-                Vec3 max_aseprite = Vec3Lit(256, 240, 0);
-                // Flip y.
-                max_aseprite.y = tx.height - 1.0f - max_aseprite.y;
-                Vec3 max_world = Vec3Add(max_aseprite, origin_offset);
-
+                Vec3 min_world = AsepritePosToWorldPos(tx, Vec3Lit(1.0f, 1.0f, 0.0f));
+                Vec3 max_world = AsepritePosToWorldPos(tx, Vec3Lit(256.0f, 240.0f, 0.0f));
                 Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
 
-                stage.camera_start = Vec3Lit(mid.x, mid.y, 1.0f);
+                stage.camera_start = Vec3Lit(mid.x, mid.y, 0.0f);
             }
             stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(129.0f, 181.0f, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
@@ -3068,24 +3048,24 @@ static void StageTick(GameState* gstate) {
             }
         }
 
-        // Update camera.
-        {
-            Entity* player = NULL;
-            for (u32 i = 0; i < GetNumEntities(); ++i) {
-                Entity* e = GetEntity(i);
-                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                    continue;
-                }
+        // // Update camera.
+        // {
+        //     Entity* player = NULL;
+        //     for (u32 i = 0; i < GetNumEntities(); ++i) {
+        //         Entity* e = GetEntity(i);
+        //         if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+        //             continue;
+        //         }
 
-                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                    player = e;
-                    break;
-                }
-            }
-            Assert(player);
+        //         if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+        //             player = e;
+        //             break;
+        //         }
+        //     }
+        //     Assert(player);
 
-            CAMERA.eye.x = player->pos.x;
-        }
+        //     CAMERA.eye.x = player->pos.x;
+        // }
 
         // Update graphics.
         for (u32 i = 0; i < GetNumEntities(); ++i) {
