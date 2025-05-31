@@ -2172,6 +2172,11 @@ typedef struct Polyhedron {
     };
 } Polyhedron;
 
+LCORE void PolyhedronInit(Polyhedron* p) {
+    memset(p, 0, sizeof(Polyhedron));
+    p->type = PH_NONE;
+}
+
 // lc: bottom left corner
 // dims: full width/height of bbox
 // grid_dims: width x height of sprite
@@ -2692,6 +2697,7 @@ LCORE Entity* AllocateEntity() {
     entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
     entity->color = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
+    PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
@@ -2994,8 +3000,7 @@ static void StageTick(GameState* gstate) {
             e->shape.aabb2d.c = Vec2Zero();
             e->shape.aabb2d.r = bb.r;
 
-            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * bb.r.x, 2.0f * bb.r.y, 1.0f), LRED);
-            FlagOn(e->flags, EFLAG_COLLIDER);
+            FlagOn(e->flags, EFLAG_WALL);
         }
     }
 
@@ -3004,6 +3009,11 @@ static void StageTick(GameState* gstate) {
             SPAWNED = true;
             Entity* e = AllocateEntity();
             e->pos = gstate->stage.player_start;
+
+            e->shape.type = PH_AABB2D;
+            e->shape.aabb2d.c = Vec2Zero();
+            e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
+
             GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
@@ -3030,6 +3040,61 @@ static void StageTick(GameState* gstate) {
                 // TODO: I might need to change this.
                 Vec3 v = Vec3Add(move, Vec3Lit(0.0f, -50.0f, 0.0f));
                 e->pos = Vec3Add(e->pos, Vec3Scale(v, dt));
+            }
+        }
+
+        // Collisions
+        {
+            CollisionInfo collisions[10];
+            u32 clen = 0;
+            u32 ccap = 10;
+            for (u32 i = 0; i < GetNumEntities(); ++i) {
+                Entity* ei = GetEntity(i);
+                if (!TestFlag(ei->flags, EFLAG_ACTIVE) || ei->shape.type == PH_NONE) {
+                    continue;
+                }
+
+                Polyhedron pi = PolyhedronTransform(ei->shape, ei->scale, ei->orient, ei->pos);
+                for (u32 j = i + 1; j < GetNumEntities(); ++j) {
+                    Entity* ej = GetEntity(j);
+                    if (!TestFlag(ej->flags, EFLAG_ACTIVE) || ej->shape.type == PH_NONE) {
+                        continue;
+                    }
+
+                    Polyhedron pj = PolyhedronTransform(ej->shape, ej->scale, ej->orient, ej->pos);
+
+                    CollisionInfo info = {0};
+                    info.id0 = ei->id;
+                    info.id1 = ej->id;
+                    bool collides = TestPolyhedronVsPolyhedron(&pi, &pj, &info.normal, &info.depth);
+                    if (collides) {
+                        Assert(clen < ccap);
+                        collisions[clen++] = info;
+                    }
+                }
+            }
+
+            for (u32 j = 0; j < clen; ++j) {
+                CollisionInfo* c = &collisions[j];
+
+                // To handle checking "both sides" of the collision. We just make two collisions
+                // with reversed directions.
+                CollisionInfo reverse = *c;
+                reverse.id0 = c->id1;
+                reverse.id1 = c->id0;
+                reverse.normal = Vec3Negate(reverse.normal);
+
+                CollisionInfo cs[2] = {*c, reverse};
+                for (u32 i = 0; i < 2; ++i) {
+                    CollisionInfo* info = &cs[i];
+                    Entity* e0 = GetEntity(info->id0);
+                    Entity* e1 = GetEntity(info->id1);
+
+                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
+                        Entity* player = e0;
+                        player->pos = Vec3Add(player->pos, Vec3Scale(info->normal, info->depth));
+                    }
+                }
             }
         }
 
