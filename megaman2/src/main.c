@@ -772,6 +772,17 @@ static Vec3 AsepritePosToWorldPos(LTexture tx, Vec3 aseprite_pos) {
     return pos;
 }
 
+// We assume that a quad's center is the origin. aseprite assumes that a quads top left pixel center
+// is the origin (with +x right and +y down). This will convert to a position that is properly offset from the
+// quad center/origin. Note that coord 0, 0 in aseprite represents the center of the pixel in top left corner.
+static Vec3 AsepritePosToWorldPos2(LTexture tx, Vec3 aseprite_pos) {
+    Vec3 origin_offset = Vec3Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f), 0.0f);
+    Mat4 m = Mat4Multiply(Mat4TranslateV(origin_offset), Mat4ScaleV(Vec3Lit(1.0f, -1.0f, 1.0f)));
+    Vec3 v = Vec3WTransform(aseprite_pos, m);
+    breakpoint();
+    return v;
+}
+
 static void TexturesInit() {
     TextureCache* tcache = &TCACHE;
     tcache->txlen = 0;
@@ -3005,8 +3016,8 @@ static void StageTick(GameState* gstate) {
 
     if (gstate->update) {
         if (!SPAWNED) {
-            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, AsepritePxBL(Vec3Lit(118.0f, 192.0f, 0.0f)));
-            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, AsepritePxTR(Vec3Lit(141.0f, 169.0f, 0.0f)));
+            Vec3 bl = AsepritePosToWorldPos2(gstate->stage.background, AsepritePxBL(Vec3Lit(118.0f, 192.0f, 0.0f)));
+            Vec3 tr = AsepritePosToWorldPos2(gstate->stage.background, AsepritePxTR(Vec3Lit(141.0f, 169.0f, 0.0f)));
             breakpoint();
             Vec3 pos = Vec3Lerp(bl, tr, 0.5f);
 
@@ -3109,6 +3120,84 @@ static void StageTick(GameState* gstate) {
                 cmd->meshcmd.txid = e->graphics.txid;
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
+        }
+
+        EndShaderPass();
+    }
+
+    // UI. origin at bottom left hand of screen.
+    {
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
+
+        u32 width = gstate->renderw;
+        u32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+        char msg[] = "Stage 1";
+        u32 size = strlen(msg);
+
+        u32 fontsize = 10.0f;
+        Vec2 dim = MeasureLText(msg, size, fontsize);
+
+        // Center text by shifting center forward by half a text cell size and then shifting backward
+        // by half the text size.
+        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+        DrawLText(msg, size, pos, fontsize, LYELLOW);
+
+        EndShaderPass();
+    }
+
+    EndRender();
+}
+
+static void Stage2Tick(GameState* gstate) {
+    static LCamera CAMERA = {0};
+    static bool SPAWNED = false;
+
+    f32 dt = gstate->dt;
+
+    if (!gstate->init) {
+        gstate->stage = GetStage(STAGE_WOODMAN);
+
+        TraceLog(LOG_INFO, "fooo");
+
+        Vec3 origin_offset = Vec3Lit(-0.5f * (gstate->stage.background.width - 1.0f),
+                                     -0.5f * (gstate->stage.background.height - 1.0f), 0.0f);
+
+        Vec3 min_aseprite = Vec3Lit(1, 1, 0);
+        // Flip y.
+        min_aseprite.y = gstate->stage.background.height - 1.0f - min_aseprite.y;
+        Vec3 min_world = Vec3Add(min_aseprite, origin_offset);
+
+        Vec3 max_aseprite = Vec3Lit(256, 240, 0);
+        // Flip y.
+        max_aseprite.y = gstate->stage.background.height - 1.0f - max_aseprite.y;
+        Vec3 max_world = Vec3Add(max_aseprite, origin_offset);
+
+        Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
+        breakpoint();
+
+        CAMERA.eye = gstate->stage.camera_start;
+        CAMERA.orient = Vec3Zero();
+    }
+
+    BeginRender();
+
+    {
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
+        // ClearBuffer(LBLUE);
+
+        u32 width = gstate->renderw;
+        u32 height = gstate->renderh;
+        f32 hwidth = 0.5f * width;
+        f32 hheight = 0.5f * height;
+        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+
+        // Draw background. Assumption is that origin is at center of background texture.
+        {
+            DrawLTexture(gstate->stage.background, Vec2Zero(), 1.0f);
         }
 
         EndShaderPass();
