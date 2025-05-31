@@ -2497,7 +2497,7 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    bool jumping;
+    f32 jumping_dt;
 
 } Entity;
 
@@ -2915,6 +2915,7 @@ static void StageTick(GameState* gstate) {
             if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                 static const f32 DX_SPEED = 50.0f;
                 static const f32 GRAVITY_SPEED = 50.0f;
+                static const f32 JUMP_TIME = 15.0f / 60.0f;
 
                 Vec3 dx = Vec3Zero();
                 if (IsKeyDown(KEY_LEFT)) {
@@ -2924,10 +2925,27 @@ static void StageTick(GameState* gstate) {
                 }
 
                 Vec3 dy = Vec3Zero();
-                if (IsKeyPressed(KEY_SPACE)) {
-                    dy.y += 50.0f;
+                if (e->jumping_dt) {
+                    u32 jump_frame = JUMP_TIME / e->jumping_dt;
+                    TraceLog(LOG_INFO, "jump frame %d", jump_frame);
+                    if (jump_frame < 7) {
+                        dy.y += 200.0f;
+                    } else if (jump_frame >= 9.0f) {
+                        dy.y -= 200.0f;
+                    }
+
+                    e->jumping_dt += dt;
+                    TraceLog(LOG_INFO, "jumping %f", e->jumping_dt);
+                    if (e->jumping_dt >= JUMP_TIME) {
+                        e->jumping_dt = 0.0f;
+                    }
                 } else {
-                    dy.y -= GRAVITY_SPEED;
+                    if (IsKeyPressed(KEY_SPACE)) {
+                        dy.y += 50.0f;
+                        e->jumping_dt += dt;
+                    } else {
+                        dy.y -= GRAVITY_SPEED;
+                    }
                 }
 
                 // Note that for gravity we don't multiply by dt because its just a constant gravity.
