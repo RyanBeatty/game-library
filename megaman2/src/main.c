@@ -2675,6 +2675,16 @@ static Stage* GetStage(StageId sid) {
                     spec.shape.aabb2d.r = bb.r;
                     stage.walls[stage.wlen++] = spec;
                 }
+                {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(257.0f, 256.0f)),
+                                                     AsepritePxTR(Vec2Lit(320.0f, 177.0f)));
+                    EntitySpec spec = {0};
+                    spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    spec.shape.type = PH_AABB2D;
+                    spec.shape.aabb2d.c = Vec2Zero();
+                    spec.shape.aabb2d.r = bb.r;
+                    stage.walls[stage.wlen++] = spec;
+                }
                 Assert(stage.wlen < ArraySizeOf(stage.walls));
             }
 
