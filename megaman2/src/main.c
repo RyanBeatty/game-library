@@ -1986,6 +1986,16 @@ LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
     return box;
 }
 
+// Convert an aseprite bb on a marked up png to a world position bb.
+// The aseprite bb min will be the bottom left corner of the box THAT I SEE ON THE SCREEN. Not the bottom
+// left according to the pixel coords in the UI. The Top right will be similar.
+LCORE AABB2D AABB2DFromAsepriteBB(LTexture tx, Vec3 min_aseprite, Vec3 max_aseprite) {
+    Vec3 min_world = AsepritePosToWorldPos(tx, min_aseprite);
+    Vec3 max_world = AsepritePosToWorldPos(tx, max_aseprite);
+    AABB2D bb = AABB2DFromMinMax(Vec3ToVec2(min_world), Vec3ToVec2(max_world));
+    return bb;
+}
+
 // Normal from b -> a if there is a collision.
 LCORE bool TestAABB2DVsAABB2D(AABB2D a, AABB2D b, Vec2* normal, f32* depth) {
     Vec2 ba = Vec2Sub(a.c, b.c);
@@ -2770,11 +2780,7 @@ static Stage GetStage(StageId sid) {
             Stage stage = {0};
             stage.background = tx;
             {
-                Vec3 min_world = AsepritePosToWorldPos(tx, Vec3Lit(1.0f, 1.0f, 0.0f));
-                Vec3 max_world = AsepritePosToWorldPos(tx, Vec3Lit(256.0f, 240.0f, 0.0f));
-                // Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
-                AABB2D bb = AABB2DFromMinMax(Vec3ToVec2(min_world), Vec3ToVec2(max_world));
-
+                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec3Lit(1.0f, 1.0f, 0), Vec3Lit(256.0f, 240.0f, 0));
                 stage.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
             }
             stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(129.0f, 181.0f, 0.0f));
