@@ -2916,6 +2916,7 @@ static void StageTick(GameState* gstate) {
                 static const f32 DX_SPEED = 50.0f;
                 static const f32 GRAVITY_SPEED = 50.0f;
                 static const f32 JUMP_TIME = 15.0f / 60.0f;
+                static u32 JUMP_FRAME = 0;
 
                 Vec3 dx = Vec3Zero();
                 if (IsKeyDown(KEY_LEFT)) {
@@ -2925,28 +2926,48 @@ static void StageTick(GameState* gstate) {
                 }
 
                 Vec3 dy = Vec3Zero();
-                if (e->jumping_dt) {
-                    u32 jump_frame = JUMP_TIME / e->jumping_dt;
-                    TraceLog(LOG_INFO, "jump frame %d", jump_frame);
-                    if (jump_frame < 7) {
+                if (JUMP_FRAME) {
+                    if (JUMP_FRAME < 7) {
                         dy.y += 200.0f;
-                    } else if (jump_frame >= 9.0f) {
+
+                    } else if (JUMP_FRAME >= 11) {
                         dy.y -= 200.0f;
                     }
 
-                    e->jumping_dt += dt;
-                    TraceLog(LOG_INFO, "jumping %f", e->jumping_dt);
-                    if (e->jumping_dt >= JUMP_TIME) {
-                        e->jumping_dt = 0.0f;
+                    JUMP_FRAME += 1;
+                    if (JUMP_FRAME >= 18) {
+                        JUMP_FRAME = 0;
                     }
                 } else {
                     if (IsKeyPressed(KEY_SPACE)) {
                         dy.y += 50.0f;
-                        e->jumping_dt += dt;
+                        JUMP_FRAME = 1;
                     } else {
                         dy.y -= GRAVITY_SPEED;
                     }
                 }
+                // if (e->jumping_dt) {
+                //     u32 jump_frame = JUMP_TIME / e->jumping_dt;
+                //     TraceLog(LOG_INFO, "jump frame %d", jump_frame);
+                //     if (jump_frame < 7) {
+                //         dy.y += 200.0f;
+                //     } else if (jump_frame >= 9.0f) {
+                //         dy.y -= 200.0f;
+                //     }
+
+                //     e->jumping_dt += dt;
+                //     TraceLog(LOG_INFO, "jumping %f", e->jumping_dt);
+                //     if (e->jumping_dt >= JUMP_TIME) {
+                //         e->jumping_dt = 0.0f;
+                //     }
+                // } else {
+                //     if (IsKeyPressed(KEY_SPACE)) {
+                //         dy.y += 50.0f;
+                //         e->jumping_dt += dt;
+                //     } else {
+                //         dy.y -= GRAVITY_SPEED;
+                //     }
+                // }
 
                 // Note that for gravity we don't multiply by dt because its just a constant gravity.
                 // TODO: I might need to change this.
