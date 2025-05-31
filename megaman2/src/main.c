@@ -1975,16 +1975,14 @@ typedef struct {
 } AABB2D;
 
 // Returns a aabb2d from a bottom left and top right
-LCORE AABB2D AABB2DFromBLTR(Vec2 bl, Vec2 tr) {
-    Vec2 r = Vec2Sub(tr, bl);
-    // If we just subtract the right and left coords, we'll be off of the width by 1, so we need to add
-    // that back in. similar logic for top and bottom.
-    r.x = 0.5f * (r.x + 1.0f);
-    r.y = 0.5f * (r.y + 1.0f);
+LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
+    Vec2 r = Vec2Sub(pmax, pmin);
+    r.x *= 0.5f;
+    r.y *= 0.5f;
 
     AABB2D box = {0};
     box.r = r;
-    box.c = Vec2Add(bl, r);
+    box.c = Vec2Add(pmin, r);
     return box;
 }
 
@@ -2774,9 +2772,10 @@ static Stage GetStage(StageId sid) {
             {
                 Vec3 min_world = AsepritePosToWorldPos(tx, Vec3Lit(1.0f, 1.0f, 0.0f));
                 Vec3 max_world = AsepritePosToWorldPos(tx, Vec3Lit(256.0f, 240.0f, 0.0f));
-                Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
+                // Vec3 mid = Vec3Lerp(max_world, min_world, 0.5f);
+                AABB2D bb = AABB2DFromMinMax(Vec3ToVec2(min_world), Vec3ToVec2(max_world));
 
-                stage.camera_start = Vec3Lit(mid.x, mid.y, 0.0f);
+                stage.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
             }
             stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(129.0f, 181.0f, 0.0f));
             STAGES[STAGE_WOODMAN] = stage;
@@ -2983,7 +2982,7 @@ static void StageTick(GameState* gstate) {
             // Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(256.0f, 193.0f, 0.0f));
             Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(118.0f, 192.0f, 0.0f));
             Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(141.0f, 169.0f, 0.0f));
-            AABB2D box = AABB2DFromBLTR(Vec3ToVec2(bl), Vec3ToVec2(tr));
+            AABB2D box = AABB2DFromMinMax(Vec3ToVec2(bl), Vec3ToVec2(tr));
 
             Entity* e = AllocateEntity();
             e->pos = Vec2ToVec3(box.c);
