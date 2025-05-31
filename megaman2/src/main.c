@@ -2783,7 +2783,10 @@ static Stage GetStage(StageId sid) {
                 AABB2D bb = AABB2DFromAsepriteBB(tx, Vec3Lit(1.0f, 1.0f, 0), Vec3Lit(256.0f, 240.0f, 0));
                 stage.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
             }
-            stage.player_start = AsepritePosToWorldPos(tx, Vec3Lit(129.0f, 181.0f, 0.0f));
+            {
+                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec3Lit(118.0f, 192.0f, 0), Vec3Lit(141.0f, 169.0f, 0));
+                stage.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+            }
             STAGES[STAGE_WOODMAN] = stage;
         }
     }
@@ -2981,38 +2984,32 @@ static void StageTick(GameState* gstate) {
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
 
-        // Colliders.
-        // TODO: This should be moved onto stage data.
-        {
-            // Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(1.0f, 256.0f, 0.0f));
-            // Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(256.0f, 193.0f, 0.0f));
-            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(118.0f, 192.0f, 0.0f));
-            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(141.0f, 169.0f, 0.0f));
-            AABB2D box = AABB2DFromMinMax(Vec3ToVec2(bl), Vec3ToVec2(tr));
+        // // Colliders.
+        // // TODO: This should be moved onto stage data.
+        // {
+        //     // Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(1.0f, 256.0f, 0.0f));
+        //     // Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(256.0f, 193.0f, 0.0f));
+        //     Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(118.0f, 192.0f, 0.0f));
+        //     Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, Vec3Lit(141.0f, 169.0f, 0.0f));
+        //     AABB2D box = AABB2DFromMinMax(Vec3ToVec2(bl), Vec3ToVec2(tr));
 
-            Entity* e = AllocateEntity();
-            e->pos = Vec2ToVec3(box.c);
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec2ToVec3(box.c);
 
-            e->shape.type = PH_AABB2D;
-            e->shape.aabb2d = box;
-            e->shape.aabb2d.c = Vec2Zero();
+        //     e->shape.type = PH_AABB2D;
+        //     e->shape.aabb2d = box;
+        //     e->shape.aabb2d.c = Vec2Zero();
 
-            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * box.r.x, 2.0f * box.r.y, 1.0f), LRED);
-            FlagOn(e->flags, EFLAG_COLLIDER);
-        }
+        //     GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(2.0f * box.r.x, 2.0f * box.r.y, 1.0f), LRED);
+        //     FlagOn(e->flags, EFLAG_COLLIDER);
+        // }
     }
 
     if (gstate->update) {
         if (!SPAWNED) {
-            Vec3 bl = AsepritePosToWorldPos(gstate->stage.background, AsepritePxBL(Vec3Lit(118.0f, 192.0f, 0.0f)));
-            Vec3 tr = AsepritePosToWorldPos(gstate->stage.background, AsepritePxTR(Vec3Lit(141.0f, 169.0f, 0.0f)));
-            Vec3 pos = Vec3Lerp(bl, tr, 0.5f);
-            breakpoint();
-
             SPAWNED = true;
             Entity* e = AllocateEntity();
-            // e->pos = gstate->stage.player_start;
-            e->pos = pos;
+            e->pos = gstate->stage.player_start;
             GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
