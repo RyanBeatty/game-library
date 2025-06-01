@@ -2930,8 +2930,6 @@ static void StageTick(GameState* gstate) {
                     dy.y += 200.0f;
                 }
 
-                // Note that for gravity we don't multiply by dt because its just a constant gravity.
-                // TODO: I might need to change this.
                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), 350 * dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
             }
