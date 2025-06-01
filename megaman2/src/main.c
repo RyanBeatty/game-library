@@ -2987,10 +2987,16 @@ static void StageTick(GameState* gstate) {
                         player->pos = Vec3Add(player->pos, Vec3Scale(info->normal, info->depth));
 
                         // TODO: We don't really check closing velocity here.
-                        Vec3 vplayer = player->v;
-                        Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
-                        Vec3 vparallel = Vec3Sub(vplayer, vperp);
-                        player->v = vparallel;
+
+                        // Only stop perp to surface velocity if we are traveling towards the surface. this prevents
+                        // teleporting down to top of collider if we are hugging a wall and jump.
+                        f32 vdir = Vec3Dot(player->v, info->normal);
+                        if (vdir < 0.0f) {
+                            Vec3 vplayer = player->v;
+                            Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
+                            Vec3 vparallel = Vec3Sub(vplayer, vperp);
+                            player->v = vparallel;
+                        }
                         // Vec3 vperp2 = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
                         // Vec3 vparallel = Vec3Sub(vplayer, vperp2);
                         // vparallel = Vec3Zero();
