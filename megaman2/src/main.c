@@ -2932,6 +2932,19 @@ static void StageTick(GameState* gstate) {
 
                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                if (IsKeyPressed(KEY_SPACE)) {
+                    Entity* shot = AllocateEntity();
+                    shot->pos = e->pos;
+                    shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
+
+                    GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                    FlagOn(shot->flags, EFLAG_PROJECTILE);
+                }
+            }
+
+            if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
             }
         }
 
