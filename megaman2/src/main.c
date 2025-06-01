@@ -2938,6 +2938,10 @@ static void StageTick(GameState* gstate) {
                     shot->pos = e->pos;
                     shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
 
+                    shot->shape.type = PH_AABB2D;
+                    shot->shape.aabb2d.c = Vec2Zero();
+                    shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+
                     GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
                     FlagOn(shot->flags, EFLAG_PROJECTILE);
                 }
@@ -3010,6 +3014,11 @@ static void StageTick(GameState* gstate) {
                             Vec3 vparallel = Vec3Sub(vplayer, vperp);
                             player->v = vparallel;
                         }
+                    }
+
+                    if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_WALL)) {
+                        Entity* shot = e0;
+                        SoftDeactivateEntity(shot->id);
                     }
                 }
             }
@@ -3122,6 +3131,8 @@ static void StageTick(GameState* gstate) {
     }
 
     EndRender();
+
+    DeactivateEntities();
 }
 
 // TODO; Remove
