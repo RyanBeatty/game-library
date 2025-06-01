@@ -2925,54 +2925,16 @@ static void StageTick(GameState* gstate) {
                     dx.x += DX_SPEED;
                 }
 
-                Vec3 dy = Vec3Zero();
-                if (JUMP_FRAME) {
-                    if (JUMP_FRAME < 10) {
-                        dy.y += AIR_SPEED;
-
-                    } else if (JUMP_FRAME > 11) {
-                        dy.y -= AIR_SPEED;
-                    }
-
-                    JUMP_FRAME += 1;
-                    if (JUMP_FRAME >= 21) {
-                        JUMP_FRAME = 0;
-                    }
-                } else {
-                    if (IsKeyPressed(KEY_SPACE)) {
-                        dy.y += AIR_SPEED;
-                        JUMP_FRAME = 1;
-                    } else {
-                        dy.y -= AIR_SPEED;
-                    }
+                Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                if (IsKeyPressed(KEY_SPACE)) {
+                    dy.y += 200.0f;
                 }
-                // if (e->jumping_dt) {
-                //     u32 jump_frame = JUMP_TIME / e->jumping_dt;
-                //     TraceLog(LOG_INFO, "jump frame %d", jump_frame);
-                //     if (jump_frame < 7) {
-                //         dy.y += 200.0f;
-                //     } else if (jump_frame >= 9.0f) {
-                //         dy.y -= 200.0f;
-                //     }
-
-                //     e->jumping_dt += dt;
-                //     TraceLog(LOG_INFO, "jumping %f", e->jumping_dt);
-                //     if (e->jumping_dt >= JUMP_TIME) {
-                //         e->jumping_dt = 0.0f;
-                //     }
-                // } else {
-                //     if (IsKeyPressed(KEY_SPACE)) {
-                //         dy.y += 50.0f;
-                //         e->jumping_dt += dt;
-                //     } else {
-                //         dy.y -= GRAVITY_SPEED;
-                //     }
-                // }
 
                 // Note that for gravity we don't multiply by dt because its just a constant gravity.
                 // TODO: I might need to change this.
-                Vec3 v = Vec3Add(dx, dy);
-                e->pos = Vec3Add(e->pos, Vec3Scale(v, dt));
+                e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), 350 * dt));
+                TraceLog(LOG_INFO, "%f, %f, %f", e->v.x, e->v.y, e->v.z);
+                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
             }
         }
 
@@ -3026,6 +2988,7 @@ static void StageTick(GameState* gstate) {
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
                         Entity* player = e0;
                         player->pos = Vec3Add(player->pos, Vec3Scale(info->normal, info->depth));
+                        player->v = Vec3Zero();
                     }
                 }
             }
