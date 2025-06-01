@@ -2940,10 +2940,10 @@ static void StageTick(GameState* gstate) {
                     }
                 } else {
                     if (IsKeyPressed(KEY_SPACE)) {
-                        dy.y += 50.0f;
+                        dy.y += 200.0f;
                         JUMP_FRAME = 1;
                     } else {
-                        dy.y -= GRAVITY_SPEED;
+                        dy.y -= 200;
                     }
                 }
                 // if (e->jumping_dt) {
