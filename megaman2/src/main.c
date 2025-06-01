@@ -2997,10 +2997,6 @@ static void StageTick(GameState* gstate) {
                             Vec3 vparallel = Vec3Sub(vplayer, vperp);
                             player->v = vparallel;
                         }
-                        // Vec3 vperp2 = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
-                        // Vec3 vparallel = Vec3Sub(vplayer, vperp2);
-                        // vparallel = Vec3Zero();
-                        // player->v = Vec3Add(vperp2, vparallel);
                     }
                 }
             }

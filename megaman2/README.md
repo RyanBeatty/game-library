@@ -24,8 +24,6 @@ MEGAMAN GOALS
 
 
 TODO MEGAMAN
-* Jump
-    * if you are hugging a short wall and you jump you instantly pop up on top of the wall. probably because we set perp velocity to 0
 * scenes
     * boss scene
 * better text rendering
