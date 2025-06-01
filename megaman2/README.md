@@ -24,8 +24,8 @@ MEGAMAN GOALS
 
 
 TODO MEGAMAN
-* aseprite conventions
-    * Need to figure out how to better translate aseprite stage markup to world pos coords. Example is megaman. I can't mark the center of his sprite because he is even width and height so the center falls between two aseprite pixels. I think the best way is to probably specify by the bottom left and top right corner coords. I can calculate the center from them.
+* Jump
+    * if you are hugging a short wall and you jump you instantly pop up on top of the wall. probably because we set perp velocity to 0
 * scenes
     * boss scene
 * better text rendering

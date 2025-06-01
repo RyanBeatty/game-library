@@ -2933,7 +2933,6 @@ static void StageTick(GameState* gstate) {
                 // Note that for gravity we don't multiply by dt because its just a constant gravity.
                 // TODO: I might need to change this.
                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), 350 * dt));
-                TraceLog(LOG_INFO, "%f, %f, %f", e->v.x, e->v.y, e->v.z);
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
             }
         }
@@ -2988,7 +2987,16 @@ static void StageTick(GameState* gstate) {
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
                         Entity* player = e0;
                         player->pos = Vec3Add(player->pos, Vec3Scale(info->normal, info->depth));
-                        player->v = Vec3Zero();
+
+                        // TODO: We don't really check closing velocity here.
+                        Vec3 vplayer = player->v;
+                        Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
+                        Vec3 vparallel = Vec3Sub(vplayer, vperp);
+                        player->v = vparallel;
+                        // Vec3 vperp2 = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
+                        // Vec3 vparallel = Vec3Sub(vplayer, vperp2);
+                        // vparallel = Vec3Zero();
+                        // player->v = Vec3Add(vperp2, vparallel);
                     }
                 }
             }
@@ -3109,8 +3117,6 @@ LCORE void Stage2Tick(GameState* gstate) {
 
     if (!gstate->init) {
         gstate->stage = GetStage(STAGE_WOODMAN);
-
-        TraceLog(LOG_INFO, "fooo");
 
         Vec3 origin_offset = Vec3Lit(-0.5f * (gstate->stage->background.width - 1.0f),
                                      -0.5f * (gstate->stage->background.height - 1.0f), 0.0f);
