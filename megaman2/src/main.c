@@ -2926,7 +2926,7 @@ static void StageTick(GameState* gstate) {
                 }
 
                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
-                if (IsKeyPressed(KEY_SPACE)) {
+                if (IsKeyPressed(KEY_UP)) {
                     dy.y += DY_SPEED;
                 }
 
