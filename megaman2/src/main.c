@@ -2914,9 +2914,9 @@ static void StageTick(GameState* gstate) {
 
             if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                 static const f32 DX_SPEED = 50.0f;
-                static const f32 AIR_SPEED = 3.2f * 60.0f;
+                static const f32 DY_SPEED = 200.0f;
+                static const f32 GRAVITY = 350.0f;
                 static const f32 JUMP_TIME = 15.0f / 60.0f;
-                static u32 JUMP_FRAME = 0;
 
                 Vec3 dx = Vec3Zero();
                 if (IsKeyDown(KEY_LEFT)) {
@@ -2927,10 +2927,10 @@ static void StageTick(GameState* gstate) {
 
                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                 if (IsKeyPressed(KEY_SPACE)) {
-                    dy.y += 200.0f;
+                    dy.y += DY_SPEED;
                 }
 
-                e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), 350 * dt));
+                e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
             }
         }
