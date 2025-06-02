@@ -2499,6 +2499,8 @@ typedef struct {
     // Gameplay fields.
     f32 jumping_dt;
 
+    i32 health;
+
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -2925,6 +2927,8 @@ static void StageTick(GameState* gstate) {
                 GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
                                      LRED);
                 FlagOn(e->flags, EFLAG_MOB);
+
+                e->health = 2;
             }
         }
     }
@@ -2984,6 +2988,12 @@ static void StageTick(GameState* gstate) {
 
                     GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
                     FlagOn(shot->flags, EFLAG_PROJECTILE);
+                }
+            }
+
+            if (TestFlag(e->flags, EFLAG_MOB)) {
+                if (e->health <= 0) {
+                    SoftDeactivateEntity(e->id);
                 }
             }
 
@@ -3054,6 +3064,14 @@ static void StageTick(GameState* gstate) {
                             Vec3 vparallel = Vec3Sub(vplayer, vperp);
                             player->v = vparallel;
                         }
+                    }
+
+                    if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
+                        Entity* mob = e0;
+                        Entity* shot = e1;
+
+                        --mob->health;
+                        SoftDeactivateEntity(shot->id);
                     }
 
                     if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_WALL)) {
