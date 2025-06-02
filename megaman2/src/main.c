@@ -610,8 +610,8 @@ typedef struct {
     u8* end;
 } Arena;
 
-#define new(a, count, type) (alloc((a), (count), sizeof((type)), _Alignof((type))))
-LCORE void* alloc(Arena* a, isize count, isize size, isize alignment) {
+#define New(a, count, type) (ArenaAlloc((a), (count), sizeof((type)), _Alignof((type))))
+LCORE void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment) {
     isize padding = -(uptr)a->beg & (alignment - 1);
     isize nbytes = count * size;
     Assert(count < (a->end - a->beg - padding) / size);
