@@ -603,6 +603,14 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 }
 
 ////////////////////////////////////////////////////////////
+// S:Memory
+
+typedef struct {
+    u8* beg;
+    u8* end;
+} Arena;
+
+////////////////////////////////////////////////////////////
 // S:Color
 
 static const Vec4 LCLEAR = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
