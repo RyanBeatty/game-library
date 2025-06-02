@@ -610,8 +610,15 @@ typedef struct {
     u8* end;
 } Arena;
 
-// #define new(a, count, type) (alloc((a), (count), sizeof((type)), alignof((type))))
-LCORE void* alloc(Arena* a, isize count, isize size, isize alignment) { return NULL; };
+#define new(a, count, type) (alloc((a), (count), sizeof((type)), _Alignof((type))))
+LCORE void* alloc(Arena* a, isize count, isize size, isize alignment) {
+    isize padding = -(uptr)a->beg & (alignment - 1);
+    isize nbytes = count * size;
+    Assert(count < (a->end - a->beg - padding) / size);
+    void* ptr = a->beg + padding;
+    a->beg += padding + nbytes;
+    return memset(ptr, 0, nbytes);
+};
 
 ////////////////////////////////////////////////////////////
 // S:Color

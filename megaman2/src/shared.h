@@ -32,6 +32,7 @@ typedef double f64;
 
 typedef ptrdiff_t isize;
 typedef size_t usize;
+typedef uintptr_t uptr;
 
 #define LPI ((f32)3.1415926535)
 #define LTAU ((f32)6.2831853071)
