@@ -24,6 +24,11 @@ MEGAMAN GOALS
 
 
 TODO MEGAMAN
+* Memory
+    * unittest alignment
+    * Allocate global memory
+    * Dynamic array
+    * Convert collision infos to be list of colliders
 * scenes
     * boss scene
 * better text rendering
