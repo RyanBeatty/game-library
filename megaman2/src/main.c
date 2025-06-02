@@ -610,6 +610,11 @@ typedef struct {
     u8* end;
 } Arena;
 
+typedef ptrdiff_t tsize;
+
+// #define new(a, count, type) (alloc((a), (count), sizeof((type)), alignof((type))))
+LCORE void* alloc(Arena* a, tsize count, tsize size, tsize alignment) { return NULL; };
+
 ////////////////////////////////////////////////////////////
 // S:Color
 
@@ -2968,7 +2973,6 @@ static void StageTick(GameState* gstate) {
                 static const f32 DX_SPEED = 50.0f;
                 static const f32 DY_SPEED = 200.0f;
                 static const f32 GRAVITY = 350.0f;
-                static const f32 JUMP_TIME = 15.0f / 60.0f;
 
                 Vec3 dx = Vec3Zero();
                 if (IsKeyDown(KEY_LEFT)) {
