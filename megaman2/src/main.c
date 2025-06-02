@@ -2462,7 +2462,7 @@ typedef enum EntityFlag {
     EFLAG_COLLIDER = 1 << 3,
     EFLAG_PROJECTILE = 1 << 4,
     EFLAG_WALL = 1 << 5,
-    EFLAG_PHYSICS = 1 << 6,
+    EFLAG_MOB = 1 << 6,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2628,6 +2628,9 @@ typedef struct {
 
     EntitySpec walls[10];
     u32 wlen;
+
+    EntitySpec enemies[10];
+    u32 elen;
 } Stage;
 
 typedef enum {
@@ -2678,6 +2681,23 @@ static Stage* GetStage(StageId sid) {
                     spec.shape.aabb2d.r = bb.r;
                     Assert(stage.wlen < ArraySizeOf(stage.walls));
                     stage.walls[stage.wlen++] = spec;
+                }
+            }
+
+            // Enemies
+            {
+                Vec2 positions[][2] = {
+                    {Vec2Lit(441.0f, 176.0f), Vec2Lit(472.0f, 145.0f)},
+                };
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                    EntitySpec spec = {0};
+                    spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    spec.shape.type = PH_AABB2D;
+                    spec.shape.aabb2d.c = Vec2Zero();
+                    spec.shape.aabb2d.r = bb.r;
+                    Assert(stage.wlen < ArraySizeOf(stage.enemies));
+                    stage.enemies[stage.elen++] = spec;
                 }
             }
 
@@ -2879,13 +2899,33 @@ static void StageTick(GameState* gstate) {
         SPAWNED = false;
 
         // walls.
-        for (u32 i = 0; i < gstate->stage->wlen; ++i) {
-            EntitySpec* spec = &gstate->stage->walls[i];
+        {
+            EntitySpec* specs = gstate->stage->walls;
+            u32 len = gstate->stage->wlen;
+            for (u32 i = 0; i < len; ++i) {
+                EntitySpec* spec = &specs[i];
 
-            Entity* e = AllocateEntity();
-            e->pos = spec->pos;
-            e->shape = spec->shape;
-            FlagOn(e->flags, EFLAG_WALL);
+                Entity* e = AllocateEntity();
+                e->pos = spec->pos;
+                e->shape = spec->shape;
+                FlagOn(e->flags, EFLAG_WALL);
+            }
+        }
+
+        // Enemies.
+        {
+            EntitySpec* specs = gstate->stage->enemies;
+            u32 len = gstate->stage->elen;
+            for (u32 i = 0; i < len; ++i) {
+                EntitySpec* spec = &specs[i];
+
+                Entity* e = AllocateEntity();
+                e->pos = spec->pos;
+                e->shape = spec->shape;
+                GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+                                     LRED);
+                FlagOn(e->flags, EFLAG_MOB);
+            }
         }
     }
 
