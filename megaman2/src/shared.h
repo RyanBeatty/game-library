@@ -23,14 +23,15 @@ typedef int32_t i32;
 typedef int64_t i64;
 
 typedef float f32;
+typedef f32 rad;
+typedef f32 deg;
 typedef double f64;
-
 #define F32_MAX FLT_MAX
 // Min value a float can differ by.
 #define F32_EPSILON FLT_EPSILON
 
-typedef f32 rad;
-typedef f32 deg;
+typedef ptrdiff_t isize;
+typedef size_t usize;
 
 #define LPI ((f32)3.1415926535)
 #define LTAU ((f32)6.2831853071)

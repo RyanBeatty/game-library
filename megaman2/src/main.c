@@ -610,10 +610,8 @@ typedef struct {
     u8* end;
 } Arena;
 
-typedef ptrdiff_t tsize;
-
 // #define new(a, count, type) (alloc((a), (count), sizeof((type)), alignof((type))))
-LCORE void* alloc(Arena* a, tsize count, tsize size, tsize alignment) { return NULL; };
+LCORE void* alloc(Arena* a, isize count, isize size, isize alignment) { return NULL; };
 
 ////////////////////////////////////////////////////////////
 // S:Color
