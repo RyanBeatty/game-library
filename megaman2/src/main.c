@@ -620,6 +620,14 @@ LCORE void* alloc(Arena* a, isize count, isize size, isize alignment) {
     return memset(ptr, 0, nbytes);
 };
 
+LCORE Arena NewArena(isize cap) {
+    Arena a = {0};
+    a.beg = malloc(cap);
+    Assert(a.beg != NULL);
+    a.end = a.beg + cap;
+    return a;
+}
+
 ////////////////////////////////////////////////////////////
 // S:Color
 
@@ -3910,9 +3918,29 @@ static void TestMath() {
     }
 }
 
+static void TestMemory() {
+    // NewArena
+    {
+        {
+            Arena a = NewArena(1);
+            TAssert(a.beg != NULL, "NewArena(1) beg not null");
+            TAssert(a.end != a.beg, "NewArena(1) end != beg");
+            TAssert(a.end == a.beg + 1, "NewArena(1) end = beg + 1");
+            TAssert(a.end - a.beg == 1, "NewArena(1) end - beg == 1");
+        }
+
+        {
+            Arena a = NewArena(1234);
+            TAssert(a.end == a.beg + 1234, "NewArena(1234) end = beg + 1234");
+            TAssert(a.end - a.beg == 1234, "NewArena(1234) end - beg == 1234");
+        }
+    }
+}
+
 static void TestL() {
     TraceLog(LOG_INFO, "Running Tests");
     TestMath();
+    TestMemory();
 
     if (TestFail) {
         TraceLog(LOG_ERROR, "Failed tests!");
