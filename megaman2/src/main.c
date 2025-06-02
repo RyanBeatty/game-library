@@ -606,15 +606,17 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 // S:Memory
 
 typedef struct {
+    // TODO: I might want to include a stable pointer to the start if I ever want to free() arenas.
     u8* beg;
     u8* end;
 } Arena;
 
-#define New(a, count, type) (ArenaAlloc((a), (count), sizeof((type)), _Alignof((type))))
+#define New(a, count, type) (ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
 LCORE void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment) {
     isize padding = -(uptr)a->beg & (alignment - 1);
     isize nbytes = count * size;
-    Assert(count < (a->end - a->beg - padding) / size);
+    // I think <= is appropriate here. if remaining = 1 and we want to allocate 1, then we should be able to do so
+    Assert(count <= (a->end - a->beg - padding) / size);
     void* ptr = a->beg + padding;
     a->beg += padding + nbytes;
     return memset(ptr, 0, nbytes);
@@ -3933,6 +3935,60 @@ static void TestMemory() {
             Arena a = NewArena(1234);
             TAssert(a.end == a.beg + 1234, "NewArena(1234) end = beg + 1234");
             TAssert(a.end - a.beg == 1234, "NewArena(1234) end - beg == 1234");
+        }
+    }
+
+    // New
+    {
+        {
+            Arena a = NewArena(1);
+            u8* begprev = a.beg;
+            u8* b = New(&a, 1, u8);
+            *b = 10;
+
+            breakpoint();
+            TAssert(b == begprev, "NewArena(1) + New(1, u8): b == begprev");
+            TAssert(a.beg == a.end, "NewArena(1) + New(1, u8): beg == end");
+            TAssert(*b == 10, "NewArena(1) + New(1, u8): *b == 10");
+        }
+
+        {
+            Arena a = NewArena(10);
+            u8* begprev = a.beg;
+            u8* b = New(&a, 5, u8);
+            b[0] = 10;
+            b[1] = 20;
+            b[2] = 30;
+            b[3] = 40;
+            b[4] = 50;
+            TAssert(b == begprev, "NewArena(10) + New(5, u8): b == begprev");
+            TAssert(a.beg != a.end, "NewArena(10) + New(5, u8): beg != end");
+            TAssert(a.end - a.beg == 5, "NewArena(10) + New(5, u8): end - beg == 5");
+            TAssert(b[0] == 10, "NewArena(10) + New(5, u8): b[0]");
+            TAssert(b[1] == 20, "NewArena(10) + New(5, u8): b[1]");
+            TAssert(b[2] == 30, "NewArena(10) + New(5, u8): b[2]");
+            TAssert(b[3] == 40, "NewArena(10) + New(5, u8): b[3]");
+            TAssert(b[4] == 50, "NewArena(10) + New(5, u8): b[4]");
+
+            u8* begprev2 = a.beg;
+            u8* b2 = New(&a, 5, u8);
+            b2[0] = 60;
+            b2[1] = 70;
+            b2[2] = 80;
+            b2[3] = 90;
+            b2[4] = 100;
+            TAssert(b2 == begprev2, "NewArena(10) + New(5, u8): b2 == begprev2");
+            TAssert(a.beg == a.end, "NewArena(10) + New(5, u8): beg == end");
+            TAssert(b[0] == 10, "NewArena(10) + New(5, u8) + New(5, u8): b[0]");
+            TAssert(b[1] == 20, "NewArena(10) + New(5, u8) + New(5, u8): b[1]");
+            TAssert(b[2] == 30, "NewArena(10) + New(5, u8) + New(5, u8): b[2]");
+            TAssert(b[3] == 40, "NewArena(10) + New(5, u8) + New(5, u8): b[3]");
+            TAssert(b[4] == 50, "NewArena(10) + New(5, u8) + New(5, u8): b[4]");
+            TAssert(b2[0] == 60, "NewArena(10) + New(5, u8) + New(5, u8): b2[0]");
+            TAssert(b2[1] == 70, "NewArena(10) + New(5, u8) + New(5, u8): b2[1]");
+            TAssert(b2[2] == 80, "NewArena(10) + New(5, u8) + New(5, u8): b2[2]");
+            TAssert(b2[3] == 90, "NewArena(10) + New(5, u8) + New(5, u8): b2[3]");
+            TAssert(b2[4] == 100, "NewArena(10) + New(5, u8) + New(5, u8): b2[4]");
         }
     }
 }
