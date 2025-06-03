@@ -3053,6 +3053,9 @@ static void StageTick(GameState* gstate) {
                     if (!TestFlag(ej->flags, EFLAG_ACTIVE) || ej->shape.type == PH_NONE) {
                         continue;
                     }
+                    if (TestFlag(ei->flags, EFLAG_WALL) && TestFlag(ej->flags, EFLAG_WALL)) {
+                        continue;
+                    }
 
                     Polyhedron pj = PolyhedronTransform(ej->shape, ej->scale, ej->orient, ej->pos);
 
