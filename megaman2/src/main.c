@@ -2491,6 +2491,7 @@ typedef enum EntityFlag {
     EFLAG_PROJECTILE = 1 << 4,
     EFLAG_WALL = 1 << 5,
     EFLAG_MOB = 1 << 6,
+    EFLAG_CLIMABLE = 1 << 7,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2989,6 +2990,21 @@ static void StageTick(GameState* gstate) {
                 e->health = 2;
             }
         }
+
+        // Ladders.
+        {
+            EntitySpec* specs = gstate->stage->ladders;
+            u32 len = gstate->stage->llen;
+            for (u32 i = 0; i < len; ++i) {
+                EntitySpec* spec = &specs[i];
+
+                Entity* e = AllocateEntity();
+                e->pos = spec->pos;
+                e->shape = spec->shape;
+                FlagOff(e->flags, EFLAG_DRAW);
+                FlagOn(e->flags, EFLAG_CLIMABLE);
+            }
+        }
     }
 
     if (gstate->update) {
@@ -3223,7 +3239,7 @@ static void StageTick(GameState* gstate) {
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
 
-            if (gstate->debug && TestFlag(e->flags, EFLAG_COLLIDER)) {
+            if (gstate->debug && e->shape.type != PH_NONE) {
                 // TODO: Wireframe rasterization can lead to looking like the quad is offset. For now
                 // Draw filled quads for debugging collisions.
                 Vec3 pos = e->pos;
