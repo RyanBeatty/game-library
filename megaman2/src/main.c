@@ -2718,6 +2718,7 @@ static Stage* GetStage(StageId sid) {
             {
                 Vec2 positions[][2] = {
                     {Vec2Lit(441.0f, 176.0f), Vec2Lit(472.0f, 145.0f)},
+                    {Vec2Lit(757.0f, 176.0f), Vec2Lit(788.0f, 145.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
