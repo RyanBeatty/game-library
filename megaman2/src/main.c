@@ -2661,6 +2661,9 @@ typedef struct {
 
     EntitySpec enemies[10];
     u32 elen;
+
+    EntitySpec ladders[10];
+    u32 llen;
 } Stage;
 
 typedef enum {
@@ -2691,6 +2694,9 @@ static Stage* GetStage(StageId sid) {
 
             // Walls
             {
+                EntitySpec* specs = stage.walls;
+                u32* len = &stage.wlen;
+                u32 cap = ArraySizeOf(stage.walls);
                 Vec2 positions[][2] = {
                     {Vec2Lit(1.0f, 256.0f), Vec2Lit(256.0f, 193.0f)},
                     {Vec2Lit(257.0f, 256.0f), Vec2Lit(320.0f, 177.0f)},
@@ -2709,13 +2715,16 @@ static Stage* GetStage(StageId sid) {
                     spec.shape.type = PH_AABB2D;
                     spec.shape.aabb2d.c = Vec2Zero();
                     spec.shape.aabb2d.r = bb.r;
-                    Assert(stage.wlen < ArraySizeOf(stage.walls));
-                    stage.walls[stage.wlen++] = spec;
+                    Assert(*len < cap);
+                    specs[(*len)++] = spec;
                 }
             }
 
             // Enemies
             {
+                EntitySpec* specs = stage.enemies;
+                u32* len = &stage.elen;
+                u32 cap = ArraySizeOf(stage.enemies);
                 Vec2 positions[][2] = {
                     {Vec2Lit(441.0f, 176.0f), Vec2Lit(472.0f, 145.0f)},
                     {Vec2Lit(757.0f, 176.0f), Vec2Lit(788.0f, 145.0f)},
@@ -2727,8 +2736,28 @@ static Stage* GetStage(StageId sid) {
                     spec.shape.type = PH_AABB2D;
                     spec.shape.aabb2d.c = Vec2Zero();
                     spec.shape.aabb2d.r = bb.r;
-                    Assert(stage.wlen < ArraySizeOf(stage.enemies));
-                    stage.enemies[stage.elen++] = spec;
+                    Assert(*len < cap);
+                    specs[(*len)++] = spec;
+                }
+            }
+
+            // Ladders
+            {
+                EntitySpec* specs = stage.ladders;
+                u32* len = &stage.llen;
+                u32 cap = ArraySizeOf(stage.ladders);
+                Vec2 positions[][2] = {
+                    {Vec2Lit(1185.0f, 336.0f), Vec2Lit(1200.0f, 193.0f)},
+                };
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                    EntitySpec spec = {0};
+                    spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    spec.shape.type = PH_AABB2D;
+                    spec.shape.aabb2d.c = Vec2Zero();
+                    spec.shape.aabb2d.r = bb.r;
+                    Assert(*len < cap);
+                    specs[(*len)++] = spec;
                 }
             }
 
