@@ -2748,6 +2748,7 @@ static Stage* GetStage(StageId sid) {
                 u32* len = &stage.llen;
                 u32 cap = ArraySizeOf(stage.ladders);
                 Vec2 positions[][2] = {
+                    {Vec2Lit(195.0f, 192.0f), Vec2Lit(219.0f, 164.0f)},
                     {Vec2Lit(1185.0f, 336.0f), Vec2Lit(1200.0f, 187.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -3049,6 +3050,7 @@ static void StageTick(GameState* gstate) {
                     SPAWNED = false;
                 } else {
                     // Ladder detection.
+                    Entity* ladder = NULL;
                     {
                         Polyhedron shape = {0};
                         shape.type = PH_AABB2D;
@@ -3056,7 +3058,6 @@ static void StageTick(GameState* gstate) {
                         shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
 
                         shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                        Entity* ladder = NULL;
                         for (u32 j = 0; j < GetNumEntities(); ++j) {
                             Entity* e2 = GetEntity(j);
                             if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
@@ -3078,38 +3079,43 @@ static void StageTick(GameState* gstate) {
                                  ladder != NULL ? LGREEN : LGRAY);
                     }
 
-                    // Movement.
-                    {
-                        static const f32 DX_SPEED = 50.0f;
-                        static const f32 DY_SPEED = 200.0f;
-                        static const f32 GRAVITY = 350.0f;
+                    if (ladder != NULL && IsKeyPressed(KEY_UP)) {
+                        e->pos = ladder->pos;
+                    } else {
+                        // Movement.
+                        {
+                            static const f32 DX_SPEED = 50.0f;
+                            static const f32 DY_SPEED = 200.0f;
+                            static const f32 GRAVITY = 350.0f;
 
-                        Vec3 dx = Vec3Zero();
-                        if (IsKeyDown(KEY_LEFT)) {
-                            dx.x -= DX_SPEED;
-                        } else if (IsKeyDown(KEY_RIGHT)) {
-                            dx.x += DX_SPEED;
-                        }
+                            Vec3 dx = Vec3Zero();
+                            if (IsKeyDown(KEY_LEFT)) {
+                                dx.x -= DX_SPEED;
+                            } else if (IsKeyDown(KEY_RIGHT)) {
+                                dx.x += DX_SPEED;
+                            }
 
-                        Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
-                        if (IsKeyPressed(KEY_UP)) {
-                            dy.y += DY_SPEED;
-                        }
+                            Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                            if (IsKeyPressed(KEY_UP)) {
+                                dy.y += DY_SPEED;
+                            }
 
-                        e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                            e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
+                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
-                        if (IsKeyPressed(KEY_SPACE)) {
-                            Entity* shot = AllocateEntity();
-                            shot->pos = e->pos;
-                            shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
+                            if (IsKeyPressed(KEY_SPACE)) {
+                                Entity* shot = AllocateEntity();
+                                shot->pos = e->pos;
+                                shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
 
-                            shot->shape.type = PH_AABB2D;
-                            shot->shape.aabb2d.c = Vec2Zero();
-                            shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+                                shot->shape.type = PH_AABB2D;
+                                shot->shape.aabb2d.c = Vec2Zero();
+                                shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
 
-                            GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
-                            FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f),
+                                                     LYELLOW);
+                                FlagOn(shot->flags, EFLAG_PROJECTILE);
+                            }
                         }
                     }
                 }
