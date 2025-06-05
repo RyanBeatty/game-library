@@ -24,6 +24,7 @@ MEGAMAN GOALS
 
 
 TODO MEGAMAN
+* I should seriously consider integrating with something like ldtk. Making new stages is painful and error prone. For now though lets keep managing stages via code. I'm still in prototyping phase of just getting some mechanics into the game.
 * Memory
     * unittest alignment
     * Allocate global memory
