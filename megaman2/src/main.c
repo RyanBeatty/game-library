@@ -2748,7 +2748,7 @@ static Stage* GetStage(StageId sid) {
                 u32* len = &stage.llen;
                 u32 cap = ArraySizeOf(stage.ladders);
                 Vec2 positions[][2] = {
-                    {Vec2Lit(1185.0f, 336.0f), Vec2Lit(1200.0f, 193.0f)},
+                    {Vec2Lit(1185.0f, 336.0f), Vec2Lit(1200.0f, 187.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -2951,6 +2951,17 @@ static void StageTick(GameState* gstate) {
     static LCamera CAMERA = {0};
     static bool SPAWNED = false;
 
+    BeginRender();
+    ShaderPass* pass = BeginShaderPass(GetShader());
+    pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
+    // ClearBuffer(LBLUE);
+
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    f32 hwidth = 0.5f * width;
+    f32 hheight = 0.5f * height;
+    pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+
     f32 dt = gstate->dt;
 
     if (!gstate->init) {
@@ -3037,36 +3048,69 @@ static void StageTick(GameState* gstate) {
                     SoftDeactivateEntity(e->id);
                     SPAWNED = false;
                 } else {
-                    static const f32 DX_SPEED = 50.0f;
-                    static const f32 DY_SPEED = 200.0f;
-                    static const f32 GRAVITY = 350.0f;
+                    // Ladder detection.
+                    {
+                        Polyhedron shape = {0};
+                        shape.type = PH_AABB2D;
+                        shape.aabb2d.c = Vec2Zero();
+                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
 
-                    Vec3 dx = Vec3Zero();
-                    if (IsKeyDown(KEY_LEFT)) {
-                        dx.x -= DX_SPEED;
-                    } else if (IsKeyDown(KEY_RIGHT)) {
-                        dx.x += DX_SPEED;
+                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                        Entity* ladder = NULL;
+                        for (u32 j = 0; j < GetNumEntities(); ++j) {
+                            Entity* e2 = GetEntity(j);
+                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                e2->shape.type == PH_NONE) {
+                                continue;
+                            }
+
+                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                            if (collides) {
+                                ladder = e2;
+                                break;
+                            }
+                        }
+
+                        DrawQuad(Vec3Lit(e->pos.x, e->pos.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
+                                 ladder != NULL ? LGREEN : LGRAY);
                     }
 
-                    Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
-                    if (IsKeyPressed(KEY_UP)) {
-                        dy.y += DY_SPEED;
-                    }
+                    // Movement.
+                    {
+                        static const f32 DX_SPEED = 50.0f;
+                        static const f32 DY_SPEED = 200.0f;
+                        static const f32 GRAVITY = 350.0f;
 
-                    e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
-                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        Vec3 dx = Vec3Zero();
+                        if (IsKeyDown(KEY_LEFT)) {
+                            dx.x -= DX_SPEED;
+                        } else if (IsKeyDown(KEY_RIGHT)) {
+                            dx.x += DX_SPEED;
+                        }
 
-                    if (IsKeyPressed(KEY_SPACE)) {
-                        Entity* shot = AllocateEntity();
-                        shot->pos = e->pos;
-                        shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
+                        Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                        if (IsKeyPressed(KEY_UP)) {
+                            dy.y += DY_SPEED;
+                        }
 
-                        shot->shape.type = PH_AABB2D;
-                        shot->shape.aabb2d.c = Vec2Zero();
-                        shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+                        e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
-                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
-                        FlagOn(shot->flags, EFLAG_PROJECTILE);
+                        if (IsKeyPressed(KEY_SPACE)) {
+                            Entity* shot = AllocateEntity();
+                            shot->pos = e->pos;
+                            shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
+
+                            shot->shape.type = PH_AABB2D;
+                            shot->shape.aabb2d.c = Vec2Zero();
+                            shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+
+                            GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                            FlagOn(shot->flags, EFLAG_PROJECTILE);
+                        }
                     }
                 }
             }
@@ -3204,19 +3248,8 @@ static void StageTick(GameState* gstate) {
         }
     }
 
-    BeginRender();
-
+    // Draw entities.
     {
-        ShaderPass* pass = BeginShaderPass(GetShader());
-        pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
-        // ClearBuffer(LBLUE);
-
-        u32 width = gstate->renderw;
-        u32 height = gstate->renderh;
-        f32 hwidth = 0.5f * width;
-        f32 hheight = 0.5f * height;
-        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
-
         // Draw background. Assumption is that origin is at center of background texture.
         {
             DrawLTexture(gstate->stage->background, Vec2Zero(), 1.0f);
@@ -3249,9 +3282,9 @@ static void StageTick(GameState* gstate) {
                 DrawPolyhedron(&shape, color);
             }
         }
-
-        EndShaderPass();
     }
+
+    EndShaderPass();
 
     // UI. origin at bottom left hand of screen.
     {
