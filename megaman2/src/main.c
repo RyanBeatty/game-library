@@ -2856,6 +2856,14 @@ typedef enum {
 
 static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
 
+typedef enum {
+    PS_NONE = 0,
+    PS_IDLE,
+    PS_WALKING,
+    PS_CLIMBING,
+    PS_COUNT,
+} PlayerState;
+
 static void SceneDefaultTick(GameState* gstate) {
     BeginRender();
 
@@ -2951,6 +2959,7 @@ static void StageSelectTick(GameState* gstate) {
 static void StageTick(GameState* gstate) {
     static LCamera CAMERA = {0};
     static bool SPAWNED = false;
+    static PlayerState PSTATE = PS_NONE;
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -3033,6 +3042,7 @@ static void StageTick(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
             e->health = 1;
+            PSTATE = PS_IDLE;
         }
 
         // Update.
@@ -3049,73 +3059,88 @@ static void StageTick(GameState* gstate) {
                     SoftDeactivateEntity(e->id);
                     SPAWNED = false;
                 } else {
-                    // Ladder detection.
-                    Entity* ladder = NULL;
-                    {
-                        Polyhedron shape = {0};
-                        shape.type = PH_AABB2D;
-                        shape.aabb2d.c = Vec2Zero();
-                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+                    switch (PSTATE) {
+                        case PS_IDLE: {
+                            // Ladder detection.
+                            Entity* ladder = NULL;
+                            {
+                                Polyhedron shape = {0};
+                                shape.type = PH_AABB2D;
+                                shape.aabb2d.c = Vec2Zero();
+                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
 
-                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                        for (u32 j = 0; j < GetNumEntities(); ++j) {
-                            Entity* e2 = GetEntity(j);
-                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                e2->shape.type == PH_NONE) {
-                                continue;
+                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                                for (u32 j = 0; j < GetNumEntities(); ++j) {
+                                    Entity* e2 = GetEntity(j);
+                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                        e2->shape.type == PH_NONE) {
+                                        continue;
+                                    }
+
+                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                                    CollisionInfo info = {0};
+                                    bool collides =
+                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                                    if (collides) {
+                                        ladder = e2;
+                                        break;
+                                    }
+                                }
+
+                                DrawQuad(Vec3Lit(e->pos.x, e->pos.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
+                                         ladder != NULL ? LGREEN : LGRAY);
                             }
 
-                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+                            if (ladder != NULL && IsKeyDown(KEY_UP)) {
+                                e->pos = ladder->pos;
+                                PSTATE = PS_CLIMBING;
+                            } else {
+                                // Movement.
+                                {
+                                    static const f32 DX_SPEED = 50.0f;
+                                    static const f32 DY_SPEED = 200.0f;
+                                    static const f32 GRAVITY = 350.0f;
 
-                            CollisionInfo info = {0};
-                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                            if (collides) {
-                                ladder = e2;
-                                break;
+                                    Vec3 dx = Vec3Zero();
+                                    if (IsKeyDown(KEY_LEFT)) {
+                                        dx.x -= DX_SPEED;
+                                    } else if (IsKeyDown(KEY_RIGHT)) {
+                                        dx.x += DX_SPEED;
+                                    }
+
+                                    Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                                    if (IsKeyPressed(KEY_UP)) {
+                                        dy.y += DY_SPEED;
+                                    }
+
+                                    e->v =
+                                        Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
+                                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                                    if (IsKeyPressed(KEY_SPACE)) {
+                                        Entity* shot = AllocateEntity();
+                                        shot->pos = e->pos;
+                                        shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
+
+                                        shot->shape.type = PH_AABB2D;
+                                        shot->shape.aabb2d.c = Vec2Zero();
+                                        shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+
+                                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
+                                                             Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                                        FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                    }
+                                }
                             }
+                            break;
                         }
-
-                        DrawQuad(Vec3Lit(e->pos.x, e->pos.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
-                                 ladder != NULL ? LGREEN : LGRAY);
-                    }
-
-                    if (ladder != NULL && IsKeyPressed(KEY_UP)) {
-                        e->pos = ladder->pos;
-                    } else {
-                        // Movement.
-                        {
-                            static const f32 DX_SPEED = 50.0f;
-                            static const f32 DY_SPEED = 200.0f;
-                            static const f32 GRAVITY = 350.0f;
-
-                            Vec3 dx = Vec3Zero();
-                            if (IsKeyDown(KEY_LEFT)) {
-                                dx.x -= DX_SPEED;
-                            } else if (IsKeyDown(KEY_RIGHT)) {
-                                dx.x += DX_SPEED;
-                            }
-
-                            Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
-                            if (IsKeyPressed(KEY_UP)) {
-                                dy.y += DY_SPEED;
-                            }
-
-                            e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
-                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-
-                            if (IsKeyPressed(KEY_SPACE)) {
-                                Entity* shot = AllocateEntity();
-                                shot->pos = e->pos;
-                                shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
-
-                                shot->shape.type = PH_AABB2D;
-                                shot->shape.aabb2d.c = Vec2Zero();
-                                shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
-
-                                GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f),
-                                                     LYELLOW);
-                                FlagOn(shot->flags, EFLAG_PROJECTILE);
-                            }
+                        case PS_CLIMBING: {
+                            break;
+                        }
+                        default: {
+                            TraceLog(LOG_ERROR, "Unknown Player State %d", PSTATE);
+                            exit(0);
                         }
                     }
                 }
