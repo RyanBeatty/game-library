@@ -3135,6 +3135,16 @@ static void StageTick(GameState* gstate) {
                         break;
                     }
                     case PS_CLIMBING: {
+                        static const f32 CLIMB_SPEED = 30.0f;
+
+                        f32 dy = 0.0f;
+                        if (IsKeyDown(KEY_UP)) {
+                            dy += CLIMB_SPEED;
+                        } else if (IsKeyDown(KEY_DOWN)) {
+                            dy -= CLIMB_SPEED;
+                        }
+
+                        e->pos = Vec3Add(e->pos, Vec3Lit(0.0f, dt * dy, 0.0f));
                         break;
                     }
                     case PS_DYING: {
