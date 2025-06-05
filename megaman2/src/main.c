@@ -756,7 +756,14 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_LFONT, TX_LFONT2, TX_WOODMAN_STAGE, TX_COUNT } TextureLabel;
+typedef enum TextureLabel {
+    TX_DEFAULT = 0,
+    TX_LFONT,
+    TX_LFONT2,
+    TX_WOODMAN_STAGE,
+    TX_LADDER_TEST_STAGE,
+    TX_COUNT
+} TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -834,6 +841,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_WOODMAN_STAGE] = UploadTexture("assets/textures/woodman-stage.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_LADDER_TEST_STAGE] = UploadTexture("assets/textures/stages/ladder-test.png");
         ++tcache->txlen;
     }
 }
@@ -2670,6 +2683,7 @@ typedef struct {
 typedef enum {
     STAGE_NONE = 0,
     STAGE_WOODMAN,
+    STAGE_LADDER_TEST,
     STAGE_COUNT,
 } StageId;
 
@@ -2764,6 +2778,84 @@ static Stage* GetStage(StageId sid) {
             }
 
             STAGES[STAGE_WOODMAN] = stage;
+        }
+
+        {
+            LTexture tx = GetTexture(TX_LADDER_TEST_STAGE);
+            Stage stage = {0};
+            stage.background = tx;
+            {
+                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(128.0f, 271.0f), Vec2Lit(383.0f, 32.0f));
+                stage.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
+            }
+            {
+                AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(224.0f, 271.0f), Vec2Lit(247.0f, 248.0f));
+                stage.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+            }
+
+            // Walls
+            {
+                EntitySpec* specs = stage.walls;
+                u32* len = &stage.wlen;
+                u32 cap = ArraySizeOf(stage.walls);
+                Vec2 positions[][2] = {
+                    {Vec2Lit(112.0f, 319.0f), Vec2Lit(367.0f, 272.0f)},
+                    {Vec2Lit(128.0f, 191.0f), Vec2Lit(191.0f, 176.0f)},
+                };
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                    EntitySpec spec = {0};
+                    spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    spec.shape.type = PH_AABB2D;
+                    spec.shape.aabb2d.c = Vec2Zero();
+                    spec.shape.aabb2d.r = bb.r;
+                    Assert(*len < cap);
+                    specs[(*len)++] = spec;
+                }
+            }
+
+            // Enemies
+            {
+                EntitySpec* specs = stage.enemies;
+                u32* len = &stage.elen;
+                u32 cap = ArraySizeOf(stage.enemies);
+                Vec2 positions[][2] = {
+                    {Vec2Lit(441.0f, 176.0f), Vec2Lit(472.0f, 145.0f)},
+                    {Vec2Lit(757.0f, 176.0f), Vec2Lit(788.0f, 145.0f)},
+                };
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                    EntitySpec spec = {0};
+                    spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    spec.shape.type = PH_AABB2D;
+                    spec.shape.aabb2d.c = Vec2Zero();
+                    spec.shape.aabb2d.r = bb.r;
+                    Assert(*len < cap);
+                    specs[(*len)++] = spec;
+                }
+            }
+
+            // Ladders
+            {
+                EntitySpec* specs = stage.ladders;
+                u32* len = &stage.llen;
+                u32 cap = ArraySizeOf(stage.ladders);
+                Vec2 positions[][2] = {
+                    {Vec2Lit(160.0f, 271.0f), Vec2Lit(175.0f, 192.0f)},
+                };
+                for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                    EntitySpec spec = {0};
+                    spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    spec.shape.type = PH_AABB2D;
+                    spec.shape.aabb2d.c = Vec2Zero();
+                    spec.shape.aabb2d.r = bb.r;
+                    Assert(*len < cap);
+                    specs[(*len)++] = spec;
+                }
+            }
+
+            STAGES[STAGE_LADDER_TEST] = stage;
         }
     }
 
@@ -2983,7 +3075,7 @@ static void StageTick(GameState* gstate) {
     f32 dt = gstate->dt;
 
     if (!gstate->init) {
-        gstate->stage = GetStage(STAGE_WOODMAN);
+        gstate->stage = GetStage(STAGE_LADDER_TEST);
         CAMERA.eye = gstate->stage->camera_start;
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
