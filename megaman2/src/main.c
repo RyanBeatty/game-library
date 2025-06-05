@@ -3144,7 +3144,8 @@ static void StageTick(GameState* gstate) {
                             dy -= CLIMB_SPEED;
                         }
 
-                        e->pos = Vec3Add(e->pos, Vec3Lit(0.0f, dt * dy, 0.0f));
+                        e->v = Vec3Lit(0.0f, dy, 0.0f);
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         break;
                     }
                     case PS_DYING: {
