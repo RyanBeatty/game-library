@@ -2865,6 +2865,13 @@ typedef enum {
     PS_COUNT,
 } PlayerState;
 
+static const i32 KUP = KEY_UP;
+static const i32 KDOWN = KEY_DOWN;
+static const i32 KLEFT = KEY_LEFT;
+static const i32 KRIGHT = KEY_RIGHT;
+static const i32 KJUMP = KEY_Z;
+static const i32 KSHOOT = KEY_X;
+
 static void SceneDefaultTick(GameState* gstate) {
     BeginRender();
 
@@ -3092,7 +3099,7 @@ static void StageTick(GameState* gstate) {
                                      ladder != NULL ? LGREEN : LGRAY);
                         }
 
-                        if (ladder != NULL && IsKeyDown(KEY_UP)) {
+                        if (ladder != NULL && IsKeyDown(KUP)) {
                             e->pos = ladder->pos;
                             PSTATE = PS_CLIMBING;
                         } else {
@@ -3103,21 +3110,21 @@ static void StageTick(GameState* gstate) {
                                 static const f32 GRAVITY = 350.0f;
 
                                 Vec3 dx = Vec3Zero();
-                                if (IsKeyDown(KEY_LEFT)) {
+                                if (IsKeyDown(KLEFT)) {
                                     dx.x -= DX_SPEED;
-                                } else if (IsKeyDown(KEY_RIGHT)) {
+                                } else if (IsKeyDown(KRIGHT)) {
                                     dx.x += DX_SPEED;
                                 }
 
                                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
-                                if (IsKeyPressed(KEY_UP)) {
+                                if (IsKeyPressed(KJUMP)) {
                                     dy.y += DY_SPEED;
                                 }
 
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
                                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
-                                if (IsKeyPressed(KEY_SPACE)) {
+                                if (IsKeyPressed(KSHOOT)) {
                                     Entity* shot = AllocateEntity();
                                     shot->pos = e->pos;
                                     shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
@@ -3138,9 +3145,9 @@ static void StageTick(GameState* gstate) {
                         static const f32 CLIMB_SPEED = 30.0f;
 
                         f32 dy = 0.0f;
-                        if (IsKeyDown(KEY_UP)) {
+                        if (IsKeyDown(KUP)) {
                             dy += CLIMB_SPEED;
-                        } else if (IsKeyDown(KEY_DOWN)) {
+                        } else if (IsKeyDown(KDOWN)) {
                             dy -= CLIMB_SPEED;
                         }
 
