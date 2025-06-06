@@ -3192,7 +3192,7 @@ static void StageTick(GameState* gstate) {
                         }
 
                         if (ladder != NULL && IsKeyDown(KUP)) {
-                            e->pos = ladder->pos;
+                            e->pos.x = ladder->pos.x;  // Teleport to middle of ladder.
                             PSTATE = PS_CLIMBING;
                         } else {
                             // Movement.
