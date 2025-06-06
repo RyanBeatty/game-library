@@ -2104,6 +2104,13 @@ LCORE void PolyhedronSetAABB2DFromGridRect(Polyhedron* shape, Vec2 lc, Vec2 dims
     shape->aabb2d.c = c;
 }
 
+// Set AABB2D From center and full width and height.
+LCORE void PolyHedronSetAABB2DFromWH(Polyhedron* shape, Vec2 c, Vec2 dims) {
+    shape->type = PH_AABB2D;
+    shape->aabb2d.c = c;
+    shape->aabb2d.r = Vec2Lit(0.5f * dims.x, 0.5f * dims.y);
+}
+
 // Important to pass decomposed transformation matrix (scale, rot, translate) because some polyhedron
 // like world axis-aligned shapes do not rotate for instance.
 // TODO: Consider making an interface where I get the correct polyhedron transformation matrix as a separate
@@ -2800,7 +2807,8 @@ static Stage* GetStage(StageId sid) {
                 u32 cap = ArraySizeOf(stage.walls);
                 Vec2 positions[][2] = {
                     {Vec2Lit(112.0f, 319.0f), Vec2Lit(367.0f, 272.0f)},
-                    {Vec2Lit(128.0f, 191.0f), Vec2Lit(255.0f, 176.0f)},
+                    {Vec2Lit(128.0f, 191.0f), Vec2Lit(159.0f, 176.0f)},
+                    {Vec2Lit(176.0f, 191.0f), Vec2Lit(255.0f, 176.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3192,6 +3200,9 @@ static void StageTick(GameState* gstate) {
 
                         if (ladder != NULL && IsKeyDown(KUP)) {
                             e->pos.x = ladder->pos.x;  // Teleport to middle of ladder.
+                            // Super hacky. we should be more rigorous about this eventually.
+                            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
+
                             PSTATE = PS_CLIMBING;
                         } else {
                             // Movement.
@@ -3239,6 +3250,9 @@ static void StageTick(GameState* gstate) {
                         if (IsKeyPressed(KJUMP)) {
                             PSTATE = PS_IDLE;
                             e->v.y += 200.0f;
+
+                            // Super hacky. we should be more rigorous about this eventually.
+                            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
                         } else {
                             f32 dy = 0.0f;
                             if (IsKeyDown(KUP)) {
