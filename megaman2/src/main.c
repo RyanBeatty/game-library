@@ -2800,7 +2800,7 @@ static Stage* GetStage(StageId sid) {
                 u32 cap = ArraySizeOf(stage.walls);
                 Vec2 positions[][2] = {
                     {Vec2Lit(112.0f, 319.0f), Vec2Lit(367.0f, 272.0f)},
-                    {Vec2Lit(128.0f, 191.0f), Vec2Lit(191.0f, 176.0f)},
+                    {Vec2Lit(128.0f, 191.0f), Vec2Lit(255.0f, 176.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -2819,10 +2819,7 @@ static Stage* GetStage(StageId sid) {
                 EntitySpec* specs = stage.enemies;
                 u32* len = &stage.elen;
                 u32 cap = ArraySizeOf(stage.enemies);
-                Vec2 positions[][2] = {
-                    {Vec2Lit(441.0f, 176.0f), Vec2Lit(472.0f, 145.0f)},
-                    {Vec2Lit(757.0f, 176.0f), Vec2Lit(788.0f, 145.0f)},
-                };
+                Vec2 positions[][2] = {};
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
                     EntitySpec spec = {0};
@@ -2841,7 +2838,9 @@ static Stage* GetStage(StageId sid) {
                 u32* len = &stage.llen;
                 u32 cap = ArraySizeOf(stage.ladders);
                 Vec2 positions[][2] = {
-                    {Vec2Lit(160.0f, 271.0f), Vec2Lit(175.0f, 192.0f)},
+                    {Vec2Lit(160.0f, 271.0f), Vec2Lit(175.0f, 176.0f)},
+                    {Vec2Lit(192.0f, 175.0f), Vec2Lit(207.0f, 96.0f)},
+                    {Vec2Lit(208.0f, 271.0f), Vec2Lit(223.0f, 192.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
