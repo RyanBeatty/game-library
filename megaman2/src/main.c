@@ -2690,7 +2690,7 @@ typedef struct {
     u32 elen;
 
     EntitySpec next_room_spec;
-    u32 next_room_idx;
+    u32 room_idx_to_be;
 
     EntitySpec prev_room_spec;
     u32 prev_room_idx;
@@ -2971,7 +2971,7 @@ static Stage* GetStage(StageId sid) {
 
                         breakpoint();
                         room.next_room_spec = spec;
-                        room.next_room_idx = 1;
+                        room.room_idx_to_be = 1;
                     }
                 }
 
@@ -3063,7 +3063,7 @@ typedef struct GameState {
     // Scene fields
     Stage* stage;
     u32 room_idx;  // Current room idx;
-    u32 next_room_idx;
+    u32 room_idx_to_be;
 } GameState;
 
 static GameState GState;
@@ -3247,7 +3247,7 @@ static void LoadRoomEntities(Room* room) {
                                  LGREEN);
             FlagOn(e->flags, EFLAG_EXIT);
 
-            e->room_link = room->next_room_idx;
+            e->room_link = room->room_idx_to_be;
         }
     }
 }
@@ -3276,7 +3276,7 @@ static void StageTick(GameState* gstate) {
         u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_ROOM_TEST);
         gstate->room_idx = room_idx;
-        gstate->next_room_idx = room_idx;
+        gstate->room_idx_to_be = room_idx;
 
         // walls.
         {
@@ -3313,12 +3313,12 @@ static void StageTick(GameState* gstate) {
         LoadRoomEntities(room);
     }
 
-    if (gstate->next_room_idx != gstate->room_idx) {
-        TraceLog(LOG_INFO, "Loaded Room %d", gstate->next_room_idx);
-        Room* room = &gstate->stage->rooms[gstate->next_room_idx];
+    if (gstate->room_idx_to_be != gstate->room_idx) {
+        TraceLog(LOG_INFO, "Loaded Room %d", gstate->room_idx_to_be);
+        Room* room = &gstate->stage->rooms[gstate->room_idx_to_be];
 
         LoadRoomEntities(room);
-        gstate->room_idx = gstate->next_room_idx;
+        gstate->room_idx = gstate->room_idx_to_be;
     }
 
     Room* room = &gstate->stage->rooms[gstate->room_idx];
@@ -3664,7 +3664,7 @@ static void StageTick(GameState* gstate) {
 
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_EXIT)) {
                         Entity* exit = e1;
-                        gstate->next_room_idx = exit->room_link;
+                        gstate->room_idx_to_be = exit->room_link;
                     }
                 }
             }
