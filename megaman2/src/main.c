@@ -2686,6 +2686,8 @@ typedef struct {
     Vec3 camera_start;
     Vec3 player_start;
 
+    bool static_camera;
+
     EntitySpec enemies[10];
     u32 elen;
 
@@ -2981,6 +2983,7 @@ static Stage* GetStage(StageId sid) {
             // Room 1
             {
                 Room room = {0};
+                room.static_camera = true;
                 {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(225.0f, 499.0f), Vec2Lit(480.0f, 210.0f));
                     room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
@@ -3671,7 +3674,7 @@ static void StageTick(GameState* gstate) {
         }
 
         // Update camera.
-        {
+        if (!room->static_camera) {
             Entity* player = NULL;
             for (u32 i = 0; i < GetNumEntities(); ++i) {
                 Entity* e = GetEntity(i);
