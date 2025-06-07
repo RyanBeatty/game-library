@@ -3307,7 +3307,6 @@ static void StageTick(GameState* gstate) {
                     FlagOn(e->flags, EFLAG_EXIT);
 
                     e->room_link = room->next_room_idx;
-                    breakpoint();
                 }
             }
         }
@@ -3652,6 +3651,12 @@ static void StageTick(GameState* gstate) {
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_MOB)) {
                         Entity* player = e0;
                         --player->health;
+                    }
+
+                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_EXIT)) {
+                        Entity* player = e0;
+                        Entity* exit = e1;
+                        TraceLog(LOG_INFO, "exit");
                     }
                 }
             }
