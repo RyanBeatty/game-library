@@ -3244,7 +3244,7 @@ static void StageTick(GameState* gstate) {
                         break;
                     }
                     case PS_CLIMBING: {
-                        static const f32 CLIMB_SPEED = 30.0f;
+                        static const f32 CLIMB_SPEED = 70.0f;
 
                         // Ladder detection.
                         Entity* ground = NULL;
