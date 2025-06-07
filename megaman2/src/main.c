@@ -2519,6 +2519,7 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 5,
     EFLAG_MOB = 1 << 6,
     EFLAG_CLIMABLE = 1 << 7,
+    EFLAG_EXIT = 1 << 8,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2556,6 +2557,8 @@ typedef struct {
     f32 jumping_dt;
 
     i32 health;
+
+    u32 room_link;  // Used for room exit triggers.
 
 } Entity;
 
@@ -2686,7 +2689,10 @@ typedef struct {
     EntitySpec enemies[10];
     u32 elen;
 
+    EntitySpec next_room_spec;
     u32 next_room_idx;
+
+    EntitySpec prev_room_spec;
     u32 prev_room_idx;
 } Room;
 
@@ -2950,9 +2956,26 @@ static Stage* GetStage(StageId sid) {
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
-
-                    stage.rooms[stage.rlen++] = room;
                 }
+
+                // Exits.
+                {
+                    {
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
+                                                         AsepritePxTR(Vec2Lit(241.0f, 299.0f)));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                        spec.shape.type = PH_AABB2D;
+                        spec.shape.aabb2d.c = Vec2Zero();
+                        spec.shape.aabb2d.r = bb.r;
+
+                        breakpoint();
+                        room.next_room_spec = spec;
+                        room.next_room_idx = 1;
+                    }
+                }
+
+                stage.rooms[stage.rlen++] = room;
             }
 
             // Room 1
@@ -2986,9 +3009,9 @@ static Stage* GetStage(StageId sid) {
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
-
-                    stage.rooms[stage.rlen++] = room;
                 }
+
+                stage.rooms[stage.rlen++] = room;
             }
 
             STAGES[STAGE_ROOM_TEST] = stage;
@@ -3269,6 +3292,22 @@ static void StageTick(GameState* gstate) {
                     FlagOn(e->flags, EFLAG_MOB);
 
                     e->health = 2;
+                }
+            }
+
+            // Exits.
+            {
+                {
+                    EntitySpec* spec = &room->next_room_spec;
+                    Entity* e = AllocateEntity();
+                    e->pos = spec->pos;
+                    e->shape = spec->shape;
+                    GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD),
+                                         Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f), LGREEN);
+                    FlagOn(e->flags, EFLAG_EXIT);
+
+                    e->room_link = room->next_room_idx;
+                    breakpoint();
                 }
             }
         }
@@ -4444,7 +4483,6 @@ static void TestMemory() {
             u8* b = New(&a, 1, u8);
             *b = 10;
 
-            breakpoint();
             TAssert(b == begprev, "NewArena(1) + New(1, u8): b == begprev");
             TAssert(a.beg == a.end, "NewArena(1) + New(1, u8): beg == end");
             TAssert(*b == 10, "NewArena(1) + New(1, u8): *b == 10");
