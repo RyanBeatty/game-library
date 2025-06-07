@@ -3082,7 +3082,7 @@ static void StageTick(GameState* gstate) {
     f32 dt = gstate->dt;
 
     if (!gstate->init) {
-        gstate->stage = GetStage(STAGE_LADDER_TEST);
+        gstate->stage = GetStage(STAGE_WOODMAN);
         CAMERA.eye = gstate->stage->camera_start;
         CAMERA.orient = Vec3Zero();
         SPAWNED = false;
@@ -3169,7 +3169,7 @@ static void StageTick(GameState* gstate) {
                 switch (PSTATE) {
                     case PS_IDLE: {
                         // Ladder detection.
-                        Entity* ladder = NULL;
+                        Entity* up_ladder = NULL;
                         {
                             Polyhedron shape = {0};
                             shape.type = PH_AABB2D;
@@ -3189,17 +3189,52 @@ static void StageTick(GameState* gstate) {
                                 CollisionInfo info = {0};
                                 bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
                                 if (collides) {
-                                    ladder = e2;
+                                    up_ladder = e2;
                                     break;
                                 }
                             }
 
-                            DrawQuad(Vec3Lit(e->pos.x, e->pos.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
-                                     ladder != NULL ? LGREEN : LGRAY);
+                            DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
+                                     Mat4Identity(), up_ladder != NULL ? LGREEN : LGRAY);
                         }
 
-                        if (ladder != NULL && IsKeyDown(KUP)) {
-                            e->pos.x = ladder->pos.x;  // Teleport to middle of ladder.
+                        Entity* down_ladder = NULL;
+                        {
+                            Polyhedron shape = {0};
+                            shape.type = PH_AABB2D;
+                            shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
+                            shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                            shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                            for (u32 j = 0; j < GetNumEntities(); ++j) {
+                                Entity* e2 = GetEntity(j);
+                                if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                    e2->shape.type == PH_NONE) {
+                                    continue;
+                                }
+
+                                Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                                CollisionInfo info = {0};
+                                bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                                if (collides) {
+                                    down_ladder = e2;
+                                    break;
+                                }
+                            }
+
+                            DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
+                                     Mat4Identity(), down_ladder != NULL ? LGREEN : LGRAY);
+                        }
+
+                        if (up_ladder != NULL && IsKeyDown(KUP)) {
+                            e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
+                            // Super hacky. we should be more rigorous about this eventually.
+                            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
+
+                            PSTATE = PS_CLIMBING;
+                        } else if (down_ladder != NULL && IsKeyDown(KDOWN)) {
+                            e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
                             // Super hacky. we should be more rigorous about this eventually.
                             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
 
