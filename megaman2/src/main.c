@@ -2935,7 +2935,46 @@ static Stage* GetStage(StageId sid) {
                     EntitySpec* specs = room.enemies;
                     u32* len = &room.elen;
                     u32 cap = ArraySizeOf(room.enemies);
-                    Vec2 positions[][2] = {};
+                    Vec2 positions[][2] = {
+                        {Vec2Lit(4.0f, 408.0f), Vec2Lit(35.0f, 377.0f)},
+                        // {Vec2Lit(434.0f, 408.0f), Vec2Lit(465.0f, 377.0f)},
+                    };
+                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                        AABB2D bb =
+                            AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                        spec.shape.type = PH_AABB2D;
+                        spec.shape.aabb2d.c = Vec2Zero();
+                        spec.shape.aabb2d.r = bb.r;
+                        Assert(*len < cap);
+                        specs[(*len)++] = spec;
+                    }
+
+                    stage.rooms[stage.rlen++] = room;
+                }
+            }
+
+            // Room 1
+            {
+                Room room = {0};
+                {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(225.0f, 499.0f), Vec2Lit(480.0f, 210.0f));
+                    room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
+                }
+                {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(321.0f, 408.0f), Vec2Lit(344.0f, 385.0f));
+                    room.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                }
+
+                // Enemies
+                {
+                    EntitySpec* specs = room.enemies;
+                    u32* len = &room.elen;
+                    u32 cap = ArraySizeOf(room.enemies);
+                    Vec2 positions[][2] = {
+                        {Vec2Lit(434.0f, 408.0f), Vec2Lit(465.0f, 377.0f)},
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
