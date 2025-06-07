@@ -3321,6 +3321,12 @@ static void StageTick(GameState* gstate) {
         Room* room = &gstate->stage->rooms[gstate->room_idx_to_be];
 
         LoadRoomEntities(room);
+        // TODO: Need to think about how to transition from a fixed camera room to a non fixed room.
+        // Like if I enter a fixed room and exit the way I came, I can't move the camera position to
+        // camera start because its the end of the room. maybe I also need to define a camera end...
+        // or as a hacky first start I could just move the camera to the y position of camera_start.
+        CAMERA.eye = room->camera_start;
+
         gstate->room_idx = gstate->room_idx_to_be;
     }
 
