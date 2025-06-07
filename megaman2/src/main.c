@@ -3063,6 +3063,7 @@ typedef struct GameState {
     // Scene fields
     Stage* stage;
     u32 room_idx;  // Current room idx;
+    u32 next_room_idx;
 } GameState;
 
 static GameState GState;
@@ -3216,6 +3217,41 @@ static void StageSelectTick(GameState* gstate) {
     EndRender();
 }
 
+static void LoadRoomEntities(Room* room) {
+    // Enemies.
+    {
+        EntitySpec* specs = room->enemies;
+        u32 len = room->elen;
+        for (u32 i = 0; i < len; ++i) {
+            EntitySpec* spec = &specs[i];
+
+            Entity* e = AllocateEntity();
+            e->pos = spec->pos;
+            e->shape = spec->shape;
+            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+                                 LRED);
+            FlagOn(e->flags, EFLAG_MOB);
+
+            e->health = 2;
+        }
+    }
+
+    // Exits.
+    {
+        {
+            EntitySpec* spec = &room->next_room_spec;
+            Entity* e = AllocateEntity();
+            e->pos = spec->pos;
+            e->shape = spec->shape;
+            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+                                 LGREEN);
+            FlagOn(e->flags, EFLAG_EXIT);
+
+            e->room_link = room->next_room_idx;
+        }
+    }
+}
+
 static void StageTick(GameState* gstate) {
     static LCamera CAMERA = {0};
     static bool SPAWNED = false;
@@ -3240,6 +3276,7 @@ static void StageTick(GameState* gstate) {
         u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_ROOM_TEST);
         gstate->room_idx = room_idx;
+        gstate->next_room_idx = room_idx;
 
         // walls.
         {
@@ -3270,46 +3307,18 @@ static void StageTick(GameState* gstate) {
             }
         }
 
-        // Load room data.
-        {
-            Room* room = &gstate->stage->rooms[gstate->room_idx];
+        Room* room = &gstate->stage->rooms[gstate->room_idx];
+        CAMERA.eye = room->camera_start;
+        CAMERA.orient = Vec3Zero();
+        LoadRoomEntities(room);
+    }
 
-            CAMERA.eye = room->camera_start;
-            CAMERA.orient = Vec3Zero();
+    if (gstate->next_room_idx != gstate->room_idx) {
+        TraceLog(LOG_INFO, "Loaded Room %d", gstate->next_room_idx);
+        Room* room = &gstate->stage->rooms[gstate->next_room_idx];
 
-            // Enemies.
-            {
-                EntitySpec* specs = room->enemies;
-                u32 len = room->elen;
-                for (u32 i = 0; i < len; ++i) {
-                    EntitySpec* spec = &specs[i];
-
-                    Entity* e = AllocateEntity();
-                    e->pos = spec->pos;
-                    e->shape = spec->shape;
-                    GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD),
-                                         Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f), LRED);
-                    FlagOn(e->flags, EFLAG_MOB);
-
-                    e->health = 2;
-                }
-            }
-
-            // Exits.
-            {
-                {
-                    EntitySpec* spec = &room->next_room_spec;
-                    Entity* e = AllocateEntity();
-                    e->pos = spec->pos;
-                    e->shape = spec->shape;
-                    GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD),
-                                         Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f), LGREEN);
-                    FlagOn(e->flags, EFLAG_EXIT);
-
-                    e->room_link = room->next_room_idx;
-                }
-            }
-        }
+        LoadRoomEntities(room);
+        gstate->room_idx = gstate->next_room_idx;
     }
 
     Room* room = &gstate->stage->rooms[gstate->room_idx];
@@ -3654,9 +3663,8 @@ static void StageTick(GameState* gstate) {
                     }
 
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_EXIT)) {
-                        Entity* player = e0;
                         Entity* exit = e1;
-                        TraceLog(LOG_INFO, "exit");
+                        gstate->next_room_idx = exit->room_link;
                     }
                 }
             }
