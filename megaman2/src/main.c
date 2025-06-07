@@ -2769,7 +2769,6 @@ static Stage* GetStage(StageId sid) {
                 u32* len = &stage.llen;
                 u32 cap = ArraySizeOf(stage.ladders);
                 Vec2 positions[][2] = {
-                    {Vec2Lit(195.0f, 192.0f), Vec2Lit(219.0f, 164.0f)},
                     {Vec2Lit(1185.0f, 336.0f), Vec2Lit(1200.0f, 187.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
