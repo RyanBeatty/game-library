@@ -2703,7 +2703,7 @@ typedef struct {
 typedef struct {
     LTexture background;
 
-    EntitySpec walls[10];
+    EntitySpec walls[30];
     u32 wlen;
 
     EntitySpec ladders[10];
@@ -2751,6 +2751,13 @@ static Stage* GetStage(StageId sid) {
 
                     // Room 1
                     {Vec2Lit(1169.0f, 374.0f), Vec2Lit(1216.0f, 337.0f)},
+                    {Vec2Lit(1249.0f, 480.0f), Vec2Lit(1280.0f, 291.0f)},
+                    {Vec2Lit(1089.0f, 479.0f), Vec2Lit(1279.0f, 449.0f)},
+                    {Vec2Lit(1185.0f, 477.0f), Vec2Lit(1216.0f, 433.0f)},
+                    {Vec2Lit(1121.0f, 477.0f), Vec2Lit(1152.0f, 433.0f)},
+                    {Vec2Lit(1105.0f, 385.0f), Vec2Lit(1136.0f, 334.0f)},
+                    {Vec2Lit(1026.0f, 368.0f), Vec2Lit(1104.0f, 335.0f)},
+                    {Vec2Lit(1026.0f, 634.0f), Vec2Lit(1056.0f, 363.0f)},
 
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -2772,6 +2779,9 @@ static Stage* GetStage(StageId sid) {
                 u32 cap = ArraySizeOf(stage.ladders);
                 Vec2 positions[][2] = {
                     {Vec2Lit(1185.0f, 336.0f), Vec2Lit(1200.0f, 187.0f)},
+
+                    // Room 1
+                    {Vec2Lit(1073.0f, 560.0f), Vec2Lit(1088.0f, 449.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3838,9 +3848,9 @@ static void StageTick(GameState* gstate) {
 
             // Collisions
             {
-                CollisionInfo collisions[10];
+                CollisionInfo collisions[20];
                 u32 clen = 0;
-                u32 ccap = 10;
+                u32 ccap = ArraySizeOf(collisions);
                 for (u32 i = 0; i < GetNumEntities(); ++i) {
                     Entity* ei = GetEntity(i);
                     if (!TestFlag(ei->flags, EFLAG_ACTIVE) || ei->shape.type == PH_NONE) {
