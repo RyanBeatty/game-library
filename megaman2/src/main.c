@@ -2748,6 +2748,10 @@ static Stage* GetStage(StageId sid) {
                     {Vec2Lit(828.0f, 346.0f), Vec2Lit(1184.0f, 193.0f)},
                     {Vec2Lit(0.0f, 256.0f), Vec2Lit(0.0f, 0.0f)},
                     {Vec2Lit(1201.0f, 302.0f), Vec2Lit(1280.0f, 1.0f)},
+
+                    // Room 1
+                    {Vec2Lit(1169.0f, 374.0f), Vec2Lit(1216.0f, 337.0f)},
+
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3465,8 +3469,8 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
             Entity* e = AllocateEntity();
             e->pos = spec->pos;
             e->shape = spec->shape;
-            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
-                                 LGREEN);
+            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+            //                      LGREEN);
             FlagOn(e->flags, EFLAG_EXIT);
 
             e->room_link = spec->room_idx_to_be;
@@ -3480,8 +3484,8 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
             Entity* e = AllocateEntity();
             e->pos = spec->pos;
             e->shape = spec->shape;
-            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
-                                 LRED);
+            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+            //                      LRED);
             FlagOn(e->flags, EFLAG_EXIT);
 
             e->room_link = spec->room_idx_to_be;
