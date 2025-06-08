@@ -2875,8 +2875,9 @@ static Stage* GetStage(StageId sid) {
                     u32* len = &room.elen;
                     u32 cap = ArraySizeOf(room.enemies);
                     Vec2 positions[][2] = {
-                        // {Vec2Lit(441.0f, 176.0f), Vec2Lit(472.0f, 145.0f)},
-                        // {Vec2Lit(757.0f, 176.0f), Vec2Lit(788.0f, 145.0f)},
+                        {Vec2Lit(1068.0f, 384.0f), Vec2Lit(1083.0f, 369.0f)},
+                        {Vec2Lit(1114.0f, 401.0f), Vec2Lit(1129.0f, 386.0f)},
+                        {Vec2Lit(1147.0f, 369.0f), Vec2Lit(1162.0f, 354.0f)},
                     };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
@@ -3529,7 +3530,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 0;
+        u32 room_idx = 1;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -3618,6 +3619,37 @@ static void StageTick(GameState* gstate) {
 
                     switch (PSTATE) {
                         case PS_IDLE: {
+                            // ground detection.
+                            Entity* ground = NULL;
+                            {
+                                Polyhedron shape = {0};
+                                shape.type = PH_AABB2D;
+                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
+                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                                for (u32 j = 0; j < GetNumEntities(); ++j) {
+                                    Entity* e2 = GetEntity(j);
+                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
+                                        e2->shape.type == PH_NONE) {
+                                        continue;
+                                    }
+
+                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                                    CollisionInfo info = {0};
+                                    bool collides =
+                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                                    if (collides) {
+                                        ground = e2;
+                                        break;
+                                    }
+                                }
+
+                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
+                                         Mat4Identity(), ground != NULL ? LGREEN : LGRAY);
+                            }
+
                             // Ladder detection.
                             Entity* up_ladder = NULL;
                             {
@@ -3685,7 +3717,7 @@ static void StageTick(GameState* gstate) {
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
 
                                 PSTATE = PS_CLIMBING;
-                            } else if (down_ladder != NULL && IsKeyDown(KDOWN)) {
+                            } else if (down_ladder != NULL && ground == NULL && IsKeyDown(KDOWN)) {
                                 e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
