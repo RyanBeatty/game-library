@@ -607,6 +607,7 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 
 typedef struct {
     // TODO: I might want to include a stable pointer to the start if I ever want to free() arenas.
+    // TODO IMPORTANT: Convert these to some typedef'd version of char* so we don't violate strict aliasing rules.
     u8* beg;
     u8* end;
 } Arena;
