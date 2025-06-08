@@ -2694,7 +2694,7 @@ typedef struct {
     u32 elen;
 
     EntitySpec next_room_exit_spec;
-    EntitySpec prev_room_spec;
+    EntitySpec prev_room_exit_spec;
 } Room;
 
 typedef struct {
@@ -2974,18 +2974,18 @@ static Stage* GetStage(StageId sid) {
                         room.next_room_exit_spec = spec;
                     }
 
-                    // {
-                    //     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
-                    //                                      AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
-                    //     EntitySpec spec = {0};
-                    //     spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
-                    //     spec.shape.type = PH_AABB2D;
-                    //     spec.shape.aabb2d.c = Vec2Zero();
-                    //     spec.shape.aabb2d.r = bb.r;
+                    {
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
+                                                         AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                        spec.shape.type = PH_AABB2D;
+                        spec.shape.aabb2d.c = Vec2Zero();
+                        spec.shape.aabb2d.r = bb.r;
+                        spec.room_idx_to_be = 0;
 
-                    //     room.next_room_spec = spec;
-                    //     room.room_idx_to_be = 1;
-                    // }
+                        room.prev_room_exit_spec = spec;
+                    }
                 }
 
                 stage.rooms[stage.rlen++] = room;
@@ -3259,6 +3259,18 @@ static void LoadRoomEntities(Room* room) {
             e->shape = spec->shape;
             GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
                                  LGREEN);
+            FlagOn(e->flags, EFLAG_EXIT);
+
+            e->room_link = spec->room_idx_to_be;
+        }
+
+        {
+            EntitySpec* spec = &room->prev_room_exit_spec;
+            Entity* e = AllocateEntity();
+            e->pos = spec->pos;
+            e->shape = spec->shape;
+            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+                                 LRED);
             FlagOn(e->flags, EFLAG_EXIT);
 
             e->room_link = spec->room_idx_to_be;
