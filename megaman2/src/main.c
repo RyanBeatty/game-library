@@ -3259,6 +3259,9 @@ static void StageTick(GameState* gstate) {
     static LCamera CAMERA = {0};
     static bool SPAWNED = false;
     static PlayerState PSTATE = PS_NONE;
+    static float CAMERA_TRANSITION_DT = 0.0f;
+    static bool CAMERA_TRANSITIONING = false;
+    static Vec3 CAMERA_EYE_START = {0};
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -3321,395 +3324,415 @@ static void StageTick(GameState* gstate) {
         Room* room = &gstate->stage->rooms[gstate->room_idx_to_be];
 
         LoadRoomEntities(room);
-        // TODO: Need to think about how to transition from a fixed camera room to a non fixed room.
-        // Like if I enter a fixed room and exit the way I came, I can't move the camera position to
-        // camera start because its the end of the room. maybe I also need to define a camera end...
-        // or as a hacky first start I could just move the camera to the y position of camera_start.
-        CAMERA.eye = room->camera_start;
+        // // TODO: Need to think about how to transition from a fixed camera room to a non fixed room.
+        // // Like if I enter a fixed room and exit the way I came, I can't move the camera position to
+        // // camera start because its the end of the room. maybe I also need to define a camera end...
+        // // or as a hacky first start I could just move the camera to the y position of camera_start.
+        // CAMERA.eye = room->camera_start;
+        CAMERA_TRANSITIONING = true;
+        CAMERA_TRANSITION_DT += 0.0f;
+        CAMERA_EYE_START = CAMERA.eye;
 
         gstate->room_idx = gstate->room_idx_to_be;
     }
 
     Room* room = &gstate->stage->rooms[gstate->room_idx];
 
-    if (gstate->update) {
-        if (!SPAWNED) {
-            SPAWNED = true;
-            Entity* e = AllocateEntity();
-            e->pos = room->player_start;
+    if (!CAMERA_TRANSITIONING) {
+        if (gstate->update) {
+            if (!SPAWNED) {
+                SPAWNED = true;
+                Entity* e = AllocateEntity();
+                e->pos = room->player_start;
 
-            e->shape.type = PH_AABB2D;
-            e->shape.aabb2d.c = Vec2Zero();
-            e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
+                e->shape.type = PH_AABB2D;
+                e->shape.aabb2d.c = Vec2Zero();
+                e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
-            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
-            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+                GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
+                FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
-            e->health = 1;
-            PSTATE = PS_IDLE;
-        }
-
-        // Update.
-        for (u32 i = 0; i < GetNumEntities(); ++i) {
-            Entity* e = GetEntity(i);
-            if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                continue;
+                e->health = 1;
+                PSTATE = PS_IDLE;
             }
 
-            e->ppos = e->pos;
-
-            if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                if (e->health <= 0) {
-                    PSTATE = PS_DYING;
-                }
-
-                switch (PSTATE) {
-                    case PS_IDLE: {
-                        // Ladder detection.
-                        Entity* up_ladder = NULL;
-                        {
-                            Polyhedron shape = {0};
-                            shape.type = PH_AABB2D;
-                            shape.aabb2d.c = Vec2Zero();
-                            shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                            shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                            for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                Entity* e2 = GetEntity(j);
-                                if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                    e2->shape.type == PH_NONE) {
-                                    continue;
-                                }
-
-                                Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                CollisionInfo info = {0};
-                                bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                if (collides) {
-                                    up_ladder = e2;
-                                    break;
-                                }
-                            }
-
-                            DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                     Mat4Identity(), up_ladder != NULL ? LGREEN : LGRAY);
-                        }
-
-                        Entity* down_ladder = NULL;
-                        {
-                            Polyhedron shape = {0};
-                            shape.type = PH_AABB2D;
-                            shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                            shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                            shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                            for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                Entity* e2 = GetEntity(j);
-                                if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                    e2->shape.type == PH_NONE) {
-                                    continue;
-                                }
-
-                                Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                CollisionInfo info = {0};
-                                bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                if (collides) {
-                                    down_ladder = e2;
-                                    break;
-                                }
-                            }
-
-                            DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                     Mat4Identity(), down_ladder != NULL ? LGREEN : LGRAY);
-                        }
-
-                        if (up_ladder != NULL && IsKeyDown(KUP)) {
-                            e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
-                            // Super hacky. we should be more rigorous about this eventually.
-                            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
-
-                            PSTATE = PS_CLIMBING;
-                        } else if (down_ladder != NULL && IsKeyDown(KDOWN)) {
-                            e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
-                            // Super hacky. we should be more rigorous about this eventually.
-                            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
-
-                            PSTATE = PS_CLIMBING;
-                        } else {
-                            // Movement.
-                            {
-                                static const f32 DX_SPEED = 50.0f;
-                                static const f32 DY_SPEED = 200.0f;
-                                static const f32 GRAVITY = 350.0f;
-
-                                Vec3 dx = Vec3Zero();
-                                if (IsKeyDown(KLEFT)) {
-                                    dx.x -= DX_SPEED;
-                                } else if (IsKeyDown(KRIGHT)) {
-                                    dx.x += DX_SPEED;
-                                }
-
-                                Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
-                                if (IsKeyPressed(KJUMP)) {
-                                    dy.y += DY_SPEED;
-                                }
-
-                                e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
-                                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-
-                                if (IsKeyPressed(KSHOOT)) {
-                                    Entity* shot = AllocateEntity();
-                                    shot->pos = e->pos;
-                                    shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
-
-                                    shot->shape.type = PH_AABB2D;
-                                    shot->shape.aabb2d.c = Vec2Zero();
-                                    shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
-
-                                    GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f),
-                                                         LYELLOW);
-                                    FlagOn(shot->flags, EFLAG_PROJECTILE);
-                                }
-                            }
-                        }
-                        break;
-                    }
-                    case PS_CLIMBING: {
-                        static const f32 CLIMB_SPEED = 70.0f;
-
-                        // ground detection.
-                        Entity* ground = NULL;
-                        {
-                            Polyhedron shape = {0};
-                            shape.type = PH_AABB2D;
-                            shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                            shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                            shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                            for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                Entity* e2 = GetEntity(j);
-                                if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
-                                    e2->shape.type == PH_NONE) {
-                                    continue;
-                                }
-
-                                Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                CollisionInfo info = {0};
-                                bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                if (collides) {
-                                    ground = e2;
-                                    break;
-                                }
-                            }
-
-                            DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                     Mat4Identity(), ground != NULL ? LGREEN : LGRAY);
-                        }
-
-                        // ladder detection.
-                        Entity* ladder = NULL;
-                        {
-                            Polyhedron shape = {0};
-                            shape.type = PH_AABB2D;
-                            shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                            shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                            shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                            for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                Entity* e2 = GetEntity(j);
-                                if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                    e2->shape.type == PH_NONE) {
-                                    continue;
-                                }
-
-                                Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                CollisionInfo info = {0};
-                                bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                if (collides) {
-                                    ladder = e2;
-                                    break;
-                                }
-                            }
-
-                            DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                     Mat4Identity(), ladder != NULL ? LGREEN : LGRAY);
-                        }
-
-                        if (ladder == NULL) {
-                            PSTATE = PS_IDLE;
-                            e->v = Vec3Zero();
-                        } else if (IsKeyDown(KDOWN) && ground != NULL) {
-                            PSTATE = PS_IDLE;
-                        } else if (IsKeyPressed(KJUMP)) {
-                            PSTATE = PS_IDLE;
-                            // TODO: Having to set velocity here for this state change is messy.
-                            e->v.y = 200.0f;
-
-                            // Super hacky. we should be more rigorous about this eventually.
-                            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
-                        } else {
-                            f32 dy = 0.0f;
-                            if (IsKeyDown(KUP)) {
-                                dy += CLIMB_SPEED;
-                            } else if (IsKeyDown(KDOWN)) {
-                                dy -= CLIMB_SPEED;
-                            }
-
-                            e->v = Vec3Lit(0.0f, dy, 0.0f);
-                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                        }
-                        break;
-                    }
-                    case PS_DYING: {
-                        SoftDeactivateEntity(e->id);
-                        SPAWNED = false;
-                        break;
-                    }
-                    default: {
-                        TraceLog(LOG_ERROR, "Unknown Player State %d", PSTATE);
-                        exit(0);
-                    }
-                }
-            }
-
-            if (TestFlag(e->flags, EFLAG_MOB)) {
-                if (e->health <= 0) {
-                    SoftDeactivateEntity(e->id);
-                }
-            }
-
-            if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-            }
-        }
-
-        // Collisions
-        {
-            CollisionInfo collisions[10];
-            u32 clen = 0;
-            u32 ccap = 10;
-            for (u32 i = 0; i < GetNumEntities(); ++i) {
-                Entity* ei = GetEntity(i);
-                if (!TestFlag(ei->flags, EFLAG_ACTIVE) || ei->shape.type == PH_NONE) {
-                    continue;
-                }
-
-                Polyhedron pi = PolyhedronTransform(ei->shape, ei->scale, ei->orient, ei->pos);
-                for (u32 j = i + 1; j < GetNumEntities(); ++j) {
-                    Entity* ej = GetEntity(j);
-                    if (!TestFlag(ej->flags, EFLAG_ACTIVE) || ej->shape.type == PH_NONE) {
-                        continue;
-                    }
-                    if (TestFlag(ei->flags, EFLAG_WALL) && TestFlag(ej->flags, EFLAG_WALL)) {
-                        continue;
-                    }
-
-                    Polyhedron pj = PolyhedronTransform(ej->shape, ej->scale, ej->orient, ej->pos);
-
-                    CollisionInfo info = {0};
-                    info.id0 = ei->id;
-                    info.id1 = ej->id;
-                    bool collides = TestPolyhedronVsPolyhedron(&pi, &pj, &info.normal, &info.depth);
-                    if (collides) {
-                        Assert(clen < ccap);
-                        collisions[clen++] = info;
-                    }
-                }
-            }
-
-            for (u32 j = 0; j < clen; ++j) {
-                CollisionInfo* c = &collisions[j];
-
-                // To handle checking "both sides" of the collision. We just make two collisions
-                // with reversed directions.
-                CollisionInfo reverse = *c;
-                reverse.id0 = c->id1;
-                reverse.id1 = c->id0;
-                reverse.normal = Vec3Negate(reverse.normal);
-
-                CollisionInfo cs[2] = {*c, reverse};
-                for (u32 i = 0; i < 2; ++i) {
-                    CollisionInfo* info = &cs[i];
-                    Entity* e0 = GetEntity(info->id0);
-                    Entity* e1 = GetEntity(info->id1);
-
-                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
-                        Entity* player = e0;
-                        player->pos = Vec3Add(player->pos, Vec3Scale(info->normal, info->depth));
-
-                        // TODO: We don't really check closing velocity here.
-
-                        // Only stop perp to surface velocity if we are traveling towards the surface. this prevents
-                        // teleporting down to top of collider if we are hugging a wall and jump.
-                        f32 vdir = Vec3Dot(player->v, info->normal);
-                        if (vdir < 0.0f) {
-                            Vec3 vplayer = player->v;
-                            Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
-                            Vec3 vparallel = Vec3Sub(vplayer, vperp);
-                            player->v = vparallel;
-                        }
-                    }
-
-                    if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
-                        Entity* mob = e0;
-                        Entity* shot = e1;
-
-                        --mob->health;
-                        SoftDeactivateEntity(shot->id);
-                    }
-
-                    if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_WALL)) {
-                        Entity* shot = e0;
-                        SoftDeactivateEntity(shot->id);
-                    }
-
-                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_MOB)) {
-                        Entity* player = e0;
-                        --player->health;
-                    }
-
-                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_EXIT)) {
-                        Entity* exit = e1;
-                        gstate->room_idx_to_be = exit->room_link;
-                    }
-                }
-            }
-        }
-
-        // Update camera.
-        if (!room->static_camera) {
-            Entity* player = NULL;
+            // Update.
             for (u32 i = 0; i < GetNumEntities(); ++i) {
                 Entity* e = GetEntity(i);
                 if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
                     continue;
                 }
 
+                e->ppos = e->pos;
+
                 if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                    player = e;
-                    break;
+                    if (e->health <= 0) {
+                        PSTATE = PS_DYING;
+                    }
+
+                    switch (PSTATE) {
+                        case PS_IDLE: {
+                            // Ladder detection.
+                            Entity* up_ladder = NULL;
+                            {
+                                Polyhedron shape = {0};
+                                shape.type = PH_AABB2D;
+                                shape.aabb2d.c = Vec2Zero();
+                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                                for (u32 j = 0; j < GetNumEntities(); ++j) {
+                                    Entity* e2 = GetEntity(j);
+                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                        e2->shape.type == PH_NONE) {
+                                        continue;
+                                    }
+
+                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                                    CollisionInfo info = {0};
+                                    bool collides =
+                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                                    if (collides) {
+                                        up_ladder = e2;
+                                        break;
+                                    }
+                                }
+
+                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
+                                         Mat4Identity(), up_ladder != NULL ? LGREEN : LGRAY);
+                            }
+
+                            Entity* down_ladder = NULL;
+                            {
+                                Polyhedron shape = {0};
+                                shape.type = PH_AABB2D;
+                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
+                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                                for (u32 j = 0; j < GetNumEntities(); ++j) {
+                                    Entity* e2 = GetEntity(j);
+                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                        e2->shape.type == PH_NONE) {
+                                        continue;
+                                    }
+
+                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                                    CollisionInfo info = {0};
+                                    bool collides =
+                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                                    if (collides) {
+                                        down_ladder = e2;
+                                        break;
+                                    }
+                                }
+
+                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
+                                         Mat4Identity(), down_ladder != NULL ? LGREEN : LGRAY);
+                            }
+
+                            if (up_ladder != NULL && IsKeyDown(KUP)) {
+                                e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
+                                // Super hacky. we should be more rigorous about this eventually.
+                                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
+
+                                PSTATE = PS_CLIMBING;
+                            } else if (down_ladder != NULL && IsKeyDown(KDOWN)) {
+                                e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
+                                // Super hacky. we should be more rigorous about this eventually.
+                                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
+
+                                PSTATE = PS_CLIMBING;
+                            } else {
+                                // Movement.
+                                {
+                                    static const f32 DX_SPEED = 50.0f;
+                                    static const f32 DY_SPEED = 200.0f;
+                                    static const f32 GRAVITY = 350.0f;
+
+                                    Vec3 dx = Vec3Zero();
+                                    if (IsKeyDown(KLEFT)) {
+                                        dx.x -= DX_SPEED;
+                                    } else if (IsKeyDown(KRIGHT)) {
+                                        dx.x += DX_SPEED;
+                                    }
+
+                                    Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                                    if (IsKeyPressed(KJUMP)) {
+                                        dy.y += DY_SPEED;
+                                    }
+
+                                    e->v =
+                                        Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
+                                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                                    if (IsKeyPressed(KSHOOT)) {
+                                        Entity* shot = AllocateEntity();
+                                        shot->pos = e->pos;
+                                        shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
+
+                                        shot->shape.type = PH_AABB2D;
+                                        shot->shape.aabb2d.c = Vec2Zero();
+                                        shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+
+                                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
+                                                             Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                                        FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                        case PS_CLIMBING: {
+                            static const f32 CLIMB_SPEED = 70.0f;
+
+                            // ground detection.
+                            Entity* ground = NULL;
+                            {
+                                Polyhedron shape = {0};
+                                shape.type = PH_AABB2D;
+                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
+                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                                for (u32 j = 0; j < GetNumEntities(); ++j) {
+                                    Entity* e2 = GetEntity(j);
+                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
+                                        e2->shape.type == PH_NONE) {
+                                        continue;
+                                    }
+
+                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                                    CollisionInfo info = {0};
+                                    bool collides =
+                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                                    if (collides) {
+                                        ground = e2;
+                                        break;
+                                    }
+                                }
+
+                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
+                                         Mat4Identity(), ground != NULL ? LGREEN : LGRAY);
+                            }
+
+                            // ladder detection.
+                            Entity* ladder = NULL;
+                            {
+                                Polyhedron shape = {0};
+                                shape.type = PH_AABB2D;
+                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
+                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                                for (u32 j = 0; j < GetNumEntities(); ++j) {
+                                    Entity* e2 = GetEntity(j);
+                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                        e2->shape.type == PH_NONE) {
+                                        continue;
+                                    }
+
+                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                                    CollisionInfo info = {0};
+                                    bool collides =
+                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                                    if (collides) {
+                                        ladder = e2;
+                                        break;
+                                    }
+                                }
+
+                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
+                                         Mat4Identity(), ladder != NULL ? LGREEN : LGRAY);
+                            }
+
+                            if (ladder == NULL) {
+                                PSTATE = PS_IDLE;
+                                e->v = Vec3Zero();
+                            } else if (IsKeyDown(KDOWN) && ground != NULL) {
+                                PSTATE = PS_IDLE;
+                            } else if (IsKeyPressed(KJUMP)) {
+                                PSTATE = PS_IDLE;
+                                // TODO: Having to set velocity here for this state change is messy.
+                                e->v.y = 200.0f;
+
+                                // Super hacky. we should be more rigorous about this eventually.
+                                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
+                            } else {
+                                f32 dy = 0.0f;
+                                if (IsKeyDown(KUP)) {
+                                    dy += CLIMB_SPEED;
+                                } else if (IsKeyDown(KDOWN)) {
+                                    dy -= CLIMB_SPEED;
+                                }
+
+                                e->v = Vec3Lit(0.0f, dy, 0.0f);
+                                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                            }
+                            break;
+                        }
+                        case PS_DYING: {
+                            SoftDeactivateEntity(e->id);
+                            SPAWNED = false;
+                            break;
+                        }
+                        default: {
+                            TraceLog(LOG_ERROR, "Unknown Player State %d", PSTATE);
+                            exit(0);
+                        }
+                    }
+                }
+
+                if (TestFlag(e->flags, EFLAG_MOB)) {
+                    if (e->health <= 0) {
+                        SoftDeactivateEntity(e->id);
+                    }
+                }
+
+                if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
             }
-            Assert(player);
 
-            CAMERA.eye.x = player->pos.x;
+            // Collisions
+            {
+                CollisionInfo collisions[10];
+                u32 clen = 0;
+                u32 ccap = 10;
+                for (u32 i = 0; i < GetNumEntities(); ++i) {
+                    Entity* ei = GetEntity(i);
+                    if (!TestFlag(ei->flags, EFLAG_ACTIVE) || ei->shape.type == PH_NONE) {
+                        continue;
+                    }
+
+                    Polyhedron pi = PolyhedronTransform(ei->shape, ei->scale, ei->orient, ei->pos);
+                    for (u32 j = i + 1; j < GetNumEntities(); ++j) {
+                        Entity* ej = GetEntity(j);
+                        if (!TestFlag(ej->flags, EFLAG_ACTIVE) || ej->shape.type == PH_NONE) {
+                            continue;
+                        }
+                        if (TestFlag(ei->flags, EFLAG_WALL) && TestFlag(ej->flags, EFLAG_WALL)) {
+                            continue;
+                        }
+
+                        Polyhedron pj = PolyhedronTransform(ej->shape, ej->scale, ej->orient, ej->pos);
+
+                        CollisionInfo info = {0};
+                        info.id0 = ei->id;
+                        info.id1 = ej->id;
+                        bool collides = TestPolyhedronVsPolyhedron(&pi, &pj, &info.normal, &info.depth);
+                        if (collides) {
+                            Assert(clen < ccap);
+                            collisions[clen++] = info;
+                        }
+                    }
+                }
+
+                for (u32 j = 0; j < clen; ++j) {
+                    CollisionInfo* c = &collisions[j];
+
+                    // To handle checking "both sides" of the collision. We just make two collisions
+                    // with reversed directions.
+                    CollisionInfo reverse = *c;
+                    reverse.id0 = c->id1;
+                    reverse.id1 = c->id0;
+                    reverse.normal = Vec3Negate(reverse.normal);
+
+                    CollisionInfo cs[2] = {*c, reverse};
+                    for (u32 i = 0; i < 2; ++i) {
+                        CollisionInfo* info = &cs[i];
+                        Entity* e0 = GetEntity(info->id0);
+                        Entity* e1 = GetEntity(info->id1);
+
+                        if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
+                            Entity* player = e0;
+                            player->pos = Vec3Add(player->pos, Vec3Scale(info->normal, info->depth));
+
+                            // TODO: We don't really check closing velocity here.
+
+                            // Only stop perp to surface velocity if we are traveling towards the surface. this prevents
+                            // teleporting down to top of collider if we are hugging a wall and jump.
+                            f32 vdir = Vec3Dot(player->v, info->normal);
+                            if (vdir < 0.0f) {
+                                Vec3 vplayer = player->v;
+                                Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
+                                Vec3 vparallel = Vec3Sub(vplayer, vperp);
+                                player->v = vparallel;
+                            }
+                        }
+
+                        if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
+                            Entity* mob = e0;
+                            Entity* shot = e1;
+
+                            --mob->health;
+                            SoftDeactivateEntity(shot->id);
+                        }
+
+                        if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_WALL)) {
+                            Entity* shot = e0;
+                            SoftDeactivateEntity(shot->id);
+                        }
+
+                        if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_MOB)) {
+                            Entity* player = e0;
+                            --player->health;
+                        }
+
+                        if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_EXIT)) {
+                            Entity* exit = e1;
+                            gstate->room_idx_to_be = exit->room_link;
+                        }
+                    }
+                }
+            }
+
+            // Update camera.
+            if (!room->static_camera) {
+                Entity* player = NULL;
+                for (u32 i = 0; i < GetNumEntities(); ++i) {
+                    Entity* e = GetEntity(i);
+                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                        continue;
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        player = e;
+                        break;
+                    }
+                }
+                Assert(player);
+
+                CAMERA.eye.x = player->pos.x;
+            }
+
+            // Update graphics.
+            for (u32 i = 0; i < GetNumEntities(); ++i) {
+                Entity* e = GetEntity(i);
+                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+                    continue;
+                }
+
+                if (TestFlag(e->flags, EFLAG_DRAW)) {
+                    GraphicsInfo* graphics = &e->graphics;
+                    graphics->pos = e->pos;
+                    graphics->orient = e->orient;
+                }
+            }
         }
-
-        // Update graphics.
-        for (u32 i = 0; i < GetNumEntities(); ++i) {
-            Entity* e = GetEntity(i);
-            if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                continue;
-            }
-
-            if (TestFlag(e->flags, EFLAG_DRAW)) {
-                GraphicsInfo* graphics = &e->graphics;
-                graphics->pos = e->pos;
-                graphics->orient = e->orient;
-            }
+    } else {
+        // Transitioning camera between rooms
+        CAMERA_TRANSITION_DT += dt;
+        if (CAMERA_TRANSITION_DT >= 1.0f) {
+            CAMERA_TRANSITION_DT = 0.0f;
+            CAMERA_TRANSITIONING = false;
+            CAMERA.eye = room->camera_start;
+        } else {
+            CAMERA.eye = Vec3Lerp(CAMERA_EYE_START, room->camera_start, CAMERA_TRANSITION_DT);
         }
     }
 
