@@ -2693,7 +2693,7 @@ typedef struct {
     EntitySpec enemies[10];
     u32 elen;
 
-    EntitySpec next_room_spec;
+    EntitySpec next_room_exit_spec;
     EntitySpec prev_room_spec;
 } Room;
 
@@ -2971,7 +2971,7 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.aabb2d.r = bb.r;
                         spec.room_idx_to_be = 1;
 
-                        room.next_room_spec = spec;
+                        room.next_room_exit_spec = spec;
                     }
 
                     // {
@@ -3253,7 +3253,7 @@ static void LoadRoomEntities(Room* room) {
     // Exits.
     {
         {
-            EntitySpec* spec = &room->next_room_spec;
+            EntitySpec* spec = &room->next_room_exit_spec;
             Entity* e = AllocateEntity();
             e->pos = spec->pos;
             e->shape = spec->shape;
