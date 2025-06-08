@@ -2686,9 +2686,10 @@ typedef struct {
     // corner you finish selecting is the start.
     // This will end up being the origin in worldspace.
     Vec3 camera_start;
-    Vec3 player_start;
-
+    AABB2D camera_bounds;  // The bounding box of the room. Only used for non static camera rooms.
     bool static_camera;
+
+    Vec3 player_start;
 
     EntitySpec enemies[10];
     u32 elen;
@@ -2893,7 +2894,7 @@ static Stage* GetStage(StageId sid) {
                 u32* len = &stage.wlen;
                 u32 cap = ArraySizeOf(stage.walls);
                 Vec2 positions[][2] = {
-                    {Vec2Lit(0.0f, 499.0f), Vec2Lit(499.0f, 409.0f)},
+                    {Vec2Lit(100.0f, 499.0f), Vec2Lit(599.0f, 409.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -2928,12 +2929,18 @@ static Stage* GetStage(StageId sid) {
             // Room 0
             {
                 Room room = {0};
+                // Camera info
                 {
-                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(0.0f, 499.0f), Vec2Lit(255.0f, 210.0f));
-                    room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
+                    {
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(100.0f, 499.0f), Vec2Lit(355.0f, 210.0f));
+                        room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
+                    }
+                    room.static_camera = false;
+                    {
+                    }
                 }
                 {
-                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(63.0f, 408.0f), Vec2Lit(86.0f, 385.0f));
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(163.0f, 408.0f), Vec2Lit(186.0f, 385.0f));
                     room.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
                 }
 
@@ -2943,8 +2950,7 @@ static Stage* GetStage(StageId sid) {
                     u32* len = &room.elen;
                     u32 cap = ArraySizeOf(room.enemies);
                     Vec2 positions[][2] = {
-                        {Vec2Lit(4.0f, 408.0f), Vec2Lit(35.0f, 377.0f)},
-                        // {Vec2Lit(434.0f, 408.0f), Vec2Lit(465.0f, 377.0f)},
+                        {Vec2Lit(104.0f, 408.0f), Vec2Lit(135.0f, 377.0f)},
                     };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
@@ -2962,8 +2968,8 @@ static Stage* GetStage(StageId sid) {
                 // Exits.
                 {
                     {
-                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(258.0f, 408.0f)),
-                                                         AsepritePxTR(Vec2Lit(264.0f, 249.0f)));
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(358.0f, 408.0f)),
+                                                         AsepritePxTR(Vec2Lit(364.0f, 249.0f)));
                         EntitySpec spec = {0};
                         spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
                         spec.shape.type = PH_AABB2D;
@@ -2983,11 +2989,11 @@ static Stage* GetStage(StageId sid) {
                 Room room = {0};
                 room.static_camera = true;
                 {
-                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(225.0f, 499.0f), Vec2Lit(480.0f, 210.0f));
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(325.0f, 499.0f), Vec2Lit(580.0f, 210.0f));
                     room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
                 }
                 {
-                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(321.0f, 408.0f), Vec2Lit(344.0f, 385.0f));
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(421.0f, 408.0f), Vec2Lit(444.0f, 385.0f));
                     room.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
                 }
 
@@ -2997,7 +3003,7 @@ static Stage* GetStage(StageId sid) {
                     u32* len = &room.elen;
                     u32 cap = ArraySizeOf(room.enemies);
                     Vec2 positions[][2] = {
-                        {Vec2Lit(434.0f, 408.0f), Vec2Lit(465.0f, 377.0f)},
+                        {Vec2Lit(534.0f, 408.0f), Vec2Lit(565.0f, 377.0f)},
                     };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
@@ -3016,8 +3022,8 @@ static Stage* GetStage(StageId sid) {
                 {
                     // Prev
                     {
-                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
-                                                         AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(326.0f, 408.0f)),
+                                                         AsepritePxTR(Vec2Lit(331.0f, 249.0f)));
                         EntitySpec spec = {0};
                         spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
                         spec.shape.type = PH_AABB2D;
