@@ -2677,6 +2677,8 @@ static const f32 GRID_DEPTH = 1.0f;
 typedef struct {
     Vec3 pos;
     Polyhedron shape;
+
+    u32 room_idx_to_be;
 } EntitySpec;
 
 typedef struct {
@@ -2692,10 +2694,7 @@ typedef struct {
     u32 elen;
 
     EntitySpec next_room_spec;
-    u32 room_idx_to_be;
-
     EntitySpec prev_room_spec;
-    u32 prev_room_idx;
 } Room;
 
 typedef struct {
@@ -2970,23 +2969,23 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        spec.room_idx_to_be = 1;
 
                         room.next_room_spec = spec;
-                        room.room_idx_to_be = 1;
                     }
 
-                    {
-                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
-                                                         AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
-                        EntitySpec spec = {0};
-                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
-                        spec.shape.type = PH_AABB2D;
-                        spec.shape.aabb2d.c = Vec2Zero();
-                        spec.shape.aabb2d.r = bb.r;
+                    // {
+                    //     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
+                    //                                      AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
+                    //     EntitySpec spec = {0};
+                    //     spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                    //     spec.shape.type = PH_AABB2D;
+                    //     spec.shape.aabb2d.c = Vec2Zero();
+                    //     spec.shape.aabb2d.r = bb.r;
 
-                        room.next_room_spec = spec;
-                        room.room_idx_to_be = 1;
-                    }
+                    //     room.next_room_spec = spec;
+                    //     room.room_idx_to_be = 1;
+                    // }
                 }
 
                 stage.rooms[stage.rlen++] = room;
@@ -3262,7 +3261,7 @@ static void LoadRoomEntities(Room* room) {
                                  LGREEN);
             FlagOn(e->flags, EFLAG_EXIT);
 
-            e->room_link = room->room_idx_to_be;
+            e->room_link = spec->room_idx_to_be;
         }
     }
 }
