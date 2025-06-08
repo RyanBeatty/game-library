@@ -2559,6 +2559,7 @@ typedef struct {
     i32 health;
 
     u32 room_link;  // Used for room exit triggers.
+    bool facing_left;
 
 } Entity;
 
@@ -3514,8 +3515,10 @@ static void StageTick(GameState* gstate) {
                                     Vec3 dx = Vec3Zero();
                                     if (IsKeyDown(KLEFT)) {
                                         dx.x -= DX_SPEED;
+                                        e->facing_left = true;
                                     } else if (IsKeyDown(KRIGHT)) {
                                         dx.x += DX_SPEED;
+                                        e->facing_left = false;
                                     }
 
                                     Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
@@ -3530,7 +3533,7 @@ static void StageTick(GameState* gstate) {
                                     if (IsKeyPressed(KSHOOT)) {
                                         Entity* shot = AllocateEntity();
                                         shot->pos = e->pos;
-                                        shot->v = Vec3Lit(100.0f, 0.0f, 0.0f);
+                                        shot->v = Vec3Lit(100.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
 
                                         shot->shape.type = PH_AABB2D;
                                         shot->shape.aabb2d.c = Vec2Zero();
