@@ -2895,6 +2895,7 @@ static Stage* GetStage(StageId sid) {
                 u32* len = &stage.wlen;
                 u32 cap = ArraySizeOf(stage.walls);
                 Vec2 positions[][2] = {
+                    {Vec2Lit(0.0f, 499.0f), Vec2Lit(110.0f, 409.0f)},
                     {Vec2Lit(100.0f, 499.0f), Vec2Lit(599.0f, 409.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -2937,8 +2938,7 @@ static Stage* GetStage(StageId sid) {
                         room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
                     }
                     room.static_camera = false;
-                    {
-                    }
+                    room.camera_bounds = AABB2DFromAsepriteBB(tx, Vec2Lit(100.0f, 499.0f), Vec2Lit(355.0f, 210.0f));
                 }
                 {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(163.0f, 408.0f), Vec2Lit(186.0f, 385.0f));

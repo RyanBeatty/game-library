@@ -24,10 +24,8 @@ MEGAMAN GOALS
 
 
 TODO MEGAMAN
-* Lots of things to do:
-    * implement room prev room exits.
-    * implement camera transition between rooms
-    * unload entities when exiting a room or respawning.
+* Collision system issue:
+    * when walking over two ground bboxes. player character will start bouncing rapidly. this is probably due to the fact that we are resolving collision constraints twice (one for each ground plane) but the second resolution probably isn't necessary since the resolution of the first constraint will also satisfy the second. This might be fixed by moving to iterative solver approach where we check each constraint for violation before attempting to resolve.
 * I should seriously consider integrating with something like ldtk. Making new stages is painful and error prone. For now though lets keep managing stages via code. I'm still in prototyping phase of just getting some mechanics into the game.
 * Memory
     * unittest alignment
