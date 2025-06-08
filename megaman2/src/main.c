@@ -3321,14 +3321,8 @@ static void StageTick(GameState* gstate) {
 
     if (gstate->room_idx_to_be != gstate->room_idx) {
         TraceLog(LOG_INFO, "Loaded Room %d", gstate->room_idx_to_be);
-        Room* room = &gstate->stage->rooms[gstate->room_idx_to_be];
 
-        LoadRoomEntities(room);
-        // // TODO: Need to think about how to transition from a fixed camera room to a non fixed room.
-        // // Like if I enter a fixed room and exit the way I came, I can't move the camera position to
-        // // camera start because its the end of the room. maybe I also need to define a camera end...
-        // // or as a hacky first start I could just move the camera to the y position of camera_start.
-        // CAMERA.eye = room->camera_start;
+        // Setup camera transition.
         CAMERA_TRANSITIONING = true;
         CAMERA_TRANSITION_DT += 0.0f;
         CAMERA_EYE_START = CAMERA.eye;
@@ -3709,20 +3703,6 @@ static void StageTick(GameState* gstate) {
 
                 CAMERA.eye.x = player->pos.x;
             }
-
-            // Update graphics.
-            for (u32 i = 0; i < GetNumEntities(); ++i) {
-                Entity* e = GetEntity(i);
-                if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                    continue;
-                }
-
-                if (TestFlag(e->flags, EFLAG_DRAW)) {
-                    GraphicsInfo* graphics = &e->graphics;
-                    graphics->pos = e->pos;
-                    graphics->orient = e->orient;
-                }
-            }
         }
     } else {
         // Transitioning camera between rooms
@@ -3730,9 +3710,30 @@ static void StageTick(GameState* gstate) {
         if (CAMERA_TRANSITION_DT >= 1.0f) {
             CAMERA_TRANSITION_DT = 0.0f;
             CAMERA_TRANSITIONING = false;
+
+            // TODO: Need to think about how to transition from a fixed camera room to a non fixed room.
+            // Like if I enter a fixed room and exit the way I came, I can't move the camera position to
+            // camera start because its the end of the room. maybe I also need to define a camera end...
+            // or as a hacky first start I could just move the camera to the y position of camera_start.
             CAMERA.eye = room->camera_start;
+
+            LoadRoomEntities(room);
         } else {
             CAMERA.eye = Vec3Lerp(CAMERA_EYE_START, room->camera_start, CAMERA_TRANSITION_DT);
+        }
+    }
+
+    // Update graphics.
+    for (u32 i = 0; i < GetNumEntities(); ++i) {
+        Entity* e = GetEntity(i);
+        if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+            continue;
+        }
+
+        if (TestFlag(e->flags, EFLAG_DRAW)) {
+            GraphicsInfo* graphics = &e->graphics;
+            graphics->pos = e->pos;
+            graphics->orient = e->orient;
         }
     }
 
