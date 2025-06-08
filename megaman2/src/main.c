@@ -2963,8 +2963,21 @@ static Stage* GetStage(StageId sid) {
                 // Exits.
                 {
                     {
-                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(248.0f, 408.0f)),
-                                                         AsepritePxTR(Vec2Lit(254.0f, 249.0f)));
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(258.0f, 408.0f)),
+                                                         AsepritePxTR(Vec2Lit(264.0f, 249.0f)));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                        spec.shape.type = PH_AABB2D;
+                        spec.shape.aabb2d.c = Vec2Zero();
+                        spec.shape.aabb2d.r = bb.r;
+
+                        room.next_room_spec = spec;
+                        room.room_idx_to_be = 1;
+                    }
+
+                    {
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
+                                                         AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
                         EntitySpec spec = {0};
                         spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
                         spec.shape.type = PH_AABB2D;
