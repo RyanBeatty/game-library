@@ -3078,6 +3078,10 @@ typedef struct GameState {
     Stage* stage;
     u32 room_idx;  // Current room idx;
     u32 room_idx_to_be;
+
+    EntityId loadable_entities[100];
+    u32 lelen;
+    u32 lecap;
 } GameState;
 
 static GameState GState;
@@ -3231,7 +3235,25 @@ static void StageSelectTick(GameState* gstate) {
     EndRender();
 }
 
-static void LoadRoomEntities(Room* room) {
+static void UnloadRoomEntities(GameState* gstate) {
+    TraceLog(LOG_INFO, "Unloading Room");
+
+    for (u32 i = 0; i < gstate->lelen; ++i) {
+        EntityId id = gstate->loadable_entities[i];
+        Entity* e = GetEntity(id);
+        Assert(e != NULL);
+        FlagOff(e->flags, EFLAG_ACTIVE);
+    }
+
+    for (u32 i = 0; i < gstate->lecap; ++i) {
+        gstate->loadable_entities[i] = NULLID;
+    }
+    gstate->lelen = 0;
+}
+
+static void LoadRoomEntities(GameState* gstate, Room* room) {
+    Assert(gstate->lelen == 0);
+
     // Enemies.
     {
         EntitySpec* specs = room->enemies;
@@ -3247,6 +3269,9 @@ static void LoadRoomEntities(Room* room) {
             FlagOn(e->flags, EFLAG_MOB);
 
             e->health = 2;
+
+            Assert(gstate->lelen < gstate->lecap);
+            gstate->loadable_entities[gstate->lelen++] = e->id;
         }
     }
 
@@ -3262,6 +3287,9 @@ static void LoadRoomEntities(Room* room) {
             FlagOn(e->flags, EFLAG_EXIT);
 
             e->room_link = spec->room_idx_to_be;
+
+            Assert(gstate->lelen < gstate->lecap);
+            gstate->loadable_entities[gstate->lelen++] = e->id;
         }
 
         {
@@ -3274,6 +3302,9 @@ static void LoadRoomEntities(Room* room) {
             FlagOn(e->flags, EFLAG_EXIT);
 
             e->room_link = spec->room_idx_to_be;
+
+            Assert(gstate->lelen < gstate->lecap);
+            gstate->loadable_entities[gstate->lelen++] = e->id;
         }
     }
 }
@@ -3338,7 +3369,7 @@ static void StageTick(GameState* gstate) {
         Room* room = &gstate->stage->rooms[gstate->room_idx];
         CAMERA.eye = room->camera_start;
         CAMERA.orient = Vec3Zero();
-        LoadRoomEntities(room);
+        LoadRoomEntities(gstate, room);
     }
 
     if (gstate->room_idx_to_be != gstate->room_idx) {
@@ -3350,6 +3381,8 @@ static void StageTick(GameState* gstate) {
         CAMERA_EYE_START = CAMERA.eye;
 
         gstate->room_idx = gstate->room_idx_to_be;
+
+        UnloadRoomEntities(gstate);
     }
 
     Room* room = &gstate->stage->rooms[gstate->room_idx];
@@ -3739,7 +3772,7 @@ static void StageTick(GameState* gstate) {
             // or as a hacky first start I could just move the camera to the y position of camera_start.
             CAMERA.eye = room->camera_start;
 
-            LoadRoomEntities(room);
+            LoadRoomEntities(gstate, room);
         } else {
             CAMERA.eye = Vec3Lerp(CAMERA_EYE_START, room->camera_start, CAMERA_TRANSITION_DT);
         }
@@ -3950,6 +3983,9 @@ static void GameStateInit(GameState* gstate) {
         gstate->scenefuncssize = idx;
     }
     GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
+
+    gstate->lecap = ArraySizeOf(gstate->loadable_entities);
+    gstate->lelen = 0;
 }
 
 static void GameStateTick(GameState* gstate) {
