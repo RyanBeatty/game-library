@@ -2973,19 +2973,6 @@ static Stage* GetStage(StageId sid) {
 
                         room.next_room_exit_spec = spec;
                     }
-
-                    {
-                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
-                                                         AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
-                        EntitySpec spec = {0};
-                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
-                        spec.shape.type = PH_AABB2D;
-                        spec.shape.aabb2d.c = Vec2Zero();
-                        spec.shape.aabb2d.r = bb.r;
-                        spec.room_idx_to_be = 0;
-
-                        room.prev_room_exit_spec = spec;
-                    }
                 }
 
                 stage.rooms[stage.rlen++] = room;
@@ -3022,6 +3009,23 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.aabb2d.r = bb.r;
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
+                    }
+                }
+
+                // Exits
+                {
+                    // Prev
+                    {
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(226.0f, 408.0f)),
+                                                         AsepritePxTR(Vec2Lit(231.0f, 249.0f)));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                        spec.shape.type = PH_AABB2D;
+                        spec.shape.aabb2d.c = Vec2Zero();
+                        spec.shape.aabb2d.r = bb.r;
+                        spec.room_idx_to_be = 0;
+
+                        room.prev_room_exit_spec = spec;
                     }
                 }
 
