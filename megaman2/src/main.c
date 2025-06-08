@@ -2687,7 +2687,7 @@ typedef struct {
     // corner you finish selecting is the start.
     // This will end up being the origin in worldspace.
     Vec3 camera_start;
-    AABB2D camera_bounds;  // The bounding box of the room. Only used for non static camera rooms.
+    AABB2D room_bounds;  // The bounding box of the room. Only used for non static camera rooms.
     bool static_camera;
 
     Vec3 player_start;
@@ -2938,7 +2938,7 @@ static Stage* GetStage(StageId sid) {
                         room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
                     }
                     room.static_camera = false;
-                    room.camera_bounds = AABB2DFromAsepriteBB(tx, Vec2Lit(100.0f, 499.0f), Vec2Lit(355.0f, 210.0f));
+                    room.room_bounds = AABB2DFromAsepriteBB(tx, Vec2Lit(0.0f, 449.0f), Vec2Lit(355.0f, 210.0f));
                 }
                 {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(163.0f, 408.0f), Vec2Lit(186.0f, 385.0f));
@@ -3769,7 +3769,11 @@ static void StageTick(GameState* gstate) {
                 }
                 Assert(player);
 
-                CAMERA.eye.x = player->pos.x;
+                // Set camera x to player x but clamp to camera movement bounding box.
+                f32 camera_half_width = 0.5f * gstate->renderw;
+                f32 camera_left_bound_x = room->room_bounds.c.x - room->room_bounds.r.x + camera_half_width;
+                f32 camera_right_bound_x = room->room_bounds.c.x + room->room_bounds.r.x - camera_half_width;
+                CAMERA.eye.x = f32clamp(player->pos.x, camera_left_bound_x, camera_right_bound_x);
             }
         }
     } else {
