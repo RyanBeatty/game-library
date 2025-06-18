@@ -2769,6 +2769,11 @@ static Stage* GetStage(StageId sid) {
                     {Vec2Lit(1441.0f, 738.0f), Vec2Lit(1504.0f, 641.0f)},
                     {Vec2Lit(1502.0f, 734.0f), Vec2Lit(1572.0f, 705.0f)},
 
+                    // Room 4
+                    {Vec2Lit(1569.0f, 720.0f), Vec2Lit(1626.0f, 673.0f)},
+                    {Vec2Lit(1601.0f, 681.0f), Vec2Lit(1735.0f, 641.0f)},
+                    {Vec2Lit(1729.0f, 666.0f), Vec2Lit(2017.0f, 609.0f)},
+
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
