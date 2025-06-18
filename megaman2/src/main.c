@@ -2760,7 +2760,10 @@ static Stage* GetStage(StageId sid) {
                     {Vec2Lit(1026.0f, 634.0f), Vec2Lit(1056.0f, 363.0f)},
 
                     // Room 2
-                    {Vec2Lit(1169.0f, 374.0f), Vec2Lit(1216.0f, 337.0f)},
+                    {Vec2Lit(1029.0f, 686.0f), Vec2Lit(1088.0f, 609.0f)},
+                    {Vec2Lit(1037.0f, 720.0f), Vec2Lit(1104.0f, 673.0f)},
+                    {Vec2Lit(1079.0f, 725.0f), Vec2Lit(1190.0f, 705.0f)},
+                    {Vec2Lit(1185.0f, 717.0f), Vec2Lit(1453.0f, 673.0f)},
 
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
