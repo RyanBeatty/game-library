@@ -3045,7 +3045,7 @@ static Stage* GetStage(StageId sid) {
                     room.static_camera = true;
                 }
                 {
-                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(1294.0f, 672.0f), Vec2Lit(1317.0f, 649.0f));
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(1543.0f, 704.0f), Vec2Lit(1566.0f, 681.0f));
                     room.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
                 }
 
@@ -3055,7 +3055,7 @@ static Stage* GetStage(StageId sid) {
                     u32* len = &room.elen;
                     u32 cap = ArraySizeOf(room.enemies);
                     Vec2 positions[][2] = {
-                        {Vec2Lit(1441.0f, 640.0f), Vec2Lit(1504.0f, 609.0f)},
+                        {Vec2Lit(1729.0f, 608.0f), Vec2Lit(1792.0f, 577.0f)},
                     };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
