@@ -2826,7 +2826,7 @@ static Stage* GetStage(StageId sid) {
                     {Vec2Lit(1841.0f, 384.0f), Vec2Lit(1856.0f, 190.0f)},
 
                     // Room 7
-                    {Vec2Lit(2025.0f, 352.0f), Vec2Lit(3040.0f, 61.0f)},
+                    {Vec2Lit(3025.0f, 352.0f), Vec2Lit(3040.0f, 61.0f)},
 
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -3246,6 +3246,7 @@ static Stage* GetStage(StageId sid) {
                         room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
                     }
                     room.static_camera = false;
+                    room.room_bounds = AABB2DFromAsepriteBB(tx, Vec2Lit(1793.0f, 240.0f), Vec2Lit(3072.0f, 1.0f));
                 }
                 {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(1860.0f, 192.0f), Vec2Lit(1883.0f, 169.0f));
@@ -3911,7 +3912,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 6;
+        u32 room_idx = 7;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
