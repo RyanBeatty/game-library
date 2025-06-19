@@ -764,6 +764,7 @@ typedef enum TextureLabel {
     TX_WOODMAN_STAGE,
     TX_LADDER_TEST_STAGE,
     TX_ROOM_TEST_STAGE,
+    TX_MEGAMAN,
     TX_COUNT
 } TextureLabel;
 
@@ -855,6 +856,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_ROOM_TEST_STAGE] = UploadTexture("assets/textures/stages/room-test.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_MEGAMAN] = UploadTexture("assets/textures/megaman.png");
         ++tcache->txlen;
     }
 }
@@ -3978,7 +3985,9 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.c = Vec2Zero();
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
-                GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
+                // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_MEGAMAN),
+                                          (Rect){.c = Vec2Lit(0.0f, 0.0f), .r = Vec2Lit(24.0f, 24.0f)}, 0.0f, 1.0f);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
                 e->health = 1;
