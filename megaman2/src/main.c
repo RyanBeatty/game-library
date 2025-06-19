@@ -2703,7 +2703,7 @@ typedef struct {
 typedef struct {
     LTexture background;
 
-    EntitySpec walls[30];
+    EntitySpec walls[64];
     u32 wlen;
 
     EntitySpec ladders[10];
@@ -2776,6 +2776,13 @@ static Stage* GetStage(StageId sid) {
 
                     // Room 5
                     {Vec2Lit(2001.0f, 628.0f), Vec2Lit(2048.0f, 377.0f)},
+                    {Vec2Lit(2001.0f, 631.0f), Vec2Lit(2042.0f, 331.0f)},
+
+                    // Room 6
+                    {Vec2Lit(1867.0f, 528.0f), Vec2Lit(1984.0f, 449.0f)},
+                    {Vec2Lit(1832.0f, 462.0f), Vec2Lit(1920.0f, 433.0f)},
+                    {Vec2Lit(1798.0f, 445.0f), Vec2Lit(1840.0f, 82.0f)},
+                    {Vec2Lit(1857.0f, 326.0f), Vec2Lit(1927.0f, 193.0f)},
 
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
@@ -2803,6 +2810,9 @@ static Stage* GetStage(StageId sid) {
 
                     // Room 5
                     {Vec2Lit(1985.0f, 608.0f), Vec2Lit(2000.0f, 444.0f)},
+
+                    // Room 6
+                    {Vec2Lit(1841.0f, 384.0f), Vec2Lit(1856.0f, 190.0f)},
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3175,7 +3185,10 @@ static Stage* GetStage(StageId sid) {
                     EntitySpec* specs = room.enemies;
                     u32* len = &room.elen;
                     u32 cap = ArraySizeOf(room.enemies);
-                    Vec2 positions[][2] = {};
+                    Vec2 positions[][2] = {
+                        {Vec2Lit(1864, 342), Vec2Lit(1879, 327)},
+                        {Vec2Lit(1906, 374), Vec2Lit(1921, 359)},
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3827,7 +3840,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 5;
+        u32 room_idx = 6;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
