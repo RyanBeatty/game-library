@@ -3204,6 +3204,62 @@ static Stage* GetStage(StageId sid) {
 
                 // Exits.
                 {
+                    {
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(1838.0f, 275.0f)),
+                                                         AsepritePxTR(Vec2Lit(1859.0f, 266.0f)));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                        spec.shape.type = PH_AABB2D;
+                        spec.shape.aabb2d.c = Vec2Zero();
+                        spec.shape.aabb2d.r = bb.r;
+                        spec.room_idx_to_be = 7;
+
+                        room.next_room_exit_spec = spec;
+                    }
+                }
+
+                stage.rooms[stage.rlen++] = room;
+            }
+
+            // Room 7
+            {
+                Room room = {0};
+                // Camera info
+                {
+                    {
+                        AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(1793.0f, 240.0f), Vec2Lit(2048.0f, 1.0f));
+                        room.camera_start = Vec3Lit(bb.c.x, bb.c.y, 1.0f);
+                    }
+                    room.static_camera = false;
+                }
+                {
+                    AABB2D bb = AABB2DFromAsepriteBB(tx, Vec2Lit(1860.0f, 192.0f), Vec2Lit(1883.0f, 169.0f));
+                    room.player_start = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                }
+
+                // Enemies
+                {
+                    EntitySpec* specs = room.enemies;
+                    u32* len = &room.elen;
+                    u32 cap = ArraySizeOf(room.enemies);
+                    Vec2 positions[][2] = {
+                        // {Vec2Lit(1864, 342), Vec2Lit(1879, 327)},
+                    };
+                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                        AABB2D bb =
+                            AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
+                        spec.shape.type = PH_AABB2D;
+                        spec.shape.aabb2d.c = Vec2Zero();
+                        spec.shape.aabb2d.r = bb.r;
+                        Assert(*len < cap);
+                        specs[(*len)++] = spec;
+                    }
+                }
+
+                // Exits.
+                {
                     // {
                     //     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(Vec2Lit(1277.0f, 672.0f)),
                     //                                      AsepritePxTR(Vec2Lit(1283.0f, 639.0f)));
