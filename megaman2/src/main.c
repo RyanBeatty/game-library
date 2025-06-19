@@ -2784,6 +2784,17 @@ static Stage* GetStage(StageId sid) {
                     {Vec2Lit(1798.0f, 445.0f), Vec2Lit(1840.0f, 82.0f)},
                     {Vec2Lit(1857.0f, 326.0f), Vec2Lit(1927.0f, 193.0f)},
 
+                    // Room 7
+                    {Vec2Lit(1921.0f, 212.0f), Vec2Lit(1994.0f, 161.0f)},
+                    {Vec2Lit(1985.0f, 176.0f), Vec2Lit(2048.0f, 129.0f)},
+                    {Vec2Lit(2045.0f, 134.0f), Vec2Lit(2176.0f, 129.0f)},
+                    {Vec2Lit(2209.0f, 102.0f), Vec2Lit(2368.0f, 97.0f)},
+                    {Vec2Lit(2369.0f, 166.0f), Vec2Lit(2560.0f, 161.0f)},
+                    {Vec2Lit(2593.0f, 134.0f), Vec2Lit(2688.0f, 129.0f)},
+                    {Vec2Lit(2689.0f, 86.0f), Vec2Lit(2752.0f, 81.0f)},
+                    {Vec2Lit(2753.0f, 92.0f), Vec2Lit(3024.0f, 65.0f)},
+                    {Vec2Lit(3041.0f, 473.0f), Vec2Lit(3072.0f, 27.0f)},
+
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -2813,6 +2824,10 @@ static Stage* GetStage(StageId sid) {
 
                     // Room 6
                     {Vec2Lit(1841.0f, 384.0f), Vec2Lit(1856.0f, 190.0f)},
+
+                    // Room 7
+                    {Vec2Lit(2025.0f, 352.0f), Vec2Lit(3040.0f, 61.0f)},
+
                 };
                 for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                     AABB2D bb = AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -4262,6 +4277,10 @@ static void StageTick(GameState* gstate) {
                             continue;
                         }
                         if (TestFlag(ei->flags, EFLAG_WALL) && TestFlag(ej->flags, EFLAG_WALL)) {
+                            continue;
+                        }
+                        if ((TestFlag(ei->flags, EFLAG_CLIMABLE) && TestFlag(ej->flags, EFLAG_WALL)) ||
+                            (TestFlag(ei->flags, EFLAG_WALL) && TestFlag(ej->flags, EFLAG_CLIMABLE))) {
                             continue;
                         }
 
