@@ -2404,6 +2404,8 @@ typedef struct {
     LMesh mid;
 
     TextureId txid;
+    // uvscale essentially functions as the top right corner of the window in the texture we are subselecting and
+    // uvoffset essentially functions as the bottom left corner of the window.
     Vec2 uvscale;
     Vec2 uvoffset;
 
