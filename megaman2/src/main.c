@@ -4426,24 +4426,6 @@ static void StageTick(GameState* gstate) {
             GraphicsInfo* graphics = &e->graphics;
             graphics->pos = e->pos;
             graphics->orient = e->orient;
-
-            // If we are facing right, flip the sprite by multiplying by -1.0f
-            // f32 scalex = f32abs(graphics->uvscale.x);
-            // // graphics->uvscale.x = e->facing_left ? scalex : -1.0f * scalex;
-            // if (e->facing_left) {
-            //     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
-            //     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
-            // } else {
-            //     graphics->
-            // }
-            if (e->facing_left) {
-                graphics->uvoffset = Vec2Zero();
-                graphics->uvscale = Vec2Lit(1.0f, 1.0f);
-            } else {
-                // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
-                graphics->uvoffset = Vec2Lit(1.0f, 0.0f);
-                graphics->uvscale = Vec2Lit(-1.0f, 1.0f);
-            }
         }
     }
 
@@ -4463,10 +4445,18 @@ static void StageTick(GameState* gstate) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 DrawCmd* cmd = AddDrawMeshCmd();
 
+                Vec2 uvscale = e->graphics.uvscale;
+                Vec2 uvoffset = e->graphics.uvoffset;
+                if (!e->facing_left) {
+                    // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
+                    uvoffset = Vec2Lit(1.0f, 0.0f);
+                    uvscale = Vec2Lit(-1.0f, 1.0f);
+                }
+
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                 cmd->meshcmd.color = e->graphics.color;
-                cmd->meshcmd.uvscale = e->graphics.uvscale;
-                cmd->meshcmd.uvoffset = e->graphics.uvoffset;
+                cmd->meshcmd.uvscale = uvscale;
+                cmd->meshcmd.uvoffset = uvoffset;
                 cmd->meshcmd.txid = e->graphics.txid;
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
