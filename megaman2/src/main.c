@@ -3995,7 +3995,7 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
                 // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
-                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_MEGAMAN2),
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_MEGAMAN),
                                           (Rect){.c = Vec2Lit(0.0f, 0.0f), .r = Vec2Lit(24.0f, 24.0f)}, 0.0f, 1.0f);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
@@ -4451,8 +4451,10 @@ static void StageTick(GameState* gstate) {
                 Vec2 uvoffset = e->graphics.uvoffset;
                 if (!e->facing_left) {
                     // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
-                    uvoffset = Vec2Lit(1.0f, 0.0f);
-                    uvscale = Vec2Lit(-1.0f, 1.0f);
+                    // Move the bottom left corner to the bottom right corner.
+                    uvoffset.x = uvscale.x;
+                    // Interpolate across from the bottom right corner to the top left corner.
+                    uvscale.x *= -1.0f;
                 }
 
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
