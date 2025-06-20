@@ -765,6 +765,7 @@ typedef enum TextureLabel {
     TX_LADDER_TEST_STAGE,
     TX_ROOM_TEST_STAGE,
     TX_MEGAMAN,
+    TX_MEGAMAN2,
     TX_COUNT
 } TextureLabel;
 
@@ -862,6 +863,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_MEGAMAN] = UploadTexture("assets/textures/megaman.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_MEGAMAN2] = UploadTexture("assets/textures/megaman2.png");
         ++tcache->txlen;
     }
 }
@@ -3986,7 +3993,7 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
                 // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
-                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_MEGAMAN),
+                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_MEGAMAN2),
                                           (Rect){.c = Vec2Lit(0.0f, 0.0f), .r = Vec2Lit(24.0f, 24.0f)}, 0.0f, 1.0f);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
@@ -4419,6 +4426,24 @@ static void StageTick(GameState* gstate) {
             GraphicsInfo* graphics = &e->graphics;
             graphics->pos = e->pos;
             graphics->orient = e->orient;
+
+            // If we are facing right, flip the sprite by multiplying by -1.0f
+            // f32 scalex = f32abs(graphics->uvscale.x);
+            // // graphics->uvscale.x = e->facing_left ? scalex : -1.0f * scalex;
+            // if (e->facing_left) {
+            //     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
+            //     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
+            // } else {
+            //     graphics->
+            // }
+            if (e->facing_left) {
+                graphics->uvoffset = Vec2Zero();
+                graphics->uvscale = Vec2Lit(1.0f, 1.0f);
+            } else {
+                // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
+                graphics->uvoffset = Vec2Lit(1.0f, 0.0f);
+                graphics->uvscale = Vec2Lit(-1.0f, 1.0f);
+            }
         }
     }
 
