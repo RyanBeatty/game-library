@@ -402,7 +402,7 @@ LCORE Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far
 // Up just needs to be pointing somewhere along the plane between the +z and where you want the +y
 // axis to be.
 LCORE Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
-    // We need target -> eye direction vec because we assueme +z is towards the viewer.
+    // We need target -> eye diAserection vec because we assueme +z is towards the viewer.
     Vec3 z = Vec3Normalize(Vec3Sub(eye, target));
 
     // Get the right camera axis by using the +z and a vector pointint up (but not necessarily
@@ -423,7 +423,7 @@ LCORE Mat4 Mat4LookAt(Vec3 eye, Vec3 target, Vec3 up) {
 LCORE Mat4 Mat4PointAt(Vec3 forward) {
     static const Vec3 UP = Vec3Lit(0.0f, 1.0f, 0.0);
 
-    // We assume the forward vector points in the opposite direction of the z axis of the coordinate
+    // We assume the forward vector points in the opposite diAserection of the z axis of the coordinate
     // space, so invert the z axis here.
     Vec3 z = Vec3Normalize(Vec3Scale(forward, -1.0f));
 
@@ -784,13 +784,15 @@ static LTexture GetTexture(TextureLabel label) {
 #define AsepritePxTL(px) (Vec2Lit((px).x - 0.5f, (px).y - 0.5f))
 #define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
 
+// This essentially moves the origin from aseprite top left corner to bottom right corner. Why do we do this?
+// Its because when we import the texture/png we flip the Y axis there. subtract 1 from height so that the
+// max height aseprite pixel coords get mapped to 0
+#define AsepritePosToFlipped(tx, apos) (Vec2Lit((apos).x, (tx).height - 1.0f - (apos).y))
+
 // Conver the position in aseprite space to world space. aseprite space is the coordinate given by
 // aseprite UI.
 static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
-    // This essentially moves the origin from aseprite top left corner to bottom right corner. Why do we do this?
-    // Its because when we import the texture/png we flip the Y axis there. subtract 1 from height so that the
-    // max height aseprite pixel coords get mapped to 0
-    pos_aseprite.y = tx.height - 1.0f - pos_aseprite.y;
+    pos_aseprite = AsepritePosToFlipped(tx, pos_aseprite);
 
     // The origin in world space of the texture is at its center. We want to find the offset from the origin in
     // aseprite space (which is the center of the bottom left pixel since we flip the Y coords) to the center of
@@ -1574,7 +1576,7 @@ static void RenderDataInit() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
 
     // NOTE: This is very tricky to get right. Don't dynamically set these based on shader attribute
-    // locations. just hardcode and make sure that the shader code specifies the correct layout.
+    // locations. just hardcode and make sure that the shader code specifies the corAserect layout.
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, pos));
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
@@ -1602,7 +1604,7 @@ typedef struct {
             Mat4 modelm;  // converts from model space to world space.
             Vec4 color;
             Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
-            Vec2 uvscale;    // width/height in texture space of the rect to sample inside the texture [0, 1]
+            Vec2 uvscale;    // width/height in texture space of the Aserect to sample inside the texture [0, 1]
             TextureId txid;  // Texture id.
         } meshcmd;
 
@@ -2073,7 +2075,7 @@ LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* dep
         return false;
     }
 
-    // If the center is inside of the aabb, then the normal and depth will not be correct, since the
+    // If the center is inside of the aabb, then the normal and depth will not be corAserect, since the
     // closest point will be the center itself. But at least we will report the collision happened.
     *depth = f32sqrt(d) - circle.r;
     *normal = Vec2Normalize(disp);
@@ -2110,7 +2112,7 @@ LCORE void PolyhedronInit(Polyhedron* p) {
 // We assume that (0, 0) is the bottom left *corner* (not the center of the bottom left pixel).
 // To translate from aseprite, count the number of pixels (where bottom left pixel counts as 1) until the first
 // pixel of the collider, then subtract (-1, -1) to get the lc.
-LCORE void PolyhedronSetAABB2DFromGridRect(Polyhedron* shape, Vec2 lc, Vec2 dims, Vec2 grid_dims) {
+LCORE void PolyhedronSetAABB2DFromGridAseRect(Polyhedron* shape, Vec2 lc, Vec2 dims, Vec2 grid_dims) {
     shape->type = PH_AABB2D;
 
     // The input params assume that the min and max are given as if the origin is the bottom left
@@ -2135,7 +2137,7 @@ LCORE void PolyHedronSetAABB2DFromWH(Polyhedron* shape, Vec2 c, Vec2 dims) {
 
 // Important to pass decomposed transformation matrix (scale, rot, translate) because some polyhedron
 // like world axis-aligned shapes do not rotate for instance.
-// TODO: Consider making an interface where I get the correct polyhedron transformation matrix as a separate
+// TODO: Consider making an interface where I get the corAserect polyhedron transformation matrix as a separate
 // function (maybe take an entity as an arg) and then I can just take a single matrix here
 LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
     switch (shape.type) {
@@ -2411,8 +2413,8 @@ typedef struct {
 
     // Animation related fields. Below vec2s should be integer. Maybe I'm just being paranoid about float
     // precision issues.
-    Vec2 c;     // bottom left of rect in texture space
-    Vec2 r;     // full width and height of rect in texture space
+    Vec2 c;     // bottom left of Aserect in texture space
+    Vec2 r;     // full width and height of Aserect in texture space
     Vec2 step;  // How far along each axis to move to the next frame.
     u32 nframes;
     f32 frames_dt;    // Amount of time we've currently gone through the animation.
@@ -2442,16 +2444,17 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->frames_time = 0.0f;
 }
 
+// Rect in aseprite pos space.
 typedef struct {
     Vec2 c;  // bottom left corner.
     Vec2 r;  // width + height.
-} Rect;
+} AseRect;
 
 typedef struct {
-    Rect start;  // Start rect of the animation.
+    AseRect start;  // Start Aserect of the animation.
     Vec2 step;
     u32 nframes;
-} AnimationRect;
+} AnimationAseRect;
 
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
@@ -2467,19 +2470,22 @@ LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src
     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
 }
 
-LCORE void GraphicsInfoSetSpriteRect(GraphicsInfo* graphics, LTexture tx, Rect src, f32 orient, f32 scale) {
+// Remember rect coords are in aseprite space.
+LCORE void GraphicsInfoSetSpriteAseRect(GraphicsInfo* graphics, LTexture tx, AseRect src, f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
     graphics->mid = GetMesh(M_QUAD);
 
     graphics->txid = tx.id;
-    // TODO: its possible we want these to be ints?
+    // TODO: its possible we want these to be ints? I dunno what this comment is talking about.
+    // uvscale and offset should be in uv space which an aserect is not.
+    src.c = AsepritePosToFlipped(tx, src.c);
     graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
     graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
 }
 
-LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, Rect src, Vec2 step, u32 nframes,
+LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, AseRect src, Vec2 step, u32 nframes,
                                           f32 frames_time, f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
@@ -2501,9 +2507,10 @@ LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, R
     graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
 }
 
-LCORE void GraphicsInfoSetSpriteAnimationRect(GraphicsInfo* graphics, LTexture tx, AnimationRect rect, f32 frames_time,
-                                              f32 orient, f32 scale) {
-    GraphicsInfoSetSpriteAnimation(graphics, tx, rect.start, rect.step, rect.nframes, frames_time, orient, scale);
+LCORE void GraphicsInfoSetSpriteAnimationAseRect(GraphicsInfo* graphics, LTexture tx, AnimationAseRect Aserect,
+                                                 f32 frames_time, f32 orient, f32 scale) {
+    GraphicsInfoSetSpriteAnimation(graphics, tx, Aserect.start, Aserect.step, Aserect.nframes, frames_time, orient,
+                                   scale);
 }
 
 LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
@@ -3995,8 +4002,9 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
                 // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
-                GraphicsInfoSetSpriteRect(&e->graphics, GetTexture(TX_MEGAMAN),
-                                          (Rect){.c = Vec2Lit(0.0f, 0.0f), .r = Vec2Lit(24.0f, 24.0f)}, 0.0f, 1.0f);
+                GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN),
+                                             (AseRect){.c = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)}, 0.0f,
+                                             1.0f);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
                 e->health = 1;
@@ -4320,7 +4328,7 @@ static void StageTick(GameState* gstate) {
                     CollisionInfo* c = &collisions[j];
 
                     // To handle checking "both sides" of the collision. We just make two collisions
-                    // with reversed directions.
+                    // with reversed diAserections.
                     CollisionInfo reverse = *c;
                     reverse.id0 = c->id1;
                     reverse.id1 = c->id0;
