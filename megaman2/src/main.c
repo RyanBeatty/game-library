@@ -2462,18 +2462,6 @@ typedef struct {
     Vec2 uvscale;
     Vec2 uvoffset;
 
-    // // Animation related fields. Below vec2s should be integer. Maybe I'm just being paranoid about float
-    // // precision issues.
-    // Vec2 c;     // bottom left of Aserect in texture space
-    // Vec2 r;     // full width and height of Aserect in texture space
-    // Vec2 step;  // How far along each axis to move to the next frame.
-    // u32 nframes;
-    // f32 frames_dt;    // Amount of time we've currently gone through the animation.
-    // f32 frames_time;  // total time for one loop of the animation.
-    // // u32 frame;
-    // // f32 frame_dt;
-    // // f32 frame_time;  // How long the animation is supposed to take.
-
     Vec4 color;
 
     TextureInfo tinfo;
@@ -3996,7 +3984,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 7;
+        u32 room_idx = 1;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
