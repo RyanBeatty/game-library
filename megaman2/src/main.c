@@ -3927,6 +3927,7 @@ static void StageTick(GameState* gstate) {
     static Vec3 CAMERA_EYE_START = {0};
 
     static const AseRect M_IDLE = {.c = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
+    static const AseRect M_JUMP = {.c = Vec2Lit(1.0f, 409.0f), .r = Vec2Lit(32.0f, 32.0f)};
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -4033,6 +4034,8 @@ static void StageTick(GameState* gstate) {
 
                     switch (PSTATE) {
                         case PS_IDLE: {
+                            GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+
                             // ground detection.
                             Entity* ground = NULL;
                             {
@@ -4125,6 +4128,10 @@ static void StageTick(GameState* gstate) {
                                          Mat4Identity(), down_ladder != NULL ? LGREEN : LGRAY);
                             }
 
+                            if (ground == NULL) {
+                                GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f, 1.0f);
+                            }
+
                             if (up_ladder != NULL && IsKeyDown(KUP)) {
                                 e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
@@ -4156,6 +4163,8 @@ static void StageTick(GameState* gstate) {
                                     Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                                     if (IsKeyPressed(KJUMP)) {
                                         dy.y += DY_SPEED;
+                                        GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
+                                                                     1.0f);
                                     }
 
                                     e->v =
