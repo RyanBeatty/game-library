@@ -3739,9 +3739,9 @@ static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
 typedef enum {
     PS_NONE = 0,
     PS_IDLE,
-    PS_WALKING,
     PS_CLIMBING,
     PS_DYING,
+    PS_WALKING,
     PS_COUNT,
 } PlayerState;
 
@@ -4033,6 +4033,10 @@ static void StageTick(GameState* gstate) {
                 e->ppos = e->pos;
 
                 if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                    static const f32 WALK_DX_SPEED = 50.0f;
+                    static const f32 WALK_DY_SPEED = 200.0f;
+                    static const f32 GRAVITY = 350.0f;
+
                     if (e->health <= 0) {
                         PSTATE = PS_DYING;
                     }
@@ -4150,22 +4154,18 @@ static void StageTick(GameState* gstate) {
                             } else {
                                 // Movement.
                                 {
-                                    static const f32 DX_SPEED = 50.0f;
-                                    static const f32 DY_SPEED = 200.0f;
-                                    static const f32 GRAVITY = 350.0f;
-
                                     Vec3 dx = Vec3Zero();
                                     if (IsKeyDown(KLEFT)) {
-                                        dx.x -= DX_SPEED;
+                                        dx.x -= WALK_DX_SPEED;
                                         e->facing_left = true;
                                     } else if (IsKeyDown(KRIGHT)) {
-                                        dx.x += DX_SPEED;
+                                        dx.x += WALK_DX_SPEED;
                                         e->facing_left = false;
                                     }
 
                                     Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                                     if (IsKeyPressed(KJUMP)) {
-                                        dy.y += DY_SPEED;
+                                        dy.y += WALK_DY_SPEED;
                                         GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
                                                                           0.0f, 1.0f);
                                     }
@@ -4216,6 +4216,28 @@ static void StageTick(GameState* gstate) {
 
                                 e->v = Vec3Lit(0.0f, dy, 0.0f);
                                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                            }
+                            break;
+                        }
+                        case PS_WALKING: {
+                            bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
+                            if (walking) {
+                                Vec3 dx = Vec3Zero();
+                                if (IsKeyDown(KLEFT)) {
+                                    dx.x -= WALK_DX_SPEED;
+                                    e->facing_left = true;
+                                } else if (IsKeyDown(KRIGHT)) {
+                                    dx.x += WALK_DX_SPEED;
+                                    e->facing_left = false;
+                                }
+
+                                Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                                e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
+                                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                            } else {
+                                PSTATE = PS_IDLE;
+                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f,
+                                                                  1.0f);
                             }
                             break;
                         }
