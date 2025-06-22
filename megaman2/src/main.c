@@ -4194,38 +4194,7 @@ static void StageTick(GameState* gstate) {
                         case PS_CLIMBING: {
                             static const f32 CLIMB_SPEED = 70.0f;
 
-                            // ladder detection.
-                            Entity* ladder = NULL;
-                            {
-                                Polyhedron shape = {0};
-                                shape.type = PH_AABB2D;
-                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                                for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                    Entity* e2 = GetEntity(j);
-                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                        e2->shape.type == PH_NONE) {
-                                        continue;
-                                    }
-
-                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                    CollisionInfo info = {0};
-                                    bool collides =
-                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                    if (collides) {
-                                        ladder = e2;
-                                        break;
-                                    }
-                                }
-
-                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                         Mat4Identity(), ladder != NULL ? LGREEN : LGRAY);
-                            }
-
-                            if (ladder == NULL) {
+                            if (down_ladder == NULL) {
                                 PSTATE = PS_IDLE;
                                 e->v = Vec3Zero();
                             } else if (IsKeyDown(KDOWN) && ground != NULL) {
