@@ -2434,7 +2434,7 @@ typedef struct {
     Vec4 tint;  // Color.
 } TextureInfo;
 
-static void TextureInfoZero(TextureInfo* tinfo) {
+static void TextureInfoZero(TextureInfo* txinfo) {
     TextureInfo res = {0};
     res.txid = GetTexture(TX_DEFAULT).id;
     res.type = TI_SPRITE;
@@ -2442,7 +2442,7 @@ static void TextureInfoZero(TextureInfo* tinfo) {
     res.sprite.maxuv = Vec2Lit(1.0f, 1.0f);
     res.tint = LCLEAR;
 
-    *tinfo = res;
+    *txinfo = res;
 }
 
 typedef struct {
@@ -2462,9 +2462,7 @@ typedef struct {
     Vec2 uvscale;
     Vec2 uvoffset;
 
-    Vec4 color;
-
-    TextureInfo tinfo;
+    TextureInfo txinfo;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -2477,9 +2475,8 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->txid = GetTexture(TX_DEFAULT).id;
     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
-    graphics->color = LCLEAR;
 
-    TextureInfoZero(&graphics->tinfo);
+    TextureInfoZero(&graphics->txinfo);
 }
 
 // Rect in aseprite pos space.
@@ -2561,7 +2558,7 @@ LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orien
 LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
     graphics->mid = mesh;
     graphics->scale = scale;
-    graphics->color = color;
+    graphics->txinfo.tint = color;
 }
 
 ////////////////////////////////////////////////////////////
@@ -4479,7 +4476,7 @@ static void StageTick(GameState* gstate) {
                 }
 
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
-                cmd->meshcmd.color = e->graphics.color;
+                cmd->meshcmd.color = e->graphics.txinfo.tint;
                 cmd->meshcmd.uvscale = uvscale;
                 cmd->meshcmd.uvoffset = uvoffset;
                 cmd->meshcmd.txid = e->graphics.txid;
