@@ -2491,32 +2491,29 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
     graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
 }
 
-LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, AseRect src, Vec2 step, u32 nframes,
-                                          f32 frames_time, f32 orient, f32 scale) {
-    graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
+LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
+                                                f32 frames_time, f32 orient, f32 scale) {
+    animation.start.lc = AsepritePosToFlipped(tx, animation.start.lc);
+    animation.step = AsepritePosToFlipped(tx, animation.step);
+
+    graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
     graphics->mid = GetMesh(M_QUAD);
 
     graphics->txid = tx.id;
-    graphics->c = src.lc;
-    graphics->r = src.r;
-    graphics->step = step;
-    graphics->nframes = nframes;
+    graphics->c = animation.start.lc;
+    graphics->r = animation.start.r;
+    graphics->step = animation.step;
+    graphics->nframes = animation.nframes;
     graphics->frames_dt = 0.0f;
     graphics->frames_time = frames_time;
 
     // TODO: its possible we want these to be ints?
     // I need to set uvscale, since that does not change over the animation. But possible don't need to set uvoffset
     // since that can be calculated from the animation frame time.
-    graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
-    graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
-}
-
-LCORE void GraphicsInfoSetSpriteAnimationAseRect(GraphicsInfo* graphics, LTexture tx, AnimationAseRect Aserect,
-                                                 f32 frames_time, f32 orient, f32 scale) {
-    GraphicsInfoSetSpriteAnimation(graphics, tx, Aserect.start, Aserect.step, Aserect.nframes, frames_time, orient,
-                                   scale);
+    graphics->uvscale = Vec2Lit(animation.start.r.x / tx.width, animation.start.r.y / tx.height);
+    graphics->uvoffset = Vec2Lit(animation.start.lc.x / tx.width, animation.start.lc.y / tx.height);
 }
 
 LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
