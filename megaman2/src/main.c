@@ -2446,8 +2446,8 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 
 // Rect in aseprite pos space.
 typedef struct {
-    Vec2 c;  // bottom left corner.
-    Vec2 r;  // width + height.
+    Vec2 lc;  // bottom left corner.
+    Vec2 r;   // width + height.
 } AseRect;
 
 typedef struct {
@@ -2486,9 +2486,9 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
     graphics->txid = tx.id;
     // TODO: its possible we want these to be ints? I dunno what this comment is talking about.
     // uvscale and offset should be in uv space which an aserect is not.
-    src.c = AsepritePosToFlipped(tx, src.c);
+    src.lc = AsepritePosToFlipped(tx, src.lc);
     graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
-    graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
+    graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
 }
 
 LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, AseRect src, Vec2 step, u32 nframes,
@@ -2499,7 +2499,7 @@ LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, A
     graphics->mid = GetMesh(M_QUAD);
 
     graphics->txid = tx.id;
-    graphics->c = src.c;
+    graphics->c = src.lc;
     graphics->r = src.r;
     graphics->step = step;
     graphics->nframes = nframes;
@@ -2510,7 +2510,7 @@ LCORE void GraphicsInfoSetSpriteAnimation(GraphicsInfo* graphics, LTexture tx, A
     // I need to set uvscale, since that does not change over the animation. But possible don't need to set uvoffset
     // since that can be calculated from the animation frame time.
     graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
-    graphics->uvoffset = Vec2Lit(src.c.x / tx.width, src.c.y / tx.height);
+    graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
 }
 
 LCORE void GraphicsInfoSetSpriteAnimationAseRect(GraphicsInfo* graphics, LTexture tx, AnimationAseRect Aserect,
@@ -3926,10 +3926,10 @@ static void StageTick(GameState* gstate) {
     static bool CAMERA_TRANSITIONING = false;
     static Vec3 CAMERA_EYE_START = {0};
 
-    static const AseRect M_IDLE = {.c = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
-    static const AseRect M_JUMP = {.c = Vec2Lit(1.0f, 409.0f), .r = Vec2Lit(32.0f, 32.0f)};
+    static const AseRect M_IDLE = {.lc = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
+    static const AseRect M_JUMP = {.lc = Vec2Lit(1.0f, 409.0f), .r = Vec2Lit(32.0f, 32.0f)};
     static const AnimationAseRect M_WALK_CYCLE = {
-        .start = {.c = Vec2Lit(1.0f, 281.0f), .r = Vec2Lit(24.0f, 24.0f)},
+        .start = {.lc = Vec2Lit(1.0f, 281.0f), .r = Vec2Lit(24.0f, 24.0f)},
         .step = Vec2Lit(25.0f, 0.0f),
         .nframes = 3,
     };
