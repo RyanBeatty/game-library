@@ -2452,7 +2452,7 @@ typedef struct {
 
 typedef struct {
     AseRect start;  // Start Aserect of the animation.
-    Vec2 step;
+    Vec2 step;      // step to move each frame in aseprite coord space.
     u32 nframes;
 } AnimationAseRect;
 
