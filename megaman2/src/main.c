@@ -2471,6 +2471,12 @@ LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src
 }
 
 // Remember rect coords are in aseprite space.
+// TODO: This feels inefficient. Feels like what I really want is to be able to save visual info loaded from aseprite
+// once as a constant and set an entities' visuals to the constant. problem is that I can't save entire graphics info
+// or else when I set entity graphics, I overwrite position. So I need some sort of notion for the "static" entity
+// data.
+// NOTE: We don't overwrite all graphics info data because we don't set GraphicsInfoMemset, so data like position
+// is preserved.
 LCORE void GraphicsInfoSetSpriteAseRect(GraphicsInfo* graphics, LTexture tx, AseRect src, f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
@@ -3920,6 +3926,8 @@ static void StageTick(GameState* gstate) {
     static bool CAMERA_TRANSITIONING = false;
     static Vec3 CAMERA_EYE_START = {0};
 
+    static const AseRect M_IDLE = {.c = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
+
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
     pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
@@ -4002,9 +4010,7 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
                 // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
-                GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN),
-                                             (AseRect){.c = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)}, 0.0f,
-                                             1.0f);
+                GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
                 e->health = 1;
