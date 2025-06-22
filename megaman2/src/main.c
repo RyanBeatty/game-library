@@ -2456,9 +2456,9 @@ typedef struct {
 
     LMesh mid;
 
-    TextureId txid;
     // uvscale essentially functions as the top right corner of the window in the texture we are subselecting and
     // uvoffset essentially functions as the bottom left corner of the window.
+    // TODO: Rename these possibly.
     Vec2 uvscale;
     Vec2 uvoffset;
 
@@ -2471,8 +2471,6 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->pos = Vec3Zero();
     graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
 
-    // TODO: Delete.
-    graphics->txid = GetTexture(TX_DEFAULT).id;
     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
 
@@ -2499,7 +2497,7 @@ LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src
 
     graphics->mid = GetMesh(M_QUAD);
 
-    graphics->txid = tx.id;
+    graphics->txinfo.txid = tx.id;
     // TODO: its possible we want these to be ints?
     graphics->uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
     graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
@@ -2518,7 +2516,7 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
 
     graphics->mid = GetMesh(M_QUAD);
 
-    graphics->txid = tx.id;
+    graphics->txinfo.txid = tx.id;
     // TODO: its possible we want these to be ints? I dunno what this comment is talking about.
     // uvscale and offset should be in uv space which an aserect is not.
     src.lc = AsepritePosToFlipped(tx, src.lc);
@@ -4479,7 +4477,7 @@ static void StageTick(GameState* gstate) {
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
                 cmd->meshcmd.uvscale = uvscale;
                 cmd->meshcmd.uvoffset = uvoffset;
-                cmd->meshcmd.txid = e->graphics.txid;
+                cmd->meshcmd.txid = e->graphics.txinfo.txid;
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
 
