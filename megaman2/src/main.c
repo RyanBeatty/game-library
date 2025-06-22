@@ -2394,6 +2394,57 @@ LCORE void ParticleSystemTick(f32 dt) {
 
 ////////////////////////////////////////////////////////////
 
+typedef enum {
+    TI_NONE = 0,
+    TI_SPRITE,
+    TI_ANIMATION,
+    TI_COUNT,
+} TextureInfoType;
+
+// Abstraction for texture data for a mesh. Essentially you can think of this at the moment as the information
+// required to subselect a rect inside of a 2d texture (animations are a subselected rect that are stepped
+// along through the texture at some time interval).
+typedef struct {
+    TextureId txid;
+
+    TextureInfoType type;
+    union {
+        struct {
+            Vec2 minuv;
+            Vec2 maxuv;
+        } sprite;
+
+        struct {
+            // Start min and max of the first frame in uv space.
+            Vec2 minuv;
+            Vec2 maxuv;
+
+            // How much to step each frame in uv.
+            Vec2 stepuv;
+
+            // n frames in animation.
+            u32 nframes;
+            // Delta time we've currently spent playing animation.
+            f32 frames_dt;
+            // Maximum time duration of the animation.
+            f32 frames_time;
+        } animation;
+    };
+
+    Vec4 tint;  // Color.
+} TextureInfo;
+
+static void TextureInfoZero(TextureInfo* tinfo) {
+    TextureInfo res = {0};
+    res.txid = GetTexture(TX_DEFAULT).id;
+    res.type = TI_SPRITE;
+    res.sprite.minuv = Vec2Zero();
+    res.sprite.maxuv = Vec2Lit(1.0f, 1.0f);
+    res.tint = LCLEAR;
+
+    *tinfo = res;
+}
+
 typedef struct {
     Vec3 pos;
     Vec3 scale;
@@ -2411,19 +2462,21 @@ typedef struct {
     Vec2 uvscale;
     Vec2 uvoffset;
 
-    // Animation related fields. Below vec2s should be integer. Maybe I'm just being paranoid about float
-    // precision issues.
-    Vec2 c;     // bottom left of Aserect in texture space
-    Vec2 r;     // full width and height of Aserect in texture space
-    Vec2 step;  // How far along each axis to move to the next frame.
-    u32 nframes;
-    f32 frames_dt;    // Amount of time we've currently gone through the animation.
-    f32 frames_time;  // total time for one loop of the animation.
-    // u32 frame;
-    // f32 frame_dt;
-    // f32 frame_time;  // How long the animation is supposed to take.
+    // // Animation related fields. Below vec2s should be integer. Maybe I'm just being paranoid about float
+    // // precision issues.
+    // Vec2 c;     // bottom left of Aserect in texture space
+    // Vec2 r;     // full width and height of Aserect in texture space
+    // Vec2 step;  // How far along each axis to move to the next frame.
+    // u32 nframes;
+    // f32 frames_dt;    // Amount of time we've currently gone through the animation.
+    // f32 frames_time;  // total time for one loop of the animation.
+    // // u32 frame;
+    // // f32 frame_dt;
+    // // f32 frame_time;  // How long the animation is supposed to take.
 
     Vec4 color;
+
+    TextureInfo tinfo;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -2431,17 +2484,14 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->orient = Mat4Identity();
     graphics->pos = Vec3Zero();
     graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+
+    // TODO: Delete.
     graphics->txid = GetTexture(TX_DEFAULT).id;
     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
     graphics->color = LCLEAR;
 
-    graphics->c = Vec2Zero();
-    graphics->r = Vec2Lit(1.0f, 1.0f);
-    graphics->step = Vec2Zero();
-    // graphics->nframes = 1;
-    graphics->frames_dt = 0.0f;
-    graphics->frames_time = 0.0f;
+    TextureInfoZero(&graphics->tinfo);
 }
 
 // Rect in aseprite pos space.
@@ -2493,27 +2543,27 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
 
 LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
                                                 f32 frames_time, f32 orient, f32 scale) {
-    animation.start.lc = AsepritePosToFlipped(tx, animation.start.lc);
-    animation.step = AsepritePosToFlipped(tx, animation.step);
+    // animation.start.lc = AsepritePosToFlipped(tx, animation.start.lc);
+    // animation.step = AsepritePosToFlipped(tx, animation.step);
 
-    graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
-    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+    // graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
+    // graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
-    graphics->mid = GetMesh(M_QUAD);
+    // graphics->mid = GetMesh(M_QUAD);
 
-    graphics->txid = tx.id;
-    graphics->c = animation.start.lc;
-    graphics->r = animation.start.r;
-    graphics->step = animation.step;
-    graphics->nframes = animation.nframes;
-    graphics->frames_dt = 0.0f;
-    graphics->frames_time = frames_time;
+    // graphics->txid = tx.id;
+    // graphics->c = animation.start.lc;
+    // graphics->r = animation.start.r;
+    // graphics->step = animation.step;
+    // graphics->nframes = animation.nframes;
+    // graphics->frames_dt = 0.0f;
+    // graphics->frames_time = frames_time;
 
-    // TODO: its possible we want these to be ints?
-    // I need to set uvscale, since that does not change over the animation. But possible don't need to set uvoffset
-    // since that can be calculated from the animation frame time.
-    graphics->uvscale = Vec2Lit(animation.start.r.x / tx.width, animation.start.r.y / tx.height);
-    graphics->uvoffset = Vec2Lit(animation.start.lc.x / tx.width, animation.start.lc.y / tx.height);
+    // // TODO: its possible we want these to be ints?
+    // // I need to set uvscale, since that does not change over the animation. But possible don't need to set uvoffset
+    // // since that can be calculated from the animation frame time.
+    // graphics->uvscale = Vec2Lit(animation.start.r.x / tx.width, animation.start.r.y / tx.height);
+    // graphics->uvoffset = Vec2Lit(animation.start.lc.x / tx.width, animation.start.lc.y / tx.height);
 }
 
 LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
