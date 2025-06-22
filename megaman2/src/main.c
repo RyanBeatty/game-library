@@ -3928,11 +3928,11 @@ static void StageTick(GameState* gstate) {
 
     static const AseRect M_IDLE = {.c = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
     static const AseRect M_JUMP = {.c = Vec2Lit(1.0f, 409.0f), .r = Vec2Lit(32.0f, 32.0f)};
-    static const AnimationAseRect M_WALK_CYCLE = {
-        .start = (AseRect){.c = Vec2Lit(1.0f, 281.0f), .r = Vec2Lit(24.0f, 24.0f)},
-        .step = Vec2Lit(25.0f, 0.0f),
-        .nframes = 3,
-    };
+    // static const AnimationAseRect M_WALK_CYCLE = {
+    //     .start = (AseRect){.c = Vec2Lit(1.0f, 281.0f), .r = Vec2Lit(24.0f, 24.0f)},
+    //     .step = Vec2Lit(25.0f, 0.0f),
+    //     .nframes = 3,
+    // };
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -4037,101 +4037,98 @@ static void StageTick(GameState* gstate) {
                         PSTATE = PS_DYING;
                     }
 
+                    // ground detection.
+                    Entity* ground = NULL;
+                    {
+                        Polyhedron shape = {0};
+                        shape.type = PH_AABB2D;
+                        shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
+                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                        for (u32 j = 0; j < GetNumEntities(); ++j) {
+                            Entity* e2 = GetEntity(j);
+                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
+                                e2->shape.type == PH_NONE) {
+                                continue;
+                            }
+
+                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                            if (collides) {
+                                ground = e2;
+                                break;
+                            }
+                        }
+
+                        DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
+                                 ground != NULL ? LGREEN : LGRAY);
+                    }
+
+                    // Ladder detection.
+                    Entity* up_ladder = NULL;
+                    {
+                        Polyhedron shape = {0};
+                        shape.type = PH_AABB2D;
+                        shape.aabb2d.c = Vec2Zero();
+                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                        for (u32 j = 0; j < GetNumEntities(); ++j) {
+                            Entity* e2 = GetEntity(j);
+                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                e2->shape.type == PH_NONE) {
+                                continue;
+                            }
+
+                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                            if (collides) {
+                                up_ladder = e2;
+                                break;
+                            }
+                        }
+
+                        DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
+                                 up_ladder != NULL ? LGREEN : LGRAY);
+                    }
+
+                    Entity* down_ladder = NULL;
+                    {
+                        Polyhedron shape = {0};
+                        shape.type = PH_AABB2D;
+                        shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
+                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                        for (u32 j = 0; j < GetNumEntities(); ++j) {
+                            Entity* e2 = GetEntity(j);
+                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
+                                e2->shape.type == PH_NONE) {
+                                continue;
+                            }
+
+                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                            if (collides) {
+                                down_ladder = e2;
+                                break;
+                            }
+                        }
+
+                        DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
+                                 down_ladder != NULL ? LGREEN : LGRAY);
+                    }
+
                     switch (PSTATE) {
                         case PS_IDLE: {
                             GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
-
-                            // ground detection.
-                            Entity* ground = NULL;
-                            {
-                                Polyhedron shape = {0};
-                                shape.type = PH_AABB2D;
-                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                                for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                    Entity* e2 = GetEntity(j);
-                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
-                                        e2->shape.type == PH_NONE) {
-                                        continue;
-                                    }
-
-                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                    CollisionInfo info = {0};
-                                    bool collides =
-                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                    if (collides) {
-                                        ground = e2;
-                                        break;
-                                    }
-                                }
-
-                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                         Mat4Identity(), ground != NULL ? LGREEN : LGRAY);
-                            }
-
-                            // Ladder detection.
-                            Entity* up_ladder = NULL;
-                            {
-                                Polyhedron shape = {0};
-                                shape.type = PH_AABB2D;
-                                shape.aabb2d.c = Vec2Zero();
-                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                                for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                    Entity* e2 = GetEntity(j);
-                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                        e2->shape.type == PH_NONE) {
-                                        continue;
-                                    }
-
-                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                    CollisionInfo info = {0};
-                                    bool collides =
-                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                    if (collides) {
-                                        up_ladder = e2;
-                                        break;
-                                    }
-                                }
-
-                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                         Mat4Identity(), up_ladder != NULL ? LGREEN : LGRAY);
-                            }
-
-                            Entity* down_ladder = NULL;
-                            {
-                                Polyhedron shape = {0};
-                                shape.type = PH_AABB2D;
-                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                                for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                    Entity* e2 = GetEntity(j);
-                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                        e2->shape.type == PH_NONE) {
-                                        continue;
-                                    }
-
-                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                    CollisionInfo info = {0};
-                                    bool collides =
-                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                    if (collides) {
-                                        down_ladder = e2;
-                                        break;
-                                    }
-                                }
-
-                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                         Mat4Identity(), down_ladder != NULL ? LGREEN : LGRAY);
-                            }
 
                             if (ground == NULL) {
                                 GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
@@ -4196,37 +4193,6 @@ static void StageTick(GameState* gstate) {
                         }
                         case PS_CLIMBING: {
                             static const f32 CLIMB_SPEED = 70.0f;
-
-                            // ground detection.
-                            Entity* ground = NULL;
-                            {
-                                Polyhedron shape = {0};
-                                shape.type = PH_AABB2D;
-                                shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                                shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                                shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                                for (u32 j = 0; j < GetNumEntities(); ++j) {
-                                    Entity* e2 = GetEntity(j);
-                                    if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
-                                        e2->shape.type == PH_NONE) {
-                                        continue;
-                                    }
-
-                                    Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                                    CollisionInfo info = {0};
-                                    bool collides =
-                                        TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                                    if (collides) {
-                                        ground = e2;
-                                        break;
-                                    }
-                                }
-
-                                DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                                         Mat4Identity(), ground != NULL ? LGREEN : LGRAY);
-                            }
 
                             // ladder detection.
                             Entity* ladder = NULL;
