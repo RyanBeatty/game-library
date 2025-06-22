@@ -2477,7 +2477,7 @@ LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src
 // data.
 // NOTE: We don't overwrite all graphics info data because we don't set GraphicsInfoMemset, so data like position
 // is preserved.
-LCORE void GraphicsInfoSetSpriteAseRect(GraphicsInfo* graphics, LTexture tx, AseRect src, f32 orient, f32 scale) {
+LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx, AseRect src, f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
@@ -4011,7 +4011,7 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
                 // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
-                GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
                 e->health = 1;
@@ -4034,7 +4034,7 @@ static void StageTick(GameState* gstate) {
 
                     switch (PSTATE) {
                         case PS_IDLE: {
-                            GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+                            GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
 
                             // ground detection.
                             Entity* ground = NULL;
@@ -4129,7 +4129,8 @@ static void StageTick(GameState* gstate) {
                             }
 
                             if (ground == NULL) {
-                                GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f, 1.0f);
+                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
+                                                                  1.0f);
                             }
 
                             if (up_ladder != NULL && IsKeyDown(KUP)) {
@@ -4163,8 +4164,8 @@ static void StageTick(GameState* gstate) {
                                     Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                                     if (IsKeyPressed(KJUMP)) {
                                         dy.y += DY_SPEED;
-                                        GraphicsInfoSetSpriteAseRect(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
-                                                                     1.0f);
+                                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
+                                                                          0.0f, 1.0f);
                                     }
 
                                     e->v =
