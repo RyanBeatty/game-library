@@ -3928,11 +3928,11 @@ static void StageTick(GameState* gstate) {
 
     static const AseRect M_IDLE = {.c = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
     static const AseRect M_JUMP = {.c = Vec2Lit(1.0f, 409.0f), .r = Vec2Lit(32.0f, 32.0f)};
-    // static const AnimationAseRect M_WALK_CYCLE = {
-    //     .start = (AseRect){.c = Vec2Lit(1.0f, 281.0f), .r = Vec2Lit(24.0f, 24.0f)},
-    //     .step = Vec2Lit(25.0f, 0.0f),
-    //     .nframes = 3,
-    // };
+    static const AnimationAseRect M_WALK_CYCLE = {
+        .start = {.c = Vec2Lit(1.0f, 281.0f), .r = Vec2Lit(24.0f, 24.0f)},
+        .step = Vec2Lit(25.0f, 0.0f),
+        .nframes = 3,
+    };
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
