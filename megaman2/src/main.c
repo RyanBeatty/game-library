@@ -2411,13 +2411,13 @@ typedef struct {
     union {
         struct {
             Vec2 minuv;
-            Vec2 maxuv;
+            Vec2 dimsuv;
         } sprite;
 
         struct {
-            // Start min and max of the first frame in uv space.
+            // Start min and dims of the first frame in uv space.
             Vec2 minuv;
-            Vec2 maxuv;
+            Vec2 dimsuv;
 
             // How much to step each frame in uv.
             Vec2 stepuv;
@@ -2439,7 +2439,7 @@ static void TextureInfoZero(TextureInfo* txinfo) {
     res.txid = GetTexture(TX_DEFAULT).id;
     res.type = TI_SPRITE;
     res.sprite.minuv = Vec2Zero();
-    res.sprite.maxuv = Vec2Lit(1.0f, 1.0f);
+    res.sprite.dimsuv = Vec2Lit(1.0f, 1.0f);
     res.tint = LCLEAR;
 
     *txinfo = res;
