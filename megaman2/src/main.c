@@ -2458,7 +2458,7 @@ static void TextureInfoDefault(TextureInfo* txinfo) {
     *txinfo = res;
 }
 
-static void TextureInfoSetFromAseprite(TextureInfo* txinfo, LTexture tx, AseRect src) {
+static void TextureInfoSetSpriteFromAseprite(TextureInfo* txinfo, LTexture tx, AseRect src) {
     src.lc = AsepritePosToFlipped(tx, src.lc);
 
     TextureInfo res = {0};
@@ -2529,15 +2529,17 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
 
     graphics->mid = GetMesh(M_QUAD);
 
-    graphics->txinfo.txid = tx.id;
+    // graphics->txinfo.txid = tx.id;
 
-    // TODO: its possible we want these to be ints? I dunno what this comment is talking about.
-    // uvscale and offset should be in uv space which an aserect is not.
-    src.lc = AsepritePosToFlipped(tx, src.lc);
-    graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
-    graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
+    TextureInfoSetSpriteFromAseprite(&graphics->txinfo, tx, src);
 
-    // TextureInfoSetFromAseprite(&graphics->txinfo, tx, src);
+    // // TODO: its possible we want these to be ints? I dunno what this comment is talking about.
+    // // uvscale and offset should be in uv space which an aserect is not.
+    // src.lc = AsepritePosToFlipped(tx, src.lc);
+    // graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
+    // graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
+
+    // breakpoint();
 }
 
 LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
@@ -4461,18 +4463,18 @@ static void StageTick(GameState* gstate) {
             graphics->pos = e->pos;
             graphics->orient = e->orient;
 
-            // TextureInfo* txinfo = &graphics->txinfo;
-            // switch (txinfo->type) {
-            //     case TI_SPRITE: {
-            //         graphics->uvoffset = txinfo->sprite.minuv;
-            //         graphics->uvoffset = txinfo->sprite.dimsuv;
-            //         break;
-            //     }
-            //     default: {
-            //         TraceLog(LOG_ERROR, "Unknown texture info type: %d", txinfo->type);
-            //         exit(1);
-            //     }
-            // }
+            TextureInfo* txinfo = &graphics->txinfo;
+            switch (txinfo->type) {
+                case TI_SPRITE: {
+                    graphics->uvoffset = txinfo->sprite.minuv;
+                    graphics->uvscale = txinfo->sprite.dimsuv;
+                    break;
+                }
+                default: {
+                    TraceLog(LOG_ERROR, "Unknown texture info type: %d", txinfo->type);
+                    exit(1);
+                }
+            }
         }
     }
 
@@ -4494,13 +4496,13 @@ static void StageTick(GameState* gstate) {
 
                 Vec2 uvscale = e->graphics.uvscale;
                 Vec2 uvoffset = e->graphics.uvoffset;
-                if (!e->facing_left) {
-                    // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
-                    // Move the bottom left corner to the bottom right corner.
-                    uvoffset.x = uvscale.x;
-                    // Interpolate across from the bottom right corner to the top left corner.
-                    uvscale.x *= -1.0f;
-                }
+                // if (!e->facing_left) {
+                //     // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
+                //     // Move the bottom left corner to the bottom right corner.
+                //     uvoffset.x = uvscale.x;
+                //     // Interpolate across from the bottom right corner to the top left corner.
+                //     uvscale.x *= -1.0f;
+                // }
 
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
