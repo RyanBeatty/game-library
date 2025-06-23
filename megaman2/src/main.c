@@ -2394,6 +2394,18 @@ LCORE void ParticleSystemTick(f32 dt) {
 
 ////////////////////////////////////////////////////////////
 
+// Rect in aseprite pos space.
+typedef struct {
+    Vec2 lc;  // bottom left corner.
+    Vec2 r;   // width + height.
+} AseRect;
+
+typedef struct {
+    AseRect start;  // Start Aserect of the animation.
+    Vec2 step;      // step to move each frame in aseprite coord space.
+    u32 nframes;
+} AnimationAseRect;
+
 typedef enum {
     TI_NONE = 0,
     TI_SPRITE,
@@ -2410,6 +2422,7 @@ typedef struct {
     TextureInfoType type;
     union {
         struct {
+            // Start min and dims of the window in uv space.
             Vec2 minuv;
             Vec2 dimsuv;
         } sprite;
@@ -2434,7 +2447,7 @@ typedef struct {
     Vec4 tint;  // Color.
 } TextureInfo;
 
-static void TextureInfoZero(TextureInfo* txinfo) {
+static void TextureInfoDefault(TextureInfo* txinfo) {
     TextureInfo res = {0};
     res.txid = GetTexture(TX_DEFAULT).id;
     res.type = TI_SPRITE;
@@ -2442,6 +2455,18 @@ static void TextureInfoZero(TextureInfo* txinfo) {
     res.sprite.dimsuv = Vec2Lit(1.0f, 1.0f);
     res.tint = LCLEAR;
 
+    *txinfo = res;
+}
+
+static void TextureInfoSetFromAseprite(TextureInfo* txinfo, LTexture tx, AseRect src) {
+    src.lc = AsepritePosToFlipped(tx, src.lc);
+
+    TextureInfo res = {0};
+    res.txid = tx.id;
+    res.type = TI_SPRITE;
+    res.sprite.minuv = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
+    res.sprite.dimsuv = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
+    res.tint = LCLEAR;
     *txinfo = res;
 }
 
@@ -2474,20 +2499,8 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
 
-    TextureInfoZero(&graphics->txinfo);
+    TextureInfoDefault(&graphics->txinfo);
 }
-
-// Rect in aseprite pos space.
-typedef struct {
-    Vec2 lc;  // bottom left corner.
-    Vec2 r;   // width + height.
-} AseRect;
-
-typedef struct {
-    AseRect start;  // Start Aserect of the animation.
-    Vec2 step;      // step to move each frame in aseprite coord space.
-    u32 nframes;
-} AnimationAseRect;
 
 // c_src - bottom left hand corner of sprite (in png space, not uvspace)
 // r_src - full width/height of sprite in png space not uvspace.
@@ -2517,11 +2530,14 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
     graphics->mid = GetMesh(M_QUAD);
 
     graphics->txinfo.txid = tx.id;
+
     // TODO: its possible we want these to be ints? I dunno what this comment is talking about.
     // uvscale and offset should be in uv space which an aserect is not.
     src.lc = AsepritePosToFlipped(tx, src.lc);
     graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
     graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
+
+    // TextureInfoSetFromAseprite(&graphics->txinfo, tx, src);
 }
 
 LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
@@ -4444,6 +4460,19 @@ static void StageTick(GameState* gstate) {
             GraphicsInfo* graphics = &e->graphics;
             graphics->pos = e->pos;
             graphics->orient = e->orient;
+
+            // TextureInfo* txinfo = &graphics->txinfo;
+            // switch (txinfo->type) {
+            //     case TI_SPRITE: {
+            //         graphics->uvoffset = txinfo->sprite.minuv;
+            //         graphics->uvoffset = txinfo->sprite.dimsuv;
+            //         break;
+            //     }
+            //     default: {
+            //         TraceLog(LOG_ERROR, "Unknown texture info type: %d", txinfo->type);
+            //         exit(1);
+            //     }
+            // }
         }
     }
 
