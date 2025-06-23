@@ -2458,18 +2458,6 @@ static void TextureInfoDefault(TextureInfo* txinfo) {
     *txinfo = res;
 }
 
-static void TextureInfoSetSpriteFromAseprite(TextureInfo* txinfo, LTexture tx, AseRect src) {
-    src.lc = AsepritePosToFlipped(tx, src.lc);
-
-    TextureInfo res = {0};
-    res.txid = tx.id;
-    res.type = TI_SPRITE;
-    res.sprite.minuv = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
-    res.sprite.dimsuv = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
-    res.tint = LCLEAR;
-    *txinfo = res;
-}
-
 typedef struct {
     Vec3 pos;
     Vec3 scale;
@@ -2531,7 +2519,15 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
 
     graphics->mid = GetMesh(M_QUAD);
 
-    TextureInfoSetSpriteFromAseprite(&graphics->txinfo, tx, src);
+    src.lc = AsepritePosToFlipped(tx, src.lc);
+
+    TextureInfo res = {0};
+    res.txid = tx.id;
+    res.type = TI_SPRITE;
+    res.sprite.minuv = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
+    res.sprite.dimsuv = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
+    res.tint = LCLEAR;
+    graphics->txinfo = res;
 }
 
 LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
@@ -4055,7 +4051,6 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.c = Vec2Zero();
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
-                // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(24.0f, 24.0f, 0.0f), LBLUE);
                 GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
