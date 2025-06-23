@@ -2481,11 +2481,10 @@ typedef struct {
 
     LMesh mid;
 
-    // uvscale essentially functions as the top right corner of the window in the texture we are subselecting and
-    // uvoffset essentially functions as the bottom left corner of the window.
-    // TODO: Rename these possibly.
-    Vec2 uvscale;
+    // Min (generally lower left hand corner) of the texture selection rect in uv space.
     Vec2 uvoffset;
+    // Dimensions of the texture selection rect in uv space.
+    Vec2 uvscale;
 
     TextureInfo txinfo;
 } GraphicsInfo;
