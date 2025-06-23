@@ -2467,12 +2467,14 @@ typedef struct {
     Vec3 posb;
     f32 posdt;
 
+    //////////////////////////////////////
+    // Final drawing related fields. For now think of this as the destination rectangle + texture coords
     LMesh mid;
-
     // Min (generally lower left hand corner) of the texture selection rect in uv space.
     Vec2 uvoffset;
     // Dimensions of the texture selection rect in uv space.
     Vec2 uvscale;
+    //////////////////////////////////////
 
     TextureInfo txinfo;
 } GraphicsInfo;
