@@ -2532,27 +2532,27 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
 
 LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
                                                 f32 frames_time, f32 orient, f32 scale) {
-    // animation.start.lc = AsepritePosToFlipped(tx, animation.start.lc);
-    // animation.step = AsepritePosToFlipped(tx, animation.step);
+    graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
+    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
-    // graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
-    // graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+    graphics->mid = GetMesh(M_QUAD);
 
-    // graphics->mid = GetMesh(M_QUAD);
+    animation.start.lc = AsepritePosToFlipped(tx, animation.start.lc);
 
-    // graphics->txid = tx.id;
-    // graphics->c = animation.start.lc;
-    // graphics->r = animation.start.r;
-    // graphics->step = animation.step;
-    // graphics->nframes = animation.nframes;
-    // graphics->frames_dt = 0.0f;
-    // graphics->frames_time = frames_time;
+    f32 width_inv = 1.0f / tx.width;
+    f32 height_inv = 1.0f / tx.height;
+    TextureInfo txinfo = {0};
+    txinfo.txid = tx.id;
+    txinfo.type = TI_ANIMATION;
+    txinfo.animation.minuv = Vec2Lit(animation.start.lc.x * width_inv, animation.start.lc.y * height_inv);
+    txinfo.animation.dimsuv = Vec2Lit(animation.start.r.x * width_inv, animation.start.r.y * height_inv);
+    txinfo.animation.stepuv = Vec2Lit(animation.step.x * width_inv, animation.step.y * height_inv);
+    txinfo.animation.nframes = animation.nframes;
+    txinfo.animation.frames_dt = 0.0f;
+    txinfo.animation.frames_time = frames_time;
+    txinfo.tint = LCLEAR;
 
-    // // TODO: its possible we want these to be ints?
-    // // I need to set uvscale, since that does not change over the animation. But possible don't need to set uvoffset
-    // // since that can be calculated from the animation frame time.
-    // graphics->uvscale = Vec2Lit(animation.start.r.x / tx.width, animation.start.r.y / tx.height);
-    // graphics->uvoffset = Vec2Lit(animation.start.lc.x / tx.width, animation.start.lc.y / tx.height);
+    graphics->txinfo = txinfo;
 }
 
 LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
@@ -4456,6 +4456,10 @@ static void StageTick(GameState* gstate) {
                     graphics->uvoffset = txinfo->sprite.minuv;
                     graphics->uvscale = txinfo->sprite.dimsuv;
                     break;
+                }
+                case TI_ANIMATION: {
+                    graphics->uvoffset = txinfo->animation.minuv;
+                    graphics->uvscale = txinfo->animation.dimsuv;
                 }
                 default: {
                     TraceLog(LOG_ERROR, "Unknown texture info type: %d", txinfo->type);
