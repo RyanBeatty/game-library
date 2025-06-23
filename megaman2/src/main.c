@@ -4488,13 +4488,13 @@ static void StageTick(GameState* gstate) {
 
                 Vec2 uvscale = e->graphics.uvscale;
                 Vec2 uvoffset = e->graphics.uvoffset;
-                // if (!e->facing_left) {
-                //     // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
-                //     // Move the bottom left corner to the bottom right corner.
-                //     uvoffset.x = uvscale.x;
-                //     // Interpolate across from the bottom right corner to the top left corner.
-                //     uvscale.x *= -1.0f;
-                // }
+                if (!e->facing_left) {
+                    // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
+                    // Move the bottom left corner to the bottom right corner.
+                    uvoffset.x = uvscale.x;
+                    // Interpolate across from the bottom right corner to the top left corner.
+                    uvscale.x *= -1.0f;
+                }
 
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
