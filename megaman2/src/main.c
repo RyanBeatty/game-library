@@ -2502,18 +2502,21 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     TextureInfoDefault(&graphics->txinfo);
 }
 
-// c_src - bottom left hand corner of sprite (in png space, not uvspace)
-// r_src - full width/height of sprite in png space not uvspace.
-LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 c_src, Vec2 r_src, f32 orient, f32 scale) {
-    graphics->scale = Vec3Lit(r_src.x * scale, r_src.y * scale, 1.0f);
+// min - bottom left hand corner of sprite (in png space, not uvspace)
+// dims - full width/height of sprite in png space not uvspace.
+LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 min, Vec2 dims, f32 orient, f32 scale) {
+    graphics->scale = Vec3Lit(dims.x * scale, dims.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
     graphics->mid = GetMesh(M_QUAD);
 
-    graphics->txinfo.txid = tx.id;
-    // TODO: its possible we want these to be ints?
-    graphics->uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
-    graphics->uvoffset = Vec2Lit(c_src.x / tx.width, c_src.y / tx.height);
+    TextureInfo res = {0};
+    res.txid = tx.id;
+    res.type = TI_SPRITE;
+    res.sprite.minuv = Vec2Lit(min.x / tx.width, min.y / tx.height);
+    res.sprite.dimsuv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
+    res.tint = LCLEAR;
+    graphics->txinfo = res;
 }
 
 // Remember rect coords are in aseprite space.
@@ -2529,17 +2532,7 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
 
     graphics->mid = GetMesh(M_QUAD);
 
-    // graphics->txinfo.txid = tx.id;
-
     TextureInfoSetSpriteFromAseprite(&graphics->txinfo, tx, src);
-
-    // // TODO: its possible we want these to be ints? I dunno what this comment is talking about.
-    // // uvscale and offset should be in uv space which an aserect is not.
-    // src.lc = AsepritePosToFlipped(tx, src.lc);
-    // graphics->uvscale = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
-    // graphics->uvoffset = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
-
-    // breakpoint();
 }
 
 LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
