@@ -4198,6 +4198,10 @@ static void StageTick(GameState* gstate) {
                                         e->facing_left = false;
                                     }
 
+                                    if (IsKeyDown(KLEFT) || IsKeyDown(KRIGHT)) {
+                                        PSTATE = PS_WALKING;
+                                    }
+
                                     Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                                     if (IsKeyPressed(KJUMP)) {
                                         dy.y += WALK_DY_SPEED;
@@ -4255,6 +4259,9 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case PS_WALKING: {
+                            GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_WALK_CYCLE,
+                                                                 2.0f, 0.0f, 1.0f);
+
                             bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
                             if (walking) {
                                 Vec3 dx = Vec3Zero();
@@ -4460,6 +4467,7 @@ static void StageTick(GameState* gstate) {
                 case TI_ANIMATION: {
                     graphics->uvoffset = txinfo->animation.minuv;
                     graphics->uvscale = txinfo->animation.dimsuv;
+                    break;
                 }
                 default: {
                     TraceLog(LOG_ERROR, "Unknown texture info type: %d", txinfo->type);
