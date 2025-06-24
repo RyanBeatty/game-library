@@ -3778,6 +3778,7 @@ typedef enum {
     PS_NONE = 0,
     PS_IDLE,
     PS_CLIMBING,
+    PS_JUMPING,
     PS_DYING,
     PS_WALKING,
     PS_COUNT,
@@ -4167,11 +4168,148 @@ static void StageTick(GameState* gstate) {
                                  down_ladder != NULL ? LGREEN : LGRAY);
                     }
 
+                    //     switch (PSTATE) {
+                    //         case PS_IDLE: {
+                    //             GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE,
+                    //             0.0f, 1.0f);
+
+                    //             if (ground == NULL) {
+                    //                 GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
+                    //                 0.0f,
+                    //                                                   1.0f);
+                    //             }
+
+                    //             if (up_ladder != NULL && IsKeyDown(KUP)) {
+                    //                 e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
+                    //                 // Super hacky. we should be more rigorous about this eventually.
+                    //                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
+
+                    //                 PSTATE = PS_CLIMBING;
+                    //             } else if (down_ladder != NULL && ground == NULL && IsKeyDown(KDOWN)) {
+                    //                 e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
+                    //                 // Super hacky. we should be more rigorous about this eventually.
+                    //                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
+
+                    //                 PSTATE = PS_CLIMBING;
+                    //             } else {
+                    //                 // Movement.
+                    //                 {
+                    //                     Vec3 dx = Vec3Zero();
+                    //                     if (IsKeyDown(KLEFT)) {
+                    //                         dx.x -= WALK_DX_SPEED;
+                    //                         e->facing_left = true;
+                    //                     } else if (IsKeyDown(KRIGHT)) {
+                    //                         dx.x += WALK_DX_SPEED;
+                    //                         e->facing_left = false;
+                    //                     }
+
+                    //                     if (IsKeyDown(KLEFT) || IsKeyDown(KRIGHT)) {
+                    //                         PSTATE = PS_WALKING;
+                    //                     }
+
+                    //                     Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                    //                     if (IsKeyPressed(KJUMP)) {
+                    //                         dy.y += WALK_DY_SPEED;
+                    //                         GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                    //                         M_JUMP,
+                    //                                                           0.0f, 1.0f);
+                    //                     }
+
+                    //                     e->v =
+                    //                         Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY *
+                    //                         dt));
+                    //                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                    //                     if (IsKeyPressed(KSHOOT)) {
+                    //                         Entity* shot = AllocateEntity();
+                    //                         shot->pos = e->pos;
+                    //                         shot->v = Vec3Lit(100.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
+
+                    //                         shot->shape.type = PH_AABB2D;
+                    //                         shot->shape.aabb2d.c = Vec2Zero();
+                    //                         shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+
+                    //                         GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
+                    //                                              Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                    //                         FlagOn(shot->flags, EFLAG_PROJECTILE);
+                    //                     }
+                    //                 }
+                    //             }
+                    //             break;
+                    //         }
+                    //         case PS_CLIMBING: {
+                    //             static const f32 CLIMB_SPEED = 70.0f;
+
+                    //             if (down_ladder == NULL) {
+                    //                 PSTATE = PS_IDLE;
+                    //                 e->v = Vec3Zero();
+                    //             } else if (IsKeyDown(KDOWN) && ground != NULL) {
+                    //                 PSTATE = PS_IDLE;
+                    //             } else if (IsKeyPressed(KJUMP)) {
+                    //                 PSTATE = PS_IDLE;
+                    //                 // TODO: Having to set velocity here for this state change is messy.
+                    //                 e->v.y = 200.0f;
+
+                    //                 // Super hacky. we should be more rigorous about this eventually.
+                    //                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
+                    //             } else {
+                    //                 f32 dy = 0.0f;
+                    //                 if (IsKeyDown(KUP)) {
+                    //                     dy += CLIMB_SPEED;
+                    //                 } else if (IsKeyDown(KDOWN)) {
+                    //                     dy -= CLIMB_SPEED;
+                    //                 }
+
+                    //                 e->v = Vec3Lit(0.0f, dy, 0.0f);
+                    //                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    //             }
+                    //             break;
+                    //         }
+                    //         case PS_WALKING: {
+                    //             GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                    //             M_WALK_CYCLE,
+                    //                                                  2.0f, 0.0f, 1.0f);
+
+                    //             bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
+                    //             if (walking) {
+                    //                 Vec3 dx = Vec3Zero();
+                    //                 if (IsKeyDown(KLEFT)) {
+                    //                     dx.x -= WALK_DX_SPEED;
+                    //                     e->facing_left = true;
+                    //                 } else if (IsKeyDown(KRIGHT)) {
+                    //                     dx.x += WALK_DX_SPEED;
+                    //                     e->facing_left = false;
+                    //                 }
+
+                    //                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                    //                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY *
+                    //                 dt)); e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    //             } else {
+                    //                 PSTATE = PS_IDLE;
+                    //                 GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE,
+                    //                 0.0f,
+                    //                                                   1.0f);
+                    //             }
+                    //             break;
+                    //         }
+                    //         case PS_DYING: {
+                    //             SoftDeactivateEntity(e->id);
+                    //             SPAWNED = false;
+                    //             break;
+                    //         }
+                    //         default: {
+                    //             TraceLog(LOG_ERROR, "Unknown Player State %d", PSTATE);
+                    //             exit(0);
+                    //         }
+                    //     }
+                    // }
+
                     switch (PSTATE) {
                         case PS_IDLE: {
-                            GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
-
+                            // We are falling.
                             if (ground == NULL) {
+                                PSTATE = PS_JUMPING;
+                                e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
                                 GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
                                                                   1.0f);
                             }
@@ -4190,45 +4328,28 @@ static void StageTick(GameState* gstate) {
                                 PSTATE = PS_CLIMBING;
                             } else {
                                 // Movement.
-                                {
-                                    Vec3 dx = Vec3Zero();
-                                    if (IsKeyDown(KLEFT)) {
-                                        dx.x -= WALK_DX_SPEED;
-                                        e->facing_left = true;
-                                    } else if (IsKeyDown(KRIGHT)) {
-                                        dx.x += WALK_DX_SPEED;
-                                        e->facing_left = false;
-                                    }
-
-                                    if (IsKeyDown(KLEFT) || IsKeyDown(KRIGHT)) {
-                                        PSTATE = PS_WALKING;
-                                    }
-
-                                    Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
-                                    if (IsKeyPressed(KJUMP)) {
-                                        dy.y += WALK_DY_SPEED;
-                                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
-                                                                          0.0f, 1.0f);
-                                    }
-
-                                    e->v =
-                                        Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
-                                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-
-                                    if (IsKeyPressed(KSHOOT)) {
-                                        Entity* shot = AllocateEntity();
-                                        shot->pos = e->pos;
-                                        shot->v = Vec3Lit(100.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
-
-                                        shot->shape.type = PH_AABB2D;
-                                        shot->shape.aabb2d.c = Vec2Zero();
-                                        shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
-
-                                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
-                                                             Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
-                                        FlagOn(shot->flags, EFLAG_PROJECTILE);
-                                    }
+                                Vec3 dx = Vec3Zero();
+                                if (IsKeyDown(KLEFT)) {
+                                    dx.x -= WALK_DX_SPEED;
+                                    e->facing_left = true;
+                                } else if (IsKeyDown(KRIGHT)) {
+                                    dx.x += WALK_DX_SPEED;
+                                    e->facing_left = false;
                                 }
+
+                                if (IsKeyDown(KLEFT) || IsKeyDown(KRIGHT)) {
+                                    PSTATE = PS_WALKING;
+                                }
+
+                                Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                                if (IsKeyPressed(KJUMP)) {
+                                    PSTATE = PS_JUMPING;
+                                    dy.y += WALK_DY_SPEED;
+                                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
+                                                                      0.0f, 1.0f);
+                                }
+
+                                e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
                             }
                             break;
                         }
@@ -4241,7 +4362,7 @@ static void StageTick(GameState* gstate) {
                             } else if (IsKeyDown(KDOWN) && ground != NULL) {
                                 PSTATE = PS_IDLE;
                             } else if (IsKeyPressed(KJUMP)) {
-                                PSTATE = PS_IDLE;
+                                PSTATE = PS_JUMPING;
                                 // TODO: Having to set velocity here for this state change is messy.
                                 e->v.y = 200.0f;
 
@@ -4256,7 +4377,6 @@ static void StageTick(GameState* gstate) {
                                 }
 
                                 e->v = Vec3Lit(0.0f, dy, 0.0f);
-                                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                             }
                             break;
                         }
@@ -4277,12 +4397,47 @@ static void StageTick(GameState* gstate) {
 
                                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
-                                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                             } else {
                                 PSTATE = PS_IDLE;
                                 GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f,
                                                                   1.0f);
                             }
+                            break;
+                        }
+                        case PS_JUMPING: {
+                            // Movement.
+                            Vec3 dx = Vec3Zero();
+                            if (IsKeyDown(KLEFT)) {
+                                dx.x -= WALK_DX_SPEED;
+                                e->facing_left = true;
+                            } else if (IsKeyDown(KRIGHT)) {
+                                dx.x += WALK_DX_SPEED;
+                                e->facing_left = false;
+                            }
+
+                            Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                            // if (IsKeyPressed(KJUMP)) {
+                            //     PSTATE = PS_JUMPING;
+                            //     dy.y += WALK_DY_SPEED;
+                            //     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
+                            //                                       1.0f);
+                            // }
+
+                            e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
+
+                            bool moving = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
+                            if (ground != NULL) {
+                                if (moving) {
+                                    PSTATE = PS_WALKING;
+                                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                                                                         M_WALK_CYCLE, 1.0f, 0.0f, 1.0f);
+                                } else {
+                                    PSTATE = PS_IDLE;
+                                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE,
+                                                                      0.0f, 1.0f);
+                                }
+                            }
+
                             break;
                         }
                         case PS_DYING: {
@@ -4295,6 +4450,21 @@ static void StageTick(GameState* gstate) {
                             exit(0);
                         }
                     }
+                }
+
+                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+
+                if (IsKeyPressed(KSHOOT)) {
+                    Entity* shot = AllocateEntity();
+                    shot->pos = e->pos;
+                    shot->v = Vec3Lit(100.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
+
+                    shot->shape.type = PH_AABB2D;
+                    shot->shape.aabb2d.c = Vec2Zero();
+                    shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+
+                    GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                    FlagOn(shot->flags, EFLAG_PROJECTILE);
                 }
 
                 if (TestFlag(e->flags, EFLAG_MOB)) {
