@@ -4345,6 +4345,8 @@ static void StageTick(GameState* gstate) {
                                                                       0.0f, 1.0f);
                                 } else if (walking) {
                                     PSTATE = PS_WALKING;
+                                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                                                                         M_WALK_CYCLE, 1.0f, 0.0f, 1.0f);
                                 }
 
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
@@ -4382,11 +4384,15 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case PS_WALKING: {
-                            GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_WALK_CYCLE,
-                                                                 2.0f, 0.0f, 1.0f);
-
                             bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
-                            if (walking) {
+
+                            // We are falling.
+                            if (ground == NULL) {
+                                PSTATE = PS_JUMPING;
+                                e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
+                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
+                                                                  1.0f);
+                            } else if (walking) {
                                 Vec3 dx = Vec3Zero();
                                 if (IsKeyDown(KLEFT)) {
                                     dx.x -= WALK_DX_SPEED;
