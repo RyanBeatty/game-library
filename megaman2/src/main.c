@@ -4312,9 +4312,7 @@ static void StageTick(GameState* gstate) {
                                 e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
                                 GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
                                                                   1.0f);
-                            }
-
-                            if (up_ladder != NULL && IsKeyDown(KUP)) {
+                            } else if (up_ladder != NULL && IsKeyDown(KUP)) {
                                 e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
@@ -4337,9 +4335,7 @@ static void StageTick(GameState* gstate) {
                                     e->facing_left = false;
                                 }
 
-                                if (IsKeyDown(KLEFT) || IsKeyDown(KRIGHT)) {
-                                    PSTATE = PS_WALKING;
-                                }
+                                bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
 
                                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                                 if (IsKeyPressed(KJUMP)) {
@@ -4347,6 +4343,8 @@ static void StageTick(GameState* gstate) {
                                     dy.y += WALK_DY_SPEED;
                                     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
                                                                       0.0f, 1.0f);
+                                } else if (walking) {
+                                    PSTATE = PS_WALKING;
                                 }
 
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
@@ -4368,6 +4366,9 @@ static void StageTick(GameState* gstate) {
 
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
+
+                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
+                                                                  1.0f);
                             } else {
                                 f32 dy = 0.0f;
                                 if (IsKeyDown(KUP)) {
@@ -4396,6 +4397,13 @@ static void StageTick(GameState* gstate) {
                                 }
 
                                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
+                                if (IsKeyPressed(KJUMP)) {
+                                    PSTATE = PS_JUMPING;
+                                    dy.y += WALK_DY_SPEED;
+                                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
+                                                                      0.0f, 1.0f);
+                                }
+
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
                             } else {
                                 PSTATE = PS_IDLE;
