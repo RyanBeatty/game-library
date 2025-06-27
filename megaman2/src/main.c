@@ -3983,6 +3983,8 @@ static void StageTick(GameState* gstate) {
         .nframes = 2,
     };
 
+    static const AseRect M_SHOOT_IDLE = {.lc = Vec2Lit(102.0f, 353.0f), .r = Vec2Lit(31.0f, 24.0f)};
+
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
     pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
@@ -4388,16 +4390,22 @@ static void StageTick(GameState* gstate) {
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
                     if (IsKeyPressed(KSHOOT)) {
-                        Entity* shot = AllocateEntity();
-                        shot->pos = e->pos;
-                        shot->v = Vec3Lit(100.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
+                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_SHOOT_IDLE, 0.0f,
+                                                          1.0f);
 
-                        shot->shape.type = PH_AABB2D;
-                        shot->shape.aabb2d.c = Vec2Zero();
-                        shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+                        // Spawn shot.
+                        {
+                            Entity* shot = AllocateEntity();
+                            shot->pos = e->pos;
+                            shot->v = Vec3Lit(100.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
 
-                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
-                        FlagOn(shot->flags, EFLAG_PROJECTILE);
+                            shot->shape.type = PH_AABB2D;
+                            shot->shape.aabb2d.c = Vec2Zero();
+                            shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+
+                            GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                            FlagOn(shot->flags, EFLAG_PROJECTILE);
+                        }
                     }
                 }
 
