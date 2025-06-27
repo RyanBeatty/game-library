@@ -4237,8 +4237,12 @@ static void StageTick(GameState* gstate) {
                             if (down_ladder == NULL) {
                                 PSTATE = PS_IDLE;
                                 e->v = Vec3Zero();
+                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f,
+                                                                  1.0f);
                             } else if (IsKeyDown(KDOWN) && ground != NULL) {
                                 PSTATE = PS_IDLE;
+                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f,
+                                                                  1.0f);
                             } else if (IsKeyPressed(KJUMP)) {
                                 PSTATE = PS_JUMPING;
                                 // TODO: Having to set velocity here for this state change is messy.
