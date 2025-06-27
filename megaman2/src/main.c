@@ -2437,10 +2437,13 @@ typedef struct {
 
             // n frames in animation.
             u32 nframes;
-            // Delta time we've currently spent playing animation.
-            f32 frames_dt;
-            // Maximum time duration of the animation.
-            f32 frames_time;
+            // Index of what frame we are on in the animation.
+            u32 frame;
+
+            // // Delta time we've currently spent playing animation.
+            // f32 frames_dt;
+            // // Maximum time duration of the animation.
+            // f32 frames_time;
         } animation;
     };
 
@@ -2533,7 +2536,7 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
 }
 
 LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
-                                                f32 frames_time, f32 orient, f32 scale) {
+                                                f32 orient, f32 scale) {
     graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
@@ -2550,8 +2553,6 @@ LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture
     txinfo.animation.dimsuv = Vec2Lit(animation.start.r.x * width_inv, animation.start.r.y * height_inv);
     txinfo.animation.stepuv = Vec2Lit(animation.step.x * width_inv, animation.step.y * height_inv);
     txinfo.animation.nframes = animation.nframes;
-    txinfo.animation.frames_dt = 0.0f;
-    txinfo.animation.frames_time = frames_time;
     txinfo.tint = LCLEAR;
 
     graphics->txinfo = txinfo;
@@ -4346,7 +4347,7 @@ static void StageTick(GameState* gstate) {
                                 } else if (walking) {
                                     PSTATE = PS_WALKING;
                                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
-                                                                         M_WALK_CYCLE, 1.0f, 0.0f, 1.0f);
+                                                                         M_WALK_CYCLE, 0.0f, 1.0f);
                                 }
 
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
@@ -4444,7 +4445,7 @@ static void StageTick(GameState* gstate) {
                                 if (moving) {
                                     PSTATE = PS_WALKING;
                                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
-                                                                         M_WALK_CYCLE, 1.0f, 0.0f, 1.0f);
+                                                                         M_WALK_CYCLE, 0.0f, 1.0f);
                                 } else {
                                     PSTATE = PS_IDLE;
                                     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE,
