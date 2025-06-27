@@ -2439,6 +2439,8 @@ typedef struct {
             u32 nframes;
             // Index of what frame we are on in the animation.
             u32 frame;
+            // Time spent in current frame.
+            f32 frame_dt;
 
             // // Delta time we've currently spent playing animation.
             // f32 frames_dt;
@@ -2554,6 +2556,7 @@ LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture
     txinfo.animation.stepuv = Vec2Lit(animation.step.x * width_inv, animation.step.y * height_inv);
     txinfo.animation.nframes = animation.nframes;
     txinfo.animation.frame = 0;
+    txinfo.animation.frame_dt = 0.0f;
     txinfo.tint = LCLEAR;
 
     graphics->txinfo = txinfo;
@@ -3990,7 +3993,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 1;
+        u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -4410,6 +4413,28 @@ static void StageTick(GameState* gstate) {
                                     dy.y += WALK_DY_SPEED;
                                     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
                                                                       0.0f, 1.0f);
+                                } else {
+                                    // Kind of a hacky ish way to control the walk cycle animation but seems to work.
+                                    if (e->graphics.txinfo.animation.frame_dt >= (8.0f / 60.0f)) {
+                                        static bool FORWARD = true;
+                                        e->graphics.txinfo.animation.frame_dt = 0.0f;
+
+                                        if (FORWARD) {
+                                            ++e->graphics.txinfo.animation.frame;
+                                            if (e->graphics.txinfo.animation.frame >=
+                                                e->graphics.txinfo.animation.nframes) {
+                                                e->graphics.txinfo.animation.frame -= 2;
+                                                FORWARD = false;
+                                            }
+                                        } else {
+                                            if (e->graphics.txinfo.animation.frame == 0) {
+                                                e->graphics.txinfo.animation.frame = 1;
+                                                FORWARD = true;
+                                            } else {
+                                                --e->graphics.txinfo.animation.frame;
+                                            }
+                                        }
+                                    }
                                 }
 
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
@@ -4654,8 +4679,9 @@ static void StageTick(GameState* gstate) {
                 }
                 case TI_ANIMATION: {
                     graphics->uvoffset =
-                        Vec2Add(txinfo->animation.minuv, Vec2Scale(txinfo->animation.stepuv, txinfo->animation));
+                        Vec2Add(txinfo->animation.minuv, Vec2Scale(txinfo->animation.stepuv, txinfo->animation.frame));
                     graphics->uvscale = txinfo->animation.dimsuv;
+                    graphics->txinfo.animation.frame_dt += dt;
                     break;
                 }
                 default: {
