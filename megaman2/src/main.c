@@ -2553,6 +2553,7 @@ LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture
     txinfo.animation.dimsuv = Vec2Lit(animation.start.r.x * width_inv, animation.start.r.y * height_inv);
     txinfo.animation.stepuv = Vec2Lit(animation.step.x * width_inv, animation.step.y * height_inv);
     txinfo.animation.nframes = animation.nframes;
+    txinfo.animation.frame = 0;
     txinfo.tint = LCLEAR;
 
     graphics->txinfo = txinfo;
@@ -4652,7 +4653,8 @@ static void StageTick(GameState* gstate) {
                     break;
                 }
                 case TI_ANIMATION: {
-                    graphics->uvoffset = txinfo->animation.minuv;
+                    graphics->uvoffset =
+                        Vec2Add(txinfo->animation.minuv, Vec2Scale(txinfo->animation.stepuv, txinfo->animation));
                     graphics->uvscale = txinfo->animation.dimsuv;
                     break;
                 }
@@ -4685,7 +4687,7 @@ static void StageTick(GameState* gstate) {
                 if (!e->facing_left) {
                     // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
                     // Move the bottom left corner to the bottom right corner.
-                    uvoffset.x = uvscale.x;
+                    uvoffset.x += uvscale.x;
                     // Interpolate across from the bottom right corner to the top left corner.
                     uvscale.x *= -1.0f;
                 }
