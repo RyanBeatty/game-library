@@ -3979,7 +3979,7 @@ static void StageTick(GameState* gstate) {
     };
     static const AnimationAseRect M_CLIMB_CYCLE = {
         .start = {.lc = Vec2Lit(1.0f, 167.0f), .r = Vec2Lit(16.0f, 29.0f)},
-        .step = Vec2Lit(30.0f, 0.0f),
+        .step = Vec2Lit(17.0f, 0.0f),
         .nframes = 2,
     };
 
@@ -4262,6 +4262,20 @@ static void StageTick(GameState* gstate) {
                                 }
 
                                 e->v = Vec3Lit(0.0f, dy, 0.0f);
+
+                                // Update animation.
+                                {
+                                    bool climbing = IsKeyDown(KUP) || IsKeyDown(KDOWN);
+                                    if (climbing) {
+                                        e->graphics.txinfo.animation.frame_dt += dt;
+
+                                        if (e->graphics.txinfo.animation.frame_dt >= (8.0f / 60.0f)) {
+                                            e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                            ++e->graphics.txinfo.animation.frame;
+                                            e->graphics.txinfo.animation.frame %= e->graphics.txinfo.animation.nframes;
+                                        }
+                                    }
+                                }
                             }
                             break;
                         }
