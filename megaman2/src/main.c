@@ -4291,6 +4291,8 @@ static void StageTick(GameState* gstate) {
                                     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
                                                                       0.0f, 1.0f);
                                 } else {
+                                    e->graphics.txinfo.animation.frame_dt += dt;
+
                                     // Kind of a hacky ish way to control the walk cycle animation but seems to work.
                                     if (e->graphics.txinfo.animation.frame_dt >= (8.0f / 60.0f)) {
                                         static bool FORWARD = true;
@@ -4558,7 +4560,6 @@ static void StageTick(GameState* gstate) {
                     graphics->uvoffset =
                         Vec2Add(txinfo->animation.minuv, Vec2Scale(txinfo->animation.stepuv, txinfo->animation.frame));
                     graphics->uvscale = txinfo->animation.dimsuv;
-                    graphics->txinfo.animation.frame_dt += dt;
                     break;
                 }
                 default: {
