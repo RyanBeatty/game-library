@@ -4086,6 +4086,8 @@ static void StageTick(GameState* gstate) {
                     static const f32 WALK_DX_SPEED = 50.0f;
                     static const f32 WALK_DY_SPEED = 200.0f;
                     static const f32 GRAVITY = 350.0f;
+                    static f32 SHOOT_COOLDOWN = 0.0f;
+                    static bool SHOOTING = false;
 
                     if (e->health <= 0) {
                         PSTATE = PS_DYING;
@@ -4389,7 +4391,15 @@ static void StageTick(GameState* gstate) {
 
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
-                    if (IsKeyPressed(KSHOOT)) {
+                    SHOOT_COOLDOWN += dt;
+                    if (SHOOT_COOLDOWN >= (20.0f / 60.0f)) {
+                        SHOOTING = false;
+                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+                    }
+
+                    if (IsKeyPressed(KSHOOT) && SHOOT_COOLDOWN >= (6.0f / 60.0f)) {
+                        SHOOTING = true;
+                        SHOOT_COOLDOWN = 0.0f;
                         GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_SHOOT_IDLE, 0.0f,
                                                           1.0f);
 
@@ -4406,6 +4416,9 @@ static void StageTick(GameState* gstate) {
                             GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
                             FlagOn(shot->flags, EFLAG_PROJECTILE);
                         }
+                    } else if (SHOOTING) {
+                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_SHOOT_IDLE, 0.0f,
+                                                          1.0f);
                     }
                 }
 
