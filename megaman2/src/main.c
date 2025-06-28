@@ -3962,14 +3962,7 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
     }
 }
 
-static void StageTick(GameState* gstate) {
-    static LCamera CAMERA = {0};
-    static bool SPAWNED = false;
-    static PlayerState PSTATE = PS_NONE;
-    static float CAMERA_TRANSITION_DT = 0.0f;
-    static bool CAMERA_TRANSITIONING = false;
-    static Vec3 CAMERA_EYE_START = {0};
-
+static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pstate, bool shooting) {
     static const AseRect M_IDLE = {.lc = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
     static const AseRect M_JUMP = {.lc = Vec2Lit(1.0f, 409.0f), .r = Vec2Lit(32.0f, 32.0f)};
     static const AnimationAseRect M_WALK_CYCLE = {
@@ -3989,6 +3982,43 @@ static void StageTick(GameState* gstate) {
         .step = Vec2Lit(33.0f, 0.0f),
         .nframes = 3,
     };
+
+    LTexture tx = GetTexture(TX_MEGAMAN);
+    switch (pstate) {
+        case PS_IDLE: {
+            if (shooting) {
+                GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_SHOOT_IDLE, 0.0f, 1.0f);
+            } else {
+                GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_IDLE, 0.0f, 1.0f);
+            }
+            break;
+        }
+        case PS_CLIMBING: {
+            GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_CLIMB_CYCLE, 0.0f, 1.0f);
+            break;
+        }
+        case PS_WALKING: {
+            GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_WALK_CYCLE, 0.0f, 1.0f);
+            break;
+        }
+        case PS_JUMPING: {
+            GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_JUMP, 0.0f, 1.0f);
+            break;
+        }
+        default: {
+            TraceLog(LOG_ERROR, "Unknown player state: %d", pstate);
+            exit(1);
+        }
+    }
+}
+
+static void StageTick(GameState* gstate) {
+    static LCamera CAMERA = {0};
+    static bool SPAWNED = false;
+    static PlayerState PSTATE = PS_NONE;
+    static float CAMERA_TRANSITION_DT = 0.0f;
+    static bool CAMERA_TRANSITIONING = false;
+    static Vec3 CAMERA_EYE_START = {0};
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -4193,24 +4223,21 @@ static void StageTick(GameState* gstate) {
                             if (ground == NULL) {
                                 PSTATE = PS_JUMPING;
                                 e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
-                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
-                                                                  1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else if (up_ladder != NULL && IsKeyDown(KUP)) {
                                 e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
 
                                 PSTATE = PS_CLIMBING;
-                                GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
-                                                                     M_CLIMB_CYCLE, 0.0f, 1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else if (down_ladder != NULL && ground == NULL && IsKeyDown(KDOWN)) {
                                 e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
 
                                 PSTATE = PS_CLIMBING;
-                                GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
-                                                                     M_CLIMB_CYCLE, 0.0f, 1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else {
                                 // Movement.
                                 Vec3 dx = Vec3Zero();
@@ -4228,12 +4255,10 @@ static void StageTick(GameState* gstate) {
                                 if (IsKeyPressed(KJUMP)) {
                                     PSTATE = PS_JUMPING;
                                     dy.y += WALK_DY_SPEED;
-                                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
-                                                                      0.0f, 1.0f);
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 } else if (walking) {
                                     PSTATE = PS_WALKING;
-                                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
-                                                                         M_WALK_CYCLE, 0.0f, 1.0f);
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 }
 
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
@@ -4246,12 +4271,10 @@ static void StageTick(GameState* gstate) {
                             if (down_ladder == NULL) {
                                 PSTATE = PS_IDLE;
                                 e->v = Vec3Zero();
-                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f,
-                                                                  1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else if (IsKeyDown(KDOWN) && ground != NULL) {
                                 PSTATE = PS_IDLE;
-                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f,
-                                                                  1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else if (IsKeyPressed(KJUMP)) {
                                 PSTATE = PS_JUMPING;
                                 // TODO: Having to set velocity here for this state change is messy.
@@ -4260,8 +4283,7 @@ static void StageTick(GameState* gstate) {
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
 
-                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
-                                                                  1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else {
                                 f32 dy = 0.0f;
                                 if (IsKeyDown(KUP)) {
@@ -4295,8 +4317,7 @@ static void StageTick(GameState* gstate) {
                             if (ground == NULL) {
                                 PSTATE = PS_JUMPING;
                                 e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
-                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
-                                                                  1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else if (walking) {
                                 Vec3 dx = Vec3Zero();
                                 if (IsKeyDown(KLEFT)) {
@@ -4311,8 +4332,7 @@ static void StageTick(GameState* gstate) {
                                 if (IsKeyPressed(KJUMP)) {
                                     PSTATE = PS_JUMPING;
                                     dy.y += WALK_DY_SPEED;
-                                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
-                                                                      0.0f, 1.0f);
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 } else {
                                     e->graphics.txinfo.animation.frame_dt += dt;
 
@@ -4342,8 +4362,7 @@ static void StageTick(GameState* gstate) {
                                 e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
                             } else {
                                 PSTATE = PS_IDLE;
-                                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f,
-                                                                  1.0f);
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             }
                             break;
                         }
@@ -4372,12 +4391,10 @@ static void StageTick(GameState* gstate) {
                             if (ground != NULL) {
                                 if (moving) {
                                     PSTATE = PS_WALKING;
-                                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
-                                                                         M_WALK_CYCLE, 0.0f, 1.0f);
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 } else {
                                     PSTATE = PS_IDLE;
-                                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE,
-                                                                      0.0f, 1.0f);
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 }
                             }
 
@@ -4400,15 +4417,14 @@ static void StageTick(GameState* gstate) {
                     if (SHOOT_COOLDOWN >= (20.0f / 60.0f)) {
                         if (SHOOTING) {
                             SHOOTING = false;
-                            GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+                            GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                         }
                     }
 
                     if (IsKeyPressed(KSHOOT) && SHOOT_COOLDOWN >= (6.0f / 60.0f)) {
                         SHOOTING = true;
                         SHOOT_COOLDOWN = 0.0f;
-                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_SHOOT_IDLE, 0.0f,
-                                                          1.0f);
+                        GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
 
                         // Spawn shot.
                         {
@@ -4423,10 +4439,14 @@ static void StageTick(GameState* gstate) {
                             GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
                             FlagOn(shot->flags, EFLAG_PROJECTILE);
                         }
-                    } else if (SHOOTING) {
-                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_SHOOT_IDLE, 0.0f,
-                                                          1.0f);
                     }
+                    // else if (SHOOTING) {
+                    //     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
+
+                    //     // GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_SHOOT_IDLE,
+                    //     0.0f,
+                    //     //                                   1.0f);
+                    // }
                 }
 
                 if (TestFlag(e->flags, EFLAG_MOB)) {
