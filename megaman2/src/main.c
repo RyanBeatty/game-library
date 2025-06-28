@@ -3984,6 +3984,11 @@ static void StageTick(GameState* gstate) {
     };
 
     static const AseRect M_SHOOT_IDLE = {.lc = Vec2Lit(102.0f, 353.0f), .r = Vec2Lit(31.0f, 24.0f)};
+    static const AnimationAseRect M_SHOOT_WALK_CYCLE = {
+        .start = {.lc = Vec2Lit(131.0f, 386.0f), .r = Vec2Lit(32.0f, 24.0f)},
+        .step = Vec2Lit(33.0f, 0.0f),
+        .nframes = 3,
+    };
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -4000,7 +4005,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 1;
+        u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -4393,8 +4398,10 @@ static void StageTick(GameState* gstate) {
 
                     SHOOT_COOLDOWN += dt;
                     if (SHOOT_COOLDOWN >= (20.0f / 60.0f)) {
-                        SHOOTING = false;
-                        GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+                        if (SHOOTING) {
+                            SHOOTING = false;
+                            GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+                        }
                     }
 
                     if (IsKeyPressed(KSHOOT) && SHOOT_COOLDOWN >= (6.0f / 60.0f)) {
