@@ -4631,7 +4631,7 @@ static void StageTick(GameState* gstate) {
 
         if (TestFlag(e->flags, EFLAG_DRAW)) {
             GraphicsInfo* graphics = &e->graphics;
-            graphics->pos = Vec3Add(e->pos, graphics->pos_offset);
+            graphics->pos = Vec3Add(e->pos, Vec3Scale(graphics->pos_offset, e->facing_left ? -1.0f : 1.0f));
             graphics->orient = e->orient;
 
             TextureInfo* txinfo = &graphics->txinfo;
