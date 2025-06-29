@@ -3999,7 +3999,6 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
         }
         case PS_WALKING: {
             if (shooting) {
-                // TODO: I think this works, but need to double check that all frames are actually playing
                 GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_SHOOT_WALK_CYCLE, 0.0f, 1.0f);
             } else {
                 GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_WALK_CYCLE, 0.0f, 1.0f);
@@ -4427,9 +4426,13 @@ static void StageTick(GameState* gstate) {
                     }
 
                     if (IsKeyPressed(KSHOOT) && SHOOT_COOLDOWN >= (6.0f / 60.0f)) {
+                        // If we are shooting, don't update the visuals or else shooting animations will
+                        // always restart from frame 0.
+                        if (!SHOOTING) {
+                            GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, true);
+                        }
                         SHOOTING = true;
                         SHOOT_COOLDOWN = 0.0f;
-                        GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
 
                         // Spawn shot.
                         {
