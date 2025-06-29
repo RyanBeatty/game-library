@@ -2642,6 +2642,9 @@ typedef struct {
     u32 room_link;  // Used for room exit triggers.
     bool facing_left;
 
+    EntityId attacker_id;
+    Vec3 attack_dir;
+
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -2699,6 +2702,9 @@ LCORE Entity* AllocateEntity() {
     PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
+
+    entity->attacker_id = NULLID;
+    entity->attack_dir = Vec3Zero();
     return entity;
 }
 
@@ -3794,6 +3800,7 @@ typedef enum {
     PS_JUMPING,
     PS_DYING,
     PS_WALKING,
+    PS_HURT,
     PS_COUNT,
 } PlayerState;
 
@@ -3983,7 +3990,9 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
         .step = Vec2Lit(17.0f, 0.0f),
         .nframes = 2,
     };
+    static const AseRect M_HURT = {.lc = Vec2Lit(140.0f, 279.0f), .r = Vec2Lit(32.0f, 32.0f)};
 
+    // Shooting related visuals.
     static const AseRect M_SHOOT_IDLE = {.lc = Vec2Lit(102.0f, 353.0f), .r = Vec2Lit(31.0f, 24.0f)};
     static const AnimationAseRect M_SHOOT_WALK_CYCLE = {
         .start = {.lc = Vec2Lit(131.0f, 386.0f), .r = Vec2Lit(32.0f, 24.0f)},
@@ -4031,6 +4040,11 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
             }
             break;
         }
+        case PS_HURT: {
+            GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_HURT, 0.0f, 1.0f);
+            graphics->pos_offset = Vec3Lit(0.0f, -3.0f, 0.0f);
+            break;
+        }
         default: {
             TraceLog(LOG_ERROR, "Unknown player state: %d", pstate);
             exit(1);
@@ -4061,7 +4075,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 1;
+        u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -4131,7 +4145,7 @@ static void StageTick(GameState* gstate) {
                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, false);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
-                e->health = 1;
+                e->health = 4;
             }
 
             // Update.
@@ -4149,6 +4163,22 @@ static void StageTick(GameState* gstate) {
                     static const f32 GRAVITY = 350.0f;
                     static f32 SHOOT_COOLDOWN = 0.0f;
                     static bool SHOOTING = false;
+                    static f32 HITSTUN_COOLDOWN_DT = 0.0f;
+
+                    HITSTUN_COOLDOWN_DT += dt;
+                    if (e->attacker_id != NULLID && PSTATE != PS_HURT) {
+                        PSTATE = PS_HURT;
+                        HITSTUN_COOLDOWN_DT = 0.0f;
+                        GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
+                        --e->health;
+                        // Get x direction to move. if attack is perp and this == 0, then just pick a direciton.
+                        f32 dir = Vec3Dot(e->attack_dir, Vec3Lit(1.0f, 0.0f, 0.0f));
+                        Vec3 v = Vec3Zero();
+                        v.x = (dir >= 0.0f ? 1.0f : -1.0f) * WALK_DX_SPEED;
+                        e->v = v;
+                    }
+                    e->attacker_id = NULLID;
+                    e->attack_dir = Vec3Zero();
 
                     if (e->health <= 0) {
                         PSTATE = PS_DYING;
@@ -4439,6 +4469,14 @@ static void StageTick(GameState* gstate) {
 
                             break;
                         }
+                        case PS_HURT: {
+                            if (HITSTUN_COOLDOWN_DT >= 0.8f) {
+                                PSTATE = PS_IDLE;
+                                SHOOTING = false;
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
+                            }
+                            break;
+                        }
                         case PS_DYING: {
                             SoftDeactivateEntity(e->id);
                             SPAWNED = false;
@@ -4582,7 +4620,11 @@ static void StageTick(GameState* gstate) {
 
                         if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_MOB)) {
                             Entity* player = e0;
-                            --player->health;
+                            Entity* attacker = e1;
+                            if (player->attacker_id == NULLID) {
+                                player->attacker_id = attacker->id;
+                                player->attack_dir = info->normal;
+                            }
                         }
 
                         if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_EXIT)) {
