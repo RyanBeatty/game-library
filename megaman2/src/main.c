@@ -2481,6 +2481,12 @@ typedef struct {
     Vec2 uvscale;
     //////////////////////////////////////
 
+    //////////////////////////////////////
+    // Add static offset to the visual position of the graphics. Useful for example when you want to
+    // offset a sprite so that it lines up with a different sprite of a different bounding box shape.
+    Vec3 pos_offset;
+    //////////////////////////////////////
+
     TextureInfo txinfo;
 } GraphicsInfo;
 
@@ -2492,6 +2498,8 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 
     graphics->uvscale = Vec2Lit(1.0f, 1.0f);
     graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
+
+    graphics->pos_offset = Vec3Zero();
 
     TextureInfoDefault(&graphics->txinfo);
 }
@@ -3985,6 +3993,9 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
     static const AseRect M_SHOOT_JUMP = {.lc = Vec2Lit(160.0f, 353.0f), .r = Vec2Lit(32.0f, 32.0f)};
     static const AseRect M_SHOOT_CLIMB = {.lc = Vec2Lit(57.0f, 181.0f), .r = Vec2Lit(24.0f, 32.0f)};
 
+    // TODO: Hacky. I should be setting this properly on the graphics info.
+    graphics->pos_offset = Vec3Zero();
+
     LTexture tx = GetTexture(TX_MEGAMAN);
     switch (pstate) {
         case PS_IDLE: {
@@ -3998,6 +4009,7 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
         case PS_CLIMBING: {
             if (shooting) {
                 GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_SHOOT_CLIMB, 0.0f, 1.0f);
+                graphics->pos_offset = Vec3Lit(4.0f, 0.0f, 0.0f);
             } else {
                 GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_CLIMB_CYCLE, 0.0f, 1.0f);
             }
@@ -4049,7 +4061,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 0;
+        u32 room_idx = 1;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -4619,7 +4631,7 @@ static void StageTick(GameState* gstate) {
 
         if (TestFlag(e->flags, EFLAG_DRAW)) {
             GraphicsInfo* graphics = &e->graphics;
-            graphics->pos = e->pos;
+            graphics->pos = Vec3Add(e->pos, graphics->pos_offset);
             graphics->orient = e->orient;
 
             TextureInfo* txinfo = &graphics->txinfo;
@@ -4640,6 +4652,14 @@ static void StageTick(GameState* gstate) {
                     exit(1);
                 }
             }
+
+            if (!e->facing_left) {
+                // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
+                // Move the bottom left corner to the bottom right corner.
+                graphics->uvoffset.x += graphics->uvscale.x;
+                // Interpolate across from the bottom right corner to the top left corner.
+                graphics->uvscale.x *= -1.0f;
+            }
         }
     }
 
@@ -4659,20 +4679,10 @@ static void StageTick(GameState* gstate) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 DrawCmd* cmd = AddDrawMeshCmd();
 
-                Vec2 uvscale = e->graphics.uvscale;
-                Vec2 uvoffset = e->graphics.uvoffset;
-                if (!e->facing_left) {
-                    // Flip sprite horizontally. Requires GL_REPEAT wrap mode.
-                    // Move the bottom left corner to the bottom right corner.
-                    uvoffset.x += uvscale.x;
-                    // Interpolate across from the bottom right corner to the top left corner.
-                    uvscale.x *= -1.0f;
-                }
-
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
-                cmd->meshcmd.uvscale = uvscale;
-                cmd->meshcmd.uvoffset = uvoffset;
+                cmd->meshcmd.uvoffset = e->graphics.uvoffset;
+                cmd->meshcmd.uvscale = e->graphics.uvscale;
                 cmd->meshcmd.txid = e->graphics.txinfo.txid;
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
