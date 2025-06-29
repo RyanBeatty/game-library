@@ -4294,46 +4294,59 @@ static void StageTick(GameState* gstate) {
                         case PS_CLIMBING: {
                             static const f32 CLIMB_SPEED = 70.0f;
 
-                            if (down_ladder == NULL) {
-                                PSTATE = PS_IDLE;
-                                e->v = Vec3Zero();
-                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else if (IsKeyDown(KDOWN) && ground != NULL) {
-                                PSTATE = PS_IDLE;
-                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else if (IsKeyPressed(KJUMP)) {
-                                PSTATE = PS_JUMPING;
-                                // TODO: Having to set velocity here for this state change is messy.
-                                e->v.y = 200.0f;
+                            // Freeze climbing actions while shooting.
+                            // Make sure we zero out y velocity or else if we are moving on ladder
+                            // then shoot we will continue moving.
+                            f32 dy = 0.0f;
+                            if (!SHOOTING) {
+                                if (down_ladder == NULL) {
+                                    PSTATE = PS_IDLE;
+                                    e->v = Vec3Zero();
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
+                                } else if (IsKeyDown(KDOWN) && ground != NULL) {
+                                    PSTATE = PS_IDLE;
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
+                                } else if (IsKeyPressed(KJUMP)) {
+                                    PSTATE = PS_JUMPING;
+                                    // TODO: Having to set velocity here for this state change is messy.
+                                    e->v.y = 200.0f;
 
-                                // Super hacky. we should be more rigorous about this eventually.
-                                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
+                                    // Super hacky. we should be more rigorous about this eventually.
+                                    PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(24.0f, 24.0f));
 
-                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else {
-                                f32 dy = 0.0f;
-                                if (IsKeyDown(KUP)) {
-                                    dy += CLIMB_SPEED;
-                                } else if (IsKeyDown(KDOWN)) {
-                                    dy -= CLIMB_SPEED;
-                                }
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
+                                } else {
+                                    if (IsKeyDown(KLEFT)) {
+                                        e->facing_left = true;
+                                    } else if (IsKeyDown(KRIGHT)) {
+                                        e->facing_left = false;
+                                    }
 
-                                e->v = Vec3Lit(0.0f, dy, 0.0f);
+                                    if (IsKeyDown(KUP)) {
+                                        dy += CLIMB_SPEED;
+                                    } else if (IsKeyDown(KDOWN)) {
+                                        dy -= CLIMB_SPEED;
+                                    }
 
-                                // Update animation.
-                                {
-                                    bool climbing = IsKeyDown(KUP) || IsKeyDown(KDOWN);
-                                    if (climbing) {
-                                        e->graphics.txinfo.animation.frame_dt += dt;
+                                    // Update animation.
+                                    {
+                                        bool climbing = IsKeyDown(KUP) || IsKeyDown(KDOWN);
+                                        if (climbing) {
+                                            e->graphics.txinfo.animation.frame_dt += dt;
 
-                                        if (e->graphics.txinfo.animation.frame_dt >= (8.0f / 60.0f)) {
-                                            e->graphics.txinfo.animation.frame_dt = 0.0f;
-                                            ++e->graphics.txinfo.animation.frame;
-                                            e->graphics.txinfo.animation.frame %= e->graphics.txinfo.animation.nframes;
+                                            if (e->graphics.txinfo.animation.frame_dt >= (8.0f / 60.0f)) {
+                                                e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                                ++e->graphics.txinfo.animation.frame;
+                                                e->graphics.txinfo.animation.frame %=
+                                                    e->graphics.txinfo.animation.nframes;
+                                            }
                                         }
                                     }
                                 }
                             }
+
+                            e->v = Vec3Lit(0.0f, dy, 0.0f);
+
                             break;
                         }
                         case PS_WALKING: {
