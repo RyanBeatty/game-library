@@ -3998,7 +3998,12 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
             break;
         }
         case PS_WALKING: {
-            GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_WALK_CYCLE, 0.0f, 1.0f);
+            if (shooting) {
+                // TODO: I think this works, but need to double check that all frames are actually playing
+                GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_SHOOT_WALK_CYCLE, 0.0f, 1.0f);
+            } else {
+                GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_WALK_CYCLE, 0.0f, 1.0f);
+            }
             break;
         }
         case PS_JUMPING: {
@@ -4101,11 +4106,11 @@ static void StageTick(GameState* gstate) {
                 e->shape.aabb2d.c = Vec2Zero();
                 e->shape.aabb2d.r = Vec2Lit(0.5f * 24.0f, 0.5f * 24.0f);
 
-                GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_IDLE, 0.0f, 1.0f);
+                PSTATE = PS_IDLE;
+                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, false);
                 FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
                 e->health = 1;
-                PSTATE = PS_IDLE;
             }
 
             // Update.
