@@ -3983,6 +3983,7 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
         .nframes = 3,
     };
     static const AseRect M_SHOOT_JUMP = {.lc = Vec2Lit(160.0f, 353.0f), .r = Vec2Lit(32.0f, 32.0f)};
+    static const AseRect M_SHOOT_CLIMB = {.lc = Vec2Lit(57.0f, 181.0f), .r = Vec2Lit(24.0f, 32.0f)};
 
     LTexture tx = GetTexture(TX_MEGAMAN);
     switch (pstate) {
@@ -3995,7 +3996,11 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
             break;
         }
         case PS_CLIMBING: {
-            GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_CLIMB_CYCLE, 0.0f, 1.0f);
+            if (shooting) {
+                GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_SHOOT_CLIMB, 0.0f, 1.0f);
+            } else {
+                GraphicsInfoSetAnimationFromAseprite(graphics, tx, M_CLIMB_CYCLE, 0.0f, 1.0f);
+            }
             break;
         }
         case PS_WALKING: {
@@ -4453,13 +4458,6 @@ static void StageTick(GameState* gstate) {
                             FlagOn(shot->flags, EFLAG_PROJECTILE);
                         }
                     }
-                    // else if (SHOOTING) {
-                    //     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-
-                    //     // GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_SHOOT_IDLE,
-                    //     0.0f,
-                    //     //                                   1.0f);
-                    // }
                 }
 
                 if (TestFlag(e->flags, EFLAG_MOB)) {
