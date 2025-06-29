@@ -3982,6 +3982,7 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
         .step = Vec2Lit(33.0f, 0.0f),
         .nframes = 3,
     };
+    static const AseRect M_SHOOT_JUMP = {.lc = Vec2Lit(160.0f, 353.0f), .r = Vec2Lit(32.0f, 32.0f)};
 
     LTexture tx = GetTexture(TX_MEGAMAN);
     switch (pstate) {
@@ -4006,7 +4007,11 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
             break;
         }
         case PS_JUMPING: {
-            GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_JUMP, 0.0f, 1.0f);
+            if (shooting) {
+                GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_SHOOT_JUMP, 0.0f, 1.0f);
+            } else {
+                GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_JUMP, 0.0f, 1.0f);
+            }
             break;
         }
         default: {
