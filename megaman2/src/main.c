@@ -4558,7 +4558,11 @@ static void StageTick(GameState* gstate) {
                     if (e->movement_cooldown_dt >= 2.0f) {
                         e->movement_cooldown_dt = 0.0f;
 
-                        // f32 dist = Vec3Sub()
+                        if (player != NULL) {
+                            Vec3 dist = Vec3Sub(player->pos, e->pos);
+                            f32 dir = Vec3Dot(dist, Vec3Lit(1.0f, 0.0f, 0.0f));
+                            e->v = Vec3Lit((dir >= 0.0f ? 1.0f : -1.0f) * 20.0f, 200.0f, 0.0f);
+                        }
                     }
 
                     e->v.y += -GRAVITY * dt;
@@ -4644,18 +4648,7 @@ static void StageTick(GameState* gstate) {
                         if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_WALL)) {
                             Entity* mob = e0;
                             mob->pos = Vec3Add(mob->pos, Vec3Scale(info->normal, info->depth));
-
-                            // TODO: We don't really check closing velocity here.
-
-                            // Only stop perp to surface velocity if we are traveling towards the surface. this prevents
-                            // teleporting down to top of collider if we are hugging a wall and jump.
-                            f32 vdir = Vec3Dot(mob->v, info->normal);
-                            if (vdir < 0.0f) {
-                                Vec3 vmob = mob->v;
-                                Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vmob, info->normal));
-                                Vec3 vparallel = Vec3Sub(vmob, vperp);
-                                mob->v = vparallel;
-                            }
+                            mob->v = Vec3Zero();
                         }
 
                         if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
