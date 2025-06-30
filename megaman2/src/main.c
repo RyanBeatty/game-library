@@ -2582,6 +2582,14 @@ LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, 
 
 ////////////////////////////////////////////////////////////
 
+typedef enum {
+    MT_NONE = 0,
+    MT_RABBIT,
+    MT_COUNT,
+} MobType;
+
+////////////////////////////////////////////////////////////
+
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 
@@ -2644,6 +2652,9 @@ typedef struct {
 
     EntityId attacker_id;
     Vec3 attack_dir;
+
+    MobType mtype;
+    f32 movement_cooldown_dt;
 
 } Entity;
 
@@ -4059,6 +4070,7 @@ static void StageTick(GameState* gstate) {
     static float CAMERA_TRANSITION_DT = 0.0f;
     static bool CAMERA_TRANSITIONING = false;
     static Vec3 CAMERA_EYE_START = {0};
+    static const f32 GRAVITY = 350.0f;
 
     BeginRender();
     ShaderPass* pass = BeginShaderPass(GetShader());
@@ -4160,7 +4172,6 @@ static void StageTick(GameState* gstate) {
                 if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                     static const f32 WALK_DX_SPEED = 50.0f;
                     static const f32 WALK_DY_SPEED = 200.0f;
-                    static const f32 GRAVITY = 350.0f;
                     static f32 SHOOT_COOLDOWN = 0.0f;
                     static bool SHOOTING = false;
                     static f32 HITSTUN_COOLDOWN_DT = 0.0f;
@@ -4529,6 +4540,14 @@ static void StageTick(GameState* gstate) {
                     if (e->health <= 0) {
                         SoftDeactivateEntity(e->id);
                     }
+
+                    e->movement_cooldown_dt += dt;
+                    if (e->movement_cooldown_dt >= 2.0f) {
+                        e->movement_cooldown_dt = 0.0f;
+                    }
+
+                    e->v.y += -GRAVITY * dt;
+                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
 
                 if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
@@ -4604,6 +4623,23 @@ static void StageTick(GameState* gstate) {
                                 Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vplayer, info->normal));
                                 Vec3 vparallel = Vec3Sub(vplayer, vperp);
                                 player->v = vparallel;
+                            }
+                        }
+
+                        if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_WALL)) {
+                            Entity* mob = e0;
+                            mob->pos = Vec3Add(mob->pos, Vec3Scale(info->normal, info->depth));
+
+                            // TODO: We don't really check closing velocity here.
+
+                            // Only stop perp to surface velocity if we are traveling towards the surface. this prevents
+                            // teleporting down to top of collider if we are hugging a wall and jump.
+                            f32 vdir = Vec3Dot(mob->v, info->normal);
+                            if (vdir < 0.0f) {
+                                Vec3 vmob = mob->v;
+                                Vec3 vperp = Vec3Scale(info->normal, Vec3Dot(vmob, info->normal));
+                                Vec3 vparallel = Vec3Sub(vmob, vperp);
+                                mob->v = vparallel;
                             }
                         }
 
