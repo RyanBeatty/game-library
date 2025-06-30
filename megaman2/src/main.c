@@ -4174,7 +4174,7 @@ static void StageTick(GameState* gstate) {
                         // Get x direction to move. if attack is perp and this == 0, then just pick a direciton.
                         f32 dir = Vec3Dot(e->attack_dir, Vec3Lit(1.0f, 0.0f, 0.0f));
                         Vec3 v = Vec3Zero();
-                        v.x = (dir >= 0.0f ? 1.0f : -1.0f) * WALK_DX_SPEED;
+                        v.x = (dir >= 0.0f ? 1.0f : -1.0f) * 0.5f * WALK_DX_SPEED;
                         e->v = v;
                     }
                     e->attacker_id = NULLID;
@@ -4470,6 +4470,8 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case PS_HURT: {
+                            e->v.y += -GRAVITY * dt;
+
                             if (HITSTUN_COOLDOWN_DT >= 0.8f) {
                                 PSTATE = PS_IDLE;
                                 SHOOTING = false;
