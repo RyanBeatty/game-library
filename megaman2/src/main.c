@@ -4550,18 +4550,51 @@ static void StageTick(GameState* gstate) {
                 }
 
                 if (TestFlag(e->flags, EFLAG_MOB)) {
+                    // ground detection.
+                    Entity* ground = NULL;
+                    {
+                        Polyhedron shape = {0};
+                        shape.type = PH_AABB2D;
+                        shape.aabb2d.c = Vec2Lit(0.0f, -(e->shape.aabb2d.r.y + 0.3f * 5.0f));
+                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
+
+                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+                        for (u32 j = 0; j < GetNumEntities(); ++j) {
+                            Entity* e2 = GetEntity(j);
+                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
+                                e2->shape.type == PH_NONE) {
+                                continue;
+                            }
+
+                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+                            if (collides) {
+                                ground = e2;
+                                break;
+                            }
+                        }
+
+                        DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
+                                 ground != NULL ? LGREEN : LGRAY);
+                    }
+
                     if (e->health <= 0) {
                         SoftDeactivateEntity(e->id);
                     }
 
-                    e->movement_cooldown_dt += dt;
-                    if (e->movement_cooldown_dt >= 2.0f) {
-                        e->movement_cooldown_dt = 0.0f;
+                    if (ground != NULL) {
+                        e->movement_cooldown_dt += dt;
 
-                        if (player != NULL) {
-                            Vec3 dist = Vec3Sub(player->pos, e->pos);
-                            f32 dir = Vec3Dot(dist, Vec3Lit(1.0f, 0.0f, 0.0f));
-                            e->v = Vec3Lit((dir >= 0.0f ? 1.0f : -1.0f) * 20.0f, 200.0f, 0.0f);
+                        if (e->movement_cooldown_dt >= 2.0f) {
+                            e->movement_cooldown_dt = 0.0f;
+
+                            if (player != NULL) {
+                                Vec3 dist = Vec3Sub(player->pos, e->pos);
+                                f32 dir = Vec3Dot(dist, Vec3Lit(1.0f, 0.0f, 0.0f));
+                                e->v = Vec3Lit((dir >= 0.0f ? 1.0f : -1.0f) * 100.0f, 250.0f, 0.0f);
+                            }
                         }
                     }
 
