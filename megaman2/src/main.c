@@ -4142,6 +4142,19 @@ static void StageTick(GameState* gstate) {
 
     Room* room = &gstate->stage->rooms[gstate->room_idx];
 
+    Entity* player = NULL;
+    for (u32 i = 0; i < GetNumEntities(); ++i) {
+        Entity* e = GetEntity(i);
+        if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
+            continue;
+        }
+
+        if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+            player = e;
+            break;
+        }
+    }
+
     if (!CAMERA_TRANSITIONING) {
         if (gstate->update) {
             if (!SPAWNED) {
@@ -4544,6 +4557,8 @@ static void StageTick(GameState* gstate) {
                     e->movement_cooldown_dt += dt;
                     if (e->movement_cooldown_dt >= 2.0f) {
                         e->movement_cooldown_dt = 0.0f;
+
+                        // f32 dist = Vec3Sub()
                     }
 
                     e->v.y += -GRAVITY * dt;
@@ -4674,21 +4689,7 @@ static void StageTick(GameState* gstate) {
             }
 
             // Update camera.
-            if (!room->static_camera) {
-                Entity* player = NULL;
-                for (u32 i = 0; i < GetNumEntities(); ++i) {
-                    Entity* e = GetEntity(i);
-                    if (!TestFlag(e->flags, EFLAG_ACTIVE)) {
-                        continue;
-                    }
-
-                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        player = e;
-                        break;
-                    }
-                }
-                Assert(player);
-
+            if (!room->static_camera && player != NULL) {
                 // Set camera x to player x but clamp to camera movement bounding box.
                 f32 camera_half_width = 0.5f * gstate->renderw;
                 f32 camera_left_bound_x = room->room_bounds.c.x - room->room_bounds.r.x + camera_half_width;
