@@ -2653,7 +2653,7 @@ typedef struct {
     EntityId attacker_id;
     Vec3 attack_dir;
 
-    MobType mtype;
+    MobType mobtype;
     f32 movement_cooldown_dt;
 
 } Entity;
@@ -4584,17 +4584,27 @@ static void StageTick(GameState* gstate) {
                         SoftDeactivateEntity(e->id);
                     }
 
-                    if (ground != NULL) {
-                        e->movement_cooldown_dt += dt;
+                    switch (e->mob_type) {
+                        case MT_RABBIT: {
+                            if (ground != NULL) {
+                                e->movement_cooldown_dt += dt;
 
-                        if (e->movement_cooldown_dt >= 2.0f) {
-                            e->movement_cooldown_dt = 0.0f;
+                                if (e->movement_cooldown_dt >= 2.0f) {
+                                    e->movement_cooldown_dt = 0.0f;
 
-                            if (player != NULL) {
-                                Vec3 dist = Vec3Sub(player->pos, e->pos);
-                                f32 dir = Vec3Dot(dist, Vec3Lit(1.0f, 0.0f, 0.0f));
-                                e->v = Vec3Lit((dir >= 0.0f ? 1.0f : -1.0f) * 100.0f, 250.0f, 0.0f);
+                                    if (player != NULL) {
+                                        Vec3 dist = Vec3Sub(player->pos, e->pos);
+                                        f32 dir = Vec3Dot(dist, Vec3Lit(1.0f, 0.0f, 0.0f));
+                                        e->v = Vec3Lit((dir >= 0.0f ? 1.0f : -1.0f) * 100.0f, 250.0f, 0.0f);
+                                    }
+                                }
                             }
+                            break;
+                        }
+                        default: {
+                            TraceLog(LOG_ERROR, "Unknown mob type: %d", e->mobtype);
+                            exit(1);
+                            return;
                         }
                     }
 
