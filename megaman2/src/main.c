@@ -2778,6 +2778,8 @@ typedef struct {
     Polyhedron shape;
 
     u32 room_idx_to_be;
+
+    MobType mobtype;
 } EntitySpec;
 
 typedef struct {
@@ -2964,6 +2966,10 @@ static Stage* GetStage(StageId sid) {
                         {Vec2Lit(441.0f, 176.0f), Vec2Lit(472.0f, 145.0f)},
                         {Vec2Lit(757.0f, 176.0f), Vec2Lit(788.0f, 145.0f)},
                     };
+                    MobType mobtypes[] = {
+                        MT_RABBIT,
+                        MT_RABBIT,
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -2972,6 +2978,7 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        spec.mobtype = mobtypes[i];
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
@@ -3947,6 +3954,8 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                                  LRED);
             FlagOn(e->flags, EFLAG_MOB);
 
+            e->mobtype = spec->mobtype;
+
             e->health = 2;
 
             Assert(gstate->lelen < gstate->lecap);
@@ -4584,7 +4593,7 @@ static void StageTick(GameState* gstate) {
                         SoftDeactivateEntity(e->id);
                     }
 
-                    switch (e->mob_type) {
+                    switch (e->mobtype) {
                         case MT_RABBIT: {
                             if (ground != NULL) {
                                 e->movement_cooldown_dt += dt;
