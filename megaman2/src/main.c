@@ -4546,7 +4546,7 @@ static void StageTick(GameState* gstate) {
                         {
                             Entity* shot = AllocateEntity();
                             shot->pos = e->pos;
-                            shot->v = Vec3Lit(100.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
+                            shot->v = Vec3Lit(200.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
 
                             shot->shape.type = PH_AABB2D;
                             shot->shape.aabb2d.c = Vec2Zero();
