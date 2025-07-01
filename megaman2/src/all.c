@@ -13,6 +13,11 @@
 // #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 //
+// Only define once.
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
+//
+//
 #include "../external/cJSON/cJSON.h"
 //
 #include "glad/glad.h"
