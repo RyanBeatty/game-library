@@ -2585,6 +2585,7 @@ LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, 
 typedef enum {
     MT_NONE = 0,
     MT_RABBIT,
+    MT_BAT,
     MT_COUNT,
 } MobType;
 
@@ -2655,6 +2656,7 @@ typedef struct {
 
     MobType mobtype;
     f32 movement_cooldown_dt;
+    bool awake;
 
 } Entity;
 
@@ -3029,6 +3031,11 @@ static Stage* GetStage(StageId sid) {
                         {Vec2Lit(1114.0f, 401.0f), Vec2Lit(1129.0f, 386.0f)},
                         {Vec2Lit(1147.0f, 369.0f), Vec2Lit(1162.0f, 354.0f)},
                     };
+                    MobType mobtypes[] = {
+                        MT_BAT,
+                        MT_BAT,
+                        MT_BAT,
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3037,6 +3044,7 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        spec.mobtype = mobtypes[i];
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
@@ -4096,7 +4104,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 0;
+        u32 room_idx = 1;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -4593,6 +4601,8 @@ static void StageTick(GameState* gstate) {
                         SoftDeactivateEntity(e->id);
                     }
 
+                    f32 gravity = GRAVITY;
+
                     switch (e->mobtype) {
                         case MT_RABBIT: {
                             if (ground != NULL) {
@@ -4610,6 +4620,18 @@ static void StageTick(GameState* gstate) {
                             }
                             break;
                         }
+                        case MT_BAT: {
+                            if (player != NULL) {
+                                Vec3 dir = Vec3Sub(player->pos, e->pos);
+                                if (e->awake) {
+                                    e->v = Vec3Scale(Vec3Normalize(dir), 20.0f);
+                                } else if (dir.y <= 0.0f) {
+                                    e->awake = true;
+                                }
+                            }
+                            gravity = 0.0f;
+                            break;
+                        }
                         default: {
                             TraceLog(LOG_ERROR, "Unknown mob type: %d", e->mobtype);
                             exit(1);
@@ -4617,7 +4639,7 @@ static void StageTick(GameState* gstate) {
                         }
                     }
 
-                    e->v.y += -GRAVITY * dt;
+                    e->v.y += -1.0f * gravity * dt;
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
 
