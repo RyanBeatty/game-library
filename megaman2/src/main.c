@@ -3945,6 +3945,12 @@ static void UnloadRoomEntities(GameState* gstate) {
     gstate->lelen = 0;
 }
 
+static const AnimationAseRect MOB_BUNNY = {
+    .start = {.lc = Vec2Lit(20.0f, 79.0f), .r = Vec2Lit(32.0f, 40.0f)},
+    .step = Vec2Lit(33.0f, 0.0f),
+    .nframes = 3,
+};
+
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
 
@@ -3963,6 +3969,17 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
             FlagOn(e->flags, EFLAG_MOB);
 
             e->mobtype = spec->mobtype;
+            switch (e->mobtype) {
+                case MT_RABBIT: {
+                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_BUNNY, 0.0f, 1.0f);
+                    break;
+                }
+                default: {
+                    TraceLog(LOG_ERROR, "Unknown mob type %d", e->mobtype);
+                    exit(1);
+                    return;
+                }
+            }
 
             e->health = 2;
 
@@ -4104,7 +4121,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 1;
+        u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -4615,8 +4632,16 @@ static void StageTick(GameState* gstate) {
                                         Vec3 dist = Vec3Sub(player->pos, e->pos);
                                         f32 dir = Vec3Dot(dist, Vec3Lit(1.0f, 0.0f, 0.0f));
                                         e->v = Vec3Lit((dir >= 0.0f ? 1.0f : -1.0f) * 100.0f, 250.0f, 0.0f);
+                                        e->facing_left = dir < 0.0f;
+                                        e->graphics.txinfo.animation.frame = 2;
                                     }
+                                } else if (e->movement_cooldown_dt >= 1.8f) {
+                                    e->graphics.txinfo.animation.frame = 1;
+                                } else {
+                                    e->graphics.txinfo.animation.frame = 0;
                                 }
+                            } else {
+                                e->graphics.txinfo.animation.frame = 2;
                             }
                             break;
                         }
