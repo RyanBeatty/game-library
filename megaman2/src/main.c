@@ -3736,6 +3736,7 @@ typedef enum {
     SCENE_TITLE_SCREEN,
     SCENE_STAGE_SELECT,
     SCENE_STAGE,
+    SCENE_TRUE_TYPE,
     SCENE_COUNT,
 } SceneId;
 
@@ -3855,6 +3856,68 @@ static void SceneDefaultTick(GameState* gstate) {
     // by half the text size.
     Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
     DrawLText(msg, size, pos, fontsize, LYELLOW);
+
+    EndShaderPass();
+
+    EndRender();
+}
+
+static void TrueTypeTick(GameState* gstate) {
+    static stbtt_bakedchar CDATA[96];  // ASCII 32..126 is 95 glyphs
+    static LTexture TX = {0};
+
+    if (!gstate->init) {
+        FILE* fp = fopen("/Windows/fonts/times.ttf", "rb");
+        fseek(fp, 0, SEEK_END);
+        size_t size = ftell(fp);
+        rewind(fp);
+
+        byte* font_buffer = calloc(size, sizeof(byte));
+        i32 nread = fread(font_buffer, 1, size, fp);
+        Assert(nread == size);
+        fclose(fp);
+
+        breakpoint();
+
+        // Not guaranteed that the baked data will fit the bitmap.
+        i32 width = 512;
+        i32 height = 512;
+        byte bitmap_alpha[512 * 512] = {0};
+        i32 res = stbtt_BakeFontBitmap(font_buffer, 0, 32.0, bitmap_alpha, width, height, 32, 96, CDATA);
+        free(font_buffer);
+
+        // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
+        // this with our normal shader. yes this is a bit wasteful.
+        byte bitmap[(512 * 512) * 4] = {0};
+        for (i32 i = 0; i < (512 * 512); ++i) {
+            bitmap[(i * 4) + 0] = 255;
+            bitmap[(i * 4) + 1] = 255;
+            bitmap[(i * 4) + 2] = 255;
+            bitmap[(i * 4) + 3] = bitmap_alpha[i];
+        }
+
+        breakpoint();
+        TX.width = width;
+        TX.height = height;
+        glGenTextures(1, &TX.id);
+        glBindTexture(GL_TEXTURE_2D, TX.id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TX.width, TX.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
+        // can free temp_bitmap at this point
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
+
+    BeginRender();
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
+    ClearBuffer(LBLUE);
+
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    // LTexture tx = {.id = TXID, .width = BWIDTH, .height = BHEIGHT};
+    // DrawLTexture(tx, Vec2Lit(0.5f * width, 0.5f * height), 0.2f);
 
     EndShaderPass();
 
@@ -3995,7 +4058,8 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
             Entity* e = AllocateEntity();
             e->pos = spec->pos;
             e->shape = spec->shape;
-            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD),
+            // Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
             //                      LGREEN);
             FlagOn(e->flags, EFLAG_EXIT);
 
@@ -4010,7 +4074,8 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
             Entity* e = AllocateEntity();
             e->pos = spec->pos;
             e->shape = spec->shape;
-            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
+            // GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD),
+            // Vec3Scale(Vec2ToVec3(spec->shape.aabb2d.r), 2.0f),
             //                      LRED);
             FlagOn(e->flags, EFLAG_EXIT);
 
@@ -4463,7 +4528,8 @@ static void StageTick(GameState* gstate) {
                                 } else {
                                     e->graphics.txinfo.animation.frame_dt += dt;
 
-                                    // Kind of a hacky ish way to control the walk cycle animation but seems to work.
+                                    // Kind of a hacky ish way to control the walk cycle animation but seems to
+                                    // work.
                                     if (e->graphics.txinfo.animation.frame_dt >= (8.0f / 60.0f)) {
                                         static bool FORWARD = true;
                                         e->graphics.txinfo.animation.frame_dt = 0.0f;
@@ -4508,7 +4574,8 @@ static void StageTick(GameState* gstate) {
                             // if (IsKeyPressed(KJUMP)) {
                             //     PSTATE = PS_JUMPING;
                             //     dy.y += WALK_DY_SPEED;
-                            //     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP, 0.0f,
+                            //     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), M_JUMP,
+                            //     0.0f,
                             //                                       1.0f);
                             // }
 
@@ -4733,8 +4800,8 @@ static void StageTick(GameState* gstate) {
 
                             // TODO: We don't really check closing velocity here.
 
-                            // Only stop perp to surface velocity if we are traveling towards the surface. this prevents
-                            // teleporting down to top of collider if we are hugging a wall and jump.
+                            // Only stop perp to surface velocity if we are traveling towards the surface. this
+                            // prevents teleporting down to top of collider if we are hugging a wall and jump.
                             f32 vdir = Vec3Dot(player->v, info->normal);
                             if (vdir < 0.0f) {
                                 Vec3 vplayer = player->v;
@@ -5033,13 +5100,14 @@ static void GameStateInit(GameState* gstate) {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
+        gstate->scenefuncs[SCENE_TRUE_TYPE] = TrueTypeTick;
         gstate->scenefuncs[SCENE_TITLE_SCREEN] = TitleScreenTick;
         gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
         gstate->scenefuncs[SCENE_STAGE] = StageTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
+    GameStateLoadScene(gstate, SCENE_TRUE_TYPE);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
