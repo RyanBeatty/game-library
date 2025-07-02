@@ -3867,43 +3867,58 @@ static void TrueTypeTick(GameState* gstate) {
     static LTexture TX = {0};
 
     if (!gstate->init) {
-        FILE* fp = fopen("/Windows/fonts/times.ttf", "rb");
-        fseek(fp, 0, SEEK_END);
-        size_t size = ftell(fp);
-        rewind(fp);
+        unsigned char ttf_buffer[1 << 20];
+        unsigned char temp_bitmap[512 * 512];
+        fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
+        stbtt_BakeFontBitmap(ttf_buffer, 0, 32.0, temp_bitmap, 512, 512, 32, 96, CDATA);
 
-        byte* font_buffer = calloc(size, sizeof(byte));
-        i32 nread = fread(font_buffer, 1, size, fp);
-        Assert(nread == size);
-        fclose(fp);
-
-        breakpoint();
-
-        // Not guaranteed that the baked data will fit the bitmap.
-        i32 width = 512;
-        i32 height = 512;
-        byte bitmap_alpha[512 * 512] = {0};
-        i32 res = stbtt_BakeFontBitmap(font_buffer, 0, 32.0, bitmap_alpha, width, height, 32, 96, CDATA);
-        free(font_buffer);
-
-        // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
-        // this with our normal shader. yes this is a bit wasteful.
-        byte bitmap[(512 * 512) * 4] = {0};
-        for (i32 i = 0; i < (512 * 512); ++i) {
-            bitmap[(i * 4) + 0] = 255;
-            bitmap[(i * 4) + 1] = 255;
-            bitmap[(i * 4) + 2] = 255;
-            bitmap[(i * 4) + 3] = bitmap_alpha[i];
+        FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
+        if (out) {
+            fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+            fwrite(temp_bitmap, 1, 512 * 512, out);
+            fclose(out);
+        } else {
+            perror("Failed to open font_dump.pgm for writing");
         }
 
         breakpoint();
-        TX.width = width;
-        TX.height = height;
-        glGenTextures(1, &TX.id);
-        glBindTexture(GL_TEXTURE_2D, TX.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TX.width, TX.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
-        // can free temp_bitmap at this point
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        // FILE* fp = fopen("/Windows/fonts/times.ttf", "rb");
+        // fseek(fp, 0, SEEK_END);
+        // size_t size = ftell(fp);
+        // rewind(fp);
+
+        // byte* font_buffer = calloc(size, sizeof(byte));
+        // i32 nread = fread(font_buffer, 1, size, fp);
+        // Assert(nread == size);
+        // fclose(fp);
+
+        // breakpoint();
+
+        // // Not guaranteed that the baked data will fit the bitmap.
+        // i32 width = 512;
+        // i32 height = 512;
+        // byte bitmap_alpha[512 * 512] = {0};
+        // i32 res = stbtt_BakeFontBitmap(font_buffer, 0, 32.0, bitmap_alpha, width, height, 32, 96, CDATA);
+        // free(font_buffer);
+
+        // // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
+        // // this with our normal shader. yes this is a bit wasteful.
+        // byte bitmap[(512 * 512) * 4] = {0};
+        // for (i32 i = 0; i < (512 * 512); ++i) {
+        //     bitmap[(i * 4) + 0] = 255;
+        //     bitmap[(i * 4) + 1] = 255;
+        //     bitmap[(i * 4) + 2] = 255;
+        //     bitmap[(i * 4) + 3] = bitmap_alpha[i];
+        // }
+
+        // breakpoint();
+        // TX.width = width;
+        // TX.height = height;
+        // glGenTextures(1, &TX.id);
+        // glBindTexture(GL_TEXTURE_2D, TX.id);
+        // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TX.width, TX.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
+        // // can free temp_bitmap at this point
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     }
 
     BeginRender();
