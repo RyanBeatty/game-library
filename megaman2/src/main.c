@@ -3872,13 +3872,16 @@ static void TrueTypeTick(GameState* gstate) {
         fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
         stbtt_BakeFontBitmap(ttf_buffer, 0, 32.0, temp_bitmap, 512, 512, 32, 96, CDATA);
 
-        FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
-        if (out) {
-            fprintf(out, "P5\n%d %d\n255\n", 512, 512);
-            fwrite(temp_bitmap, 1, 512 * 512, out);
-            fclose(out);
-        } else {
-            perror("Failed to open font_dump.pgm for writing");
+        // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
+        if (false) {
+            FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
+            if (out) {
+                fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                fwrite(temp_bitmap, 1, 512 * 512, out);
+                fclose(out);
+            } else {
+                perror("Failed to open font_dump.pgm for writing");
+            }
         }
 
         breakpoint();
