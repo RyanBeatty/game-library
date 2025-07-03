@@ -1812,6 +1812,8 @@ static void EndRender() {
         DrawCmd* cmd = ShaderPassAddCmd(&pass);
         DrawMeshCmdInit(cmd);
         cmd->meshcmd.meshid = GetMesh(M_QUAD);
+        // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the quad
+        // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
         cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->meshcmd.color = LRED;  // For debug.
         cmd->meshcmd.txid = rstate->target.txid;
@@ -3992,7 +3994,14 @@ static void TrueTypeTick(GameState* gstate) {
 
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // DrawLTexturePro2(GetTexture(TX_DEFAULT).id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
-    DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+
+    DrawCmd* cmd = DrawQuad(Vec3Lit(0.5f * 512.0f, 0.5f * 512.0f, 0.0f), 512, 512, Mat4Identity(), LCLEAR);
+    cmd->meshcmd.txid = GetTexture(TX_MEGAMAN).id;
+    cmd->meshcmd.uvoffset = Vec2Lit(0, 0);
+    cmd->meshcmd.uvscale = Vec2Lit(1, 1);
+    // DrawLTexture(TX, Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh), 0.5f);
+
+    // DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
 
     breakpoint();
 
@@ -5150,12 +5159,13 @@ LCORE void Stage2Tick(GameState* gstate) {
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
 
-    gstate->renderw = 256.0f;
-    gstate->renderh = 240.0f;
+    gstate->renderw = 512.0f;
+    gstate->renderh = 512.0f;
 
-    u32 scale = 3;
+    u32 scale = 1;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
-    SetWindowState(FLAG_WINDOW_UNDECORATED);
+    SetWindowPosition(100, 100);
+    // SetWindowState(FLAG_WINDOW_UNDECORATED);
     SetConfigFlags(FLAG_VSYNC_HINT);
     SetTargetFPS(60);
     // DisableCursor();
