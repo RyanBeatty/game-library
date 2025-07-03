@@ -1916,7 +1916,8 @@ LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2
 // :r_src - full width/height of sub rect to read from texture in uv space
 // :c_dst - destination origin (center of quad) of where to draw in world space
 // :r_dst - full width + height of quad
-LCORE void DrawLTexturePro2(TextureId txid, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
+LCORE DrawCmd* DrawLTexturePro2(TextureId txid, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation,
+                                Vec4 color) {
     Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
     Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
     Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
@@ -1929,6 +1930,7 @@ LCORE void DrawLTexturePro2(TextureId txid, Vec2 c_src, Vec2 r_src, Vec2 c_dst, 
     cmd->meshcmd.uvscale = r_src;
     cmd->meshcmd.txid = txid;
     cmd->meshcmd.meshid = GetMesh(M_QUAD);
+    return cmd;
 }
 
 LCORE void DrawLTextureEx(LTexture tx, Vec2 pos, f32 scale, f32 rotation, Vec4 color) {
@@ -3987,8 +3989,10 @@ static void TrueTypeTick(GameState* gstate) {
     // cmd->meshcmd.uvoffset = quvoffset;
     // cmd->meshcmd.uvscale = quvdims;
     // DrawLTexturePro2(TX.id, Vec2Zero(), Vec2Lit(1.0f, 1.0f), qorigin, qdims, 0.0f, LRED);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    DrawLTexturePro2(GetTexture(TX_DEFAULT).id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // DrawLTexturePro2(GetTexture(TX_DEFAULT).id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+    DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
 
     breakpoint();
 
