@@ -3995,11 +3995,17 @@ static void TrueTypeTick(GameState* gstate) {
     // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // DrawLTexturePro2(GetTexture(TX_DEFAULT).id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
 
-    DrawCmd* cmd = DrawQuad(Vec3Lit(0.5f * 512.0f, 0.5f * 512.0f, 0.0f), 512, 512, Mat4Identity(), LCLEAR);
-    cmd->meshcmd.txid = GetTexture(TX_MEGAMAN).id;
-    cmd->meshcmd.uvoffset = Vec2Lit(0, 0);
-    cmd->meshcmd.uvscale = Vec2Lit(1, 1);
-    // DrawLTexture(TX, Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh), 0.5f);
+    // Debug
+    // DrawCmd* cmd = DrawQuad(Vec3Lit(0.5f * 512.0f, 0.5f * 512.0f, 0.0f), 512, 512, Mat4Identity(), LCLEAR);
+    // cmd->meshcmd.txid = GetTexture(TX_MEGAMAN).id;
+    // cmd->meshcmd.uvoffset = Vec2Lit(0, 0);
+    // cmd->meshcmd.uvscale = Vec2Lit(1, 1);
+
+    Vec3 origin = {0};
+    origin.x = 512 * (quvoffset.x + (0.5f * quvdims.x));
+    origin.y = 512 * (quvoffset.y - (0.5f * quvdims.y));
+    DrawLTexture(TX, Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh), 1.0f);
+    DrawQuad(origin, quvdims.x * 512, quvdims.y * 512, Mat4Identity(), LRED);
 
     // DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
 
