@@ -3983,8 +3983,11 @@ static void TrueTypeTick(GameState* gstate) {
     // origin top left and +Y is down. The rendering position data will work.
     Vec2 qorigin = Vec2Lit(quad.x0 + (0.5f * qdims.x), quad.y0 + (0.5f * qdims.y));
 
+    // We do need to flip the y text coords because we have flipped the texture after baking. Note that
+    // this will likely result in y text coords that are negative but that is expected since we've reflected
+    // the image about the x axis midpoint.
     Vec2 quvoffset = Vec2Lit(quad.s0, 1.0f - quad.t0);
-    Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
+    Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, 1.0f - quad.t1), Vec2Lit(quad.s0, 1.0f - quad.t0));
 
     // DrawCmd* cmd = DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
     // cmd->meshcmd.txid = TX.id;
@@ -4003,9 +4006,9 @@ static void TrueTypeTick(GameState* gstate) {
 
     Vec3 origin = {0};
     origin.x = 512 * (quvoffset.x + (0.5f * quvdims.x));
-    origin.y = 512 * (quvoffset.y - (0.5f * quvdims.y));
+    origin.y = 512 * (quvoffset.y + (0.5f * quvdims.y));
     DrawLTexture(TX, Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh), 1.0f);
-    DrawQuad(origin, quvdims.x * 512, quvdims.y * 512, Mat4Identity(), LRED);
+    DrawQuad(origin, quvdims.x * 512, fabs(quvdims.y) * 512, Mat4Identity(), LRED);
 
     // DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
 
