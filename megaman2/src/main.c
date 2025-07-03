@@ -3914,7 +3914,7 @@ static void TrueTypeTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    DrawLTexture(TX, Vec2Lit(0.5f * width, 0.5f * height), 0.5f);
+    DrawLTexture(TX, Vec2Lit(0.5f * width, 0.5f * height), 0.3f);
 
     EndShaderPass();
 
