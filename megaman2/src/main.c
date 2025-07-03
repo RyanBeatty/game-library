@@ -1863,11 +1863,12 @@ LCORE void DrawLCube(Vec3 center, Vec3 scale, Vec4 color) {
     cmd->meshcmd.color = color;
 }
 
-LCORE void DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 color) {
+LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshcmd.meshid = GetMesh(M_QUAD);
     cmd->meshcmd.modelm = Mat4SVRT(Vec3Lit(width, height, 1.0f), orient, center);
     cmd->meshcmd.color = color;
+    return cmd;
 }
 
 LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
@@ -3939,7 +3940,19 @@ static void TrueTypeTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
+    // DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
+
+    // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
+    Vec2 pos = Vec2Lit(1.0f, 15.0f);
+    stbtt_aligned_quad quad = {0};
+    stbtt_GetBakedQuad(CDATA, TX.width, TX.height, 'a' - 32, &pos.x, &pos.y, &quad, true);
+
+    Vec2 quad_dims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
+    // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
+    // origin top left and +Y is down. The rendering position data will work.
+    Vec2 quad_origin = Vec2Lit(quad.x0 + (0.5f * quad_dims.x), quad.y0 + (0.5f * quad_dims.y));
+    DrawCmd* cmd = DrawQuad(Vec2ToVec3(quad_origin), quad_dims.x, quad_dims.y, Mat4Identity(), LRED);
+    breakpoint();
 
     EndShaderPass();
 
