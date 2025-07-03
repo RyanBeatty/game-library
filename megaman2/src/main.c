@@ -3884,6 +3884,31 @@ static void TrueTypeTick(GameState* gstate) {
             }
         }
 
+        // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
+        // origin in bottom left with +y going up.
+        for (i32 i = 0; i < (512 * 512) / 2; ++i) {
+            i32 col = i % 512;
+            i32 top_row = i / 512;
+            i32 bottom_row = 512 - top_row - 1;
+            i32 top_idx = (top_row * 512) + col;
+            i32 bottom_idx = (bottom_row * 512) + col;
+
+            byte temp = bitmap_alpha[top_idx];
+            bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
+            bitmap_alpha[bottom_idx] = temp;
+        }
+
+        if (false) {
+            FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
+            if (out) {
+                fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                fwrite(bitmap_alpha, 1, 512 * 512, out);
+                fclose(out);
+            } else {
+                perror("Failed to open font_dump.pgm for writing");
+            }
+        }
+
         // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
         // this with our normal shader. yes this is a bit wasteful.
         byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
@@ -3914,7 +3939,7 @@ static void TrueTypeTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    DrawLTexture(TX, Vec2Lit(0.5f * width, 0.5f * height), 0.3f);
+    DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
 
     EndShaderPass();
 
