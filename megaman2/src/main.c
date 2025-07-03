@@ -1879,12 +1879,14 @@ LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
 }
 
 // Remember
+// src == where to draw in texture space
+// dest == where to draw in world space.
 // (0, 0)
-// * maps to bottom left corner in src texture space
-// * maps to origin in dest world space.
+// * maps to bottom left corner in src texture space (this is not uv space, but width/height space)
+// * maps to origin in world space.
 // radius
 // * need to be full width/height of quad in texture space
-// * need to be half width/height in world space
+// * need to be half width/height in world space. Is this right? it looks like it might need to be full width/height
 LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
     // TODO: is scale right?
     Vec2 uvscale = Vec2Lit(r_src.x / tx.width, r_src.y / tx.height);
@@ -1901,6 +1903,31 @@ LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2
     cmd->meshcmd.uvoffset = uvoffset;
     cmd->meshcmd.uvscale = uvscale;
     cmd->meshcmd.txid = tx.id;
+    cmd->meshcmd.meshid = GetMesh(M_QUAD);
+}
+
+// Remember
+// src == where to draw in texture space
+// dest == where to draw in world space.
+// (0, 0)
+// * maps to bottom left corner in src texture space (this is not uv space, but width/height space)
+// * maps to origin in world space.
+// :c_src - source origin (lower left corner) of where to read from texture in uv space
+// :r_src - full width/height of sub rect to read from texture in uv space
+// :c_dst - destination origin (center of quad) of where to draw in world space
+// :r_dst - full width + height of quad
+LCORE void DrawLTexturePro2(TextureId txid, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
+    Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
+    Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
+    Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
+    Mat4 model = Mat4Multiply(Mat4Multiply(translate, orient), scale);
+
+    DrawCmd* cmd = AddDrawMeshCmd();
+    cmd->meshcmd.modelm = model;
+    cmd->meshcmd.color = color;
+    cmd->meshcmd.uvoffset = c_src;
+    cmd->meshcmd.uvscale = r_src;
+    cmd->meshcmd.txid = txid;
     cmd->meshcmd.meshid = GetMesh(M_QUAD);
 }
 
@@ -3943,15 +3970,26 @@ static void TrueTypeTick(GameState* gstate) {
     // DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
 
     // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
-    Vec2 pos = Vec2Lit(1.0f, 15.0f);
+    Vec2 pos = Vec2Lit(100.0f, 150.0f);
     stbtt_aligned_quad quad = {0};
     stbtt_GetBakedQuad(CDATA, TX.width, TX.height, 'a' - 32, &pos.x, &pos.y, &quad, true);
 
-    Vec2 quad_dims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
+    Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
     // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
     // origin top left and +Y is down. The rendering position data will work.
-    Vec2 quad_origin = Vec2Lit(quad.x0 + (0.5f * quad_dims.x), quad.y0 + (0.5f * quad_dims.y));
-    DrawCmd* cmd = DrawQuad(Vec2ToVec3(quad_origin), quad_dims.x, quad_dims.y, Mat4Identity(), LRED);
+    Vec2 qorigin = Vec2Lit(quad.x0 + (0.5f * qdims.x), quad.y0 + (0.5f * qdims.y));
+
+    Vec2 quvoffset = Vec2Lit(quad.s0, 1.0f - quad.t0);
+    Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
+
+    // DrawCmd* cmd = DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
+    // cmd->meshcmd.txid = TX.id;
+    // cmd->meshcmd.uvoffset = quvoffset;
+    // cmd->meshcmd.uvscale = quvdims;
+    // DrawLTexturePro2(TX.id, Vec2Zero(), Vec2Lit(1.0f, 1.0f), qorigin, qdims, 0.0f, LRED);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    DrawLTexturePro2(GetTexture(TX_DEFAULT).id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+
     breakpoint();
 
     EndShaderPass();
