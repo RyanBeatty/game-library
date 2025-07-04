@@ -4136,7 +4136,16 @@ static void TrueTypeTick(GameState* gstate) {
         Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
         // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
         // origin top left and +Y is down. The rendering position data will work.
-        Vec2 qorigin = Vec2Lit(quad.x0 + (0.5f * qdims.x), quad.y0 + (0.5f * qdims.y));
+        Vec2 qorigin = {0};
+        qorigin.x = quad.x0 + (0.5f * qdims.x);
+        // We need to flip the y position coords since stb_truetype assumes that positioning is relative to a
+        // baseline where the origin is top left and +y is down. Our pos.y is our baseline, so to reflect
+        // we take the height relative to the baseline and subtract that from the baseline. Think of this as if
+        // we were in the coordinate space of stb_truetype. we have a baseline pos.y and some position quad.y1
+        // which is the highest y position of the glyph. We need to subtract the height delta from the baseline
+        // to reflect in stb_truetype coordinate system which will result in upright positions in lcore engine.
+        f32 height_relative_to_baseline = quad.y1 - pos.y;
+        qorigin.y = (pos.y - height_relative_to_baseline) + (0.5f * qdims.y);
 
         // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
         // coordinate system.
@@ -4148,7 +4157,9 @@ static void TrueTypeTick(GameState* gstate) {
         // By subtracting the height we then get the bottom left corner which is what the engine expects.
         quvoffset.y = 1.0f - quad.t0 - quvdims.y;
 
-        DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
+        if (gstate->debug) {
+            DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
+        }
         DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
         breakpoint();
 
