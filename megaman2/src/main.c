@@ -3894,7 +3894,7 @@ static void SceneDefaultTick(GameState* gstate) {
     EndRender();
 }
 
-static void TrueTypeTick(GameState* gstate) {
+static void TrueTypeTickRaw(GameState* gstate) {
     static stbtt_bakedchar CDATA[96];  // ASCII 32..126 is 95 glyphs
     static LTexture TX = {0};
 
@@ -4014,6 +4014,114 @@ static void TrueTypeTick(GameState* gstate) {
              LORANGE);
 
     // DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+
+    breakpoint();
+
+    EndShaderPass();
+
+    EndRender();
+}
+
+static void TrueTypeTick(GameState* gstate) {
+    static stbtt_bakedchar CDATA[96];  // ASCII 32..126 is 95 glyphs
+    static LTexture TX = {0};
+
+    if (!gstate->init) {
+        byte ttf_buffer[1 << 20];
+        byte bitmap_alpha[512 * 512];
+        fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
+        stbtt_BakeFontBitmap(ttf_buffer, 0, 32.0, bitmap_alpha, 512, 512, 32, 96, CDATA);
+
+        // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
+        if (false) {
+            FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
+            if (out) {
+                fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                fwrite(bitmap_alpha, 1, 512 * 512, out);
+                fclose(out);
+            } else {
+                perror("Failed to open font_dump.pgm for writing");
+            }
+        }
+
+        // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
+        // origin in bottom left with +y going up.
+        for (i32 i = 0; i < (512 * 512) / 2; ++i) {
+            i32 col = i % 512;
+            i32 top_row = i / 512;
+            i32 bottom_row = 512 - top_row - 1;
+            i32 top_idx = (top_row * 512) + col;
+            i32 bottom_idx = (bottom_row * 512) + col;
+
+            byte temp = bitmap_alpha[top_idx];
+            bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
+            bitmap_alpha[bottom_idx] = temp;
+        }
+
+        if (false) {
+            FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
+            if (out) {
+                fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                fwrite(bitmap_alpha, 1, 512 * 512, out);
+                fclose(out);
+            } else {
+                perror("Failed to open font_dump.pgm for writing");
+            }
+        }
+
+        // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
+        // this with our normal shader. yes this is a bit wasteful.
+        byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
+        for (i32 i = 0; i < (512 * 512); ++i) {
+            bitmap[(i * 4) + 0] = 255;
+            bitmap[(i * 4) + 1] = 255;
+            bitmap[(i * 4) + 2] = 255;
+            bitmap[(i * 4) + 3] = bitmap_alpha[i];
+        }
+
+        TX.width = 512;
+        TX.height = 512;
+        glGenTextures(1, &TX.id);
+        glBindTexture(GL_TEXTURE_2D, TX.id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TX.width, TX.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+        free(bitmap);
+    }
+
+    BeginRender();
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
+    ClearBuffer(LBLUE);
+
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    // DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
+
+    // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
+    Vec2 pos = Vec2Lit(100.0f, 150.0f);
+    stbtt_aligned_quad quad = {0};
+    stbtt_GetBakedQuad(CDATA, TX.width, TX.height, 'a' - 32, &pos.x, &pos.y, &quad, true);
+
+    Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
+    // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
+    // origin top left and +Y is down. The rendering position data will work.
+    Vec2 qorigin = Vec2Lit(quad.x0 + (0.5f * qdims.x), quad.y0 + (0.5f * qdims.y));
+
+    // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
+    // coordinate system.
+    Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
+    Vec2 quvoffset = {0};
+    quvoffset.x = quad.s0;
+    // We do need to flip the y text coords because we have flipped the texture after baking.
+    // 1 - t0 will map the top left of the sub rect to the new top left of the flipped texture.
+    // By subtracting the height we then get the bottom left corner which is what the engine expects.
+    quvoffset.y = 1.0f - quad.t0 - quvdims.y;
+
+    DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
 
     breakpoint();
 
