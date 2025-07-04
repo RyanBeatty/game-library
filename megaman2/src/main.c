@@ -4009,6 +4009,9 @@ static void TrueTypeTick(GameState* gstate) {
     origin.y = 512 * (quvoffset.y + (0.5f * quvdims.y));
     DrawLTexture(TX, Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh), 1.0f);
     DrawQuad(origin, quvdims.x * 512, fabs(quvdims.y) * 512, Mat4Identity(), LRED);
+    DrawQuad(Vec3Lit(512.0f * quvoffset.x, 512.0f * quvoffset.y, 0.0f), 3, 3, Mat4Identity(), LGREEN);
+    DrawQuad(Vec3Lit(512.0f * quvoffset.x, 512.0f * (1.0f - quad.t0 - (quad.t1 - quad.t0)), 0.0f), 3, 3, Mat4Identity(),
+             LORANGE);
 
     // DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
 
