@@ -4022,6 +4022,28 @@ static void TrueTypeTickRaw(GameState* gstate) {
     EndRender();
 }
 
+void lcore_GetBakedQuad(const stbtt_bakedchar* chardata, int pw, int ph, int char_index, float* xpos, float* ypos,
+                        stbtt_aligned_quad* q, int opengl_fillrule) {
+    float d3d_bias = opengl_fillrule ? 0 : -0.5f;
+    float ipw = 1.0f / pw, iph = 1.0f / ph;
+    const stbtt_bakedchar* b = chardata + char_index;
+    int round_x = STBTT_ifloor((*xpos + b->xoff) + 0.5f);
+    int round_y = STBTT_ifloor((*ypos + b->yoff) + 0.5f);
+    breakpoint();
+
+    q->x0 = round_x + d3d_bias;
+    q->y0 = round_y + d3d_bias;
+    q->x1 = round_x + b->x1 - b->x0 + d3d_bias;
+    q->y1 = round_y + b->y1 - b->y0 + d3d_bias;
+
+    q->s0 = b->x0 * ipw;
+    q->t0 = b->y0 * iph;
+    q->s1 = b->x1 * ipw;
+    q->t1 = b->y1 * iph;
+
+    *xpos += b->xadvance;
+}
+
 static void TrueTypeTick(GameState* gstate) {
     static stbtt_bakedchar CDATA[96];  // ASCII 32..126 is 95 glyphs
     static LTexture TX = {0};
@@ -4101,30 +4123,37 @@ static void TrueTypeTick(GameState* gstate) {
 
     // DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
 
-    // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
+    char text[] = "hello, carly";
     Vec2 pos = Vec2Lit(100.0f, 150.0f);
-    stbtt_aligned_quad quad = {0};
-    stbtt_GetBakedQuad(CDATA, TX.width, TX.height, 'a' - 32, &pos.x, &pos.y, &quad, true);
 
-    Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
-    // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
-    // origin top left and +Y is down. The rendering position data will work.
-    Vec2 qorigin = Vec2Lit(quad.x0 + (0.5f * qdims.x), quad.y0 + (0.5f * qdims.y));
+    char* s = text;
+    while (*s) {
+        // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
+        stbtt_aligned_quad quad = {0};
+        // stbtt_GetBakedQuad(CDATA, TX.width, TX.height, *s - 32, &pos.x, &pos.y, &quad, true);
+        lcore_GetBakedQuad(CDATA, TX.width, TX.height, *s - 32, &pos.x, &pos.y, &quad, true);
 
-    // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
-    // coordinate system.
-    Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
-    Vec2 quvoffset = {0};
-    quvoffset.x = quad.s0;
-    // We do need to flip the y text coords because we have flipped the texture after baking.
-    // 1 - t0 will map the top left of the sub rect to the new top left of the flipped texture.
-    // By subtracting the height we then get the bottom left corner which is what the engine expects.
-    quvoffset.y = 1.0f - quad.t0 - quvdims.y;
+        Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
+        // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
+        // origin top left and +Y is down. The rendering position data will work.
+        Vec2 qorigin = Vec2Lit(quad.x0 + (0.5f * qdims.x), quad.y0 + (0.5f * qdims.y));
 
-    DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
+        // coordinate system.
+        Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
+        Vec2 quvoffset = {0};
+        quvoffset.x = quad.s0;
+        // We do need to flip the y text coords because we have flipped the texture after baking.
+        // 1 - t0 will map the top left of the sub rect to the new top left of the flipped texture.
+        // By subtracting the height we then get the bottom left corner which is what the engine expects.
+        quvoffset.y = 1.0f - quad.t0 - quvdims.y;
 
-    breakpoint();
+        DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
+        DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        breakpoint();
 
+        ++s;
+    }
     EndShaderPass();
 
     EndRender();
