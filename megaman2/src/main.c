@@ -4101,7 +4101,7 @@ static void TrueTypeTick(GameState* gstate) {
 
     // DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
 
-    char text[] = "hello, carly";
+    char text[] = "Goodnight, my love";
     Vec2 pos = Vec2Lit(100.0f, 150.0f);
 
     char* s = text;
@@ -4110,6 +4110,12 @@ static void TrueTypeTick(GameState* gstate) {
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
         stbtt_GetBakedQuad(CDATA, TX.width, TX.height, *s - 32, &pos.x, &pos.y, &quad, true);
+
+        /*
+            Remember. the key to understanding all of these transformations is to visualize them from the perspective
+            of the originating coordinate system (stb_truetype's coordinate system). If you try to visualize
+            them from the perspective of the final coordinate system, it will be hard to do.
+        */
 
         Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
         // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
