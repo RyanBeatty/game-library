@@ -2286,6 +2286,73 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
 ////////////////////////////////////////////////////////////
 // S:Font
 
+// Loads a true type file at :filename and bakes it into a 512x512 texture containing
+// characters at :fontsize size.
+static LTexture BakeTrueTypeFontBitmap(char* filename, f32 fontsize, stbtt_bakedchar* cdata) {
+    byte ttf_buffer[1 << 20];
+    byte bitmap_alpha[512 * 512];
+    fread(ttf_buffer, 1, 1 << 20, fopen(filename, "rb"));
+    stbtt_BakeFontBitmap(ttf_buffer, 0, fontsize, bitmap_alpha, 512, 512, 32, 96, cdata);
+
+    // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
+    if (false) {
+        FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
+        if (out) {
+            fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+            fwrite(bitmap_alpha, 1, 512 * 512, out);
+            fclose(out);
+        } else {
+            perror("Failed to open font_dump.pgm for writing");
+        }
+    }
+
+    // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
+    // origin in bottom left with +y going up.
+    for (i32 i = 0; i < (512 * 512) / 2; ++i) {
+        i32 col = i % 512;
+        i32 top_row = i / 512;
+        i32 bottom_row = 512 - top_row - 1;
+        i32 top_idx = (top_row * 512) + col;
+        i32 bottom_idx = (bottom_row * 512) + col;
+
+        byte temp = bitmap_alpha[top_idx];
+        bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
+        bitmap_alpha[bottom_idx] = temp;
+    }
+
+    if (false) {
+        FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
+        if (out) {
+            fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+            fwrite(bitmap_alpha, 1, 512 * 512, out);
+            fclose(out);
+        } else {
+            perror("Failed to open font_dump.pgm for writing");
+        }
+    }
+
+    // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
+    // this with our normal shader. yes this is a bit wasteful.
+    byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
+    for (i32 i = 0; i < (512 * 512); ++i) {
+        bitmap[(i * 4) + 0] = 255;
+        bitmap[(i * 4) + 1] = 255;
+        bitmap[(i * 4) + 2] = 255;
+        bitmap[(i * 4) + 3] = bitmap_alpha[i];
+    }
+
+    LTexture tx = {0};
+    tx.width = 512;
+    tx.height = 512;
+    glGenTextures(1, &tx.id);
+    glBindTexture(GL_TEXTURE_2D, tx.id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    free(bitmap);
+    return tx;
+}
+
 typedef u32 FontId;
 
 typedef struct {
@@ -2308,69 +2375,7 @@ LCORE void InitFonts() {
     {
         LFont font = {0};
         font.fontsize = 32.0f;
-        {
-            byte ttf_buffer[1 << 20];
-            byte bitmap_alpha[512 * 512];
-            fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
-            stbtt_BakeFontBitmap(ttf_buffer, 0, font.fontsize, bitmap_alpha, 512, 512, 32, 96, font.cdata);
-
-            // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
-            if (false) {
-                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
-                if (out) {
-                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
-                    fwrite(bitmap_alpha, 1, 512 * 512, out);
-                    fclose(out);
-                } else {
-                    perror("Failed to open font_dump.pgm for writing");
-                }
-            }
-
-            // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
-            // origin in bottom left with +y going up.
-            for (i32 i = 0; i < (512 * 512) / 2; ++i) {
-                i32 col = i % 512;
-                i32 top_row = i / 512;
-                i32 bottom_row = 512 - top_row - 1;
-                i32 top_idx = (top_row * 512) + col;
-                i32 bottom_idx = (bottom_row * 512) + col;
-
-                byte temp = bitmap_alpha[top_idx];
-                bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
-                bitmap_alpha[bottom_idx] = temp;
-            }
-
-            if (false) {
-                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
-                if (out) {
-                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
-                    fwrite(bitmap_alpha, 1, 512 * 512, out);
-                    fclose(out);
-                } else {
-                    perror("Failed to open font_dump.pgm for writing");
-                }
-            }
-
-            // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
-            // this with our normal shader. yes this is a bit wasteful.
-            byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
-            for (i32 i = 0; i < (512 * 512); ++i) {
-                bitmap[(i * 4) + 0] = 255;
-                bitmap[(i * 4) + 1] = 255;
-                bitmap[(i * 4) + 2] = 255;
-                bitmap[(i * 4) + 3] = bitmap_alpha[i];
-            }
-
-            font.tx.width = 512;
-            font.tx.height = 512;
-            glGenTextures(1, &font.tx.id);
-            glBindTexture(GL_TEXTURE_2D, font.tx.id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.tx.width, font.tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                         bitmap);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-            free(bitmap);
-        }
+        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/times.ttf", font.fontsize, font.cdata);
         font.id = LFONT_DEFAULT;
         FONTS[LFONT_DEFAULT] = font;
     }
