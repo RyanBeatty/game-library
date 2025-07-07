@@ -3973,50 +3973,53 @@ static void TrueTypeTickRaw(GameState* gstate) {
 
     // DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
 
-    // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
+    char text[] = "Goodnight, my love";
     Vec2 pos = Vec2Lit(100.0f, 150.0f);
-    stbtt_aligned_quad quad = {0};
-    stbtt_GetBakedQuad(CDATA, TX.width, TX.height, 'a' - 32, &pos.x, &pos.y, &quad, true);
 
-    Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
-    // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
-    // origin top left and +Y is down. The rendering position data will work.
-    Vec2 qorigin = Vec2Lit(quad.x0 + (0.5f * qdims.x), quad.y0 + (0.5f * qdims.y));
+    char* s = text;
+    i32 len = strlen(s);
+    for (i32 i = 0; i < len; ++i) {
+        // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
+        stbtt_aligned_quad quad = {0};
+        // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+        stbtt_GetBakedQuad(CDATA, TX.width, TX.height, s[i] - 32, &pos.x, &pos.y, &quad, true);
 
-    // We do need to flip the y text coords because we have flipped the texture after baking. Note that
-    // this will likely result in y text coords that are negative but that is expected since we've reflected
-    // the image about the x axis midpoint.
-    Vec2 quvoffset = Vec2Lit(quad.s0, 1.0f - quad.t0);
-    Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, 1.0f - quad.t1), Vec2Lit(quad.s0, 1.0f - quad.t0));
+        /*
+            Remember. the key to understanding all of these transformations is to visualize them from the perspective
+            of the originating coordinate system (stb_truetype's coordinate system). If you try to visualize
+            them from the perspective of the final coordinate system, it will be hard to do.
+        */
 
-    // DrawCmd* cmd = DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
-    // cmd->meshcmd.txid = TX.id;
-    // cmd->meshcmd.uvoffset = quvoffset;
-    // cmd->meshcmd.uvscale = quvdims;
-    // DrawLTexturePro2(TX.id, Vec2Zero(), Vec2Lit(1.0f, 1.0f), qorigin, qdims, 0.0f, LRED);
+        Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
+        // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
+        // origin top left and +Y is down. The rendering position data will work.
+        Vec2 qorigin = {0};
+        qorigin.x = quad.x0 + (0.5f * qdims.x);
+        // We need to flip the y position coords since stb_truetype assumes that positioning is relative to a
+        // baseline where the origin is top left and +y is down. Our pos.y is our baseline, so to reflect
+        // we take the height relative to the baseline and subtract that from the baseline. Think of this as if
+        // we were in the coordinate space of stb_truetype. we have a baseline pos.y and some position quad.y1
+        // which is the highest y position of the glyph. We need to subtract the height delta from the baseline
+        // to reflect in stb_truetype coordinate system which will result in upright positions in lcore engine.
+        f32 height_relative_to_baseline = quad.y1 - pos.y;
+        qorigin.y = (pos.y - height_relative_to_baseline) + (0.5f * qdims.y);
 
-    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    // DrawLTexturePro2(GetTexture(TX_DEFAULT).id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
+        // coordinate system.
+        Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
+        Vec2 quvoffset = {0};
+        quvoffset.x = quad.s0;
+        // We do need to flip the y text coords because we have flipped the texture after baking.
+        // 1 - t0 will map the top left of the sub rect to the new top left of the flipped texture.
+        // By subtracting the height we then get the bottom left corner which is what the engine expects.
+        quvoffset.y = 1.0f - quad.t0 - quvdims.y;
 
-    // Debug
-    // DrawCmd* cmd = DrawQuad(Vec3Lit(0.5f * 512.0f, 0.5f * 512.0f, 0.0f), 512, 512, Mat4Identity(), LCLEAR);
-    // cmd->meshcmd.txid = GetTexture(TX_MEGAMAN).id;
-    // cmd->meshcmd.uvoffset = Vec2Lit(0, 0);
-    // cmd->meshcmd.uvscale = Vec2Lit(1, 1);
-
-    Vec3 origin = {0};
-    origin.x = 512 * (quvoffset.x + (0.5f * quvdims.x));
-    origin.y = 512 * (quvoffset.y + (0.5f * quvdims.y));
-    DrawLTexture(TX, Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh), 1.0f);
-    DrawQuad(origin, quvdims.x * 512, fabs(quvdims.y) * 512, Mat4Identity(), LRED);
-    DrawQuad(Vec3Lit(512.0f * quvoffset.x, 512.0f * quvoffset.y, 0.0f), 3, 3, Mat4Identity(), LGREEN);
-    DrawQuad(Vec3Lit(512.0f * quvoffset.x, 512.0f * (1.0f - quad.t0 - (quad.t1 - quad.t0)), 0.0f), 3, 3, Mat4Identity(),
-             LORANGE);
-
-    // DrawCmd* cmd = DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
-
-    breakpoint();
-
+        if (gstate->debug) {
+            DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
+        }
+        DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        breakpoint();
+    }
     EndShaderPass();
 
     EndRender();
