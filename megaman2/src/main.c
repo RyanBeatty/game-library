@@ -2342,6 +2342,8 @@ typedef enum {
 static LFont FONTS[LFONT_COUNT] = {0};
 
 LCORE void InitFonts() {
+    memset(FONTS, 0, sizeof(LFont) * LFONT_COUNT);
+
     {
         LFont font = {0};
         font.fontsize = 32.0f;
@@ -4171,7 +4173,6 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
 
 static void TrueTypeTick(GameState* gstate) {
     if (!gstate->init) {
-        InitFonts();
     }
 
     BeginRender();
@@ -5363,6 +5364,7 @@ static void GameStateInit(GameState* gstate) {
     // DisableCursor();
 
     InitAudio();
+    InitFonts();
     ParticleSystemInit();
 
     RenderStateInit(gstate->renderw, gstate->renderh);
