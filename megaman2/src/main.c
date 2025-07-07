@@ -2454,11 +2454,11 @@ LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
 // Assumes the font texture contains the ascii printable characters on a single line.
 // Characters (note the space beginning the sequence is included):
 // !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
-LCORE void DrawLText(char* text, u32 len, Vec3 pos, Vec4 color) {
+LCORE void DrawLText(char* text, u32 len, Vec2 pos, Vec4 color) {
     DrawLTextEx(GetLFont(LFONT_DEFAULT), text, len, Vec2Lit(pos.x, pos.y), color);
 }
 
-LCORE void DrawLTextF(Vec3 pos, u32 fontsize, Vec4 color, const char* format, ...) {
+LCORE void DrawLTextF(Vec2 pos, u32 fontsize, Vec4 color, const char* format, ...) {
     char buffer[1024];
 
     va_list args;
@@ -4039,7 +4039,7 @@ static void SceneDefaultTick(GameState* gstate) {
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
-    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
     DrawLText(msg, size, pos, LYELLOW);
 
     EndShaderPass();
@@ -4232,7 +4232,7 @@ static void TitleScreenTick(GameState* gstate) {
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
-    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
     DrawLText(msg, size, pos, LYELLOW);
 
     // LTexture tx = GetTexture(TX_LFONT2);
@@ -4266,7 +4266,7 @@ static void StageSelectTick(GameState* gstate) {
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
-    Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+    Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
     DrawLText(msg, size, pos, LYELLOW);
 
     EndShaderPass();
@@ -5253,7 +5253,7 @@ static void StageTick(GameState* gstate) {
 
         // Center text by shifting center forward by half a text cell size and then shifting backward
         // by half the text size.
-        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+        Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
         DrawLText(msg, size, pos, LYELLOW);
 
         EndShaderPass();
@@ -5341,7 +5341,7 @@ LCORE void Stage2Tick(GameState* gstate) {
 
         // Center text by shifting center forward by half a text cell size and then shifting backward
         // by half the text size.
-        Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
+        Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
         DrawLText(msg, size, pos, LYELLOW);
 
         EndShaderPass();
