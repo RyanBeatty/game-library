@@ -908,6 +908,7 @@ static RenderTarget CreateRenderTarget(u32 width, u32 height) {
     // Bind default framebuffer.
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    // Note: This texture is not in the texture cache.
     return (RenderTarget){.fbid = fbo, .txid = txid, .width = width, .height = height};
 }
 
@@ -3894,7 +3895,7 @@ static void SceneDefaultTick(GameState* gstate) {
     EndRender();
 }
 
-static void TrueTypeTickRaw(GameState* gstate) {
+LCORE void TrueTypeTickRaw(GameState* gstate) {
     static stbtt_bakedchar CDATA[96];  // ASCII 32..126 is 95 glyphs
     static LTexture TX = {0};
 
@@ -4025,71 +4026,162 @@ static void TrueTypeTickRaw(GameState* gstate) {
     EndRender();
 }
 
+typedef u32 FontId;
+
+typedef struct {
+    FontId id;
+    LTexture tx;
+    f32 fontsize;
+    stbtt_bakedchar cdata[96];  // ASCII 32..126 is 95 glyphs
+} LFont;
+
+typedef enum {
+    LFONT_DEFAULT = 0,
+    LFONT_COUNT,
+} FontLabel;
+
+static LFont FONTS[LFONT_COUNT] = {0};
+
+LCORE void InitFonts() {
+    {
+        LFont font = {0};
+        font.fontsize = 32.0f;
+        {
+            byte ttf_buffer[1 << 20];
+            byte bitmap_alpha[512 * 512];
+            fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
+            stbtt_BakeFontBitmap(ttf_buffer, 0, font.fontsize, bitmap_alpha, 512, 512, 32, 96, font.cdata);
+
+            // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
+            if (false) {
+                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
+                if (out) {
+                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                    fwrite(bitmap_alpha, 1, 512 * 512, out);
+                    fclose(out);
+                } else {
+                    perror("Failed to open font_dump.pgm for writing");
+                }
+            }
+
+            // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
+            // origin in bottom left with +y going up.
+            for (i32 i = 0; i < (512 * 512) / 2; ++i) {
+                i32 col = i % 512;
+                i32 top_row = i / 512;
+                i32 bottom_row = 512 - top_row - 1;
+                i32 top_idx = (top_row * 512) + col;
+                i32 bottom_idx = (bottom_row * 512) + col;
+
+                byte temp = bitmap_alpha[top_idx];
+                bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
+                bitmap_alpha[bottom_idx] = temp;
+            }
+
+            if (false) {
+                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
+                if (out) {
+                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                    fwrite(bitmap_alpha, 1, 512 * 512, out);
+                    fclose(out);
+                } else {
+                    perror("Failed to open font_dump.pgm for writing");
+                }
+            }
+
+            // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
+            // this with our normal shader. yes this is a bit wasteful.
+            byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
+            for (i32 i = 0; i < (512 * 512); ++i) {
+                bitmap[(i * 4) + 0] = 255;
+                bitmap[(i * 4) + 1] = 255;
+                bitmap[(i * 4) + 2] = 255;
+                bitmap[(i * 4) + 3] = bitmap_alpha[i];
+            }
+
+            font.tx.width = 512;
+            font.tx.height = 512;
+            glGenTextures(1, &font.tx.id);
+            glBindTexture(GL_TEXTURE_2D, font.tx.id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.tx.width, font.tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         bitmap);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+            free(bitmap);
+        }
+        font.id = LFONT_DEFAULT;
+        FONTS[LFONT_DEFAULT] = font;
+    }
+}
+
+static LFont GetFont(FontLabel label) {
+    Assert(label < LFONT_COUNT);
+    return FONTS[label];
+}
+
 static void TrueTypeTick(GameState* gstate) {
-    static stbtt_bakedchar CDATA[96];  // ASCII 32..126 is 95 glyphs
-    static LTexture TX = {0};
-
     if (!gstate->init) {
-        byte ttf_buffer[1 << 20];
-        byte bitmap_alpha[512 * 512];
-        fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
-        stbtt_BakeFontBitmap(ttf_buffer, 0, 32.0, bitmap_alpha, 512, 512, 32, 96, CDATA);
+        InitFonts();
+        // byte ttf_buffer[1 << 20];
+        // byte bitmap_alpha[512 * 512];
+        // fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
+        // stbtt_BakeFontBitmap(ttf_buffer, 0, 32.0, bitmap_alpha, 512, 512, 32, 96, CDATA);
 
-        // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
-        if (false) {
-            FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
-            if (out) {
-                fprintf(out, "P5\n%d %d\n255\n", 512, 512);
-                fwrite(bitmap_alpha, 1, 512 * 512, out);
-                fclose(out);
-            } else {
-                perror("Failed to open font_dump.pgm for writing");
-            }
-        }
+        // // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
+        // if (false) {
+        //     FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
+        //     if (out) {
+        //         fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+        //         fwrite(bitmap_alpha, 1, 512 * 512, out);
+        //         fclose(out);
+        //     } else {
+        //         perror("Failed to open font_dump.pgm for writing");
+        //     }
+        // }
 
-        // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
-        // origin in bottom left with +y going up.
-        for (i32 i = 0; i < (512 * 512) / 2; ++i) {
-            i32 col = i % 512;
-            i32 top_row = i / 512;
-            i32 bottom_row = 512 - top_row - 1;
-            i32 top_idx = (top_row * 512) + col;
-            i32 bottom_idx = (bottom_row * 512) + col;
+        // // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
+        // // origin in bottom left with +y going up.
+        // for (i32 i = 0; i < (512 * 512) / 2; ++i) {
+        //     i32 col = i % 512;
+        //     i32 top_row = i / 512;
+        //     i32 bottom_row = 512 - top_row - 1;
+        //     i32 top_idx = (top_row * 512) + col;
+        //     i32 bottom_idx = (bottom_row * 512) + col;
 
-            byte temp = bitmap_alpha[top_idx];
-            bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
-            bitmap_alpha[bottom_idx] = temp;
-        }
+        //     byte temp = bitmap_alpha[top_idx];
+        //     bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
+        //     bitmap_alpha[bottom_idx] = temp;
+        // }
 
-        if (false) {
-            FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
-            if (out) {
-                fprintf(out, "P5\n%d %d\n255\n", 512, 512);
-                fwrite(bitmap_alpha, 1, 512 * 512, out);
-                fclose(out);
-            } else {
-                perror("Failed to open font_dump.pgm for writing");
-            }
-        }
+        // if (false) {
+        //     FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
+        //     if (out) {
+        //         fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+        //         fwrite(bitmap_alpha, 1, 512 * 512, out);
+        //         fclose(out);
+        //     } else {
+        //         perror("Failed to open font_dump.pgm for writing");
+        //     }
+        // }
 
-        // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
-        // this with our normal shader. yes this is a bit wasteful.
-        byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
-        for (i32 i = 0; i < (512 * 512); ++i) {
-            bitmap[(i * 4) + 0] = 255;
-            bitmap[(i * 4) + 1] = 255;
-            bitmap[(i * 4) + 2] = 255;
-            bitmap[(i * 4) + 3] = bitmap_alpha[i];
-        }
+        // // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
+        // // this with our normal shader. yes this is a bit wasteful.
+        // byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
+        // for (i32 i = 0; i < (512 * 512); ++i) {
+        //     bitmap[(i * 4) + 0] = 255;
+        //     bitmap[(i * 4) + 1] = 255;
+        //     bitmap[(i * 4) + 2] = 255;
+        //     bitmap[(i * 4) + 3] = bitmap_alpha[i];
+        // }
 
-        TX.width = 512;
-        TX.height = 512;
-        glGenTextures(1, &TX.id);
-        glBindTexture(GL_TEXTURE_2D, TX.id);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TX.width, TX.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        // TX.width = 512;
+        // TX.height = 512;
+        // glGenTextures(1, &TX.id);
+        // glBindTexture(GL_TEXTURE_2D, TX.id);
+        // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TX.width, TX.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
+        // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-        free(bitmap);
+        // free(bitmap);
     }
 
     BeginRender();
@@ -4109,11 +4201,13 @@ static void TrueTypeTick(GameState* gstate) {
 
     char* s = text;
     i32 len = strlen(s);
+
+    LFont font = GetFont(LFONT_DEFAULT);
     for (i32 i = 0; i < len; ++i) {
         // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-        stbtt_GetBakedQuad(CDATA, TX.width, TX.height, s[i] - 32, &pos.x, &pos.y, &quad, true);
+        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, s[i] - 32, &pos.x, &pos.y, &quad, true);
 
         /*
             Remember. the key to understanding all of these transformations is to visualize them from the perspective
@@ -4148,7 +4242,7 @@ static void TrueTypeTick(GameState* gstate) {
         if (gstate->debug) {
             DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         }
-        DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
         breakpoint();
     }
     EndShaderPass();
