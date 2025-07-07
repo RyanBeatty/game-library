@@ -2381,7 +2381,7 @@ static LFont GetLFont(FontLabel label) {
     return FONTS[label];
 }
 
-LCORE Vec2 DrawLTextEx(LFont font, Vec2 baseline_pos, char* text, i32 len, Vec4 color) {
+LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 color) {
     for (i32 i = 0; i < len; ++i) {
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
@@ -2455,7 +2455,7 @@ LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
 // Characters (note the space beginning the sequence is included):
 // !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 LCORE void DrawLText(char* text, u32 len, Vec3 pos, Vec4 color) {
-    DrawLTextEx(GetLFont(LFONT_DEFAULT), Vec2Lit(pos.x, pos.y), text, len, color);
+    DrawLTextEx(GetLFont(LFONT_DEFAULT), text, len, Vec2Lit(pos.x, pos.y), color);
 }
 
 LCORE void DrawLTextF(Vec3 pos, u32 fontsize, Vec4 color, const char* format, ...) {
@@ -4199,7 +4199,7 @@ static void TrueTypeTick(GameState* gstate) {
     Vec2 dims = LFontMeasureText(font, text, len);
     Vec2 pos = Vec2Lit(0.5f * (gstate->renderw - dims.x), 0.5f * (gstate->renderh - dims.y));
 
-    DrawLTextEx(font, pos, text, len, LRED);
+    DrawLTextEx(font, text, len, pos, LRED);
 
     EndShaderPass();
 
