@@ -4119,35 +4119,15 @@ static LFont GetFont(FontLabel label) {
     return FONTS[label];
 }
 
-static void TrueTypeTick(GameState* gstate) {
-    if (!gstate->init) {
-        InitFonts();
-    }
+LCORE Vec2 DrawLText2(LFont font, Vec2 baseline_pos, char* text, i32 len) {
+    GameState* gstate = GetGameState();
 
-    BeginRender();
-
-    ShaderPass* pass = BeginShaderPass(GetShader());
-
-    ClearBuffer(LBLUE);
-
-    u32 width = gstate->renderw;
-    u32 height = gstate->renderh;
-    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
-
-    // DrawLTexture(TX, Vec2Lit(0.5f * width, 0.3f * height), 0.5f);
-
-    char text[] = "Goodnight, my love";
-    Vec2 pos = Vec2Lit(100.0f, 150.0f);
-
-    char* s = text;
-    i32 len = strlen(s);
-
-    LFont font = GetFont(LFONT_DEFAULT);
     for (i32 i = 0; i < len; ++i) {
         // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, s[i] - 32, &pos.x, &pos.y, &quad, true);
+        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
+                           &quad, true);
 
         /*
             Remember. the key to understanding all of these transformations is to visualize them from the perspective
@@ -4166,8 +4146,8 @@ static void TrueTypeTick(GameState* gstate) {
         // we were in the coordinate space of stb_truetype. we have a baseline pos.y and some position quad.y1
         // which is the highest y position of the glyph. We need to subtract the height delta from the baseline
         // to reflect in stb_truetype coordinate system which will result in upright positions in lcore engine.
-        f32 height_relative_to_baseline = quad.y1 - pos.y;
-        qorigin.y = (pos.y - height_relative_to_baseline) + (0.5f * qdims.y);
+        f32 height_relative_to_baseline = quad.y1 - baseline_pos.y;
+        qorigin.y = (baseline_pos.y - height_relative_to_baseline) + (0.5f * qdims.y);
 
         // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
         // coordinate system.
@@ -4184,6 +4164,33 @@ static void TrueTypeTick(GameState* gstate) {
         }
         DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
     }
+    return baseline_pos;
+}
+
+static void TrueTypeTick(GameState* gstate) {
+    if (!gstate->init) {
+        InitFonts();
+    }
+
+    BeginRender();
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+
+    ClearBuffer(LBLUE);
+
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+
+    LFont font = GetFont(LFONT_DEFAULT);
+
+    char text[] = "Goodnight, my love";
+    i32 len = strlen(text);
+
+    Vec2 pos = Vec2Lit(100.0f, 150.0f);
+
+    DrawLText2(font, pos, text, len);
+
     EndShaderPass();
 
     EndRender();
