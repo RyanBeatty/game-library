@@ -4211,7 +4211,7 @@ static void TrueTypeTick(GameState* gstate) {
 
     LFont font = GetFont(LFONT_DEFAULT);
 
-    char text[] = "Goodnight, my love";
+    char text[] = "The quick brown fox";
     i32 len = strlen(text);
 
     Vec2 dims = LFontMeasureText(font, text, len);
