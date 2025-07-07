@@ -1947,45 +1947,6 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
                     Vec2Lit(tx.width * scale, tx.height * scale), 0.0f, LCLEAR);
 }
 
-// Assumes the font texture contains the ascii printable characters on a single line.
-// Characters (note the space beginning the sequence is included):
-// !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
-LCORE void DrawLText(const char* text, u32 size, Vec3 pos, u32 fontsize, Vec4 color) {
-    LTexture tx = GetTexture(TX_LFONT);
-
-    u32 x = 28;
-    u32 y = 52;
-    // (width, height) of the src and dest recs).
-    // misnomer name I think. the center adjusts by the full width each time.
-    Vec2 r_src = Vec2Lit(x, y);
-    // Vec2 r_dst = Vec2Lit(8, 8);
-    Vec2 r_dst = Vec2Lit(fontsize, fontsize);
-
-    for (u32 i = 0; i < size; ++i, pos = Vec3Add(pos, Vec3Lit(r_dst.x, 0.0f, 0.0f))) {
-        u32 offset = text[i] - ' ';
-
-        // center src and dest.
-        Vec2 c_src = Vec2Lit((x * offset) % tx.width, y * (u32)((x * offset) / tx.width));
-        Vec2 c_dst = Vec2Lit(pos.x, pos.y);
-        DrawLTexturePro(tx, c_src, r_src, c_dst, r_dst, 0.0f, color);
-    }
-}
-
-LCORE void DrawLTextF(Vec3 pos, u32 fontsize, Vec4 color, const char* format, ...) {
-    char buffer[1024];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    DrawLText(buffer, strlen(buffer), pos, fontsize, color);
-}
-
-// Imagine the texture as a single pre baked one off texture. This will measure the width
-// and height of that texture.
-LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
-
 ////////////////////////////////////////////////////////////
 // S:Geometry
 
@@ -2415,7 +2376,7 @@ LCORE void InitFonts() {
     }
 }
 
-static LFont GetFont(FontLabel label) {
+static LFont GetLFont(FontLabel label) {
     Assert(label < LFONT_COUNT);
     return FONTS[label];
 }
@@ -2489,6 +2450,28 @@ LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
     Vec2 dims = Vec2Sub(br, tl);
     return dims;
 }
+
+// Assumes the font texture contains the ascii printable characters on a single line.
+// Characters (note the space beginning the sequence is included):
+// !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+LCORE void DrawLText(char* text, u32 len, Vec3 pos, Vec4 color) {
+    DrawLTextEx(GetLFont(LFONT_DEFAULT), Vec2Lit(pos.x, pos.y), text, len, color);
+}
+
+LCORE void DrawLTextF(Vec3 pos, u32 fontsize, Vec4 color, const char* format, ...) {
+    char buffer[1024];
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    DrawLText(buffer, strlen(buffer), pos, color);
+}
+
+// Imagine the texture as a single pre baked one off texture. This will measure the width
+// and height of that texture.
+LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
 
 ////////////////////////////////////////////////////////////
 // S:Sound
@@ -4057,7 +4040,7 @@ static void SceneDefaultTick(GameState* gstate) {
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
     Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-    DrawLText(msg, size, pos, fontsize, LYELLOW);
+    DrawLText(msg, size, pos, LYELLOW);
 
     EndShaderPass();
 
@@ -4188,7 +4171,6 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
             DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         }
         DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
-        breakpoint();
     }
     EndShaderPass();
 
@@ -4209,7 +4191,7 @@ static void TrueTypeTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
 
-    LFont font = GetFont(LFONT_DEFAULT);
+    LFont font = GetLFont(LFONT_DEFAULT);
 
     char text[] = "The quick brown fox";
     i32 len = strlen(text);
@@ -4251,7 +4233,7 @@ static void TitleScreenTick(GameState* gstate) {
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
     Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-    DrawLText(msg, size, pos, fontsize, LYELLOW);
+    DrawLText(msg, size, pos, LYELLOW);
 
     // LTexture tx = GetTexture(TX_LFONT2);
     // DrawLTexture(GetTexture(TX_LFONT2), Vec3ToVec2(POS), 1.0f);
@@ -4285,7 +4267,7 @@ static void StageSelectTick(GameState* gstate) {
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
     Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-    DrawLText(msg, size, pos, fontsize, LYELLOW);
+    DrawLText(msg, size, pos, LYELLOW);
 
     EndShaderPass();
 
@@ -5272,7 +5254,7 @@ static void StageTick(GameState* gstate) {
         // Center text by shifting center forward by half a text cell size and then shifting backward
         // by half the text size.
         Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-        DrawLText(msg, size, pos, fontsize, LYELLOW);
+        DrawLText(msg, size, pos, LYELLOW);
 
         EndShaderPass();
     }
@@ -5360,7 +5342,7 @@ LCORE void Stage2Tick(GameState* gstate) {
         // Center text by shifting center forward by half a text cell size and then shifting backward
         // by half the text size.
         Vec3 pos = Vec3Lit(0.5f * (width + fontsize - dim.x), 0.70f * height, 0);
-        DrawLText(msg, size, pos, fontsize, LYELLOW);
+        DrawLText(msg, size, pos, LYELLOW);
 
         EndShaderPass();
     }
@@ -5373,14 +5355,10 @@ LCORE void Stage2Tick(GameState* gstate) {
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
 
-    //     gstate->renderw = 256.0f;
-    // gstate->renderh = 240.0f;
+    gstate->renderw = 256.0f;
+    gstate->renderh = 240.0f;
 
-    // u32 scale = 3;
-    gstate->renderw = 512.0f;
-    gstate->renderh = 512.0f;
-
-    u32 scale = 1;
+    u32 scale = 3;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowPosition(100, 100);
     // SetWindowState(FLAG_WINDOW_UNDECORATED);
@@ -5413,7 +5391,7 @@ static void GameStateInit(GameState* gstate) {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_TRUE_TYPE);
+    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
