@@ -2353,10 +2353,7 @@ static LTexture BakeTrueTypeFontBitmap(char* filename, f32 fontsize, stbtt_baked
     return tx;
 }
 
-typedef u32 FontId;
-
 typedef struct {
-    FontId id;
     LTexture tx;
     f32 fontsize;
     stbtt_bakedchar cdata[96];  // ASCII 32..126 is 95 glyphs
@@ -2364,6 +2361,7 @@ typedef struct {
 
 typedef enum {
     LFONT_DEFAULT = 0,
+    LFONT_SMALL,
     LFONT_COUNT,
 } FontLabel;
 
@@ -2376,8 +2374,14 @@ LCORE void InitFonts() {
         LFont font = {0};
         font.fontsize = 32.0f;
         font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/times.ttf", font.fontsize, font.cdata);
-        font.id = LFONT_DEFAULT;
         FONTS[LFONT_DEFAULT] = font;
+    }
+
+    {
+        LFont font = {0};
+        font.fontsize = 16.0f;
+        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/times.ttf", font.fontsize, font.cdata);
+        FONTS[LFONT_SMALL] = font;
     }
 }
 
@@ -4228,16 +4232,13 @@ static void TitleScreenTick(GameState* gstate) {
     char msg[] = "Press ENTER To Start";
     u32 size = strlen(msg);
 
-    LFont font = GetLFont(LFONT_DEFAULT);
+    LFont font = GetLFont(LFONT_SMALL);
     Vec2 dim = LFontMeasureText(font, msg, size);
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
     Vec2 pos = Vec2Lit(0.5f * (width - dim.x), 0.70f * height);
     DrawLTextEx(font, msg, size, pos, LYELLOW);
-
-    // LTexture tx = GetTexture(TX_LFONT2);
-    // DrawLTexture(GetTexture(TX_LFONT2), Vec3ToVec2(POS), 1.0f);
 
     EndShaderPass();
 
