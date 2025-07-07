@@ -2422,7 +2422,6 @@ static LFont GetFont(FontLabel label) {
 
 LCORE Vec2 DrawLText2(LFont font, Vec2 baseline_pos, char* text, i32 len) {
     for (i32 i = 0; i < len; ++i) {
-        // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
         stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
@@ -2464,6 +2463,31 @@ LCORE Vec2 DrawLText2(LFont font, Vec2 baseline_pos, char* text, i32 len) {
         DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
     }
     return baseline_pos;
+}
+
+// This will return the dimensions of the quad that would be necessary to span the entire text (i.e. if somehow
+// the text was baked into a texture, what quad dims would be needed to draw the texture).
+LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
+    Vec2 tl = Vec2Zero();
+    Vec2 br = Vec2Zero();
+
+    Vec2 baseline_pos = Vec2Zero();
+
+    for (i32 i = 0; i < len; ++i) {
+        stbtt_aligned_quad quad = {0};
+        // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
+                           &quad, true);
+
+        tl.x = f32min(tl.x, quad.x0);
+        tl.y = f32min(tl.y, quad.y0);
+
+        br.x = f32max(br.x, quad.x1);
+        br.y = f32max(br.y, quad.y1);
+    }
+
+    Vec2 dims = Vec2Sub(br, tl);
+    return dims;
 }
 
 ////////////////////////////////////////////////////////////
@@ -4190,7 +4214,8 @@ static void TrueTypeTick(GameState* gstate) {
     char text[] = "Goodnight, my love";
     i32 len = strlen(text);
 
-    Vec2 pos = Vec2Lit(100.0f, 150.0f);
+    Vec2 dims = LFontMeasureText(font, text, len);
+    Vec2 pos = Vec2Lit(0.5f * (gstate->renderw - dims.x), 0.5f * (gstate->renderh - dims.y));
 
     DrawLText2(font, pos, text, len);
 
