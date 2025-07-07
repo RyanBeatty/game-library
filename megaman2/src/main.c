@@ -2420,7 +2420,7 @@ static LFont GetFont(FontLabel label) {
     return FONTS[label];
 }
 
-LCORE Vec2 DrawLText2(LFont font, Vec2 baseline_pos, char* text, i32 len) {
+LCORE Vec2 DrawLTextEx(LFont font, Vec2 baseline_pos, char* text, i32 len, Vec4 color) {
     for (i32 i = 0; i < len; ++i) {
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
@@ -2460,7 +2460,7 @@ LCORE Vec2 DrawLText2(LFont font, Vec2 baseline_pos, char* text, i32 len) {
         // if (gstate->debug) {
         //     DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         // }
-        DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
     }
     return baseline_pos;
 }
@@ -4217,7 +4217,7 @@ static void TrueTypeTick(GameState* gstate) {
     Vec2 dims = LFontMeasureText(font, text, len);
     Vec2 pos = Vec2Lit(0.5f * (gstate->renderw - dims.x), 0.5f * (gstate->renderh - dims.y));
 
-    DrawLText2(font, pos, text, len);
+    DrawLTextEx(font, pos, text, len, LRED);
 
     EndShaderPass();
 
