@@ -2469,10 +2469,6 @@ LCORE void DrawLTextF(Vec2 pos, u32 fontsize, Vec4 color, const char* format, ..
     DrawLText(buffer, strlen(buffer), pos, color);
 }
 
-// Imagine the texture as a single pre baked one off texture. This will measure the width
-// and height of that texture.
-LCORE Vec2 MeasureLText(const char* text, u32 size, u32 fontsize) { return Vec2Lit(fontsize * size, fontsize); }
-
 ////////////////////////////////////////////////////////////
 // S:Sound
 
@@ -4034,13 +4030,13 @@ static void SceneDefaultTick(GameState* gstate) {
     char msg[] = "DEFAULT SCENE";
     u32 size = strlen(msg);
 
-    u32 fontsize = 10.0f;
-    Vec2 dim = MeasureLText(msg, size, fontsize);
+    LFont font = GetLFont(LFONT_DEFAULT);
+    Vec2 dim = LFontMeasureText(font, msg, size);
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
-    Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
-    DrawLText(msg, size, pos, LYELLOW);
+    Vec2 pos = Vec2Lit(0.5f * (width - dim.x), 0.70f * height);
+    DrawLTextEx(font, msg, size, pos, LYELLOW);
 
     EndShaderPass();
 
@@ -4227,13 +4223,13 @@ static void TitleScreenTick(GameState* gstate) {
     char msg[] = "Press ENTER To Start";
     u32 size = strlen(msg);
 
-    u32 fontsize = 10.0f;
-    Vec2 dim = MeasureLText(msg, size, fontsize);
+    LFont font = GetLFont(LFONT_DEFAULT);
+    Vec2 dim = LFontMeasureText(font, msg, size);
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
-    Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
-    DrawLText(msg, size, pos, LYELLOW);
+    Vec2 pos = Vec2Lit(0.5f * (width - dim.x), 0.70f * height);
+    DrawLTextEx(font, msg, size, pos, LYELLOW);
 
     // LTexture tx = GetTexture(TX_LFONT2);
     // DrawLTexture(GetTexture(TX_LFONT2), Vec3ToVec2(POS), 1.0f);
@@ -4261,12 +4257,12 @@ static void StageSelectTick(GameState* gstate) {
     char msg[] = "Stage Select";
     u32 size = strlen(msg);
 
-    u32 fontsize = 10.0f;
-    Vec2 dim = MeasureLText(msg, size, fontsize);
+    LFont font = GetLFont(LFONT_DEFAULT);
+    Vec2 dim = LFontMeasureText(font, msg, size);
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
     // by half the text size.
-    Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
+    Vec2 pos = Vec2Lit(0.5f * (width - dim.x), 0.70f * height);
     DrawLText(msg, size, pos, LYELLOW);
 
     EndShaderPass();
@@ -5248,13 +5244,13 @@ static void StageTick(GameState* gstate) {
         char msg[] = "Stage 1";
         u32 size = strlen(msg);
 
-        u32 fontsize = 10.0f;
-        Vec2 dim = MeasureLText(msg, size, fontsize);
+        LFont font = GetLFont(LFONT_DEFAULT);
+        Vec2 dim = LFontMeasureText(font, msg, size);
 
         // Center text by shifting center forward by half a text cell size and then shifting backward
         // by half the text size.
-        Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
-        DrawLText(msg, size, pos, LYELLOW);
+        Vec2 pos = Vec2Lit(0.5f * (width - dim.x), 0.70f * height);
+        DrawLTextEx(font, msg, size, pos, LYELLOW);
 
         EndShaderPass();
     }
@@ -5336,13 +5332,13 @@ LCORE void Stage2Tick(GameState* gstate) {
         char msg[] = "Stage 1";
         u32 size = strlen(msg);
 
-        u32 fontsize = 10.0f;
-        Vec2 dim = MeasureLText(msg, size, fontsize);
+        LFont font = GetLFont(LFONT_DEFAULT);
+        Vec2 dim = LFontMeasureText(font, msg, size);
 
         // Center text by shifting center forward by half a text cell size and then shifting backward
         // by half the text size.
-        Vec2 pos = Vec2Lit(0.5f * (width + fontsize - dim.x), 0.70f * height);
-        DrawLText(msg, size, pos, LYELLOW);
+        Vec2 pos = Vec2Lit(0.5f * (width - dim.x), 0.70f * height);
+        DrawLTextEx(font, msg, size, pos, LYELLOW);
 
         EndShaderPass();
     }
