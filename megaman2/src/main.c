@@ -4105,11 +4105,12 @@ static void TrueTypeTick(GameState* gstate) {
     Vec2 pos = Vec2Lit(100.0f, 150.0f);
 
     char* s = text;
-    while (*s) {
+    i32 len = strlen(s);
+    for (i32 i = 0; i < len; ++i) {
         // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-        stbtt_GetBakedQuad(CDATA, TX.width, TX.height, *s - 32, &pos.x, &pos.y, &quad, true);
+        stbtt_GetBakedQuad(CDATA, TX.width, TX.height, s[i] - 32, &pos.x, &pos.y, &quad, true);
 
         /*
             Remember. the key to understanding all of these transformations is to visualize them from the perspective
@@ -4146,8 +4147,6 @@ static void TrueTypeTick(GameState* gstate) {
         }
         DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
         breakpoint();
-
-        ++s;
     }
     EndShaderPass();
 
@@ -5303,6 +5302,10 @@ LCORE void Stage2Tick(GameState* gstate) {
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
 
+    //     gstate->renderw = 256.0f;
+    // gstate->renderh = 240.0f;
+
+    // u32 scale = 3;
     gstate->renderw = 512.0f;
     gstate->renderh = 512.0f;
 
