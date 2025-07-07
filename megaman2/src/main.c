@@ -2323,6 +2323,149 @@ LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
 }
 
 ////////////////////////////////////////////////////////////
+// S:Font
+
+typedef u32 FontId;
+
+typedef struct {
+    FontId id;
+    LTexture tx;
+    f32 fontsize;
+    stbtt_bakedchar cdata[96];  // ASCII 32..126 is 95 glyphs
+} LFont;
+
+typedef enum {
+    LFONT_DEFAULT = 0,
+    LFONT_COUNT,
+} FontLabel;
+
+static LFont FONTS[LFONT_COUNT] = {0};
+
+LCORE void InitFonts() {
+    {
+        LFont font = {0};
+        font.fontsize = 32.0f;
+        {
+            byte ttf_buffer[1 << 20];
+            byte bitmap_alpha[512 * 512];
+            fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
+            stbtt_BakeFontBitmap(ttf_buffer, 0, font.fontsize, bitmap_alpha, 512, 512, 32, 96, font.cdata);
+
+            // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
+            if (false) {
+                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
+                if (out) {
+                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                    fwrite(bitmap_alpha, 1, 512 * 512, out);
+                    fclose(out);
+                } else {
+                    perror("Failed to open font_dump.pgm for writing");
+                }
+            }
+
+            // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
+            // origin in bottom left with +y going up.
+            for (i32 i = 0; i < (512 * 512) / 2; ++i) {
+                i32 col = i % 512;
+                i32 top_row = i / 512;
+                i32 bottom_row = 512 - top_row - 1;
+                i32 top_idx = (top_row * 512) + col;
+                i32 bottom_idx = (bottom_row * 512) + col;
+
+                byte temp = bitmap_alpha[top_idx];
+                bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
+                bitmap_alpha[bottom_idx] = temp;
+            }
+
+            if (false) {
+                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
+                if (out) {
+                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
+                    fwrite(bitmap_alpha, 1, 512 * 512, out);
+                    fclose(out);
+                } else {
+                    perror("Failed to open font_dump.pgm for writing");
+                }
+            }
+
+            // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
+            // this with our normal shader. yes this is a bit wasteful.
+            byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
+            for (i32 i = 0; i < (512 * 512); ++i) {
+                bitmap[(i * 4) + 0] = 255;
+                bitmap[(i * 4) + 1] = 255;
+                bitmap[(i * 4) + 2] = 255;
+                bitmap[(i * 4) + 3] = bitmap_alpha[i];
+            }
+
+            font.tx.width = 512;
+            font.tx.height = 512;
+            glGenTextures(1, &font.tx.id);
+            glBindTexture(GL_TEXTURE_2D, font.tx.id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.tx.width, font.tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         bitmap);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+            free(bitmap);
+        }
+        font.id = LFONT_DEFAULT;
+        FONTS[LFONT_DEFAULT] = font;
+    }
+}
+
+static LFont GetFont(FontLabel label) {
+    Assert(label < LFONT_COUNT);
+    return FONTS[label];
+}
+
+LCORE Vec2 DrawLText2(LFont font, Vec2 baseline_pos, char* text, i32 len) {
+    for (i32 i = 0; i < len; ++i) {
+        // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
+        stbtt_aligned_quad quad = {0};
+        // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
+                           &quad, true);
+
+        /*
+            Remember. the key to understanding all of these transformations is to visualize them from the perspective
+            of the originating coordinate system (stb_truetype's coordinate system). If you try to visualize
+            them from the perspective of the final coordinate system, it will be hard to do.
+        */
+
+        Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
+        // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
+        // origin top left and +Y is down. The rendering position data will work.
+        Vec2 qorigin = {0};
+        qorigin.x = quad.x0 + (0.5f * qdims.x);
+        // We need to flip the y position coords since stb_truetype assumes that positioning is relative to a
+        // baseline where the origin is top left and +y is down. Our pos.y is our baseline, so to reflect
+        // we take the height relative to the baseline and subtract that from the baseline. Think of this as if
+        // we were in the coordinate space of stb_truetype. we have a baseline pos.y and some position quad.y1
+        // which is the highest y position of the glyph. We need to subtract the height delta from the baseline
+        // to reflect in stb_truetype coordinate system which will result in upright positions in lcore engine.
+        f32 height_relative_to_baseline = quad.y1 - baseline_pos.y;
+        qorigin.y = (baseline_pos.y - height_relative_to_baseline) + (0.5f * qdims.y);
+
+        // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
+        // coordinate system.
+        Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
+        Vec2 quvoffset = {0};
+        quvoffset.x = quad.s0;
+        // We do need to flip the y text coords because we have flipped the texture after baking.
+        // 1 - t0 will map the top left of the sub rect to the new top left of the flipped texture.
+        // By subtracting the height we then get the bottom left corner which is what the engine expects.
+        quvoffset.y = 1.0f - quad.t0 - quvdims.y;
+
+        // if (gstate->debug) {
+        //     DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
+        // }
+        DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+    }
+    return baseline_pos;
+}
+
+////////////////////////////////////////////////////////////
+// S:Sound
 
 typedef enum {
     SOUND_NONE = 0,
@@ -4024,147 +4167,6 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
     EndShaderPass();
 
     EndRender();
-}
-
-typedef u32 FontId;
-
-typedef struct {
-    FontId id;
-    LTexture tx;
-    f32 fontsize;
-    stbtt_bakedchar cdata[96];  // ASCII 32..126 is 95 glyphs
-} LFont;
-
-typedef enum {
-    LFONT_DEFAULT = 0,
-    LFONT_COUNT,
-} FontLabel;
-
-static LFont FONTS[LFONT_COUNT] = {0};
-
-LCORE void InitFonts() {
-    {
-        LFont font = {0};
-        font.fontsize = 32.0f;
-        {
-            byte ttf_buffer[1 << 20];
-            byte bitmap_alpha[512 * 512];
-            fread(ttf_buffer, 1, 1 << 20, fopen("c:/windows/fonts/times.ttf", "rb"));
-            stbtt_BakeFontBitmap(ttf_buffer, 0, font.fontsize, bitmap_alpha, 512, 512, 32, 96, font.cdata);
-
-            // Output alpha bitmap to pgm file (greyscal file). viewable in GIMP for debugging.
-            if (false) {
-                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump.pgm", "wb");
-                if (out) {
-                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
-                    fwrite(bitmap_alpha, 1, 512 * 512, out);
-                    fclose(out);
-                } else {
-                    perror("Failed to open font_dump.pgm for writing");
-                }
-            }
-
-            // The baked bitmap assumes origin in top left with +y pointing down. Flip the engine expects
-            // origin in bottom left with +y going up.
-            for (i32 i = 0; i < (512 * 512) / 2; ++i) {
-                i32 col = i % 512;
-                i32 top_row = i / 512;
-                i32 bottom_row = 512 - top_row - 1;
-                i32 top_idx = (top_row * 512) + col;
-                i32 bottom_idx = (bottom_row * 512) + col;
-
-                byte temp = bitmap_alpha[top_idx];
-                bitmap_alpha[top_idx] = bitmap_alpha[bottom_idx];
-                bitmap_alpha[bottom_idx] = temp;
-            }
-
-            if (false) {
-                FILE* out = fopen("C:/Users/rvbea/scratch/font_dump_flipped.pgm", "wb");
-                if (out) {
-                    fprintf(out, "P5\n%d %d\n255\n", 512, 512);
-                    fwrite(bitmap_alpha, 1, 512 * 512, out);
-                    fclose(out);
-                } else {
-                    perror("Failed to open font_dump.pgm for writing");
-                }
-            }
-
-            // The baked bitmap contains only alpha channel information. Convert to rgba so that we can draw
-            // this with our normal shader. yes this is a bit wasteful.
-            byte* bitmap = calloc(512 * 512 * 4, sizeof(byte));
-            for (i32 i = 0; i < (512 * 512); ++i) {
-                bitmap[(i * 4) + 0] = 255;
-                bitmap[(i * 4) + 1] = 255;
-                bitmap[(i * 4) + 2] = 255;
-                bitmap[(i * 4) + 3] = bitmap_alpha[i];
-            }
-
-            font.tx.width = 512;
-            font.tx.height = 512;
-            glGenTextures(1, &font.tx.id);
-            glBindTexture(GL_TEXTURE_2D, font.tx.id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, font.tx.width, font.tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                         bitmap);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-            free(bitmap);
-        }
-        font.id = LFONT_DEFAULT;
-        FONTS[LFONT_DEFAULT] = font;
-    }
-}
-
-static LFont GetFont(FontLabel label) {
-    Assert(label < LFONT_COUNT);
-    return FONTS[label];
-}
-
-LCORE Vec2 DrawLText2(LFont font, Vec2 baseline_pos, char* text, i32 len) {
-    GameState* gstate = GetGameState();
-
-    for (i32 i = 0; i < len; ++i) {
-        // Vec2 pos = Vec2Lit(0.5f * width, 0.5f * height);
-        stbtt_aligned_quad quad = {0};
-        // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
-                           &quad, true);
-
-        /*
-            Remember. the key to understanding all of these transformations is to visualize them from the perspective
-            of the originating coordinate system (stb_truetype's coordinate system). If you try to visualize
-            them from the perspective of the final coordinate system, it will be hard to do.
-        */
-
-        Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
-        // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
-        // origin top left and +Y is down. The rendering position data will work.
-        Vec2 qorigin = {0};
-        qorigin.x = quad.x0 + (0.5f * qdims.x);
-        // We need to flip the y position coords since stb_truetype assumes that positioning is relative to a
-        // baseline where the origin is top left and +y is down. Our pos.y is our baseline, so to reflect
-        // we take the height relative to the baseline and subtract that from the baseline. Think of this as if
-        // we were in the coordinate space of stb_truetype. we have a baseline pos.y and some position quad.y1
-        // which is the highest y position of the glyph. We need to subtract the height delta from the baseline
-        // to reflect in stb_truetype coordinate system which will result in upright positions in lcore engine.
-        f32 height_relative_to_baseline = quad.y1 - baseline_pos.y;
-        qorigin.y = (baseline_pos.y - height_relative_to_baseline) + (0.5f * qdims.y);
-
-        // Don't need to modify anything to calculate the dims since dimensions are not in reference of a particular
-        // coordinate system.
-        Vec2 quvdims = Vec2Sub(Vec2Lit(quad.s1, quad.t1), Vec2Lit(quad.s0, quad.t0));
-        Vec2 quvoffset = {0};
-        quvoffset.x = quad.s0;
-        // We do need to flip the y text coords because we have flipped the texture after baking.
-        // 1 - t0 will map the top left of the sub rect to the new top left of the flipped texture.
-        // By subtracting the height we then get the bottom left corner which is what the engine expects.
-        quvoffset.y = 1.0f - quad.t0 - quvdims.y;
-
-        if (gstate->debug) {
-            DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
-        }
-        DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
-    }
-    return baseline_pos;
 }
 
 static void TrueTypeTick(GameState* gstate) {
