@@ -4321,6 +4321,9 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_BUNNY, 0.0f, 1.0f);
                     break;
                 }
+                case MT_BAT: {
+                    break;
+                }
                 default: {
                     TraceLog(LOG_ERROR, "Unknown mob type %d", e->mobtype);
                     exit(1);
@@ -4507,7 +4510,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 0;
+        u32 room_idx = 1;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
