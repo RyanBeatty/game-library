@@ -2846,6 +2846,7 @@ typedef struct {
 
     MobType mobtype;
     f32 movement_cooldown_dt;
+    f32 wakeup_dt;
     bool awake;
 
 } Entity;
@@ -4302,6 +4303,11 @@ static const AseRect MOB_BAT_IDLE = {
     .lc = Vec2Lit(149.0f, 73.0f),
     .r = Vec2Lit(16.0f, 24.0f),
 };
+static const AnimationAseRect MOB_BAT_WAKEUP = {
+    .start = {.lc = Vec2Lit(166.0f, 73.0f), .r = Vec2Lit(32.0f, 24.0f)},
+    .step = Vec2Lit(33.0f, 0.0f),
+    .nframes = 3,
+};
 
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
@@ -5023,8 +5029,19 @@ static void StageTick(GameState* gstate) {
                                 Vec3 dir = Vec3Sub(player->pos, e->pos);
                                 if (e->awake) {
                                     e->v = Vec3Scale(Vec3Normalize(dir), 20.0f);
+                                } else if (e->wakeup_dt > 0.0f) {
+                                    e->wakeup_dt += dt;
+                                    if (e->wakeup_dt >= 0.6f) {
+                                        e->awake = true;
+                                    } else if (e->wakeup_dt >= 0.4f) {
+                                        e->graphics.txinfo.animation.frame = 3;
+                                    } else if (e->wakeup_dt >= 0.2f) {
+                                        e->graphics.txinfo.animation.frame = 2;
+                                    }
                                 } else if (dir.y <= 0.0f) {
-                                    e->awake = true;
+                                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                                                                         MOB_BAT_WAKEUP, 0.0f, 1.0f);
+                                    e->wakeup_dt += dt;
                                 }
                             }
                             gravity = 0.0f;
