@@ -4298,6 +4298,11 @@ static const AnimationAseRect MOB_BUNNY = {
     .nframes = 3,
 };
 
+static const AseRect MOB_BAT_IDLE = {
+    .lc = Vec2Lit(149.0f, 73.0f),
+    .r = Vec2Lit(16.0f, 24.0f),
+};
+
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
 
@@ -4322,6 +4327,7 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                     break;
                 }
                 case MT_BAT: {
+                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_BAT_IDLE, 0.0f, 1.0f);
                     break;
                 }
                 default: {
@@ -4510,7 +4516,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 0;
+        u32 room_idx = 1;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
