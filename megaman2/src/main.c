@@ -4510,7 +4510,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 1;
+        u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -4710,7 +4710,7 @@ static void StageTick(GameState* gstate) {
 
                                 PSTATE = PS_CLIMBING;
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else if (down_ladder != NULL && no_ground && IsKeyDown(KDOWN)) {
+                            } else if (down_ladder != NULL && IsKeyDown(KDOWN)) {
                                 e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
