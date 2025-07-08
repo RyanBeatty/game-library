@@ -4446,6 +4446,43 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
     }
 }
 
+// Returns reference to first entity with :flag that is hit by the 2x2 bb.
+static Entity* EntityProbeWorld(Entity* e, Vec2 c, EntityFlag flag) {
+    f32 probe_width = 2.0f;
+    f32 probe_height = 2.0f;
+
+    Polyhedron shape = {0};
+    shape.type = PH_AABB2D;
+    shape.aabb2d.c = c;
+    shape.aabb2d.r = Vec2Lit(0.5f * probe_width, 0.5f * probe_height);
+
+    shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
+
+    Entity* hit = NULL;
+    for (u32 j = 0; j < GetNumEntities(); ++j) {
+        Entity* e2 = GetEntity(j);
+        if (e->id == e2->id) {
+            continue;
+        }
+        if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, flag) || e2->shape.type == PH_NONE) {
+            continue;
+        }
+
+        Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
+
+        CollisionInfo info = {0};
+        bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
+        if (collides) {
+            hit = e2;
+            break;
+        }
+    }
+
+    DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), probe_width, probe_height, Mat4Identity(),
+             hit != NULL ? LGREEN : LGRAY);
+    return hit;
+}
+
 static void StageTick(GameState* gstate) {
     static LCamera CAMERA = {0};
     static bool SPAWNED = false;
@@ -4592,34 +4629,10 @@ static void StageTick(GameState* gstate) {
                     }
 
                     // ground detection.
-                    Entity* ground = NULL;
-                    {
-                        Polyhedron shape = {0};
-                        shape.type = PH_AABB2D;
-                        shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                        for (u32 j = 0; j < GetNumEntities(); ++j) {
-                            Entity* e2 = GetEntity(j);
-                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
-                                e2->shape.type == PH_NONE) {
-                                continue;
-                            }
-
-                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                            CollisionInfo info = {0};
-                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                            if (collides) {
-                                ground = e2;
-                                break;
-                            }
-                        }
-
-                        DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
-                                 ground != NULL ? LGREEN : LGRAY);
-                    }
+                    Entity* ground[2] = {0};
+                    ground[0] = EntityProbeWorld(e, Vec2Lit(-8.0f, -12.0f), EFLAG_WALL);
+                    ground[1] = EntityProbeWorld(e, Vec2Lit(8.0f, -12.0f), EFLAG_WALL);
+                    bool in_air = ground[0] == NULL && ground[1] == NULL;
 
                     // Ladder detection.
                     Entity* up_ladder = NULL;
@@ -4683,7 +4696,7 @@ static void StageTick(GameState* gstate) {
                     switch (PSTATE) {
                         case PS_IDLE: {
                             // We are falling.
-                            if (ground == NULL) {
+                            if (in_air) {
                                 PSTATE = PS_JUMPING;
                                 e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
@@ -4694,7 +4707,7 @@ static void StageTick(GameState* gstate) {
 
                                 PSTATE = PS_CLIMBING;
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else if (down_ladder != NULL && ground == NULL && IsKeyDown(KDOWN)) {
+                            } else if (down_ladder != NULL && in_air && IsKeyDown(KDOWN)) {
                                 e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
@@ -4740,7 +4753,7 @@ static void StageTick(GameState* gstate) {
                                     PSTATE = PS_IDLE;
                                     e->v = Vec3Zero();
                                     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                                } else if (IsKeyDown(KDOWN) && ground != NULL) {
+                                } else if (IsKeyDown(KDOWN) && !in_air) {
                                     PSTATE = PS_IDLE;
                                     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 } else if (IsKeyPressed(KJUMP)) {
@@ -4790,7 +4803,7 @@ static void StageTick(GameState* gstate) {
                             bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
 
                             // We are falling.
-                            if (ground == NULL) {
+                            if (in_air) {
                                 PSTATE = PS_JUMPING;
                                 e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
@@ -4866,7 +4879,7 @@ static void StageTick(GameState* gstate) {
                             e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
 
                             bool moving = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
-                            if (ground != NULL) {
+                            if (!in_air) {
                                 if (moving) {
                                     PSTATE = PS_WALKING;
                                     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
