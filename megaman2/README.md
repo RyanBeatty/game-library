@@ -7,11 +7,11 @@ Conventions
 
 
 Engine Improvments/Thoughts
-* We need to improve text rendering. Fonts clip a bit when upscaled. Maybe this can be fixed by rasterizing a larger font size
 * The way shader passes work with multiple shaders is kind of clunky. Especially the render to texture and then to sreen bit. Seems like I don't have great support for switching framebuffers between shader passes. I'm not sure what the right structure here is at this time tbh.
 * At some point we need to tackle memory allocation.
 * Stop using raylib for input handling
 * Stop using raylib for window + opengl context creation.
+* The way graphics info is set is a bit weird. Really I should be able only have to initialize data from an aserect or aserpite animation once and then do some simple pointer swap of graphicsinfo state between these intialized things. Might need to take into account animation state. Maybe that should be moved though?
 
 MEGAMAN GOALS
 * at least 1 stage + boss fight
@@ -35,11 +35,6 @@ TODO MEGAMAN
     * Convert collision infos to be list of colliders
 * scenes
     * boss scene
-* better text rendering
-
-BUGS
-* Trying to render rasterized text at different sizes is awful. I should either pre render multiple
-sizes or bite the bullet and try to implement true type fonts.
 
 
 TODO
