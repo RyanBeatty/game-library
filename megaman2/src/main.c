@@ -4632,9 +4632,9 @@ static void StageTick(GameState* gstate) {
                     }
 
                     // ground detection.
-                    Entity* leftground = EntityProbeWorld(e, Vec2Lit(-8.0f, -12.0f), EFLAG_WALL);
+                    Entity* leftground = EntityProbeWorld(e, Vec2Lit(-6.0f, -12.0f), EFLAG_WALL);
                     Entity* middleground = EntityProbeWorld(e, Vec2Lit(0.0f, -12.0f), EFLAG_WALL);
-                    Entity* rightground = EntityProbeWorld(e, Vec2Lit(8.0f, -12.0f), EFLAG_WALL);
+                    Entity* rightground = EntityProbeWorld(e, Vec2Lit(6.0f, -12.0f), EFLAG_WALL);
                     bool no_ground = leftground == NULL && middleground == NULL && rightground == NULL;
 
                     // Ladder detection.
