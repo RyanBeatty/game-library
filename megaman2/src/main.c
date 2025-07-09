@@ -4308,6 +4308,11 @@ static const AnimationAseRect MOB_BAT_WAKEUP = {
     .step = Vec2Lit(33.0f, 0.0f),
     .nframes = 3,
 };
+static const AnimationAseRect MOB_BAT_AWAKE = {
+    .start = {.lc = Vec2Lit(265.0f, 73.0f), .r = Vec2Lit(32.0f, 24.0f)},
+    .step = Vec2Lit(33.0f, 0.0f),
+    .nframes = 3,
+};
 
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
@@ -5029,14 +5034,23 @@ static void StageTick(GameState* gstate) {
                                 Vec3 dir = Vec3Sub(player->pos, e->pos);
                                 if (e->awake) {
                                     e->v = Vec3Scale(Vec3Normalize(dir), 20.0f);
+
+                                    e->graphics.txinfo.animation.frame_dt += dt;
+                                    if (e->graphics.txinfo.animation.frame_dt > 0.12f) {
+                                        ++e->graphics.txinfo.animation.frame;
+                                        e->graphics.txinfo.animation.frame %= e->graphics.txinfo.animation.nframes;
+                                        e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                    }
                                 } else if (e->wakeup_dt > 0.0f) {
                                     e->wakeup_dt += dt;
                                     if (e->wakeup_dt >= 0.6f) {
                                         e->awake = true;
+                                        GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                                                                             MOB_BAT_AWAKE, 0.0f, 1.0f);
                                     } else if (e->wakeup_dt >= 0.4f) {
-                                        e->graphics.txinfo.animation.frame = 3;
-                                    } else if (e->wakeup_dt >= 0.2f) {
                                         e->graphics.txinfo.animation.frame = 2;
+                                    } else if (e->wakeup_dt >= 0.2f) {
+                                        e->graphics.txinfo.animation.frame = 1;
                                     }
                                 } else if (dir.y <= 0.0f) {
                                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
