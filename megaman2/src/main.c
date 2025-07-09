@@ -3283,7 +3283,7 @@ static Stage* GetStage(StageId sid) {
                     u32* len = &room.elen;
                     u32 cap = ArraySizeOf(room.enemies);
                     Vec2 positions[][2] = {
-                        {Vec2Lit(1190.0f, 672.0f), Vec2Lit(1221.0f, 641.0f)},
+                        {Vec2Lit(1199.0f, 672.0f), Vec2Lit(1230.0f, 641.0f)},
                     };
                     MobType mobtypes[] = {
                         MT_DOG,
@@ -4356,6 +4356,7 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_DOG_IDLE, 0.0f,
                                                          1.0f);
                     e->facing_left = true;
+                    e->graphics.pos_offset = Vec3Lit(0.0f, 13.0f, 0.0f);
                     break;
                 }
                 default: {
@@ -4544,7 +4545,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 1;
+        u32 room_idx = 2;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -5241,7 +5242,9 @@ static void StageTick(GameState* gstate) {
 
         if (TestFlag(e->flags, EFLAG_DRAW)) {
             GraphicsInfo* graphics = &e->graphics;
-            graphics->pos = Vec3Add(e->pos, Vec3Scale(graphics->pos_offset, e->facing_left ? -1.0f : 1.0f));
+            Vec3 pos_offset = graphics->pos_offset;
+            pos_offset.x *= e->facing_left ? -1.0f : 1.0f;
+            graphics->pos = Vec3Add(e->pos, pos_offset);
             graphics->orient = e->orient;
 
             TextureInfo* txinfo = &graphics->txinfo;
