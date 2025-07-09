@@ -2776,6 +2776,7 @@ typedef enum {
     MT_NONE = 0,
     MT_RABBIT,
     MT_BAT,
+    MT_DOG,
     MT_COUNT,
 } MobType;
 
@@ -3284,6 +3285,9 @@ static Stage* GetStage(StageId sid) {
                     Vec2 positions[][2] = {
                         {Vec2Lit(1190.0f, 672.0f), Vec2Lit(1221.0f, 641.0f)},
                     };
+                    MobType mobtypes[] = {
+                        MT_DOG,
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3292,6 +3296,7 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        spec.mobtype = mobtypes[i];
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
@@ -4314,6 +4319,12 @@ static const AnimationAseRect MOB_BAT_AWAKE = {
     .nframes = 3,
 };
 
+static const AnimationAseRect MOB_DOG_IDLE = {
+    .start = {.lc = Vec2Lit(121.0f, 471.0f), .r = Vec2Lit(73.0f, 62.0f)},
+    .step = Vec2Lit(74.0f, 0.0f),
+    .nframes = 6,
+};
+
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
 
@@ -4339,6 +4350,12 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                 }
                 case MT_BAT: {
                     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_BAT_IDLE, 0.0f, 1.0f);
+                    break;
+                }
+                case MT_DOG: {
+                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_DOG_IDLE, 0.0f,
+                                                         1.0f);
+                    e->facing_left = true;
                     break;
                 }
                 default: {
@@ -5059,6 +5076,9 @@ static void StageTick(GameState* gstate) {
                                 }
                             }
                             gravity = 0.0f;
+                            break;
+                        }
+                        case MT_DOG: {
                             break;
                         }
                         default: {

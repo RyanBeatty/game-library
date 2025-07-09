@@ -12,6 +12,7 @@ Engine Improvments/Thoughts
 * Stop using raylib for input handling
 * Stop using raylib for window + opengl context creation.
 * The way graphics info is set is a bit weird. Really I should be able only have to initialize data from an aserect or aserpite animation once and then do some simple pointer swap of graphicsinfo state between these intialized things. Might need to take into account animation state. Maybe that should be moved though?
+    - Having fame_dt be inside the textureinfo doesn't make much sense. This should probably be on the GraphicsInfo itself
 
 MEGAMAN GOALS
 * at least 1 stage + boss fight
