@@ -2852,6 +2852,10 @@ typedef struct {
 
     f32 idle_dt;
     f32 shooting_dt;
+
+    bool pos_parametric;
+    f32 parametric_dt;
+    Vec3 pos_start;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -5112,6 +5116,16 @@ static void StageTick(GameState* gstate) {
                                     e->idle_dt = 0.0f;
                                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
                                                                          MOB_DOG_ATTACK, 0.0f, 1.0f);
+
+                                    {
+                                        Entity* shot = AllocateEntity();
+
+                                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
+                                                             Vec3Lit(8.0f, 8.0f, 1.0f), LRED);
+                                        FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                        shot->pos_parametric = true;
+                                        shot->pos_start = e->pos;
+                                    }
                                 } else {
                                     e->graphics.txinfo.animation.frame_dt += dt;
                                     if (e->graphics.txinfo.animation.frame_dt >=
@@ -5135,7 +5149,15 @@ static void StageTick(GameState* gstate) {
                 }
 
                 if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    if (e->pos_parametric) {
+                        e->parametric_dt += dt;
+                        Vec3 curve = {0};
+                        curve.x = -e->parametric_dt;
+                        curve.y = (e->parametric_dt * e->parametric_dt) - (3.0f * e->parametric_dt);
+                        e->pos = Vec3Add(e->pos_start, curve);
+                    } else {
+                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    }
                 }
             }
 
@@ -5216,13 +5238,13 @@ static void StageTick(GameState* gstate) {
                             mob->v = Vec3Zero();
                         }
 
-                        if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
-                            Entity* mob = e0;
-                            Entity* shot = e1;
+                        // if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
+                        //     Entity* mob = e0;
+                        //     Entity* shot = e1;
 
-                            --mob->health;
-                            SoftDeactivateEntity(shot->id);
-                        }
+                        //     --mob->health;
+                        //     SoftDeactivateEntity(shot->id);
+                        // }
 
                         if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_WALL)) {
                             Entity* shot = e0;
