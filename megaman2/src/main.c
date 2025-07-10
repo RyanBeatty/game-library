@@ -4327,6 +4327,12 @@ static const AnimationAseRect MOB_DOG_IDLE = {
     .nframes = 6,
 };
 
+static const AnimationAseRect MOB_DOG_ATTACK = {
+    .start = {.lc = Vec2Lit(560.0f, 471.0f), .r = Vec2Lit(72.0f, 62.0f)},
+    .step = Vec2Lit(73.0f, 0.0f),
+    .nframes = 2,
+};
+
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
 
@@ -5082,18 +5088,37 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case MT_DOG: {
-                            static const f32 IDLE_TIME = 1.5f;
-                            e->idle_dt += dt;
-                            if (e->idle_dt > IDLE_TIME) {
-                                e->idle_dt = 0.0f;
-                                GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_DOG_IDLE,
-                                                                     0.0f, 1.0f);
+                            if (e->awake) {
+                                static const f32 SHOOTING_TIME = 0.7f;
+                                e->shooting_dt += dt;
+                                if (e->shooting_dt >= SHOOTING_TIME) {
+                                    e->shooting_dt = 0.0f;
+                                    e->awake = false;
+                                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                                                                         MOB_DOG_IDLE, 0.0f, 1.0f);
+                                } else {
+                                    e->graphics.txinfo.animation.frame_dt += dt;
+                                    if (e->graphics.txinfo.animation.frame_dt >=
+                                        SHOOTING_TIME / e->graphics.txinfo.animation.nframes) {
+                                        ++e->graphics.txinfo.animation.frame;
+                                        e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                    }
+                                }
                             } else {
-                                e->graphics.txinfo.animation.frame_dt += dt;
-                                if (e->graphics.txinfo.animation.frame_dt >=
-                                    IDLE_TIME / e->graphics.txinfo.animation.nframes) {
-                                    ++e->graphics.txinfo.animation.frame;
-                                    e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                static const f32 IDLE_TIME = 1.5f;
+                                e->idle_dt += dt;
+                                if (e->idle_dt > IDLE_TIME) {
+                                    e->awake = true;
+                                    e->idle_dt = 0.0f;
+                                    GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                                                                         MOB_DOG_ATTACK, 0.0f, 1.0f);
+                                } else {
+                                    e->graphics.txinfo.animation.frame_dt += dt;
+                                    if (e->graphics.txinfo.animation.frame_dt >=
+                                        IDLE_TIME / e->graphics.txinfo.animation.nframes) {
+                                        ++e->graphics.txinfo.animation.frame;
+                                        e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                    }
                                 }
                             }
                             break;
