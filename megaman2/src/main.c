@@ -2850,6 +2850,8 @@ typedef struct {
     f32 wakeup_dt;
     bool awake;
 
+    f32 idle_dt;
+    f32 shooting_dt;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4320,8 +4322,8 @@ static const AnimationAseRect MOB_BAT_AWAKE = {
 };
 
 static const AnimationAseRect MOB_DOG_IDLE = {
-    .start = {.lc = Vec2Lit(121.0f, 471.0f), .r = Vec2Lit(73.0f, 62.0f)},
-    .step = Vec2Lit(74.0f, 0.0f),
+    .start = {.lc = Vec2Lit(122.0f, 471.0f), .r = Vec2Lit(72.0f, 62.0f)},
+    .step = Vec2Lit(73.0f, 0.0f),
     .nframes = 6,
 };
 
@@ -5080,6 +5082,20 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case MT_DOG: {
+                            static const f32 IDLE_TIME = 1.5f;
+                            e->idle_dt += dt;
+                            if (e->idle_dt > IDLE_TIME) {
+                                e->idle_dt = 0.0f;
+                                GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_DOG_IDLE,
+                                                                     0.0f, 1.0f);
+                            } else {
+                                e->graphics.txinfo.animation.frame_dt += dt;
+                                if (e->graphics.txinfo.animation.frame_dt >=
+                                    IDLE_TIME / e->graphics.txinfo.animation.nframes) {
+                                    ++e->graphics.txinfo.animation.frame;
+                                    e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                }
+                            }
                             break;
                         }
                         default: {
