@@ -5006,6 +5006,7 @@ static void StageTick(GameState* gstate) {
 
                             GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
                             FlagOn(shot->flags, EFLAG_PROJECTILE);
+                            shot->attacker_id = e->id;
                         }
                     }
                 }
@@ -5287,6 +5288,15 @@ static void StageTick(GameState* gstate) {
                             Entity* player = e0;
                             Entity* attacker = e1;
                             if (player->attacker_id == NULLID) {
+                                player->attacker_id = attacker->id;
+                                player->attack_dir = info->normal;
+                            }
+                        }
+
+                        if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
+                            Entity* player = e0;
+                            Entity* attacker = e1;
+                            if (player->attacker_id == NULLID && attacker->attacker_id != player->id) {
                                 player->attacker_id = attacker->id;
                                 player->attack_dir = info->normal;
                             }
