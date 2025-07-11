@@ -4348,6 +4348,12 @@ static const AnimationAseRect MOB_DOG_ATTACK = {
     .nframes = 2,
 };
 
+static const AnimationAseRect MOB_DOG_FIREBALL = {
+    .start = {.lc = Vec2Lit(18.0f, 112.0f), .r = Vec2Lit(10.0f, 10.0f)},
+    .step = Vec2Lit(11.0f, 0.0f),
+    .nframes = 3,
+};
+
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
 
@@ -5126,8 +5132,10 @@ static void StageTick(GameState* gstate) {
                                             shot->lifetime = 4.0f;
                                             shot->attacker_id = e->id;
 
-                                            GraphicsInfoSetShape(&shot->graphics, GetMesh(M_ICOSPHERE),
-                                                                 Vec3Lit(5.0f, 5.0f, 1.0f), LRED);
+                                            // GraphicsInfoSetShape(&shot->graphics, GetMesh(M_ICOSPHERE),
+                                            //                      Vec3Lit(5.0f, 5.0f, 1.0f), LRED);
+                                            GraphicsInfoSetAnimationFromAseprite(
+                                                &shot->graphics, GetTexture(TX_MEGAMAN), MOB_DOG_FIREBALL, 0.0f, 1.0f);
                                             FlagOn(shot->flags, EFLAG_PROJECTILE);
                                             shot->pos_parametric = true;
                                             shot->pos_start = Vec3Add(e->pos, Vec3Lit(-10.0f, 0.0f, 0.0f));
@@ -5183,6 +5191,15 @@ static void StageTick(GameState* gstate) {
                             // A controls acceleration. B controls initial velocity.
                             curve.y = (120.0f * e->parametric_dt * e->parametric_dt) - (100.0f * e->parametric_dt);
                             e->pos = Vec3Add(e->pos_start, curve);
+                        }
+
+                        if (e->graphics.txinfo.type == TI_ANIMATION) {
+                            e->graphics.txinfo.animation.frame_dt += dt;
+                            if (e->graphics.txinfo.animation.frame_dt >= 0.05f) {
+                                e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                ++e->graphics.txinfo.animation.frame;
+                                e->graphics.txinfo.animation.frame %= e->graphics.txinfo.animation.nframes;
+                            }
                         }
                     } else {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
