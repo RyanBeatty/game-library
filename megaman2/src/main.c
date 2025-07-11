@@ -5123,6 +5123,7 @@ static void StageTick(GameState* gstate) {
                                             PolyhedronSetCircle(&shot->shape, Vec2Zero(), 4.0f);
                                             FlagOn(shot->flags, EFLAG_IGNORE_WALL_ON_HIT);
                                             shot->lifetime = 4.0f;
+                                            shot->attacker_id = e->id;
 
                                             GraphicsInfoSetShape(&shot->graphics, GetMesh(M_ICOSPHERE),
                                                                  Vec3Lit(5.0f, 5.0f, 1.0f), LRED);
@@ -5265,13 +5266,15 @@ static void StageTick(GameState* gstate) {
                             mob->v = Vec3Zero();
                         }
 
-                        // if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
-                        //     Entity* mob = e0;
-                        //     Entity* shot = e1;
+                        if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
+                            Entity* mob = e0;
+                            Entity* shot = e1;
 
-                        //     --mob->health;
-                        //     SoftDeactivateEntity(shot->id);
-                        // }
+                            if (shot->attacker_id != mob->id) {
+                                --mob->health;
+                                SoftDeactivateEntity(shot->id);
+                            }
+                        }
 
                         if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_WALL)) {
                             Entity* shot = e0;
