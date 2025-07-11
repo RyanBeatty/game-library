@@ -5102,8 +5102,9 @@ static void StageTick(GameState* gstate) {
                                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
                                                                          MOB_DOG_IDLE, 0.0f, 1.0f);
                                 } else {
-                                    f32 shot_cooldown_dt = SHOOTING_TIME / 3.0f;
-                                    if (e->shooting_dt >= shot_cooldown_dt * e->nshots) {
+                                    // f32 shot_cooldown_dt = SHOOTING_TIME / 3.0f;
+                                    f32 shot_cooldown_dt = 0.12f;
+                                    if (e->nshots < 3 && e->shooting_dt >= shot_cooldown_dt * e->nshots) {
                                         ++e->nshots;
                                         {
                                             Entity* shot = AllocateEntity();
