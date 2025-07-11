@@ -5124,7 +5124,7 @@ static void StageTick(GameState* gstate) {
                                                              Vec3Lit(8.0f, 8.0f, 1.0f), LRED);
                                         FlagOn(shot->flags, EFLAG_PROJECTILE);
                                         shot->pos_parametric = true;
-                                        shot->pos_start = e->pos;
+                                        shot->pos_start = Vec3Add(e->pos, Vec3Lit(-10.0f, 0.0f, 0.0f));
                                     }
                                 } else {
                                     e->graphics.txinfo.animation.frame_dt += dt;
@@ -5152,8 +5152,8 @@ static void StageTick(GameState* gstate) {
                     if (e->pos_parametric) {
                         e->parametric_dt += dt;
                         Vec3 curve = {0};
-                        curve.x = -e->parametric_dt;
-                        curve.y = (e->parametric_dt * e->parametric_dt) - (3.0f * e->parametric_dt);
+                        curve.x = -e->parametric_dt * 150.0f;
+                        curve.y = (120.0f * e->parametric_dt * e->parametric_dt) - (100.0f * e->parametric_dt);
                         e->pos = Vec3Add(e->pos_start, curve);
                     } else {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
