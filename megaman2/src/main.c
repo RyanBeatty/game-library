@@ -5120,8 +5120,8 @@ static void StageTick(GameState* gstate) {
                                     {
                                         Entity* shot = AllocateEntity();
 
-                                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
-                                                             Vec3Lit(8.0f, 8.0f, 1.0f), LRED);
+                                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_ICOSPHERE),
+                                                             Vec3Lit(5.0f, 5.0f, 1.0f), LRED);
                                         FlagOn(shot->flags, EFLAG_PROJECTILE);
                                         shot->pos_parametric = true;
                                         shot->pos_start = Vec3Add(e->pos, Vec3Lit(-10.0f, 0.0f, 0.0f));
