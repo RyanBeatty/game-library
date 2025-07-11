@@ -5153,6 +5153,7 @@ static void StageTick(GameState* gstate) {
                         e->parametric_dt += dt;
                         Vec3 curve = {0};
                         curve.x = -e->parametric_dt * 150.0f;
+                        // A controls acceleration. B controls initial velocity.
                         curve.y = (120.0f * e->parametric_dt * e->parametric_dt) - (100.0f * e->parametric_dt);
                         e->pos = Vec3Add(e->pos_start, curve);
                     } else {
