@@ -2129,6 +2129,12 @@ LCORE void PolyHedronSetAABB2DFromWH(Polyhedron* shape, Vec2 c, Vec2 dims) {
     shape->aabb2d.r = Vec2Lit(0.5f * dims.x, 0.5f * dims.y);
 }
 
+LCORE void PolyhedronSetCircle(Polyhedron* shape, Vec2 c, f32 r) {
+    shape->type = PH_CIRCLE;
+    shape->circle.c = c;
+    shape->circle.r = r;
+}
+
 // Important to pass decomposed transformation matrix (scale, rot, translate) because some polyhedron
 // like world axis-aligned shapes do not rotate for instance.
 // TODO: Consider making an interface where I get the corAserect polyhedron transformation matrix as a separate
@@ -2801,6 +2807,7 @@ typedef enum EntityFlag {
     EFLAG_MOB = 1 << 6,
     EFLAG_CLIMABLE = 1 << 7,
     EFLAG_EXIT = 1 << 8,
+    EFLAG_IGNORE_WALL_ON_HIT = 1 << 9
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2833,6 +2840,8 @@ typedef struct {
 
     GraphicsInfo graphics;
 
+    f32 active_dt;
+
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
     f32 jumping_dt;
@@ -2857,6 +2866,7 @@ typedef struct {
     bool pos_parametric;
     f32 parametric_dt;
     Vec3 pos_start;
+    f32 lifetime;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4651,6 +4661,8 @@ static void StageTick(GameState* gstate) {
                     continue;
                 }
 
+                e->active_dt += dt;
+
                 e->ppos = e->pos;
 
                 if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
@@ -5108,6 +5120,10 @@ static void StageTick(GameState* gstate) {
                                         {
                                             Entity* shot = AllocateEntity();
 
+                                            PolyhedronSetCircle(&shot->shape, Vec2Zero(), 4.0f);
+                                            FlagOn(shot->flags, EFLAG_IGNORE_WALL_ON_HIT);
+                                            shot->lifetime = 4.0f;
+
                                             GraphicsInfoSetShape(&shot->graphics, GetMesh(M_ICOSPHERE),
                                                                  Vec3Lit(5.0f, 5.0f, 1.0f), LRED);
                                             FlagOn(shot->flags, EFLAG_PROJECTILE);
@@ -5156,12 +5172,16 @@ static void StageTick(GameState* gstate) {
 
                 if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
                     if (e->pos_parametric) {
-                        e->parametric_dt += dt;
-                        Vec3 curve = {0};
-                        curve.x = -e->parametric_dt * 150.0f;
-                        // A controls acceleration. B controls initial velocity.
-                        curve.y = (120.0f * e->parametric_dt * e->parametric_dt) - (100.0f * e->parametric_dt);
-                        e->pos = Vec3Add(e->pos_start, curve);
+                        if (e->active_dt >= e->lifetime) {
+                            SoftDeactivateEntity(e->id);
+                        } else {
+                            e->parametric_dt += dt;
+                            Vec3 curve = {0};
+                            curve.x = -e->parametric_dt * 150.0f;
+                            // A controls acceleration. B controls initial velocity.
+                            curve.y = (120.0f * e->parametric_dt * e->parametric_dt) - (100.0f * e->parametric_dt);
+                            e->pos = Vec3Add(e->pos_start, curve);
+                        }
                     } else {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
@@ -5255,7 +5275,9 @@ static void StageTick(GameState* gstate) {
 
                         if (TestFlag(e0->flags, EFLAG_PROJECTILE) && TestFlag(e1->flags, EFLAG_WALL)) {
                             Entity* shot = e0;
-                            SoftDeactivateEntity(shot->id);
+                            if (!TestFlag(shot->flags, EFLAG_IGNORE_WALL_ON_HIT)) {
+                                SoftDeactivateEntity(shot->id);
+                            }
                         }
 
                         if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_MOB)) {
