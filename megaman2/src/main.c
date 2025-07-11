@@ -2852,6 +2852,7 @@ typedef struct {
 
     f32 idle_dt;
     f32 shooting_dt;
+    i32 nshots;
 
     bool pos_parametric;
     f32 parametric_dt;
@@ -5101,6 +5102,20 @@ static void StageTick(GameState* gstate) {
                                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
                                                                          MOB_DOG_IDLE, 0.0f, 1.0f);
                                 } else {
+                                    f32 shot_cooldown_dt = SHOOTING_TIME / 3.0f;
+                                    if (e->shooting_dt >= shot_cooldown_dt * e->nshots) {
+                                        ++e->nshots;
+                                        {
+                                            Entity* shot = AllocateEntity();
+
+                                            GraphicsInfoSetShape(&shot->graphics, GetMesh(M_ICOSPHERE),
+                                                                 Vec3Lit(5.0f, 5.0f, 1.0f), LRED);
+                                            FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                            shot->pos_parametric = true;
+                                            shot->pos_start = Vec3Add(e->pos, Vec3Lit(-10.0f, 0.0f, 0.0f));
+                                        }
+                                    }
+
                                     e->graphics.txinfo.animation.frame_dt += dt;
                                     if (e->graphics.txinfo.animation.frame_dt >=
                                         SHOOTING_TIME / e->graphics.txinfo.animation.nframes) {
@@ -5114,18 +5129,9 @@ static void StageTick(GameState* gstate) {
                                 if (e->idle_dt > IDLE_TIME) {
                                     e->awake = true;
                                     e->idle_dt = 0.0f;
+                                    e->nshots = 0;
                                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
                                                                          MOB_DOG_ATTACK, 0.0f, 1.0f);
-
-                                    {
-                                        Entity* shot = AllocateEntity();
-
-                                        GraphicsInfoSetShape(&shot->graphics, GetMesh(M_ICOSPHERE),
-                                                             Vec3Lit(5.0f, 5.0f, 1.0f), LRED);
-                                        FlagOn(shot->flags, EFLAG_PROJECTILE);
-                                        shot->pos_parametric = true;
-                                        shot->pos_start = Vec3Add(e->pos, Vec3Lit(-10.0f, 0.0f, 0.0f));
-                                    }
                                 } else {
                                     e->graphics.txinfo.animation.frame_dt += dt;
                                     if (e->graphics.txinfo.animation.frame_dt >=
