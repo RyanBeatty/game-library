@@ -3539,6 +3539,10 @@ static Stage* GetStage(StageId sid) {
                         {Vec2Lit(1864, 342), Vec2Lit(1879, 327)},
                         {Vec2Lit(1906, 374), Vec2Lit(1921, 359)},
                     };
+                    MobType mobtypes[] = {
+                        MT_BAT,
+                        MT_BAT,
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3547,6 +3551,7 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        spec.mobtype = mobtypes[i];
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
@@ -4584,7 +4589,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 4;
+        u32 room_idx = 5;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
