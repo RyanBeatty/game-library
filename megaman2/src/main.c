@@ -28,6 +28,8 @@ static f32 TOL = 0.001;
 #define f32asin asin
 #define f32acos acos
 #define f32atan atan
+#define f32floor floorf
+#define f32ceil ceilf
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
 // Prefer this lerp forumulation as at t=0 we will have exactly start and at t=1 we will have exactly end.
 // The other formulation is subject to floating point precision issues where we might not get exactly
@@ -3362,6 +3364,9 @@ static Stage* GetStage(StageId sid) {
                     Vec2 positions[][2] = {
                         {Vec2Lit(1441.0f, 640.0f), Vec2Lit(1504.0f, 609.0f)},
                     };
+                    MobType mobtypes[] = {
+                        MT_DOG,
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3370,6 +3375,7 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        spec.mobtype = mobtypes[i];
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
@@ -3418,6 +3424,9 @@ static Stage* GetStage(StageId sid) {
                     Vec2 positions[][2] = {
                         {Vec2Lit(1729.0f, 608.0f), Vec2Lit(1792.0f, 577.0f)},
                     };
+                    MobType mobtypes[] = {
+                        MT_DOG,
+                    };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
                             AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
@@ -3426,6 +3435,7 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        spec.mobtype = mobtypes[i];
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
@@ -4574,7 +4584,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 2;
+        u32 room_idx = 4;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
@@ -5335,6 +5345,11 @@ static void StageTick(GameState* gstate) {
                 f32 camera_right_bound_x = room->room_bounds.c.x + room->room_bounds.r.x - camera_half_width;
                 CAMERA.eye.x = f32clamp(player->pos.x, camera_left_bound_x, camera_right_bound_x);
             }
+
+            // A bit hacky, but we clamp the camera position to be only integer values. If we don't then its
+            // possible for sprites to get rasterized incorrectly due to subpixel texture values.
+            CAMERA.eye.x = f32floor(CAMERA.eye.x);
+            CAMERA.eye.y = f32floor(CAMERA.eye.y);
         }
     } else {
         // Transitioning camera between rooms
