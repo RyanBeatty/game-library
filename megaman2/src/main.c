@@ -4971,6 +4971,14 @@ static void StageTick(GameState* gstate) {
                                     PSTATE = PS_IDLE;
                                     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 }
+                            } else if (up_ladder != NULL && IsKeyPressed(KUP)) {
+                                e->v = Vec3Zero();
+                                e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
+                                // Super hacky. we should be more rigorous about this eventually.
+                                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
+
+                                PSTATE = PS_CLIMBING;
+                                GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             }
 
                             break;
@@ -5351,10 +5359,10 @@ static void StageTick(GameState* gstate) {
                 CAMERA.eye.x = f32clamp(player->pos.x, camera_left_bound_x, camera_right_bound_x);
             }
 
-            // A bit hacky, but we clamp the camera position to be only integer values. If we don't then its
-            // possible for sprites to get rasterized incorrectly due to subpixel texture values.
-            CAMERA.eye.x = f32floor(CAMERA.eye.x);
-            CAMERA.eye.y = f32floor(CAMERA.eye.y);
+            // // A bit hacky, but we clamp the camera position to be only integer values. If we don't then its
+            // // possible for sprites to get rasterized incorrectly due to subpixel texture values.
+            // CAMERA.eye.x = f32floor(CAMERA.eye.x);
+            // CAMERA.eye.y = f32floor(CAMERA.eye.y);
         }
     } else {
         // Transitioning camera between rooms
