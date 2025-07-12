@@ -3009,6 +3009,9 @@ typedef struct {
     EntitySpec enemies[10];
     u32 elen;
 
+    EntitySpec spawners[10];
+    u32 spawnerslen;
+
     EntitySpec next_room_exit_spec;
     EntitySpec prev_room_exit_spec;
 } Room;
@@ -3610,6 +3613,24 @@ static Stage* GetStage(StageId sid) {
                         spec.shape.type = PH_AABB2D;
                         spec.shape.aabb2d.c = Vec2Zero();
                         spec.shape.aabb2d.r = bb.r;
+                        Assert(*len < cap);
+                        specs[(*len)++] = spec;
+                    }
+                }
+
+                // Spawners
+                {
+                    EntitySpec* specs = room.spawners;
+                    u32* len = &room.spawnerslen;
+                    u32 cap = ArraySizeOf(room.spawners);
+                    Vec2 positions[][2] = {
+                        {Vec2Lit(2729, 36), Vec2Lit(2744, 24)},
+                    };
+                    for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
+                        AABB2D bb =
+                            AABB2DFromAsepriteBB(tx, AsepritePxBL(positions[i][0]), AsepritePxTR(positions[i][1]));
+                        EntitySpec spec = {0};
+                        spec.pos = Vec3Lit(bb.c.x, bb.c.y, 0.0f);
                         Assert(*len < cap);
                         specs[(*len)++] = spec;
                     }
@@ -4596,7 +4617,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 5;
+        u32 room_idx = 7;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
