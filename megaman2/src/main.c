@@ -2785,6 +2785,7 @@ typedef enum {
     MT_RABBIT,
     MT_BAT,
     MT_DOG,
+    MT_BIRD,
     MT_COUNT,
 } MobType;
 
@@ -4367,6 +4368,12 @@ static const AnimationAseRect MOB_DOG_FIREBALL = {
     .start = {.lc = Vec2Lit(18.0f, 112.0f), .r = Vec2Lit(10.0f, 10.0f)},
     .step = Vec2Lit(11.0f, 0.0f),
     .nframes = 3,
+};
+
+static const AnimationAseRect MOB_BIRD_FLYING = {
+    .start = {.lc = Vec2Lit(83.0f, 100.0f), .r = Vec2Lit(18.0f, 16.0f)},
+    .step = Vec2Lit(17.0f, 0.0f),
+    .nframes = 2,
 };
 
 static void LoadRoomEntities(GameState* gstate, Room* room) {
