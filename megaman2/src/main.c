@@ -2874,6 +2874,9 @@ typedef struct {
     f32 lifetime;
 
     EntityId spawnedid;
+
+    EntityId birdid;
+    EntityId eggid;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4402,6 +4405,8 @@ static const AnimationAseRect MOB_BIRD_FLYING = {
     .nframes = 2,
 };
 
+static const AseRect MOB_EGG = {.lc = Vec2Lit(84.0f, 114.0f), .r = Vec2Lit(13.0f, 10.0f)};
+
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
 
@@ -5256,6 +5261,16 @@ static void StageTick(GameState* gstate) {
                         }
                         case MT_EGG: {
                             gravity = 0.0f;
+                            Entity* bird = GetEntity(e->birdid);
+                            // This could potentially be incorrect. Need to support generations in ids.
+                            // The egg parent bird could be killed and then a new one spawned.
+                            if (TestFlag(bird->flags, EFLAG_ACTIVE)) {
+                                // This will be laggy potentially. I think a better approach is for children positions
+                                // to be given in relative offsets to parent posistions. Then in graphics update, we
+                                // incorporate the parent position in transform to find correct world positions. This
+                                // way parent and child positions will be in sync.
+                                e->pos = Vec3Add(bird->pos, Vec3Lit(1.0f, -12.0f, 0.0f));
+                            }
                             break;
                         }
                         default: {
@@ -5325,15 +5340,18 @@ static void StageTick(GameState* gstate) {
                             // Spawn egg
                             {
                                 Entity* egg = AllocateEntity();
-                                egg->pos = spawned->pos;
+                                egg->pos = Vec3Add(spawned->pos, Vec3Lit(0.0f, -8.0f, 0.0f));
 
-                                // GraphicsInfoSetAnimationFromAseprite(&egg->graphics, GetTexture(TX_MEGAMAN),
-                                //                                      MOB_BIRD_FLYING, 0.0f, 1.0f);
-                                GraphicsInfoSetShape(&egg->graphics, GetMesh(M_QUAD), Vec3Lit(6, 6, 1), LBLUE);
+                                GraphicsInfoSetSpriteFromAseprite(&egg->graphics, GetTexture(TX_MEGAMAN), MOB_EGG, 0.0f,
+                                                                  1.0f);
+                                // GraphicsInfoSetShape(&egg->graphics, GetMesh(M_QUAD), Vec3Lit(6, 6, 1), LBLUE);
 
                                 FlagOn(egg->flags, EFLAG_MOB);
                                 egg->mobtype = MT_EGG;
                                 egg->health = 2;
+                                egg->birdid = spawned->id;
+
+                                spawned->eggid = egg->id;
                                 // egg->facing_left = true;
                                 // egg->v = Vec3Lit(-100.0f, 0.0f, 0.0f);
 
