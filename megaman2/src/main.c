@@ -4411,6 +4411,12 @@ static const AnimationAseRect MOB_BIRD_FLYING = {
 static const AseRect MOB_EGG = {.lc = Vec2Lit(84.0f, 114.0f), .r = Vec2Lit(13.0f, 10.0f)};
 static const AseRect MOB_EGG_BROKEN = {.lc = Vec2Lit(104.0f, 117.0f), .r = Vec2Lit(17.0f, 15.0f)};
 
+static const AnimationAseRect MOB_CHICK_FLYING = {
+    .start = {.lc = Vec2Lit(106.0f, 126.0f), .r = Vec2Lit(8.0f, 8.0f)},
+    .step = Vec2Lit(9.0f, 0.0f),
+    .nframes = 2,
+};
+
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
 
@@ -5290,11 +5296,13 @@ static void StageTick(GameState* gstate) {
                                     PolyhedronInit(&e->shape);
 
                                     {
-                                        Entity* chicks = AllocateEntity();
-                                        chicks->pos = e->pos;
+                                        Entity* chick = AllocateEntity();
+                                        chick->pos = e->pos;
 
-                                        GraphicsInfoSetShape(&chicks->graphics, GetMesh(M_QUAD), Vec3Lit(6, 6, 1),
-                                                             LORANGE);
+                                        // GraphicsInfoSetShape(&chicks->graphics, GetMesh(M_QUAD), Vec3Lit(6, 6, 1),
+                                        //                      LORANGE);
+                                        GraphicsInfoSetAnimationFromAseprite(&chick->graphics, GetTexture(TX_MEGAMAN),
+                                                                             MOB_CHICK_FLYING, 0.0f, 1.0f);
                                     }
                                 }
                             } else {
