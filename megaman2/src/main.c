@@ -5369,7 +5369,7 @@ static void StageTick(GameState* gstate) {
                                 // egg->facing_left = true;
                                 // egg->v = Vec3Lit(-100.0f, 0.0f, 0.0f);
 
-                                // PolyHedronSetAABB2DFromWH(&egg->shape, Vec2Zero(), Vec2Lit(17.0f, 15.0f));
+                                PolyHedronSetAABB2DFromWH(&egg->shape, Vec2Zero(), Vec2Lit(11.0f, 8.0f));
                             }
                         }
                     }
