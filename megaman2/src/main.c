@@ -4397,7 +4397,7 @@ static const AnimationAseRect MOB_DOG_FIREBALL = {
 
 static const AnimationAseRect MOB_BIRD_FLYING = {
     .start = {.lc = Vec2Lit(83.0f, 100.0f), .r = Vec2Lit(18.0f, 16.0f)},
-    .step = Vec2Lit(17.0f, 0.0f),
+    .step = Vec2Lit(19.0f, 0.0f),
     .nframes = 2,
 };
 
@@ -5244,11 +5244,13 @@ static void StageTick(GameState* gstate) {
                         }
                         case MT_BIRD: {
                             gravity = 0.0f;
-                            // e->graphics.txinfo.animation.frame_dt += dt;
-                            // if (e->graphics.txinfo.animation.frame_dt >= 0.1f) {
-                            //     ++e->graphics.txinfo.animation.frame;
-                            //     e->graphics.txinfo.animation.frame_dt = 0.0f;
-                            // }
+
+                            e->graphics.txinfo.animation.frame_dt += dt;
+                            if (e->graphics.txinfo.animation.frame_dt >= 0.1f) {
+                                e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                ++e->graphics.txinfo.animation.frame;
+                                e->graphics.txinfo.animation.frame %= e->graphics.txinfo.animation.nframes;
+                            }
                             break;
                         }
                         default: {
@@ -5309,6 +5311,9 @@ static void StageTick(GameState* gstate) {
                             spawned->mobtype = MT_BIRD;
                             spawned->health = 2;
                             spawned->facing_left = true;
+                            spawned->v = Vec3Lit(-100.0f, 0.0f, 0.0f);
+
+                            PolyHedronSetAABB2DFromWH(&spawned->shape, Vec2Zero(), Vec2Lit(17.0f, 15.0f));
 
                             e->spawnedid = spawned->id;
                         }
