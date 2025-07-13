@@ -2786,6 +2786,7 @@ typedef enum {
     MT_BAT,
     MT_DOG,
     MT_BIRD,
+    MT_EGG,
     MT_COUNT,
 } MobType;
 
@@ -5253,6 +5254,10 @@ static void StageTick(GameState* gstate) {
                             }
                             break;
                         }
+                        case MT_EGG: {
+                            gravity = 0.0f;
+                            break;
+                        }
                         default: {
                             TraceLog(LOG_ERROR, "Unknown mob type: %d", e->mobtype);
                             exit(1);
@@ -5316,6 +5321,24 @@ static void StageTick(GameState* gstate) {
                             PolyHedronSetAABB2DFromWH(&spawned->shape, Vec2Zero(), Vec2Lit(17.0f, 15.0f));
 
                             e->spawnedid = spawned->id;
+
+                            // Spawn egg
+                            {
+                                Entity* egg = AllocateEntity();
+                                egg->pos = spawned->pos;
+
+                                // GraphicsInfoSetAnimationFromAseprite(&egg->graphics, GetTexture(TX_MEGAMAN),
+                                //                                      MOB_BIRD_FLYING, 0.0f, 1.0f);
+                                GraphicsInfoSetShape(&egg->graphics, GetMesh(M_QUAD), Vec3Lit(6, 6, 1), LBLUE);
+
+                                FlagOn(egg->flags, EFLAG_MOB);
+                                egg->mobtype = MT_EGG;
+                                egg->health = 2;
+                                // egg->facing_left = true;
+                                // egg->v = Vec3Lit(-100.0f, 0.0f, 0.0f);
+
+                                // PolyHedronSetAABB2DFromWH(&egg->shape, Vec2Zero(), Vec2Lit(17.0f, 15.0f));
+                            }
                         }
                     }
                 }
