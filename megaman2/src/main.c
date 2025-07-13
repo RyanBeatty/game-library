@@ -5270,10 +5270,11 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case MT_EGG: {
-                            gravity = 0.0f;
                             Entity* bird = GetEntity(e->birdid);
                             if (e->awake) {
                             } else {
+                                gravity = 0.0f;
+
                                 // This could potentially be incorrect. Need to support generations in ids.
                                 // The egg parent bird could be killed and then a new one spawned.
                                 if (TestFlag(bird->flags, EFLAG_ACTIVE)) {
