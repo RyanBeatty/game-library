@@ -2877,6 +2877,9 @@ typedef struct {
 
     EntityId birdid;
     EntityId eggid;
+
+    bool broken;
+    f32 broken_dt;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4406,6 +4409,7 @@ static const AnimationAseRect MOB_BIRD_FLYING = {
 };
 
 static const AseRect MOB_EGG = {.lc = Vec2Lit(84.0f, 114.0f), .r = Vec2Lit(13.0f, 10.0f)};
+static const AseRect MOB_EGG_BROKEN = {.lc = Vec2Lit(104.0f, 117.0f), .r = Vec2Lit(17.0f, 15.0f)};
 
 static void LoadRoomEntities(GameState* gstate, Room* room) {
     Assert(gstate->lelen == 0);
@@ -5272,6 +5276,22 @@ static void StageTick(GameState* gstate) {
                         case MT_EGG: {
                             Entity* bird = GetEntity(e->birdid);
                             if (e->awake) {
+                                if (e->broken) {
+                                    gravity = 0.0f;
+                                    e->v = Vec3Zero();
+                                    e->broken_dt += dt;
+                                    if (e->broken_dt >= 0.2f) {
+                                        SoftDeactivateEntity(e->id);
+                                    }
+                                } else if (ground != NULL) {
+                                    // gravity = 0.0f;
+                                    // e->v = Vec3Zero();
+
+                                    e->broken = true;
+                                    GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
+                                                                      MOB_EGG_BROKEN, 0.0f, 1.0f);
+                                    PolyhedronInit(&e->shape);
+                                }
                             } else {
                                 gravity = 0.0f;
 
