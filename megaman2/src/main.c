@@ -2881,6 +2881,9 @@ typedef struct {
 
     bool broken;
     f32 broken_dt;
+
+    f32 sleeptime;
+    f32 sleep_dt;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -5305,9 +5308,19 @@ static void StageTick(GameState* gstate) {
                                         GraphicsInfoSetAnimationFromAseprite(&chick->graphics, GetTexture(TX_MEGAMAN),
                                                                              MOB_CHICK_FLYING, 0.0f, 1.0f);
 
+                                        // Launch out at random angle.
+                                        f32 dirangle = f32randab(0.0f, LPI);
+                                        Vec2 dir = Vec2Lit(f32cos(dirangle), f32sin(dirangle));
+                                        f32 speed = 20.0f;
+                                        chick->v = Vec2ToVec3(Vec2Scale(dir, speed));
+
                                         FlagOn(chick->flags, EFLAG_MOB);
                                         chick->health = 1;
                                         chick->mobtype = MT_CHICK;
+                                        chick->sleeptime = f32randab(0.3f, 1.5f);
+
+                                        FlagOn(chick->flags, EFLAG_IGNORE_WALL_ON_HIT);
+                                        PolyHedronSetAABB2DFromWH(&chick->shape, Vec2Zero(), Vec2Lit(6.0f, 5.0f));
                                     }
                                 }
                             } else {
@@ -5327,6 +5340,15 @@ static void StageTick(GameState* gstate) {
                         }
                         case MT_CHICK: {
                             gravity = 0.0f;
+
+                            if (e->awake) {
+                            } else {
+                                e->sleep_dt += dt;
+                                if (e->sleep_dt >= e->sleeptime) {
+                                    e->awake = true;
+                                    TraceLog(LOG_INFO, "chick awake");
+                                }
+                            }
 
                             e->graphics.txinfo.animation.frame_dt += dt;
                             if (e->graphics.txinfo.animation.frame_dt >= 0.1f) {
