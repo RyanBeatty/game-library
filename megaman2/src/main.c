@@ -5288,6 +5288,14 @@ static void StageTick(GameState* gstate) {
                                     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
                                                                       MOB_EGG_BROKEN, 0.0f, 1.0f);
                                     PolyhedronInit(&e->shape);
+
+                                    {
+                                        Entity* chicks = AllocateEntity();
+                                        chicks->pos = e->pos;
+
+                                        GraphicsInfoSetShape(&chicks->graphics, GetMesh(M_QUAD), Vec3Lit(6, 6, 1),
+                                                             LORANGE);
+                                    }
                                 }
                             } else {
                                 gravity = 0.0f;
