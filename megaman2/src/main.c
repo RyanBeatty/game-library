@@ -2787,6 +2787,7 @@ typedef enum {
     MT_DOG,
     MT_BIRD,
     MT_EGG,
+    MT_CHICK,
     MT_COUNT,
 } MobType;
 
@@ -5303,6 +5304,10 @@ static void StageTick(GameState* gstate) {
                                         //                      LORANGE);
                                         GraphicsInfoSetAnimationFromAseprite(&chick->graphics, GetTexture(TX_MEGAMAN),
                                                                              MOB_CHICK_FLYING, 0.0f, 1.0f);
+
+                                        FlagOn(chick->flags, EFLAG_MOB);
+                                        chick->health = 1;
+                                        chick->mobtype = MT_CHICK;
                                     }
                                 }
                             } else {
@@ -5317,6 +5322,17 @@ static void StageTick(GameState* gstate) {
                                     // positions. This way parent and child positions will be in sync.
                                     e->pos = Vec3Add(bird->pos, Vec3Lit(1.0f, -12.0f, 0.0f));
                                 }
+                            }
+                            break;
+                        }
+                        case MT_CHICK: {
+                            gravity = 0.0f;
+
+                            e->graphics.txinfo.animation.frame_dt += dt;
+                            if (e->graphics.txinfo.animation.frame_dt >= 0.1f) {
+                                e->graphics.txinfo.animation.frame_dt = 0.0f;
+                                ++e->graphics.txinfo.animation.frame;
+                                e->graphics.txinfo.animation.frame %= e->graphics.txinfo.animation.nframes;
                             }
                             break;
                         }
