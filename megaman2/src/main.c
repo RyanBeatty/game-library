@@ -2810,7 +2810,8 @@ typedef enum EntityFlag {
     EFLAG_MOB = 1 << 6,
     EFLAG_CLIMABLE = 1 << 7,
     EFLAG_EXIT = 1 << 8,
-    EFLAG_IGNORE_WALL_ON_HIT = 1 << 9
+    EFLAG_IGNORE_WALL_ON_HIT = 1 << 9,
+    EFLAG_SPAWNER = 1 << 10,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -2870,6 +2871,8 @@ typedef struct {
     f32 parametric_dt;
     Vec3 pos_start;
     f32 lifetime;
+
+    EntityId spawnedid;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -2904,7 +2907,8 @@ static Entity* GetEntity(EntityId id) {
 
 static EntityId NextEntityId() {
     EntityManager* em = GetEntityManager();
-    for (uint32_t i = 0; i < ArraySizeOf(em->entities); ++i) {
+    // Always have a null entity at position 0
+    for (uint32_t i = NULLID + 1; i < ArraySizeOf(em->entities); ++i) {
         Entity* entity = &em->entities[i];
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             return i;
@@ -3624,7 +3628,7 @@ static Stage* GetStage(StageId sid) {
                     u32* len = &room.spawnerslen;
                     u32 cap = ArraySizeOf(room.spawners);
                     Vec2 positions[][2] = {
-                        {Vec2Lit(2729, 36), Vec2Lit(2744, 24)},
+                        {Vec2Lit(2729, 48), Vec2Lit(2744, 36)},
                     };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
@@ -4445,6 +4449,24 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
         }
     }
 
+    // Spawners.
+    {
+        EntitySpec* specs = room->spawners;
+        u32 len = room->spawnerslen;
+        for (u32 i = 0; i < len; ++i) {
+            EntitySpec* spec = &specs[i];
+
+            Entity* e = AllocateEntity();
+            e->pos = spec->pos;
+            e->shape = spec->shape;
+            GraphicsInfoSetShape(&e->graphics, GetMesh(M_QUAD), Vec3Lit(4.0f, 4.0f, 0.0f), LRED);
+            FlagOn(e->flags, EFLAG_SPAWNER);
+
+            Assert(gstate->lelen < gstate->lecap);
+            gstate->loadable_entities[gstate->lelen++] = e->id;
+        }
+    }
+
     // Exits.
     {
         {
@@ -5220,6 +5242,15 @@ static void StageTick(GameState* gstate) {
                             }
                             break;
                         }
+                        case MT_BIRD: {
+                            gravity = 0.0f;
+                            // e->graphics.txinfo.animation.frame_dt += dt;
+                            // if (e->graphics.txinfo.animation.frame_dt >= 0.1f) {
+                            //     ++e->graphics.txinfo.animation.frame;
+                            //     e->graphics.txinfo.animation.frame_dt = 0.0f;
+                            // }
+                            break;
+                        }
                         default: {
                             TraceLog(LOG_ERROR, "Unknown mob type: %d", e->mobtype);
                             exit(1);
@@ -5254,6 +5285,33 @@ static void StageTick(GameState* gstate) {
                         }
                     } else {
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    }
+                }
+
+                if (TestFlag(e->flags, EFLAG_SPAWNER)) {
+                    if (player != NULL) {
+                        Vec3 diff = Vec3Sub(player->pos, e->pos);
+                        Entity* spawned = GetEntity(e->spawnedid);
+                        // TraceLog(LOG_INFO, "diff %f", diff.x);
+
+                        bool has_spawned = TestFlag(spawned->flags, EFLAG_ACTIVE) &&
+                                           TestFlag(spawned->flags, EFLAG_MOB) && spawned->mobtype == MT_BIRD;
+                        if (f32abs(diff.x) <= 612.0f && !has_spawned) {
+                            TraceLog(LOG_INFO, "Spawned");
+                            spawned = AllocateEntity();
+                            spawned->pos = e->pos;
+
+                            GraphicsInfoSetAnimationFromAseprite(&spawned->graphics, GetTexture(TX_MEGAMAN),
+                                                                 MOB_BIRD_FLYING, 0.0f, 1.0f);
+                            // GraphicsInfoSetShape(&spawned->graphics, GetMesh(M_QUAD), Vec3Lit(6, 6, 1), LBLUE);
+
+                            FlagOn(spawned->flags, EFLAG_MOB);
+                            spawned->mobtype = MT_BIRD;
+                            spawned->health = 2;
+                            spawned->facing_left = true;
+
+                            e->spawnedid = spawned->id;
+                        }
                     }
                 }
             }
