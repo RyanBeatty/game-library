@@ -5251,6 +5251,16 @@ static void StageTick(GameState* gstate) {
                         case MT_BIRD: {
                             gravity = 0.0f;
 
+                            if (player != NULL) {
+                                Vec3 diff = Vec3Sub(player->pos, e->pos);
+                                Entity* egg = GetEntity(e->eggid);
+                                if (f32abs(diff.x) <= 20.0f && TestFlag(egg->flags, EFLAG_ACTIVE)) {
+                                    TraceLog(LOG_INFO, "Egg Awake");
+                                    egg->awake = true;
+                                    e->eggid = NULLID;
+                                }
+                            }
+
                             e->graphics.txinfo.animation.frame_dt += dt;
                             if (e->graphics.txinfo.animation.frame_dt >= 0.1f) {
                                 e->graphics.txinfo.animation.frame_dt = 0.0f;
@@ -5262,14 +5272,17 @@ static void StageTick(GameState* gstate) {
                         case MT_EGG: {
                             gravity = 0.0f;
                             Entity* bird = GetEntity(e->birdid);
-                            // This could potentially be incorrect. Need to support generations in ids.
-                            // The egg parent bird could be killed and then a new one spawned.
-                            if (TestFlag(bird->flags, EFLAG_ACTIVE)) {
-                                // This will be laggy potentially. I think a better approach is for children positions
-                                // to be given in relative offsets to parent posistions. Then in graphics update, we
-                                // incorporate the parent position in transform to find correct world positions. This
-                                // way parent and child positions will be in sync.
-                                e->pos = Vec3Add(bird->pos, Vec3Lit(1.0f, -12.0f, 0.0f));
+                            if (e->awake) {
+                            } else {
+                                // This could potentially be incorrect. Need to support generations in ids.
+                                // The egg parent bird could be killed and then a new one spawned.
+                                if (TestFlag(bird->flags, EFLAG_ACTIVE)) {
+                                    // This will be laggy potentially. I think a better approach is for children
+                                    // positions to be given in relative offsets to parent posistions. Then in graphics
+                                    // update, we incorporate the parent position in transform to find correct world
+                                    // positions. This way parent and child positions will be in sync.
+                                    e->pos = Vec3Add(bird->pos, Vec3Lit(1.0f, -12.0f, 0.0f));
+                                }
                             }
                             break;
                         }
