@@ -3628,7 +3628,7 @@ static Stage* GetStage(StageId sid) {
                     u32* len = &room.spawnerslen;
                     u32 cap = ArraySizeOf(room.spawners);
                     Vec2 positions[][2] = {
-                        {Vec2Lit(2729, 48), Vec2Lit(2744, 36)},
+                        {Vec2Lit(2753, 62), Vec2Lit(2768, 50)},
                     };
                     for (u32 i = 0; i < ArraySizeOf(positions); ++i) {
                         AABB2D bb =
