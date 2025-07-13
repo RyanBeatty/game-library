@@ -5284,9 +5284,6 @@ static void StageTick(GameState* gstate) {
                                         SoftDeactivateEntity(e->id);
                                     }
                                 } else if (ground != NULL) {
-                                    // gravity = 0.0f;
-                                    // e->v = Vec3Zero();
-
                                     e->broken = true;
                                     GraphicsInfoSetSpriteFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN),
                                                                       MOB_EGG_BROKEN, 0.0f, 1.0f);
