@@ -5311,7 +5311,7 @@ static void StageTick(GameState* gstate) {
                                         // Launch out at random angle.
                                         f32 dirangle = f32randab(0.0f, LPI);
                                         Vec2 dir = Vec2Lit(f32cos(dirangle), f32sin(dirangle));
-                                        f32 speed = 20.0f;
+                                        f32 speed = 80.0f;
                                         chick->v = Vec2ToVec3(Vec2Scale(dir, speed));
 
                                         FlagOn(chick->flags, EFLAG_MOB);
@@ -5345,8 +5345,12 @@ static void StageTick(GameState* gstate) {
                             } else {
                                 e->sleep_dt += dt;
                                 if (e->sleep_dt >= e->sleeptime) {
-                                    e->awake = true;
                                     TraceLog(LOG_INFO, "chick awake");
+                                    e->awake = true;
+                                    if (player != NULL) {
+                                        Vec3 dir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
+                                        e->v = Vec3Scale(dir, 80.0f);
+                                    }
                                 }
                             }
 
