@@ -5268,7 +5268,7 @@ static void StageTick(GameState* gstate) {
                             if (player != NULL) {
                                 Vec3 diff = Vec3Sub(player->pos, e->pos);
                                 Entity* egg = GetEntity(e->eggid);
-                                if (f32abs(diff.x) <= 20.0f && TestFlag(egg->flags, EFLAG_ACTIVE)) {
+                                if (f32abs(diff.x) <= 40.0f && TestFlag(egg->flags, EFLAG_ACTIVE)) {
                                     TraceLog(LOG_INFO, "Egg Awake");
                                     egg->awake = true;
                                     e->eggid = NULLID;
@@ -5299,7 +5299,11 @@ static void StageTick(GameState* gstate) {
                                                                       MOB_EGG_BROKEN, 0.0f, 1.0f);
                                     PolyhedronInit(&e->shape);
 
-                                    {
+                                    f32 angles[] = {
+                                        Deg2Rad(0.0f),   Deg2Rad(30.0f),  Deg2Rad(60.0f),  Deg2Rad(90.0f),
+                                        Deg2Rad(120.0f), Deg2Rad(150.0f), Deg2Rad(280.0f), Deg2Rad(300.0f),
+                                    };
+                                    for (i32 ia = 0; ia < ArraySizeOf(angles); ++ia) {
                                         Entity* chick = AllocateEntity();
                                         chick->pos = e->pos;
 
@@ -5308,8 +5312,7 @@ static void StageTick(GameState* gstate) {
                                         GraphicsInfoSetAnimationFromAseprite(&chick->graphics, GetTexture(TX_MEGAMAN),
                                                                              MOB_CHICK_FLYING, 0.0f, 1.0f);
 
-                                        // Launch out at random angle.
-                                        f32 dirangle = f32randab(0.0f, LPI);
+                                        f32 dirangle = angles[ia];  // f32randab(0.0f, LPI);
                                         Vec2 dir = Vec2Lit(f32cos(dirangle), f32sin(dirangle));
                                         f32 speed = 80.0f;
                                         chick->v = Vec2ToVec3(Vec2Scale(dir, speed));
@@ -5453,7 +5456,7 @@ static void StageTick(GameState* gstate) {
 
             // Collisions
             {
-                CollisionInfo collisions[20];
+                CollisionInfo collisions[40];
                 u32 clen = 0;
                 u32 ccap = ArraySizeOf(collisions);
                 for (u32 i = 0; i < GetNumEntities(); ++i) {
