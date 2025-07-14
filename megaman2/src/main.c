@@ -5527,8 +5527,10 @@ static void StageTick(GameState* gstate) {
 
                         if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_WALL)) {
                             Entity* mob = e0;
-                            mob->pos = Vec3Add(mob->pos, Vec3Scale(info->normal, info->depth));
-                            mob->v = Vec3Zero();
+                            if (!TestFlag(mob->flags, EFLAG_IGNORE_WALL_ON_HIT)) {
+                                mob->pos = Vec3Add(mob->pos, Vec3Scale(info->normal, info->depth));
+                                mob->v = Vec3Zero();
+                            }
                         }
 
                         if (TestFlag(e0->flags, EFLAG_MOB) && TestFlag(e1->flags, EFLAG_PROJECTILE)) {
