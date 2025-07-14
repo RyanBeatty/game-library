@@ -5355,10 +5355,15 @@ static void StageTick(GameState* gstate) {
                             gravity = 0.0f;
 
                             if (e->awake) {
+                                if (player != NULL) {
+                                    f32 dist = Vec3Len(Vec3Sub(player->pos, e->pos));
+                                    if (dist >= 200.0f) {
+                                        SoftDeactivateEntity(e->id);
+                                    }
+                                }
                             } else {
                                 e->sleep_dt += dt;
                                 if (e->sleep_dt >= e->sleeptime) {
-                                    TraceLog(LOG_INFO, "chick awake");
                                     e->awake = true;
                                     if (player != NULL) {
                                         Vec3 dir = Vec3Normalize(Vec3Sub(player->pos, e->pos));
