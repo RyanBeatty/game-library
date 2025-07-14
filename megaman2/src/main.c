@@ -5267,6 +5267,10 @@ static void StageTick(GameState* gstate) {
                         case MT_BIRD: {
                             gravity = 0.0f;
 
+                            if (e->active_dt >= 10.0f) {
+                                SoftDeactivateEntity(e->id);
+                            }
+
                             if (player != NULL) {
                                 Vec3 diff = Vec3Sub(player->pos, e->pos);
                                 Entity* egg = GetEntity(e->eggid);
@@ -5286,6 +5290,10 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case MT_EGG: {
+                            if (e->active_dt >= 10.0f) {
+                                SoftDeactivateEntity(e->id);
+                            }
+
                             Entity* bird = GetEntity(e->birdid);
                             if (e->awake) {
                                 if (e->broken) {
