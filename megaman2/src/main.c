@@ -4523,6 +4523,8 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
     }
 }
 
+static const AseRect MEGAMAN_SHOOTING = {.lc = Vec2Lit(217.0f, 128.0f), .r = Vec2Lit(7.0f, 6.0f)};
+
 static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pstate, bool shooting) {
     static const AseRect M_IDLE = {.lc = Vec2Lit(1.0f, 466.0f), .r = Vec2Lit(24.0f, 24.0f)};
     static const AseRect M_JUMP = {.lc = Vec2Lit(1.0f, 409.0f), .r = Vec2Lit(32.0f, 32.0f)};
@@ -5096,14 +5098,17 @@ static void StageTick(GameState* gstate) {
                         // Spawn shot.
                         {
                             Entity* shot = AllocateEntity();
-                            shot->pos = e->pos;
+                            shot->pos = Vec3Add(e->pos, Vec3Lit(13.0f * (e->facing_left ? -1.0f : 1.0f), 1.0f, 0.0f));
                             shot->v = Vec3Lit(200.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
 
                             shot->shape.type = PH_AABB2D;
                             shot->shape.aabb2d.c = Vec2Zero();
-                            shot->shape.aabb2d.r = Vec2Lit(0.5f * 8.0f, 0.5f * 8.0f);
+                            shot->shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 4.0f);
 
-                            GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f), LYELLOW);
+                            // GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f),
+                            // LYELLOW);
+                            GraphicsInfoSetSpriteFromAseprite(&shot->graphics, GetTexture(TX_MEGAMAN), MEGAMAN_SHOOTING,
+                                                              0.0f, 1.0f);
                             FlagOn(shot->flags, EFLAG_PROJECTILE);
                             shot->attacker_id = e->id;
                         }
