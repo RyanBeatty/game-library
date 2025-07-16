@@ -5092,10 +5092,9 @@ static void StageTick(GameState* gstate) {
                             GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                         }
 
-                        if (IsKeyDown(KSHOOT) && CHARGING_DT == 0.0f) {
-                            CHARGING_DT += dt;
-
-                            if (can_shoot) {
+                        if (IsKeyDown(KSHOOT)) {
+                            // If we weren't already holding down shoot and we can shoot, then shoot. duh!
+                            if (CHARGING_DT == 0.0f && can_shoot) {
                                 // If we were shooting, don't update the visuals or else shooting animations will
                                 // always restart from frame 0.
                                 if (!SHOOTING) {
@@ -5124,6 +5123,8 @@ static void StageTick(GameState* gstate) {
                                     shot->attacker_id = e->id;
                                 }
                             }
+
+                            CHARGING_DT += dt;
                         }
 
                         if (IsKeyReleased(KSHOOT)) {
