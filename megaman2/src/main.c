@@ -5114,9 +5114,6 @@ static void StageTick(GameState* gstate) {
                                     shot->shape.aabb2d.c = Vec2Zero();
                                     shot->shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 4.0f);
 
-                                    // // GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
-                                    // Vec3Lit(8.0f, 8.0f, 1.0f),
-                                    //     // LYELLOW);
                                     GraphicsInfoSetSpriteFromAseprite(&shot->graphics, GetTexture(TX_MEGAMAN),
                                                                       MEGAMAN_SHOOTING, 0.0f, 1.0f);
                                     FlagOn(shot->flags, EFLAG_PROJECTILE);
@@ -5128,6 +5125,24 @@ static void StageTick(GameState* gstate) {
                         }
 
                         if (IsKeyReleased(KSHOOT)) {
+                            // Charge shot
+                            if (CHARGING_DT >= 1.5f) {
+                                Entity* shot = AllocateEntity();
+                                shot->pos =
+                                    Vec3Add(e->pos, Vec3Lit(13.0f * (e->facing_left ? -1.0f : 1.0f), 1.0f, 0.0f));
+                                shot->v = Vec3Lit(200.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
+
+                                shot->shape.type = PH_AABB2D;
+                                shot->shape.aabb2d.c = Vec2Zero();
+                                shot->shape.aabb2d.r = Vec2Lit(0.5f * 22.0f, 0.5f * 22.0f);
+
+                                GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(22.0f, 22.0f, 1.0f),
+                                                     LYELLOW);
+                                FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                shot->attacker_id = e->id;
+                            } else {
+                                // TODO spawn normal shot if haven't charged enough.
+                            }
                             CHARGING_DT = 0.0f;
                         }
                     }
