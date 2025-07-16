@@ -2814,6 +2814,7 @@ typedef enum EntityFlag {
     EFLAG_EXIT = 1 << 8,
     EFLAG_IGNORE_WALL_ON_HIT = 1 << 9,
     EFLAG_SPAWNER = 1 << 10,
+    EFLAG_SURVIVE_HIT = 1 << 11,
 } EntityFlag;
 
 typedef u32 EntityId;
@@ -5143,6 +5144,7 @@ static void StageTick(GameState* gstate) {
                                 GraphicsInfoSetSpriteFromAseprite(&shot->graphics, GetTexture(TX_MEGAMAN),
                                                                   MEGAMAN_CHARGE_SHOT, 0.0f, 1.0f);
                                 FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                FlagOn(shot->flags, EFLAG_SURVIVE_HIT);
                                 shot->attacker_id = e->id;
                             } else if (!SHOOTING) {
                                 SHOOTING = true;
@@ -5611,7 +5613,9 @@ static void StageTick(GameState* gstate) {
 
                             if (shot->attacker_id != mob->id) {
                                 --mob->health;
-                                SoftDeactivateEntity(shot->id);
+                                if (!TestFlag(shot->flags, EFLAG_SURVIVE_HIT)) {
+                                    SoftDeactivateEntity(shot->id);
+                                }
                             }
                         }
 
