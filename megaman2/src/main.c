@@ -4761,7 +4761,6 @@ static void StageTick(GameState* gstate) {
                 if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                     static const f32 WALK_DX_SPEED = 50.0f;
                     static const f32 WALK_DY_SPEED = 200.0f;
-                    static f32 SHOOT_COOLDOWN = 0.0f;
                     static bool SHOOTING = false;
                     static f32 HITSTUN_COOLDOWN_DT = 0.0f;
 
@@ -5078,39 +5077,57 @@ static void StageTick(GameState* gstate) {
 
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
 
-                    SHOOT_COOLDOWN += dt;
-                    if (SHOOT_COOLDOWN >= (20.0f / 60.0f)) {
-                        if (SHOOTING) {
+                    // Shooting logic.
+                    {
+                        static f32 CHARGING_DT = 0.0f;
+                        static f32 SHOOT_COOLDOWN_DT = 0.0f;
+
+                        SHOOT_COOLDOWN_DT += dt;
+                        bool can_shoot = SHOOT_COOLDOWN_DT >= (6.0f / 60.0f);
+
+                        // If we were shooting and we are past the cooldown phase, then make sure we set the visuals
+                        // back to non shooting pose.
+                        if (SHOOTING && SHOOT_COOLDOWN_DT >= (20.0f / 60.0f)) {
                             SHOOTING = false;
                             GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                         }
-                    }
 
-                    if (IsKeyPressed(KSHOOT) && SHOOT_COOLDOWN >= (6.0f / 60.0f)) {
-                        // If we are shooting, don't update the visuals or else shooting animations will
-                        // always restart from frame 0.
-                        if (!SHOOTING) {
-                            GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, true);
+                        if (IsKeyDown(KSHOOT) && CHARGING_DT == 0.0f) {
+                            CHARGING_DT += dt;
+
+                            if (can_shoot) {
+                                // If we were shooting, don't update the visuals or else shooting animations will
+                                // always restart from frame 0.
+                                if (!SHOOTING) {
+                                    GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, true);
+                                }
+                                SHOOTING = true;
+                                SHOOT_COOLDOWN_DT = 0.0f;
+
+                                // Spawn shot.
+                                {
+                                    Entity* shot = AllocateEntity();
+                                    shot->pos =
+                                        Vec3Add(e->pos, Vec3Lit(13.0f * (e->facing_left ? -1.0f : 1.0f), 1.0f, 0.0f));
+                                    shot->v = Vec3Lit(200.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
+
+                                    shot->shape.type = PH_AABB2D;
+                                    shot->shape.aabb2d.c = Vec2Zero();
+                                    shot->shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 4.0f);
+
+                                    // // GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD),
+                                    // Vec3Lit(8.0f, 8.0f, 1.0f),
+                                    //     // LYELLOW);
+                                    GraphicsInfoSetSpriteFromAseprite(&shot->graphics, GetTexture(TX_MEGAMAN),
+                                                                      MEGAMAN_SHOOTING, 0.0f, 1.0f);
+                                    FlagOn(shot->flags, EFLAG_PROJECTILE);
+                                    shot->attacker_id = e->id;
+                                }
+                            }
                         }
-                        SHOOTING = true;
-                        SHOOT_COOLDOWN = 0.0f;
 
-                        // Spawn shot.
-                        {
-                            Entity* shot = AllocateEntity();
-                            shot->pos = Vec3Add(e->pos, Vec3Lit(13.0f * (e->facing_left ? -1.0f : 1.0f), 1.0f, 0.0f));
-                            shot->v = Vec3Lit(200.0f * (e->facing_left ? -1.0f : 1.0f), 0.0f, 0.0f);
-
-                            shot->shape.type = PH_AABB2D;
-                            shot->shape.aabb2d.c = Vec2Zero();
-                            shot->shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 4.0f);
-
-                            // GraphicsInfoSetShape(&shot->graphics, GetMesh(M_QUAD), Vec3Lit(8.0f, 8.0f, 1.0f),
-                            // LYELLOW);
-                            GraphicsInfoSetSpriteFromAseprite(&shot->graphics, GetTexture(TX_MEGAMAN), MEGAMAN_SHOOTING,
-                                                              0.0f, 1.0f);
-                            FlagOn(shot->flags, EFLAG_PROJECTILE);
-                            shot->attacker_id = e->id;
+                        if (IsKeyReleased(KSHOOT)) {
+                            CHARGING_DT = 0.0f;
                         }
                     }
                 }
