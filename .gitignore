@@ -1,5 +1,8 @@
 build
 
+# Special ignore dirs.
+**/no_commit/
+
 ##########################################################
 # Start python stuff
 
