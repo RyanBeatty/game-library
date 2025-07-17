@@ -615,6 +615,7 @@ typedef struct {
 } Arena;
 
 #define New(a, count, type) (ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
+
 LCORE void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment) {
     isize padding = -(uptr)a->beg & (alignment - 1);
     isize nbytes = count * size;
@@ -2498,6 +2499,7 @@ typedef enum {
     SOUND_WATER_DEATH,
     SOUND_CAR_DEATH,
     SOUND_GAME_OVER,
+    SOUND_WOODMAN_STAGE,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2515,6 +2517,8 @@ static void LoadSounds() {
     SOUNDS[SOUND_WATER_DEATH] = LoadLSound("assets/sounds/water_death.wav");
     SOUNDS[SOUND_CAR_DEATH] = LoadLSound("assets/sounds/car_death.wav");
     SOUNDS[SOUND_GAME_OVER] = LoadLSound("assets/sounds/game_over.wav");
+    // TODO: This overflows sound storage. Need to dynamically allocate.
+    // SOUNDS[SOUND_WOODMAN_STAGE] = LoadLSound("assets/sounds/no_commit/woodman_stage_music.wav");
 }
 
 ////////////////////////////////////////////////////////////
