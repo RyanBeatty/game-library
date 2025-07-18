@@ -619,6 +619,7 @@ typedef struct {
     byte* end;
 } Arena;
 
+// :a = arena, :count = num elems to alloc, :type = type to allocate
 #define New(a, count, type) (ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
 
 LCORE void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment) {
@@ -638,6 +639,32 @@ LCORE Arena NewArena(byte* buffer, isize cap) {
     a.end = a.beg + cap;
     return a;
 }
+
+// Assumes that :s: is a struct with members
+// struct {
+//  T *data;
+//  isize len;
+//  isize cap;
+// }
+// Will crash if you try to allocate more than cap for now. In future could implement growable array.
+#define Push(s, arena) (s->len < s->cap ? s->buffer[buffer->len++] = elem : Assert(false))
+
+// Init Static. Inits a static buffer.
+#define InitS(s, d, c)   \
+    do {                 \
+        (s)->data = (d); \
+        (s)->len = 0;    \
+        (s)->cap = (c);  \
+    } while (0)
+
+// Assumes that :s: is a struct with members
+// struct {
+//  T *data;
+//  isize len;
+//  isize cap;
+// }
+// Will crash if you try to allocate more than cap. PushS = Push Static
+#define PushS(s) ((s)->len < (s)->cap ? (s)->data + (s)->len++ : (assert(false), (s)->data))
 
 ////////////////////////////////////////////////////////////
 // S:Color
@@ -6588,6 +6615,34 @@ static void TestMemory() {
             TAssert(b2[2] == 80, "NewArena(10) + New(5, u8) + New(5, u8): b2[2]");
             TAssert(b2[3] == 90, "NewArena(10) + New(5, u8) + New(5, u8): b2[3]");
             TAssert(b2[4] == 100, "NewArena(10) + New(5, u8) + New(5, u8): b2[4]");
+        }
+    }
+
+    // PushS
+    {
+        {
+            byte buffer[100] = {0};
+            Arena a = NewArena(buffer, ArraySizeOf(buffer));
+
+            struct {
+                i32* data;
+                isize len;
+                isize cap;
+            } ii = {0};
+            i32* data = New(&a, 5, i32);
+            InitS(&ii, data, 5);
+            TAssert(ii.len == 0, "PushS(int): len == 0");
+
+            *PushS(&ii) = 0;
+            *PushS(&ii) = 10;
+            *PushS(&ii) = 20;
+            *PushS(&ii) = 30;
+            *PushS(&ii) = 40;
+            for (i32 i = 0; i < ii.len; ++i) {
+                TAssert(ii.data[i] == i * 10, "PushS: data matches");
+            }
+            TAssert(ii.len == 5, "PushS(int): len == 5");
+            TAssert(ii.cap == 5, "PushS(int): cap == 5");
         }
     }
 }
