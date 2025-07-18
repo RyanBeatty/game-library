@@ -640,15 +640,6 @@ LCORE Arena NewArena(byte* buffer, isize cap) {
     return a;
 }
 
-// Assumes that :s: is a struct with members
-// struct {
-//  T *data;
-//  isize len;
-//  isize cap;
-// }
-// Will crash if you try to allocate more than cap for now. In future could implement growable array.
-#define Push(s, arena) (s->len < s->cap ? s->buffer[buffer->len++] = elem : Assert(false))
-
 // Init Static. Inits a static buffer.
 #define InitS(s, d, c)   \
     do {                 \
