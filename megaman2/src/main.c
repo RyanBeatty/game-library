@@ -609,9 +609,8 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 
 typedef struct {
     // TODO: I might want to include a stable pointer to the start if I ever want to free() arenas.
-    // TODO IMPORTANT: Convert these to some typedef'd version of char* so we don't violate strict aliasing rules.
-    u8* beg;
-    u8* end;
+    byte* beg;
+    byte* end;
 } Arena;
 
 #define New(a, count, type) (ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
@@ -626,9 +625,9 @@ LCORE void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment) {
     return memset(ptr, 0, nbytes);
 };
 
-LCORE Arena NewArena(isize cap) {
+LCORE Arena NewArena(byte* buffer, isize cap) {
     Arena a = {0};
-    a.beg = malloc(cap);
+    a.beg = buffer;
     Assert(a.beg != NULL);
     a.end = a.beg + cap;
     return a;
@@ -6508,7 +6507,8 @@ static void TestMemory() {
     // NewArena
     {
         {
-            Arena a = NewArena(1);
+            byte buffer[1] = {0};
+            Arena a = NewArena(buffer, ArraySizeOf(buffer));
             TAssert(a.beg != NULL, "NewArena(1) beg not null");
             TAssert(a.end != a.beg, "NewArena(1) end != beg");
             TAssert(a.end == a.beg + 1, "NewArena(1) end = beg + 1");
@@ -6516,7 +6516,8 @@ static void TestMemory() {
         }
 
         {
-            Arena a = NewArena(1234);
+            byte buffer[1234] = {0};
+            Arena a = NewArena(buffer, ArraySizeOf(buffer));
             TAssert(a.end == a.beg + 1234, "NewArena(1234) end = beg + 1234");
             TAssert(a.end - a.beg == 1234, "NewArena(1234) end - beg == 1234");
         }
@@ -6525,7 +6526,8 @@ static void TestMemory() {
     // New
     {
         {
-            Arena a = NewArena(1);
+            byte buffer[1] = {0};
+            Arena a = NewArena(buffer, ArraySizeOf(buffer));
             u8* begprev = a.beg;
             u8* b = New(&a, 1, u8);
             *b = 10;
@@ -6536,7 +6538,8 @@ static void TestMemory() {
         }
 
         {
-            Arena a = NewArena(10);
+            byte buffer[10] = {0};
+            Arena a = NewArena(buffer, ArraySizeOf(buffer));
             u8* begprev = a.beg;
             u8* b = New(&a, 5, u8);
             b[0] = 10;
