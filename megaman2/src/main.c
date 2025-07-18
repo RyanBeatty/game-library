@@ -607,6 +607,12 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 ////////////////////////////////////////////////////////////
 // S:Memory
 
+byte* PlatformAllocate(isize cap) {
+    byte* buffer = (byte*)malloc(cap * sizeof(byte));
+    Assert(buffer != NULL);
+    return buffer;
+}
+
 typedef struct {
     // TODO: I might want to include a stable pointer to the start if I ever want to free() arenas.
     byte* beg;
@@ -4012,6 +4018,8 @@ typedef enum {
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
+    Arena memory;
+
     bool debug;
     bool update;
     bool game_over;
@@ -5887,6 +5895,11 @@ LCORE void Stage2Tick(GameState* gstate) {
 
 static void GameStateInit(GameState* gstate) {
     memset(gstate, 0, sizeof(GameState));
+
+    // Initialize dyanmic memory pool.
+    isize cap = GB(4);
+    byte* buffer = PlatformAllocate(cap);
+    gstate->memory = NewArena(buffer, cap);
 
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
