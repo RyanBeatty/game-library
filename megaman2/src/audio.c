@@ -186,92 +186,101 @@ SoundId LoadLSound(const char* filename) {
     byte* cur = buffer;
     byte* end = buffer + bcap;
 
-    Assert(end - cur > 4);
-    Assert(*cur++ == 'R' && *cur++ == 'I' && *cur++ == 'F' && *cur++ == 'F');
+    // RIFF header
+    {
+        Assert(end - cur > 4);
+        Assert(*cur++ == 'R' && *cur++ == 'I' && *cur++ == 'F' && *cur++ == 'F');
 
-    // NOTE: Assumes little endian.
-    Assert(end - cur > 4);
-    u32 chunk_size = 0;
-    chunk_size |= ((u32)*cur++) << 0;
-    chunk_size |= ((u32)*cur++) << 8;
-    chunk_size |= ((u32)*cur++) << 16;
-    chunk_size |= ((u32)*cur++) << 24;
+        // NOTE: Assumes little endian.
+        Assert(end - cur > 4);
+        u32 chunk_size = 0;
+        chunk_size |= ((u32)*cur++) << 0;
+        chunk_size |= ((u32)*cur++) << 8;
+        chunk_size |= ((u32)*cur++) << 16;
+        chunk_size |= ((u32)*cur++) << 24;
 
-    Assert(end - cur > 4);
-    Assert(*cur++ == 'W' && *cur++ == 'A' && *cur++ == 'V' && *cur++ == 'E');
+        Assert(end - cur > 4);
+        Assert(*cur++ == 'W' && *cur++ == 'A' && *cur++ == 'V' && *cur++ == 'E');
+    }
 
-    Assert(end - cur > 4);
-    Assert(*cur++ == 'f' && *cur++ == 'm' && *cur++ == 't' && *cur++ == ' ');
+    // fmt chunk
+    {
+        Assert(end - cur > 4);
+        Assert(*cur++ == 'f' && *cur++ == 'm' && *cur++ == 't' && *cur++ == ' ');
 
-    Assert(end - cur > 4);
-    isize subchunk1_size = 0;
-    subchunk1_size |= ((isize)*cur++) << 0;
-    subchunk1_size |= ((isize)*cur++) << 8;
-    subchunk1_size |= ((isize)*cur++) << 16;
-    subchunk1_size |= ((isize)*cur++) << 24;
-    Assert(subchunk1_size == 16 || subchunk1_size == 18);
-    // Get next chunk offset for later.
-    byte* subchunk2_start = cur + subchunk1_size;
+        Assert(end - cur > 4);
+        isize fmt_chunk_size = 0;
+        fmt_chunk_size |= ((isize)*cur++) << 0;
+        fmt_chunk_size |= ((isize)*cur++) << 8;
+        fmt_chunk_size |= ((isize)*cur++) << 16;
+        fmt_chunk_size |= ((isize)*cur++) << 24;
+        Assert(fmt_chunk_size == 16 || fmt_chunk_size == 18);
+        // Get next chunk offset for later.
+        byte* subchunk2_start = cur + fmt_chunk_size;
 
-    Assert(end - cur > 2);
-    u16 fmt = 0;
-    fmt |= ((u16)*cur++) << 0;
-    fmt |= ((u16)*cur++) << 8;
-    Assert(fmt == 1);
+        Assert(end - cur > 2);
+        u16 fmt = 0;
+        fmt |= ((u16)*cur++) << 0;
+        fmt |= ((u16)*cur++) << 8;
+        Assert(fmt == 1);
 
-    Assert(end - cur > 2);
-    u16 nchannels = 0;
-    nchannels |= ((u16)*cur++) << 0;
-    nchannels |= ((u16)*cur++) << 8;
-    Assert(nchannels == 1);
+        Assert(end - cur > 2);
+        u16 nchannels = 0;
+        nchannels |= ((u16)*cur++) << 0;
+        nchannels |= ((u16)*cur++) << 8;
+        Assert(nchannels == 1);
 
-    Assert(end - cur > 4);
-    u32 sample_rate = 0;
-    sample_rate |= ((u32)*cur++) << 0;
-    sample_rate |= ((u32)*cur++) << 8;
-    sample_rate |= ((u32)*cur++) << 16;
-    sample_rate |= ((u32)*cur++) << 24;
-    Assert(sample_rate == SAMPLESPERSEC);
+        Assert(end - cur > 4);
+        u32 sample_rate = 0;
+        sample_rate |= ((u32)*cur++) << 0;
+        sample_rate |= ((u32)*cur++) << 8;
+        sample_rate |= ((u32)*cur++) << 16;
+        sample_rate |= ((u32)*cur++) << 24;
+        Assert(sample_rate == SAMPLESPERSEC);
 
-    Assert(end - cur > 4);
-    u32 byte_rate = 0;
-    byte_rate |= ((u32)*cur++) << 0;
-    byte_rate |= ((u32)*cur++) << 8;
-    byte_rate |= ((u32)*cur++) << 16;
-    byte_rate |= ((u32)*cur++) << 24;
-    Assert(byte_rate == AUDIO_BYTE_RATE);
+        Assert(end - cur > 4);
+        u32 byte_rate = 0;
+        byte_rate |= ((u32)*cur++) << 0;
+        byte_rate |= ((u32)*cur++) << 8;
+        byte_rate |= ((u32)*cur++) << 16;
+        byte_rate |= ((u32)*cur++) << 24;
+        Assert(byte_rate == AUDIO_BYTE_RATE);
 
-    Assert(end - cur > 2);
-    u16 block_align = 0;
-    block_align |= ((u16)*cur++) << 0;
-    block_align |= ((u16)*cur++) << 8;
-    Assert(block_align == AUDIO_BLOCK_ALIGN);
+        Assert(end - cur > 2);
+        u16 block_align = 0;
+        block_align |= ((u16)*cur++) << 0;
+        block_align |= ((u16)*cur++) << 8;
+        Assert(block_align == AUDIO_BLOCK_ALIGN);
 
-    Assert(end - cur > 2);
-    u16 bits_per_sample = 0;
-    bits_per_sample |= ((u16)*cur++) << 0;
-    bits_per_sample |= ((u16)*cur++) << 8;
-    Assert(bits_per_sample == BITSPERSSAMPLE);
+        Assert(end - cur > 2);
+        u16 bits_per_sample = 0;
+        bits_per_sample |= ((u16)*cur++) << 0;
+        bits_per_sample |= ((u16)*cur++) << 8;
+        Assert(bits_per_sample == BITSPERSSAMPLE);
 
-    cur = subchunk2_start;
+        cur = subchunk2_start;
+    }
 
-    Assert(cur < end && end - cur > 4);
-    Assert(*cur++ == 'd' && *cur++ == 'a' && *cur++ == 't' && *cur++ == 'a');
+    // data chunk
+    {
+        Assert(cur < end && end - cur > 4);
+        Assert(*cur++ == 'd' && *cur++ == 'a' && *cur++ == 't' && *cur++ == 'a');
 
-    Assert(end - cur > 4);
-    u32 subchunk2_size = 0;
-    subchunk2_size |= ((u32)*cur++) << 0;
-    subchunk2_size |= ((u32)*cur++) << 8;
-    subchunk2_size |= ((u32)*cur++) << 16;
-    subchunk2_size |= ((u32)*cur++) << 24;
+        Assert(end - cur > 4);
+        u32 subchunk2_size = 0;
+        subchunk2_size |= ((u32)*cur++) << 0;
+        subchunk2_size |= ((u32)*cur++) << 8;
+        subchunk2_size |= ((u32)*cur++) << 16;
+        subchunk2_size |= ((u32)*cur++) << 24;
 
-    sound->cap = subchunk2_size;
-    sound->len = 0;
-    sound->data = New(&AUDIO.soundmem, sound->cap, sizeof(byte));
+        sound->cap = subchunk2_size;
+        sound->len = 0;
+        sound->data = New(&AUDIO.soundmem, sound->cap, sizeof(byte));
 
-    byte* subchunk2_end = cur + subchunk2_size;
-    while (cur < subchunk2_end) {
-        *PushS(sound) = *cur++;
+        byte* subchunk2_end = cur + subchunk2_size;
+        while (cur < subchunk2_end) {
+            *PushS(sound) = *cur++;
+        }
     }
 
     return id;
