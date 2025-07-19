@@ -2474,6 +2474,7 @@ typedef enum {
     SOUND_MEGAMAN_SHOOT_SMALL,
     SOUND_MEGAMAN_SHOOT_LARGE,
     SOUND_MEGAMAN_CHARGING,
+    SOUND_MEGAMAN_CHARGED,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2496,6 +2497,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_MEGAMAN_SHOOT_SMALL] = LoadLSound("assets/sounds/megaman_shoot_small.wav");
     SOUNDS[SOUND_MEGAMAN_SHOOT_LARGE] = LoadLSound("assets/sounds/megaman_shoot_large.wav");
     SOUNDS[SOUND_MEGAMAN_CHARGING] = LoadLSound("assets/sounds/megaman_charging.wav");
+    SOUNDS[SOUND_MEGAMAN_CHARGED] = LoadLSound("assets/sounds/megaman_charged.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -5068,6 +5070,7 @@ static void StageTick(GameState* gstate) {
                     {
                         static f32 CHARGING_DT = 0.0f;
                         static f32 SHOOT_COOLDOWN_DT = 0.0f;
+                        static f32 FULL_CHARGE_DT = 1.5f;
 
                         SHOOT_COOLDOWN_DT += dt;
                         bool can_shoot = SHOOT_COOLDOWN_DT >= (6.0f / 60.0f);
@@ -5111,14 +5114,15 @@ static void StageTick(GameState* gstate) {
                             }
 
                             CHARGING_DT += dt;
-                            if (CHARGING_DT > 0.1f && !IsLSoundPlaying(GetSound(SOUND_MEGAMAN_CHARGING))) {
-                                PlayLSound(GetSound(SOUND_MEGAMAN_CHARGING), SF_PLAY_INFINITE);
+                            if (CHARGING_DT >= FULL_CHARGE_DT && !IsLSoundPlaying(GetSound(SOUND_MEGAMAN_CHARGED))) {
+                                TraceLog(LOG_INFO, "Charging Sound Start");
+                                PlayLSound(GetSound(SOUND_MEGAMAN_CHARGED), SF_PLAY_INFINITE);
                             }
                         }
 
                         if (IsKeyReleased(KSHOOT)) {
                             // Charge shot
-                            if (CHARGING_DT >= 1.5f) {
+                            if (CHARGING_DT >= FULL_CHARGE_DT) {
                                 SHOOTING = true;
                                 SHOOT_COOLDOWN_DT = 0.0f;
 
