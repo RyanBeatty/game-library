@@ -47,7 +47,7 @@ void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) 
 #define MAX_SOUNDS 10
 
 typedef struct {
-    Arena perm;
+    Arena mem;
 
     IXAudio2* xaudio;
     IXAudio2MasteringVoice* xaudioMasterVoice;
@@ -78,7 +78,7 @@ void InitAudio(byte* buffer, isize cap) {
     static i32 INIT = 0;
     Assert(INIT++);
 
-    AUDIO.perm = NewArena(buffer, cap);
+    AUDIO.mem = NewArena(buffer, cap);
 
     HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(res)) {
@@ -268,7 +268,7 @@ SoundId LoadLSound(const char* filename) {
 
     sound->cap = subchunk2_size;
     sound->len = 0;
-    sound->data = New(&AUDIO.perm, sound->cap, sizeof(byte));
+    sound->data = New(&AUDIO.mem, sound->cap, sizeof(byte));
 
     byte* subchunk2_end = cur + subchunk2_size;
     while (cur < subchunk2_end) {

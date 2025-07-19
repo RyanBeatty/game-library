@@ -96,3 +96,9 @@ Arena NewArena(byte* buffer, isize cap);
 // }
 // Will crash if you try to allocate more than cap. PushS = Push Static
 #define PushS(s) (assert((s)->len < (s)->cap), (s)->data + (s)->len++)
+
+typedef struct {
+    byte* data;
+    isize len;
+    isize cap;
+} ByteBuffer;
