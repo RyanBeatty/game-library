@@ -19,7 +19,7 @@
 const SoundId NULLSOUND = 0;
 
 typedef struct {
-    u8 buffer[MAX_SOUND_SIZE];
+    byte data[MAX_SOUND_SIZE];
     isize len;
     isize cap;
 } LSound;
@@ -148,8 +148,8 @@ SoundId LoadLSoundTest(const char* filename) {
     while (sound->len < AUDIOBUFFERSIZEINBYTES) {
         phase += (2 * LPI) / SAMPLESPERCYCLE;
         int16_t sample = (int16_t)(sin(phase) * INT16_MAX * VOLUME);
-        sound->buffer[sound->len++] = (byte)sample;  // Values are little-endian.
-        sound->buffer[sound->len++] = (byte)(sample >> 8);
+        sound->data[sound->len++] = (byte)sample;  // Values are little-endian.
+        sound->data[sound->len++] = (byte)(sample >> 8);
     }
     Assert(sound->len <= sound->cap);
     return id;
@@ -262,7 +262,7 @@ SoundId LoadLSound(const char* filename) {
 
     u8* subchunk2_end = cur + subchunk2_size;
     while (cur < subchunk2_end) {
-        sound->buffer[sound->len++] = *cur++;
+        sound->data[sound->len++] = *cur++;
     }
 
     Assert(sound->len <= sound->cap);
@@ -279,7 +279,7 @@ void PlayLSound(SoundId id, u32 flags) {
             stream->free = false;
 
             stream->xbuffer.AudioBytes = sound->len;
-            stream->xbuffer.pAudioData = sound->buffer;
+            stream->xbuffer.pAudioData = sound->data;
 
             stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
             stream->voice->lpVtbl->Start(stream->voice, 0, 0);
