@@ -26,6 +26,7 @@ typedef struct {
     IXAudio2SourceVoice* voice;
     XAUDIO2_BUFFER xbuffer;
     bool free;
+    SoundId id;  // ID of sound being played if stream not free.
 } AudioStream;
 
 void WINAPI OnBufferEnd(IXAudio2VoiceCallback* this, void* ctx) {
@@ -324,6 +325,7 @@ void PlayLSound(SoundId id, SoundFlag flags) {
         AudioStream* stream = &AUDIO.streams[i];
         if (stream->free) {
             stream->free = false;
+            stream->id = id;
 
             stream->xbuffer.AudioBytes = sound->len;
             stream->xbuffer.pAudioData = sound->data;
@@ -334,4 +336,16 @@ void PlayLSound(SoundId id, SoundFlag flags) {
             return;
         }
     }
+}
+
+bool IsLSoundPlaying(SoundId id) {
+    AudioState* audio = &AUDIO;
+    for (i32 i = 0; i < audio->cap; ++i) {
+        AudioStream* stream = &audio->streams[i];
+        if (!stream->free && stream->id == id) {
+            return true;
+        }
+    }
+
+    return false;
 }

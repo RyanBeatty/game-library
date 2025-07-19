@@ -5111,7 +5111,9 @@ static void StageTick(GameState* gstate) {
                             }
 
                             CHARGING_DT += dt;
-                            // TODO: Add Charging sound.
+                            if (CHARGING_DT > 0.1f && !IsLSoundPlaying(GetSound(SOUND_MEGAMAN_CHARGING))) {
+                                PlayLSound(GetSound(SOUND_MEGAMAN_CHARGING), SF_PLAY_INFINITE);
+                            }
                         }
 
                         if (IsKeyReleased(KSHOOT)) {
