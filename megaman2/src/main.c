@@ -5082,12 +5082,6 @@ static void StageTick(GameState* gstate) {
                                 SHOOTING = true;
                                 SHOOT_COOLDOWN_DT = 0.0f;
 
-                                {
-                                    static SoundId sid = 0;
-                                    PlayLSound(GetSound(sid++), 0);
-                                    sid %= SOUND_COUNT - 1;
-                                }
-
                                 // Spawn shot.
                                 {
                                     Entity* shot = AllocateEntity();
