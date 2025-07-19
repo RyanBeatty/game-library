@@ -76,8 +76,9 @@ static AudioState AUDIO = {
 #define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
 void InitAudio(byte* buffer, isize cap) {
-    static i32 INIT = 0;
-    Assert(INIT++);
+    static bool INIT = false;
+    Assert(!INIT);
+    INIT = true;
 
     AUDIO.mem = NewArena(buffer, cap);
     AUDIO.soundmem = NewArena(New(&AUDIO.mem, GB(1), byte), GB(1));
@@ -203,12 +204,14 @@ SoundId LoadLSound(const char* filename) {
     Assert(*cur++ == 'f' && *cur++ == 'm' && *cur++ == 't' && *cur++ == ' ');
 
     Assert(end - cur > 4);
-    u32 subchunk_size = 0;
-    subchunk_size |= ((u32)*cur++) << 0;
-    subchunk_size |= ((u32)*cur++) << 8;
-    subchunk_size |= ((u32)*cur++) << 16;
-    subchunk_size |= ((u32)*cur++) << 24;
-    Assert(subchunk_size == 16 || subchunk_size == 18);
+    isize subchunk1_size = 0;
+    subchunk1_size |= ((isize)*cur++) << 0;
+    subchunk1_size |= ((isize)*cur++) << 8;
+    subchunk1_size |= ((isize)*cur++) << 16;
+    subchunk1_size |= ((isize)*cur++) << 24;
+    Assert(subchunk1_size == 16 || subchunk1_size == 18);
+    // Get next chunk offset for later.
+    byte* subchunk2_start = cur + subchunk1_size;
 
     Assert(end - cur > 2);
     u16 fmt = 0;
@@ -250,12 +253,9 @@ SoundId LoadLSound(const char* filename) {
     bits_per_sample |= ((u16)*cur++) << 8;
     Assert(bits_per_sample == BITSPERSSAMPLE);
 
-    if (subchunk_size == 18) {
-        cur += 2;  // Consume extra 2 bytes of extension data
-    }
+    cur = subchunk2_start;
 
-    // TODO: I should instead move cur to beg + subchunk1 size since there can be optional parameters
-    Assert(end - cur > 4);
+    Assert(cur < end && end - cur > 4);
     Assert(*cur++ == 'd' && *cur++ == 'a' && *cur++ == 't' && *cur++ == 'a');
 
     Assert(end - cur > 4);
