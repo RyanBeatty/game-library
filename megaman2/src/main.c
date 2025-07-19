@@ -2469,7 +2469,9 @@ typedef enum {
     SOUND_WATER_DEATH,
     SOUND_CAR_DEATH,
     SOUND_GAME_OVER,
+
     SOUND_WOODMAN_STAGE,
+    SOUND_MEGAMAN_SHOOT_SMALL,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2487,7 +2489,9 @@ static void LoadSounds() {
     SOUNDS[SOUND_WATER_DEATH] = LoadLSound("assets/sounds/water_death.wav");
     SOUNDS[SOUND_CAR_DEATH] = LoadLSound("assets/sounds/car_death.wav");
     SOUNDS[SOUND_GAME_OVER] = LoadLSound("assets/sounds/game_over.wav");
+
     SOUNDS[SOUND_WOODMAN_STAGE] = LoadLSound("assets/sounds/no_commit/woodman_stage_music_new.wav");
+    SOUNDS[SOUND_MEGAMAN_SHOOT_SMALL] = LoadLSound("assets/sounds/megaman_shoot_small.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -5098,6 +5102,8 @@ static void StageTick(GameState* gstate) {
                                     FlagOn(shot->flags, EFLAG_PROJECTILE);
                                     shot->attacker_id = e->id;
                                 }
+
+                                PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
                             }
 
                             CHARGING_DT += dt;
@@ -5140,6 +5146,7 @@ static void StageTick(GameState* gstate) {
                                                                   MEGAMAN_SMALL_SHOT, 0.0f, 1.0f);
                                 FlagOn(shot->flags, EFLAG_PROJECTILE);
                                 shot->attacker_id = e->id;
+                                PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
                             }
                             CHARGING_DT = 0.0f;
                         }

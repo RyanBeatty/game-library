@@ -166,6 +166,9 @@ SoundId LoadLSoundTest(const char* filename) {
 // Can load canonical wav files:
 // * http://soundfile.sapp.org/doc/WaveFormat/
 // * https://web.archive.org/web/20160304204823/http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
+// Can load:
+// * yt2wav wav files.
+// * jsfxr wav files (with sample rate 44k and sample size 16 bit).
 SoundId LoadLSound(const char* filename) {
     Assert(AUDIO.soundlen < AUDIO.soundcap);
     SoundId id = AUDIO.soundlen++;
