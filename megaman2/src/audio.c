@@ -184,8 +184,8 @@ SoundId LoadLSound(const char* filename) {
     fread(buffer, 1, bsize, file);
     fclose(file);
 
-    u8* cur = buffer;
-    u8* end = buffer + bsize;
+    byte* cur = buffer;
+    byte* end = buffer + bsize;
 
     Assert(end - cur > 4);
     Assert(*cur++ == 'R' && *cur++ == 'I' && *cur++ == 'F' && *cur++ == 'F');
@@ -270,7 +270,7 @@ SoundId LoadLSound(const char* filename) {
     sound->len = 0;
     sound->data = New(&AUDIO.perm, sound->cap, sizeof(byte));
 
-    u8* subchunk2_end = cur + subchunk2_size;
+    byte* subchunk2_end = cur + subchunk2_size;
     while (cur < subchunk2_end) {
         *PushS(sound) = *cur++;
     }
