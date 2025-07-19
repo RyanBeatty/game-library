@@ -338,6 +338,38 @@ void PlayLSound(SoundId id, SoundFlag flags) {
     }
 }
 
+void PlayLSoundLimit(SoundId id, u32 limit) {
+    Assert(id < AUDIO.soundlen);
+    LSound* sound = &AUDIO.sounds[id];
+
+    AudioStream* choice = NULL;
+
+    u32 playing = 0;
+    for (u32 i = 0; i < AUDIO.cap; ++i) {
+        AudioStream* stream = &AUDIO.streams[i];
+        if (!stream->free) {
+            if (stream->id == id) {
+                ++playing;
+            }
+        } else {
+            choice = stream;
+        }
+    }
+
+    if (choice != NULL && playing < limit) {
+        AudioStream* stream = choice;
+        stream->free = false;
+        stream->id = id;
+
+        stream->xbuffer.AudioBytes = sound->len;
+        stream->xbuffer.pAudioData = sound->data;
+        stream->xbuffer.LoopCount = 0;
+
+        stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
+        stream->voice->lpVtbl->Start(stream->voice, 0, 0);
+    }
+}
+
 bool IsLSoundPlaying(SoundId id) {
     AudioState* audio = &AUDIO;
     for (i32 i = 0; i < audio->cap; ++i) {
@@ -348,4 +380,19 @@ bool IsLSoundPlaying(SoundId id) {
     }
 
     return false;
+}
+
+// Stops *all* running sounds for the given sound id.
+void StopLSound(SoundId id) {
+    AudioState* audio = &AUDIO;
+    for (i32 i = 0; i < audio->cap; ++i) {
+        AudioStream* stream = &audio->streams[i];
+        if (!stream->free && stream->id == id) {
+            stream->voice->lpVtbl->Stop(stream->voice, 0, 0);
+            // Ensure we free the stream. Stop() will not cause any callback events to be fired for
+            // buffers. Need to call flush buffers insteam of explicitly marking free since if we play the voice
+            // again, it will still have leftover sound buffered.
+            stream->voice->lpVtbl->FlushSourceBuffers(stream->voice);
+        }
+    }
 }

@@ -5114,6 +5114,9 @@ static void StageTick(GameState* gstate) {
                             }
 
                             CHARGING_DT += dt;
+                            // if (CHARGING_DT >= FULL_CHARGE_DT) {
+                            //     PlayLSoundLimit(GetSound(SOUND_MEGAMAN_CHARGED), 1);
+                            // }
                             if (CHARGING_DT >= FULL_CHARGE_DT && !IsLSoundPlaying(GetSound(SOUND_MEGAMAN_CHARGED))) {
                                 TraceLog(LOG_INFO, "Charging Sound Start");
                                 PlayLSound(GetSound(SOUND_MEGAMAN_CHARGED), SF_PLAY_INFINITE);
@@ -5141,6 +5144,7 @@ static void StageTick(GameState* gstate) {
                                 FlagOn(shot->flags, EFLAG_SURVIVE_HIT);
                                 shot->attacker_id = e->id;
                                 PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_LARGE), 0);
+                                StopLSound(GetSound(SOUND_MEGAMAN_CHARGED));
                             } else if (!SHOOTING) {
                                 SHOOTING = true;
                                 SHOOT_COOLDOWN_DT = 0.0f;

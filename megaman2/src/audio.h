@@ -17,4 +17,6 @@ SoundId LoadLSoundTest(const char* filename);
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
 SoundId LoadLSound(const char* filename);
 void PlayLSound(SoundId id, SoundFlag flags);
+void PlayLSoundLimit(SoundId id, u32 limit);
 bool IsLSoundPlaying(SoundId id);
+void StopLSound(SoundId);
