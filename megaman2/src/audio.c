@@ -47,6 +47,8 @@ void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) 
 #define MAX_SOUNDS 10
 
 typedef struct {
+    Arena perm;
+
     IXAudio2* xaudio;
     IXAudio2MasteringVoice* xaudioMasterVoice;
     IXAudio2VoiceCallback callbacks;
@@ -73,6 +75,11 @@ static AudioState AUDIO = {
 #define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
 void InitAudio(byte* buffer, isize cap) {
+    static i32 INIT = 0;
+    Assert(INIT++);
+
+    AUDIO.perm = NewArena(buffer, cap);
+
     HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(res)) {
         fprintf(stderr, "failed CoInitializeEx\n");
