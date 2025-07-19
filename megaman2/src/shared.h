@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #define LCORE static __attribute__((unused))
@@ -60,3 +62,37 @@ void __attribute__((noinline)) breakpoint();
 #define TestFlag(flags, flag) ((flags) & (flag))
 #define FlagOn(flags, flag) ((flags) |= flag)
 #define FlagOff(flags, flag) ((flags) &= ~(flag))
+
+////////////////////////////////////////////////////////////
+// S:Memory
+
+byte* PlatformAllocate(isize cap);
+
+typedef struct {
+    // TODO: I might want to include a stable pointer to the start if I ever want to free() arenas.
+    byte* beg;
+    byte* end;
+} Arena;
+
+// :a = arena, :count = num elems to alloc, :type = type to allocate
+#define New(a, count, type) (ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
+
+void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment);
+Arena NewArena(byte* buffer, isize cap);
+
+// Init Static. Inits a static buffer.
+#define InitS(s, d, c)   \
+    do {                 \
+        (s)->data = (d); \
+        (s)->len = 0;    \
+        (s)->cap = (c);  \
+    } while (0)
+
+// Assumes that :s: is a struct with members
+// struct {
+//  T *data;
+//  isize len;
+//  isize cap;
+// }
+// Will crash if you try to allocate more than cap. PushS = Push Static
+#define PushS(s) (assert((s)->len < (s)->cap), (s)->data + (s)->len++)

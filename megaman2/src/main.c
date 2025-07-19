@@ -605,59 +605,6 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 }
 
 ////////////////////////////////////////////////////////////
-// S:Memory
-
-byte* PlatformAllocate(isize cap) {
-    byte* buffer = (byte*)malloc(cap * sizeof(byte));
-    Assert(buffer != NULL);
-    return buffer;
-}
-
-typedef struct {
-    // TODO: I might want to include a stable pointer to the start if I ever want to free() arenas.
-    byte* beg;
-    byte* end;
-} Arena;
-
-// :a = arena, :count = num elems to alloc, :type = type to allocate
-#define New(a, count, type) (ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
-
-LCORE void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment) {
-    isize padding = -(uptr)a->beg & (alignment - 1);
-    isize nbytes = count * size;
-    // I think <= is appropriate here. if remaining = 1 and we want to allocate 1, then we should be able to do so
-    Assert(count <= (a->end - a->beg - padding) / size);
-    void* ptr = a->beg + padding;
-    a->beg += padding + nbytes;
-    return memset(ptr, 0, nbytes);
-};
-
-LCORE Arena NewArena(byte* buffer, isize cap) {
-    Arena a = {0};
-    a.beg = buffer;
-    Assert(a.beg != NULL);
-    a.end = a.beg + cap;
-    return a;
-}
-
-// Init Static. Inits a static buffer.
-#define InitS(s, d, c)   \
-    do {                 \
-        (s)->data = (d); \
-        (s)->len = 0;    \
-        (s)->cap = (c);  \
-    } while (0)
-
-// Assumes that :s: is a struct with members
-// struct {
-//  T *data;
-//  isize len;
-//  isize cap;
-// }
-// Will crash if you try to allocate more than cap. PushS = Push Static
-#define PushS(s) (assert((s)->len < (s)->cap), (s)->data + (s)->len++)
-
-////////////////////////////////////////////////////////////
 // S:Color
 
 static const Vec4 LCLEAR = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
