@@ -49,6 +49,8 @@ void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) 
 typedef struct {
     Arena mem;
 
+    Arena soundmem;
+
     IXAudio2* xaudio;
     IXAudio2MasteringVoice* xaudioMasterVoice;
     IXAudio2VoiceCallback callbacks;
@@ -79,6 +81,7 @@ void InitAudio(byte* buffer, isize cap) {
     Assert(INIT++);
 
     AUDIO.mem = NewArena(buffer, cap);
+    AUDIO.soundmem = NewArena(New(&AUDIO.mem, GB(1), byte), GB(1));
 
     HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(res)) {
@@ -268,7 +271,7 @@ SoundId LoadLSound(const char* filename) {
 
     sound->cap = subchunk2_size;
     sound->len = 0;
-    sound->data = New(&AUDIO.mem, sound->cap, sizeof(byte));
+    sound->data = New(&AUDIO.soundmem, sound->cap, sizeof(byte));
 
     byte* subchunk2_end = cur + subchunk2_size;
     while (cur < subchunk2_end) {
