@@ -54,12 +54,12 @@ typedef struct {
     IXAudio2MasteringVoice* xaudioMasterVoice;
     IXAudio2VoiceCallback callbacks;
 
-    u32 cap;
     AudioStream streams[NUM_STREAMS];
+    isize cap;
 
-    u32 soundlen;
-    u32 soundcap;
     LSound sounds[MAX_SOUNDS];
+    isize soundlen;
+    isize soundcap;
 } AudioState;
 
 // NOTE: Cannot memset thisor vtable gets wiped!!!! Should probably switch to a Zero init struct.

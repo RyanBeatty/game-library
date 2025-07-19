@@ -2473,6 +2473,7 @@ typedef enum {
     SOUND_WOODMAN_STAGE,
     SOUND_MEGAMAN_SHOOT_SMALL,
     SOUND_MEGAMAN_SHOOT_LARGE,
+    SOUND_MEGAMAN_CHARGING,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2494,6 +2495,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_WOODMAN_STAGE] = LoadLSound("assets/sounds/no_commit/woodman_stage_music_new.wav");
     SOUNDS[SOUND_MEGAMAN_SHOOT_SMALL] = LoadLSound("assets/sounds/megaman_shoot_small.wav");
     SOUNDS[SOUND_MEGAMAN_SHOOT_LARGE] = LoadLSound("assets/sounds/megaman_shoot_large.wav");
+    SOUNDS[SOUND_MEGAMAN_CHARGING] = LoadLSound("assets/sounds/megaman_charging.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -5109,6 +5111,7 @@ static void StageTick(GameState* gstate) {
                             }
 
                             CHARGING_DT += dt;
+                            // TODO: Add Charging sound.
                         }
 
                         if (IsKeyReleased(KSHOOT)) {
