@@ -370,16 +370,17 @@ void PlayLSoundLimit(SoundId id, u32 limit) {
     }
 }
 
-bool IsLSoundPlaying(SoundId id) {
+u32 GetLSoundPlaying(SoundId id) {
     AudioState* audio = &AUDIO;
+    u32 count = 0;
     for (i32 i = 0; i < audio->cap; ++i) {
         AudioStream* stream = &audio->streams[i];
         if (!stream->free && stream->id == id) {
-            return true;
+            ++count;
         }
     }
 
-    return false;
+    return count;
 }
 
 // Stops *all* running sounds for the given sound id.
