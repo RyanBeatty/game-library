@@ -19,9 +19,9 @@
 const SoundId NULLSOUND = 0;
 
 typedef struct {
-    u32 len;
-    u32 cap;
     u8 buffer[MAX_SOUND_SIZE];
+    isize len;
+    isize cap;
 } LSound;
 
 typedef struct {
@@ -59,6 +59,7 @@ typedef struct {
     LSound sounds[MAX_SOUNDS];
 } AudioState;
 
+// NOTE: Cannot memset thisor vtable gets wiped!!!! Should probably switch to a Zero init struct.
 static AudioState AUDIO = {
     .callbacks = {.lpVtbl = &(IXAudio2VoiceCallbackVtbl){.OnStreamEnd = OnStreamEnd,
                                                          .OnVoiceProcessingPassEnd = OnVoiceProcessingPassEnd,
