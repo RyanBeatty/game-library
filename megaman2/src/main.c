@@ -5070,7 +5070,7 @@ static void StageTick(GameState* gstate) {
                     {
                         static f32 CHARGING_DT = 0.0f;
                         static f32 SHOOT_COOLDOWN_DT = 0.0f;
-                        static f32 FULL_CHARGE_DT = 2.5f;
+                        static f32 FULL_CHARGE_DT = 3.0f;
 
                         SoundId charged = GetSound(SOUND_MEGAMAN_CHARGED);
                         SoundId charging = GetSound(SOUND_MEGAMAN_CHARGING);
@@ -5117,7 +5117,7 @@ static void StageTick(GameState* gstate) {
                             }
 
                             CHARGING_DT += dt;
-                            if (CHARGING_DT > 0.2f) {
+                            if (CHARGING_DT > 0.5f) {
                                 if (CHARGING_DT >= FULL_CHARGE_DT) {
                                     if (!GetLSoundPlaying(charged)) {
                                         StopLSound(charging);
