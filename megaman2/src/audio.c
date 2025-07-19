@@ -216,7 +216,7 @@ SoundId LoadLSound(const char* filename) {
         fmt_chunk_size |= ((isize)*cur++) << 24;
         Assert(fmt_chunk_size == 16 || fmt_chunk_size == 18);
         // Get next chunk offset for later.
-        byte* subchunk2_start = cur + fmt_chunk_size;
+        byte* next_chunk_start = cur + fmt_chunk_size;
 
         Assert(end - cur > 2);
         u16 fmt = 0;
@@ -258,7 +258,7 @@ SoundId LoadLSound(const char* filename) {
         bits_per_sample |= ((u16)*cur++) << 8;
         Assert(bits_per_sample == BITSPERSSAMPLE);
 
-        cur = subchunk2_start;
+        cur = next_chunk_start;
     }
 
     // data chunk
