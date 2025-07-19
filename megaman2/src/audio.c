@@ -71,7 +71,9 @@ static AudioState AUDIO = {
 #define XAUDIO2() (AUDIO.xaudio->lpVtbl)
 #define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
-void InitAudio() {
+void InitAudio(byte* buffer, isize cap) {
+    memset(&AUDIO, 0, sizeof(AUDIO));
+
     HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(res)) {
         fprintf(stderr, "failed CoInitializeEx\n");
@@ -98,6 +100,8 @@ void InitAudio() {
     wfx.nBlockAlign = AUDIO_BLOCK_ALIGN;
     wfx.nAvgBytesPerSec = AUDIO_BYTE_RATE;
     wfx.cbSize = 0;
+
+    // memset(&AUDIO, 0, sizeof(AUDIO));
 
     AUDIO.cap = NUM_STREAMS;
     for (u32 i = 0; i < AUDIO.cap; ++i) {

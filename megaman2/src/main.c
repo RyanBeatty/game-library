@@ -4036,7 +4036,7 @@ typedef enum {
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
-    Arena memory;
+    Arena perm;
 
     bool debug;
     bool update;
@@ -5917,7 +5917,7 @@ static void GameStateInit(GameState* gstate) {
     // Initialize dyanmic memory pool.
     isize cap = GB(4);
     byte* buffer = PlatformAllocate(cap);
-    gstate->memory = NewArena(buffer, cap);
+    gstate->perm = NewArena(buffer, cap);
 
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
@@ -5930,7 +5930,10 @@ static void GameStateInit(GameState* gstate) {
     SetTargetFPS(60);
     // DisableCursor();
 
-    InitAudio();
+    isize sound_cap = GB(1);
+    byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
+
+    InitAudio(sound_buffer, sound_cap);
     InitFonts();
     ParticleSystemInit();
 
