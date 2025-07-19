@@ -49,6 +49,7 @@ void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) 
 typedef struct {
     Arena mem;
 
+    // Holds sound buffer memory. Alive for duration of program.
     Arena soundmem;
 
     IXAudio2* xaudio;
