@@ -19,7 +19,7 @@
 const SoundId NULLSOUND = 0;
 
 typedef struct {
-    byte data[MAX_SOUND_SIZE];
+    byte* data;
     isize len;
     isize cap;
 } LSound;
@@ -133,9 +133,9 @@ void ClearLSounds() {
     // sound 0 is blank sound sentinal.
     AUDIO.soundlen = 1;
     AUDIO.soundcap = MAX_SOUNDS;
-    for (u32 i = 0; i < AUDIO.soundcap; ++i) {
-        AUDIO.sounds[i].cap = MAX_SOUND_SIZE;
-    }
+    // for (u32 i = 0; i < AUDIO.soundcap; ++i) {
+    //     AUDIO.sounds[i].cap = MAX_SOUND_SIZE;
+    // }
 }
 
 SoundId LoadLSoundTest(const char* filename) {
@@ -265,14 +265,16 @@ SoundId LoadLSound(const char* filename) {
     subchunk2_size |= ((u32)*cur++) << 8;
     subchunk2_size |= ((u32)*cur++) << 16;
     subchunk2_size |= ((u32)*cur++) << 24;
-    Assert(subchunk2_size < sound->cap);
+
+    sound->cap = subchunk2_size;
+    sound->len = 0;
+    sound->data = New(&AUDIO.perm, sound->cap, sizeof(byte));
 
     u8* subchunk2_end = cur + subchunk2_size;
     while (cur < subchunk2_end) {
-        sound->data[sound->len++] = *cur++;
+        *PushS(sound) = *cur++;
     }
 
-    Assert(sound->len <= sound->cap);
     return id;
 }
 
