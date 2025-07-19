@@ -137,9 +137,7 @@ void ClearLSounds() {
     // sound 0 is blank sound sentinal.
     AUDIO.soundlen = 1;
     AUDIO.soundcap = MAX_SOUNDS;
-    // for (u32 i = 0; i < AUDIO.soundcap; ++i) {
-    //     AUDIO.sounds[i].cap = MAX_SOUND_SIZE;
-    // }
+    // TODO: I should just have a free flag on each sound and set those to false.
 }
 
 SoundId LoadLSoundTest(const char* filename) {

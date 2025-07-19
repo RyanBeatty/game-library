@@ -2487,8 +2487,7 @@ static void LoadSounds() {
     SOUNDS[SOUND_WATER_DEATH] = LoadLSound("assets/sounds/water_death.wav");
     SOUNDS[SOUND_CAR_DEATH] = LoadLSound("assets/sounds/car_death.wav");
     SOUNDS[SOUND_GAME_OVER] = LoadLSound("assets/sounds/game_over.wav");
-    // TODO: This overflows sound storage. Need to dynamically allocate.
-    // SOUNDS[SOUND_WOODMAN_STAGE] = LoadLSound("assets/sounds/no_commit/woodman_stage_music.wav");
+    SOUNDS[SOUND_WOODMAN_STAGE] = LoadLSound("assets/sounds/no_commit/woodman_stage_music.wav");
 }
 
 ////////////////////////////////////////////////////////////
