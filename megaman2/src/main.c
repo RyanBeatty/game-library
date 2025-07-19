@@ -5114,12 +5114,8 @@ static void StageTick(GameState* gstate) {
                             }
 
                             CHARGING_DT += dt;
-                            // if (CHARGING_DT >= FULL_CHARGE_DT) {
-                            //     PlayLSoundLimit(GetSound(SOUND_MEGAMAN_CHARGED), 1);
-                            // }
-                            if (CHARGING_DT >= FULL_CHARGE_DT && !IsLSoundPlaying(GetSound(SOUND_MEGAMAN_CHARGED))) {
-                                TraceLog(LOG_INFO, "Charging Sound Start");
-                                PlayLSound(GetSound(SOUND_MEGAMAN_CHARGED), SF_PLAY_INFINITE);
+                            if (CHARGING_DT >= FULL_CHARGE_DT) {
+                                PlayLSoundLimit(GetSound(SOUND_MEGAMAN_CHARGED), 1);
                             }
                         }
 
