@@ -254,6 +254,7 @@ SoundId LoadLSound(const char* filename) {
         cur += 2;  // Consume extra 2 bytes of extension data
     }
 
+    // TODO: I should instead move cur to beg + subchunk1 size since there can be optional parameters
     Assert(end - cur > 4);
     Assert(*cur++ == 'd' && *cur++ == 'a' && *cur++ == 't' && *cur++ == 'a');
 
