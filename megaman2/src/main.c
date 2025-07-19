@@ -2472,6 +2472,7 @@ typedef enum {
 
     SOUND_WOODMAN_STAGE,
     SOUND_MEGAMAN_SHOOT_SMALL,
+    SOUND_MEGAMAN_SHOOT_LARGE,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2492,6 +2493,7 @@ static void LoadSounds() {
 
     SOUNDS[SOUND_WOODMAN_STAGE] = LoadLSound("assets/sounds/no_commit/woodman_stage_music_new.wav");
     SOUNDS[SOUND_MEGAMAN_SHOOT_SMALL] = LoadLSound("assets/sounds/megaman_shoot_small.wav");
+    SOUNDS[SOUND_MEGAMAN_SHOOT_LARGE] = LoadLSound("assets/sounds/megaman_shoot_large.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -5129,6 +5131,7 @@ static void StageTick(GameState* gstate) {
                                 FlagOn(shot->flags, EFLAG_PROJECTILE);
                                 FlagOn(shot->flags, EFLAG_SURVIVE_HIT);
                                 shot->attacker_id = e->id;
+                                PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_LARGE), 0);
                             } else if (!SHOOTING) {
                                 SHOOTING = true;
                                 SHOOT_COOLDOWN_DT = 0.0f;

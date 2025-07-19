@@ -42,7 +42,7 @@ void WINAPI OnVoiceError(IXAudio2VoiceCallback* this, void* ctx, HRESULT error) 
 
 #define NUM_STREAMS 10
 
-#define MAX_SOUNDS 10
+#define MAX_SOUNDS 20
 
 typedef struct {
     Arena mem;
