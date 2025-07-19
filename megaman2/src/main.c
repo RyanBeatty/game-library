@@ -5081,7 +5081,11 @@ static void StageTick(GameState* gstate) {
                                 SHOOTING = true;
                                 SHOOT_COOLDOWN_DT = 0.0f;
 
-                                PlayLSound(GetSound(SOUND_BEEP), 0);
+                                {
+                                    static SoundId sid = 0;
+                                    PlayLSound(GetSound(sid++), 0);
+                                    sid %= SOUND_COUNT - 1;
+                                }
 
                                 // Spawn shot.
                                 {
@@ -5879,7 +5883,7 @@ static void GameStateInit(GameState* gstate) {
     SetTargetFPS(60);
     // DisableCursor();
 
-    isize sound_cap = GB(1);
+    isize sound_cap = GB(2);
     byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
 
     InitAudio(sound_buffer, sound_cap);

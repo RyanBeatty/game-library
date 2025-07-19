@@ -172,24 +172,22 @@ SoundId LoadLSound(const char* filename) {
     SoundId id = AUDIO.soundlen++;
     LSound* sound = &AUDIO.sounds[id];
 
-    u32 bsize = 0;
-    u32 bcap = MAX_SOUND_SIZE;
-    u8 buffer[MAX_SOUND_SIZE] = {0};
-
     FILE* file = fopen(filename, "rb");  // Open file in binary mode
     Assert(file);
 
     // Seek to the end to determine the file size
     fseek(file, 0, SEEK_END);
-    bsize = ftell(file);
-    Assert(bsize <= bcap);
+    isize bcap = ftell(file);
     rewind(file);
 
-    fread(buffer, 1, bsize, file);
+    Arena temp = AUDIO.mem;
+    byte* buffer = New(&temp, bcap, byte);
+
+    fread(buffer, 1, bcap, file);
     fclose(file);
 
     byte* cur = buffer;
-    byte* end = buffer + bsize;
+    byte* end = buffer + bcap;
 
     Assert(end - cur > 4);
     Assert(*cur++ == 'R' && *cur++ == 'I' && *cur++ == 'F' && *cur++ == 'F');
