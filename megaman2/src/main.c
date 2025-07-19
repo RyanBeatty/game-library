@@ -4723,7 +4723,7 @@ static void StageTick(GameState* gstate) {
 
                 e->health = 4;
 
-                PlayLSound(GetSound(SOUND_WOODMAN_STAGE), 0);
+                PlayLSound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
             }
 
             // Update.

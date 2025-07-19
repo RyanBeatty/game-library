@@ -313,7 +313,7 @@ SoundId LoadLSound(const char* filename) {
     return id;
 }
 
-void PlayLSound(SoundId id, u32 flags) {
+void PlayLSound(SoundId id, SoundFlag flags) {
     Assert(id < AUDIO.soundlen);
     LSound* sound = &AUDIO.sounds[id];
 
@@ -324,6 +324,7 @@ void PlayLSound(SoundId id, u32 flags) {
 
             stream->xbuffer.AudioBytes = sound->len;
             stream->xbuffer.pAudioData = sound->data;
+            stream->xbuffer.LoopCount = (flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
 
             stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
             stream->voice->lpVtbl->Start(stream->voice, 0, 0);
