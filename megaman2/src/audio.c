@@ -163,7 +163,9 @@ SoundId LoadLSoundTest(const char* filename) {
     return id;
 }
 
-// Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
+// Can load canonical wav files:
+// * http://soundfile.sapp.org/doc/WaveFormat/
+// * https://web.archive.org/web/20160304204823/http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html
 SoundId LoadLSound(const char* filename) {
     Assert(AUDIO.soundlen < AUDIO.soundcap);
     SoundId id = AUDIO.soundlen++;
@@ -257,6 +259,31 @@ SoundId LoadLSound(const char* filename) {
         bits_per_sample |= ((u16)*cur++) << 0;
         bits_per_sample |= ((u16)*cur++) << 8;
         Assert(bits_per_sample == BITSPERSSAMPLE);
+
+        cur = next_chunk_start;
+    }
+
+    // optional LIST chunk
+    // * https://www.recordingblogs.com/wiki/list-chunk-of-a-wave-file
+    byte peek = *cur;
+    if (peek == 'L') {
+        Assert(*cur++ == 'L');
+        Assert(*cur++ == 'I');
+        Assert(*cur++ == 'S');
+        Assert(*cur++ == 'T');
+
+        isize chunk_size = 0;
+        chunk_size |= ((isize)*cur++) << 0;
+        chunk_size |= ((isize)*cur++) << 8;
+        chunk_size |= ((isize)*cur++) << 16;
+        chunk_size |= ((isize)*cur++) << 24;
+        byte* next_chunk_start = cur + chunk_size;
+
+        // Assume we can only parse INFO list chunks.
+        Assert(*cur++ == 'I');
+        Assert(*cur++ == 'N');
+        Assert(*cur++ == 'F');
+        Assert(*cur++ == 'O');
 
         cur = next_chunk_start;
     }
