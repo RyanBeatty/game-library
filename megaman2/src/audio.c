@@ -72,8 +72,6 @@ static AudioState AUDIO = {
 #define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
 void InitAudio(byte* buffer, isize cap) {
-    memset(&AUDIO, 0, sizeof(AUDIO));
-
     HRESULT res = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(res)) {
         fprintf(stderr, "failed CoInitializeEx\n");

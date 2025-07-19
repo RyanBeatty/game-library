@@ -5081,6 +5081,8 @@ static void StageTick(GameState* gstate) {
                                 SHOOTING = true;
                                 SHOOT_COOLDOWN_DT = 0.0f;
 
+                                PlayLSound(GetSound(SOUND_BEEP), 0);
+
                                 // Spawn shot.
                                 {
                                     Entity* shot = AllocateEntity();
