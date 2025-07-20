@@ -979,6 +979,7 @@ typedef struct {
     u32 vuvscale_loc;
 
     // frag shader.
+    u32 fresolution_loc;
 
     // fx
     u32 fchargingstate_loc;
@@ -1058,6 +1059,7 @@ static LShader GetShader() {
         "in vec2 fTextCoords;\n"
         "\n"
         "uniform sampler2D texture0;\n"
+        "uniform vec2 resolution;\n"
         "\n"
         "uniform int fChargingState;\n"
         "\n"
@@ -1097,6 +1099,7 @@ static LShader GetShader() {
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
             SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
 
             SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
 
@@ -1645,7 +1648,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
     return cmd;
 }
 
-static void ShaderPassExecute(ShaderPass* pass) {
+static void ShaderPassExecute(ShaderPass* pass, Vec2 resolution) {
     LShader shader2d = GetShader();
     LShader effects_shader = GetEffectsShader();
 
@@ -1657,6 +1660,8 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
         glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
+
+        glUniform2fv(shader.fresolution_loc, 1, (const f32*)&resolution.f);
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
@@ -1704,6 +1709,9 @@ typedef struct {
     u32 passcap;
     ShaderPass passes[MAX_SHADER_PASSES];
 
+    f32 dt;
+    f32 timer;
+
     RenderTarget target;
 } RenderState;
 
@@ -1719,11 +1727,13 @@ static void RenderStateInit(u32 width, u32 height) {
 }
 
 // Reset render state and allow accumulation of shader passes.
-static void BeginRender() {
+static void BeginRender(f32 dt) {
     RenderState* rstate = &RSTATE;
     rstate->passidx = PASSNULL;
     rstate->passlen = 0;
     rstate->passcap = MAX_SHADER_PASSES - 1;  // last entry reserved for null idx.
+    rstate->dt = dt;
+    rstate->timer += dt;
 }
 
 static ShaderPass* BeginShaderPass(LShader shader) {
@@ -1777,9 +1787,10 @@ static void EndRender() {
     //         glFrontFace(GL_CCW);
     //     }
     // }
+    Vec2 resolution = Vec2Lit(rstate->target.width, rstate->target.height);
 
     for (u32 i = 0; i < rstate->passlen; ++i) {
-        ShaderPassExecute(&rstate->passes[i]);
+        ShaderPassExecute(&rstate->passes[i], resolution);
     }
 
     // Draw the render target texture to screen as a quad.
@@ -1806,7 +1817,7 @@ static void EndRender() {
         cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->meshcmd.color = LRED;  // For debug.
         cmd->meshcmd.txid = rstate->target.txid;
-        ShaderPassExecute(&pass);
+        ShaderPassExecute(&pass, Vec2Lit(GetScreenWidth(), GetScreenHeight()));
     }
 
     EndDrawing();
@@ -4105,7 +4116,7 @@ static const i32 KJUMP = KEY_Z;
 static const i32 KSHOOT = KEY_X;
 
 static void SceneDefaultTick(GameState* gstate) {
-    BeginRender();
+    BeginRender(gstate->dt);
 
     ShaderPass* pass = BeginShaderPass(GetShader());
     u32 width = gstate->renderw;
@@ -4195,7 +4206,7 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
         free(bitmap);
     }
 
-    BeginRender();
+    BeginRender(gstate->dt);
 
     ShaderPass* pass = BeginShaderPass(GetShader());
 
@@ -4262,7 +4273,7 @@ static void TrueTypeTick(GameState* gstate) {
     if (!gstate->init) {
     }
 
-    BeginRender();
+    BeginRender(gstate->dt);
 
     ShaderPass* pass = BeginShaderPass(GetShader());
 
@@ -4295,7 +4306,7 @@ static void TitleScreenTick(GameState* gstate) {
         gstate->nextsceneid = SCENE_STAGE_SELECT;
     }
 
-    BeginRender();
+    BeginRender(gstate->dt);
 
     ShaderPass* pass = BeginShaderPass(GetShader());
 
@@ -4326,7 +4337,7 @@ static void StageSelectTick(GameState* gstate) {
         gstate->nextsceneid = SCENE_STAGE;
     }
 
-    BeginRender();
+    BeginRender(gstate->dt);
 
     ShaderPass* pass = BeginShaderPass(GetShader());
 
@@ -4648,7 +4659,7 @@ static void StageTick(GameState* gstate) {
     static Vec3 CAMERA_EYE_START = {0};
     static const f32 GRAVITY = 350.0f;
 
-    BeginRender();
+    BeginRender(gstate->dt);
     ShaderPass* pass = BeginShaderPass(GetShader());
     pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
 
@@ -5859,7 +5870,7 @@ LCORE void Stage2Tick(GameState* gstate) {
         CAMERA.eye.x += dx;
     }
 
-    BeginRender();
+    BeginRender(gstate->dt);
 
     {
         ShaderPass* pass = BeginShaderPass(GetShader());
