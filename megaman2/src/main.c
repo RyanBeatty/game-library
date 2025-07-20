@@ -980,6 +980,7 @@ typedef struct {
 
     // frag shader.
     u32 fresolution_loc;
+    u32 ftimer_loc;
 
     // fx
     u32 fchargingstate_loc;
@@ -1060,6 +1061,7 @@ static LShader GetShader() {
         "\n"
         "uniform sampler2D texture0;\n"
         "uniform vec2 resolution;\n"
+        "uniform float timer;\n"
         "\n"
         "uniform int fChargingState;\n"
         "\n"
@@ -1100,6 +1102,7 @@ static LShader GetShader() {
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
             SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
             SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
+            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
 
             SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
 
@@ -1666,6 +1669,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
         glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
 
         glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
+        glUniform1f(shader.ftimer_loc, pass->timer);
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
