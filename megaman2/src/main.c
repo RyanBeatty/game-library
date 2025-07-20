@@ -979,6 +979,9 @@ typedef struct {
     u32 vuvscale_loc;
 
     // frag shader.
+
+    // fx
+    u32 fchargingstate_loc;
 } LShader;
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
@@ -1056,6 +1059,8 @@ static LShader GetShader() {
         "\n"
         "uniform sampler2D texture0;\n"
         "\n"
+        "uniform int fChargingState;\n"
+        "\n"
         "out vec4 FragColor;\n"
         "\n"
         "void main()\n"
@@ -1069,6 +1074,10 @@ static LShader GetShader() {
         // For blending to work here properly, its important that either texture is specified or texture
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
+        "\n"
+        "   if (fChargingState == 1) {\n"
+        "       FragColor = vec4(1, 0, 0, 1);\n"
+        "   }\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
@@ -1088,6 +1097,8 @@ static LShader GetShader() {
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
             SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+
+            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
 
             glUseProgram(SHADER.pid);
             glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
@@ -1580,6 +1591,8 @@ typedef struct {
             Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
             Vec2 uvscale;    // width/height in texture space of the Aserect to sample inside the texture [0, 1]
             TextureId txid;  // Texture id.
+
+            u32 charging_state;
         } meshcmd;
 
         // Clears buffer with color.
@@ -1656,6 +1669,8 @@ static void ShaderPassExecute(ShaderPass* pass) {
                     glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
                     glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
                     glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+                    glUniform1i(shader.fchargingstate_loc, cmd->meshcmd.charging_state);
 
                     glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
                                    (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
@@ -5750,6 +5765,10 @@ static void StageTick(GameState* gstate) {
 
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 DrawCmd* cmd = AddDrawMeshCmd();
+
+                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                    cmd->meshcmd.charging_state = 1;
+                }
 
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
