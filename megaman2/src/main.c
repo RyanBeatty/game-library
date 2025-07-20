@@ -1626,6 +1626,10 @@ typedef struct {
     Mat4 proj;
     ///////////////////////
 
+    Vec2 resolution;
+    f32 dt;
+    f32 timer;
+
     u32 clen;
     u32 ccap;
     DrawCmd cmds[MAX_CMDS];
@@ -1648,7 +1652,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
     return cmd;
 }
 
-static void ShaderPassExecute(ShaderPass* pass, Vec2 resolution) {
+static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader2d = GetShader();
     LShader effects_shader = GetEffectsShader();
 
@@ -1661,7 +1665,7 @@ static void ShaderPassExecute(ShaderPass* pass, Vec2 resolution) {
         glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
         glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
 
-        glUniform2fv(shader.fresolution_loc, 1, (const f32*)&resolution.f);
+        glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
@@ -1744,6 +1748,9 @@ static ShaderPass* BeginShaderPass(LShader shader) {
     rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
     ShaderPassInit(pass, shader.pid);
+    pass->resolution = Vec2Lit(rstate->target.width, rstate->target.height);
+    pass->dt = rstate->dt;
+    pass->timer = rstate->timer;
     return pass;
 }
 
@@ -1787,10 +1794,9 @@ static void EndRender() {
     //         glFrontFace(GL_CCW);
     //     }
     // }
-    Vec2 resolution = Vec2Lit(rstate->target.width, rstate->target.height);
 
     for (u32 i = 0; i < rstate->passlen; ++i) {
-        ShaderPassExecute(&rstate->passes[i], resolution);
+        ShaderPassExecute(&rstate->passes[i]);
     }
 
     // Draw the render target texture to screen as a quad.
@@ -1809,6 +1815,9 @@ static void EndRender() {
 
         ShaderPass pass;
         ShaderPassInit(&pass, GetEffectsShader().pid);
+        pass.dt = rstate->dt;
+        pass.timer = rstate->timer;
+        pass.resolution = Vec2Lit(GetScreenWidth(), GetScreenHeight());
         DrawCmd* cmd = ShaderPassAddCmd(&pass);
         DrawMeshCmdInit(cmd);
         cmd->meshcmd.meshid = GetMesh(M_QUAD);
@@ -1817,7 +1826,7 @@ static void EndRender() {
         cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->meshcmd.color = LRED;  // For debug.
         cmd->meshcmd.txid = rstate->target.txid;
-        ShaderPassExecute(&pass, Vec2Lit(GetScreenWidth(), GetScreenHeight()));
+        ShaderPassExecute(&pass);
     }
 
     EndDrawing();
