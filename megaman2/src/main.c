@@ -1083,8 +1083,13 @@ static LShader GetShader() {
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
         "\n"
+        "   bool is_black = txColor == vec4(0, 0, 0, 1);\n"
         "   if (fChargingState == 1) {\n"
-        "       if (txColor == vec4(0, 0, 0, 1) && NFrame % 6 == 0) {\n"
+        "       if (is_black && NFrame % 6 == 0) {\n"
+        "           FragColor = vec4(1, 0, 0, 1);\n"
+        "       }\n"
+        "   } else if (fChargingState == 2) {\n"
+        "       if (is_black) {\n"
         "           FragColor = vec4(1, 0, 0, 1);\n"
         "       }\n"
         "   }\n"
@@ -5807,7 +5812,7 @@ static void StageTick(GameState* gstate) {
                 DrawCmd* cmd = AddDrawMeshCmd();
 
                 if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                    cmd->meshcmd.charging_state = 1;
+                    cmd->meshcmd.charging_state = 2;
                 }
 
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
