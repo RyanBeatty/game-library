@@ -1083,14 +1083,15 @@ static LShader GetShader() {
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
         "\n"
+        "   vec4 charge_color = vec4(1, 0, 0, 1);\n"
         "   bool is_black = txColor == vec4(0, 0, 0, 1);\n"
         "   if (fChargingState == 1) {\n"
         "       if (is_black && NFrame % 6 == 0) {\n"
-        "           FragColor = vec4(1, 0, 0, 1);\n"
+        "           FragColor = charge_color;\n"
         "       }\n"
         "   } else if (fChargingState == 2) {\n"
         "       if (is_black) {\n"
-        "           FragColor = vec4(1, 0, 0, 1);\n"
+        "           FragColor = charge_color;\n"
         "       }\n"
         "   }\n"
         "}\0";
