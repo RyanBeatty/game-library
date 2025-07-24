@@ -2653,7 +2653,7 @@ typedef enum {
 // required to subselect a rect inside of a 2d texture (animations are a subselected rect that are stepped
 // along through the texture at some time interval).
 typedef struct {
-    TextureId txid;
+    LTexture tx;
 
     TextureInfoType type;
     union {
@@ -2690,7 +2690,7 @@ typedef struct {
 
 static void TextureInfoDefault(TextureInfo* txinfo) {
     TextureInfo res = {0};
-    res.txid = GetTexture(TX_DEFAULT).id;
+    res.tx = GetTexture(TX_DEFAULT);
     res.type = TI_SPRITE;
     res.sprite.minuv = Vec2Zero();
     res.sprite.dimsuv = Vec2Lit(1.0f, 1.0f);
@@ -2749,7 +2749,7 @@ LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 min, 
     graphics->mid = GetMesh(M_QUAD);
 
     TextureInfo res = {0};
-    res.txid = tx.id;
+    res.tx = tx;
     res.type = TI_SPRITE;
     res.sprite.minuv = Vec2Lit(min.x / tx.width, min.y / tx.height);
     res.sprite.dimsuv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
@@ -2773,7 +2773,7 @@ LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx
     src.lc = AsepritePosToFlipped(tx, src.lc);
 
     TextureInfo res = {0};
-    res.txid = tx.id;
+    res.tx = tx;
     res.type = TI_SPRITE;
     res.sprite.minuv = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
     res.sprite.dimsuv = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
@@ -2793,7 +2793,7 @@ LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture
     f32 width_inv = 1.0f / tx.width;
     f32 height_inv = 1.0f / tx.height;
     TextureInfo txinfo = {0};
-    txinfo.txid = tx.id;
+    txinfo.tx = tx;
     txinfo.type = TI_ANIMATION;
     txinfo.animation.minuv = Vec2Lit(animation.start.lc.x * width_inv, animation.start.lc.y * height_inv);
     txinfo.animation.dimsuv = Vec2Lit(animation.start.r.x * width_inv, animation.start.r.y * height_inv);
@@ -5814,7 +5814,7 @@ static void StageTick(GameState* gstate) {
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
                 cmd->meshcmd.uvoffset = e->graphics.uvoffset;
                 cmd->meshcmd.uvscale = e->graphics.uvscale;
-                cmd->meshcmd.txid = e->graphics.txinfo.txid;
+                cmd->meshcmd.txid = e->graphics.txinfo.tx.id;
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
 
