@@ -979,6 +979,7 @@ typedef struct {
     u32 vuvscale_loc;
 
     // frag shader.
+    u32 ftexture0_resolution_loc;
     u32 fresolution_loc;
     u32 ftimer_loc;
 
@@ -1060,6 +1061,7 @@ static LShader GetShader() {
         "in vec2 fTextCoords;\n"
         "\n"
         "uniform sampler2D texture0;\n"
+        "uniform vec2 Texture0Resolution;\n"
         "uniform vec2 resolution;\n"
         "uniform float timer;\n"
         "\n"
@@ -1079,24 +1081,29 @@ static LShader GetShader() {
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
         "\n"
-        "   if (false && fChargingState == 1) {\n"
+        "   if (fChargingState == 1) {\n"
         // "       FragColor = vec4(1, 0, 0, 1);\n"
         "       vec2 uv = fTextCoords;\n"
-        // TODO: this should be texture0 resolution and not canvas resolution.
-        "       float du = 1.0 / resolution.x;\n"
-        "       float dv = 1.0 / resolution.y;\n"
+        // "       float du = 1.0 / 512.0;\n"
+        // "       float dv = 1.0 / 512.0;\n"
+        "       float du = 1.0 / Texture0Resolution.x;\n"
+        "       float dv = 1.0 / Texture0Resolution.y;\n"
         "       int px = 1;\n"
-        "       for (int i = -px; i < px+1; ++i) {\n"
-        "           for(int j = -px; j < px+1; ++j) {\n"
-        "               vec2 offset = vec2(du * i, dv * j);\n"
-        "               vec2 newuv = clamp(uv + offset, 0.0, 1.0);\n"
-        "               float nexta = texture(texture0, newuv).a;\n"
-        "               if (txColor.a == 0.0 && nexta > 0.5)\n {"
-        "                   FragColor = vec4(1, 0, 0, 1);\n"
-        "                   return ;\n"
-        "               }\n"
-        "           }\n"
+        "       vec4 next_color = texture(texture0, uv + vec2(0, dv));\n"
+        "       if (next_color.a !=0.0) {\n"
+        "           FragColor = vec4(1, 0, 0, 1);\n"
         "       }\n"
+        // "       for (int i = -px; i < px+1; ++i) {\n"
+        // "           for(int j = -px; j < px+1; ++j) {\n"
+        // "               vec2 offset = vec2(du * i, dv * j);\n"
+        // "               vec2 newuv = uv + offset;\n"
+        // "               float nexta = texture(texture0, newuv).a;\n"
+        // "               if (txColor.a == 0.0 && nexta > 0.0)\n {"
+        // "                   FragColor = vec4(1, 0, 0, 1);\n"
+        // // "                   return ;\n"
+        // "               }\n"
+        // "           }\n"
+        // "       }\n"
         "   }\n"
         "}\0";
     static bool INIT = false;
@@ -1119,6 +1126,7 @@ static LShader GetShader() {
             SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
             SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
             SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
+            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
 
             SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
 
@@ -1693,6 +1701,9 @@ static void ShaderPassExecute(ShaderPass* pass) {
                 case CMD_DRAW_MESH: {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+                    // Vec2 tx0_resolution = Vec2Lit(cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+                    glUniform2f(shader.ftexture0_resolution_loc, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+                    // glUniform2fv(shader.ftexture0_resolution_loc, 1, (const f32*)&tx0_resolution.f);
 
                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
                     glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
