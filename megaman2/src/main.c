@@ -1072,15 +1072,31 @@ static LShader GetShader() {
         "   vec4 txColor = texture(texture0, fTextCoords);\n"
         // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
         // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-        "   if (txColor.a < 0.01) {\n"
+        "   if (txColor.a < 0.01 && fChargingState == 0) {\n"
         "       discard;\n"
         "   }\n"
         // For blending to work here properly, its important that either texture is specified or texture
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
         "\n"
-        "   if (fChargingState == 1) {\n"
-        "       FragColor = vec4(1, 0, 0, 1);\n"
+        "   if (false && fChargingState == 1) {\n"
+        // "       FragColor = vec4(1, 0, 0, 1);\n"
+        "       vec2 uv = fTextCoords;\n"
+        // TODO: this should be texture0 resolution and not canvas resolution.
+        "       float du = 1.0 / resolution.x;\n"
+        "       float dv = 1.0 / resolution.y;\n"
+        "       int px = 1;\n"
+        "       for (int i = -px; i < px+1; ++i) {\n"
+        "           for(int j = -px; j < px+1; ++j) {\n"
+        "               vec2 offset = vec2(du * i, dv * j);\n"
+        "               vec2 newuv = clamp(uv + offset, 0.0, 1.0);\n"
+        "               float nexta = texture(texture0, newuv).a;\n"
+        "               if (txColor.a == 0.0 && nexta > 0.5)\n {"
+        "                   FragColor = vec4(1, 0, 0, 1);\n"
+        "                   return ;\n"
+        "               }\n"
+        "           }\n"
+        "       }\n"
         "   }\n"
         "}\0";
     static bool INIT = false;
@@ -4687,7 +4703,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 7;
+        u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
