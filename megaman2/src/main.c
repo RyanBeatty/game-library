@@ -982,6 +982,7 @@ typedef struct {
     u32 ftexture0_resolution_loc;
     u32 fresolution_loc;
     u32 ftimer_loc;
+    u32 fnframe_loc;
 
     // fx
     u32 fchargingstate_loc;
@@ -1064,6 +1065,7 @@ static LShader GetShader() {
         "uniform vec2 Texture0Resolution;\n"
         "uniform vec2 resolution;\n"
         "uniform float timer;\n"
+        "uniform int NFrame;\n"
         "\n"
         "uniform int fChargingState;\n"
         "\n"
@@ -1082,31 +1084,9 @@ static LShader GetShader() {
         "    FragColor = txColor * fColor;\n"
         "\n"
         "   if (fChargingState == 1) {\n"
-        "       if (txColor == vec4(0, 0, 0, 1)) {\n"
+        "       if (txColor == vec4(0, 0, 0, 1) && NFrame % 6 == 0) {\n"
         "           FragColor = vec4(1, 0, 0, 1);\n"
         "       }\n"
-        // // "       FragColor = vec4(1, 0, 0, 1);\n"
-        // "       vec2 uv = fTextCoords;\n"
-        // // "       float du = 1.0 / 512.0;\n"
-        // // "       float dv = 1.0 / 512.0;\n"
-        // "       float du = 1.0 / Texture0Resolution.x;\n"
-        // "       float dv = 1.0 / Texture0Resolution.y;\n"
-        // "       int px = 2;\n"
-        // // "       vec4 next_color = texture(texture0, uv + vec2(0, dv));\n"
-        // // "       if (next_color.a !=0.0) {\n"
-        // // "           FragColor = vec4(1, 0, 0, 1);\n"
-        // // "       }\n"
-        // "       for (int i = -px; i < px+1; ++i) {\n"
-        // "           for(int j = -px; j < px+1; ++j) {\n"
-        // "               vec2 offset = vec2(du * i, dv * j);\n"
-        // "               vec2 newuv = uv + offset;\n"
-        // "               float nexta = texture(texture0, newuv).a;\n"
-        // "               if (txColor.a == 0.0 && nexta > 0.0)\n {"
-        // "                   FragColor = vec4(1, 0, 0, 1);\n"
-        // // "                   return ;\n"
-        // "               }\n"
-        // "           }\n"
-        // "       }\n"
         "   }\n"
         "}\0";
     static bool INIT = false;
@@ -1130,6 +1110,7 @@ static LShader GetShader() {
             SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
             SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
             SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
+            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
 
             SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
 
@@ -1659,6 +1640,7 @@ typedef struct {
     Vec2 resolution;
     f32 dt;
     f32 timer;
+    i32 nframe;
 
     u32 clen;
     u32 ccap;
@@ -1697,6 +1679,8 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
         glUniform1f(shader.ftimer_loc, pass->timer);
+
+        glUniform1i(shader.fnframe_loc, pass->nframe);
 
         for (u32 i = 0; i < pass->clen; ++i) {
             DrawCmd* cmd = &pass->cmds[i];
@@ -1747,6 +1731,7 @@ typedef struct {
 
     f32 dt;
     f32 timer;
+    i32 nframe;
 
     RenderTarget target;
 } RenderState;
@@ -1770,6 +1755,7 @@ static void BeginRender(f32 dt) {
     rstate->passcap = MAX_SHADER_PASSES - 1;  // last entry reserved for null idx.
     rstate->dt = dt;
     rstate->timer += dt;
+    ++rstate->nframe;
 }
 
 static ShaderPass* BeginShaderPass(LShader shader) {
@@ -1783,6 +1769,7 @@ static ShaderPass* BeginShaderPass(LShader shader) {
     pass->resolution = Vec2Lit(rstate->target.width, rstate->target.height);
     pass->dt = rstate->dt;
     pass->timer = rstate->timer;
+    pass->nframe = rstate->nframe;
     return pass;
 }
 
