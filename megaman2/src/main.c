@@ -1610,9 +1610,9 @@ typedef struct {
             LMesh meshid;
             Mat4 modelm;  // converts from model space to world space.
             Vec4 color;
-            Vec2 uvoffset;   // offset of the bottom left corner/origin in texture space (0, 0)
-            Vec2 uvscale;    // width/height in texture space of the Aserect to sample inside the texture [0, 1]
-            TextureId txid;  // Texture id.
+            Vec2 uvoffset;  // offset of the bottom left corner/origin in texture space (0, 0)
+            Vec2 uvscale;   // width/height in texture space of the Aserect to sample inside the texture [0, 1]
+            LTexture tx;
 
             u32 charging_state;
         } meshcmd;
@@ -1631,7 +1631,7 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
     cmd->meshcmd.modelm = Mat4Identity();
     cmd->meshcmd.uvoffset = Vec2Lit(0.0f, 0.0f);
     cmd->meshcmd.uvscale = Vec2Lit(1.0f, 1.0f);
-    cmd->meshcmd.txid = GetTexture(TX_DEFAULT).id;
+    cmd->meshcmd.tx = GetTexture(TX_DEFAULT);
 }
 
 #define MAX_CMDS 4092
@@ -1692,7 +1692,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
             switch (cmd->type) {
                 case CMD_DRAW_MESH: {
                     glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.txid);
+                    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
 
                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
                     glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
@@ -1845,7 +1845,9 @@ static void EndRender() {
         // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
         cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->meshcmd.color = LRED;  // For debug.
-        cmd->meshcmd.txid = rstate->target.txid;
+        cmd->meshcmd.tx.id = rstate->target.txid;
+        cmd->meshcmd.tx.width = rstate->target.width;
+        cmd->meshcmd.tx.height = rstate->target.height;
         ShaderPassExecute(&pass);
     }
 
@@ -1933,7 +1935,7 @@ LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2
     cmd->meshcmd.color = color;
     cmd->meshcmd.uvoffset = uvoffset;
     cmd->meshcmd.uvscale = uvscale;
-    cmd->meshcmd.txid = tx.id;
+    cmd->meshcmd.tx = tx;
     cmd->meshcmd.meshid = GetMesh(M_QUAD);
 }
 
@@ -1947,8 +1949,7 @@ LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2
 // :r_src - full width/height of sub rect to read from texture in uv space
 // :c_dst - destination origin (center of quad) of where to draw in world space
 // :r_dst - full width + height of quad
-LCORE DrawCmd* DrawLTexturePro2(TextureId txid, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation,
-                                Vec4 color) {
+LCORE DrawCmd* DrawLTexturePro2(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
     Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
     Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
     Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
@@ -1959,7 +1960,7 @@ LCORE DrawCmd* DrawLTexturePro2(TextureId txid, Vec2 c_src, Vec2 r_src, Vec2 c_d
     cmd->meshcmd.color = color;
     cmd->meshcmd.uvoffset = c_src;
     cmd->meshcmd.uvscale = r_src;
-    cmd->meshcmd.txid = txid;
+    cmd->meshcmd.tx = tx;
     cmd->meshcmd.meshid = GetMesh(M_QUAD);
     return cmd;
 }
@@ -2464,7 +2465,7 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
         // if (gstate->debug) {
         //     DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         // }
-        DrawLTexturePro2(font.tx.id, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
+        DrawLTexturePro2(font.tx, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
     }
     return baseline_pos;
 }
@@ -4291,7 +4292,7 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
         if (gstate->debug) {
             DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         }
-        DrawLTexturePro2(TX.id, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        DrawLTexturePro2(TX, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
     }
     EndShaderPass();
 
@@ -5814,7 +5815,7 @@ static void StageTick(GameState* gstate) {
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
                 cmd->meshcmd.uvoffset = e->graphics.uvoffset;
                 cmd->meshcmd.uvscale = e->graphics.uvscale;
-                cmd->meshcmd.txid = e->graphics.txinfo.tx.id;
+                cmd->meshcmd.tx = e->graphics.txinfo.tx;
                 cmd->meshcmd.meshid = e->graphics.mid;
             }
 
