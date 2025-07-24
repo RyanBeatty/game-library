@@ -1088,22 +1088,22 @@ static LShader GetShader() {
         // "       float dv = 1.0 / 512.0;\n"
         "       float du = 1.0 / Texture0Resolution.x;\n"
         "       float dv = 1.0 / Texture0Resolution.y;\n"
-        "       int px = 1;\n"
-        "       vec4 next_color = texture(texture0, uv + vec2(0, dv));\n"
-        "       if (next_color.a !=0.0) {\n"
-        "           FragColor = vec4(1, 0, 0, 1);\n"
-        "       }\n"
-        // "       for (int i = -px; i < px+1; ++i) {\n"
-        // "           for(int j = -px; j < px+1; ++j) {\n"
-        // "               vec2 offset = vec2(du * i, dv * j);\n"
-        // "               vec2 newuv = uv + offset;\n"
-        // "               float nexta = texture(texture0, newuv).a;\n"
-        // "               if (txColor.a == 0.0 && nexta > 0.0)\n {"
-        // "                   FragColor = vec4(1, 0, 0, 1);\n"
-        // // "                   return ;\n"
-        // "               }\n"
-        // "           }\n"
+        "       int px = 2;\n"
+        // "       vec4 next_color = texture(texture0, uv + vec2(0, dv));\n"
+        // "       if (next_color.a !=0.0) {\n"
+        // "           FragColor = vec4(1, 0, 0, 1);\n"
         // "       }\n"
+        "       for (int i = -px; i < px+1; ++i) {\n"
+        "           for(int j = -px; j < px+1; ++j) {\n"
+        "               vec2 offset = vec2(du * i, dv * j);\n"
+        "               vec2 newuv = uv + offset;\n"
+        "               float nexta = texture(texture0, newuv).a;\n"
+        "               if (txColor.a == 0.0 && nexta > 0.0)\n {"
+        "                   FragColor = vec4(1, 0, 0, 1);\n"
+        // "                   return ;\n"
+        "               }\n"
+        "           }\n"
+        "       }\n"
         "   }\n"
         "}\0";
     static bool INIT = false;
@@ -1701,9 +1701,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
                 case CMD_DRAW_MESH: {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
-                    // Vec2 tx0_resolution = Vec2Lit(cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
                     glUniform2f(shader.ftexture0_resolution_loc, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
-                    // glUniform2fv(shader.ftexture0_resolution_loc, 1, (const f32*)&tx0_resolution.f);
 
                     glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
                     glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
