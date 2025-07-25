@@ -4820,10 +4820,10 @@ static void StageTick(GameState* gstate) {
                     static const f32 WALK_DX_SPEED = 50.0f;
                     static const f32 WALK_DY_SPEED = 200.0f;
                     static bool SHOOTING = false;
-                    static f32 HITSTUN_COOLDOWN_DT = 0.0f;
+                    static f32 HITSTUN_COOLDOWN_DT = 10.0f;
 
                     HITSTUN_COOLDOWN_DT += dt;
-                    if (e->attacker_id != NULLID && PSTATE != PS_HURT) {
+                    if (e->attacker_id != NULLID && PSTATE != PS_HURT && HITSTUN_COOLDOWN_DT >= 2.0f) {
                         PSTATE = PS_HURT;
                         HITSTUN_COOLDOWN_DT = 0.0f;
                         GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
