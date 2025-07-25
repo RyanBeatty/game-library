@@ -1083,7 +1083,7 @@ static LShader GetShader() {
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor * fColor;\n"
         "\n"
-        "   vec4 charge_color = vec4(1, 0, 0, 1);\n"
+        "   vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);\n"
         "   bool is_black = txColor == vec4(0, 0, 0, 1);\n"
         "   if (fChargingState == 1) {\n"
         "       if (is_black && NFrame % 6 == 0) {\n"
@@ -1091,11 +1091,8 @@ static LShader GetShader() {
         "       }\n"
         "   } else if (fChargingState == 2) {\n"
         "       if (is_black) {\n"
-        "           vec4 base_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 6.0));"
-        "           vec4 charged_color = charge_color;\n"
-        "           float wave = sin(fTextCoords.y * 0.4 + timer * 10.0);"
-        "           charged_color.rgb *= 0.8 + 0.2 * wave;\n"
-        "           FragColor = base_color;\n"
+        "           vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 6.0));"
+        "           FragColor = glow_color;\n"
         "       }\n"
         "   }\n"
         "}\0";
