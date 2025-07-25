@@ -2731,6 +2731,9 @@ typedef struct {
     //////////////////////////////////////
 
     TextureInfo txinfo;
+
+    // Gameplay fields
+    u32 charging_state;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -5176,6 +5179,7 @@ static void StageTick(GameState* gstate) {
                                 }
 
                                 PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
+                                e->graphics.charging_state = 0;
                             }
 
                             CHARGING_DT += dt;
@@ -5185,8 +5189,12 @@ static void StageTick(GameState* gstate) {
                                         StopLSound(charging);
                                         PlayLSound(charged, SF_PLAY_INFINITE);
                                     }
-                                } else if (!GetLSoundPlaying(charging)) {
-                                    PlayLSound(charging, SF_PLAY_INFINITE);
+                                    e->graphics.charging_state = 2;
+                                } else {
+                                    if (!GetLSoundPlaying(charging)) {
+                                        PlayLSound(charging, SF_PLAY_INFINITE);
+                                    }
+                                    e->graphics.charging_state = 1;
                                 }
                             }
                         }
@@ -5212,6 +5220,7 @@ static void StageTick(GameState* gstate) {
                                 FlagOn(shot->flags, EFLAG_SURVIVE_HIT);
                                 shot->attacker_id = e->id;
                                 PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_LARGE), 0);
+                                e->graphics.charging_state = 0;
                             } else if (!SHOOTING) {
                                 SHOOTING = true;
                                 SHOOT_COOLDOWN_DT = 0.0f;
@@ -5230,6 +5239,7 @@ static void StageTick(GameState* gstate) {
                                 FlagOn(shot->flags, EFLAG_PROJECTILE);
                                 shot->attacker_id = e->id;
                                 PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
+                                e->graphics.charging_state = 0;
                             }
                             CHARGING_DT = 0.0f;
                             StopLSound(charging);
@@ -5813,16 +5823,13 @@ static void StageTick(GameState* gstate) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 DrawCmd* cmd = AddDrawMeshCmd();
 
-                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                    cmd->meshcmd.charging_state = 2;
-                }
-
                 cmd->meshcmd.modelm = Mat4SVRT(e->graphics.scale, e->graphics.orient, e->graphics.pos);
                 cmd->meshcmd.color = e->graphics.txinfo.tint;
                 cmd->meshcmd.uvoffset = e->graphics.uvoffset;
                 cmd->meshcmd.uvscale = e->graphics.uvscale;
                 cmd->meshcmd.tx = e->graphics.txinfo.tx;
                 cmd->meshcmd.meshid = e->graphics.mid;
+                cmd->meshcmd.charging_state = e->graphics.charging_state;
             }
 
             if (gstate->debug && e->shape.type != PH_NONE) {
