@@ -2537,6 +2537,8 @@ typedef enum {
     SOUND_MEGAMAN_SHOOT_LARGE,
     SOUND_MEGAMAN_CHARGING,
     SOUND_MEGAMAN_CHARGED,
+
+    SOUND_MOB_HURT,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2560,6 +2562,8 @@ static void LoadSounds() {
     SOUNDS[SOUND_MEGAMAN_SHOOT_LARGE] = LoadLSound("assets/sounds/megaman_shoot_large.wav");
     SOUNDS[SOUND_MEGAMAN_CHARGING] = LoadLSound("assets/sounds/megaman_charging.wav");
     SOUNDS[SOUND_MEGAMAN_CHARGED] = LoadLSound("assets/sounds/megaman_charged.wav");
+
+    SOUNDS[SOUND_MOB_HURT] = LoadLSound("assets/sounds/mob_hurt.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -5640,6 +5644,7 @@ static void StageTick(GameState* gstate) {
                                 if (!TestFlag(shot->flags, EFLAG_SURVIVE_HIT)) {
                                     SoftDeactivateEntity(shot->id);
                                 }
+                                PlayLSoundLimit(GetSound(SOUND_MOB_HURT), 3);
                             }
                         }
 
