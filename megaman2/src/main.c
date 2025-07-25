@@ -4838,6 +4838,7 @@ static void StageTick(GameState* gstate) {
                     e->attack_dir = Vec3Zero();
 
                     if (e->health <= 0) {
+                        StopLSound(GetSound(SOUND_WOODMAN_STAGE));
                         PSTATE = PS_DYING;
                     }
 
@@ -5201,34 +5202,6 @@ static void StageTick(GameState* gstate) {
                     // ground detection.
                     Entity* ground =
                         EntityProbeWorld(e, Vec2Lit(0.0f, -(e->shape.aabb2d.r.y + 0.3f * 5.0f)), EFLAG_WALL);
-                    // {
-                    //     Polyhedron shape = {0};
-                    //     shape.type = PH_AABB2D;
-                    //     shape.aabb2d.c = Vec2Lit(0.0f, -(e->shape.aabb2d.r.y + 0.3f * 5.0f));
-                    //     shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                    //     shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                    //     for (u32 j = 0; j < GetNumEntities(); ++j) {
-                    //         Entity* e2 = GetEntity(j);
-                    //         if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_WALL) ||
-                    //             e2->shape.type == PH_NONE) {
-                    //             continue;
-                    //         }
-
-                    //         Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                    //         CollisionInfo info = {0};
-                    //         bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                    //         if (collides) {
-                    //             ground = e2;
-                    //             break;
-                    //         }
-                    //     }
-
-                    //     DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f,
-                    //     Mat4Identity(),
-                    //              ground != NULL ? LGREEN : LGRAY);
-                    // }
 
                     if (e->health <= 0) {
                         SoftDeactivateEntity(e->id);
