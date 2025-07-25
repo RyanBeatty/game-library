@@ -4845,35 +4845,7 @@ static void StageTick(GameState* gstate) {
 
                     // Ladder detection.
                     Entity* up_ladder = EntityProbeWorld(e, Vec2Zero(), EFLAG_CLIMABLE);
-
-                    Entity* down_ladder = NULL;
-                    {
-                        Polyhedron shape = {0};
-                        shape.type = PH_AABB2D;
-                        shape.aabb2d.c = Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f);
-                        shape.aabb2d.r = Vec2Lit(0.5f * 5.0f, 0.5f * 5.0f);
-
-                        shape = PolyhedronTransform(shape, Vec3Lit(1.0f, 1.0f, 1.0f), Mat4Identity(), e->pos);
-                        for (u32 j = 0; j < GetNumEntities(); ++j) {
-                            Entity* e2 = GetEntity(j);
-                            if (!TestFlag(e2->flags, EFLAG_ACTIVE) || !TestFlag(e2->flags, EFLAG_CLIMABLE) ||
-                                e2->shape.type == PH_NONE) {
-                                continue;
-                            }
-
-                            Polyhedron shape2 = PolyhedronTransform(e2->shape, e2->scale, e2->orient, e2->pos);
-
-                            CollisionInfo info = {0};
-                            bool collides = TestPolyhedronVsPolyhedron(&shape, &shape2, &info.normal, &info.depth);
-                            if (collides) {
-                                down_ladder = e2;
-                                break;
-                            }
-                        }
-
-                        DrawQuad(Vec3Lit(shape.aabb2d.c.x, shape.aabb2d.c.y, e->pos.z + 1), 5.0f, 5.0f, Mat4Identity(),
-                                 down_ladder != NULL ? LGREEN : LGRAY);
-                    }
+                    Entity* down_ladder = EntityProbeWorld(e, Vec2Lit(0.0f, -12.0f + 0.5f * 5.0f), EFLAG_CLIMABLE);
 
                     switch (PSTATE) {
                         case PS_IDLE: {
@@ -4889,7 +4861,7 @@ static void StageTick(GameState* gstate) {
 
                                 PSTATE = PS_CLIMBING;
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else if (down_ladder != NULL && IsKeyDown(KDOWN)) {
+                            } else if (down_ladder != NULL && IsKeyDown(KDOWN) && middleground == NULL) {
                                 e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
