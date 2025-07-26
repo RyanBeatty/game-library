@@ -38,8 +38,7 @@ static f32 TOL = 0.001;
 // #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
 #define f32rand01() ((f32)rand() / (f32)RAND_MAX)
 #define f32randab(a, b) (f32lerp((a), (b), (f32rand01())))
-
-static f32 f32clamp(f32 v, f32 min, f32 max) { return f32min(f32max(v, min), max); }
+#define f32clamp(x, min, max) (f32min(f32max((x), (min)), (max)))
 
 typedef struct {
     union {
