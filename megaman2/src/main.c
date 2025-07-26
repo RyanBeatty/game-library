@@ -4509,9 +4509,11 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                                  LRED);
             FlagOn(e->flags, EFLAG_MOB);
 
+            i32 health = 2;
             e->mobtype = spec->mobtype;
             switch (e->mobtype) {
                 case MT_RABBIT: {
+                    health = 10;
                     GraphicsInfoSetAnimationFromAseprite(&e->graphics, GetTexture(TX_MEGAMAN), MOB_BUNNY, 0.0f, 1.0f);
                     break;
                 }
@@ -4533,7 +4535,7 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                 }
             }
 
-            e->health = 2;
+            e->health = health;
 
             Assert(gstate->lelen < gstate->lecap);
             gstate->loadable_entities[gstate->lelen++] = e->id;
@@ -4733,7 +4735,7 @@ static void StageTick(GameState* gstate) {
     if (!gstate->init) {
         SPAWNED = false;
 
-        u32 room_idx = 1;
+        u32 room_idx = 0;
         gstate->stage = GetStage(STAGE_WOODMAN);
         gstate->room_idx = room_idx;
         gstate->room_idx_to_be = room_idx;
