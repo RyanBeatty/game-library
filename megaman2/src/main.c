@@ -621,6 +621,7 @@ static const Vec4 LPURPLE = Vec4Lit(1.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
 static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255.0f, 1.0f);
 static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
+static const Vec4 LWHITE = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
 
 ////////////////////////////////////////////////////////////
 // S:Render Data
@@ -2647,7 +2648,10 @@ LCORE void ParticleSystemTick(f32 dt) {
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
         // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
-        DrawQuad(particle->p, particle->scale.x, particle->scale.y, particle->orient, particle->color);
+        RGBA color = particle->color;
+        color.a = f32lerp(color.a, 0.0f, particle->lifedt / particle->lifetime);
+
+        DrawQuad(particle->p, particle->scale.x, particle->scale.y, particle->orient, color);
         // DrawCmd* cmd = AddDrawMeshCmd();
         // cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
         // cmd->meshcmd.meshid = GetMesh(M_QUAD);
@@ -5640,7 +5644,8 @@ static void StageTick(GameState* gstate) {
 
                                 f32 nparticles = f32randab(2, 3);
                                 for (i32 pi = 0; pi < nparticles; ++pi) {
-                                    Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), 0.55f, LBLUE);
+                                    f32 lifetime = 0.5f + f32randab(0.0f, 0.3f);
+                                    Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), lifetime, LWHITE);
 
                                     // f32 side = Vec3Dot(info->normal, Vec3Lit(1.0f, 0.0f, 0.0f));
                                     // f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(90.0f));
