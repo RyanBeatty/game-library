@@ -2567,7 +2567,14 @@ static void LoadSounds() {
 }
 
 ////////////////////////////////////////////////////////////
+typedef enum {
+    PF_NONE = 1 << 0,
+    PF_ACTIVE = 1 << 1,
+} ParticleFlag;
+
 typedef struct {
+    ParticleFlag flags;
+
     Vec3 p;
     Vec3 v;
     Vec3 scale;
@@ -2582,7 +2589,6 @@ typedef struct {
 
 typedef struct {
     Particle particles[MAX_PARTICLES];
-    u32 plen;
     u32 pcap;
 } ParticleSystem;
 
@@ -2591,32 +2597,38 @@ static ParticleSystem PARTICLES;
 #define GetParticleSystem() (&PARTICLES)
 
 static void ParticleSystemInit() {
-    ParticleSystem* particles = &PARTICLES;
-    memset(particles, 0, sizeof(*particles));
-    particles->plen = 0;
+    ParticleSystem* particles = GetParticleSystem();
+    ParticleSystem zero = {0};
+    *particles = zero;
     particles->pcap = MAX_PARTICLES;
 }
 
-LCORE Particle* AllocateParticle() {
+LCORE Particle* SpawnParticle(f32 lifetime) {
+    Assert(lifetime > 0.0f);
     ParticleSystem* particles = GetParticleSystem();
-    Assert(particles->plen < particles->pcap);
-    Particle* particle = &particles->particles[particles->plen++];
+    Particle* particle = NULL;
+    for (i32 i = 0; i < particles->pcap; ++i) {
+        if (!TestFlag(particles->particles[i].flags, PF_ACTIVE)) {
+            particle = &particles->particles[i];
+            break;
+        }
+    }
+    Assert(particle != NULL);
     memset(particle, 0, sizeof(Particle));
     particle->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     particle->orient = Mat4Identity();
+    particle->lifetime = lifetime;
+    FlagOn(particle->flags, PF_ACTIVE);
     return particle;
 }
 
 LCORE void ParticleSystemTick(f32 dt) {
-    u32 to_delete[MAX_PARTICLES] = {0};
-    u32 dlen = 0;
-
-    ParticleSystem* particles = &PARTICLES;
-    for (u32 i = 0; i < particles->plen; ++i) {
+    ParticleSystem* particles = GetParticleSystem();
+    for (u32 i = 0; i < particles->pcap; ++i) {
         Particle* particle = &particles->particles[i];
         particle->lifedt += dt;
         if (particle->lifedt >= particle->lifetime) {
-            to_delete[dlen++] = i;
+            FlagOff(particle->flags, PF_ACTIVE);
             continue;
         }
 
@@ -2627,15 +2639,6 @@ LCORE void ParticleSystemTick(f32 dt) {
         cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
         cmd->meshcmd.meshid = GetMesh(M_QUAD);
         cmd->meshcmd.color = particle->color;
-    }
-
-    // Remove particles by swapping with end. NOTE this means we shouldn't be keeping persistent pointers
-    // to these particles around.
-    for (i32 i = dlen - 1; i >= 0; --i) {
-        Particle temp = particles->particles[particles->plen - 1];
-        particles->particles[particles->plen - 1] = particles->particles[to_delete[i]];
-        particles->particles[to_delete[i]] = temp;
-        --particles->plen;
     }
 }
 
