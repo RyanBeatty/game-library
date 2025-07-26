@@ -2594,6 +2594,8 @@ typedef struct {
     // For the last x% of the lifetime of the particle. linearly fade from color.alpha to transparent.
     // By default set to 1.0 for the full range.
     f32 fade_out_pct;
+    // Last % percent, scale out from full size to 0.
+    f32 scale_out_pct;
 } Particle;
 
 LCORE void ParticleSetFadeIn(Particle* particle, f32 fade_in_pct) {
@@ -2689,9 +2691,13 @@ LCORE void ParticleSystemTick(f32 dt) {
         RGBA color = particle->color;
         color.a *= alpha_mask;
 
-        // color.a = f32lerp(color.a, 0.0f, particle->lifedt / particle->lifetime);
+        f32 scale_mask = 1.0f;
+        if (particle->scale_out_pct != 0.0f) {
+            scale_mask *= 1.0f - f32lerp_pct(1.0f - particle->scale_out_pct, 1.0f, lifedt_pct);
+        }
+        Vec3 scale = Vec3Scale(particle->scale, scale_mask);
 
-        DrawQuad(particle->p, particle->scale.x, particle->scale.y, particle->orient, color);
+        DrawQuad(particle->p, scale.x, scale.y, particle->orient, color);
         // DrawCmd* cmd = AddDrawMeshCmd();
         // cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
         // cmd->meshcmd.meshid = GetMesh(M_QUAD);
@@ -5688,6 +5694,7 @@ static void StageTick(GameState* gstate) {
                                     Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), lifetime, LWHITE);
                                     ParticleSetFadeIn(particle, 0.2f);
                                     ParticleSetFadeOut(particle, 0.4f);
+                                    particle->scale_out_pct = 0.2f;
 
                                     // f32 side = Vec3Dot(info->normal, Vec3Lit(1.0f, 0.0f, 0.0f));
                                     // f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(90.0f));
