@@ -5637,7 +5637,7 @@ static void StageTick(GameState* gstate) {
                                     SoftDeactivateEntity(shot->id);
                                 }
                                 PlayLSoundLimit(GetSound(SOUND_MOB_HURT), 3);
-                                Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), 1.0f, LBLUE);
+                                Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), 0.4f, LBLUE);
 
                                 Vec3 v = Vec3Lit(info->normal.x * 20.0f, 50.0f, 0.0f);
                                 particle->v = v;
