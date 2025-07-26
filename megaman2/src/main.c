@@ -609,6 +609,9 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 
 typedef Vec4 RGBA;
 
+#define RGBALit(r, g, b, a) (Vec4Lit((r) / 255.0f, (g) / 255.0f, (b) / 255.0f, (a)))
+#define RGBLit(r, g, b) (RGBALit((r), (g), (b), 1.0f))
+
 static const Vec4 LCLEAR = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
 static const Vec4 LRED = Vec4Lit(1.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LGREEN = Vec4Lit(0.0f, 1.0f, 0.0f, 1.0f);
@@ -618,9 +621,6 @@ static const Vec4 LPURPLE = Vec4Lit(1.0f, 0.0f, 1.0f, 1.0f);
 static const Vec4 LORANGE = Vec4Lit(1.0f, 0.5f, 0.0f, 1.0f);
 static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255.0f, 1.0f);
 static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
-
-#define RGBALit(r, g, b, a) (Vec4Lit((r) / 255.0f, (g) / 255.0f, (b) / 255.0f, (a)))
-#define RGBLit(r, g, b) (RGBALit((r), (g), (b), 1.0f))
 
 ////////////////////////////////////////////////////////////
 // S:Render Data
