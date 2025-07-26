@@ -5656,7 +5656,7 @@ static void StageTick(GameState* gstate) {
                                     Vec3 dir =
                                         Vec3RotateAxis(Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), angle);
 
-                                    f32 speed = f32randab(40.0f, 60.0f);
+                                    f32 speed = 40.0f + f32randab(0.0f, 30.0f);
                                     Vec3 v = Vec3Scale(dir, speed);
 
                                     // Vec3 v = Vec3Lit(info->normal.x * 20.0f, 50.0f, 0.0f);
