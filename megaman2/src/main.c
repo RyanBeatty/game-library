@@ -607,6 +607,8 @@ LCORE Mat4 Quat2Mat4(Quat q) {
 ////////////////////////////////////////////////////////////
 // S:Color
 
+typedef Vec4 RGBA;
+
 static const Vec4 LCLEAR = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
 static const Vec4 LRED = Vec4Lit(1.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LGREEN = Vec4Lit(0.0f, 1.0f, 0.0f, 1.0f);
@@ -2603,7 +2605,7 @@ static void ParticleSystemInit() {
     particles->pcap = MAX_PARTICLES;
 }
 
-LCORE Particle* SpawnParticle(f32 lifetime) {
+LCORE Particle* SpawnParticle(Vec3 p, f32 lifetime, RGBA color) {
     Assert(lifetime > 0.0f);
     ParticleSystem* particles = GetParticleSystem();
     Particle* particle = NULL;
@@ -2617,8 +2619,11 @@ LCORE Particle* SpawnParticle(f32 lifetime) {
     memset(particle, 0, sizeof(Particle));
     particle->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     particle->orient = Mat4Identity();
-    particle->lifetime = lifetime;
     FlagOn(particle->flags, PF_ACTIVE);
+
+    particle->p = p;
+    particle->lifetime = lifetime;
+    particle->color = color;
     return particle;
 }
 
@@ -2632,13 +2637,16 @@ LCORE void ParticleSystemTick(f32 dt) {
             continue;
         }
 
+        Vec3 G = Vec3Lit(0.0f, -350.0f, 0.0f);
+        particle->v = Vec3Add(particle->v, Vec3Scale(G, dt));
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
         // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
-        DrawCmd* cmd = AddDrawMeshCmd();
-        cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
-        cmd->meshcmd.meshid = GetMesh(M_QUAD);
-        cmd->meshcmd.color = particle->color;
+        DrawQuad(particle->p, particle->scale.x, particle->scale.y, particle->orient, particle->color);
+        // DrawCmd* cmd = AddDrawMeshCmd();
+        // cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
+        // cmd->meshcmd.meshid = GetMesh(M_QUAD);
+        // cmd->meshcmd.color = particle->color;
     }
 }
 
@@ -5621,6 +5629,7 @@ static void StageTick(GameState* gstate) {
                                     SoftDeactivateEntity(shot->id);
                                 }
                                 PlayLSoundLimit(GetSound(SOUND_MOB_HURT), 3);
+                                SpawnParticle(mob->pos, 1.0f, LRED);
                             }
                         }
 
@@ -5768,6 +5777,8 @@ static void StageTick(GameState* gstate) {
                 DrawPolyhedron(&shape, color);
             }
         }
+
+        ParticleSystemTick(dt);
     }
 
     EndShaderPass();
