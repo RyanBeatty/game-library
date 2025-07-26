@@ -2669,16 +2669,16 @@ LCORE void ParticleSystemTick(f32 dt) {
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
         // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
-        f32 alpha_mask = 1.0f;
         // Find % along lifetime we are.
         f32 lifedt_pct = f32lerp_pct(0.0f, particle->lifetime, particle->lifedt);
+
+        f32 alpha_mask = 1.0f;
         if (particle->fade_in_pct != 0.0f) {
             // Linearly fade in if we are within the fade in window by the percent we are in the fade in window.
             // Remember that multiplying here is essentially our lerp because lerp(0, e, x) = e * x. X is
             // already a percentage in range 0..1 because of f32lerp_pct.
             alpha_mask *= f32lerp_pct(0.0f, particle->fade_in_pct, lifedt_pct);
         }
-
         // Determine the % of the way through we are through the fade out window. Since our fade out window
         // is given in percent of the ending (i.e. relative). We need to subtract 100% - fadeout pct to get
         // absolute percent. then we can determine percent we are through using abs percent. Need to do
@@ -2686,7 +2686,6 @@ LCORE void ParticleSystemTick(f32 dt) {
         // Because we are fading out f32lerp(color.a, 0.0f, x) this reduces to (1.0f - x) * color.a
         // Which reduces to alpha *= 1.0f - x where x is percentage way through fade out window.
         alpha_mask *= 1.0f - f32lerp_pct(1.0f - particle->fade_out_pct, 1.0f, lifedt_pct);
-
         RGBA color = particle->color;
         color.a *= alpha_mask;
 
