@@ -5637,17 +5637,20 @@ static void StageTick(GameState* gstate) {
                                     SoftDeactivateEntity(shot->id);
                                 }
                                 PlayLSoundLimit(GetSound(SOUND_MOB_HURT), 3);
-                                Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), 0.4f, LBLUE);
+                                Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), 0.55f, LBLUE);
 
                                 f32 nparticles = f32randab(2, 3);
                                 for (i32 pi = 0; pi < nparticles; ++pi) {
-                                    f32 side = Vec3Dot(info->normal, Vec3Lit(1.0f, 0.0f, 0.0f));
-                                    f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(90.0f));
-                                    angle = side >= 0.0f ? angle : Deg2Rad(180.0f) - angle;
+                                    // f32 side = Vec3Dot(info->normal, Vec3Lit(1.0f, 0.0f, 0.0f));
+                                    // f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(90.0f));
+                                    // angle = side >= 0.0f ? angle : Deg2Rad(180.0f) - angle;
+                                    // Vec3 dir =
+                                    //     Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), angle);
+                                    f32 angle = f32randab(Deg2Rad(-30.0f), Deg2Rad(30.0f));
                                     Vec3 dir =
-                                        Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), angle);
+                                        Vec3RotateAxis(Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), angle);
 
-                                    Vec3 v = Vec3Scale(dir, 100.0f);
+                                    Vec3 v = Vec3Scale(dir, 60.0f);
 
                                     // Vec3 v = Vec3Lit(info->normal.x * 20.0f, 50.0f, 0.0f);
                                     particle->v = v;
