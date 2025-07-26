@@ -5589,12 +5589,13 @@ static void StageTick(GameState* gstate) {
                     CollisionInfo* c = &collisions[j];
 
                     // To handle checking "both sides" of the collision. We just make two collisions
-                    // with reversed diAserections.
+                    // with reversed directions.
                     CollisionInfo reverse = *c;
                     reverse.id0 = c->id1;
                     reverse.id1 = c->id0;
                     reverse.normal = Vec3Negate(reverse.normal);
 
+                    // Remember the normal will always point from e1 to e0.
                     CollisionInfo cs[2] = {*c, reverse};
                     for (u32 i = 0; i < 2; ++i) {
                         CollisionInfo* info = &cs[i];
@@ -5636,7 +5637,10 @@ static void StageTick(GameState* gstate) {
                                     SoftDeactivateEntity(shot->id);
                                 }
                                 PlayLSoundLimit(GetSound(SOUND_MOB_HURT), 3);
-                                SpawnParticle(mob->pos, Vec2Lit(2.0f, 2.0f), 1.0f, LRED);
+                                Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), 1.0f, LBLUE);
+
+                                Vec3 v = Vec3Lit(info->normal.x * 20.0f, 50.0f, 0.0f);
+                                particle->v = v;
                             }
                         }
 
