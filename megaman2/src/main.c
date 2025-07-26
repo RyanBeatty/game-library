@@ -2605,8 +2605,7 @@ static void ParticleSystemInit() {
     particles->pcap = MAX_PARTICLES;
 }
 
-LCORE Particle* SpawnParticle(Vec3 p, f32 lifetime, RGBA color) {
-    Assert(lifetime > 0.0f);
+LCORE Particle* AllocateParticle() {
     ParticleSystem* particles = GetParticleSystem();
     Particle* particle = NULL;
     for (i32 i = 0; i < particles->pcap; ++i) {
@@ -2620,8 +2619,14 @@ LCORE Particle* SpawnParticle(Vec3 p, f32 lifetime, RGBA color) {
     particle->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     particle->orient = Mat4Identity();
     FlagOn(particle->flags, PF_ACTIVE);
+    return particle;
+}
 
+LCORE Particle* SpawnParticle(Vec3 p, Vec2 dims, f32 lifetime, RGBA color) {
+    Assert(lifetime > 0.0f);
+    Particle* particle = AllocateParticle();
     particle->p = p;
+    particle->scale = Vec3Lit(dims.x, dims.y, 1.0f);
     particle->lifetime = lifetime;
     particle->color = color;
     return particle;
@@ -5629,7 +5634,7 @@ static void StageTick(GameState* gstate) {
                                     SoftDeactivateEntity(shot->id);
                                 }
                                 PlayLSoundLimit(GetSound(SOUND_MOB_HURT), 3);
-                                SpawnParticle(mob->pos, 1.0f, LRED);
+                                SpawnParticle(mob->pos, Vec2Lit(2.0f, 2.0f), 1.0f, LRED);
                             }
                         }
 
