@@ -2596,6 +2596,18 @@ typedef struct {
     f32 fade_out_pct;
 } Particle;
 
+LCORE void ParticleSetFadeIn(Particle* particle, f32 fade_in_pct) {
+    particle->fade_in_pct = fade_in_pct;
+    f32 rem = 1.0f - (particle->fade_in_pct + particle->fade_out_pct);
+    particle->fade_out_pct += rem < 0.0f ? rem : 0.0f;
+}
+
+LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
+    particle->fade_out_pct = fade_out_pct;
+    f32 rem = 1.0f - (particle->fade_out_pct + particle->fade_out_pct);
+    particle->fade_in_pct += rem < 0.0f ? rem : 0.0f;
+}
+
 #define MAX_PARTICLES 100
 
 typedef struct {
@@ -5675,6 +5687,8 @@ static void StageTick(GameState* gstate) {
                                 for (i32 pi = 0; pi < nparticles; ++pi) {
                                     f32 lifetime = 0.5f + f32randab(0.0f, 0.3f);
                                     Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), lifetime, LWHITE);
+                                    ParticleSetFadeIn(particle, 0.2f);
+                                    ParticleSetFadeOut(particle, 0.4f);
 
                                     // f32 side = Vec3Dot(info->normal, Vec3Lit(1.0f, 0.0f, 0.0f));
                                     // f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(90.0f));
