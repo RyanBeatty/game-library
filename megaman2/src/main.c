@@ -39,6 +39,9 @@ static f32 TOL = 0.001;
 #define f32rand01() ((f32)rand() / (f32)RAND_MAX)
 #define f32randab(a, b) (f32lerp((a), (b), (f32rand01())))
 #define f32clamp(x, min, max) (f32min(f32max((x), (min)), (max)))
+#define f32clamp01(x) (f32clamp((x), 0.0f, 1.0f))
+// Returns the percent t is between start and end so range s..e to 0..1
+#define f32lerp_pct(s, e, t) (f32clamp01(((t) - (s)) / ((e) - (s))))
 
 typedef struct {
     union {
@@ -2585,6 +2588,8 @@ typedef struct {
 
     f32 lifetime;
     f32 lifedt;
+    // For the first x% of the lifetime of the particle. linearly fade from transparent to color.alpha.
+    f32 fade_in_pct;
 } Particle;
 
 #define MAX_PARTICLES 100
@@ -2647,7 +2652,19 @@ LCORE void ParticleSystemTick(f32 dt) {
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
         // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
+        f32 alpha_mask = 1.0f;
+        // Find % along lifetime we are.
+        f32 lifedt_pct = f32lerp_pct(0.0f, particle->lifetime, particle->lifedt);
+        if (particle->fade_in_pct != 0.0f) {
+            // Linearly fade in if we are within the fade in window by the percent we are in the fade in window.
+            // Remember that multiplying here is essentially our lerp because lerp(0, e, x) = e * x. X is
+            // already a percentage in range 0..1 because of f32lerp_pct.
+            alpha_mask *= f32lerp_pct(0.0f, particle->fade_in_pct, lifedt_pct);
+        }
+
         RGBA color = particle->color;
+        color.a *= alpha_mask;
+
         color.a = f32lerp(color.a, 0.0f, particle->lifedt / particle->lifetime);
 
         DrawQuad(particle->p, particle->scale.x, particle->scale.y, particle->orient, color);
