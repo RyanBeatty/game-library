@@ -41,6 +41,7 @@ static f32 TOL = 0.001;
 #define f32clamp(x, min, max) (f32min(f32max((x), (min)), (max)))
 #define f32clamp01(x) (f32clamp((x), 0.0f, 1.0f))
 // Returns the percent t is between start and end so range s..e to 0..1
+// Note only returns positive pct. To invert direction do 1.0f - res
 #define f32lerp_pct(s, e, t) (f32clamp01(((t) - (s)) / ((e) - (s))))
 
 typedef struct {
@@ -2590,6 +2591,9 @@ typedef struct {
     f32 lifedt;
     // For the first x% of the lifetime of the particle. linearly fade from transparent to color.alpha.
     f32 fade_in_pct;
+    // For the last x% of the lifetime of the particle. linearly fade from color.alpha to transparent.
+    // By default set to 1.0 for the full range.
+    f32 fade_out_pct;
 } Particle;
 
 #define MAX_PARTICLES 100
@@ -2623,6 +2627,7 @@ LCORE Particle* AllocateParticle() {
     memset(particle, 0, sizeof(Particle));
     particle->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     particle->orient = Mat4Identity();
+    particle->fade_out_pct = 1.0f;
     FlagOn(particle->flags, PF_ACTIVE);
     return particle;
 }
@@ -2662,10 +2667,18 @@ LCORE void ParticleSystemTick(f32 dt) {
             alpha_mask *= f32lerp_pct(0.0f, particle->fade_in_pct, lifedt_pct);
         }
 
+        // Determine the % of the way through we are through the fade out window. Since our fade out window
+        // is given in percent of the ending (i.e. relative). We need to subtract 100% - fadeout pct to get
+        // absolute percent. then we can determine percent we are through using abs percent. Need to do
+        // 1.0f - lerp pct because we are fading out not in.
+        // Because we are fading out f32lerp(color.a, 0.0f, x) this reduces to (1.0f - x) * color.a
+        // Which reduces to alpha *= 1.0f - x where x is percentage way through fade out window.
+        alpha_mask *= 1.0f - f32lerp_pct(1.0f - particle->fade_out_pct, 1.0f, lifedt_pct);
+
         RGBA color = particle->color;
         color.a *= alpha_mask;
 
-        color.a = f32lerp(color.a, 0.0f, particle->lifedt / particle->lifetime);
+        // color.a = f32lerp(color.a, 0.0f, particle->lifedt / particle->lifetime);
 
         DrawQuad(particle->p, particle->scale.x, particle->scale.y, particle->orient, color);
         // DrawCmd* cmd = AddDrawMeshCmd();
