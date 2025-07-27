@@ -34,7 +34,10 @@ static f32 TOL = 0.001;
 // Prefer this lerp forumulation as at t=0 we will have exactly start and at t=1 we will have exactly end.
 // The other formulation is subject to floating point precision issues where we might not get exactly
 // end at t=1.
-#define f32lerp(s, e, t) (((1.0f - (t)) * (s)) + ((t) * (e)))
+// Also prefer a function to avoid macro double invocation of the t parameter. If t is lets say a call to a rand
+// number then it will cause us to get incorrect results.
+LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
+
 // #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
 #define f32rand01() ((f32)rand() / (f32)RAND_MAX)
 #define f32randab(a, b) (f32lerp((a), (b), (f32rand01())))
@@ -160,12 +163,18 @@ LCORE Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
 LCORE Vec3 Vec3Project(Vec3 v, Vec3 axis) { return Vec3Scale(axis, Vec3Dot(v, axis)); }
 
 LCORE Vec3 RandPointInRing(f32 r_inner, f32 r_outer) {
+    f32 r = f32randab(r_inner, r_outer);
+    TraceLog(LOG_INFO, "r %f r_inner: %f r_outer: %f", r, r_inner, r_outer);
     return Vec3Scale(
-        Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(f32randab(0.0f, 360.0f))),
-        f32randab(r_inner, r_outer));
+        Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(f32randab(0.0f, 360.0f))), r);
 }
 
 LCORE Vec3 RandPointInCircle(f32 r) { return RandPointInRing(0.0f, r); }
+
+LCORE Vec3 RandPointOnCircle(f32 r) {
+    return Vec3Scale(
+        Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(f32randab(0.0f, 360.0f))), r);
+}
 
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
@@ -2619,7 +2628,7 @@ LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
     particle->fade_in_pct += rem < 0.0f ? rem : 0.0f;
 }
 
-#define MAX_PARTICLES 100
+#define MAX_PARTICLES 512
 
 typedef struct {
     Particle particles[MAX_PARTICLES];
@@ -4885,10 +4894,12 @@ static void StageTick(GameState* gstate) {
                 PlayLSound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
             }
 
-            Vec3 offset = RandPointInCircle(20.0f);
+            Vec3 offset = RandPointInRing(30.0f, 31.0f);
+            // Vec3 offset = RandPointOnCircle(20.0f);
             RGBA color = LRED;
             color.a = 0.7f;
-            Particle* particle = SpawnParticle(Vec3Add(CAMERA.eye, offset), Vec2Lit(10.0f, 10.0f), 1.0f, color);
+            Particle* particle = SpawnParticle(Vec3Add(CAMERA.eye, offset), Vec2Lit(3.0f, 3.0f), 1.0f, color);
+            particle->fade_out_pct = 0.0f;
 
             // Update.
             for (u32 i = 0; i < GetNumEntities(); ++i) {
@@ -6734,10 +6745,32 @@ static void TestMemory() {
     }
 }
 
+static void TestRand() {
+    // f32rand01
+    {
+        for (i32 i = 0; i < 1000; ++i) {
+            f32 r = f32rand01();
+            TAssert(r >= 0.0f && r <= 1.0f, "0.0f <= f32rand01() <= 1.0f");
+        }
+    }
+
+    // f32randab
+    {
+        // small diff.
+        {
+            for (i32 i = 0; i < 1000; ++i) {
+                f32 r = f32randab(100.0f, 101.0f);
+                TAssert(r >= 100.0f && r <= 101.0f, "100.0f <= f32randab(100, 101) <= 101f");
+            }
+        }
+    }
+}
+
 static void TestL() {
     TraceLog(LOG_INFO, "Running Tests");
     TestMath();
     TestMemory();
+    TestRand();
 
     if (TestFail) {
         TraceLog(LOG_ERROR, "Failed tests!");
