@@ -5239,6 +5239,12 @@ static void StageTick(GameState* gstate) {
                                         PlayLSound(charging, SF_PLAY_INFINITE);
                                     }
                                     e->graphics.charging_state = 1;
+
+                                    Vec3 offset = RandPointOnCircle(14.0f);
+                                    RGBA color = Vec4Lit(0.7, 0.2, 1.0, 1.0);
+                                    Particle* particle =
+                                        SpawnParticle(Vec3Add(e->pos, offset), Vec2Lit(2.0f, 2.0f), 0.4f, LWHITE);
+                                    particle->v = Vec3Negate(offset);
                                 }
                             }
                         }
