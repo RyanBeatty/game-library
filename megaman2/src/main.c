@@ -163,10 +163,9 @@ LCORE Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
 LCORE Vec3 Vec3Project(Vec3 v, Vec3 axis) { return Vec3Scale(axis, Vec3Dot(v, axis)); }
 
 LCORE Vec3 RandPointInRing(f32 r_inner, f32 r_outer) {
-    f32 r = f32randab(r_inner, r_outer);
-    TraceLog(LOG_INFO, "r %f r_inner: %f r_outer: %f", r, r_inner, r_outer);
     return Vec3Scale(
-        Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(f32randab(0.0f, 360.0f))), r);
+        Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(f32randab(0.0f, 360.0f))),
+        f32randab(r_inner, r_outer));
 }
 
 LCORE Vec3 RandPointInCircle(f32 r) { return RandPointInRing(0.0f, r); }
@@ -6756,6 +6755,14 @@ static void TestRand() {
 
     // f32randab
     {
+        // no diff.
+        {
+            for (i32 i = 0; i < 1000; ++i) {
+                f32 r = f32randab(1000.0f, 1000.0f);
+                TAssert(f32eq(r, 1000.0f), "f32randab(1000, 1000) ~= 1000f");
+            }
+        }
+
         // small diff.
         {
             for (i32 i = 0; i < 1000; ++i) {
