@@ -4893,12 +4893,10 @@ static void StageTick(GameState* gstate) {
                 PlayLSound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
             }
 
-            Vec3 offset = RandPointInRing(30.0f, 31.0f);
-            // Vec3 offset = RandPointOnCircle(20.0f);
-            RGBA color = LRED;
+            Vec3 offset = RandPointInRing(2.0f, 15.0f);
+            RGBA color = LWHITE;
             color.a = 0.7f;
-            Particle* particle = SpawnParticle(Vec3Add(CAMERA.eye, offset), Vec2Lit(3.0f, 3.0f), 1.0f, color);
-            particle->fade_out_pct = 0.0f;
+            Particle* particle = SpawnParticle(Vec3Add(CAMERA.eye, offset), Vec2Lit(10.0f, 10.0f), 0.15f, color);
 
             // Update.
             for (u32 i = 0; i < GetNumEntities(); ++i) {
