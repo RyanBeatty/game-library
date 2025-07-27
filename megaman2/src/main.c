@@ -4885,7 +4885,7 @@ static void StageTick(GameState* gstate) {
 
             Vec3 offset = RandPointInCircle(20.0f);
             RGBA color = LRED;
-            color.a = 0.2f;
+            color.a = 0.7f;
             Particle* particle = SpawnParticle(Vec3Add(CAMERA.eye, offset), Vec2Lit(10.0f, 10.0f), 1.0f, color);
 
             // Update.
