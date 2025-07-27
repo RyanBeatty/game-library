@@ -159,6 +159,12 @@ LCORE Vec3 Vec3RotateAxis(Vec3 v, Vec3 axis, rad rot) {
 
 LCORE Vec3 Vec3Project(Vec3 v, Vec3 axis) { return Vec3Scale(axis, Vec3Dot(v, axis)); }
 
+LCORE Vec3 RandPointInCircle(f32 r) {
+    return Vec3Scale(
+        Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(f32randab(0.0f, 360.0f))),
+        f32randab(0.0f, r));
+}
+
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
 // For matrix mult notation wise we will compose from right to left. i.e. X = CBAv.
@@ -4877,7 +4883,10 @@ static void StageTick(GameState* gstate) {
                 PlayLSound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
             }
 
-            SpawnParticle(CAMERA.eye, Vec2Lit(10.0f, 10.0f), 1.0f, LRED);
+            Vec3 offset = RandPointInCircle(20.0f);
+            RGBA color = LRED;
+            color.a = 0.2f;
+            Particle* particle = SpawnParticle(Vec3Add(CAMERA.eye, offset), Vec2Lit(10.0f, 10.0f), 1.0f, color);
 
             // Update.
             for (u32 i = 0; i < GetNumEntities(); ++i) {
