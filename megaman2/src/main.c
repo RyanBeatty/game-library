@@ -2972,6 +2972,7 @@ typedef struct {
     f32 jumping_dt;
 
     i32 health;
+    f32 dying_dt;
 
     u32 room_link;  // Used for room exit triggers.
     bool facing_left;
@@ -5272,7 +5273,13 @@ static void StageTick(GameState* gstate) {
                         EntityProbeWorld(e, Vec2Lit(0.0f, -(e->shape.aabb2d.r.y + 0.3f * 5.0f)), EFLAG_WALL);
 
                     if (e->health <= 0) {
-                        SoftDeactivateEntity(e->id);
+                        e->dying_dt += dt;
+                        if (e->dying_dt >= 0.4f) {
+                            SoftDeactivateEntity(e->id);
+                        } else {
+                            Particle* particle = SpawnParticle(e->pos, Vec2Lit(10.0f, 10.0f), 0.1f, LWHITE);
+                        }
+                        continue;
                     }
 
                     f32 gravity = GRAVITY;
