@@ -4147,6 +4147,7 @@ typedef enum {
     SCENE_STAGE_SELECT,
     SCENE_STAGE,
     SCENE_TRUE_TYPE,
+    SCENE_SUB_PIXEL_RENDER,
     SCENE_COUNT,
 } SceneId;
 
@@ -4399,6 +4400,26 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
         }
         DrawLTexturePro2(TX, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
     }
+    EndShaderPass();
+
+    EndRender();
+}
+
+static void SubPixelRenderTick(GameState* gstate) {
+    if (!gstate->init) {
+    }
+
+    BeginRender(gstate->dt);
+
+    ShaderPass* pass = BeginShaderPass(GetShader());
+    f32 hwidth = 0.5f * gstate->renderw;
+    f32 hheight = 0.5f * gstate->renderh;
+    pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+
+    ClearBuffer(LCLEAR);
+
+    DrawQuad(Vec3Zero(), 60.0f, 60.0f, Mat4RotateZ(gstate->timer), LRED);
+
     EndShaderPass();
 
     EndRender();
@@ -6072,10 +6093,11 @@ static void GameStateInit(GameState* gstate) {
         gstate->scenefuncs[SCENE_TITLE_SCREEN] = TitleScreenTick;
         gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
         gstate->scenefuncs[SCENE_STAGE] = StageTick;
+        gstate->scenefuncs[SCENE_SUB_PIXEL_RENDER] = SubPixelRenderTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
+    GameStateLoadScene(gstate, SCENE_SUB_PIXEL_RENDER);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
