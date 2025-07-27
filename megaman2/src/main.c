@@ -2576,6 +2576,7 @@ static void LoadSounds() {
 typedef enum {
     PF_NONE = 1 << 0,
     PF_ACTIVE = 1 << 1,
+    PF_GRAVITY = 1 << 2,
 } ParticleFlag;
 
 typedef struct {
@@ -2666,8 +2667,10 @@ LCORE void ParticleSystemTick(f32 dt) {
             continue;
         }
 
-        Vec3 G = Vec3Lit(0.0f, -350.0f, 0.0f);
-        particle->v = Vec3Add(particle->v, Vec3Scale(G, dt));
+        if (TestFlag(particle->flags, PF_GRAVITY)) {
+            Vec3 G = Vec3Lit(0.0f, -350.0f, 0.0f);
+            particle->v = Vec3Add(particle->v, Vec3Scale(G, dt));
+        }
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
         // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
 
@@ -4874,6 +4877,8 @@ static void StageTick(GameState* gstate) {
                 PlayLSound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
             }
 
+            SpawnParticle(CAMERA.eye, Vec2Lit(10.0f, 10.0f), 1.0f, LRED);
+
             // Update.
             for (u32 i = 0; i < GetNumEntities(); ++i) {
                 Entity* e = GetEntity(i);
@@ -5277,7 +5282,7 @@ static void StageTick(GameState* gstate) {
                         if (e->dying_dt >= 0.4f) {
                             SoftDeactivateEntity(e->id);
                         } else {
-                            Particle* particle = SpawnParticle(e->pos, Vec2Lit(10.0f, 10.0f), 0.1f, LWHITE);
+                            SpawnParticle(e->pos, Vec2Lit(10.0f, 10.0f), 0.1f, LWHITE);
                         }
                         continue;
                     }
@@ -5699,6 +5704,7 @@ static void StageTick(GameState* gstate) {
                                 for (i32 pi = 0; pi < nparticles; ++pi) {
                                     f32 lifetime = 0.5f + f32randab(0.0f, 0.3f);
                                     Particle* particle = SpawnParticle(mob->pos, Vec2Lit(3.0f, 3.0f), lifetime, LWHITE);
+                                    FlagOn(particle->flags, PF_GRAVITY);
                                     ParticleSetFadeIn(particle, 0.2f);
                                     ParticleSetFadeOut(particle, 0.4f);
                                     particle->scale_out_pct = 0.2f;
