@@ -2611,8 +2611,11 @@ typedef struct {
     // For the last x% of the lifetime of the particle. linearly fade from color.alpha to transparent.
     // By default set to 1.0 for the full range.
     f32 fade_out_pct;
-    // Last % percent, scale out from full size to 0.
+    // For the first x% of lifetime, scale in from 0 to full size.
+    f32 scale_in_pct;
+    // For the last x% of lifetime, scale out from full size to 0.
     f32 scale_out_pct;
+
 } Particle;
 
 LCORE void ParticleSetFadeIn(Particle* particle, f32 fade_in_pct) {
@@ -2711,6 +2714,9 @@ LCORE void ParticleSystemTick(f32 dt) {
         color.a *= alpha_mask;
 
         f32 scale_mask = 1.0f;
+        if (particle->scale_in_pct != 0.0f) {
+            scale_mask *= f32lerp_pct(0.0f, particle->scale_in_pct, lifedt_pct);
+        }
         if (particle->scale_out_pct != 0.0f) {
             scale_mask *= 1.0f - f32lerp_pct(1.0f - particle->scale_out_pct, 1.0f, lifedt_pct);
         }
@@ -4893,11 +4899,6 @@ static void StageTick(GameState* gstate) {
                 PlayLSound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
             }
 
-            Vec3 offset = RandPointInRing(2.0f, 15.0f);
-            RGBA color = LWHITE;
-            color.a = 0.7f;
-            Particle* particle = SpawnParticle(Vec3Add(CAMERA.eye, offset), Vec2Lit(10.0f, 10.0f), 0.15f, color);
-
             // Update.
             for (u32 i = 0; i < GetNumEntities(); ++i) {
                 Entity* e = GetEntity(i);
@@ -5301,7 +5302,16 @@ static void StageTick(GameState* gstate) {
                         if (e->dying_dt >= 0.4f) {
                             SoftDeactivateEntity(e->id);
                         } else {
-                            SpawnParticle(e->pos, Vec2Lit(10.0f, 10.0f), 0.1f, LWHITE);
+                            Vec3 offset = RandPointInRing(2.0f, 15.0f);
+                            RGBA color = LWHITE;
+                            color.a = 0.7f;
+                            Particle* particle =
+                                SpawnParticle(Vec3Add(e->pos, offset), Vec2Lit(10.0f, 10.0f), 0.4f, color);
+                            // ParticleSetFadeIn(particle, 0.2f);
+                            // ParticleSetFadeOut(particle, 0.4f);
+                            // particle->fade_in_pct = 0.2f;
+                            // particle->fade_out_pct = 0.8f;
+                            particle->scale_in_pct = 0.1f;
                         }
                         continue;
                     }
