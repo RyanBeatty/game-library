@@ -743,6 +743,25 @@ static LTexture UploadTexture(const char* filename) {
     return tx;
 }
 
+// :data - flattened 2d array of rgba data (e.g. 4 bytes, 1 byte per channel).
+// :width - length of width of buffer in rgba units.
+// :height - length of height of buffer in rgba units.
+LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height) {
+    LTexture tx = {0};
+    tx.width = width;
+    tx.height = height;
+    glGenTextures(1, &tx.id);
+    glBindTexture(GL_TEXTURE_2D, tx.id);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return tx;
+}
+
 #define MAX_TEXTURES 10
 typedef struct {
     u32 txlen;
@@ -4407,7 +4426,10 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
 }
 
 static void SubPixelRenderTick(GameState* gstate) {
+    static LTexture TX = {0};
     if (!gstate->init) {
+        byte data[] = {255, 0, 0, 255};
+        TX = TextureFromBuffer(data, 1, 1);
     }
 
     BeginRender(gstate->dt);
@@ -4425,8 +4447,10 @@ static void SubPixelRenderTick(GameState* gstate) {
     f32 scale = 20.0f + (40.0f * (0.5f * (f32cos(gstate->timer) + 1.0f)));
     f32 rot = f32cos(gstate->timer);
     // DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
-    DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(0.0f, 0.0f),
-                      Vec2Lit(scale, scale), rot, LCLEAR);
+    LTexture tx = GetTexture(TX_MEGAMAN2);
+    // tx = TX;
+    DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(0.0f, 0.0f), Vec2Lit(scale, scale), rot,
+                      Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
 
     EndShaderPass();
 
