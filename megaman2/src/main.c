@@ -1266,6 +1266,103 @@ static LShader GetEffectsShader() {
     return SHADER;
 }
 
+static LShader GetSubPixelShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 2) in vec2 vTextCoords;\n"
+        "\n"
+        "uniform mat4 vModel;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
+        "\n"
+        "uniform vec4 vUColor;\n"
+        "uniform vec2 vUVOffset;\n"
+        "uniform vec2 vUVScale;\n"
+        "\n"
+        "out vec4 fColor;\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   fColor = vUColor;\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec4 fColor;\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "uniform vec2 Texture0Resolution;\n"
+        "uniform vec2 resolution;\n"
+        "uniform float timer;\n"
+        "uniform int NFrame;\n"
+        "\n"
+        "uniform int fChargingState;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+        "   if (txColor.a < 0.01 && fChargingState == 0) {\n"
+        "       discard;\n"
+        "   }\n"
+        // For blending to work here properly, its important that either texture is specified or texture
+        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+        "    FragColor = txColor * fColor;\n"
+        "\n"
+        "   vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);\n"
+        "   bool is_black = txColor == vec4(0, 0, 0, 1);\n"
+        "   if (fChargingState == 1) {\n"
+        "       if (is_black && NFrame % 3 == 0) {\n"
+        "           FragColor = charge_color;\n"
+        "       }\n"
+        "   } else if (fChargingState == 2) {\n"
+        "       if (is_black) {\n"
+        "           vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 8.0));"
+        "           FragColor = glow_color;\n"
+        "       }\n"
+        "   }\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
+
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
+            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
+            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
+            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
+            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
+
+            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
+        }
+    }
+
+    return SHADER;
+}
+
 static void RenderDataInit() {
     VAO = 0;
     VBO = 0;
@@ -1715,56 +1812,61 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader2d = GetShader();
     LShader effects_shader = GetEffectsShader();
+    LShader subpixel_shader = GetSubPixelShader();
 
-    if (pass->sid == shader2d.pid || pass->sid == effects_shader.pid) {
-        // Need a better way to map shaders.
-        LShader shader = pass->sid == shader2d.pid ? shader2d : effects_shader;
-
-        glUseProgram(shader.pid);
-
-        glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
-        glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
-
-        glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
-        glUniform1f(shader.ftimer_loc, pass->timer);
-
-        glUniform1i(shader.fnframe_loc, pass->nframe);
-
-        for (u32 i = 0; i < pass->clen; ++i) {
-            DrawCmd* cmd = &pass->cmds[i];
-            switch (cmd->type) {
-                case CMD_DRAW_MESH: {
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
-                    glUniform2f(shader.ftexture0_resolution_loc, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
-
-                    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-                    glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
-                    glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-                    glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
-
-                    glUniform1i(shader.fchargingstate_loc, cmd->meshcmd.charging_state);
-
-                    glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                                   (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
-                    break;
-                };
-
-                case CMD_CLEAR: {
-                    Vec4 color = cmd->clearcmd.color;
-                    glClearColor(color.r, color.g, color.b, color.a);
-                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                    break;
-                }
-
-                default: {
-                    Assert(false);
-                    break;
-                };
-            }
-        }
+    LShader shader = {0};
+    if (pass->sid == shader2d.pid) {
+        shader = shader2d;
+    } else if (pass->sid == effects_shader.pid) {
+        shader = effects_shader;
+    } else if (pass->sid == subpixel_shader.pid) {
+        shader = subpixel_shader;
     } else {
         Assert(false);
+    }
+
+    glUseProgram(shader.pid);
+
+    glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
+    glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
+
+    glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
+    glUniform1f(shader.ftimer_loc, pass->timer);
+
+    glUniform1i(shader.fnframe_loc, pass->nframe);
+
+    for (u32 i = 0; i < pass->clen; ++i) {
+        DrawCmd* cmd = &pass->cmds[i];
+        switch (cmd->type) {
+            case CMD_DRAW_MESH: {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+                glUniform2f(shader.ftexture0_resolution_loc, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+
+                glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+                glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
+                glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+                glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+                glUniform1i(shader.fchargingstate_loc, cmd->meshcmd.charging_state);
+
+                glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                               (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
+                break;
+            };
+
+            case CMD_CLEAR: {
+                Vec4 color = cmd->clearcmd.color;
+                glClearColor(color.r, color.g, color.b, color.a);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                break;
+            }
+
+            default: {
+                Assert(false);
+                break;
+            };
+        }
     }
 }
 
