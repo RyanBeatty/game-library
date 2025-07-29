@@ -1971,13 +1971,14 @@ LCORE void DrawLTexturePro(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2
 // src == where to draw in texture space
 // dest == where to draw in world space.
 // (0, 0)
-// * maps to bottom left corner in src texture space (this is not uv space, but width/height space)
+// * maps to bottom left corner in src texture space (uv space)
 // * maps to origin in world space.
 // :c_src - source origin (lower left corner) of where to read from texture in uv space
 // :r_src - full width/height of sub rect to read from texture in uv space
 // :c_dst - destination origin (center of quad) of where to draw in world space
 // :r_dst - full width + height of quad
-LCORE DrawCmd* DrawLTexturePro2(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation, Vec4 color) {
+LCORE DrawCmd* DrawLTextureProUV(LTexture tx, Vec2 c_src, Vec2 r_src, Vec2 c_dst, Vec2 r_dst, f32 rotation,
+                                 Vec4 color) {
     Mat4 scale = Mat4ScaleV(Vec3Lit(r_dst.x, r_dst.y, 1.0f));
     Mat4 orient = Mat4Rotate(rotation, Vec3Lit(0.0f, 0.0f, 1.0f));
     Mat4 translate = Mat4TranslateV(Vec3Lit(c_dst.x, c_dst.y, 0.0f));
@@ -2493,7 +2494,7 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
         // if (gstate->debug) {
         //     DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         // }
-        DrawLTexturePro2(font.tx, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
+        DrawLTextureProUV(font.tx, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
     }
     return baseline_pos;
 }
@@ -4398,7 +4399,7 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
         if (gstate->debug) {
             DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         }
-        DrawLTexturePro2(TX, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
+        DrawLTextureProUV(TX, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
     }
     EndShaderPass();
 
@@ -4418,8 +4419,14 @@ static void SubPixelRenderTick(GameState* gstate) {
 
     ClearBuffer(LCLEAR);
 
+    DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-100.0f, 80.0f),
+                      Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+
     f32 scale = 20.0f + (40.0f * (0.5f * (f32cos(gstate->timer) + 1.0f)));
-    DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
+    f32 rot = f32cos(gstate->timer);
+    // DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
+    DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(0.0f, 0.0f),
+                      Vec2Lit(scale, scale), rot, LCLEAR);
 
     EndShaderPass();
 
