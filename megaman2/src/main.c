@@ -736,8 +736,8 @@ static LTexture UploadTexture(const char* filename) {
                         : GL_REPEAT);  // set texture wrapping to GL_CLAMP_TO_EDGE (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
     // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_image_free(data);
     return tx;
@@ -1307,7 +1307,9 @@ static LShader GetSubPixelShader() {
         "\n"
         "void main()\n"
         "{\n"
-        "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        "   vec2 uv = fTextCoords;\n"
+        // "   vec2 uv = (floor(fTextCoords * Texture0Resolution) + 0.5) / Texture0Resolution;\n"
+        "   vec4 txColor = texture(texture0, uv);\n"
         // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
         // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
         "   if (txColor.a < 0.01) {\n"
