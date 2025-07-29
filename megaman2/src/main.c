@@ -4418,7 +4418,8 @@ static void SubPixelRenderTick(GameState* gstate) {
 
     ClearBuffer(LCLEAR);
 
-    DrawQuad(Vec3Zero(), 60.0f, 60.0f, Mat4RotateZ(gstate->timer), LRED);
+    f32 scale = 20.0f + (40.0f * (0.5f * (f32cos(gstate->timer) + 1.0f)));
+    DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
 
     EndShaderPass();
 
