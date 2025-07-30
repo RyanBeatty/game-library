@@ -4774,39 +4774,63 @@ static void SubPixelTick(GameState* gstate) {
     BeginRender(gstate->dt);
 
     {
-        ShaderPass* pass = BeginShaderPass(GetSubPixelShader());
+        ShaderPass* pass = BeginShaderPass(GetSubPixelDiffShader());
         f32 hwidth = 0.5f * gstate->renderw;
         f32 hheight = 0.5f * gstate->renderh;
         pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
 
         ClearBuffer(LCLEAR);
 
-        DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-100.0f, 80.0f),
-                          Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+        SubPixelDiffExtra extra_nn = {.filter_idx = 0};
+        SubPixelDiffExtra extra_filter = {.filter_idx = 1};
+        SubPixelDiffExtra extra_compare = {.filter_idx = 1, .compare = 1};
+
+        {
+            DrawCmd* cmd = DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f),
+                                             Vec2Lit(-100.0f, 80.0f), Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+
+            cmd->extra = (void*)&extra_nn;
+        }
+
+        {
+            DrawCmd* cmd = DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f),
+                                             Vec2Lit(-20.0f, 80.0f), Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+            cmd->extra = (void*)&extra_filter;
+        }
+
+        {
+            DrawCmd* cmd = DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f),
+                                             Vec2Lit(60.0f, 80.0f), Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+            cmd->extra = (void*)&extra_compare;
+        }
 
         f32 scale = 20.0f + (40.0f * (0.5f * (f32cos(gstate->timer) + 1.0f)));
         f32 rot = f32cos(gstate->timer);
         // DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
         LTexture tx = GetTexture(TX_MEGAMAN2);
         // tx = TX;
-        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(0.0f, 0.0f), Vec2Lit(scale, scale), rot,
-                          Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-100.0f, 0.0f), Vec2Lit(scale, scale),
+                          rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-20.0f, 0.0f), Vec2Lit(scale, scale),
+                          rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(60.0f, 0.0f), Vec2Lit(scale, scale),
+                          rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
         EndShaderPass();
     }
 
-    SubPixelDiffExtra extra = {.filter_idx = 1, .compare = 1};
-    {
-        ShaderPass* pass = BeginShaderPass(GetSubPixelDiffShader());
-        f32 hwidth = 0.5f * gstate->renderw;
-        f32 hheight = 0.5f * gstate->renderh;
-        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+    // SubPixelDiffExtra extra = {.filter_idx = 1, .compare = 1};
+    // {
+    //     ShaderPass* pass = BeginShaderPass(GetSubPixelDiffShader());
+    //     f32 hwidth = 0.5f * gstate->renderw;
+    //     f32 hheight = 0.5f * gstate->renderh;
+    //     pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
 
-        DrawCmd* cmd = DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f),
-                                         Vec2Lit(80.0f, 80.0f), Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
-        cmd->extra = (void*)&extra;
+    //     DrawCmd* cmd = DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f),
+    //                                      Vec2Lit(80.0f, 80.0f), Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+    //     cmd->extra = (void*)&extra;
 
-        EndShaderPass();
-    }
+    //     EndShaderPass();
+    // }
 
     EndRender();
 }
