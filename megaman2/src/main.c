@@ -1913,6 +1913,7 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
     static i32 F_FILTER_IDX = 0;
+    static i32 F_COMPARE = 0;
 
     Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
@@ -1924,6 +1925,7 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
 
         F_FILTER_IDX = glGetUniformLocation(shader->pid, "FilterIdx");
+        F_COMPARE = glGetUniformLocation(shader->pid, "Compare");
     }
 
     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
@@ -1934,7 +1936,8 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
 
-    glUniform1i(F_FILTER_IDX, 0);
+    glUniform1i(F_FILTER_IDX, 1);
+    glUniform1i(F_COMPARE, 1);
 }
 
 static LShader GetSubPixelDiffShader() {
@@ -1966,6 +1969,7 @@ static LShader GetSubPixelDiffShader() {
         
         uniform sampler2D texture0;
         uniform int FilterIdx;
+        uniform int Compare;
 
         vec2 nearest_uv(vec2 uv, ivec2 txdims) {
            return (floor(uv * txdims) + 0.5) / txdims;
@@ -1994,8 +1998,10 @@ static LShader GetSubPixelDiffShader() {
                     break;
                 }
             }
-        
-            // vec4 txColor = vec4(1, 0, 0, length(c1 - c0));
+
+            if (Compare != 0) {
+                FragColor = vec4(1, 0, 0, length(FragColor - c0));                
+            }
         }
     );
     // clang-format on
