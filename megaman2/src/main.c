@@ -4610,7 +4610,7 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
     EndRender();
 }
 
-static void SubPixelRenderTick(GameState* gstate) {
+static void SubPixelTick(GameState* gstate) {
     // static LTexture TX = {0};
     if (!gstate->init) {
         // byte data[] = {255, 0, 0, 255};
@@ -4619,25 +4619,39 @@ static void SubPixelRenderTick(GameState* gstate) {
 
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetSubPixelShader());
-    f32 hwidth = 0.5f * gstate->renderw;
-    f32 hheight = 0.5f * gstate->renderh;
-    pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+    {
+        ShaderPass* pass = BeginShaderPass(GetSubPixelShader());
+        f32 hwidth = 0.5f * gstate->renderw;
+        f32 hheight = 0.5f * gstate->renderh;
+        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
 
-    ClearBuffer(LCLEAR);
+        ClearBuffer(LCLEAR);
 
-    DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-100.0f, 80.0f),
-                      Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+        DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-100.0f, 80.0f),
+                          Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
 
-    f32 scale = 20.0f + (40.0f * (0.5f * (f32cos(gstate->timer) + 1.0f)));
-    f32 rot = f32cos(gstate->timer);
-    // DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
-    LTexture tx = GetTexture(TX_MEGAMAN2);
-    // tx = TX;
-    DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(0.0f, 0.0f), Vec2Lit(scale, scale), rot,
-                      Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+        f32 scale = 20.0f + (40.0f * (0.5f * (f32cos(gstate->timer) + 1.0f)));
+        f32 rot = f32cos(gstate->timer);
+        // DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
+        LTexture tx = GetTexture(TX_MEGAMAN2);
+        // tx = TX;
+        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(0.0f, 0.0f), Vec2Lit(scale, scale), rot,
+                          Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+        EndShaderPass();
+    }
 
-    EndShaderPass();
+    //
+    {
+        ShaderPass* pass = BeginShaderPass(GetSubPixelShader());
+        f32 hwidth = 0.5f * gstate->renderw;
+        f32 hheight = 0.5f * gstate->renderh;
+        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+
+        DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(80.0f, 80.0f),
+                          Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+
+        EndShaderPass();
+    }
 
     EndRender();
 }
@@ -6310,7 +6324,7 @@ static void GameStateInit(GameState* gstate) {
         gstate->scenefuncs[SCENE_TITLE_SCREEN] = TitleScreenTick;
         gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
         gstate->scenefuncs[SCENE_STAGE] = StageTick;
-        gstate->scenefuncs[SCENE_SUB_PIXEL_RENDER] = SubPixelRenderTick;
+        gstate->scenefuncs[SCENE_SUB_PIXEL_RENDER] = SubPixelTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
