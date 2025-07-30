@@ -1409,6 +1409,8 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
     cmd->meshcmd.tx = GetTexture(TX_DEFAULT);
 }
 
+#define GLSL(src) "#version 330 core\n" #src
+
 typedef u32 ShaderId;
 
 // Forward decls to be able to define enable shader func. This is somewhat akward, maybe consider
@@ -1950,40 +1952,33 @@ static LShader GetSubPixelDiffShader() {
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
         "}\0";
 
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "vec2 nearest_uv(vec2 uv, ivec2 txdims) {\n"
-        "   return (floor(uv * txdims) + 0.5) / txdims;\n"
-        "}\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   vec2 uv = fTextCoords;\n"
-        "   ivec2 txdims = textureSize(texture0, 0);\n"
-        "\n"
-        "   vec2 uv0 = nearest_uv(uv, txdims);\n"
-        "   vec4 c0 = texture(texture0, uv0);\n"
-        "\n"
-        "   vec2 uv1 = uv;\n"
-        "   vec4 c1 = texture(texture0, uv1);\n"
-        "\n"
-        "   vec4 txColor = vec4(1, 0, 0, length(c1 - c0));\n"
-        // // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
-        // // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-        // "   if (txColor.a < 0.01) {\n"
-        // "       discard;\n"
-        // "   }\n"
-        // For blending to work here properly, its important that either texture is specified or texture
-        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
-        "    FragColor = txColor;\n"
-        "}\0";
+    // clang-format off
+    static const char* FSRC = GLSL(
+        in vec2 fTextCoords;
+        uniform sampler2D texture0;
+        
+        out vec4 FragColor;
+        
+        vec2 nearest_uv(vec2 uv, ivec2 txdims) {
+           return (floor(uv * txdims) + 0.5) / txdims;
+        }
+        
+        void main()
+        {
+           vec2 uv = fTextCoords;
+           ivec2 txdims = textureSize(texture0, 0);
+        
+           vec2 uv0 = nearest_uv(uv, txdims);
+           vec4 c0 = texture(texture0, uv0);
+        
+           vec2 uv1 = uv;
+           vec4 c1 = texture(texture0, uv1);
+        
+           vec4 txColor = vec4(1, 0, 0, length(c1 - c0));
+           FragColor = txColor;
+    });
+    // clang-format on
+
     static bool INIT = false;
     static LShader SHADER = {0};
 
