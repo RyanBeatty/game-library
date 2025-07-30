@@ -1001,364 +1001,6 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
     mesh->ntriangles = tsize;
 }
 
-typedef u32 ShaderId;
-
-// Forward declare
-struct ShaderPass;
-typedef struct ShaderPass ShaderPass;
-typedef void (*EnableShaderFunc)(ShaderPass*);
-
-typedef struct {
-    ShaderId pid;  // program id.
-    u32 vid;
-    u32 fid;
-
-    EnableShaderFunc enable_shader_func;
-
-    // vert shader.
-    u32 vpos_loc;
-    u32 vnormal_loc;
-    u32 vmodel_loc;
-    u32 vview_loc;
-    u32 vproj_loc;
-    u32 vtextcoords_loc;
-    u32 vucolor_loc;
-    u32 vuvoffset_loc;
-    u32 vuvscale_loc;
-
-    // frag shader.
-    u32 ftexture0_resolution_loc;
-    u32 fresolution_loc;
-    u32 ftimer_loc;
-    u32 fnframe_loc;
-
-    // fx
-    u32 fchargingstate_loc;
-} LShader;
-
-static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
-    char error[1024] = {0};
-    u32 size = ArraySizeOf(error);
-
-    // vertex shader.
-    {
-        i32 success = 0;
-        shader->vid = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(shader->vid, 1, &vsrc, NULL);
-        glCompileShader(shader->vid);
-        glGetShaderiv(shader->vid, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(shader->vid, size, NULL, error);
-            TraceLog(LOG_ERROR, "Error compiling vertex shader: %s", error);
-            Assert(false);
-        }
-    }
-
-    // fragment shader.
-    {
-        i32 success = 0;
-        shader->fid = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(shader->fid, 1, &fsrc, NULL);
-        glCompileShader(shader->fid);
-        glGetShaderiv(shader->fid, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(shader->fid, size, NULL, error);
-            TraceLog(LOG_ERROR, "Error compiling fragment shader: %s", error);
-            Assert(false);
-        }
-    }
-
-    // linking.
-    {
-        i32 success = 0;
-        shader->pid = glCreateProgram();
-        glAttachShader(shader->pid, shader->vid);
-        glAttachShader(shader->pid, shader->fid);
-        glLinkProgram(shader->pid);
-        glGetProgramiv(shader->pid, GL_LINK_STATUS, &success);
-        Assert(success);
-    }
-}
-
-static LShader GetShader() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 2) in vec2 vTextCoords;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "uniform vec4 vUColor;\n"
-        "uniform vec2 vUVOffset;\n"
-        "uniform vec2 vUVScale;\n"
-        "\n"
-        "out vec4 fColor;\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fColor = vUColor;\n"
-        "}\0";
-
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec4 fColor;\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "uniform vec2 Texture0Resolution;\n"
-        "uniform vec2 resolution;\n"
-        "uniform float timer;\n"
-        "uniform int NFrame;\n"
-        "\n"
-        "uniform int fChargingState;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   vec4 txColor = texture(texture0, fTextCoords);\n"
-        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
-        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-        "   if (txColor.a < 0.01 && fChargingState == 0) {\n"
-        "       discard;\n"
-        "   }\n"
-        // For blending to work here properly, its important that either texture is specified or texture
-        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
-        "    FragColor = txColor * fColor;\n"
-        "\n"
-        "   vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);\n"
-        "   bool is_black = txColor == vec4(0, 0, 0, 1);\n"
-        "   if (fChargingState == 1) {\n"
-        "       if (is_black && NFrame % 3 == 0) {\n"
-        "           FragColor = charge_color;\n"
-        "       }\n"
-        "   } else if (fChargingState == 2) {\n"
-        "       if (is_black) {\n"
-        "           vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 8.0));"
-        "           FragColor = glow_color;\n"
-        "       }\n"
-        "   }\n"
-        "}\0";
-    static bool INIT = false;
-    static LShader SHADER = {0};
-
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
-            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
-            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
-            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
-            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
-            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
-
-            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
-    }
-
-    return SHADER;
-}
-
-static LShader GetEffectsShader() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 2) in vec2 vTextCoords;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "uniform vec4 vUColor;\n"
-        "uniform vec2 vUVOffset;\n"
-        "uniform vec2 vUVScale;\n"
-        "\n"
-        "out vec4 fColor;\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fColor = vUColor;\n"
-        "}\0";
-
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec4 fColor;\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "vec2 uvremap(vec2 uv)\n"
-        "{\n"
-        "    // as we near the edge of our screen apply greater distortion using a cubic function\n"
-        "    vec2 curvature = vec2(7.0, 7.0);\n"
-        "    uv = uv * 2.0 - 1.0;\n"
-        "    vec2 offset = abs(uv.yx) / vec2(curvature.x, curvature.y);\n"
-        "    uv = uv + uv * offset * offset;\n"
-        "    uv = uv * 0.5 + 0.5;\n"
-        "    return uv;\n"
-        "}\n"
-        "\n"
-        "vec4 scanLineIntensity(float uv, float resolution, float opacity)\n"
-        "{\n"
-        "    float PI = 3.1415926535;\n"
-        "    float intensity = sin(uv * resolution * PI * 2.0);\n"
-        "    intensity = ((0.5 * intensity) + 0.5) * 0.9 + 0.1;\n"
-        "    return vec4(vec3(pow(intensity, opacity)), 1.0);\n"
-        "}\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   vec2 uv = fTextCoords;\n"
-        "   vec4 txcolor = texture(texture0, uv);\n"
-        "   FragColor = txcolor;\n"
-        // "   vec2 uv = uvremap(fTextCoords);\n"
-        // // "   vec2 uv = fTextCoords;\n"
-        // "   vec4 txcolor = texture(texture0, uv);\n"
-        // "   txcolor *= scanLineIntensity(uv.x, 256.0 * 3.0, 0.2);\n"
-        // "   txcolor *= scanLineIntensity(uv.y, 224.0 * 3.0, 0.2);\n"
-        // " if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {\n"
-        // "   txcolor = vec4(0.0, 0.0, 0.0, 1.0);\n"
-        // " }\n"
-        // "   FragColor = txcolor;\n"
-        //"   float grayscale = max(txcolor.r, max(txcolor.g, txcolor.b));\n"
-        // "   FragColor = vec4(grayscale, grayscale, grayscale, 1.0);\n"
-        "}\0";
-    static bool INIT = false;
-    static LShader SHADER = {0};
-
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
-            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
-    }
-
-    return SHADER;
-}
-
-static LShader GetSubPixelShader() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 2) in vec2 vTextCoords;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "uniform vec4 vUColor;\n"
-        "uniform vec2 vUVOffset;\n"
-        "uniform vec2 vUVScale;\n"
-        "\n"
-        "out vec4 fColor;\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fColor = vUColor;\n"
-        "}\0";
-
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec4 fColor;\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "uniform vec2 Texture0Resolution;\n"
-        "uniform vec2 resolution;\n"
-        "uniform float timer;\n"
-        "uniform int NFrame;\n"
-        "\n"
-        "uniform int fChargingState;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   vec2 uv = fTextCoords;\n"
-        // "   vec2 uv = (floor(fTextCoords * Texture0Resolution) + 0.5) / Texture0Resolution;\n"
-        "   vec4 txColor = texture(texture0, uv);\n"
-        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
-        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-        "   if (txColor.a < 0.01) {\n"
-        "       discard;\n"
-        "   }\n"
-        // For blending to work here properly, its important that either texture is specified or texture
-        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
-        "    FragColor = txColor * fColor;\n"
-        "}\0";
-    static bool INIT = false;
-    static LShader SHADER = {0};
-
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
-            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
-            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
-            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
-            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
-            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
-
-            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
-    }
-
-    return SHADER;
-}
-
 static void RenderDataInit() {
     VAO = 0;
     VBO = 0;
@@ -1767,6 +1409,84 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
     cmd->meshcmd.tx = GetTexture(TX_DEFAULT);
 }
 
+typedef u32 ShaderId;
+
+struct ShaderPass;
+typedef struct ShaderPass ShaderPass;
+typedef void (*EnableShaderFunc)(ShaderPass*);
+
+typedef struct {
+    ShaderId pid;  // program id.
+    u32 vid;
+    u32 fid;
+
+    EnableShaderFunc enable_shader_func;
+
+    // vert shader.
+    u32 vpos_loc;
+    u32 vnormal_loc;
+    u32 vmodel_loc;
+    u32 vview_loc;
+    u32 vproj_loc;
+    u32 vtextcoords_loc;
+    u32 vucolor_loc;
+    u32 vuvoffset_loc;
+    u32 vuvscale_loc;
+
+    // frag shader.
+    u32 ftexture0_resolution_loc;
+    u32 fresolution_loc;
+    u32 ftimer_loc;
+    u32 fnframe_loc;
+
+    // fx
+    u32 fchargingstate_loc;
+} LShader;
+
+static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
+    char error[1024] = {0};
+    u32 size = ArraySizeOf(error);
+
+    // vertex shader.
+    {
+        i32 success = 0;
+        shader->vid = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(shader->vid, 1, &vsrc, NULL);
+        glCompileShader(shader->vid);
+        glGetShaderiv(shader->vid, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(shader->vid, size, NULL, error);
+            TraceLog(LOG_ERROR, "Error compiling vertex shader: %s", error);
+            Assert(false);
+        }
+    }
+
+    // fragment shader.
+    {
+        i32 success = 0;
+        shader->fid = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(shader->fid, 1, &fsrc, NULL);
+        glCompileShader(shader->fid);
+        glGetShaderiv(shader->fid, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(shader->fid, size, NULL, error);
+            TraceLog(LOG_ERROR, "Error compiling fragment shader: %s", error);
+            Assert(false);
+        }
+    }
+
+    // linking.
+    {
+        i32 success = 0;
+        shader->pid = glCreateProgram();
+        glAttachShader(shader->pid, shader->vid);
+        glAttachShader(shader->pid, shader->fid);
+        glLinkProgram(shader->pid);
+        glGetProgramiv(shader->pid, GL_LINK_STATUS, &success);
+        Assert(success);
+    }
+}
+
 #define MAX_CMDS 4092
 
 // No typedef because it is forward declared above.
@@ -1789,6 +1509,285 @@ struct ShaderPass {
     u32 ccap;
     DrawCmd cmds[MAX_CMDS];
 };
+
+static LShader GetShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 2) in vec2 vTextCoords;\n"
+        "\n"
+        "uniform mat4 vModel;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
+        "\n"
+        "uniform vec4 vUColor;\n"
+        "uniform vec2 vUVOffset;\n"
+        "uniform vec2 vUVScale;\n"
+        "\n"
+        "out vec4 fColor;\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   fColor = vUColor;\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec4 fColor;\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "uniform vec2 Texture0Resolution;\n"
+        "uniform vec2 resolution;\n"
+        "uniform float timer;\n"
+        "uniform int NFrame;\n"
+        "\n"
+        "uniform int fChargingState;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   vec4 txColor = texture(texture0, fTextCoords);\n"
+        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+        "   if (txColor.a < 0.01 && fChargingState == 0) {\n"
+        "       discard;\n"
+        "   }\n"
+        // For blending to work here properly, its important that either texture is specified or texture
+        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+        "    FragColor = txColor * fColor;\n"
+        "\n"
+        "   vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);\n"
+        "   bool is_black = txColor == vec4(0, 0, 0, 1);\n"
+        "   if (fChargingState == 1) {\n"
+        "       if (is_black && NFrame % 3 == 0) {\n"
+        "           FragColor = charge_color;\n"
+        "       }\n"
+        "   } else if (fChargingState == 2) {\n"
+        "       if (is_black) {\n"
+        "           vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 8.0));"
+        "           FragColor = glow_color;\n"
+        "       }\n"
+        "   }\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
+
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
+            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
+            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
+            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
+            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
+
+            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
+        }
+    }
+
+    return SHADER;
+}
+
+static LShader GetEffectsShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 2) in vec2 vTextCoords;\n"
+        "\n"
+        "uniform mat4 vModel;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
+        "\n"
+        "uniform vec4 vUColor;\n"
+        "uniform vec2 vUVOffset;\n"
+        "uniform vec2 vUVScale;\n"
+        "\n"
+        "out vec4 fColor;\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   fColor = vUColor;\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec4 fColor;\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "vec2 uvremap(vec2 uv)\n"
+        "{\n"
+        "    // as we near the edge of our screen apply greater distortion using a cubic function\n"
+        "    vec2 curvature = vec2(7.0, 7.0);\n"
+        "    uv = uv * 2.0 - 1.0;\n"
+        "    vec2 offset = abs(uv.yx) / vec2(curvature.x, curvature.y);\n"
+        "    uv = uv + uv * offset * offset;\n"
+        "    uv = uv * 0.5 + 0.5;\n"
+        "    return uv;\n"
+        "}\n"
+        "\n"
+        "vec4 scanLineIntensity(float uv, float resolution, float opacity)\n"
+        "{\n"
+        "    float PI = 3.1415926535;\n"
+        "    float intensity = sin(uv * resolution * PI * 2.0);\n"
+        "    intensity = ((0.5 * intensity) + 0.5) * 0.9 + 0.1;\n"
+        "    return vec4(vec3(pow(intensity, opacity)), 1.0);\n"
+        "}\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   vec2 uv = fTextCoords;\n"
+        "   vec4 txcolor = texture(texture0, uv);\n"
+        "   FragColor = txcolor;\n"
+        // "   vec2 uv = uvremap(fTextCoords);\n"
+        // // "   vec2 uv = fTextCoords;\n"
+        // "   vec4 txcolor = texture(texture0, uv);\n"
+        // "   txcolor *= scanLineIntensity(uv.x, 256.0 * 3.0, 0.2);\n"
+        // "   txcolor *= scanLineIntensity(uv.y, 224.0 * 3.0, 0.2);\n"
+        // " if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {\n"
+        // "   txcolor = vec4(0.0, 0.0, 0.0, 1.0);\n"
+        // " }\n"
+        // "   FragColor = txcolor;\n"
+        //"   float grayscale = max(txcolor.r, max(txcolor.g, txcolor.b));\n"
+        // "   FragColor = vec4(grayscale, grayscale, grayscale, 1.0);\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
+
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
+            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
+        }
+    }
+
+    return SHADER;
+}
+
+static LShader GetSubPixelShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 2) in vec2 vTextCoords;\n"
+        "\n"
+        "uniform mat4 vModel;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
+        "\n"
+        "uniform vec4 vUColor;\n"
+        "uniform vec2 vUVOffset;\n"
+        "uniform vec2 vUVScale;\n"
+        "\n"
+        "out vec4 fColor;\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "   fColor = vUColor;\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec4 fColor;\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "uniform vec2 Texture0Resolution;\n"
+        "uniform vec2 resolution;\n"
+        "uniform float timer;\n"
+        "uniform int NFrame;\n"
+        "\n"
+        "uniform int fChargingState;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   vec2 uv = fTextCoords;\n"
+        // "   vec2 uv = (floor(fTextCoords * Texture0Resolution) + 0.5) / Texture0Resolution;\n"
+        "   vec4 txColor = texture(texture0, uv);\n"
+        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+        "   if (txColor.a < 0.01) {\n"
+        "       discard;\n"
+        "   }\n"
+        // For blending to work here properly, its important that either texture is specified or texture
+        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+        "    FragColor = txColor * fColor;\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+
+        // Att lookup.
+        {
+            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
+            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
+
+            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
+            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
+            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
+            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
+            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
+            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
+            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
+            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
+            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
+            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
+
+            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
+
+            glUseProgram(SHADER.pid);
+            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
+        }
+    }
+
+    return SHADER;
+}
 
 static void ShaderPassInit(ShaderPass* pass, LShader shader) {
     memset(pass, 0, sizeof(ShaderPass));
