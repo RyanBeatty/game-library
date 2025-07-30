@@ -1397,6 +1397,10 @@ typedef struct {
             Vec4 color;
         } clearcmd;
     };
+
+    // Pass arbitrary shader data (ex. like new uniforms to set) via this member.
+    // Mostly exists as convenience when iterating on new shader ideas.
+    void* extra;
 } DrawCmd;
 
 // Assumes the struct has been memset already.
@@ -1936,8 +1940,10 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
 
-    glUniform1i(F_FILTER_IDX, 0);
-    glUniform1i(F_COMPARE, 0);
+    if (cmd->extra == NULL) {
+        glUniform1i(F_FILTER_IDX, 1);
+        glUniform1i(F_COMPARE, 0);
+    }
 }
 
 static LShader GetSubPixelDiffShader() {
