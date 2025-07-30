@@ -1003,6 +1003,9 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
 
 typedef u32 ShaderId;
 
+struct ShaderPass;
+typedef void (*SetShaderFunc)(struct ShaderPass);
+
 typedef struct {
     ShaderId pid;  // program id.
     u32 vid;
@@ -1763,7 +1766,8 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
 #define MAX_CMDS 4092
 
 typedef struct {
-    ShaderId sid;
+    ShaderId _sid;
+    LShader shader;
 
     ///////////////////////
     // Uniform data that should be set once for a pass here.
@@ -1781,9 +1785,9 @@ typedef struct {
     DrawCmd cmds[MAX_CMDS];
 } ShaderPass;
 
-static void ShaderPassInit(ShaderPass* pass, ShaderId sid) {
+static void ShaderPassInit(ShaderPass* pass, LShader shader) {
     memset(pass, 0, sizeof(ShaderPass));
-    pass->sid = sid;
+    pass->shader = shader;
     pass->view = Mat4Identity();
     pass->proj = Mat4Identity();
 
@@ -1799,20 +1803,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 }
 
 static void ShaderPassExecute(ShaderPass* pass) {
-    LShader shader2d = GetShader();
-    LShader effects_shader = GetEffectsShader();
-    LShader subpixel_shader = GetSubPixelShader();
-
-    LShader shader = {0};
-    if (pass->sid == shader2d.pid) {
-        shader = shader2d;
-    } else if (pass->sid == effects_shader.pid) {
-        shader = effects_shader;
-    } else if (pass->sid == subpixel_shader.pid) {
-        shader = subpixel_shader;
-    } else {
-        Assert(false);
-    }
+    LShader shader = pass->shader;
 
     glUseProgram(shader.pid);
 
@@ -1904,7 +1895,7 @@ static ShaderPass* BeginShaderPass(LShader shader) {
 
     rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
-    ShaderPassInit(pass, shader.pid);
+    ShaderPassInit(pass, shader);
     pass->resolution = Vec2Lit(rstate->target.width, rstate->target.height);
     pass->dt = rstate->dt;
     pass->timer = rstate->timer;
@@ -1972,7 +1963,7 @@ static void EndRender() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         ShaderPass pass;
-        ShaderPassInit(&pass, GetEffectsShader().pid);
+        ShaderPassInit(&pass, GetEffectsShader());
         pass.dt = rstate->dt;
         pass.timer = rstate->timer;
         pass.resolution = Vec2Lit(GetScreenWidth(), GetScreenHeight());
@@ -5385,7 +5376,7 @@ static void StageTick(GameState* gstate) {
                                     e->graphics.charging_state = 1;
 
                                     Vec3 offset = RandPointOnCircle(14.0f);
-                                    RGBA color = Vec4Lit(0.7, 0.2, 1.0, 1.0);
+                                    // RGBA color = Vec4Lit(0.7, 0.2, 1.0, 1.0);
                                     Particle* particle =
                                         SpawnParticle(Vec3Add(e->pos, offset), Vec2Lit(2.0f, 2.0f), 0.4f, LWHITE);
                                     particle->v = Vec3Negate(offset);
