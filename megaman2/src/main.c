@@ -1782,9 +1782,6 @@ static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
     static i32 V_PROJ = 0;
-    static i32 F_RESOLUTION = 0;
-    static i32 F_TIMER = 0;
-    static i32 F_NFRAME = 0;
 
     glUseProgram(shader->pid);
 
@@ -1792,9 +1789,6 @@ static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
         INIT = true;
         V_VIEW = glGetUniformLocation(shader->pid, "vView");
         V_PROJ = glGetUniformLocation(shader->pid, "vProj");
-        F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
-        F_TIMER = glGetUniformLocation(shader->pid, "timer");
-        F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
 
         // IMPORTANT! Set texture uniform loc.
         glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
@@ -1802,11 +1796,6 @@ static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
 
     glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
     glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
-
-    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
-    glUniform1f(F_TIMER, pass->timer);
-
-    glUniform1i(F_NFRAME, pass->nframe);
 }
 
 static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
@@ -1861,10 +1850,6 @@ static LShader GetSubPixelShader() {
         "in vec2 fTextCoords;\n"
         "\n"
         "uniform sampler2D texture0;\n"
-        "uniform vec2 Texture0Resolution;\n"
-        "uniform vec2 resolution;\n"
-        "uniform float timer;\n"
-        "uniform int NFrame;\n"
         "\n"
         "out vec4 FragColor;\n"
         "\n"
