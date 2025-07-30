@@ -1011,6 +1011,8 @@ typedef struct {
     u32 vid;
     u32 fid;
 
+    SetShaderFunc set_shader_func;
+
     // vert shader.
     u32 vpos_loc;
     u32 vnormal_loc;
@@ -1805,15 +1807,19 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader = pass->shader;
 
-    glUseProgram(shader.pid);
+    if (shader.set_shader_func == NULL) {
+        glUseProgram(shader.pid);
 
-    glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
-    glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
+        glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
+        glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
 
-    glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
-    glUniform1f(shader.ftimer_loc, pass->timer);
+        glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
+        glUniform1f(shader.ftimer_loc, pass->timer);
 
-    glUniform1i(shader.fnframe_loc, pass->nframe);
+        glUniform1i(shader.fnframe_loc, pass->nframe);
+    } else {
+        Assert(false);
+    }
 
     for (u32 i = 0; i < pass->clen; ++i) {
         DrawCmd* cmd = &pass->cmds[i];
