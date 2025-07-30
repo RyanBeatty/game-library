@@ -1517,6 +1517,71 @@ struct ShaderPass {
     DrawCmd cmds[MAX_CMDS];
 };
 
+LCORE void EnableDefaultShader(LShader* shader, ShaderPass* pass) {
+    static bool INIT = false;
+    static i32 V_VIEW = 0;
+    static i32 V_PROJ = 0;
+    static i32 F_RESOLUTION = 0;
+    static i32 F_TIMER = 0;
+    static i32 F_NFRAME = 0;
+
+    glUseProgram(shader->pid);
+
+    if (!INIT) {
+        INIT = true;
+        V_VIEW = glGetUniformLocation(shader->pid, "vView");
+        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+        F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
+        F_TIMER = glGetUniformLocation(shader->pid, "timer");
+        F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
+
+        // IMPORTANT! Set texture uniform loc.
+        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
+    }
+
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+
+    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
+    glUniform1f(F_TIMER, pass->timer);
+
+    glUniform1i(F_NFRAME, pass->nframe);
+}
+
+LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+    static bool INIT = false;
+    static i32 V_MODEL = 0;
+    static i32 V_UVCOLOR = 0;
+    static i32 V_UVSCALE = 0;
+    static i32 V_UVOFFSET = 0;
+    static i32 F_TEXTURE0_RESOLUTION = 0;
+    static i32 F_CHARGING_STATE = 0;
+
+    Assert(cmd->type == CMD_DRAW_MESH);
+    if (!INIT) {
+        INIT = true;
+
+        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
+        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+        F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+
+        F_CHARGING_STATE = glGetUniformLocation(shader->pid, "fChargingState");
+    }
+
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+
+    glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
+}
+
 static LShader GetShader() {
     static const char* VSRC =
         "#version 330 core\n"
