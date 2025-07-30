@@ -1411,11 +1411,16 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
 
 typedef u32 ShaderId;
 
+// Forward decls to be able to define enable shader func. This is somewhat akward, maybe consider
+// trying to do what the File Pilot guy does and auto gen header files. That might be work tho.
 struct ShaderPass;
 typedef struct ShaderPass ShaderPass;
-typedef void (*EnableShaderFunc)(ShaderPass*);
+struct LShader;
+typedef struct LShader LShader;
 
-typedef struct {
+typedef void (*EnableShaderFunc)(LShader*, ShaderPass*);
+
+struct LShader {
     ShaderId pid;  // program id.
     u32 vid;
     u32 fid;
@@ -1441,7 +1446,7 @@ typedef struct {
 
     // fx
     u32 fchargingstate_loc;
-} LShader;
+};
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
     char error[1024] = {0};
@@ -1703,6 +1708,34 @@ static LShader GetEffectsShader() {
     return SHADER;
 }
 
+static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
+    static bool INIT = false;
+    static i32 V_VIEW = 0;
+    static i32 V_PROJ = 0;
+    static i32 F_RESOLUTION = 0;
+    static i32 F_TIMER = 0;
+    static i32 F_NFRAME = 0;
+
+    glUseProgram(shader->pid);
+
+    if (!INIT) {
+        INIT = true;
+        V_VIEW = glGetUniformLocation(shader->pid, "vView");
+        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+        F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
+        F_TIMER = glGetUniformLocation(shader->pid, "timer");
+        F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
+    }
+
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+
+    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
+    glUniform1f(F_TIMER, pass->timer);
+
+    glUniform1i(F_NFRAME, pass->nframe);
+}
+
 static LShader GetSubPixelShader() {
     static const char* VSRC =
         "#version 330 core\n"
@@ -1762,6 +1795,7 @@ static LShader GetSubPixelShader() {
     if (!INIT) {
         INIT = true;
         LShaderInit(&SHADER, VSRC, FSRC);
+        SHADER.enable_shader_func = EnableSubPixelShader;
 
         // Att lookup.
         {
@@ -1769,15 +1803,10 @@ static LShader GetSubPixelShader() {
             SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
 
             SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
             SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
             SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
             SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
-            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
-            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
             SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
-            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
 
             SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
 
@@ -1820,8 +1849,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
         glUniform1i(shader.fnframe_loc, pass->nframe);
     } else {
-        Assert(false);
-        shader.enable_shader_func(pass);
+        shader.enable_shader_func(&shader, pass);
     }
 
     for (u32 i = 0; i < pass->clen; ++i) {
