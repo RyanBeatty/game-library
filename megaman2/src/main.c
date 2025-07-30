@@ -1936,8 +1936,8 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
 
-    glUniform1i(F_FILTER_IDX, 1);
-    glUniform1i(F_COMPARE, 1);
+    glUniform1i(F_FILTER_IDX, 0);
+    glUniform1i(F_COMPARE, 0);
 }
 
 static LShader GetSubPixelDiffShader() {
