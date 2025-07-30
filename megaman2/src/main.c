@@ -1912,6 +1912,7 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVSCALE = 0;
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
+    static i32 F_FILTER_IDX = 0;
 
     Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
@@ -1921,6 +1922,8 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+
+        F_FILTER_IDX = glGetUniformLocation(shader->pid, "FilterIdx");
     }
 
     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
@@ -1930,6 +1933,8 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+
+    glUniform1i(F_FILTER_IDX, 0);
 }
 
 static LShader GetSubPixelDiffShader() {
@@ -1956,26 +1961,37 @@ static LShader GetSubPixelDiffShader() {
     // clang-format off
     static const char* FSRC = GLSL(
         in vec2 fTextCoords;
-        uniform sampler2D texture0;
-        
+
         out vec4 FragColor;
         
+        uniform sampler2D texture0;
+        uniform int FilterIdx;
+
         vec2 nearest_uv(vec2 uv, ivec2 txdims) {
            return (floor(uv * txdims) + 0.5) / txdims;
         }
         
         void main() {
-           vec2 uv = fTextCoords;
-           ivec2 txdims = textureSize(texture0, 0);
+            vec2 uv = fTextCoords;
+            ivec2 txdims = textureSize(texture0, 0);
         
-           vec2 uv0 = nearest_uv(uv, txdims);
-           vec4 c0 = texture(texture0, uv0);
+            vec2 uv0 = nearest_uv(uv, txdims);
+            vec4 c0 = texture(texture0, uv0);
         
-           vec2 uv1 = uv;
-           vec4 c1 = texture(texture0, uv1);
+            vec2 uv1 = uv;
+            vec4 c1 = texture(texture0, uv1);
+            switch (FilterIdx) {
+                case 0: {
+                    FragColor = texture(texture0, uv);
+                    break;
+                }
+                default: {
+                    FragColor = vec4(0, 0, 0, 1);
+                    break;
+                }
+            }
         
-           vec4 txColor = vec4(1, 0, 0, length(c1 - c0));
-           FragColor = txColor;
+            // vec4 txColor = vec4(1, 0, 0, length(c1 - c0));
         }
     );
     // clang-format on
