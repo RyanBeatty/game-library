@@ -1812,7 +1812,6 @@ static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
 static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
-    static i32 V_UVCOLOR = 0;
     static i32 V_UVSCALE = 0;
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
@@ -1822,14 +1821,12 @@ static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         INIT = true;
 
         V_MODEL = glGetUniformLocation(shader->pid, "vModel");
-        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
         V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
     }
 
     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
     glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
     glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
 
@@ -1848,23 +1845,19 @@ static LShader GetSubPixelShader() {
         "uniform mat4 vView;\n"
         "uniform mat4 vProj;\n"
         "\n"
-        "uniform vec4 vUColor;\n"
         "uniform vec2 vUVOffset;\n"
         "uniform vec2 vUVScale;\n"
         "\n"
-        "out vec4 fColor;\n"
         "out vec2 fTextCoords;\n"
         "void main()\n"
         "{\n"
         "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
         "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fColor = vUColor;\n"
         "}\0";
 
     static const char* FSRC =
         "#version 330 core\n"
         "\n"
-        "in vec4 fColor;\n"
         "in vec2 fTextCoords;\n"
         "\n"
         "uniform sampler2D texture0;\n"
@@ -1887,7 +1880,7 @@ static LShader GetSubPixelShader() {
         "   }\n"
         // For blending to work here properly, its important that either texture is specified or texture
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
-        "    FragColor = txColor * fColor;\n"
+        "    FragColor = txColor;\n"
         "}\0";
     static bool INIT = false;
     static LShader SHADER = {0};
