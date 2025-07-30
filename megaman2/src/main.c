@@ -1727,6 +1727,9 @@ static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
         F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
         F_TIMER = glGetUniformLocation(shader->pid, "timer");
         F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
+
+        // IMPORTANT! Set texture uniform loc.
+        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
     }
 
     glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
@@ -1740,21 +1743,36 @@ static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
 
 static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static bool INIT = false;
+    static i32 V_MODEL = 0;
+    static i32 V_UVCOLOR = 0;
+    static i32 V_UVSCALE = 0;
+    static i32 V_UVOFFSET = 0;
+    static i32 F_TEXTURE0_RESOLUTION = 0;
+    static i32 F_CHARGING_STATE = 0;
+
     Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
         INIT = true;
+
+        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
+        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+        F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+
+        F_CHARGING_STATE = glGetUniformLocation(shader->pid, "fChargingState");
     }
+
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
-    glUniform2f(shader->ftexture0_resolution_loc, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
 
-    glUniformMatrix4fv(shader->vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-    glUniform4fv(shader->vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
-    glUniform2fv(shader->vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-    glUniform2fv(shader->vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
-
-    glUniform1i(shader->fchargingstate_loc, cmd->meshcmd.charging_state);
+    glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
 }
 
 static LShader GetSubPixelShader() {
@@ -1818,23 +1836,6 @@ static LShader GetSubPixelShader() {
         LShaderInit(&SHADER, VSRC, FSRC);
         SHADER.enable_func = EnableSubPixelShader;
         SHADER.set_uniforms_func = SubPixelShaderSetUniforms;
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
-            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
-            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
-
-            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
     }
 
     return SHADER;
