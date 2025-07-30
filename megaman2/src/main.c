@@ -1816,7 +1816,6 @@ static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVSCALE = 0;
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
-    static i32 F_CHARGING_STATE = 0;
 
     Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
@@ -1827,8 +1826,6 @@ static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
-
-        F_CHARGING_STATE = glGetUniformLocation(shader->pid, "fChargingState");
     }
 
     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
@@ -1839,8 +1836,6 @@ static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
-
-    glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
 }
 
 static LShader GetSubPixelShader() {
@@ -1877,8 +1872,6 @@ static LShader GetSubPixelShader() {
         "uniform vec2 resolution;\n"
         "uniform float timer;\n"
         "uniform int NFrame;\n"
-        "\n"
-        "uniform int fChargingState;\n"
         "\n"
         "out vec4 FragColor;\n"
         "\n"
