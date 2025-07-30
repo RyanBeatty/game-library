@@ -1006,14 +1006,14 @@ typedef u32 ShaderId;
 // Forward declare
 struct ShaderPass;
 typedef struct ShaderPass ShaderPass;
-typedef void (*SetShaderFunc)(ShaderPass*);
+typedef void (*EnableShaderFunc)(ShaderPass*);
 
 typedef struct {
     ShaderId pid;  // program id.
     u32 vid;
     u32 fid;
 
-    SetShaderFunc set_shader_func;
+    EnableShaderFunc enable_shader_func;
 
     // vert shader.
     u32 vpos_loc;
@@ -1810,7 +1810,7 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader = pass->shader;
 
-    if (shader.set_shader_func == NULL) {
+    if (shader.enable_shader_func == NULL) {
         glUseProgram(shader.pid);
 
         glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
@@ -1822,7 +1822,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
         glUniform1i(shader.fnframe_loc, pass->nframe);
     } else {
         Assert(false);
-        shader.set_shader_func(pass);
+        shader.enable_shader_func(pass);
     }
 
     for (u32 i = 0; i < pass->clen; ++i) {
