@@ -1933,24 +1933,25 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
 }
 
 static LShader GetSubPixelDiffShader() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 2) in vec2 vTextCoords;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "uniform vec2 vUVOffset;\n"
-        "uniform vec2 vUVScale;\n"
-        "\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "}\0";
+    // clang-format off
+    static const char* VSRC = GLSL(
+        layout (location = 0) in vec3 vPos;
+        layout (location = 2) in vec2 vTextCoords;
+        
+        uniform mat4 vModel;
+        uniform mat4 vView;
+        uniform mat4 vProj;
+        
+        uniform vec2 vUVOffset;
+        uniform vec2 vUVScale;
+        
+        out vec2 fTextCoords;
+        void main() {
+           fTextCoords = vUVOffset + (vUVScale * vTextCoords);
+           gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
+        }
+    );
+    // clang-format on
 
     // clang-format off
     static const char* FSRC = GLSL(
@@ -1963,8 +1964,7 @@ static LShader GetSubPixelDiffShader() {
            return (floor(uv * txdims) + 0.5) / txdims;
         }
         
-        void main()
-        {
+        void main() {
            vec2 uv = fTextCoords;
            ivec2 txdims = textureSize(texture0, 0);
         
@@ -1976,7 +1976,8 @@ static LShader GetSubPixelDiffShader() {
         
            vec4 txColor = vec4(1, 0, 0, length(c1 - c0));
            FragColor = txColor;
-    });
+        }
+    );
     // clang-format on
 
     static bool INIT = false;
