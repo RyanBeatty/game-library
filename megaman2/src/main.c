@@ -1910,6 +1910,11 @@ static void EnableSubPixelDiffShader(LShader* shader, ShaderPass* pass) {
     glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
 }
 
+typedef struct {
+    i32 filter_idx;
+    i32 compare;
+} SubPixelDiffExtra;
+
 static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
@@ -1943,6 +1948,10 @@ static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     if (cmd->extra == NULL) {
         glUniform1i(F_FILTER_IDX, 1);
         glUniform1i(F_COMPARE, 0);
+    } else {
+        SubPixelDiffExtra* extra = (SubPixelDiffExtra*)cmd->extra;
+        glUniform1i(F_FILTER_IDX, extra->filter_idx);
+        glUniform1i(F_COMPARE, extra->compare);
     }
 }
 
@@ -4785,15 +4794,16 @@ static void SubPixelTick(GameState* gstate) {
         EndShaderPass();
     }
 
-    //
+    SubPixelDiffExtra extra = {.filter_idx = 1, .compare = 1};
     {
         ShaderPass* pass = BeginShaderPass(GetSubPixelDiffShader());
         f32 hwidth = 0.5f * gstate->renderw;
         f32 hheight = 0.5f * gstate->renderh;
         pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
 
-        DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(80.0f, 80.0f),
-                          Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+        DrawCmd* cmd = DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f),
+                                         Vec2Lit(80.0f, 80.0f), Vec2Lit(48.0f, 48.0f), 0.0f, LCLEAR);
+        cmd->extra = (void*)&extra;
 
         EndShaderPass();
     }
