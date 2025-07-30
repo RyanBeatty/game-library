@@ -1966,13 +1966,20 @@ static LShader GetSubPixelDiffShader() {
         "void main()\n"
         "{\n"
         "   vec2 uv = fTextCoords;\n"
-        "   uv = nearest_uv(uv, textureSize(texture0, 0));\n"
-        "   vec4 txColor = texture(texture0, uv);\n"
-        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
-        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-        "   if (txColor.a < 0.01) {\n"
-        "       discard;\n"
-        "   }\n"
+        "   ivec2 txdims = textureSize(texture0, 0);\n"
+        "\n"
+        "   vec2 uv0 = nearest_uv(uv, txdims);\n"
+        "   vec4 c0 = texture(texture0, uv0);\n"
+        "\n"
+        "   vec2 uv1 = uv;\n"
+        "   vec4 c1 = texture(texture0, uv1);\n"
+        "\n"
+        "   vec4 txColor = vec4(1, 0, 0, length(c1 - c0));\n"
+        // // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+        // // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+        // "   if (txColor.a < 0.01) {\n"
+        // "       discard;\n"
+        // "   }\n"
         // For blending to work here properly, its important that either texture is specified or texture
         // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
         "    FragColor = txColor;\n"
