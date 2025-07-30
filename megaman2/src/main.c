@@ -1429,6 +1429,7 @@ struct LShader {
     EnableShaderFunc enable_func;
     SetUniformsFunc set_uniforms_func;
 
+    // TODO: Delete all below
     // vert shader.
     u32 vpos_loc;
     u32 vnormal_loc;
@@ -1517,6 +1518,7 @@ struct ShaderPass {
     DrawCmd cmds[MAX_CMDS];
 };
 
+// TODO: use
 LCORE void EnableDefaultShader(LShader* shader, ShaderPass* pass) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
@@ -1548,6 +1550,7 @@ LCORE void EnableDefaultShader(LShader* shader, ShaderPass* pass) {
     glUniform1i(F_NFRAME, pass->nframe);
 }
 
+// TODO: use
 LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
