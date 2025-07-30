@@ -1853,10 +1853,14 @@ static LShader GetSubPixelShader() {
         "\n"
         "out vec4 FragColor;\n"
         "\n"
+        "vec2 nearest_uv(vec2 uv, ivec2 txdims) {\n"
+        "   return (floor(uv * txdims) + 0.5) / txdims;\n"
+        "}\n"
+        "\n"
         "void main()\n"
         "{\n"
         "   vec2 uv = fTextCoords;\n"
-        // "   vec2 uv = (floor(fTextCoords * Texture0Resolution) + 0.5) / Texture0Resolution;\n"
+        // "   uv = nearest_uv(uv, textureSize(texture0, 0));\n"
         "   vec4 txColor = texture(texture0, uv);\n"
         // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
         // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
@@ -1955,10 +1959,14 @@ static LShader GetSubPixelDiffShader() {
         "\n"
         "out vec4 FragColor;\n"
         "\n"
+        "vec2 nearest_uv(vec2 uv, ivec2 txdims) {\n"
+        "   return (floor(uv * txdims) + 0.5) / txdims;\n"
+        "}\n"
+        "\n"
         "void main()\n"
         "{\n"
         "   vec2 uv = fTextCoords;\n"
-        // "   uv = (floor(fTextCoords * Texture0Resolution) + 0.5) / Texture0Resolution;\n"
+        "   uv = nearest_uv(uv, textureSize(texture0, 0));\n"
         "   vec4 txColor = texture(texture0, uv);\n"
         // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
         // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
