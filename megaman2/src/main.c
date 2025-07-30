@@ -1982,7 +1982,11 @@ static LShader GetSubPixelDiffShader() {
             vec4 c1 = texture(texture0, uv1);
             switch (FilterIdx) {
                 case 0: {
-                    FragColor = texture(texture0, uv);
+                    FragColor = c0;
+                    break;
+                }
+                case 1: {
+                    FragColor = c1;
                     break;
                 }
                 default: {
