@@ -4659,10 +4659,17 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
 }
 
 static void SubPixelTick(GameState* gstate) {
-    // static LTexture TX = {0};
+    static i32 FILTER_IDX = 1;
+    static const i32 FILTER_COUNT = 2;
     if (!gstate->init) {
         // byte data[] = {255, 0, 0, 255};
         // TX = TextureFromBuffer(data, 1, 1);
+    }
+
+    if (IsKeyPressed(KEY_LEFT)) {
+        FILTER_IDX = (FILTER_COUNT + FILTER_IDX - 1) % FILTER_COUNT;
+    } else if (IsKeyPressed(KEY_RIGHT)) {
+        FILTER_IDX = (FILTER_IDX + 1) % FILTER_COUNT;
     }
 
     BeginRender(gstate->dt);
@@ -4676,8 +4683,8 @@ static void SubPixelTick(GameState* gstate) {
         ClearBuffer(LCLEAR);
 
         SubPixelExtra extra_nn = {.filter_idx = 0};
-        SubPixelExtra extra_filter = {.filter_idx = 1};
-        SubPixelExtra extra_compare = {.filter_idx = 1, .compare = 1};
+        SubPixelExtra extra_filter = {.filter_idx = FILTER_IDX};
+        SubPixelExtra extra_compare = {.filter_idx = FILTER_IDX, .compare = 1};
 
         {
             DrawCmd* cmd = DrawLTextureProUV(GetTexture(TX_MEGAMAN2), Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f),
