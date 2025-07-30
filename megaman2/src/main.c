@@ -4806,15 +4806,23 @@ static void SubPixelTick(GameState* gstate) {
 
         f32 scale = 20.0f + (40.0f * (0.5f * (f32cos(gstate->timer) + 1.0f)));
         f32 rot = f32cos(gstate->timer);
-        // DrawQuad(Vec3Zero(), scale, scale, Mat4RotateZ(f32cos(gstate->timer)), LRED);
         LTexture tx = GetTexture(TX_MEGAMAN2);
-        // tx = TX;
-        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-100.0f, 0.0f), Vec2Lit(scale, scale),
-                          rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
-        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-20.0f, 0.0f), Vec2Lit(scale, scale),
-                          rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
-        DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(60.0f, 0.0f), Vec2Lit(scale, scale),
-                          rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+
+        {
+            DrawCmd* cmd = DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-100.0f, 0.0f),
+                                             Vec2Lit(scale, scale), rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+            cmd->extra = (void*)&extra_nn;
+        }
+        {
+            DrawCmd* cmd = DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(-20.0f, 0.0f),
+                                             Vec2Lit(scale, scale), rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+            cmd->extra = (void*)&extra_filter;
+        }
+        {
+            DrawCmd* cmd = DrawLTextureProUV(tx, Vec2Lit(0.0f, 0.0f), Vec2Lit(1.0f, 1.0f), Vec2Lit(60.0f, 0.0f),
+                                             Vec2Lit(scale, scale), rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
+            cmd->extra = (void*)&extra_compare;
+        }
         EndShaderPass();
     }
 
