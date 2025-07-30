@@ -1880,6 +1880,108 @@ static LShader GetSubPixelShader() {
     return SHADER;
 }
 
+static void EnableSubPixelDiffShader(LShader* shader, ShaderPass* pass) {
+    static bool INIT = false;
+    static i32 V_VIEW = 0;
+    static i32 V_PROJ = 0;
+
+    glUseProgram(shader->pid);
+
+    if (!INIT) {
+        INIT = true;
+        V_VIEW = glGetUniformLocation(shader->pid, "vView");
+        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+
+        // IMPORTANT! Set texture uniform loc.
+        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
+    }
+
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+}
+
+static void SubPixelDiffShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+    static bool INIT = false;
+    static i32 V_MODEL = 0;
+    static i32 V_UVSCALE = 0;
+    static i32 V_UVOFFSET = 0;
+    static i32 F_TEXTURE0_RESOLUTION = 0;
+
+    Assert(cmd->type == CMD_DRAW_MESH);
+    if (!INIT) {
+        INIT = true;
+
+        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+        F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+    }
+
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+}
+
+static LShader GetSubPixelDiffShader() {
+    static const char* VSRC =
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 vPos;\n"
+        "layout (location = 2) in vec2 vTextCoords;\n"
+        "\n"
+        "uniform mat4 vModel;\n"
+        "uniform mat4 vView;\n"
+        "uniform mat4 vProj;\n"
+        "\n"
+        "uniform vec2 vUVOffset;\n"
+        "uniform vec2 vUVScale;\n"
+        "\n"
+        "out vec2 fTextCoords;\n"
+        "void main()\n"
+        "{\n"
+        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
+        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
+        "}\0";
+
+    static const char* FSRC =
+        "#version 330 core\n"
+        "\n"
+        "in vec2 fTextCoords;\n"
+        "\n"
+        "uniform sampler2D texture0;\n"
+        "\n"
+        "out vec4 FragColor;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   vec2 uv = fTextCoords;\n"
+        // "   uv = (floor(fTextCoords * Texture0Resolution) + 0.5) / Texture0Resolution;\n"
+        "   vec4 txColor = texture(texture0, uv);\n"
+        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+        "   if (txColor.a < 0.01) {\n"
+        "       discard;\n"
+        "   }\n"
+        // For blending to work here properly, its important that either texture is specified or texture
+        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+        "    FragColor = txColor;\n"
+        "}\0";
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+        SHADER.enable_func = EnableSubPixelDiffShader;
+        SHADER.set_uniforms_func = SubPixelDiffShaderSetUniforms;
+    }
+
+    return SHADER;
+}
+
 static void ShaderPassInit(ShaderPass* pass, LShader shader) {
     memset(pass, 0, sizeof(ShaderPass));
     pass->shader = shader;
@@ -4642,7 +4744,7 @@ static void SubPixelTick(GameState* gstate) {
 
     //
     {
-        ShaderPass* pass = BeginShaderPass(GetSubPixelShader());
+        ShaderPass* pass = BeginShaderPass(GetSubPixelDiffShader());
         f32 hwidth = 0.5f * gstate->renderw;
         f32 hheight = 0.5f * gstate->renderh;
         pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
