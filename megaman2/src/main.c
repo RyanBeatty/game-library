@@ -1738,6 +1738,25 @@ static void EnableSubPixelShader(LShader* shader, ShaderPass* pass) {
     glUniform1i(F_NFRAME, pass->nframe);
 }
 
+static void SubPixelShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+    static bool INIT = false;
+    Assert(cmd->type == CMD_DRAW_MESH);
+    if (!INIT) {
+        INIT = true;
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+    glUniform2f(shader->ftexture0_resolution_loc, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+
+    glUniformMatrix4fv(shader->vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+    glUniform4fv(shader->vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
+    glUniform2fv(shader->vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+    glUniform2fv(shader->vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+    glUniform1i(shader->fchargingstate_loc, cmd->meshcmd.charging_state);
+}
+
 static LShader GetSubPixelShader() {
     static const char* VSRC =
         "#version 330 core\n"
@@ -1798,6 +1817,7 @@ static LShader GetSubPixelShader() {
         INIT = true;
         LShaderInit(&SHADER, VSRC, FSRC);
         SHADER.enable_func = EnableSubPixelShader;
+        SHADER.set_uniforms_func = SubPixelShaderSetUniforms;
 
         // Att lookup.
         {
@@ -1870,7 +1890,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
 
                     glUniform1i(shader.fchargingstate_loc, cmd->meshcmd.charging_state);
                 } else {
-                    Assert(false);
                     shader.set_uniforms_func(&shader, cmd);
                 }
 
