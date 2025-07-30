@@ -1003,8 +1003,10 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
 
 typedef u32 ShaderId;
 
+// Forward declare
 struct ShaderPass;
-typedef void (*SetShaderFunc)(struct ShaderPass);
+typedef struct ShaderPass ShaderPass;
+typedef void (*SetShaderFunc)(ShaderPass*);
 
 typedef struct {
     ShaderId pid;  // program id.
@@ -1767,7 +1769,8 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
 
 #define MAX_CMDS 4092
 
-typedef struct {
+// No typedef because it is forward declared above.
+struct ShaderPass {
     ShaderId _sid;
     LShader shader;
 
@@ -1785,7 +1788,7 @@ typedef struct {
     u32 clen;
     u32 ccap;
     DrawCmd cmds[MAX_CMDS];
-} ShaderPass;
+};
 
 static void ShaderPassInit(ShaderPass* pass, LShader shader) {
     memset(pass, 0, sizeof(ShaderPass));
@@ -1819,6 +1822,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
         glUniform1i(shader.fnframe_loc, pass->nframe);
     } else {
         Assert(false);
+        shader.set_shader_func(pass);
     }
 
     for (u32 i = 0; i < pass->clen; ++i) {
