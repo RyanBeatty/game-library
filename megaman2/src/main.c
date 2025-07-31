@@ -2783,7 +2783,7 @@ LCORE void DrawLText(char* text, u32 len, Vec2 pos, Vec4 color) {
     DrawLTextEx(GetLFont(LFONT_DEFAULT), text, len, Vec2Lit(pos.x, pos.y), color);
 }
 
-LCORE void DrawLTextF(Vec2 pos, u32 fontsize, Vec4 color, const char* format, ...) {
+LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
     char buffer[1024];
 
     va_list args;
@@ -4724,6 +4724,22 @@ static void SubPixelTick(GameState* gstate) {
                                              Vec2Lit(scale, scale), rot, Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f));
             cmd->extra = (void*)&extra_compare;
         }
+        EndShaderPass();
+    }
+
+    {
+        static char TEXT[][256] = {
+            "NONE",
+            "BILINEAR",
+        };
+
+        ShaderPass* pass = BeginShaderPass(GetShader());
+        f32 hwidth = 0.5f * gstate->renderw;
+        f32 hheight = 0.5f * gstate->renderh;
+        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
+
+        DrawLTextF(Vec2Lit(-100.0f, -70.0f), LBLACK, "Filter: %s", TEXT[FILTER_IDX]);
+
         EndShaderPass();
     }
 
