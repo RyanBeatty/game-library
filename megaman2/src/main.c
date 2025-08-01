@@ -1976,15 +1976,15 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader = pass->shader;
-
     Assert(shader.enable_func != NULL);
+    Assert(shader.set_uniforms_func != NULL);
+
     shader.enable_func(&shader, pass);
 
     for (u32 i = 0; i < pass->clen; ++i) {
         DrawCmd* cmd = &pass->cmds[i];
         switch (cmd->type) {
             case CMD_DRAW_MESH: {
-                Assert(shader.set_uniforms_func != NULL);
                 shader.set_uniforms_func(&shader, cmd);
 
                 glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
