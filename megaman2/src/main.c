@@ -1689,27 +1689,29 @@ static LShader GetShader() {
 }
 
 static LShader GetEffectsShader() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 2) in vec2 vTextCoords;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "uniform vec4 vUColor;\n"
-        "uniform vec2 vUVOffset;\n"
-        "uniform vec2 vUVScale;\n"
-        "\n"
-        "out vec4 fColor;\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fColor = vUColor;\n"
-        "}\0";
+    // clang-format off
+    static const char* VSRC = GLSL(
+        layout (location = 0) in vec3 vPos;
+        layout (location = 2) in vec2 vTextCoords;
+        
+        uniform mat4 vModel;
+        uniform mat4 vView;
+        uniform mat4 vProj;
+        
+        uniform vec4 vUColor;
+        uniform vec2 vUVOffset;
+        uniform vec2 vUVScale;
+        
+        out vec4 fColor;
+        out vec2 fTextCoords;
+
+        void main() {
+           fTextCoords = vUVOffset + (vUVScale * vTextCoords);
+           gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
+           fColor = vUColor;
+        }
+    );
+    // clang-format on
 
     // clang-format off
     static const char* FSRC = GLSL(
