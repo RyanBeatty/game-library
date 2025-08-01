@@ -1589,7 +1589,7 @@ LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
 }
 
-static LShader GetShader() {
+static LShader GetDefaultShader() {
     // clang-format off
     static const char* VSRC = GLSL(
         layout (location = 0) in vec3 vPos;
@@ -1776,6 +1776,145 @@ static LShader GetEffectsShader() {
         LShaderInit(&SHADER, VSRC, FSRC);
         SHADER.enable_func = EnableEffectsShader;
         SHADER.set_uniforms_func = EffectsShaderSetUniforms;
+    }
+
+    return SHADER;
+}
+
+LCORE void EnableGameShader(LShader* shader, ShaderPass* pass) {
+    static bool INIT = false;
+    static i32 V_VIEW = 0;
+    static i32 V_PROJ = 0;
+    static i32 F_RESOLUTION = 0;
+    static i32 F_TIMER = 0;
+    static i32 F_NFRAME = 0;
+
+    glUseProgram(shader->pid);
+
+    if (!INIT) {
+        INIT = true;
+        V_VIEW = glGetUniformLocation(shader->pid, "vView");
+        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+        F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
+        F_TIMER = glGetUniformLocation(shader->pid, "timer");
+        F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
+
+        // IMPORTANT! Set texture uniform loc.
+        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
+    }
+
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+
+    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
+    glUniform1f(F_TIMER, pass->timer);
+
+    glUniform1i(F_NFRAME, pass->nframe);
+}
+
+LCORE void GameShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+    static bool INIT = false;
+    static i32 V_MODEL = 0;
+    static i32 V_UVCOLOR = 0;
+    static i32 V_UVSCALE = 0;
+    static i32 V_UVOFFSET = 0;
+    static i32 F_TEXTURE0_RESOLUTION = 0;
+    static i32 F_CHARGING_STATE = 0;
+
+    Assert(cmd->type == CMD_DRAW_MESH);
+    if (!INIT) {
+        INIT = true;
+
+        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
+        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+        F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+
+        F_CHARGING_STATE = glGetUniformLocation(shader->pid, "fChargingState");
+    }
+
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+
+    glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
+}
+
+static LShader GetGameShader() {
+    // clang-format off
+    static const char* VSRC = GLSL(
+        layout (location = 0) in vec3 vPos;
+        layout (location = 2) in vec2 vTextCoords;
+        
+        uniform mat4 vModel;
+        uniform mat4 vView;
+        uniform mat4 vProj;
+        uniform vec4 vUColor;
+        uniform vec2 vUVOffset;
+        uniform vec2 vUVScale;
+        
+        out vec4 fColor;
+        out vec2 fTextCoords;
+
+        void main() {
+           fTextCoords = vUVOffset + (vUVScale * vTextCoords);
+           gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
+           fColor = vUColor;
+        }
+    );
+    // clang-format on
+
+    // clang-format off
+    static const char* FSRC = GLSL(
+        in vec4 fColor; in vec2 fTextCoords;
+
+        uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
+        uniform int NFrame;
+        uniform int fChargingState;
+
+        out vec4 FragColor;
+
+        void main() {
+            vec4 txColor = texture(texture0, fTextCoords);
+            // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+            // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+            if (txColor.a < 0.01 && fChargingState == 0) {
+                discard;
+            }
+            // For blending to work here properly, its important that either texture is specified or texture
+            // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+            FragColor = txColor * fColor;
+
+            vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);
+            bool is_black = txColor == vec4(0, 0, 0, 1);
+            if (fChargingState == 1) {
+                if (is_black && NFrame % 3 == 0) {
+                    FragColor = charge_color;
+                }
+            } else if (fChargingState == 2) {
+                if (is_black) {
+                    vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 8.0));
+                    FragColor = glow_color;
+                }
+            }
+        }
+    );
+    // clang-format on
+
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+        SHADER.enable_func = EnableDefaultShader;
+        SHADER.set_uniforms_func = DefaultShaderSetUniforms;
     }
 
     return SHADER;
@@ -4513,7 +4652,7 @@ static const i32 KSHOOT = KEY_X;
 static void SceneDefaultTick(GameState* gstate) {
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetShader());
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
@@ -4603,7 +4742,7 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
 
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetShader());
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
 
     ClearBuffer(LBLUE);
 
@@ -4741,7 +4880,7 @@ static void SubPixelTick(GameState* gstate) {
             "XOR",
         };
 
-        ShaderPass* pass = BeginShaderPass(GetShader());
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
         f32 hwidth = 0.5f * gstate->renderw;
         f32 hheight = 0.5f * gstate->renderh;
         pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -1.0f, 1.0f);
@@ -4760,7 +4899,7 @@ static void TrueTypeTick(GameState* gstate) {
 
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetShader());
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
 
     ClearBuffer(LBLUE);
 
@@ -4793,7 +4932,7 @@ static void TitleScreenTick(GameState* gstate) {
 
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetShader());
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
 
     ClearBuffer(LBLACK);
 
@@ -4824,7 +4963,7 @@ static void StageSelectTick(GameState* gstate) {
 
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetShader());
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
 
     ClearBuffer(LRED);
 
@@ -5147,7 +5286,7 @@ static void StageTick(GameState* gstate) {
     static const f32 GRAVITY = 350.0f;
 
     BeginRender(gstate->dt);
-    ShaderPass* pass = BeginShaderPass(GetShader());
+    ShaderPass* pass = BeginShaderPass(GetGameShader());
     pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
 
     u32 width = gstate->renderw;
@@ -6264,7 +6403,7 @@ static void StageTick(GameState* gstate) {
 
     // UI. origin at bottom left hand of screen.
     {
-        ShaderPass* pass = BeginShaderPass(GetShader());
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
         pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
 
         u32 width = gstate->renderw;
@@ -6332,7 +6471,7 @@ LCORE void Stage2Tick(GameState* gstate) {
     BeginRender(gstate->dt);
 
     {
-        ShaderPass* pass = BeginShaderPass(GetShader());
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
         pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
         // ClearBuffer(LBLUE);
 
@@ -6352,7 +6491,7 @@ LCORE void Stage2Tick(GameState* gstate) {
 
     // UI. origin at bottom left hand of screen.
     {
-        ShaderPass* pass = BeginShaderPass(GetShader());
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
         pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
 
         u32 width = gstate->renderw;
@@ -6426,7 +6565,7 @@ static void GameStateInit(GameState* gstate) {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_SUB_PIXEL_RENDER);
+    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
