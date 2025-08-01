@@ -1663,6 +1663,52 @@ static LShader GetShader() {
     return SHADER;
 }
 
+LCORE void EnableEffectsShader(LShader* shader, ShaderPass* pass) {
+    static bool INIT = false;
+    static i32 V_VIEW = 0;
+    static i32 V_PROJ = 0;
+
+    glUseProgram(shader->pid);
+
+    if (!INIT) {
+        INIT = true;
+        V_VIEW = glGetUniformLocation(shader->pid, "vView");
+        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+
+        // IMPORTANT! Set texture uniform loc.
+        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
+    }
+
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+}
+
+LCORE void EffectsShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+    static bool INIT = false;
+    static i32 V_MODEL = 0;
+    static i32 V_UVCOLOR = 0;
+    static i32 V_UVSCALE = 0;
+    static i32 V_UVOFFSET = 0;
+
+    Assert(cmd->type == CMD_DRAW_MESH);
+    if (!INIT) {
+        INIT = true;
+
+        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
+        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+    }
+
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+}
+
 static LShader GetEffectsShader() {
     // clang-format off
     static const char* VSRC = GLSL(
@@ -1728,22 +1774,8 @@ static LShader GetEffectsShader() {
     if (!INIT) {
         INIT = true;
         LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
-            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
+        SHADER.enable_func = EnableEffectsShader;
+        SHADER.set_uniforms_func = EffectsShaderSetUniforms;
     }
 
     return SHADER;
@@ -1945,38 +1977,15 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader = pass->shader;
 
-    if (shader.enable_func == NULL) {
-        glUseProgram(shader.pid);
-
-        glUniformMatrix4fv(shader.vview_loc, 1, GL_FALSE, (const f32*)&pass->view.m);
-        glUniformMatrix4fv(shader.vproj_loc, 1, GL_FALSE, (const f32*)&pass->proj.m);
-
-        glUniform2fv(shader.fresolution_loc, 1, (const f32*)&pass->resolution.f);
-        glUniform1f(shader.ftimer_loc, pass->timer);
-
-        glUniform1i(shader.fnframe_loc, pass->nframe);
-    } else {
-        shader.enable_func(&shader, pass);
-    }
+    Assert(shader.enable_func != NULL);
+    shader.enable_func(&shader, pass);
 
     for (u32 i = 0; i < pass->clen; ++i) {
         DrawCmd* cmd = &pass->cmds[i];
         switch (cmd->type) {
             case CMD_DRAW_MESH: {
-                if (shader.set_uniforms_func == NULL) {
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
-                    glUniform2f(shader.ftexture0_resolution_loc, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
-
-                    glUniformMatrix4fv(shader.vmodel_loc, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-                    glUniform4fv(shader.vucolor_loc, 1, (const f32*)&cmd->meshcmd.color.f);
-                    glUniform2fv(shader.vuvoffset_loc, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-                    glUniform2fv(shader.vuvscale_loc, 1, (const f32*)&cmd->meshcmd.uvscale.f);
-
-                    glUniform1i(shader.fchargingstate_loc, cmd->meshcmd.charging_state);
-                } else {
-                    shader.set_uniforms_func(&shader, cmd);
-                }
+                Assert(shader.set_uniforms_func != NULL);
+                shader.set_uniforms_func(&shader, cmd);
 
                 glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
                                (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
