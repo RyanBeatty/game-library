@@ -1874,13 +1874,26 @@ static LShader GetGameShader() {
     static const char* FSRC = GLSL(
         in vec4 fColor; in vec2 fTextCoords;
 
-        uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
+        uniform sampler2D texture0; 
+        uniform vec2 Texture0Resolution; 
+        uniform vec2 resolution; 
+        uniform float timer;
         uniform int NFrame;
         uniform int fChargingState;
 
         out vec4 FragColor;
 
+        vec2 AdjustUV(vec2 uv, ivec2 txdims) {
+            vec2 px = uv * txdims;
+            vec2 seam = floor(px + 0.5);
+            vec2 dudv = fwidth(px);
+            px = seam + clamp((px - seam) / dudv, -0.5, 0.5);
+            return px / txdims;
+        }
+
         void main() {
+            // vec2 uv = fTextCoords;
+            // uv = AdjustUV(uv, textureSize(texture0, 0));
             vec4 txColor = texture(texture0, fTextCoords);
             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
             // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
