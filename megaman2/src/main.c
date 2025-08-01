@@ -1892,6 +1892,14 @@ static LShader GetSubPixelShader() {
                              clamp(0.5 / alpha * (px_fract - 1.0) + 0.5, 0.0, 0.5);
             return (floor(px) + px_offset) / txdims;
         }
+
+        vec2 iq_uv(vec2 uv, ivec2 txdims) {
+            vec2 px = uv * txdims;
+            vec2 seam = floor(px + 0.5);
+            vec2 dudv = fwidth(px);
+            px = seam + clamp((px - seam) / dudv, -0.5, 0.5);
+            return px / txdims;
+        }
         
         void main() {
             vec2 uv = fTextCoords;
@@ -1906,6 +1914,9 @@ static LShader GetSubPixelShader() {
             vec2 uv2 = cstantos_uv(uv, txdims);
             vec4 c2 = texture(texture0, uv2);
 
+            vec2 uv3 = iq_uv(uv, txdims);
+            vec4 c3 = texture(texture0, uv3);
+
             switch (FilterIdx) {
                 case 0: {
                     FragColor = c0;
@@ -1917,6 +1928,10 @@ static LShader GetSubPixelShader() {
                 }
                 case 2: {
                     FragColor = c2;
+                    break;
+                }
+                case 3: {
+                    FragColor = c3;
                     break;
                 }
                 default: {
@@ -4677,7 +4692,7 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
 
 static void SubPixelTick(GameState* gstate) {
     static i32 FILTER_IDX = 1;
-    static const i32 FILTER_COUNT = 3;
+    static const i32 FILTER_COUNT = 4;
     if (!gstate->init) {
         // byte data[] = {255, 0, 0, 255};
         // TX = TextureFromBuffer(data, 1, 1);
@@ -4749,6 +4764,7 @@ static void SubPixelTick(GameState* gstate) {
             "NONE",
             "BILINEAR",
             "CSTANTOS",
+            "XOR",
         };
 
         ShaderPass* pass = BeginShaderPass(GetShader());
