@@ -1711,52 +1711,40 @@ static LShader GetEffectsShader() {
         "   fColor = vUColor;\n"
         "}\0";
 
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec4 fColor;\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "vec2 uvremap(vec2 uv)\n"
-        "{\n"
-        "    // as we near the edge of our screen apply greater distortion using a cubic function\n"
-        "    vec2 curvature = vec2(7.0, 7.0);\n"
-        "    uv = uv * 2.0 - 1.0;\n"
-        "    vec2 offset = abs(uv.yx) / vec2(curvature.x, curvature.y);\n"
-        "    uv = uv + uv * offset * offset;\n"
-        "    uv = uv * 0.5 + 0.5;\n"
-        "    return uv;\n"
-        "}\n"
-        "\n"
-        "vec4 scanLineIntensity(float uv, float resolution, float opacity)\n"
-        "{\n"
-        "    float PI = 3.1415926535;\n"
-        "    float intensity = sin(uv * resolution * PI * 2.0);\n"
-        "    intensity = ((0.5 * intensity) + 0.5) * 0.9 + 0.1;\n"
-        "    return vec4(vec3(pow(intensity, opacity)), 1.0);\n"
-        "}\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   vec2 uv = fTextCoords;\n"
-        "   vec4 txcolor = texture(texture0, uv);\n"
-        "   FragColor = txcolor;\n"
-        // "   vec2 uv = uvremap(fTextCoords);\n"
-        // // "   vec2 uv = fTextCoords;\n"
-        // "   vec4 txcolor = texture(texture0, uv);\n"
-        // "   txcolor *= scanLineIntensity(uv.x, 256.0 * 3.0, 0.2);\n"
-        // "   txcolor *= scanLineIntensity(uv.y, 224.0 * 3.0, 0.2);\n"
-        // " if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {\n"
-        // "   txcolor = vec4(0.0, 0.0, 0.0, 1.0);\n"
-        // " }\n"
-        // "   FragColor = txcolor;\n"
-        //"   float grayscale = max(txcolor.r, max(txcolor.g, txcolor.b));\n"
-        // "   FragColor = vec4(grayscale, grayscale, grayscale, 1.0);\n"
-        "}\0";
+    // clang-format off
+    static const char* FSRC = GLSL(
+        in vec4 fColor;
+        in vec2 fTextCoords;
+
+        uniform sampler2D texture0;
+        
+        out vec4 FragColor;
+        
+        vec2 uvremap(vec2 uv) {
+            // as we near the edge of our screen apply greater distortion using a cubic function
+            vec2 curvature = vec2(7.0, 7.0);
+            uv = uv * 2.0 - 1.0;
+            vec2 offset = abs(uv.yx) / vec2(curvature.x, curvature.y);
+            uv = uv + uv * offset * offset;
+            uv = uv * 0.5 + 0.5;
+            return uv;
+        }
+        
+        vec4 scanLineIntensity(float uv, float resolution, float opacity) {
+            float PI = 3.1415926535;
+            float intensity = sin(uv * resolution * PI * 2.0);
+            intensity = ((0.5 * intensity) + 0.5) * 0.9 + 0.1;
+            return vec4(vec3(pow(intensity, opacity)), 1.0);
+        }
+        
+        void main() {
+           vec2 uv = fTextCoords;
+           vec4 txcolor = texture(texture0, uv);
+           FragColor = txcolor;
+        }
+    );
+    // clang-format on
+
     static bool INIT = false;
     static LShader SHADER = {0};
 
