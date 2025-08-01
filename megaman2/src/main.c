@@ -1592,69 +1592,66 @@ LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
 }
 
 static LShader GetShader() {
-    static const char* VSRC =
-        "#version 330 core\n"
-        "layout (location = 0) in vec3 vPos;\n"
-        "layout (location = 2) in vec2 vTextCoords;\n"
-        "\n"
-        "uniform mat4 vModel;\n"
-        "uniform mat4 vView;\n"
-        "uniform mat4 vProj;\n"
-        "\n"
-        "uniform vec4 vUColor;\n"
-        "uniform vec2 vUVOffset;\n"
-        "uniform vec2 vUVScale;\n"
-        "\n"
-        "out vec4 fColor;\n"
-        "out vec2 fTextCoords;\n"
-        "void main()\n"
-        "{\n"
-        "   fTextCoords = vUVOffset + (vUVScale * vTextCoords);\n"
-        "   gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);\n"
-        "   fColor = vUColor;\n"
-        "}\0";
+    // clang-format off
+    static const char* VSRC = GLSL(
+        layout (location = 0) in vec3 vPos;
+        layout (location = 2) in vec2 vTextCoords;
+        
+        uniform mat4 vModel;
+        uniform mat4 vView;
+        uniform mat4 vProj;
+        uniform vec4 vUColor;
+        uniform vec2 vUVOffset;
+        uniform vec2 vUVScale;
+        
+        out vec4 fColor;
+        out vec2 fTextCoords;
 
-    static const char* FSRC =
-        "#version 330 core\n"
-        "\n"
-        "in vec4 fColor;\n"
-        "in vec2 fTextCoords;\n"
-        "\n"
-        "uniform sampler2D texture0;\n"
-        "uniform vec2 Texture0Resolution;\n"
-        "uniform vec2 resolution;\n"
-        "uniform float timer;\n"
-        "uniform int NFrame;\n"
-        "\n"
-        "uniform int fChargingState;\n"
-        "\n"
-        "out vec4 FragColor;\n"
-        "\n"
-        "void main()\n"
-        "{\n"
-        "   vec4 txColor = texture(texture0, fTextCoords);\n"
-        // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
-        // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-        "   if (txColor.a < 0.01 && fChargingState == 0) {\n"
-        "       discard;\n"
-        "   }\n"
-        // For blending to work here properly, its important that either texture is specified or texture
-        // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
-        "    FragColor = txColor * fColor;\n"
-        "\n"
-        "   vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);\n"
-        "   bool is_black = txColor == vec4(0, 0, 0, 1);\n"
-        "   if (fChargingState == 1) {\n"
-        "       if (is_black && NFrame % 3 == 0) {\n"
-        "           FragColor = charge_color;\n"
-        "       }\n"
-        "   } else if (fChargingState == 2) {\n"
-        "       if (is_black) {\n"
-        "           vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 8.0));"
-        "           FragColor = glow_color;\n"
-        "       }\n"
-        "   }\n"
-        "}\0";
+        void main() {
+           fTextCoords = vUVOffset + (vUVScale * vTextCoords);
+           gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
+           fColor = vUColor;
+        }
+    );
+    // clang-format on
+
+    // clang-format off
+    static const char* FSRC = GLSL(
+        in vec4 fColor; in vec2 fTextCoords;
+
+        uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
+        uniform int NFrame;
+        uniform int fChargingState;
+
+        out vec4 FragColor;
+
+        void main() {
+            vec4 txColor = texture(texture0, fTextCoords);
+            // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+            // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+            if (txColor.a < 0.01 && fChargingState == 0) {
+                discard;
+            }
+            // For blending to work here properly, its important that either texture is specified or texture
+            // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+            FragColor = txColor * fColor;
+
+            vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);
+            bool is_black = txColor == vec4(0, 0, 0, 1);
+            if (fChargingState == 1) {
+                if (is_black && NFrame % 3 == 0) {
+                    FragColor = charge_color;
+                }
+            } else if (fChargingState == 2) {
+                if (is_black) {
+                    vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 8.0));
+                    FragColor = glow_color;
+                }
+            }
+        }
+    );
+    // clang-format on
+
     static bool INIT = false;
     static LShader SHADER = {0};
 
