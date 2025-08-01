@@ -1524,7 +1524,6 @@ struct ShaderPass {
     DrawCmd cmds[MAX_CMDS];
 };
 
-// TODO: use
 LCORE void EnableDefaultShader(LShader* shader, ShaderPass* pass) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
@@ -1556,7 +1555,6 @@ LCORE void EnableDefaultShader(LShader* shader, ShaderPass* pass) {
     glUniform1i(F_NFRAME, pass->nframe);
 }
 
-// TODO: use
 LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
@@ -1658,28 +1656,8 @@ static LShader GetShader() {
     if (!INIT) {
         INIT = true;
         LShaderInit(&SHADER, VSRC, FSRC);
-
-        // Att lookup.
-        {
-            SHADER.vpos_loc = glGetAttribLocation(SHADER.pid, "vPos");
-            SHADER.vtextcoords_loc = glGetAttribLocation(SHADER.pid, "vTextCoords");
-
-            SHADER.vmodel_loc = glGetUniformLocation(SHADER.pid, "vModel");
-            SHADER.vview_loc = glGetUniformLocation(SHADER.pid, "vView");
-            SHADER.vproj_loc = glGetUniformLocation(SHADER.pid, "vProj");
-            SHADER.vucolor_loc = glGetUniformLocation(SHADER.pid, "vUColor");
-            SHADER.vuvoffset_loc = glGetUniformLocation(SHADER.pid, "vUVOffset");
-            SHADER.vuvscale_loc = glGetUniformLocation(SHADER.pid, "vUVScale");
-            SHADER.fresolution_loc = glGetUniformLocation(SHADER.pid, "resolution");
-            SHADER.ftimer_loc = glGetUniformLocation(SHADER.pid, "timer");
-            SHADER.ftexture0_resolution_loc = glGetUniformLocation(SHADER.pid, "Texture0Resolution");
-            SHADER.fnframe_loc = glGetUniformLocation(SHADER.pid, "NFrame");
-
-            SHADER.fchargingstate_loc = glGetUniformLocation(SHADER.pid, "fChargingState");
-
-            glUseProgram(SHADER.pid);
-            glUniform1i(glGetUniformLocation(SHADER.pid, "texture0"), 0);
-        }
+        SHADER.enable_func = EnableDefaultShader;
+        SHADER.set_uniforms_func = DefaultShaderSetUniforms;
     }
 
     return SHADER;
