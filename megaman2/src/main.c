@@ -5215,6 +5215,7 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
         case PS_IDLE: {
             if (shooting) {
                 GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_SHOOT_IDLE, 0.0f, 1.0f);
+                graphics->pos_offset = Vec3Lit(2.0f, 0.0f, 0.0f);
             } else {
                 GraphicsInfoSetSpriteFromAseprite(graphics, tx, M_IDLE, 0.0f, 1.0f);
             }
