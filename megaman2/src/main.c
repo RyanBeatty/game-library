@@ -1891,9 +1891,14 @@ static LShader GetGameShader() {
             return px / txdims;
         }
 
+        vec2 NearestUV(vec2 uv, ivec2 txdims) {
+            return (floor(uv * txdims) + 0.5) / txdims;
+        }
+
         void main() {
             vec2 uv = fTextCoords;
-            uv = AdjustUV(uv, textureSize(texture0, 0));
+            ivec2 txdims = textureSize(texture0, 0);
+            uv = AdjustUV(uv, txdims);
             vec4 txColor = texture(texture0, fTextCoords);
             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
             // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
@@ -1905,7 +1910,7 @@ static LShader GetGameShader() {
             FragColor = txColor * fColor;
 
             vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);
-            bool is_black = txColor == vec4(0, 0, 0, 1);
+            bool is_black = texture(texture0, NearestUV(fTextCoords, txdims)) == vec4(0, 0, 0, 1);
             if (fChargingState == 1) {
                 if (is_black && NFrame % 3 == 0) {
                     FragColor = charge_color;
