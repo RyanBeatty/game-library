@@ -1892,8 +1892,8 @@ static LShader GetGameShader() {
         }
 
         void main() {
-            // vec2 uv = fTextCoords;
-            // uv = AdjustUV(uv, textureSize(texture0, 0));
+            vec2 uv = fTextCoords;
+            uv = AdjustUV(uv, textureSize(texture0, 0));
             vec4 txColor = texture(texture0, fTextCoords);
             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
             // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
