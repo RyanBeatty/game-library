@@ -2054,6 +2054,11 @@ static LShader GetSubPixelShader() {
             px = seam + clamp((px - seam) / dudv, -0.5, 0.5);
             return px / txdims;
         }
+
+        vec2 fat_uv(vec2 uv, ivec2 txdims) {
+            vec2 px = uv * txdims;    
+            return (floor(px) + min(fract(px) / fwidth(px), 1.0) - 0.5) / txdims;
+        }
         
         void main() {
             vec2 uv = fTextCoords;
@@ -2071,6 +2076,9 @@ static LShader GetSubPixelShader() {
             vec2 uv3 = iq_uv(uv, txdims);
             vec4 c3 = texture(texture0, uv3);
 
+            vec2 uv4 = fat_uv(uv, txdims);
+            vec4 c4 = texture(texture0, uv4);
+
             switch (FilterIdx) {
                 case 0: {
                     FragColor = c0;
@@ -2086,6 +2094,10 @@ static LShader GetSubPixelShader() {
                 }
                 case 3: {
                     FragColor = c3;
+                    break;
+                }
+                case 4: {
+                    FragColor = c4;
                     break;
                 }
                 default: {
@@ -4823,7 +4835,7 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
 
 static void SubPixelTick(GameState* gstate) {
     static i32 FILTER_IDX = 1;
-    static const i32 FILTER_COUNT = 4;
+    static const i32 FILTER_COUNT = 5;
     if (!gstate->init) {
         // byte data[] = {255, 0, 0, 255};
         // TX = TextureFromBuffer(data, 1, 1);
@@ -4892,10 +4904,7 @@ static void SubPixelTick(GameState* gstate) {
 
     {
         static char TEXT[][256] = {
-            "NONE",
-            "BILINEAR",
-            "CSTANTOS",
-            "XOR",
+            "NONE", "BILINEAR", "CSTANTOS", "XOR", "FAT",
         };
 
         ShaderPass* pass = BeginShaderPass(GetDefaultShader());
@@ -6584,7 +6593,7 @@ static void GameStateInit(GameState* gstate) {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
+    GameStateLoadScene(gstate, SCENE_SUB_PIXEL_RENDER);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
