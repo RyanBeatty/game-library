@@ -6556,7 +6556,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
 
-    u32 scale = 3;
+    u32 scale = 4;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowPosition(100, 100);
     // SetWindowState(FLAG_WINDOW_UNDECORATED);
@@ -6593,7 +6593,7 @@ static void GameStateInit(GameState* gstate) {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_SUB_PIXEL_RENDER);
+    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
