@@ -6557,7 +6557,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
 
-    u32 scale = 4;
+    u32 scale = 3;
     InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
     SetWindowPosition(100, 100);
     // SetWindowState(FLAG_WINDOW_UNDECORATED);
