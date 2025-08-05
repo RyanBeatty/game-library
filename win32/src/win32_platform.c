@@ -1,14 +1,23 @@
 #include <stdio.h>
 #include <windows.h>
 
+typedef enum { WKEY_A = 0x41 } WindowsKey;
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY: {
             PostQuitMessage(0);
             return 0;
         }
+        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
         case WM_KEYDOWN: {
+            // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
             switch (wParam) {
+                case WKEY_A: {
+                    // i32 repeat_count = lParam & 0xFFFF;
+                    printf("key a down\n");
+                    break;
+                }
                 case VK_ESCAPE: {
                     PostQuitMessage(0);
                     break;
@@ -19,17 +28,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             }
             return 0;
         }
-        // case WM_PAINT: {
-        //     PAINTSTRUCT ps;
-        //     HDC hdc = BeginPaint(hwnd, &ps);
-
-        //     // All painting occurs here, between BeginPaint and EndPaint.
-
-        //     FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-
-        //     EndPaint(hwnd, &ps);
-        //     return 0;
-        // }
+        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
+        case WM_KEYUP: {
+            // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+            switch (wParam) {
+                case WKEY_A: {
+                    printf("Key a up\n");
+                    break;
+                }
+                default: {
+                    printf("Unknown key up %lld\n", wParam);
+                }
+            }
+            return 0;
+        }
         default: {
             return DefWindowProc(hwnd, uMsg, wParam, lParam);
         }
