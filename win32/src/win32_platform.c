@@ -66,13 +66,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ShowWindow(window_handle, nCmdShow);
 
-    Sleep(5000);
-
-    // MSG msg = {};
-    // while (GetMessage(&msg, NULL, 0, 0) > 0) {
-    //     TranslateMessage(&msg);
-    //     DispatchMessage(&msg);
-    // }
+    MSG msg = {};
+    // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
+    while (GetMessage(&msg, NULL, 0, 0) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
 
     return 0;
 }
