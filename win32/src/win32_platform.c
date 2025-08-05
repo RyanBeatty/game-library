@@ -89,12 +89,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+HWND Win32CreateWindow(HINSTANCE hinstance) {
     static char CLASS_NAME[] = "L Engine";
 
     WNDCLASS wc = {
         .lpfnWndProc = WindowProc,
-        .hInstance = hInstance,
+        .hInstance = hinstance,
         .lpszClassName = CLASS_NAME,
         .style = CS_OWNDC,  // I think important for opengl.
     };
@@ -122,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
                                         NULL,       // Parent window
                                         NULL,       // Menu
-                                        hInstance,  // Instance handle
+                                        hinstance,  // Instance handle
                                         NULL        // Additional application data
     );
 
@@ -130,6 +130,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         fprintf(stderr, "Failed to create window");
         exit(1);
     }
+
+    return window_handle;
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    HWND window_handle = Win32CreateWindow(hInstance);
 
     // GL setup.
     // https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
