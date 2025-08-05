@@ -9,6 +9,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         }
         case WM_KEYDOWN: {
             switch (wParam) {
+                case VK_ESCAPE: {
+                    PostQuitMessage(0);
+                    break;
+                }
                 default: {
                     printf("Unknown key down %lld\n", wParam);
                 }
