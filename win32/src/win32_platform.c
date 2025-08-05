@@ -1,6 +1,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
+// Include after windows.h
+#include <GL/gl.h>
 
 #ifndef UNITY_BUILD
 #include "shared.h"
@@ -9,36 +11,36 @@
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 
-// https://www.ascii-code.com/
-typedef enum {
-    LKEY_NONE = 0,
-    LKEY_ESCAPE = 33,
-    LKEY_A = 65,
-} LKey;
+// // https://www.ascii-code.com/
+// typedef enum {
+//     LKEY_NONE = 0,
+//     LKEY_ESCAPE = 33,
+//     LKEY_A = 65,
+// } LKey;
 
-#define MAX_KEYS 256
+// #define MAX_KEYS 256
 
-static LKey W32KeyToLKey(W32Key key) {
-    switch (key) {
-        case WKEY_ESCAPE: {
-            return LKEY_ESCAPE;
-        }
-        case WKEY_A: {
-            return LKEY_A;
-        }
-        default: {
-            return LKEY_NONE;
-        }
-    }
-}
+// static LKey W32KeyToLKey(W32Key key) {
+//     switch (key) {
+//         case WKEY_ESCAPE: {
+//             return LKEY_ESCAPE;
+//         }
+//         case WKEY_A: {
+//             return LKEY_A;
+//         }
+//         default: {
+//             return LKEY_NONE;
+//         }
+//     }
+// }
 
-typedef struct {
-    bool down[MAX_KEYS];
-    bool up[MAX_KEYS];
-    bool was_down[MAX_KEYS];
-} KeyboardInput;
+// typedef struct {
+//     bool down[MAX_KEYS];
+//     bool up[MAX_KEYS];
+//     bool was_down[MAX_KEYS];
+// } KeyboardInput;
 
-static KeyboardInput W32Input;
+// static KeyboardInput W32Input;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -48,24 +50,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         }
         // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
         case WM_KEYDOWN: {
-            LKey key = W32KeyToLKey(wParam);
-            if (key == LKEY_ESCAPE) {
-                PostQuitMessage(0);
-            }
-            // switch (wParam) {
-            //     case WKEY_A: {
-            //         // i32 repeat_count = lParam & 0xFFFF;
-            //         printf("key a down\n");
-            //         break;
-            //     }
-            //     case VK_ESCAPE: {
-            //         PostQuitMessage(0);
-            //         break;
-            //     }
-            //     default: {
-            //         printf("Unknown key down %lld\n", wParam);
-            //     }
+            // if (key == LKEY_ESCAPE) {
+            //     PostQuitMessage(0);
             // }
+            switch (wParam) {
+                case WKEY_A: {
+                    // i32 repeat_count = lParam & 0xFFFF;
+                    printf("key a down\n");
+                    break;
+                }
+                case VK_ESCAPE: {
+                    PostQuitMessage(0);
+                    break;
+                }
+                default: {
+                    printf("Unknown key down %lld\n", wParam);
+                }
+            }
             return 0;
         }
         // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
@@ -95,6 +96,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         .lpfnWndProc = WindowProc,
         .hInstance = hInstance,
         .lpszClassName = CLASS_NAME,
+        .style = CS_OWNDC,  // I think important for opengl.
     };
 
     ATOM res = RegisterClass(&wc);
@@ -129,13 +131,60 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         exit(1);
     }
 
+    // GL setup.
+    // https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
+    {
+        PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
+                                     1,
+                                     PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,  // Flags
+                                     PFD_TYPE_RGBA,  // The kind of framebuffer. RGBA or palette.
+                                     32,             // Colordepth of the framebuffer.
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     24,  // Number of bits for the depthbuffer
+                                     8,   // Number of bits for the stencilbuffer
+                                     0,   // Number of Aux buffers in the framebuffer.
+                                     PFD_MAIN_PLANE,
+                                     0,
+                                     0,
+                                     0,
+                                     0};
+
+        HDC dc = GetDC(window_handle);
+        i32 w32_chosen_px_format = ChoosePixelFormat(dc, &pfd);
+        assert(w32_chosen_px_format != 0);
+        SetPixelFormat(dc, w32_chosen_px_format, &pfd);
+
+        HGLRC glctx = wglCreateContext(dc);
+        wglMakeCurrent(dc, glctx);
+        printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+    }
+
     ShowWindow(window_handle, nCmdShow);
+
+    HDC dc = GetDC(window_handle);
 
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
+
+        glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        SwapBuffers(dc);
     }
 
     return 0;
