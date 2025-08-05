@@ -2,18 +2,43 @@
 #include <stdio.h>
 #include <windows.h>
 
-typedef enum { WKEY_A = 0x41 } WindowsKey;
+#ifndef UNITY_BUILD
+#include "shared.h"
+#endif
 
+// https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
+
+// https://www.ascii-code.com/
 typedef enum {
+    LKEY_NONE = 0,
+    LKEY_ESCAPE = 33,
     LKEY_A = 65,
 } LKey;
 
 #define MAX_KEYS 256
+
+static LKey W32KeyToLKey(W32Key key) {
+    switch (key) {
+        case WKEY_ESCAPE: {
+            return LKEY_ESCAPE;
+        }
+        case WKEY_A: {
+            return LKEY_A;
+        }
+        default: {
+            return LKEY_NONE;
+        }
+    }
+}
+
 typedef struct {
     bool down[MAX_KEYS];
     bool up[MAX_KEYS];
     bool was_down[MAX_KEYS];
 } KeyboardInput;
+
+static KeyboardInput W32Input;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -23,21 +48,24 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         }
         // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
         case WM_KEYDOWN: {
-            // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-            switch (wParam) {
-                case WKEY_A: {
-                    // i32 repeat_count = lParam & 0xFFFF;
-                    printf("key a down\n");
-                    break;
-                }
-                case VK_ESCAPE: {
-                    PostQuitMessage(0);
-                    break;
-                }
-                default: {
-                    printf("Unknown key down %lld\n", wParam);
-                }
+            LKey key = W32KeyToLKey(wParam);
+            if (key == LKEY_ESCAPE) {
+                PostQuitMessage(0);
             }
+            // switch (wParam) {
+            //     case WKEY_A: {
+            //         // i32 repeat_count = lParam & 0xFFFF;
+            //         printf("key a down\n");
+            //         break;
+            //     }
+            //     case VK_ESCAPE: {
+            //         PostQuitMessage(0);
+            //         break;
+            //     }
+            //     default: {
+            //         printf("Unknown key down %lld\n", wParam);
+            //     }
+            // }
             return 0;
         }
         // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keyup

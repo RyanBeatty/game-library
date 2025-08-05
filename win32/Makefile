@@ -21,7 +21,7 @@ LDFLAGS := $(LDFLAGS) -lm $(PLATFORM_LDFLAGS)
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. Make will incorrectly expand these otherwise.
 # SRCS := $(shell find $(SRC_DIRS) -name '*.cpp' -or -name '*.c' -or -name '*.s')
-SRCS := $(SRC_DIRS)/win32_platform.c
+SRCS := $(SRC_DIRS)/all.c
 
 # String substitution for every C/C++ file.
 # As an example, hello.cpp turns into ./build/hello.cpp.o
@@ -36,7 +36,7 @@ INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 # Add a prefix to INC_DIRS. So moduleA would become -ImoduleA. GCC understands this -I flag
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 # TODO: Figure out how to auto detect these.
-# EXT_INC_FLAGS := -Iexternal/glad -Iexternal/stb
+EXT_INC_FLAGS := -Iexternal/glad -Iexternal/stb
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
