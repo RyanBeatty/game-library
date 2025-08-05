@@ -89,7 +89,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 }
 
-HWND Win32CreateWindow(HINSTANCE hinstance) {
+HWND Win32CreateWindow(HINSTANCE hinstance, HDC* dc) {
     static char CLASS_NAME[] = "L Engine";
 
     WNDCLASS wc = {
@@ -131,55 +131,55 @@ HWND Win32CreateWindow(HINSTANCE hinstance) {
         exit(1);
     }
 
+    *dc = GetDC(window_handle);
     return window_handle;
 }
 
+// https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
+HGLRC Win32CreateOpengGLCtx(HDC dc) {
+    PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
+                                 1,
+                                 PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,  // Flags
+                                 PFD_TYPE_RGBA,  // The kind of framebuffer. RGBA or palette.
+                                 32,             // Colordepth of the framebuffer.
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 0,
+                                 24,  // Number of bits for the depthbuffer
+                                 8,   // Number of bits for the stencilbuffer
+                                 0,   // Number of Aux buffers in the framebuffer.
+                                 PFD_MAIN_PLANE,
+                                 0,
+                                 0,
+                                 0,
+                                 0};
+
+    i32 w32_chosen_px_format = ChoosePixelFormat(dc, &pfd);
+    assert(w32_chosen_px_format != 0);
+    SetPixelFormat(dc, w32_chosen_px_format, &pfd);
+
+    HGLRC glctx = wglCreateContext(dc);
+    wglMakeCurrent(dc, glctx);
+    printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+    return glctx;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    HWND window_handle = Win32CreateWindow(hInstance);
-
-    // GL setup.
-    // https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
-    {
-        PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
-                                     1,
-                                     PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,  // Flags
-                                     PFD_TYPE_RGBA,  // The kind of framebuffer. RGBA or palette.
-                                     32,             // Colordepth of the framebuffer.
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     24,  // Number of bits for the depthbuffer
-                                     8,   // Number of bits for the stencilbuffer
-                                     0,   // Number of Aux buffers in the framebuffer.
-                                     PFD_MAIN_PLANE,
-                                     0,
-                                     0,
-                                     0,
-                                     0};
-
-        HDC dc = GetDC(window_handle);
-        i32 w32_chosen_px_format = ChoosePixelFormat(dc, &pfd);
-        assert(w32_chosen_px_format != 0);
-        SetPixelFormat(dc, w32_chosen_px_format, &pfd);
-
-        HGLRC glctx = wglCreateContext(dc);
-        wglMakeCurrent(dc, glctx);
-        printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
-    }
+    HDC dc;
+    HWND window_handle = Win32CreateWindow(hInstance, &dc);
+    HGLRC glctx = Win32CreateOpengGLCtx(dc);
 
     ShowWindow(window_handle, nCmdShow);
-
-    HDC dc = GetDC(window_handle);
 
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
