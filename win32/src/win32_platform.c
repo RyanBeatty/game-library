@@ -1,7 +1,19 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
 
 typedef enum { WKEY_A = 0x41 } WindowsKey;
+
+typedef enum {
+    LKEY_A = 65,
+} LKey;
+
+#define MAX_KEYS 256
+typedef struct {
+    bool down[MAX_KEYS];
+    bool up[MAX_KEYS];
+    bool was_down[MAX_KEYS];
+} KeyboardInput;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
