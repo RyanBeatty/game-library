@@ -32,7 +32,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         .lpszClassName = CLASS_NAME,
     };
 
-    RegisterClass(&wc);
+    ATOM res = RegisterClass(&wc);
+    if (res == 0) {
+        DWORD err = GetLastError();
+        fprintf(stderr, "Error registering class %ld", err);
+        exit(1);
+    }
 
     // wc.lpfnWndProc   = WindowProc;
     // wc.hInstance     = hInstance;
