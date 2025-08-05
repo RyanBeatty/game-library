@@ -9,14 +9,14 @@ LIB_DIR := libs
 
 ifeq ($(IS_WINDOWS), Windows_NT)
 	AUDIO_FLAGS := -lole32 -lxaudio2_8
-	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lwinmm  -L/raylib/raylib/src -I/raylib/raylib/src $(AUDIO_FLAGS)
+	PLATFORM_LDFLAGS := -lopengl32 -lgdi32  $(AUDIO_FLAGS)
 else
 	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
 endif
 
 LIBS := ""
 LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
-LDFLAGS := $(LDFLAGS) -lraylib -lm -lpthread -lraylib $(PLATFORM_LDFLAGS)
+LDFLAGS := $(LDFLAGS) -lm $(PLATFORM_LDFLAGS)
 
 # Find all the C and C++ files we want to compile
 # Note the single quotes around the * expressions. Make will incorrectly expand these otherwise.
