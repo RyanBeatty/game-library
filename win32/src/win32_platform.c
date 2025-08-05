@@ -41,13 +41,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // // Create the window.
 
-    HWND window_handle = CreateWindowEx(0,                           // Optional window styles.
-                                        CLASS_NAME,                  // Window class
-                                        "Learn to Program Windows",  // Window text
-                                        WS_OVERLAPPEDWINDOW,         // Window style
+    HWND window_handle = CreateWindowEx(0,                    // Optional window styles.
+                                        CLASS_NAME,           // Window class
+                                        "L Engine",           // Window text
+                                        WS_OVERLAPPEDWINDOW,  // dwStyle Window style
 
-                                        // Size and position
-                                        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                        // pos
+                                        CW_USEDEFAULT,  // X
+                                        CW_USEDEFAULT,  // Y
+                                        // size
+                                        CW_USEDEFAULT,  // width
+                                        CW_USEDEFAULT,  // height
 
                                         NULL,       // Parent window
                                         NULL,       // Menu
