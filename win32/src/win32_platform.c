@@ -39,41 +39,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         exit(1);
     }
 
-    // wc.lpfnWndProc   = WindowProc;
-    // wc.hInstance     = hInstance;
-    // wc.lpszClassName = CLASS_NAME;
-
-    // RegisterClass(&wc);
-
     // // Create the window.
 
-    // HWND hwnd = CreateWindowEx(
-    //     0,                              // Optional window styles.
-    //     CLASS_NAME,                     // Window class
-    //     L"Learn to Program Windows",    // Window text
-    //     WS_OVERLAPPEDWINDOW,            // Window style
+    HWND window_handle = CreateWindowEx(0,                           // Optional window styles.
+                                        CLASS_NAME,                  // Window class
+                                        "Learn to Program Windows",  // Window text
+                                        WS_OVERLAPPEDWINDOW,         // Window style
 
-    //     // Size and position
-    //     CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                        // Size and position
+                                        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
 
-    //     NULL,       // Parent window
-    //     NULL,       // Menu
-    //     hInstance,  // Instance handle
-    //     NULL        // Additional application data
-    //     );
+                                        NULL,       // Parent window
+                                        NULL,       // Menu
+                                        hInstance,  // Instance handle
+                                        NULL        // Additional application data
+    );
 
-    // if (hwnd == NULL)
-    // {
-    //     return 0;
-    // }
+    if (window_handle == NULL) {
+        fprintf(stderr, "Failed to create window");
+        exit(1);
+    }
 
-    // ShowWindow(hwnd, nCmdShow);
+    ShowWindow(window_handle, nCmdShow);
 
-    // // Run the message loop.
+    Sleep(5000);
 
-    // MSG msg = { };
-    // while (GetMessage(&msg, NULL, 0, 0) > 0)
-    // {
+    // MSG msg = {};
+    // while (GetMessage(&msg, NULL, 0, 0) > 0) {
     //     TranslateMessage(&msg);
     //     DispatchMessage(&msg);
     // }
