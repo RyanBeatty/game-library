@@ -20,6 +20,7 @@
 
 ///////////////////////////////////////////////
 // Project files below
+#include "shared.c"
 #include "shared.h"
 //
 //

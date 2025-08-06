@@ -174,31 +174,41 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
                                  0};
 
     i32 w32_chosen_px_format = ChoosePixelFormat(dc, &pfd);
-    assert(w32_chosen_px_format != 0);
+    Assert(w32_chosen_px_format != 0);
     SetPixelFormat(dc, w32_chosen_px_format, &pfd);
 
     // Create temp ctx in order to load GLAD extension for easy gl function loading (I think required for
     // access to gl functions > 1.0).
     {
         HGLRC temp_glctx = wglCreateContext(dc);
-        assert(temp_glctx != NULL);
+        Assert(temp_glctx != NULL);
 
         wglMakeCurrent(dc, temp_glctx);
-        // I think this will show the highest opengl version the driver supports. Not necessarily the functions
-        // our ctx has access to
-        printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
 
         wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-        assert(wglCreateContextAttribsARB != NULL);
+        Assert(wglCreateContextAttribsARB != NULL);
 
         i32 attribs[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB,    3, WGL_CONTEXT_MINOR_VERSION_ARB, 3, WGL_CONTEXT_PROFILE_MASK_ARB,
             WGL_CONTEXT_CORE_PROFILE_BIT_ARB, 0};
 
         HGLRC glctx = wglCreateContextAttribsARB(dc, 0, attribs);
-        assert(glctx != NULL);
+        Assert(glctx != NULL);
 
-        return temp_glctx;
+        wglDeleteContext(temp_glctx);
+        wglMakeCurrent(dc, glctx);
+
+        if (!gladLoadGL()) {
+            fprintf(stderr, "Failed to load GLAD\n");
+            exit(1);
+        }
+
+        //         // I think this will show the highest opengl version the driver supports. Not necessarily the
+        //         functions
+        // // our ctx has access to
+        // printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+
+        return glctx;
     }
 }
 
