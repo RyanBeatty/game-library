@@ -222,6 +222,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         exit(1);
     }
 
+    // TODO: Respond to window resize events.
     glViewport(0, 0, (i32)(wrect.right - wrect.left), (i32)(wrect.bottom - wrect.top));
 
     ShowWindow(window_handle, nCmdShow);
