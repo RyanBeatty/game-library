@@ -106,8 +106,6 @@ HWND Win32CreateWindow(HINSTANCE hinstance, HDC* dc) {
         exit(1);
     }
 
-    // // Create the window.
-
     HWND window_handle = CreateWindowEx(0,                    // Optional window styles.
                                         CLASS_NAME,           // Window class
                                         "L Engine",           // Window text
