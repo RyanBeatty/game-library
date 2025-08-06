@@ -2,11 +2,9 @@
 #include <stdio.h>
 #include <windows.h>
 // Include after windows.h
-#include <GL/gl.h>
-
-// #include "glad/glad.h"
 
 #ifndef UNITY_BUILD
+#include "glad/glad.h"
 #include "shared.h"
 #endif
 
