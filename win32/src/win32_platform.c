@@ -216,6 +216,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     HWND window_handle = Win32CreateWindow(hInstance, &dc);
     HGLRC glctx = Win32CreateOpengGLCtx(dc);
 
+    RECT wrect = {0};
+    if (!GetWindowRect(window_handle, &wrect)) {
+        fprintf(stderr, "Failed to get window rect\n");
+        exit(1);
+    }
+
+    glViewport(0, 0, (i32)(wrect.right - wrect.left), (i32)(wrect.bottom - wrect.top));
+
     ShowWindow(window_handle, nCmdShow);
 
     MSG msg = {};
