@@ -203,10 +203,8 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
             exit(1);
         }
 
-        //         // I think this will show the highest opengl version the driver supports. Not necessarily the
-        //         functions
-        // // our ctx has access to
-        // printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+        // Display current version of opengl.
+        printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
 
         return glctx;
     }
