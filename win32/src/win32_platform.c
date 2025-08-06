@@ -4,6 +4,8 @@
 // Include after windows.h
 #include <GL/gl.h>
 
+// #include "glad/glad.h"
+
 #ifndef UNITY_BUILD
 #include "shared.h"
 #endif
@@ -135,6 +137,15 @@ HWND Win32CreateWindow(HINSTANCE hinstance, HDC* dc) {
     return window_handle;
 }
 
+// Define some constants and gl functions to avoid dependency on glew
+#define WGL_CONTEXT_MAJOR_VERSION_ARB 0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB 0x2092
+#define WGL_CONTEXT_PROFILE_MASK_ARB 0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB 0x00000001
+
+typedef HGLRC(WINAPI* PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC, HGLRC, const int*);
+PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
+
 // https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
 HGLRC Win32CreateOpengGLCtx(HDC dc) {
     PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
@@ -168,10 +179,26 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
     assert(w32_chosen_px_format != 0);
     SetPixelFormat(dc, w32_chosen_px_format, &pfd);
 
-    HGLRC glctx = wglCreateContext(dc);
-    wglMakeCurrent(dc, glctx);
-    printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
-    return glctx;
+    // Create temp ctx in order to load GLAD extension for easy gl function loading (I think required for
+    // access to gl functions > 1.0).
+    {
+        HGLRC glctx = wglCreateContext(dc);
+        wglMakeCurrent(dc, glctx);
+        // I think this will show the highest opengl version the driver supports. Not necessarily the functions
+        // our ctx has access to
+        printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
+
+        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+        assert(wglCreateContextAttribsARB != NULL);
+
+        // i32 attribs[] = {
+        //     WGL_CONTEXT_MAJOR_VERSION_ARB,    3, WGL_CONTEXT_MINOR_VERSION_ARB, 3, WGL_CONTEXT_PROFILE_MASK_ARB,
+        //     WGL_CONTEXT_CORE_PROFILE_BIT_ARB, 0};
+
+        // HGLRC modernContext = wglCreateContextAttribsARB(dc, 0, attribs);
+
+        return glctx;
+    }
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
