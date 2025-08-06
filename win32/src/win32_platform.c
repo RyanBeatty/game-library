@@ -180,24 +180,27 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
     // Create temp ctx in order to load GLAD extension for easy gl function loading (I think required for
     // access to gl functions > 1.0).
     {
+        // Create temp ctx so we can load glad.
         HGLRC temp_glctx = wglCreateContext(dc);
         Assert(temp_glctx != NULL);
-
         wglMakeCurrent(dc, temp_glctx);
 
+        // Load function pointer for func that allows creation of modern gl context.
         wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
         Assert(wglCreateContextAttribsARB != NULL);
 
+        // Create modern gl context for gl 3.3.0
         i32 attribs[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB,    3, WGL_CONTEXT_MINOR_VERSION_ARB, 3, WGL_CONTEXT_PROFILE_MASK_ARB,
             WGL_CONTEXT_CORE_PROFILE_BIT_ARB, 0};
-
         HGLRC glctx = wglCreateContextAttribsARB(dc, 0, attribs);
         Assert(glctx != NULL);
 
+        // Make our final context current.
         wglDeleteContext(temp_glctx);
         wglMakeCurrent(dc, glctx);
 
+        // Load glad. After this point we can use any gl functions.
         if (!gladLoadGL()) {
             fprintf(stderr, "Failed to load GLAD\n");
             exit(1);
