@@ -182,8 +182,10 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
     // Create temp ctx in order to load GLAD extension for easy gl function loading (I think required for
     // access to gl functions > 1.0).
     {
-        HGLRC glctx = wglCreateContext(dc);
-        wglMakeCurrent(dc, glctx);
+        HGLRC temp_glctx = wglCreateContext(dc);
+        assert(temp_glctx != NULL);
+
+        wglMakeCurrent(dc, temp_glctx);
         // I think this will show the highest opengl version the driver supports. Not necessarily the functions
         // our ctx has access to
         printf("OpenGL Version: %s\n", glGetString(GL_VERSION));
@@ -191,13 +193,14 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
         wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
         assert(wglCreateContextAttribsARB != NULL);
 
-        // i32 attribs[] = {
-        //     WGL_CONTEXT_MAJOR_VERSION_ARB,    3, WGL_CONTEXT_MINOR_VERSION_ARB, 3, WGL_CONTEXT_PROFILE_MASK_ARB,
-        //     WGL_CONTEXT_CORE_PROFILE_BIT_ARB, 0};
+        i32 attribs[] = {
+            WGL_CONTEXT_MAJOR_VERSION_ARB,    3, WGL_CONTEXT_MINOR_VERSION_ARB, 3, WGL_CONTEXT_PROFILE_MASK_ARB,
+            WGL_CONTEXT_CORE_PROFILE_BIT_ARB, 0};
 
-        // HGLRC modernContext = wglCreateContextAttribsARB(dc, 0, attribs);
+        HGLRC glctx = wglCreateContextAttribsARB(dc, 0, attribs);
+        assert(glctx != NULL);
 
-        return glctx;
+        return temp_glctx;
     }
 }
 
