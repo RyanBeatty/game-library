@@ -15,13 +15,25 @@
 //
 //
 // #include "glad/glad.h"
-#include "glad.c"
 #include "glad/glad.h"
 
 ///////////////////////////////////////////////
 // Project files below
-#include "shared.c"
 #include "shared.h"
 //
 //
+#ifdef L_PLATFORM_WIN32
+
+#include "glad.c"
+#include "shared.c"
 #include "win32_platform.c"
+#else
+#include "raylib.h"
+#include "raymath.h"
+//
+#include "audio.h"
+
+//
+#include "main.c"
+
+#endif
