@@ -142,6 +142,18 @@ HWND Win32CreateWindow(HINSTANCE hinstance, HDC* dc) {
 typedef HGLRC(WINAPI* PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC, HGLRC, const int*);
 PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
 
+typedef BOOL(WINAPI* WGLSWAPINTERVALEXT)(int);
+WGLSWAPINTERVALEXT wglSwapIntervalEXT = NULL;
+
+void LoadWGLExtensionFunctions() {
+    // Load function pointer for func that allows creation of modern gl context.
+    wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+    Assert(wglCreateContextAttribsARB);
+
+    wglSwapIntervalEXT = (WGLSWAPINTERVALEXT)wglGetProcAddress("wglSwapIntervalEXT");
+    Assert(wglSwapIntervalEXT);
+}
+
 // https://www.khronos.org/opengl/wiki/Creating_an_OpenGL_Context_(WGL)
 HGLRC Win32CreateOpengGLCtx(HDC dc) {
     PIXELFORMATDESCRIPTOR pfd = {sizeof(PIXELFORMATDESCRIPTOR),
@@ -183,9 +195,7 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
         Assert(temp_glctx != NULL);
         wglMakeCurrent(dc, temp_glctx);
 
-        // Load function pointer for func that allows creation of modern gl context.
-        wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
-        Assert(wglCreateContextAttribsARB != NULL);
+        LoadWGLExtensionFunctions();
 
         // Create modern gl context for gl 3.3.0
         i32 attribs[] = {
@@ -214,7 +224,12 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     HDC dc;
     HWND window_handle = Win32CreateWindow(hInstance, &dc);
-    HGLRC glctx = Win32CreateOpengGLCtx(dc);
+    {
+        HGLRC glctx = Win32CreateOpengGLCtx(dc);
+        // Sync buffer flip on vsync
+        // https://www.khronos.org/opengl/wiki/Swap_Interval
+        Assert(wglSwapIntervalEXT(1));
+    }
 
     RECT wrect = {0};
     if (!GetWindowRect(window_handle, &wrect)) {
@@ -264,6 +279,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             glClear(GL_COLOR_BUFFER_BIT);
 
             SwapBuffers(dc);
+            // glFinish();
         }
     }
 
