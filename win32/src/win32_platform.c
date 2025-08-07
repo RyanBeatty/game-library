@@ -45,6 +45,7 @@ typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY: {
+            printf("Quit posted\n");
             PostQuitMessage(0);
             return 0;
         }
@@ -236,23 +237,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER ticks = {0};
 
+    bool running = true;
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
-    while (GetMessage(&msg, NULL, 0, 0) > 0) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+    while (running) {
+        while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                running = false;
+                break;
+            }
+            // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
+            // msg struct and just adds more messages to the queue. do we even need this?
+            TranslateMessage(&msg);
+            // Calls our windows procedure to process the message.
+            DispatchMessage(&msg);
 
-        QueryPerformanceCounter(&ticks);
-        i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
-        f64 dt = ticks_dt * sec_per_ticks;
-        printf("dt: %f\n", dt);
-        ticks_last = ticks;
+            QueryPerformanceCounter(&ticks);
+            i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
+            f64 dt = ticks_dt * sec_per_ticks;
+            printf("dt: %f\n", dt);
+            ticks_last = ticks;
 
-        {
-            glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
+            {
+                glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT);
 
-            SwapBuffers(dc);
+                SwapBuffers(dc);
+            }
         }
     }
 
