@@ -227,16 +227,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     ShowWindow(window_handle, nCmdShow);
 
+    LARGE_INTEGER ticks_per_sec = {0};
+    QueryPerformanceFrequency(&ticks_per_sec);
+    f64 sec_per_ticks = 1.0f / ticks_per_sec.QuadPart;
+
+    LARGE_INTEGER ticks_last = {0};
+    QueryPerformanceCounter(&ticks_last);
+
+    LARGE_INTEGER ticks = {0};
+
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
 
-        glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        QueryPerformanceCounter(&ticks);
+        i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
+        f64 dt = ticks_dt * sec_per_ticks;
+        printf("dt: %f\n", dt);
+        ticks_last = ticks;
 
-        SwapBuffers(dc);
+        {
+            glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            SwapBuffers(dc);
+        }
     }
 
     return 0;
