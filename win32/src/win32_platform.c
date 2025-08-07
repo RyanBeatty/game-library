@@ -45,7 +45,6 @@ typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY: {
-            printf("Quit posted\n");
             PostQuitMessage(0);
             return 0;
         }
@@ -241,6 +240,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
     while (running) {
+        // Respond to input
         while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) {
                 running = false;
@@ -251,19 +251,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // TranslateMessage(&msg);
             // Calls our windows procedure to process the message.
             DispatchMessage(&msg);
+        }
 
-            QueryPerformanceCounter(&ticks);
-            i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
-            f64 dt = ticks_dt * sec_per_ticks;
-            printf("dt: %f\n", dt);
-            ticks_last = ticks;
+        QueryPerformanceCounter(&ticks);
+        i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
+        f64 dt = ticks_dt * sec_per_ticks;
+        printf("dt: %f\n", dt);
+        ticks_last = ticks;
 
-            {
-                glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT);
+        {
+            glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
 
-                SwapBuffers(dc);
-            }
+            SwapBuffers(dc);
         }
     }
 
