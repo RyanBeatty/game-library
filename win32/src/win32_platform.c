@@ -229,7 +229,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER ticks_per_sec = {0};
     QueryPerformanceFrequency(&ticks_per_sec);
-    f64 sec_per_ticks = 1.0f / ticks_per_sec.QuadPart;
+    f64 sec_per_ticks = 1.0f / ((f64)ticks_per_sec.QuadPart);
 
     LARGE_INTEGER ticks_last = {0};
     QueryPerformanceCounter(&ticks_last);
