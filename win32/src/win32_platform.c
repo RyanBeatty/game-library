@@ -248,7 +248,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
             // msg struct and just adds more messages to the queue. do we even need this?
-            TranslateMessage(&msg);
+            // TranslateMessage(&msg);
             // Calls our windows procedure to process the message.
             DispatchMessage(&msg);
 
