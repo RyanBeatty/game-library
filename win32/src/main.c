@@ -246,6 +246,7 @@ LCORE i32 PlatformKeyToRaylibKey(LKey key) {
 }
 
 LCORE bool PlatformKeyPressed(LKey key) { return IsKeyPressed(PlatformKeyToRaylibKey(key)); }
+LCORE bool PlatformKeyReleased(LKey key) { return IsKeyReleased(PlatformKeyToRaylibKey(key)); }
 LCORE bool PlatformKeyDown(LKey key) { return IsKeyDown(PlatformKeyToRaylibKey(key)); }
 
 ////////////////////////////////////////////////////////////
@@ -5995,7 +5996,7 @@ static void StageTick(GameState* gstate) {
                             }
                         }
 
-                        if (IsKeyReleased(KSHOOT)) {
+                        if (PlatformKeyReleased(KSHOOT)) {
                             // Charge shot
                             if (CHARGING_DT >= FULL_CHARGE_DT) {
                                 SHOOTING = true;
