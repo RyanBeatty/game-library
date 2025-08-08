@@ -26,7 +26,33 @@ LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
     vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
 
-    TraceLog(level, "%s", buffer);
+    TraceLog(LOG_INFO, "%s", buffer);
+}
+
+typedef enum {
+    LKEY_NONE = 0,
+    LKEY_UP,
+    LKEY_ENTER,
+    LKEY_COUNT,
+} LKey;
+
+LCORE bool PlatformKeyPressed(LKey key) {
+    int newkey;
+    switch (key) {
+        case LKEY_UP: {
+            newkey = KEY_UP;
+            break;
+        }
+        case LKEY_ENTER: {
+            newkey = KEY_ENTER;
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown key %c\n", (char)key);
+            return false;
+        }
+    }
+    return IsKeyPressed(newkey);
 }
 
 ////////////////////////////////////////////////////////////
@@ -4962,7 +4988,7 @@ static void TitleScreenTick(GameState* gstate) {
     if (!gstate->init) {
     }
 
-    if (IsKeyPressed(KEY_ENTER)) {
+    if (PlatformKeyPressed(LKEY_ENTER)) {
         gstate->nextsceneid = SCENE_STAGE_SELECT;
         PlatformLog(LLOG_INFO, "hello %s", "world");
     }
