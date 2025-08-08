@@ -29,7 +29,6 @@
 #include "win32_platform.c"
 #else
 #include "raylib.h"
-#include "raymath.h"
 //
 #include "audio.h"
 
