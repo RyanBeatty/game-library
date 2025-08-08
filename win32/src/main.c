@@ -4900,12 +4900,12 @@ typedef enum {
     PS_COUNT,
 } PlayerState;
 
-static const i32 KUP = KEY_UP;
-static const i32 KDOWN = KEY_DOWN;
-static const i32 KLEFT = KEY_LEFT;
-static const i32 KRIGHT = KEY_RIGHT;
-static const i32 KJUMP = KEY_Z;
-static const i32 KSHOOT = KEY_X;
+static const LKey KUP = LKEY_UP;
+static const LKey KDOWN = LKEY_DOWN;
+static const LKey KLEFT = LKEY_LEFT;
+static const LKey KRIGHT = LKEY_RIGHT;
+static const LKey KJUMP = LKEY_Z;
+static const LKey KSHOOT = LKEY_X;
 
 static void SceneDefaultTick(GameState* gstate) {
     BeginRender(gstate->dt);
