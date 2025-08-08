@@ -6616,37 +6616,14 @@ static void GameStateTick(GameState* gstate) {
     gstate->screenw = GetScreenWidth();
     gstate->screenh = GetScreenHeight();
 
-    // Check if scene needs to be changed.
-    {
-        bool right = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_1);
-        bool left = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_1);
-
-        if ((right || left) && !(right && left)) {
-            // Need signed id for ring buffer wraparound on left.
-            i32 sceneid = gstate->sceneid;
-            if (right) {
-                sceneid = (sceneid + 1) % gstate->scenefuncssize;
-            } else {
-                sceneid = ((sceneid + gstate->scenefuncssize) - 1) % gstate->scenefuncssize;
-            }
-
-            GameStateLoadScene(gstate, sceneid);
-        }
-    }
-
     gstate->timer += dt;
 
     {
         static bool ENABLE_DEBUG_KEYMAP = true;
 
-        if (IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
-            ENABLE_DEBUG_KEYMAP = !ENABLE_DEBUG_KEYMAP;
-        }
-
         if (ENABLE_DEBUG_KEYMAP) {
             bool debugkey = IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_ONE);
-            bool debuggp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_LEFT_TRIGGER_2);
-            if (debugkey || debuggp) {
+            if (debugkey) {
                 gstate->debug = !gstate->debug;
                 gstate->update = !gstate->debug;
                 gstate->debug_ever = true;
@@ -6654,8 +6631,7 @@ static void GameStateTick(GameState* gstate) {
             }
             if (gstate->debug) {
                 bool updatekey = IsKeyPressed(KEY_U);
-                bool updategp = IsGamepadButtonPressed(GAMEPAD_ID, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
-                if (updatekey || updategp) {
+                if (updatekey) {
                     gstate->update = !gstate->update;
                 }
             }
