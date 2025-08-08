@@ -13,6 +13,8 @@ typedef enum {
     LLOG_NONE = 0,
     LLOG_DEBUG,
     LLOG_INFO,
+    LLOG_WARN,
+    LLOG_ERROR,
     LLOG_COUNT,
 } LogLevel;
 
@@ -517,9 +519,9 @@ LCORE bool Mat4Eq(Mat4 a, Mat4 b) {
                   f32eq(a.v.x, b.v.x) && f32eq(a.v.y, b.v.y) && f32eq(a.v.z, b.v.z) && f32eq(a.v.w, b.v.w);
     // #ifdef L_TEST
     if (!result) {
-        PlatformLog(LOG_INFO, "expected Mat4 b:");
+        PlatformLog(LLOG_INFO, "expected Mat4 b:");
         Mat4Print(b);
-        PlatformLog(LOG_INFO, "got Mat4 a:");
+        PlatformLog(LLOG_INFO, "got Mat4 a:");
         Mat4Print(a);
     }
     // #endif
@@ -1477,7 +1479,7 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
         glGetShaderiv(shader->vid, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(shader->vid, size, NULL, error);
-            PlatformLog(LOG_ERROR, "Error compiling vertex shader: %s", error);
+            PlatformLog(LLOG_ERROR, "Error compiling vertex shader: %s", error);
             Assert(false);
         }
     }
@@ -1491,7 +1493,7 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
         glGetShaderiv(shader->fid, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(shader->fid, size, NULL, error);
-            PlatformLog(LOG_ERROR, "Error compiling fragment shader: %s", error);
+            PlatformLog(LLOG_ERROR, "Error compiling fragment shader: %s", error);
             Assert(false);
         }
     }
@@ -2688,7 +2690,7 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
 //             break;
 //         }
 //         default: {
-//             PlatformLog(LOG_ERROR,
+//             PlatformLog(LLOG_ERROR,
 //                      "ComputePolyhedron: Unknown polyhedron type=%d. Most likely entity needs bounding volume type
 //                      set", type);
 //             Assert(false);
@@ -5023,7 +5025,7 @@ static void StageSelectTick(GameState* gstate) {
 }
 
 static void UnloadRoomEntities(GameState* gstate) {
-    PlatformLog(LOG_INFO, "Unloading Room");
+    PlatformLog(LLOG_INFO, "Unloading Room");
 
     for (u32 i = 0; i < gstate->lelen; ++i) {
         EntityId id = gstate->loadable_entities[i];
@@ -5129,7 +5131,7 @@ static void LoadRoomEntities(GameState* gstate, Room* room) {
                     break;
                 }
                 default: {
-                    PlatformLog(LOG_ERROR, "Unknown mob type %d", e->mobtype);
+                    PlatformLog(LLOG_ERROR, "Unknown mob type %d", e->mobtype);
                     exit(1);
                     return;
                 }
@@ -5269,7 +5271,7 @@ static void GraphicsInfoSetPlayerVisuals(GraphicsInfo* graphics, PlayerState pst
             break;
         }
         default: {
-            PlatformLog(LOG_ERROR, "Unknown player state: %d", pstate);
+            PlatformLog(LLOG_ERROR, "Unknown player state: %d", pstate);
             exit(1);
         }
     }
@@ -5377,7 +5379,7 @@ static void StageTick(GameState* gstate) {
     }
 
     if (gstate->room_idx_to_be != gstate->room_idx) {
-        PlatformLog(LOG_INFO, "Loaded Room %d", gstate->room_idx_to_be);
+        PlatformLog(LLOG_INFO, "Loaded Room %d", gstate->room_idx_to_be);
 
         // Setup camera transition.
         CAMERA_TRANSITIONING = true;
@@ -5693,7 +5695,7 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         default: {
-                            PlatformLog(LOG_ERROR, "Unknown Player State %d", PSTATE);
+                            PlatformLog(LLOG_ERROR, "Unknown Player State %d", PSTATE);
                             exit(0);
                         }
                     }
@@ -5975,7 +5977,7 @@ static void StageTick(GameState* gstate) {
                                 Vec3 diff = Vec3Sub(player->pos, e->pos);
                                 Entity* egg = GetEntity(e->eggid);
                                 if (f32abs(diff.x) <= 40.0f && TestFlag(egg->flags, EFLAG_ACTIVE)) {
-                                    PlatformLog(LOG_INFO, "Egg Awake");
+                                    PlatformLog(LLOG_INFO, "Egg Awake");
                                     egg->awake = true;
                                     e->eggid = NULLID;
                                 }
@@ -6081,7 +6083,7 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         default: {
-                            PlatformLog(LOG_ERROR, "Unknown mob type: %d", e->mobtype);
+                            PlatformLog(LLOG_ERROR, "Unknown mob type: %d", e->mobtype);
                             exit(1);
                             return;
                         }
@@ -6121,12 +6123,12 @@ static void StageTick(GameState* gstate) {
                     if (player != NULL) {
                         Vec3 diff = Vec3Sub(player->pos, e->pos);
                         Entity* spawned = GetEntity(e->spawnedid);
-                        // PlatformLog(LOG_INFO, "diff %f", diff.x);
+                        // PlatformLog(LLOG_INFO, "diff %f", diff.x);
 
                         bool has_spawned = TestFlag(spawned->flags, EFLAG_ACTIVE) &&
                                            TestFlag(spawned->flags, EFLAG_MOB) && spawned->mobtype == MT_BIRD;
                         if (f32abs(diff.x) <= 612.0f && !has_spawned) {
-                            PlatformLog(LOG_INFO, "Spawned");
+                            PlatformLog(LLOG_INFO, "Spawned");
                             spawned = AllocateEntity();
                             spawned->pos = e->pos;
 
@@ -6381,7 +6383,7 @@ static void StageTick(GameState* gstate) {
                     break;
                 }
                 default: {
-                    PlatformLog(LOG_ERROR, "Unknown texture info type: %d", txinfo->type);
+                    PlatformLog(LLOG_ERROR, "Unknown texture info type: %d", txinfo->type);
                     exit(1);
                 }
             }
@@ -6648,7 +6650,7 @@ static void GameStateTick(GameState* gstate) {
                 gstate->debug = !gstate->debug;
                 gstate->update = !gstate->debug;
                 gstate->debug_ever = true;
-                PlatformLog(LOG_INFO, "Debug %s", gstate->debug ? "On" : "Off");
+                PlatformLog(LLOG_INFO, "Debug %s", gstate->debug ? "On" : "Off");
             }
             if (gstate->debug) {
                 bool updatekey = IsKeyPressed(KEY_U);
@@ -6695,7 +6697,7 @@ static bool TestFail = false;
 
 static void TAssert(bool result, const char* msg) {
     if (!result) {
-        PlatformLog(LOG_ERROR, "Failed: %s", msg);
+        PlatformLog(LLOG_ERROR, "Failed: %s", msg);
     }
 
     TestFail |= !result;
@@ -7310,15 +7312,15 @@ static void TestRand() {
 }
 
 static void TestL() {
-    PlatformLog(LOG_INFO, "Running Tests");
+    PlatformLog(LLOG_INFO, "Running Tests");
     TestMath();
     TestMemory();
     TestRand();
 
     if (TestFail) {
-        PlatformLog(LOG_ERROR, "Failed tests!");
+        PlatformLog(LLOG_ERROR, "Failed tests!");
         exit(1);
     }
 
-    PlatformLog(LOG_INFO, "Tests Pass");
+    PlatformLog(LLOG_INFO, "Tests Pass");
 }
