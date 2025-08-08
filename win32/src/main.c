@@ -209,44 +209,37 @@ typedef enum {
     LKEY_OEM_CLEAR = 0xFE
 } LKey;
 
-LCORE bool PlatformKeyPressed(LKey key) {
-    int newkey;
+LCORE i32 PlatformKeyToRaylibKey(LKey key) {
     switch (key) {
         case LKEY_UP: {
-            newkey = KEY_UP;
-            break;
+            return KEY_UP;
         }
         case LKEY_DOWN: {
-            newkey = KEY_DOWN;
-            break;
+            return KEY_DOWN;
         }
         case LKEY_LEFT: {
-            newkey = KEY_LEFT;
-            break;
+            return KEY_LEFT;
         }
         case LKEY_RIGHT: {
-            newkey = KEY_RIGHT;
-            break;
+            return KEY_RIGHT;
         }
         case LKEY_ENTER: {
-            newkey = KEY_ENTER;
-            break;
+            return KEY_ENTER;
         }
         case LKEY_Z: {
-            newkey = KEY_Z;
-            break;
+            return KEY_Z;
         }
         case LKEY_1: {
-            newkey = KEY_ONE;
-            break;
+            return KEY_ONE;
         }
         default: {
             PlatformLog(LLOG_ERROR, "Unknown key %c\n", (char)key);
-            return false;
+            return LKEY_NONE;
         }
     }
-    return IsKeyPressed(newkey);
 }
+
+LCORE bool PlatformKeyPressed(LKey key) { return IsKeyPressed(PlatformKeyToRaylibKey(key)); }
 
 ////////////////////////////////////////////////////////////
 // S:Math
