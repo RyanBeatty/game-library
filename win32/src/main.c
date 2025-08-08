@@ -223,10 +223,6 @@ typedef struct {
 #define Mat4VLit(e0, e1, e2, e3) \
     ((Mat4){.v.a = (e0), .v.x = 0.0f, .v.b = (e1), .v.y = 0.0f, .v.c = (e2), .v.z = 0.0f, .v.d = (e3), .v.w = 1.0f})
 
-#define Mat4ToRMatrix(m)                                                                                      \
-    ((Matrix){(m).mm.m00, (m).mm.m10, (m).mm.m20, (m).mm.m30, (m).mm.m01, (m).mm.m11, (m).mm.m21, (m).mm.m31, \
-              (m).mm.m02, (m).mm.m12, (m).mm.m22, (m).mm.m32, (m).mm.m03, (m).mm.m13, (m).mm.m23, (m).mm.m33})
-
 LCORE Mat4 MatrixToMat4(Matrix mx) {
     return Mat4Lit(mx.m0, mx.m1, mx.m2, mx.m3,    //
                    mx.m4, mx.m5, mx.m6, mx.m7,    //
@@ -6762,10 +6758,6 @@ static void TestMath() {
 
     // Test Mat4
     {
-        {
-            Mat4 m = Mat4Lit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-            TAssert(Mat4Eq(MatrixToMat4(Mat4ToRMatrix(m)), m), "Mat4 to Matrix");
-        }
         // Mat4ScaleXYZ
         {
             // Test uniform scaling.
