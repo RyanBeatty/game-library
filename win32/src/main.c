@@ -9,6 +9,24 @@
 
 #endif
 
+typedef enum {
+    LLOG_NONE = 0,
+    LLOG_DEBUG,
+    LLOG_INFO,
+    LLOG_COUNT,
+} LogLevel;
+
+LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
+    char buffer[256] = {0};
+
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+
+    TraceLog(LOG_INFO, "%s", buffer);
+}
+
 ////////////////////////////////////////////////////////////
 // S:Math
 
@@ -4944,6 +4962,7 @@ static void TitleScreenTick(GameState* gstate) {
 
     if (IsKeyPressed(KEY_ENTER)) {
         gstate->nextsceneid = SCENE_STAGE_SELECT;
+        PlatformLog(LLOG_INFO, "hello %s", "world");
     }
 
     BeginRender(gstate->dt);
