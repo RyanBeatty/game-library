@@ -223,13 +223,6 @@ typedef struct {
 #define Mat4VLit(e0, e1, e2, e3) \
     ((Mat4){.v.a = (e0), .v.x = 0.0f, .v.b = (e1), .v.y = 0.0f, .v.c = (e2), .v.z = 0.0f, .v.d = (e3), .v.w = 1.0f})
 
-LCORE Mat4 MatrixToMat4(Matrix mx) {
-    return Mat4Lit(mx.m0, mx.m1, mx.m2, mx.m3,    //
-                   mx.m4, mx.m5, mx.m6, mx.m7,    //
-                   mx.m8, mx.m9, mx.m10, mx.m11,  //
-                   mx.m12, mx.m13, mx.m14, mx.m15);
-}
-
 // Print in col maj order.
 LCORE void Mat4Print(Mat4 m) {
     printf(
