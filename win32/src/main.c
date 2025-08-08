@@ -161,8 +161,8 @@ typedef enum {
     LKEY_SCROLL = 0x91,
     LKEY_LSHIFT = 0xA0,
     LKEY_RSHIFT = 0xA1,
-    LKEY_LCONTROL = 0xA2,
-    LKEY_RCONTROL = 0xA3,
+    LKEY_LCONTROL = 0xA2,  // left control
+    LKEY_RCONTROL = 0xA3,  // right control
     LKEY_LMENU = 0xA4,
     LKEY_RMENU = 0xA5,
     LKEY_BROWSER_BACK = 0xA6,
@@ -226,20 +226,27 @@ LCORE i32 PlatformKeyToRaylibKey(LKey key) {
         case LKEY_ENTER: {
             return KEY_ENTER;
         }
+        case LKEY_X: {
+            return KEY_X;
+        }
         case LKEY_Z: {
             return KEY_Z;
         }
         case LKEY_1: {
             return KEY_ONE;
         }
+        case LKEY_LCONTROL: {
+            return KEY_LEFT_CONTROL;
+        }
         default: {
-            PlatformLog(LLOG_ERROR, "Unknown key %c\n", (char)key);
+            PlatformLog(LLOG_ERROR, "Unknown key num=%d hex=%x c=%c\n", key, key, (char)key);
             return LKEY_NONE;
         }
     }
 }
 
 LCORE bool PlatformKeyPressed(LKey key) { return IsKeyPressed(PlatformKeyToRaylibKey(key)); }
+LCORE bool PlatformKeyDown(LKey key) { return IsKeyDown(PlatformKeyToRaylibKey(key)); }
 
 ////////////////////////////////////////////////////////////
 // S:Math
@@ -5692,14 +5699,14 @@ static void StageTick(GameState* gstate) {
                                 PSTATE = PS_JUMPING;
                                 e->v = Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt);
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else if (up_ladder != NULL && IsKeyDown(KUP)) {
+                            } else if (up_ladder != NULL && PlatformKeyDown(KUP)) {
                                 e->pos.x = up_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
 
                                 PSTATE = PS_CLIMBING;
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                            } else if (down_ladder != NULL && IsKeyDown(KDOWN) && middleground == NULL) {
+                            } else if (down_ladder != NULL && PlatformKeyDown(KDOWN) && middleground == NULL) {
                                 e->pos.x = down_ladder->pos.x;  // Teleport to middle of ladder.
                                 // Super hacky. we should be more rigorous about this eventually.
                                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(16.0f, 24.0f));
@@ -5709,15 +5716,15 @@ static void StageTick(GameState* gstate) {
                             } else {
                                 // Movement.
                                 Vec3 dx = Vec3Zero();
-                                if (IsKeyDown(KLEFT)) {
+                                if (PlatformKeyDown(KLEFT)) {
                                     dx.x -= WALK_DX_SPEED;
                                     e->facing_left = true;
-                                } else if (IsKeyDown(KRIGHT)) {
+                                } else if (PlatformKeyDown(KRIGHT)) {
                                     dx.x += WALK_DX_SPEED;
                                     e->facing_left = false;
                                 }
 
-                                bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
+                                bool walking = PlatformKeyDown(KLEFT) || PlatformKeyDown(KRIGHT);
 
                                 Vec3 dy = Vec3Lit(0.0f, e->v.y, 0.0f);
                                 if (PlatformKeyPressed(KJUMP)) {
@@ -5745,7 +5752,7 @@ static void StageTick(GameState* gstate) {
                                     PSTATE = PS_IDLE;
                                     e->v = Vec3Zero();
                                     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
-                                } else if (IsKeyDown(KDOWN) && middleground != NULL) {
+                                } else if (PlatformKeyDown(KDOWN) && middleground != NULL) {
                                     PSTATE = PS_IDLE;
                                     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 } else if (PlatformKeyPressed(KJUMP)) {
@@ -5758,21 +5765,21 @@ static void StageTick(GameState* gstate) {
 
                                     GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                                 } else {
-                                    if (IsKeyDown(KLEFT)) {
+                                    if (PlatformKeyDown(KLEFT)) {
                                         e->facing_left = true;
-                                    } else if (IsKeyDown(KRIGHT)) {
+                                    } else if (PlatformKeyDown(KRIGHT)) {
                                         e->facing_left = false;
                                     }
 
-                                    if (IsKeyDown(KUP)) {
+                                    if (PlatformKeyDown(KUP)) {
                                         dy += CLIMB_SPEED;
-                                    } else if (IsKeyDown(KDOWN)) {
+                                    } else if (PlatformKeyDown(KDOWN)) {
                                         dy -= CLIMB_SPEED;
                                     }
 
                                     // Update animation.
                                     {
-                                        bool climbing = IsKeyDown(KUP) || IsKeyDown(KDOWN);
+                                        bool climbing = PlatformKeyDown(KUP) || PlatformKeyDown(KDOWN);
                                         if (climbing) {
                                             e->graphics.txinfo.animation.frame_dt += dt;
 
@@ -5792,7 +5799,7 @@ static void StageTick(GameState* gstate) {
                             break;
                         }
                         case PS_WALKING: {
-                            bool walking = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
+                            bool walking = PlatformKeyDown(KLEFT) || PlatformKeyDown(KRIGHT);
 
                             // We are falling.
                             if (no_ground) {
@@ -5801,10 +5808,10 @@ static void StageTick(GameState* gstate) {
                                 GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                             } else if (walking) {
                                 Vec3 dx = Vec3Zero();
-                                if (IsKeyDown(KLEFT)) {
+                                if (PlatformKeyDown(KLEFT)) {
                                     dx.x -= WALK_DX_SPEED;
                                     e->facing_left = true;
-                                } else if (IsKeyDown(KRIGHT)) {
+                                } else if (PlatformKeyDown(KRIGHT)) {
                                     dx.x += WALK_DX_SPEED;
                                     e->facing_left = false;
                                 }
@@ -5851,10 +5858,10 @@ static void StageTick(GameState* gstate) {
                         case PS_JUMPING: {
                             // Movement.
                             Vec3 dx = Vec3Zero();
-                            if (IsKeyDown(KLEFT)) {
+                            if (PlatformKeyDown(KLEFT)) {
                                 dx.x -= WALK_DX_SPEED;
                                 e->facing_left = true;
-                            } else if (IsKeyDown(KRIGHT)) {
+                            } else if (PlatformKeyDown(KRIGHT)) {
                                 dx.x += WALK_DX_SPEED;
                                 e->facing_left = false;
                             }
@@ -5870,7 +5877,7 @@ static void StageTick(GameState* gstate) {
 
                             e->v = Vec3Add(Vec3Add(dx, dy), Vec3Scale(Vec3Lit(0.0f, -1.0f, 0.0f), GRAVITY * dt));
 
-                            bool moving = IsKeyDown(KLEFT) || IsKeyDown(KRIGHT);
+                            bool moving = PlatformKeyDown(KLEFT) || PlatformKeyDown(KRIGHT);
                             if (!no_ground) {
                                 if (moving) {
                                     PSTATE = PS_WALKING;
@@ -5933,7 +5940,7 @@ static void StageTick(GameState* gstate) {
                             GraphicsInfoSetPlayerVisuals(&e->graphics, PSTATE, SHOOTING);
                         }
 
-                        if (IsKeyDown(KSHOOT)) {
+                        if (PlatformKeyDown(KSHOOT)) {
                             // If we weren't already holding down shoot and we can shoot, then shoot. duh!
                             if (CHARGING_DT == 0.0f && can_shoot) {
                                 // If we were shooting, don't update the visuals or else shooting animations will
@@ -6834,7 +6841,7 @@ static void GameStateTick(GameState* gstate) {
         static bool ENABLE_DEBUG_KEYMAP = true;
 
         if (ENABLE_DEBUG_KEYMAP) {
-            bool debugkey = IsKeyDown(KEY_LEFT_CONTROL) && PlatformKeyPressed(LKEY_1);
+            bool debugkey = PlatformKeyDown(LKEY_LCONTROL) && PlatformKeyPressed(LKEY_1);
             if (debugkey) {
                 gstate->debug = !gstate->debug;
                 gstate->update = !gstate->debug;
