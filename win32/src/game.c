@@ -6240,7 +6240,7 @@ static void StageTick(GameState* gstate) {
                                 if (!TestFlag(shot->flags, EFLAG_SURVIVE_HIT)) {
                                     SoftDeactivateEntity(shot->id);
                                 }
-                                PlayLSoundLimit(GetSound(SOUND_MOB_HURT), 0, 3);
+                                PlatformPlaySoundLimit(GetSound(SOUND_MOB_HURT), 0, 3);
 
                                 f32 nparticles = f32randab(2, 3);
                                 for (i32 pi = 0; pi < nparticles; ++pi) {

@@ -317,7 +317,7 @@ SoundId PlatformLoadSound(const char* filename) {
     return id;
 }
 
-void PlayLSoundLimit(SoundId id, SoundFlag flags, u32 limit) {
+void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
     Assert(id < AUDIO.soundlen);
     LSound* sound = &AUDIO.sounds[id];
 
