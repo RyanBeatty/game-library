@@ -6588,9 +6588,9 @@ static void GameStateInit(GameState* gstate) {
     gstate->lelen = 0;
 }
 
-static void GameStateTick(GameState* gstate) {
+void GameTick(f32 dt) {
+    GameState* gstate = &GState;
     gstate->dt = GetFrameTime();
-    f32 dt = gstate->dt;
 
     gstate->screenw = PlatformScreenWidth();
     gstate->screenh = PlatformScreenHeight();
@@ -6634,7 +6634,7 @@ int main(void) {
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
-        GameStateTick(&GState);
+        GameTick(GetFPS());
     }
 
     CloseWindow();
