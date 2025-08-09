@@ -77,7 +77,11 @@ int main(void) {
     GameInit(perm);
 
     while (!WindowShouldClose()) {
+        BeginDrawing();
+
         GameTick(GetFrameTime());
+
+        EndDrawing();
     }
 
     CloseWindow();

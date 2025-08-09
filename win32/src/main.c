@@ -2232,8 +2232,6 @@ static void EndRender() {
 
     // Begin.
     {
-        BeginDrawing();
-
         // Render draw commands to render target.
         glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
         // IMPORTANT.
@@ -2294,8 +2292,6 @@ static void EndRender() {
         cmd->meshcmd.tx.height = rstate->target.height;
         ShaderPassExecute(&pass);
     }
-
-    EndDrawing();
 }
 
 static DrawCmd* AddCmd() {
