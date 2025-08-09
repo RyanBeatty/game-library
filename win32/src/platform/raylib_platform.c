@@ -7,6 +7,20 @@
 
 #include "raylib.h"
 
+#define MAX_SOUNDS 32
+
+typedef struct {
+    Arena perm;
+
+    Sound sounds[MAX_SOUNDS];
+    bool loaded[MAX_SOUNDS];
+
+} RaylibPlatformState;
+
+static RaylibPlatformState RPState = {0};
+
+#define GetRaylibPlatformState() (&RPState)
+
 LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
     char buffer[256] = {0};
 
@@ -70,9 +84,38 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
 }
 
 void PlatformInitAudio(byte* buffer, isize cap) {}
-void PlatformClearSounds() {}
+void PlatformClearSounds() {
+    RaylibPlatformState* rpstate = GetRaylibPlatformState();
+    for (i32 i = NULLSOUND + 1; i < ArraySizeOf(rpstate->loaded); ++i) {
+        if (rpstate->loaded[i]) {
+            Sound sound = rpstate->sounds[i];
+            StopSound(sound);
+            UnloadSound(sound);
+            rpstate->loaded[i] = false;
+        }
+    }
+}
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
-SoundId PlatformLoadSound(const char* filename) { return 0; }
+SoundId PlatformLoadSound(const char* filename) {
+    PlatformLog(LLOG_INFO, "Loading sound: %s", filename);
+    RaylibPlatformState* rpstate = GetRaylibPlatformState();
+
+    SoundId sid = NULLSOUND;
+    for (i32 i = NULLSOUND + 1; i < ArraySizeOf(rpstate->sounds); ++i) {
+        if (!rpstate->loaded[i]) {
+            rpstate->loaded[i] = true;
+            Sound sound = LoadSound(filename);
+            Assert((sound.frameCount > 0) &&         // Validate frame count
+                   (sound.stream.buffer != NULL) &&  // Validate stream buffer
+                   (sound.stream.sampleRate > 0) &&  // Validate sample rate is supported
+                   (sound.stream.sampleSize > 0) &&  // Validate sample size is supported
+                   (sound.stream.channels > 0));
+            rpstate->sounds[i] = sound;
+            sid = (SoundId)i;
+        }
+    }
+    return sid;
+}
 // limit = 0, means no limit
 void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {}
 

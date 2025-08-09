@@ -210,7 +210,7 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps);
 
 typedef u32 SoundId;
 
-extern const SoundId NULLSOUND;
+const SoundId NULLSOUND = 0;
 
 typedef enum {
     SF_NONE = 0,

@@ -21,12 +21,13 @@
 // Project files below
 #include "base.h"
 //
+#include "base.c"
+//
 #include "platform.h"
 
 //
 #ifdef L_PLATFORM_WIN32
 
-#include "base.c"
 #include "glad.c"
 //
 #include "platform/win32_platform.c"
