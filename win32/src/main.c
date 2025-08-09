@@ -6535,7 +6535,11 @@ LCORE void Stage2Tick(GameState* gstate) {
 
 ////////////////////////////////////////////////////////////
 
+static void TestL();
+
 static void GameStateInit(GameState* gstate) {
+    TestL();
+
     memset(gstate, 0, sizeof(GameState));
 
     // Initialize dyanmic memory pool.
@@ -6631,11 +6635,7 @@ static void GameStateTick(GameState* gstate) {
     ++gstate->nframe;
 }
 
-static void TestL();
-
 int main(void) {
-    TestL();
-
     GameStateInit(&GState);
 
     while (!WindowShouldClose()) {
