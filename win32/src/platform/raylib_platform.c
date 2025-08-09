@@ -132,7 +132,6 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
         }
     }
 
-    breakpoint();
     if (choice != NULLSOUND && (limit == 0 || limit < count)) {
         rpstate->streams[choice] = id;
         rpstate->playing[choice] = true;
@@ -140,8 +139,27 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
     }
 }
 
-u32 PlatformSoundCountPlaying(SoundId id) { return 0; }
-void PlatformStopSound(SoundId) {}
+u32 PlatformSoundCountPlaying(SoundId id) {
+    RaylibPlatformState* rpstate = GetRaylibPlatformState();
+
+    u32 count = 0;
+    for (i32 i = NULLSOUND + 1; i < ArraySizeOf(rpstate->streams); ++i) {
+        if (rpstate->playing[i] && rpstate->streams[i] == id) {
+            ++count;
+        }
+    }
+    return count;
+}
+void PlatformStopSound(SoundId id) {
+    RaylibPlatformState* rpstate = GetRaylibPlatformState();
+
+    for (i32 i = NULLSOUND + 1; i < ArraySizeOf(rpstate->streams); ++i) {
+        if (rpstate->playing[i] && rpstate->streams[i] == id) {
+            rpstate->playing[i] = false;
+        }
+    }
+    StopSound(rpstate->sounds[id]);
+}
 
 int main(void) {
     // Initialize dyanmic memory pool.
