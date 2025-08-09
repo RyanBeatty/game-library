@@ -15,6 +15,8 @@ typedef struct {
     Sound sounds[MAX_SOUNDS];
     bool loaded[MAX_SOUNDS];
 
+    SoundId streams[MAX_SOUNDS];
+    bool playing[MAX_SOUNDS];
 } RaylibPlatformState;
 
 static RaylibPlatformState RPState = {0};
@@ -100,7 +102,6 @@ SoundId PlatformLoadSound(const char* filename) {
     PlatformLog(LLOG_INFO, "Loading sound: %s", filename);
     RaylibPlatformState* rpstate = GetRaylibPlatformState();
 
-    SoundId sid = NULLSOUND;
     for (i32 i = NULLSOUND + 1; i < ArraySizeOf(rpstate->sounds); ++i) {
         if (!rpstate->loaded[i]) {
             rpstate->loaded[i] = true;
@@ -111,13 +112,33 @@ SoundId PlatformLoadSound(const char* filename) {
                    (sound.stream.sampleSize > 0) &&  // Validate sample size is supported
                    (sound.stream.channels > 0));
             rpstate->sounds[i] = sound;
-            sid = (SoundId)i;
+            return (SoundId)i;
         }
     }
-    return sid;
+    Assert(false);
+    return NULLSOUND;
 }
 // limit = 0, means no limit
-void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {}
+void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
+    RaylibPlatformState* rpstate = GetRaylibPlatformState();
+
+    u32 count = 0;
+    i32 choice = NULLSOUND;
+    for (i32 i = NULLSOUND + 1; i < ArraySizeOf(rpstate->streams); ++i) {
+        if (!rpstate->playing[i]) {
+            choice = i;
+        } else if (rpstate->streams[i] == id) {
+            ++count;
+        }
+    }
+
+    breakpoint();
+    if (choice != NULLSOUND && (limit == 0 || limit < count)) {
+        rpstate->streams[choice] = id;
+        rpstate->playing[choice] = true;
+        PlaySound(rpstate->sounds[id]);
+    }
+}
 
 u32 PlatformSoundCountPlaying(SoundId id) { return 0; }
 void PlatformStopSound(SoundId) {}
