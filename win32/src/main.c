@@ -6588,7 +6588,7 @@ void GameInit(Arena perm) {
 
 void GameTick(f32 dt) {
     GameState* gstate = &GState;
-    gstate->dt = GetFrameTime();
+    gstate->dt = dt;
 
     gstate->screenw = PlatformScreenWidth();
     gstate->screenh = PlatformScreenHeight();

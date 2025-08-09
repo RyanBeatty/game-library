@@ -77,7 +77,7 @@ int main(void) {
     GameInit(perm);
 
     while (!WindowShouldClose()) {
-        GameTick(GetFPS());
+        GameTick(GetFrameTime());
     }
 
     CloseWindow();
