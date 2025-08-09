@@ -363,7 +363,7 @@ u32 PlatformSoundCountPlaying(SoundId id) {
 }
 
 // Stops *all* running sounds for the given sound id.
-void StopLSound(SoundId id) {
+void PlatformStopSound(SoundId id) {
     AudioState* audio = &AUDIO;
     for (i32 i = 0; i < audio->cap; ++i) {
         AudioStream* stream = &audio->streams[i];

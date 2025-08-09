@@ -5439,7 +5439,7 @@ static void StageTick(GameState* gstate) {
                     e->attack_dir = Vec3Zero();
 
                     if (e->health <= 0) {
-                        StopLSound(GetSound(SOUND_WOODMAN_STAGE));
+                        PlatformStopSound(GetSound(SOUND_WOODMAN_STAGE));
                         PSTATE = PS_DYING;
                     }
 
@@ -5737,7 +5737,7 @@ static void StageTick(GameState* gstate) {
                             if (CHARGING_DT > 0.5f) {
                                 if (CHARGING_DT >= FULL_CHARGE_DT) {
                                     if (!PlatformSoundCountPlaying(charged)) {
-                                        StopLSound(charging);
+                                        PlatformStopSound(charging);
                                         PlatformPlaySound(charged, SF_PLAY_INFINITE);
                                     }
                                     e->graphics.charging_state = 2;
@@ -5799,8 +5799,8 @@ static void StageTick(GameState* gstate) {
                                 e->graphics.charging_state = 0;
                             }
                             CHARGING_DT = 0.0f;
-                            StopLSound(charging);
-                            StopLSound(charged);
+                            PlatformStopSound(charging);
+                            PlatformStopSound(charged);
                         }
                     }
                 }

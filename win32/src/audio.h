@@ -20,4 +20,4 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit);
 #define PlatformPlaySound(id, flags) (PlatformPlaySoundLimit((id), (flags), 0))
 
 u32 PlatformSoundCountPlaying(SoundId id);
-void StopLSound(SoundId);
+void PlatformStopSound(SoundId);
