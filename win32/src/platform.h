@@ -202,5 +202,6 @@ LCORE bool PlatformKeyDown(LKey key);
 
 LCORE void PlatformInit(u32 width, u32 height, u32 target_fps);
 
+// TODO: Do we really need this? maybe can remove.
 u32 PlatformScreenWidth();
 u32 PlatformScreenHeight();
