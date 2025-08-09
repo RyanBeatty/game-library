@@ -5403,7 +5403,7 @@ static void StageTick(GameState* gstate) {
 
                 e->health = 4;
 
-                PlayLSound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
+                PlatformPlaySound(GetSound(SOUND_WOODMAN_STAGE), SF_PLAY_INFINITE);
             }
 
             // Update.
@@ -5729,7 +5729,7 @@ static void StageTick(GameState* gstate) {
                                     shot->attacker_id = e->id;
                                 }
 
-                                PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
+                                PlatformPlaySound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
                                 e->graphics.charging_state = 0;
                             }
 
@@ -5738,12 +5738,12 @@ static void StageTick(GameState* gstate) {
                                 if (CHARGING_DT >= FULL_CHARGE_DT) {
                                     if (!GetLSoundPlaying(charged)) {
                                         StopLSound(charging);
-                                        PlayLSound(charged, SF_PLAY_INFINITE);
+                                        PlatformPlaySound(charged, SF_PLAY_INFINITE);
                                     }
                                     e->graphics.charging_state = 2;
                                 } else {
                                     if (!GetLSoundPlaying(charging)) {
-                                        PlayLSound(charging, SF_PLAY_INFINITE);
+                                        PlatformPlaySound(charging, SF_PLAY_INFINITE);
                                     }
                                     e->graphics.charging_state = 1;
 
@@ -5776,7 +5776,7 @@ static void StageTick(GameState* gstate) {
                                 FlagOn(shot->flags, EFLAG_PROJECTILE);
                                 FlagOn(shot->flags, EFLAG_SURVIVE_HIT);
                                 shot->attacker_id = e->id;
-                                PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_LARGE), 0);
+                                PlatformPlaySound(GetSound(SOUND_MEGAMAN_SHOOT_LARGE), 0);
                                 e->graphics.charging_state = 0;
                             } else if (!SHOOTING) {
                                 SHOOTING = true;
@@ -5795,7 +5795,7 @@ static void StageTick(GameState* gstate) {
                                                                   MEGAMAN_SMALL_SHOT, 0.0f, 1.0f);
                                 FlagOn(shot->flags, EFLAG_PROJECTILE);
                                 shot->attacker_id = e->id;
-                                PlayLSound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
+                                PlatformPlaySound(GetSound(SOUND_MEGAMAN_SHOOT_SMALL), 0);
                                 e->graphics.charging_state = 0;
                             }
                             CHARGING_DT = 0.0f;

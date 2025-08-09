@@ -17,7 +17,7 @@ void PlatformClearSounds();
 SoundId PlatformLoadSound(const char* filename);
 // limit = 0, means no limit
 void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit);
-#define PlayLSound(id, flags) (PlatformPlaySoundLimit((id), (flags), 0))
+#define PlatformPlaySound(id, flags) (PlatformPlaySoundLimit((id), (flags), 0))
 
 u32 GetLSoundPlaying(SoundId id);
 void StopLSound(SoundId);
