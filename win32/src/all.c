@@ -21,6 +21,8 @@
 // Project files below
 #include "base.h"
 //
+#include "platform.h"
+
 //
 #ifdef L_PLATFORM_WIN32
 
@@ -31,7 +33,6 @@
 
 #else
 //
-#include "platform.h"
 //
 #include "game.h"
 
