@@ -83,7 +83,7 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     SetTargetFPS(target_fps);
 }
 
-void PlatformInitAudio(byte* buffer, isize cap) {}
+void PlatformInitAudio(byte* buffer, isize cap) { InitAudioDevice(); }
 void PlatformClearSounds() {
     RaylibPlatformState* rpstate = GetRaylibPlatformState();
     for (i32 i = NULLSOUND + 1; i < ArraySizeOf(rpstate->loaded); ++i) {
