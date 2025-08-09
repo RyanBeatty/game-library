@@ -6537,15 +6537,13 @@ LCORE void Stage2Tick(GameState* gstate) {
 
 static void TestL();
 
-static void GameStateInit(GameState* gstate) {
+void GameInit(Arena perm) {
+    GameState* gstate = &GState;
     TestL();
 
     memset(gstate, 0, sizeof(GameState));
 
-    // Initialize dyanmic memory pool.
-    isize cap = GB(4);
-    byte* buffer = PlatformAllocate(cap);
-    gstate->perm = NewArena(buffer, cap);
+    gstate->perm = perm;
 
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
@@ -6631,7 +6629,11 @@ void GameTick(f32 dt) {
 }
 
 int main(void) {
-    GameStateInit(&GState);
+    // Initialize dyanmic memory pool.
+    isize cap = GB(4);
+    byte* buffer = PlatformAllocate(cap);
+    Arena perm = NewArena(buffer, cap);
+    GameInit(perm);
 
     while (!WindowShouldClose()) {
         GameTick(GetFPS());
