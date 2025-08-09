@@ -39,4 +39,7 @@
 //
 #include "main.c"
 
+//
+#include "platform/raylib_platform.c"
+
 #endif
