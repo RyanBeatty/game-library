@@ -199,3 +199,5 @@ LCORE i32 PlatformKeyToRaylibKey(LKey key);
 LCORE bool PlatformKeyPressed(LKey key);
 LCORE bool PlatformKeyReleased(LKey key);
 LCORE bool PlatformKeyDown(LKey key);
+
+LCORE void PlatformInit(u32 width, u32 height, u32 target_fps);

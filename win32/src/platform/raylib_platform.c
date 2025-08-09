@@ -56,3 +56,11 @@ LCORE i32 PlatformKeyToRaylibKey(LKey key) {
 LCORE bool PlatformKeyPressed(LKey key) { return IsKeyPressed(PlatformKeyToRaylibKey(key)); }
 LCORE bool PlatformKeyReleased(LKey key) { return IsKeyReleased(PlatformKeyToRaylibKey(key)); }
 LCORE bool PlatformKeyDown(LKey key) { return IsKeyDown(PlatformKeyToRaylibKey(key)); }
+
+LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
+    InitWindow(width, height, "Game");
+    SetWindowPosition(100, 100);
+    // SetWindowState(FLAG_WINDOW_UNDECORATED);
+    SetConfigFlags(FLAG_VSYNC_HINT);
+    SetTargetFPS(target_fps);
+}

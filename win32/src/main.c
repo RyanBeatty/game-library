@@ -6551,12 +6551,7 @@ static void GameStateInit(GameState* gstate) {
     gstate->renderh = 240.0f;
 
     u32 scale = 3;
-    InitWindow(scale * gstate->renderw, scale * gstate->renderh, "Game");
-    SetWindowPosition(100, 100);
-    // SetWindowState(FLAG_WINDOW_UNDECORATED);
-    SetConfigFlags(FLAG_VSYNC_HINT);
-    SetTargetFPS(60);
-    // DisableCursor();
+    PlatformInit(scale * gstate->renderw, scale * gstate->renderh, 60);
 
     isize sound_cap = GB(2);
     byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
