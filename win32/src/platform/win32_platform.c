@@ -24,8 +24,6 @@
 #define AUDIO_BLOCK_ALIGN (AUDIO_NUM_CHANNELS * (BITSPERSSAMPLE / 8))
 #define AUDIO_BYTE_RATE (SAMPLESPERSEC * AUDIO_NUM_CHANNELS * (BITSPERSSAMPLE / 8))
 
-const SoundId NULLSOUND = 0;
-
 typedef struct {
     byte* data;
     isize len;
