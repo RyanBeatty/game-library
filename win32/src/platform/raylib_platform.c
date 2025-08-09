@@ -2,9 +2,10 @@
 #include <shared.h>
 
 #include "platform.h"
-#include "raylib.h"
 
 #endif
+
+#include "raylib.h"
 
 LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
     char buffer[256] = {0};
