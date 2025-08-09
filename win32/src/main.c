@@ -6628,22 +6628,6 @@ void GameTick(f32 dt) {
     ++gstate->nframe;
 }
 
-int main(void) {
-    // Initialize dyanmic memory pool.
-    isize cap = GB(4);
-    byte* buffer = PlatformAllocate(cap);
-    Arena perm = NewArena(buffer, cap);
-    GameInit(perm);
-
-    while (!WindowShouldClose()) {
-        GameTick(GetFPS());
-    }
-
-    CloseWindow();
-
-    return 0;
-}
-
 ////////////////////////////////////////////////////////////
 
 static bool TestFail = false;
