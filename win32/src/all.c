@@ -30,7 +30,6 @@
 #include "platform/win32_platform.c"
 
 #else
-#include "raylib.h"
 //
 #include "audio.h"
 //
