@@ -2982,7 +2982,11 @@ static SoundId SOUNDS[SOUND_COUNT] = {0};
 #define GetSound(sid) (SOUNDS[(sid)])
 
 static void LoadSounds() {
-    ClearLSounds();
+    static bool INIT = false;
+    if (INIT) {
+        return;
+    }
+    INIT = true;
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
     SOUNDS[SOUND_JUMP] = LoadLSound("assets/sounds/jump.wav");

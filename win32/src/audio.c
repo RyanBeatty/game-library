@@ -129,10 +129,10 @@ void InitAudio(byte* buffer, isize cap) {
         }
     }
 
-    ClearLSounds();
+    PlatformClearSounds();
 }
 
-void ClearLSounds() {
+void PlatformClearSounds() {
     memset(AUDIO.sounds, 0, sizeof(AUDIO.sounds));
     // sound 0 is blank sound sentinal.
     AUDIO.soundlen = 1;

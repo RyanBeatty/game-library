@@ -12,7 +12,7 @@ typedef enum {
 } SoundFlag;
 
 void InitAudio(byte* buffer, isize cap);
-void ClearLSounds();
+void PlatformClearSounds();
 SoundId LoadLSoundTest(const char* filename);
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
 SoundId LoadLSound(const char* filename);
