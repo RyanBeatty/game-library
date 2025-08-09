@@ -69,6 +69,16 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     SetTargetFPS(target_fps);
 }
 
+void PlatformInitAudio(byte* buffer, isize cap) {}
+void PlatformClearSounds() {}
+// Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
+SoundId PlatformLoadSound(const char* filename) { return 0; }
+// limit = 0, means no limit
+void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {}
+
+u32 PlatformSoundCountPlaying(SoundId id) { return 0; }
+void PlatformStopSound(SoundId) {}
+
 int main(void) {
     // Initialize dyanmic memory pool.
     isize cap = GB(4);
