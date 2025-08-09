@@ -349,7 +349,7 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
     }
 }
 
-u32 GetLSoundPlaying(SoundId id) {
+u32 PlatformSoundCountPlaying(SoundId id) {
     AudioState* audio = &AUDIO;
     u32 count = 0;
     for (i32 i = 0; i < audio->cap; ++i) {

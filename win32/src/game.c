@@ -5736,13 +5736,13 @@ static void StageTick(GameState* gstate) {
                             CHARGING_DT += dt;
                             if (CHARGING_DT > 0.5f) {
                                 if (CHARGING_DT >= FULL_CHARGE_DT) {
-                                    if (!GetLSoundPlaying(charged)) {
+                                    if (!PlatformSoundCountPlaying(charged)) {
                                         StopLSound(charging);
                                         PlatformPlaySound(charged, SF_PLAY_INFINITE);
                                     }
                                     e->graphics.charging_state = 2;
                                 } else {
-                                    if (!GetLSoundPlaying(charging)) {
+                                    if (!PlatformSoundCountPlaying(charging)) {
                                         PlatformPlaySound(charging, SF_PLAY_INFINITE);
                                     }
                                     e->graphics.charging_state = 1;
