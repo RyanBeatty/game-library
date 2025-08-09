@@ -1,7 +1,9 @@
 #ifndef UNITY_BUILD
-#include <shared.h>
+#include <base.h>
 
 #endif
+
+#pragma once
 
 typedef enum {
     LLOG_NONE = 0,
