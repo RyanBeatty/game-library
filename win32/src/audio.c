@@ -317,28 +317,28 @@ SoundId LoadLSound(const char* filename) {
     return id;
 }
 
-void PlayLSound(SoundId id, SoundFlag flags) {
-    Assert(id < AUDIO.soundlen);
-    LSound* sound = &AUDIO.sounds[id];
+// void PlayLSound(SoundId id, SoundFlag flags) {
+//     Assert(id < AUDIO.soundlen);
+//     LSound* sound = &AUDIO.sounds[id];
 
-    for (u32 i = 0; i < AUDIO.cap; ++i) {
-        AudioStream* stream = &AUDIO.streams[i];
-        if (stream->free) {
-            stream->free = false;
-            stream->id = id;
+//     for (u32 i = 0; i < AUDIO.cap; ++i) {
+//         AudioStream* stream = &AUDIO.streams[i];
+//         if (stream->free) {
+//             stream->free = false;
+//             stream->id = id;
 
-            stream->xbuffer.AudioBytes = sound->len;
-            stream->xbuffer.pAudioData = sound->data;
-            stream->xbuffer.LoopCount = (flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
+//             stream->xbuffer.AudioBytes = sound->len;
+//             stream->xbuffer.pAudioData = sound->data;
+//             stream->xbuffer.LoopCount = (flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
 
-            stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
-            stream->voice->lpVtbl->Start(stream->voice, 0, 0);
-            return;
-        }
-    }
-}
+//             stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
+//             stream->voice->lpVtbl->Start(stream->voice, 0, 0);
+//             return;
+//         }
+//     }
+// }
 
-void PlayLSoundLimit(SoundId id, u32 limit) {
+void PlayLSoundLimit(SoundId id, SoundFlag flags, u32 limit) {
     Assert(id < AUDIO.soundlen);
     LSound* sound = &AUDIO.sounds[id];
 
@@ -356,14 +356,14 @@ void PlayLSoundLimit(SoundId id, u32 limit) {
         }
     }
 
-    if (choice != NULL && playing < limit) {
+    if (choice != NULL && (limit == 0 || playing < limit)) {
         AudioStream* stream = choice;
         stream->free = false;
         stream->id = id;
 
         stream->xbuffer.AudioBytes = sound->len;
         stream->xbuffer.pAudioData = sound->data;
-        stream->xbuffer.LoopCount = 0;
+        stream->xbuffer.LoopCount = (flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
 
         stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
         stream->voice->lpVtbl->Start(stream->voice, 0, 0);
