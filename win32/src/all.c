@@ -38,7 +38,7 @@
 #include "game.h"
 
 //
-#include "main.c"
+#include "game.c"
 
 //
 #include "platform/raylib_platform.c"
