@@ -33,6 +33,8 @@
 #include "raylib.h"
 //
 #include "audio.h"
+//
+#include "platform.h"
 
 //
 #include "main.c"
