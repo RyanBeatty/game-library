@@ -15,7 +15,7 @@ void PlatformInitAudio(byte* buffer, isize cap);
 void PlatformClearSounds();
 SoundId LoadLSoundTest(const char* filename);
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
-SoundId LoadLSound(const char* filename);
+SoundId PlatformLoadSound(const char* filename);
 // limit = 0, means no limit
 void PlayLSoundLimit(SoundId id, SoundFlag flags, u32 limit);
 #define PlayLSound(id, flags) (PlayLSoundLimit((id), (flags), 0))

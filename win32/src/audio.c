@@ -170,7 +170,7 @@ SoundId LoadLSoundTest(const char* filename) {
 // Can load:
 // * yt2wav wav files.
 // * jsfxr wav files (with sample rate 44k and sample size 16 bit).
-SoundId LoadLSound(const char* filename) {
+SoundId PlatformLoadSound(const char* filename) {
     Assert(AUDIO.soundlen < AUDIO.soundcap);
     SoundId id = AUDIO.soundlen++;
     LSound* sound = &AUDIO.sounds[id];

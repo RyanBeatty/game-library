@@ -2988,21 +2988,21 @@ static void LoadSounds() {
     }
     INIT = true;
     SOUNDS[SOUND_NONE] = 0;
-    SOUNDS[SOUND_BEEP] = LoadLSound("assets/sounds/beep.wav");
-    SOUNDS[SOUND_JUMP] = LoadLSound("assets/sounds/jump.wav");
-    SOUNDS[SOUND_HIT_GOAL] = LoadLSound("assets/sounds/hit_goal.wav");
-    SOUNDS[SOUND_START_LEVEL] = LoadLSound("assets/sounds/start_level.wav");
-    SOUNDS[SOUND_WATER_DEATH] = LoadLSound("assets/sounds/water_death.wav");
-    SOUNDS[SOUND_CAR_DEATH] = LoadLSound("assets/sounds/car_death.wav");
-    SOUNDS[SOUND_GAME_OVER] = LoadLSound("assets/sounds/game_over.wav");
+    SOUNDS[SOUND_BEEP] = PlatformLoadSound("assets/sounds/beep.wav");
+    SOUNDS[SOUND_JUMP] = PlatformLoadSound("assets/sounds/jump.wav");
+    SOUNDS[SOUND_HIT_GOAL] = PlatformLoadSound("assets/sounds/hit_goal.wav");
+    SOUNDS[SOUND_START_LEVEL] = PlatformLoadSound("assets/sounds/start_level.wav");
+    SOUNDS[SOUND_WATER_DEATH] = PlatformLoadSound("assets/sounds/water_death.wav");
+    SOUNDS[SOUND_CAR_DEATH] = PlatformLoadSound("assets/sounds/car_death.wav");
+    SOUNDS[SOUND_GAME_OVER] = PlatformLoadSound("assets/sounds/game_over.wav");
 
-    SOUNDS[SOUND_WOODMAN_STAGE] = LoadLSound("assets/sounds/no_commit/woodman_stage_music_new.wav");
-    SOUNDS[SOUND_MEGAMAN_SHOOT_SMALL] = LoadLSound("assets/sounds/megaman_shoot_small.wav");
-    SOUNDS[SOUND_MEGAMAN_SHOOT_LARGE] = LoadLSound("assets/sounds/megaman_shoot_large.wav");
-    SOUNDS[SOUND_MEGAMAN_CHARGING] = LoadLSound("assets/sounds/megaman_charging.wav");
-    SOUNDS[SOUND_MEGAMAN_CHARGED] = LoadLSound("assets/sounds/megaman_charged.wav");
+    SOUNDS[SOUND_WOODMAN_STAGE] = PlatformLoadSound("assets/sounds/no_commit/woodman_stage_music_new.wav");
+    SOUNDS[SOUND_MEGAMAN_SHOOT_SMALL] = PlatformLoadSound("assets/sounds/megaman_shoot_small.wav");
+    SOUNDS[SOUND_MEGAMAN_SHOOT_LARGE] = PlatformLoadSound("assets/sounds/megaman_shoot_large.wav");
+    SOUNDS[SOUND_MEGAMAN_CHARGING] = PlatformLoadSound("assets/sounds/megaman_charging.wav");
+    SOUNDS[SOUND_MEGAMAN_CHARGED] = PlatformLoadSound("assets/sounds/megaman_charged.wav");
 
-    SOUNDS[SOUND_MOB_HURT] = LoadLSound("assets/sounds/mob_hurt.wav");
+    SOUNDS[SOUND_MOB_HURT] = PlatformLoadSound("assets/sounds/mob_hurt.wav");
 }
 
 ////////////////////////////////////////////////////////////
