@@ -2272,7 +2272,7 @@ static void EndRender() {
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // IMPORTANT.
-        glViewport(0, 0, GetScreenWidth(), GetScreenHeight());
+        glViewport(0, 0, PlatformScreenWidth(), PlatformScreenHeight());
         glDisable(GL_DEPTH_TEST);
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -2281,7 +2281,7 @@ static void EndRender() {
         ShaderPassInit(&pass, GetEffectsShader());
         pass.dt = rstate->dt;
         pass.timer = rstate->timer;
-        pass.resolution = Vec2Lit(GetScreenWidth(), GetScreenHeight());
+        pass.resolution = Vec2Lit(PlatformScreenWidth(), PlatformScreenHeight());
         DrawCmd* cmd = ShaderPassAddCmd(&pass);
         DrawMeshCmdInit(cmd);
         cmd->meshcmd.meshid = GetMesh(M_QUAD);
@@ -6592,8 +6592,8 @@ static void GameStateTick(GameState* gstate) {
     gstate->dt = GetFrameTime();
     f32 dt = gstate->dt;
 
-    gstate->screenw = GetScreenWidth();
-    gstate->screenh = GetScreenHeight();
+    gstate->screenw = PlatformScreenWidth();
+    gstate->screenh = PlatformScreenHeight();
 
     gstate->timer += dt;
 

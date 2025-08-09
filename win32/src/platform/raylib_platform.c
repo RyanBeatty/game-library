@@ -57,6 +57,9 @@ LCORE bool PlatformKeyPressed(LKey key) { return IsKeyPressed(PlatformKeyToRayli
 LCORE bool PlatformKeyReleased(LKey key) { return IsKeyReleased(PlatformKeyToRaylibKey(key)); }
 LCORE bool PlatformKeyDown(LKey key) { return IsKeyDown(PlatformKeyToRaylibKey(key)); }
 
+u32 PlatformScreenWidth() { return GetScreenWidth(); }
+u32 PlatformScreenHeight() { return GetScreenHeight(); }
+
 LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     InitWindow(width, height, "Game");
     SetWindowPosition(100, 100);
