@@ -26,7 +26,9 @@
 
 #include "glad.c"
 #include "shared.c"
-#include "win32_platform.c"
+//
+#include "platform/win32_platform.c"
+
 #else
 #include "raylib.h"
 //
