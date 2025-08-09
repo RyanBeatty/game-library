@@ -6554,7 +6554,7 @@ void GameInit(Arena perm) {
     isize sound_cap = GB(2);
     byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
 
-    InitAudio(sound_buffer, sound_cap);
+    PlatformInitAudio(sound_buffer, sound_cap);
     InitFonts();
     ParticleSystemInit();
 

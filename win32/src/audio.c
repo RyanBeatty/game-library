@@ -76,7 +76,7 @@ static AudioState AUDIO = {
 #define XAUDIO2() (AUDIO.xaudio->lpVtbl)
 #define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
-void InitAudio(byte* buffer, isize cap) {
+void PlatformInitAudio(byte* buffer, isize cap) {
     static bool INIT = false;
     Assert(!INIT);
     INIT = true;

@@ -11,7 +11,7 @@ typedef enum {
     SF_PLAY_INFINITE = 1 << 0,
 } SoundFlag;
 
-void InitAudio(byte* buffer, isize cap);
+void PlatformInitAudio(byte* buffer, isize cap);
 void PlatformClearSounds();
 SoundId LoadLSoundTest(const char* filename);
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
