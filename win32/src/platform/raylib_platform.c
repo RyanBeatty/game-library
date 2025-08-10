@@ -141,7 +141,9 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
     if (choice != NULLSOUND && (limit == 0 || limit < count)) {
         rpstate->streams[choice] = id;
         rpstate->playing[choice] = true;
-        if (FlagOn(flags, SF_PLAY_INFINITE)) {
+        if (TestFlag(flags, SF_PLAY_INFINITE)) {
+            // PlatformLog(LLOG_INFO, "play infinite");
+            // breakpoint();
             PlayMusicStream(rpstate->musics[id]);
         } else {
             PlaySound(rpstate->sounds[id]);
@@ -172,6 +174,23 @@ void PlatformStopSound(SoundId id) {
     StopMusicStream(rpstate->musics[id]);
 }
 
+void TickAudio() {
+    RaylibPlatformState* rpstate = GetRaylibPlatformState();
+
+    for (i32 i = 0; i < ArraySizeOf(rpstate->streams); ++i) {
+        if (rpstate->playing[i]) {
+            SoundId choice = rpstate->streams[i];
+
+            UpdateMusicStream(rpstate->musics[choice]);
+
+            rpstate->playing[i] =
+                IsSoundPlaying(rpstate->sounds[choice]) || IsMusicStreamPlaying(rpstate->musics[choice]);
+            // UpdateMusicStream(rpstate->musics[i]);
+            // rpstate->playing[i] = IsSoundPlaying(rpstate->sounds[i]) || IsMusicStreamPlaying(rpstate->musics[i]);
+        }
+    }
+}
+
 int main(void) {
     PlatformLog(LLOG_INFO, "Raylib Version %s", RAYLIB_VERSION);
 
@@ -185,6 +204,7 @@ int main(void) {
         BeginDrawing();
 
         GameTick(GetFrameTime());
+        TickAudio();
 
         EndDrawing();
     }
