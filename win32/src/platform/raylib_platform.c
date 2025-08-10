@@ -116,6 +116,7 @@ SoundId PlatformLoadSound(const char* filename) {
                    (sound.stream.sampleSize > 0) &&  // Validate sample size is supported
                    (sound.stream.channels > 0));
             rpstate->sounds[i] = sound;
+            rpstate->musics[i] = LoadMusicStream(filename);
             return (SoundId)i;
         }
     }
