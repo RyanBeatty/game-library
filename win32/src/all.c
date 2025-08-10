@@ -38,11 +38,15 @@
 
 #include "glad.c"
 //
-#include "platform/win32_platform.c"
+// #include "platform/win32_platform.c"
+#define PLATFORM_FILE "platform/win32_platform.c"
 
 #else
 
 //
-#include "platform/raylib_platform.c"
+// #include "platform/raylib_platform.c"
+#define PLATFORM_FILE "platform/raylib_platform.c"
 
 #endif
+
+#include PLATFORM_FILE
