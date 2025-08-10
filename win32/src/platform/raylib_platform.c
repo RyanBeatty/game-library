@@ -12,6 +12,7 @@
 typedef struct {
     Arena perm;
 
+    // Need sounds and muscis because you can't loop a sound but you can't play multiple musics.
     Sound sounds[MAX_SOUNDS];
     Music musics[MAX_SOUNDS];
     bool loaded[MAX_SOUNDS];
@@ -140,7 +141,11 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
     if (choice != NULLSOUND && (limit == 0 || limit < count)) {
         rpstate->streams[choice] = id;
         rpstate->playing[choice] = true;
-        PlaySound(rpstate->sounds[id]);
+        if (FlagOn(flags, SF_PLAY_INFINITE)) {
+            PlayMusicStream(rpstate->musics[id]);
+        } else {
+            PlaySound(rpstate->sounds[id]);
+        }
     }
 }
 
@@ -164,6 +169,7 @@ void PlatformStopSound(SoundId id) {
         }
     }
     StopSound(rpstate->sounds[id]);
+    StopMusicStream(rpstate->musics[id]);
 }
 
 int main(void) {
