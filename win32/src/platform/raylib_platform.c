@@ -162,6 +162,8 @@ void PlatformStopSound(SoundId id) {
 }
 
 int main(void) {
+    PlatformLog(LLOG_INFO, "Raylib Version %s", RAYLIB_VERSION);
+
     // Initialize dyanmic memory pool.
     isize cap = GB(4);
     byte* buffer = PlatformAllocate(cap);
