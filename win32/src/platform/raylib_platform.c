@@ -13,6 +13,7 @@ typedef struct {
     Arena perm;
 
     Sound sounds[MAX_SOUNDS];
+    Music musics[MAX_SOUNDS];
     bool loaded[MAX_SOUNDS];
 
     SoundId streams[MAX_SOUNDS];
@@ -93,6 +94,9 @@ void PlatformClearSounds() {
             Sound sound = rpstate->sounds[i];
             StopSound(sound);
             UnloadSound(sound);
+            Music music = rpstate->musics[i];
+            StopMusicStream(music);
+            UnloadMusicStream(music);
             rpstate->loaded[i] = false;
         }
     }
