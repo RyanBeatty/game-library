@@ -7,6 +7,12 @@
 // TODO: Looks like raylib already defines this. Comment back in after removing raylib support.
 #ifdef L_PLATFORM_WIN32
 #define STB_IMAGE_IMPLEMENTATION
+#define PLATFORM_FILE "platform/win32_platform.c"
+
+#else
+
+#define PLATFORM_FILE "platform/raylib_platform.c"
+
 #endif
 #include "stb_image.h"
 //
@@ -37,15 +43,6 @@
 #ifdef L_PLATFORM_WIN32
 
 #include "glad.c"
-//
-// #include "platform/win32_platform.c"
-#define PLATFORM_FILE "platform/win32_platform.c"
-
-#else
-
-//
-// #include "platform/raylib_platform.c"
-#define PLATFORM_FILE "platform/raylib_platform.c"
 
 #endif
 
