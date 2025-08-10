@@ -1,5 +1,4 @@
 #ifndef UNITY_BUILD
-#include <shared.h>
 
 #include "platform.h"
 

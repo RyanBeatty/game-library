@@ -41,7 +41,6 @@
 
 //
 #ifdef L_PLATFORM_WIN32
-
 #include "glad.c"
 
 #endif
