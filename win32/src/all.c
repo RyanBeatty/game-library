@@ -39,7 +39,7 @@
 //
 #include "game.c"
 
-//
+// TODO: idk why but moving this to be any higher causing parsing error in game.c
 #ifdef L_PLATFORM_WIN32
 #include "glad.c"
 
