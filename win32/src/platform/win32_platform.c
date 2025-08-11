@@ -17,6 +17,7 @@ typedef struct {
     HINSTANCE hinstance;
     HDC dc;
     HWND window_handle;
+    int n_cmd_show;
 } Win32State;
 
 static Win32State W32State = {0};
@@ -640,6 +641,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     Win32State* w32state = GetWin32State();
     w32state->hinstance = hInstance;
+    w32state->n_cmd_show = nCmdShow;
 
     w32state->window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
     {
@@ -660,7 +662,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     u32 height = PlatformScreenHeight();
     glViewport(0, 0, width, height);
 
-    ShowWindow(w32state->window_handle, nCmdShow);
+    ShowWindow(w32state->window_handle, w32state->n_cmd_show);
 
     LARGE_INTEGER ticks_per_sec = {0};
     QueryPerformanceFrequency(&ticks_per_sec);
