@@ -79,7 +79,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 }
 
-HWND Win32CreateWindow(HINSTANCE hinstance, HDC* dc) {
+HWND Win32CreateWindow(HINSTANCE hinstance, u32 width, u32 height, HDC* dc) {
     static char CLASS_NAME[] = "L Engine";
 
     WNDCLASS wc = {
@@ -105,8 +105,8 @@ HWND Win32CreateWindow(HINSTANCE hinstance, HDC* dc) {
                                         CW_USEDEFAULT,  // X
                                         CW_USEDEFAULT,  // Y
                                         // size
-                                        CW_USEDEFAULT,  // width
-                                        CW_USEDEFAULT,  // height
+                                        width,   // width
+                                        height,  // height
 
                                         NULL,       // Parent window
                                         NULL,       // Menu
@@ -604,7 +604,7 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     Win32State* w32state = GetWin32State();
     w32state->target_fps = target_fps;
 
-    w32state->window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
+    w32state->window_handle = Win32CreateWindow(w32state->hinstance, width, height, &w32state->dc);
     {
         Win32CreateOpengGLCtx(w32state->dc);
         // Sync buffer flip on vsync
@@ -695,9 +695,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ticks_last = ticks;
 
         {
-            glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
-            // GameTick(dt);
+            // glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+            // glClear(GL_COLOR_BUFFER_BIT);
+            GameTick(dt);
 
             SwapBuffers(w32state->dc);
             // glFinish();
