@@ -603,6 +603,25 @@ u32 PlatformScreenHeight() {
 LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     Win32State* w32state = GetWin32State();
     w32state->target_fps = target_fps;
+
+    w32state->window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
+    {
+        Win32CreateOpengGLCtx(w32state->dc);
+        // Sync buffer flip on vsync
+        // https://www.khronos.org/opengl/wiki/Swap_Interval
+        Assert(wglSwapIntervalEXT(1));
+    }
+
+    if (!GetWindowRect(w32state->window_handle, &w32state->wrect)) {
+        fprintf(stderr, "Failed to get window rect\n");
+        exit(1);
+    }
+
+    // TODO: Respond to window resize events.
+    // TODO: Move this into game renderer. should just always call this.
+    glViewport(0, 0, PlatformScreenWidth(), PlatformScreenHeight());
+
+    ShowWindow(w32state->window_handle, w32state->n_cmd_show);
 }
 
 // // https://www.ascii-code.com/
@@ -637,32 +656,31 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
 // static KeyboardInput W32Input;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    // GameInit();
-
     Win32State* w32state = GetWin32State();
     w32state->hinstance = hInstance;
     w32state->n_cmd_show = nCmdShow;
+    GameInit();
 
-    w32state->window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
-    {
-        Win32CreateOpengGLCtx(w32state->dc);
-        // Sync buffer flip on vsync
-        // https://www.khronos.org/opengl/wiki/Swap_Interval
-        Assert(wglSwapIntervalEXT(1));
-    }
+    // w32state->window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
+    // {
+    //     Win32CreateOpengGLCtx(w32state->dc);
+    //     // Sync buffer flip on vsync
+    //     // https://www.khronos.org/opengl/wiki/Swap_Interval
+    //     Assert(wglSwapIntervalEXT(1));
+    // }
 
-    if (!GetWindowRect(w32state->window_handle, &w32state->wrect)) {
-        fprintf(stderr, "Failed to get window rect\n");
-        exit(1);
-    }
+    // if (!GetWindowRect(w32state->window_handle, &w32state->wrect)) {
+    //     fprintf(stderr, "Failed to get window rect\n");
+    //     exit(1);
+    // }
 
-    // TODO: Respond to window resize events.
-    // TODO: Move this into game renderer. should just always call this.
-    u32 width = PlatformScreenWidth();
-    u32 height = PlatformScreenHeight();
-    glViewport(0, 0, width, height);
+    // // TODO: Respond to window resize events.
+    // // TODO: Move this into game renderer. should just always call this.
+    // u32 width = PlatformScreenWidth();
+    // u32 height = PlatformScreenHeight();
+    // glViewport(0, 0, width, height);
 
-    ShowWindow(w32state->window_handle, w32state->n_cmd_show);
+    // ShowWindow(w32state->window_handle, w32state->n_cmd_show);
 
     LARGE_INTEGER ticks_per_sec = {0};
     QueryPerformanceFrequency(&ticks_per_sec);
