@@ -672,8 +672,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ticks_last = ticks;
 
         {
-            glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
+            // glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+            // glClear(GL_COLOR_BUFFER_BIT);
+            GameTick(dt);
 
             SwapBuffers(dc);
             // glFinish();
