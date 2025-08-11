@@ -413,8 +413,14 @@ LCORE bool PlatformKeyReleased(LKey key) { return false; }
 LCORE bool PlatformKeyDown(LKey key) { return false; }
 
 // TODO: Do we really need this? maybe can remove.
-u32 PlatformScreenWidth() { return 0; }
-u32 PlatformScreenHeight() { return 0; }
+u32 PlatformScreenWidth() {
+    Win32State* w32state = GetWin32State();
+    return (u32)(w32state->wrect.right - w32state->wrect.left);
+}
+u32 PlatformScreenHeight() {
+    Win32State* w32state = GetWin32State();
+    return (u32)(w32state->wrect.right - w32state->wrect.left);
+}
 
 LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     Win32State* w32state = GetWin32State();
@@ -651,8 +657,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     // TODO: Respond to window resize events.
-    i32 width = (i32)(w32state->wrect.right - w32state->wrect.left);
-    i32 height = (i32)(w32state->wrect.bottom - w32state->wrect.top);
+    // TODO: Move this into game renderer. should just always call this.
+    u32 width = PlatformScreenWidth();
+    u32 height = PlatformScreenHeight();
     glViewport(0, 0, width, height);
 
     ShowWindow(window_handle, nCmdShow);
