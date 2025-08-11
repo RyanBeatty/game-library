@@ -636,10 +636,9 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     Win32State* w32state = GetWin32State();
 
-    HDC dc;
-    HWND window_handle = Win32CreateWindow(hInstance, &dc);
+    HWND window_handle = Win32CreateWindow(hInstance, &w32state->dc);
     {
-        HGLRC glctx = Win32CreateOpengGLCtx(dc);
+        HGLRC glctx = Win32CreateOpengGLCtx(w32state->dc);
         // Sync buffer flip on vsync
         // https://www.khronos.org/opengl/wiki/Swap_Interval
         Assert(wglSwapIntervalEXT(1));
@@ -695,7 +694,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             glClear(GL_COLOR_BUFFER_BIT);
             GameTick(dt);
 
-            SwapBuffers(dc);
+            SwapBuffers(w32state->dc);
             // glFinish();
         }
     }
