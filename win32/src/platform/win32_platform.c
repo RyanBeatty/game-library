@@ -638,7 +638,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     HWND window_handle = Win32CreateWindow(hInstance, &w32state->dc);
     {
-        HGLRC glctx = Win32CreateOpengGLCtx(w32state->dc);
+        Win32CreateOpengGLCtx(w32state->dc);
         // Sync buffer flip on vsync
         // https://www.khronos.org/opengl/wiki/Swap_Interval
         Assert(wglSwapIntervalEXT(1));
