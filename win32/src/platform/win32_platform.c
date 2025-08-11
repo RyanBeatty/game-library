@@ -14,8 +14,9 @@ typedef struct {
 
     f32 target_fps;
 
-    HDC dc;
     HINSTANCE hinstance;
+    HDC dc;
+    HWND window_handle;
 } Win32State;
 
 static Win32State W32State = {0};
@@ -643,7 +644,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Win32State* w32state = GetWin32State();
     w32state->hinstance = hInstance;
 
-    HWND window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
+    w32state->window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
     {
         Win32CreateOpengGLCtx(w32state->dc);
         // Sync buffer flip on vsync
@@ -651,7 +652,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         Assert(wglSwapIntervalEXT(1));
     }
 
-    if (!GetWindowRect(window_handle, &w32state->wrect)) {
+    if (!GetWindowRect(w32state->window_handle, &w32state->wrect)) {
         fprintf(stderr, "Failed to get window rect\n");
         exit(1);
     }
@@ -662,7 +663,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     u32 height = PlatformScreenHeight();
     glViewport(0, 0, width, height);
 
-    ShowWindow(window_handle, nCmdShow);
+    ShowWindow(w32state->window_handle, nCmdShow);
 
     LARGE_INTEGER ticks_per_sec = {0};
     QueryPerformanceFrequency(&ticks_per_sec);
