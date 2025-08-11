@@ -10,8 +10,7 @@
 #endif
 
 typedef struct {
-    u32 width;
-    u32 height;
+    RECT wrect;
 
     f32 target_fps;
 
@@ -414,13 +413,11 @@ LCORE bool PlatformKeyReleased(LKey key) { return false; }
 LCORE bool PlatformKeyDown(LKey key) { return false; }
 
 // TODO: Do we really need this? maybe can remove.
-u32 PlatformScreenWidth() { return GetWin32State()->width; }
-u32 PlatformScreenHeight() { return GetWin32State()->width; }
+u32 PlatformScreenWidth() { return 0; }
+u32 PlatformScreenHeight() { return 0; }
 
 LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     Win32State* w32state = GetWin32State();
-    w32state->width = width;
-    w32state->height = height;
     w32state->target_fps = target_fps;
 }
 
@@ -648,14 +645,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         Assert(wglSwapIntervalEXT(1));
     }
 
-    RECT wrect = {0};
-    if (!GetWindowRect(window_handle, &wrect)) {
+    if (!GetWindowRect(window_handle, &w32state->wrect)) {
         fprintf(stderr, "Failed to get window rect\n");
         exit(1);
     }
 
     // TODO: Respond to window resize events.
-    glViewport(0, 0, (i32)(wrect.right - wrect.left), (i32)(wrect.bottom - wrect.top));
+    i32 width = (i32)(w32state->wrect.right - w32state->wrect.left);
+    i32 height = (i32)(w32state->wrect.bottom - w32state->wrect.top);
+    glViewport(0, 0, width, height);
 
     ShowWindow(window_handle, nCmdShow);
 
