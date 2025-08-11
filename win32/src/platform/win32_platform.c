@@ -659,28 +659,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Win32State* w32state = GetWin32State();
     w32state->hinstance = hInstance;
     w32state->n_cmd_show = nCmdShow;
+
     GameInit();
-
-    // w32state->window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
-    // {
-    //     Win32CreateOpengGLCtx(w32state->dc);
-    //     // Sync buffer flip on vsync
-    //     // https://www.khronos.org/opengl/wiki/Swap_Interval
-    //     Assert(wglSwapIntervalEXT(1));
-    // }
-
-    // if (!GetWindowRect(w32state->window_handle, &w32state->wrect)) {
-    //     fprintf(stderr, "Failed to get window rect\n");
-    //     exit(1);
-    // }
-
-    // // TODO: Respond to window resize events.
-    // // TODO: Move this into game renderer. should just always call this.
-    // u32 width = PlatformScreenWidth();
-    // u32 height = PlatformScreenHeight();
-    // glViewport(0, 0, width, height);
-
-    // ShowWindow(w32state->window_handle, w32state->n_cmd_show);
 
     LARGE_INTEGER ticks_per_sec = {0};
     QueryPerformanceFrequency(&ticks_per_sec);
