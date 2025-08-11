@@ -9,6 +9,18 @@
 #include "platform.h"
 #endif
 
+typedef struct {
+    u32 width;
+    u32 height;
+
+    f32 target_fps;
+
+    HDC dc;
+} Win32State;
+
+static Win32State W32State = {0};
+#define GetWin32State() (&W32State)
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // Audio
 
@@ -401,10 +413,15 @@ LCORE bool PlatformKeyReleased(LKey key) { return false; }
 LCORE bool PlatformKeyDown(LKey key) { return false; }
 
 // TODO: Do we really need this? maybe can remove.
-u32 PlatformScreenWidth() { return 0.0f; }
-u32 PlatformScreenHeight() { return 0.0f; }
+u32 PlatformScreenWidth() { return GetWin32State()->width; }
+u32 PlatformScreenHeight() { return GetWin32State()->width; }
 
-LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {}
+LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
+    Win32State* w32state = GetWin32State();
+    w32state->width = width;
+    w32state->height = height;
+    w32state->target_fps = target_fps;
+}
 
 // // https://www.ascii-code.com/
 // typedef enum {
@@ -617,6 +634,8 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    Win32State* w32state = GetWin32State();
+
     HDC dc;
     HWND window_handle = Win32CreateWindow(hInstance, &dc);
     {
@@ -672,8 +691,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ticks_last = ticks;
 
         {
-            // glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-            // glClear(GL_COLOR_BUFFER_BIT);
+            glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
             GameTick(dt);
 
             SwapBuffers(dc);
