@@ -16,6 +16,7 @@ typedef struct {
     f32 target_fps;
 
     HDC dc;
+    HINSTANCE hinstance;
 } Win32State;
 
 static Win32State W32State = {0};
@@ -637,8 +638,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // GameInit();
 
     Win32State* w32state = GetWin32State();
+    w32state->hinstance = hInstance;
 
-    HWND window_handle = Win32CreateWindow(hInstance, &w32state->dc);
+    HWND window_handle = Win32CreateWindow(w32state->hinstance, &w32state->dc);
     {
         Win32CreateOpengGLCtx(w32state->dc);
         // Sync buffer flip on vsync
