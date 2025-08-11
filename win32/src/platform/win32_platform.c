@@ -634,6 +634,8 @@ HGLRC Win32CreateOpengGLCtx(HDC dc) {
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    // GameInit();
+
     Win32State* w32state = GetWin32State();
 
     HWND window_handle = Win32CreateWindow(hInstance, &w32state->dc);
@@ -652,8 +654,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // TODO: Respond to window resize events.
     glViewport(0, 0, (i32)(wrect.right - wrect.left), (i32)(wrect.bottom - wrect.top));
-
-    GameInit();
 
     ShowWindow(window_handle, nCmdShow);
 
@@ -692,7 +692,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
             glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
-            GameTick(dt);
+            // GameTick(dt);
 
             SwapBuffers(w32state->dc);
             // glFinish();
