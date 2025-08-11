@@ -99,9 +99,11 @@ HWND Win32CreateWindow(HINSTANCE hinstance, u32 width, u32 height, HDC* dc) {
     int wstyle = WS_OVERLAPPEDWINDOW;
     int wstyleex = 0;
 
+    // Create window takes the full window dims as parameters this includes space for toolbar and borders.
+    // We want to translate our desired width/height which is for the drawing area to window width/height which
+    // we can do via AdjustWindowRectEx.
     RECT rect = {0, 0, width, height};
     AdjustWindowRectEx(&rect, wstyle, FALSE, wstyleex);
-
     int actual_width = rect.right - rect.left;
     int actual_height = rect.bottom - rect.top;
 
@@ -613,6 +615,9 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     Win32State* w32state = GetWin32State();
     w32state->target_fps = target_fps;
 
+    // Needed to get correct sized window after creating window.
+    // https://stackoverflow.com/questions/29195137/createwindow-on-windows-8-seems-to-create-window-too-large
+    SetProcessDPIAware();
     w32state->window_handle = Win32CreateWindow(w32state->hinstance, width, height, &w32state->dc);
     {
         Win32CreateOpengGLCtx(w32state->dc);
