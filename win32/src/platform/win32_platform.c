@@ -96,17 +96,26 @@ HWND Win32CreateWindow(HINSTANCE hinstance, u32 width, u32 height, HDC* dc) {
         exit(1);
     }
 
-    HWND window_handle = CreateWindowEx(0,                    // Optional window styles.
-                                        CLASS_NAME,           // Window class
-                                        "L Engine",           // Window text
-                                        WS_OVERLAPPEDWINDOW,  // dwStyle Window style
+    int wstyle = WS_OVERLAPPEDWINDOW;
+    int wstyleex = 0;
+
+    RECT rect = {0, 0, width, height};
+    AdjustWindowRectEx(&rect, wstyle, FALSE, wstyleex);
+
+    int actual_width = rect.right - rect.left;
+    int actual_height = rect.bottom - rect.top;
+
+    HWND window_handle = CreateWindowEx(wstyleex,    // Optional window styles.
+                                        CLASS_NAME,  // Window class
+                                        "L Engine",  // Window text
+                                        wstyle,      // dwStyle Window style
 
                                         // pos
                                         CW_USEDEFAULT,  // X
                                         CW_USEDEFAULT,  // Y
                                         // size
-                                        width,   // width
-                                        height,  // height
+                                        actual_width,   // width
+                                        actual_height,  // height
 
                                         NULL,       // Parent window
                                         NULL,       // Menu
