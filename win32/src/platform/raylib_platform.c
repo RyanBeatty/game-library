@@ -193,11 +193,7 @@ void TickAudio() {
 int main(void) {
     PlatformLog(LLOG_INFO, "Raylib Version %s", RAYLIB_VERSION);
 
-    // Initialize dyanmic memory pool.
-    isize cap = GB(4);
-    byte* buffer = PlatformAllocate(cap);
-    Arena perm = NewArena(buffer, cap);
-    GameInit(perm);
+    GameInit();
 
     while (!WindowShouldClose()) {
         BeginDrawing();
