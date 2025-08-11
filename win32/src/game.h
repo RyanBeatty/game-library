@@ -5,6 +5,6 @@
 
 #pragma once
 
-void GameInit(Arena perm);
+void GameInit();
 
 void GameTick(f32 dt);

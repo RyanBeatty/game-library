@@ -6537,12 +6537,16 @@ LCORE void Stage2Tick(GameState* gstate) {
 
 static void TestL();
 
-void GameInit(Arena perm) {
+void GameInit() {
     GameState* gstate = &GState;
     TestL();
 
     memset(gstate, 0, sizeof(GameState));
 
+    // Initialize dyanmic memory pool.
+    isize cap = GB(4);
+    byte* buffer = PlatformAllocate(cap);
+    Arena perm = NewArena(buffer, cap);
     gstate->perm = perm;
 
     gstate->renderw = 256.0f;

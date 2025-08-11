@@ -635,6 +635,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // TODO: Respond to window resize events.
     glViewport(0, 0, (i32)(wrect.right - wrect.left), (i32)(wrect.bottom - wrect.top));
 
+    GameInit();
+
     ShowWindow(window_handle, nCmdShow);
 
     LARGE_INTEGER ticks_per_sec = {0};
