@@ -689,8 +689,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER ticks = {0};
 
-    Win32Input w32input = {0};
-
     bool running = true;
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
@@ -701,7 +699,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 running = false;
                 break;
             } else if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) {
-                ProcessInput(&w32input, msg);
+                ProcessInput(&w32state->w32input, msg);
             } else {
                 // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
                 // msg struct and just adds more messages to the queue. do we even need this?
