@@ -11,7 +11,12 @@
 
 #define MAX_KEYS 256
 typedef struct {
+    // The polling window is the time between the calls to ProcessInput().
+
+    // Did the key end the polling window down.
     bool down[MAX_KEYS];
+    // How many half transitions did the key go though during the polling window.
+    u32 half_transitions[MAX_KEYS];
 } Win32Input;
 
 typedef struct {
@@ -36,15 +41,14 @@ static Win32State W32State = {0};
 // Input
 
 void ProcessInput(Win32Input* w32input, MSG msg) {
-    if (msg.message == WM_KEYDOWN) {
-        LKey key = (LKey)msg.wParam;
-        PlatformLog(LLOG_INFO, "key down %c", key);
-        w32input->down[key] = true;
-    } else if (msg.message == WM_KEYUP) {
-        LKey key = (LKey)msg.wParam;
-        w32input->down[key] = true;
-    } else {
-        Assert(false);
+    LKey key = (LKey)msg.wParam;
+    PlatformLog(LLOG_INFO, "key event %c", key);
+    ++w32input->half_transitions[key];
+    w32input->down[key] = msg.message == WM_KEYDOWN;
+
+    // TODO: Expose platform function for quitting and move this to game layer.
+    if (w32input->down[LKEY_ESCAPE]) {
+        PostQuitMessage(0);
     }
 }
 
@@ -61,39 +65,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             PostQuitMessage(0);
             return 0;
         }
-        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
-        case WM_KEYDOWN: {
-            // if (key == LKEY_ESCAPE) {
-            //     PostQuitMessage(0);
-            // }
-            switch (wParam) {
-                case WKEY_A: {
-                    // i32 repeat_count = lParam & 0xFFFF;
-                    printf("key a down\n");
-                    break;
-                }
-                case VK_ESCAPE: {
-                    PostQuitMessage(0);
-                    break;
-                }
-                default: {
-                    printf("Unknown key down %lld\n", wParam);
-                }
-            }
-            return 0;
-        }
-        // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
+        case WM_KEYDOWN:
         case WM_KEYUP: {
-            // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-            switch (wParam) {
-                case WKEY_A: {
-                    printf("Key a up\n");
-                    break;
-                }
-                default: {
-                    printf("Unknown key up %lld\n", wParam);
-                }
-            }
+            PlatformLog(LLOG_ERROR, "windows proc message for key up/down should be hanlded by ProcessInput. Key: %d",
+                        wParam);
+            Assert(false);
             return 0;
         }
         default: {
