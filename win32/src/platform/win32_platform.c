@@ -42,9 +42,13 @@ static Win32State W32State = {0};
 
 void ProcessInput(Win32Input* w32input, MSG msg) {
     LKey key = (LKey)msg.wParam;
-    PlatformLog(LLOG_INFO, "key event %c", key);
-    ++w32input->half_transitions[key];
-    w32input->down[key] = msg.message == WM_KEYDOWN;
+    bool down = msg.message == WM_KEYDOWN;
+    if (down != w32input->down[key]) {
+        ++w32input->half_transitions[key];
+    }
+    w32input->down[key] = down;
+
+    PlatformLog(LLOG_INFO, "key event %c. half_transitions: %d", key, w32input->half_transitions[key]);
 
     // TODO: Expose platform function for quitting and move this to game layer.
     if (w32input->down[LKEY_ESCAPE]) {
