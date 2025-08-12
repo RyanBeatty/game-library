@@ -36,8 +36,6 @@ void ProcessInput(Win32Input* w32input, MSG msg) {}
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 
-LCORE i32 PlatformKeyToRaylibKey(LKey key) { return LKEY_NONE; }
-
 LCORE bool PlatformKeyPressed(LKey key) { return false; }
 LCORE bool PlatformKeyReleased(LKey key) { return false; }
 LCORE bool PlatformKeyDown(LKey key) { return false; }

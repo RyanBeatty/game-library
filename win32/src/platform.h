@@ -196,8 +196,6 @@ typedef enum {
     LKEY_OEM_CLEAR = 0xFE
 } LKey;
 
-LCORE i32 PlatformKeyToRaylibKey(LKey key);
-
 LCORE bool PlatformKeyPressed(LKey key);
 LCORE bool PlatformKeyReleased(LKey key);
 LCORE bool PlatformKeyDown(LKey key);
