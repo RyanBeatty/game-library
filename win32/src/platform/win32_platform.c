@@ -9,6 +9,11 @@
 #include "platform.h"
 #endif
 
+#define MAX_KEYS 256
+typedef struct {
+    bool down[MAX_KEYS];
+} Win32Input;
+
 typedef struct {
     RECT wrect;
 
@@ -18,18 +23,17 @@ typedef struct {
     HDC dc;
     HWND window_handle;
     int n_cmd_show;
+
+    Win32Input w32input;
 } Win32State;
 
 static Win32State W32State = {0};
 #define GetWin32State() (&W32State)
 
+#define GetW32Input() (&GetWin32State()->w32input)
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Input
-
-typedef struct {
-    bool down[5];
-
-} Win32Input;
 
 void ProcessInput(Win32Input* w32input, MSG msg) {}
 
@@ -38,7 +42,7 @@ typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 
 LCORE bool PlatformKeyPressed(LKey key) { return false; }
 LCORE bool PlatformKeyReleased(LKey key) { return false; }
-LCORE bool PlatformKeyDown(LKey key) { return false; }
+LCORE bool PlatformKeyDown(LKey key) { return GetW32Input()->down[key]; }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
