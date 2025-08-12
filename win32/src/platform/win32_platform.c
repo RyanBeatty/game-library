@@ -35,7 +35,18 @@ static Win32State W32State = {0};
 ////////////////////////////////////////////////////////////////////////////////////
 // Input
 
-void ProcessInput(Win32Input* w32input, MSG msg) {}
+void ProcessInput(Win32Input* w32input, MSG msg) {
+    if (msg.message == WM_KEYDOWN) {
+        LKey key = (LKey)msg.wParam;
+        PlatformLog(LLOG_INFO, "key down %c", key);
+        w32input->down[key] = true;
+    } else if (msg.message == WM_KEYUP) {
+        LKey key = (LKey)msg.wParam;
+        w32input->down[key] = true;
+    } else {
+        Assert(false);
+    }
+}
 
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
@@ -611,7 +622,19 @@ void PlatformStopSound(SoundId id) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {}
+LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
+    static char LEVELS[][16] = {
+        "NONE", "DEBUG", "INFO", "WARN", "ERROR", "COUNT",
+    };
+    char buffer[256] = {0};
+
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+
+    printf("%s: %s\n", LEVELS[level], buffer);
+}
 
 // TODO: Do we really need this? maybe can remove.
 u32 PlatformScreenWidth() {
@@ -691,7 +714,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         QueryPerformanceCounter(&ticks);
         i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
         f64 dt = ticks_dt * sec_per_ticks;
-        printf("dt: %f\n", dt);
+        // printf("dt: %f\n", dt);
         ticks_last = ticks;
 
         {
