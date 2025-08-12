@@ -23,6 +23,16 @@ typedef struct {
 static Win32State W32State = {0};
 #define GetWin32State() (&W32State)
 
+////////////////////////////////////////////////////////////////////////////////////
+// Input
+
+typedef struct {
+    bool down[5];
+
+} Win32Input;
+
+void ProcessInput(Win32Input* w32input, MSG msg) {}
+
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 
@@ -654,6 +664,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER ticks = {0};
 
+    Win32Input w32input = {0};
+
     bool running = true;
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
@@ -663,12 +675,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (msg.message == WM_QUIT) {
                 running = false;
                 break;
+            } else if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) {
+                ProcessInput(&w32input, msg);
+            } else {
+                // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
+                // msg struct and just adds more messages to the queue. do we even need this?
+                // TranslateMessage(&msg);
+                // Calls our windows procedure to process the message.
+                DispatchMessage(&msg);
             }
-            // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
-            // msg struct and just adds more messages to the queue. do we even need this?
-            // TranslateMessage(&msg);
-            // Calls our windows procedure to process the message.
-            DispatchMessage(&msg);
         }
 
         QueryPerformanceCounter(&ticks);
