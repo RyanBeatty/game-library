@@ -638,37 +638,6 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     ShowWindow(w32state->window_handle, w32state->n_cmd_show);
 }
 
-// // https://www.ascii-code.com/
-// typedef enum {
-//     LKEY_NONE = 0,
-//     LKEY_ESCAPE = 33,
-//     LKEY_A = 65,
-// } LKey;
-
-// #define MAX_KEYS 256
-
-// static LKey W32KeyToLKey(W32Key key) {
-//     switch (key) {
-//         case WKEY_ESCAPE: {
-//             return LKEY_ESCAPE;
-//         }
-//         case WKEY_A: {
-//             return LKEY_A;
-//         }
-//         default: {
-//             return LKEY_NONE;
-//         }
-//     }
-// }
-
-// typedef struct {
-//     bool down[MAX_KEYS];
-//     bool up[MAX_KEYS];
-//     bool was_down[MAX_KEYS];
-// } KeyboardInput;
-
-// static KeyboardInput W32Input;
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     Win32State* w32state = GetWin32State();
     w32state->hinstance = hInstance;
