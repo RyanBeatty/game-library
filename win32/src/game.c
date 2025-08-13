@@ -1,9 +1,13 @@
 #ifndef UNITY_BUILD
+#include <math.h>
 #include <platform.h>
 #include <shared.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
+#include "glad.h"
+#include "stb_truetype.h"
 
 // #include "raylib.h"
 
@@ -6584,7 +6588,7 @@ void GameInit() {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
+    GameStateLoadScene(gstate, SCENE_SUB_PIXEL_RENDER);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
