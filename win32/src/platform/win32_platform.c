@@ -40,29 +40,13 @@ static Win32State W32State = {0};
 ////////////////////////////////////////////////////////////////////////////////////
 // Input
 
-// void ProcessInput(Win32State* w32state, MSG msg) {
-//     LKey key = (LKey)msg.wParam;
-//     bool down = msg.message == WM_KEYDOWN;
-//     if (down != w32input->down[key]) {
-//         ++w32input->half_transitions[key];
-//     }
-//     w32input->down[key] = down;
-
-//     PlatformLog(LLOG_INFO, "key event %c. half_transitions: %d", key, w32input->half_transitions[key]);
-
-//     // TODO: Expose platform function for quitting and move this to game layer.
-//     if (w32input->down[LKEY_ESCAPE]) {
-//         PostQuitMessage(0);
-//     }
-// }
-
-// https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
-
+// TODO: These methods don't handle the case where you are mashing and managed to do a full transition within a frame.
 LCORE bool PlatformKeyPressed(LKey key) {
     return GetWin32State()->cur_input->down[key] && !GetWin32State()->prev_input->down[key];
 }
-LCORE bool PlatformKeyReleased(LKey key) { return false; }
+LCORE bool PlatformKeyReleased(LKey key) {
+    return !GetWin32State()->cur_input->down[key] && GetWin32State()->prev_input->down[key];
+}
 LCORE bool PlatformKeyDown(LKey key) { return GetWin32State()->cur_input->down[key]; }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
