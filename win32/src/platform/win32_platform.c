@@ -29,39 +29,41 @@ typedef struct {
     HWND window_handle;
     int n_cmd_show;
 
-    Win32Input w32input;
+    Win32Input inputs[2];
+    Win32Input* cur_input;
+    Win32Input* prev_input;
 } Win32State;
 
 static Win32State W32State = {0};
 #define GetWin32State() (&W32State)
 
-#define GetW32Input() (&GetWin32State()->w32input)
+#define GetCurInput() (GetWin32State()->cur_input)
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Input
 
-void ProcessInput(Win32Input* w32input, MSG msg) {
-    LKey key = (LKey)msg.wParam;
-    bool down = msg.message == WM_KEYDOWN;
-    if (down != w32input->down[key]) {
-        ++w32input->half_transitions[key];
-    }
-    w32input->down[key] = down;
+// void ProcessInput(Win32State* w32state, MSG msg) {
+//     LKey key = (LKey)msg.wParam;
+//     bool down = msg.message == WM_KEYDOWN;
+//     if (down != w32input->down[key]) {
+//         ++w32input->half_transitions[key];
+//     }
+//     w32input->down[key] = down;
 
-    PlatformLog(LLOG_INFO, "key event %c. half_transitions: %d", key, w32input->half_transitions[key]);
+//     PlatformLog(LLOG_INFO, "key event %c. half_transitions: %d", key, w32input->half_transitions[key]);
 
-    // TODO: Expose platform function for quitting and move this to game layer.
-    if (w32input->down[LKEY_ESCAPE]) {
-        PostQuitMessage(0);
-    }
-}
+//     // TODO: Expose platform function for quitting and move this to game layer.
+//     if (w32input->down[LKEY_ESCAPE]) {
+//         PostQuitMessage(0);
+//     }
+// }
 
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 
 LCORE bool PlatformKeyPressed(LKey key) { return false; }
 LCORE bool PlatformKeyReleased(LKey key) { return false; }
-LCORE bool PlatformKeyDown(LKey key) { return GetW32Input()->down[key]; }
+LCORE bool PlatformKeyDown(LKey key) { return GetCurInput()->down[key]; }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -628,6 +630,10 @@ u32 PlatformScreenHeight() {
 
 LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     Win32State* w32state = GetWin32State();
+
+    w32state->cur_input = &w32state->inputs[1];
+    w32state->prev_input = &w32state->inputs[0];
+
     w32state->target_fps = target_fps;
 
     // Needed to get correct sized window after creating window.
@@ -669,23 +675,51 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER ticks = {0};
 
+    Win32Input zero_input = {0};
+
     bool running = true;
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
     while (running) {
         // Respond to input
-        while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
-            if (msg.message == WM_QUIT) {
-                running = false;
-                break;
-            } else if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) {
-                ProcessInput(&w32state->w32input, msg);
-            } else {
-                // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
-                // msg struct and just adds more messages to the queue. do we even need this?
-                // TranslateMessage(&msg);
-                // Calls our windows procedure to process the message.
-                DispatchMessage(&msg);
+        {
+            // Swap prev and cur input.
+            Win32Input* temp = w32state->prev_input;
+            w32state->prev_input = w32state->cur_input;
+            w32state->cur_input = temp;
+            // Zero out cur input and set down state from the prev input state.
+            Win32Input* cur_input = w32state->cur_input;
+            *cur_input = zero_input;
+            for (i32 i = 0; i < ArraySizeOf(cur_input->down); ++i) {
+                cur_input->down[i] = w32state->prev_input->down[i];
+            }
+
+            while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+                if (msg.message == WM_QUIT) {
+                    running = false;
+                    break;
+                } else if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) {
+                    LKey key = (LKey)msg.wParam;
+                    bool down = msg.message == WM_KEYDOWN;
+                    if (down != cur_input->down[key]) {
+                        ++cur_input->half_transitions[key];
+                    }
+                    cur_input->down[key] = down;
+
+                    PlatformLog(LLOG_INFO, "key event: %c down: %d half_transitions: %d", key, cur_input->down[key],
+                                cur_input->half_transitions[key]);
+
+                    // TODO: Expose platform function for quitting and move this to game layer.
+                    if (cur_input->down[LKEY_ESCAPE]) {
+                        PostQuitMessage(0);
+                    }
+                } else {
+                    // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
+                    // msg struct and just adds more messages to the queue. do we even need this?
+                    // TranslateMessage(&msg);
+                    // Calls our windows procedure to process the message.
+                    DispatchMessage(&msg);
+                }
             }
         }
 
