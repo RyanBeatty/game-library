@@ -37,8 +37,6 @@ typedef struct {
 static Win32State W32State = {0};
 #define GetWin32State() (&W32State)
 
-#define GetCurInput() (GetWin32State()->cur_input)
-
 ////////////////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -61,9 +59,11 @@ static Win32State W32State = {0};
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 typedef enum { WKEY_NONE = 0, WKEY_ESCAPE = 0X1B, WKEY_A = 0x41 } W32Key;
 
-LCORE bool PlatformKeyPressed(LKey key) { return false; }
+LCORE bool PlatformKeyPressed(LKey key) {
+    return GetWin32State()->cur_input->down[key] && !GetWin32State()->prev_input->down[key];
+}
 LCORE bool PlatformKeyReleased(LKey key) { return false; }
-LCORE bool PlatformKeyDown(LKey key) { return GetCurInput()->down[key]; }
+LCORE bool PlatformKeyDown(LKey key) { return GetWin32State()->cur_input->down[key]; }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
