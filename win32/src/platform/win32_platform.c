@@ -20,7 +20,8 @@ typedef struct {
 } Win32Input;
 
 typedef struct {
-    RECT wrect;
+    // rectangle of the drawable area of the window. this is different from the full window size.
+    RECT client_rect;
 
     f32 target_fps;
 
@@ -605,11 +606,11 @@ LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
 // TODO: Do we really need this? maybe can remove.
 u32 PlatformScreenWidth() {
     Win32State* w32state = GetWin32State();
-    return (u32)(w32state->wrect.right - w32state->wrect.left);
+    return (u32)(w32state->client_rect.right - w32state->client_rect.left);
 }
 u32 PlatformScreenHeight() {
     Win32State* w32state = GetWin32State();
-    return (u32)(w32state->wrect.right - w32state->wrect.left);
+    return (u32)(w32state->client_rect.bottom - w32state->client_rect.top);
 }
 
 LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
@@ -631,14 +632,14 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
         Assert(wglSwapIntervalEXT(1));
     }
 
-    if (!GetWindowRect(w32state->window_handle, &w32state->wrect)) {
-        fprintf(stderr, "Failed to get window rect\n");
+    if (!GetClientRect(w32state->window_handle, &w32state->client_rect)) {
+        PlatformLog(LLOG_ERROR, "Failed to get window client rect");
         exit(1);
     }
 
     // TODO: Respond to window resize events.
     // TODO: Move this into game renderer. should just always call this.
-    glViewport(0, 0, PlatformScreenWidth(), PlatformScreenHeight());
+    // glViewport(0, 0, PlatformScreenWidth(), PlatformScreenHeight());
 
     ShowWindow(w32state->window_handle, w32state->n_cmd_show);
 }
