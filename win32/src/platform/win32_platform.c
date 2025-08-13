@@ -690,8 +690,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     }
                     cur_input->down[key] = down;
 
-                    PlatformLog(LLOG_DEBUG, "key event: %c down: %d half_transitions: %d", key, cur_input->down[key],
-                                cur_input->half_transitions[key]);
+                    // PlatformLog(LLOG_DEBUG, "key event: %c down: %d half_transitions: %d", key, cur_input->down[key],
+                    //             cur_input->half_transitions[key]);
 
                     // TODO: Expose platform function for quitting and move this to game layer.
                     if (cur_input->down[LKEY_ESCAPE]) {
