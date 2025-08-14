@@ -6647,11 +6647,10 @@ void GameInit() {
 void GameTick(f32 dt) {
     GameState* gstate = &GState;
     gstate->dt = dt;
+    gstate->timer += dt;
 
     gstate->screenw = PlatformScreenWidth();
     gstate->screenh = PlatformScreenHeight();
-
-    gstate->timer += dt;
 
     {
         static bool ENABLE_DEBUG_KEYMAP = true;
