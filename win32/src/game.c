@@ -4569,6 +4569,7 @@ typedef enum {
     SCENE_STAGE,
     SCENE_TRUE_TYPE,
     SCENE_SUB_PIXEL_RENDER,
+    SCENE_BASIC,
     SCENE_COUNT,
 } SceneId;
 
@@ -4822,6 +4823,36 @@ LCORE void TrueTypeTickRaw(GameState* gstate) {
         DrawLTextureProUV(TX, quvoffset, quvdims, qorigin, qdims, 0.0f, LCLEAR);
     }
     EndShaderPass();
+
+    EndRender();
+}
+
+static void BasicTick(GameState* gstate) {
+    static LCamera CAMERA = {0};
+
+    if (!gstate->init) {
+        // byte data[] = {255, 0, 0, 255};
+        // TX = TextureFromBuffer(data, 1, 1);
+        CAMERA.eye = Vec3Lit(0.0f, 0.0f, 2.0f);
+        CAMERA.orient = Vec3Zero();
+    }
+
+    BeginRender(gstate->dt);
+
+    {
+        ShaderPass* pass = BeginShaderPass(GetSubPixelShader());
+        f32 hwidth = 0.5f * gstate->renderw;
+        f32 hheight = 0.5f * gstate->renderh;
+        pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
+        pass->proj = Mat4Ortho(-hwidth, hwidth, -hheight, hheight, -10.0f, 10.0f);
+
+        ClearBuffer(LCLEAR);
+
+        // DrawLTexture(GetTexture(TX_MEGAMAN2), Vec2Zero(), 1.0f);
+        DrawQuad(Vec3Lit(0.0f, 0.0f, 0.0f), 20.0f, 20.0f, Mat4Identity(), LRED);
+
+        EndShaderPass();
+    }
 
     EndRender();
 }
@@ -6585,10 +6616,11 @@ void GameInit() {
         gstate->scenefuncs[SCENE_STAGE_SELECT] = StageSelectTick;
         gstate->scenefuncs[SCENE_STAGE] = StageTick;
         gstate->scenefuncs[SCENE_SUB_PIXEL_RENDER] = SubPixelTick;
+        gstate->scenefuncs[SCENE_BASIC] = BasicTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_SUB_PIXEL_RENDER);
+    GameStateLoadScene(gstate, SCENE_BASIC);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
