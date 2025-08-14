@@ -6700,12 +6700,13 @@ void GameTick(f32 dt) {
         ++gstate->fdts_tail;
         gstate->fdts_tail %= len;
 
+        // The FPS is how many frames we've shown in the last second interval.
+        // We only count frames who's timestamp is within a second of the most recent timestamp.
+        // Could probably do this instead by storing delta times, but easier to think about in terms
+        // of absolute timestamps (with dts I worry about off by one errors).
         i32 cur = insert_idx;
         u32 fps = 0;
-        while (cur != gstate->fdts_head) {
-            if ((gstate->timer - gstate->frame_dts[cur]) >= 1.0f) {
-                break;
-            }
+        for (; cur != gstate->fdts_head && (gstate->timer - gstate->frame_dts[cur]) >= 1.0f;) {
             cur = (cur + len - 1) % len;
             ++fps;
         }
