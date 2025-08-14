@@ -4628,8 +4628,6 @@ static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
     // TODO: Big todo here. Need to come up with a more elegant way to load/unload scene data.
     // Luckily for megaman I don't think there will be entities that persist across scenes.
     EntitySystemInit();
-    RenderDataInit();
-    LoadSounds();
 
     // Signal to scene update func to run init.
     gstate->init = false;
@@ -6611,6 +6609,8 @@ void GameInit() {
     ParticleSystemInit();
 
     RenderStateInit(gstate->renderw, gstate->renderh);
+    RenderDataInit();
+    LoadSounds();
 
     {
         // glEnable(GL_DEPTH_TEST);
