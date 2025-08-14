@@ -629,7 +629,7 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
         Win32CreateOpengGLCtx(w32state->dc);
         // Sync buffer flip on vsync
         // https://www.khronos.org/opengl/wiki/Swap_Interval
-        Assert(wglSwapIntervalEXT(1));
+        Assert(wglSwapIntervalEXT(4));
     }
 
     if (!GetClientRect(w32state->window_handle, &w32state->client_rect)) {
