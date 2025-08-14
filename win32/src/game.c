@@ -2240,7 +2240,12 @@ static void EndRender() {
         glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
         // IMPORTANT.
         glViewport(0, 0, rstate->target.width, rstate->target.height);
+        // I forget exactly why we want depth testing. I think maybe has to do with not drawing portions of
+        // sprites that are blank? maybe thats just alpha blending.
         glEnable(GL_DEPTH_TEST);
+        // Pass depth test if incomming_depth <= stored_depth. This is necessary to ensure we still draw
+        // sprites which have the same z value which so far seems like a desirable thing.
+        glDepthFunc(GL_LEQUAL);
 
         // TODO: turn this into a draw command using unions.
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
