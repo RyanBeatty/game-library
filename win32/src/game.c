@@ -4837,10 +4837,20 @@ static void BasicTick(GameState* gstate) {
         CAMERA.orient = Vec3Zero();
     }
 
+    if (PlatformKeyDown(LKEY_LEFT)) {
+        CAMERA.eye.x -= 1.0f;
+    } else if (PlatformKeyDown(LKEY_RIGHT)) {
+        CAMERA.eye.x += 1.0f;
+    } else if (PlatformKeyDown(LKEY_DOWN)) {
+        CAMERA.eye.y -= 1.0f;
+    } else if (PlatformKeyDown(LKEY_UP)) {
+        CAMERA.eye.y += 1.0f;
+    }
+
     BeginRender(gstate->dt);
 
     {
-        ShaderPass* pass = BeginShaderPass(GetSubPixelShader());
+        ShaderPass* pass = BeginShaderPass(GetGameShader());
         f32 hwidth = 0.5f * gstate->renderw;
         f32 hheight = 0.5f * gstate->renderh;
         pass->view = GetCameraMat(CAMERA.eye, CAMERA.orient);
@@ -4848,8 +4858,11 @@ static void BasicTick(GameState* gstate) {
 
         ClearBuffer(LCLEAR);
 
+        DrawLTextureProUV(GetTexture(TX_MEGAMAN), Vec2Zero(), Vec2Lit(0.5f, 0.5f), Vec2Lit(0.0, 0), Vec2Lit(200, 200),
+                          0.0f, LCLEAR);
+
         // DrawLTexture(GetTexture(TX_MEGAMAN2), Vec2Zero(), 1.0f);
-        DrawQuad(Vec3Lit(0.0f, 0.0f, 0.0f), 20.0f, 20.0f, Mat4Identity(), LRED);
+        // DrawQuad(Vec3Lit(0.0f, 0.0f, 0.0f), 20.0f, 20.0f, Mat4Identity(), LRED);
 
         EndShaderPass();
     }
