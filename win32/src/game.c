@@ -6633,7 +6633,7 @@ void GameInit() {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_BASIC);
+    GameStateLoadScene(gstate, SCENE_TITLE_SCREEN);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
