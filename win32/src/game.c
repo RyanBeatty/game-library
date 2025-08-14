@@ -4599,10 +4599,10 @@ typedef struct GameState {
 
     f32 dt;  // frame delta time.
     f32 timer;
-    u32 nframe;          // num frame we are on.
-    f32 frame_dts[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
-    i32 fdts_tail;
-    i32 fdts_head;
+    u32 nframe;            // num frame we are on.
+    f32 frame_times[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
+    i32 fts_tail;
+    i32 fts_head;
     u32 fps;
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*);
@@ -6647,8 +6647,8 @@ void GameInit() {
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
 
-    gstate->fdts_tail = 1;
-    gstate->fdts_head = 0;
+    gstate->fts_tail = 1;
+    gstate->fts_head = 0;
 }
 
 void GameTick(f32 dt) {
@@ -6693,12 +6693,12 @@ void GameTick(f32 dt) {
 
     // FPS count
     {
-        Assert(gstate->fdts_tail != gstate->fdts_head);  // TODO: just like emit a warning log here or something.
-        i32 len = ArraySizeOf(gstate->frame_dts);
-        i32 insert_idx = gstate->fdts_tail;
-        gstate->frame_dts[insert_idx] = gstate->timer;
-        ++gstate->fdts_tail;
-        gstate->fdts_tail %= len;
+        Assert(gstate->fts_tail != gstate->fts_head);  // TODO: just like emit a warning log here or something.
+        i32 len = ArraySizeOf(gstate->frame_times);
+        i32 insert_idx = gstate->fts_tail;
+        gstate->frame_times[insert_idx] = gstate->timer;
+        ++gstate->fts_tail;
+        gstate->fts_tail %= len;
 
         // The FPS is how many frames we've shown in the last second interval.
         // We only count frames who's timestamp is within a second of the most recent timestamp.
@@ -6706,12 +6706,12 @@ void GameTick(f32 dt) {
         // of absolute timestamps (with dts I worry about off by one errors).
         i32 cur = insert_idx;
         u32 fps = 0;
-        for (; cur != gstate->fdts_head && (gstate->timer - gstate->frame_dts[cur]) >= 1.0f;) {
+        for (; cur != gstate->fts_head && (gstate->timer - gstate->frame_times[cur]) >= 1.0f;) {
             cur = (cur + len - 1) % len;
             ++fps;
         }
 
-        gstate->fdts_head = cur;
+        gstate->fts_head = cur;
         gstate->fps = fps;
         PlatformLog(LLOG_INFO, "fps: %d", gstate->fps);
     }
