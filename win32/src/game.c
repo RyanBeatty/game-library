@@ -4599,7 +4599,11 @@ typedef struct GameState {
 
     f32 dt;  // frame delta time.
     f32 timer;
-    u32 nframe;  // num frame we are on.
+    u32 nframe;          // num frame we are on.
+    f32 frame_dts[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
+    i32 fdts_tail;
+    i32 fdts_head;
+    u32 fps;
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*);
     u32 scenefuncssize;
@@ -6642,6 +6646,9 @@ void GameInit() {
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
+
+    gstate->fdts_tail = 1;
+    gstate->fdts_head = 0;
 }
 
 void GameTick(f32 dt) {
@@ -6683,6 +6690,30 @@ void GameTick(f32 dt) {
 
     gstate->init = true;
     ++gstate->nframe;
+
+    // FPS count
+    {
+        Assert(gstate->fdts_tail != gstate->fdts_head);  // TODO: just like emit a warning log here or something.
+        i32 len = ArraySizeOf(gstate->frame_dts);
+        i32 insert_idx = gstate->fdts_tail;
+        gstate->frame_dts[insert_idx] = gstate->timer;
+        ++gstate->fdts_tail;
+        gstate->fdts_tail %= len;
+
+        i32 cur = insert_idx;
+        u32 fps = 0;
+        while (cur != gstate->fdts_head) {
+            if ((gstate->timer - gstate->frame_dts[cur]) >= 1.0f) {
+                break;
+            }
+            cur = (cur + len - 1) % len;
+            ++fps;
+        }
+
+        gstate->fdts_head = cur;
+        gstate->fps = fps;
+        PlatformLog(LLOG_INFO, "fps: %d", gstate->fps);
+    }
 }
 
 ////////////////////////////////////////////////////////////
