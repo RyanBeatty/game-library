@@ -720,6 +720,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             GameTick(dt);
 
             SwapBuffers(w32state->dc);
+            // Sync/blocking
             // glFinish();
         }
     }
