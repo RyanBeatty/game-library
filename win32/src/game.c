@@ -6706,7 +6706,7 @@ void GameTick(f32 dt) {
         // of absolute timestamps (with dts I worry about off by one errors).
         i32 cur = insert_idx;
         u32 fps = 0;
-        for (; cur != gstate->fts_head && (gstate->timer - gstate->frame_times[cur]) <= 1.0f;) {
+        for (; ((cur + len - 1) % len) != gstate->fts_head && (gstate->timer - gstate->frame_times[cur]) <= 1.0f;) {
             cur = (cur + len - 1) % len;
             ++fps;
         }
