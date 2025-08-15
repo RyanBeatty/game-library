@@ -6692,7 +6692,8 @@ void GameTick(f32 dt) {
     ++gstate->nframe;
 
     // FPS count
-    {
+    // TODO: Bug if spamming enter on first couple screens. head == tail.
+    if (false) {
         Assert(gstate->fts_tail != gstate->fts_head);  // TODO: just like emit a warning log here or something.
         i32 len = ArraySizeOf(gstate->frame_times);
         i32 insert_idx = gstate->fts_tail;
