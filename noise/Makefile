@@ -42,7 +42,8 @@ EXT_INC_FLAGS := -Iexternal/glad -Iexternal/stb
 # These files will have .d instead of .o as the output.
 CPPFLAGS := $(INC_FLAGS) $(EXT_INC_FLAGS) -MMD -MP -g3 -Wall
 
-BTFLAGS := -D L_PLATFORM_WIN32=1 -D BT_INTERNAL=1 -L_TEST=1 -DBT_SLOW=1 -DPLATFORM_DESKTOP=1 -DUNITY_BUILD=1 -DNK_INCLUDE_DEFAULT_ALLOCATOR=1
+PLATFORM_FLAG := WIN32
+BTFLAGS := -D BT_INTERNAL=1 -L_TEST=1 -DBT_SLOW=1 -DPLATFORM_DESKTOP=1 -DUNITY_BUILD=1 -DNK_INCLUDE_DEFAULT_ALLOCATOR=1
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
@@ -51,7 +52,7 @@ $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 # Build step for C source
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(BTFLAGS) -c $< -o $@ $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(BTFLAGS) -D L_PLATFORM=$(PLATFORM_FLAG) -c $< -o $@ $(LDFLAGS)
 
 
 .PHONY: clean

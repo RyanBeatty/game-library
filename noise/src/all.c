@@ -5,7 +5,7 @@
 
 // Only define once.
 // TODO: Looks like raylib already defines this. Comment back in after removing raylib support.
-#ifdef L_PLATFORM_WIN32
+#if defined(L_PLATFORM) && L_PLATFORM == WIN32
 #define STB_IMAGE_IMPLEMENTATION
 #define PLATFORM_FILE "platform/win32_platform.c"
 
@@ -40,7 +40,7 @@
 #include "game.c"
 
 // TODO: idk why but moving this to be any higher causing parsing error in game.c
-#ifdef L_PLATFORM_WIN32
+#if defined(L_PLATFORM) && L_PLATFORM == WIN32
 #include "glad.c"
 
 #endif
