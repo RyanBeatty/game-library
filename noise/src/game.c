@@ -8,9 +8,6 @@
 
 #include "glad.h"
 #include "stb_truetype.h"
-
-// #include "raylib.h"
-
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -2624,20 +2621,6 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 typedef enum {
     SOUND_NONE = 0,
     SOUND_BEEP,
-    SOUND_JUMP,
-    SOUND_HIT_GOAL,
-    SOUND_START_LEVEL,
-    SOUND_WATER_DEATH,
-    SOUND_CAR_DEATH,
-    SOUND_GAME_OVER,
-
-    SOUND_WOODMAN_STAGE,
-    SOUND_MEGAMAN_SHOOT_SMALL,
-    SOUND_MEGAMAN_SHOOT_LARGE,
-    SOUND_MEGAMAN_CHARGING,
-    SOUND_MEGAMAN_CHARGED,
-
-    SOUND_MOB_HURT,
     SOUND_COUNT,
 } SoundTag;
 
@@ -2653,20 +2636,6 @@ static void LoadSounds() {
     INIT = true;
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_BEEP] = PlatformLoadSound("assets/sounds/beep.wav");
-    SOUNDS[SOUND_JUMP] = PlatformLoadSound("assets/sounds/jump.wav");
-    SOUNDS[SOUND_HIT_GOAL] = PlatformLoadSound("assets/sounds/hit_goal.wav");
-    SOUNDS[SOUND_START_LEVEL] = PlatformLoadSound("assets/sounds/start_level.wav");
-    SOUNDS[SOUND_WATER_DEATH] = PlatformLoadSound("assets/sounds/water_death.wav");
-    SOUNDS[SOUND_CAR_DEATH] = PlatformLoadSound("assets/sounds/car_death.wav");
-    SOUNDS[SOUND_GAME_OVER] = PlatformLoadSound("assets/sounds/game_over.wav");
-
-    SOUNDS[SOUND_WOODMAN_STAGE] = PlatformLoadSound("assets/sounds/no_commit/woodman_stage_music_new.wav");
-    SOUNDS[SOUND_MEGAMAN_SHOOT_SMALL] = PlatformLoadSound("assets/sounds/megaman_shoot_small.wav");
-    SOUNDS[SOUND_MEGAMAN_SHOOT_LARGE] = PlatformLoadSound("assets/sounds/megaman_shoot_large.wav");
-    SOUNDS[SOUND_MEGAMAN_CHARGING] = PlatformLoadSound("assets/sounds/megaman_charging.wav");
-    SOUNDS[SOUND_MEGAMAN_CHARGED] = PlatformLoadSound("assets/sounds/megaman_charged.wav");
-
-    SOUNDS[SOUND_MOB_HURT] = PlatformLoadSound("assets/sounds/mob_hurt.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -3004,23 +2973,8 @@ LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, 
 
 ////////////////////////////////////////////////////////////
 
-typedef enum {
-    MT_NONE = 0,
-    MT_RABBIT,
-    MT_BAT,
-    MT_DOG,
-    MT_BIRD,
-    MT_EGG,
-    MT_CHICK,
-    MT_COUNT,
-} MobType;
-
-////////////////////////////////////////////////////////////
-
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
-
-static const u8 GAMEPAD_ID = 0;
 
 ////////////////////////////////////////////////////////////
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
