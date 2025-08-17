@@ -3075,41 +3075,6 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    f32 jumping_dt;
-
-    i32 health;
-    f32 dying_dt;
-
-    u32 room_link;  // Used for room exit triggers.
-    bool facing_left;
-
-    EntityId attacker_id;
-    Vec3 attack_dir;
-
-    MobType mobtype;
-    f32 movement_cooldown_dt;
-    f32 wakeup_dt;
-    bool awake;
-
-    f32 idle_dt;
-    f32 shooting_dt;
-    i32 nshots;
-
-    bool pos_parametric;
-    f32 parametric_dt;
-    Vec3 pos_start;
-    f32 lifetime;
-
-    EntityId spawnedid;
-
-    EntityId birdid;
-    EntityId eggid;
-
-    bool broken;
-    f32 broken_dt;
-
-    f32 sleeptime;
-    f32 sleep_dt;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3168,9 +3133,6 @@ LCORE Entity* AllocateEntity() {
     PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
-
-    entity->attacker_id = NULLID;
-    entity->attack_dir = Vec3Zero();
     return entity;
 }
 
@@ -3200,12 +3162,6 @@ typedef struct {
 
 ////////////////////////////////////////////////////
 
-LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
-    return Mat4Invert(Mat4Multiply(Mat4TranslateV(eye), Mat4RotateEuler(orient)));
-}
-
-////////////////////////////////////////////////////
-
 typedef struct {
     Vec3 eye;     // world space position of the camera.
     Vec3 orient;  // vector containing euler angle rotation vector. for identity rotation, set to Vec3Zero
@@ -3214,6 +3170,10 @@ typedef struct {
 // static Mat4 LCameraGetView(LCamera c) {
 //     return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
 // }
+
+LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
+    return Mat4Invert(Mat4Multiply(Mat4TranslateV(eye), Mat4RotateEuler(orient)));
+}
 
 #define Grid2WorldEx(pos, w, h, d) (Vec3Lit((pos).x * (w), (pos).y * (h), (pos).z * (d)))
 
