@@ -1971,7 +1971,7 @@ static DrawCmd* AddDrawMeshCmd() {
     return cmd;
 }
 
-static DrawCmd* ClearBuffer(Vec4 color) {
+LCORE DrawCmd* ClearBuffer(Vec4 color) {
     DrawCmd* cmd = AddCmd();
     cmd->type = CMD_CLEAR;
     cmd->clearcmd.color = color;
