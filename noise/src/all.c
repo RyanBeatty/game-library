@@ -45,7 +45,7 @@
 #include "game.c"
 
 // TODO: idk why but moving this to be any higher causing parsing error in game.c
-#if defined(L_PLATFORM) && L_PLATFORM == WIN32
+#if L_PLATFORM == WIN32
 #include "glad.c"
 
 #endif
