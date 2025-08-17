@@ -3313,11 +3313,6 @@ static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
 
 typedef enum {
     SS_NONE = 0,
-    SS_RESPAWN,
-    SS_SPAWNED,
-    SS_PLAYING,
-    SS_GAMEOVER,
-    SS_DYING,
     SS_COUNT,
 } SceneState;
 
@@ -3325,21 +3320,8 @@ static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
 
 typedef enum {
     PS_NONE = 0,
-    PS_IDLE,
-    PS_CLIMBING,
-    PS_JUMPING,
-    PS_DYING,
-    PS_WALKING,
-    PS_HURT,
     PS_COUNT,
 } PlayerState;
-
-static const LKey KUP = LKEY_UP;
-static const LKey KDOWN = LKEY_DOWN;
-static const LKey KLEFT = LKEY_LEFT;
-static const LKey KRIGHT = LKEY_RIGHT;
-static const LKey KJUMP = LKEY_Z;
-static const LKey KSHOOT = LKEY_X;
 
 static void SceneDefaultTick(GameState* gstate) {
     BeginRender(gstate->dt);
