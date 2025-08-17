@@ -5,11 +5,16 @@
 
 // Only define once.
 // TODO: Looks like raylib already defines this. Comment back in after removing raylib support.
-#if defined(L_PLATFORM) && L_PLATFORM == WIN32
+
+#ifndef L_PLATFORM
+#error "L_PLATFORM macro must be defined. Valid values: WIN32, RAYLIB."
+#endif
+
+#if L_PLATFORM == WIN32
 #define STB_IMAGE_IMPLEMENTATION
 #define PLATFORM_FILE "platform/win32_platform.c"
 
-#else
+#elif L_PLATFORM == RAYLIB
 
 #define PLATFORM_FILE "platform/raylib_platform.c"
 
