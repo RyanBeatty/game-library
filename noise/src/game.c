@@ -1732,8 +1732,15 @@ static LShader GetNoiseShader() {
 
         out vec4 FragColor;
 
-        float whitenoise(vec3 pos) {
-            float random = dot(pos, vec3(2.971, 49.149, 0));
+        float whitenoise(vec3 value) {
+            // Produce a random value by dotting it with a random direction vector.
+            // The resulting random value will be how close our input vector is to the direciton vector
+            // multiplied by magnitudes.
+            float random = dot(value, vec3(2.971, 49.149, 0));
+            // Random could be a large number since our vectors are assumed to be unit vectors
+            // clamp to -1 to 1 range with sin function. This also gives our random value a wave like
+            // property. then to avoid tiling, multiply with a very large random number to essentially
+            // convert our small number to range [0, large number] which should eliminate tiling.
             return fract(sin(random) * 143758.5453);
         }
 
