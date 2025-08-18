@@ -1733,8 +1733,8 @@ static LShader GetNoiseShader() {
         out vec4 FragColor;
 
         float whitenoise(vec3 pos) {
-            float random = dot(pos, vec3(2.971, 49.149, 37.029));
-            return fract(random);
+            float random = dot(pos, vec3(2.971, 49.149, 0));
+            return fract(sin(random) * 143758.5453);
         }
 
         void main() {
