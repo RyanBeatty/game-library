@@ -14,8 +14,6 @@ else
 	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
 endif
 
-# LIBS := ""
-# LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
 LDFLAGS := $(LDFLAGS) -lm $(PLATFORM_LDFLAGS)
 
 # Find all the C and C++ files we want to compile
@@ -43,7 +41,7 @@ EXT_INC_FLAGS := -Iexternal/glad -Iexternal/stb
 CPPFLAGS := $(INC_FLAGS) $(EXT_INC_FLAGS) -MMD -MP -g3 -Wall
 
 PLATFORM_FLAG := WIN32
-BTFLAGS := -D BT_INTERNAL=1 -L_TEST=1 -DBT_SLOW=1 -DPLATFORM_DESKTOP=1 -DUNITY_BUILD=1 -DNK_INCLUDE_DEFAULT_ALLOCATOR=1
+BTFLAGS := -D BT_INTERNAL=1 -L_TEST=1 -DBT_SLOW=1 -DUNITY_BUILD=1 
 
 # The final build step.
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
@@ -57,6 +55,7 @@ $(BUILD_DIR)/%.c.o: %.c
 
 raylib: PLATFORM_FLAG := RAYLIB
 raylib: LDFLAGS := -lraylib -L/raylib/raylib/src -I/raylib/raylib/src  -lwinmm $(LDFLAGS)
+raylib: BTFLAGS := -DPLATFORM_DESKTOP=1 -DNK_INCLUDE_DEFAULT_ALLOCATOR=1
 raylib: $(BUILD_DIR)/$(TARGET_EXEC)
 
 
