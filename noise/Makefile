@@ -14,8 +14,8 @@ else
 	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
 endif
 
-LIBS := ""
-LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
+# LIBS := ""
+# LDFLAGS := $(shell pkg-config --cflags --libs $(LIBS))
 LDFLAGS := $(LDFLAGS) -lm $(PLATFORM_LDFLAGS)
 
 # Find all the C and C++ files we want to compile
@@ -53,6 +53,11 @@ $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(BTFLAGS) -D L_PLATFORM=$(PLATFORM_FLAG) -c $< -o $@ $(LDFLAGS)
+
+
+raylib: PLATFORM_FLAG := RAYLIB
+raylib: LDFLAGS += -lraylib -L/raylib/raylib/src -I/raylib/raylib/src -lgdi32 -lwinmm
+raylib: $(BUILD_DIR)/$(TARGET_EXEC)
 
 
 .PHONY: clean
