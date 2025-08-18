@@ -1597,7 +1597,10 @@ static LShader GetDefaultShader() {
     static const char* FSRC = GLSL(
         in vec4 fColor; in vec2 fTextCoords;
 
-        uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
+        uniform sampler2D texture0;
+        uniform vec2 Texture0Resolution;
+        uniform vec2 resolution;
+        uniform float timer;
         uniform int NFrame;
 
         out vec4 FragColor;
@@ -1717,7 +1720,10 @@ static LShader GetNoiseShader() {
     static const char* FSRC = GLSL(
         in vec4 fColor; in vec2 fTextCoords;
 
-        uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
+        uniform sampler2D texture0;
+        uniform vec2 Texture0Resolution;
+        uniform vec2 resolution;
+        uniform float timer;
         uniform int NFrame;
 
         out vec4 FragColor;
