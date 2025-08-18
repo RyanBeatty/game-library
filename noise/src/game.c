@@ -3370,6 +3370,12 @@ static void SceneDefaultTick(GameState* gstate) {
 }
 
 static void SceneNoiseTick(GameState* gstate) {
+    static bool ROTATE = false;
+
+    if (PlatformKeyPressed(LKEY_ENTER)) {
+        ROTATE = !ROTATE;
+    }
+
     BeginRender(gstate->dt);
 
     ShaderPass* pass = BeginShaderPass(GetNoiseShader());
@@ -3377,7 +3383,11 @@ static void SceneNoiseTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    DrawQuad(Vec3Zero(), 150.0f, 150.0f, Mat4Identity(), LBLACK);
+    Mat4 rot = Mat4Identity();
+    if (ROTATE) {
+        rot = Mat4RotateZ(gstate->timer);
+    }
+    DrawQuad(Vec3Zero(), 150.0f, 150.0f, rot, LBLACK);
 
     EndShaderPass();
 
