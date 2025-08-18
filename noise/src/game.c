@@ -1707,18 +1707,22 @@ static LShader GetNoiseShader() {
         
         out vec4 fColor;
         out vec2 fTextCoords;
+        out vec3 fWorldPos;
 
         void main() {
            fTextCoords = vUVOffset + (vUVScale * vTextCoords);
            gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
            fColor = vUColor;
+           fWorldPos = (vModel * vec4(fWorldPos, 1.0)).xyz;
         }
     );
     // clang-format on
 
     // clang-format off
     static const char* FSRC = GLSL(
-        in vec4 fColor; in vec2 fTextCoords;
+        in vec4 fColor; 
+        in vec2 fTextCoords;
+        in vec3 fWorldPos;
 
         uniform sampler2D texture0;
         uniform vec2 Texture0Resolution;
@@ -1727,6 +1731,11 @@ static LShader GetNoiseShader() {
         uniform int NFrame;
 
         out vec4 FragColor;
+
+        float whitenoise(vec3 pos) {
+            float random = dot(pos, vec3(2.971, 49.149, 37.029));
+            return fract(random);
+        }
 
         void main() {
             vec4 txColor = texture(texture0, fTextCoords);
@@ -1738,6 +1747,8 @@ static LShader GetNoiseShader() {
             // For blending to work here properly, its important that either texture is specified or texture
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
+            float noise = whitenoise(vec3(fTextCoords, 1.0));
+            FragColor.a = noise;
         }
     );
     // clang-format on
@@ -3366,7 +3377,7 @@ static void SceneNoiseTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    DrawQuad(Vec3Zero(), 100.0f, 100.0f, Mat4Identity(), LRED);
+    DrawQuad(Vec3Zero(), 150.0f, 150.0f, Mat4Identity(), LBLACK);
 
     EndShaderPass();
 
