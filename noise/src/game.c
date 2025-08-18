@@ -1378,8 +1378,6 @@ typedef struct {
             Vec2 uvoffset;  // offset of the bottom left corner/origin in texture space (0, 0)
             Vec2 uvscale;   // width/height in texture space of the Aserect to sample inside the texture [0, 1]
             LTexture tx;
-
-            u32 charging_state;
         } meshcmd;
 
         // Clears buffer with color.
@@ -1442,9 +1440,6 @@ struct LShader {
     u32 fresolution_loc;
     u32 ftimer_loc;
     u32 fnframe_loc;
-
-    // fx
-    u32 fchargingstate_loc;
 };
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
@@ -1552,7 +1547,6 @@ LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVSCALE = 0;
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
-    static i32 F_CHARGING_STATE = 0;
 
     Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
@@ -1563,8 +1557,6 @@ LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
-
-        F_CHARGING_STATE = glGetUniformLocation(shader->pid, "fChargingState");
     }
 
     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
@@ -1575,8 +1567,6 @@ LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
-
-    glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
 }
 
 static LShader GetDefaultShader() {
@@ -1609,7 +1599,6 @@ static LShader GetDefaultShader() {
 
         uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
         uniform int NFrame;
-        uniform int fChargingState;
 
         out vec4 FragColor;
 
@@ -1617,25 +1606,12 @@ static LShader GetDefaultShader() {
             vec4 txColor = texture(texture0, fTextCoords);
             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
             // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-            if (txColor.a < 0.01 && fChargingState == 0) {
+            if (txColor.a < 0.01) {
                 discard;
             }
             // For blending to work here properly, its important that either texture is specified or texture
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
-
-            vec4 charge_color = vec4(0.7, 0.2, 1.0, 1.0);
-            bool is_black = txColor == vec4(0, 0, 0, 1);
-            if (fChargingState == 1) {
-                if (is_black && NFrame % 3 == 0) {
-                    FragColor = charge_color;
-                }
-            } else if (fChargingState == 2) {
-                if (is_black) {
-                    vec4 glow_color = mix(charge_color, vec4(1, 1, 1, 1), 0.5 + 0.5 * cos(timer * 8.0));
-                    FragColor = glow_color;
-                }
-            }
         }
     );
     // clang-format on
@@ -1691,7 +1667,6 @@ LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVSCALE = 0;
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
-    static i32 F_CHARGING_STATE = 0;
 
     Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
@@ -1702,8 +1677,6 @@ LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
-
-        F_CHARGING_STATE = glGetUniformLocation(shader->pid, "fChargingState");
     }
 
     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
@@ -1714,8 +1687,6 @@ LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
-
-    glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
 }
 
 static LShader GetNoiseShader() {
@@ -1748,7 +1719,6 @@ static LShader GetNoiseShader() {
 
         uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
         uniform int NFrame;
-        uniform int fChargingState;
 
         out vec4 FragColor;
 
