@@ -56,7 +56,7 @@ $(BUILD_DIR)/%.c.o: %.c
 
 
 raylib: PLATFORM_FLAG := RAYLIB
-raylib: LDFLAGS += -lraylib -L/raylib/raylib/src -I/raylib/raylib/src -lgdi32 -lwinmm
+raylib: LDFLAGS := -lraylib -L/raylib/raylib/src -I/raylib/raylib/src  -lwinmm $(LDFLAGS)
 raylib: $(BUILD_DIR)/$(TARGET_EXEC)
 
 
