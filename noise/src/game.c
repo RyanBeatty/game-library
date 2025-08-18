@@ -1653,6 +1653,132 @@ static LShader GetDefaultShader() {
     return SHADER;
 }
 
+LCORE void EnableNoiseShader(LShader* shader, ShaderPass* pass) {
+    static bool INIT = false;
+    static i32 V_VIEW = 0;
+    static i32 V_PROJ = 0;
+    static i32 F_RESOLUTION = 0;
+    static i32 F_TIMER = 0;
+    static i32 F_NFRAME = 0;
+
+    glUseProgram(shader->pid);
+
+    if (!INIT) {
+        INIT = true;
+        V_VIEW = glGetUniformLocation(shader->pid, "vView");
+        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+        F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
+        F_TIMER = glGetUniformLocation(shader->pid, "timer");
+        F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
+
+        // IMPORTANT! Set texture uniform loc.
+        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
+    }
+
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+
+    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
+    glUniform1f(F_TIMER, pass->timer);
+
+    glUniform1i(F_NFRAME, pass->nframe);
+}
+
+LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+    static bool INIT = false;
+    static i32 V_MODEL = 0;
+    static i32 V_UVCOLOR = 0;
+    static i32 V_UVSCALE = 0;
+    static i32 V_UVOFFSET = 0;
+    static i32 F_TEXTURE0_RESOLUTION = 0;
+    static i32 F_CHARGING_STATE = 0;
+
+    Assert(cmd->type == CMD_DRAW_MESH);
+    if (!INIT) {
+        INIT = true;
+
+        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
+        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+        F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+
+        F_CHARGING_STATE = glGetUniformLocation(shader->pid, "fChargingState");
+    }
+
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+
+    glUniform1i(F_CHARGING_STATE, cmd->meshcmd.charging_state);
+}
+
+static LShader GetNoiseShader() {
+    // clang-format off
+    static const char* VSRC = GLSL(
+        layout (location = 0) in vec3 vPos;
+        layout (location = 2) in vec2 vTextCoords;
+        
+        uniform mat4 vModel;
+        uniform mat4 vView;
+        uniform mat4 vProj;
+        uniform vec4 vUColor;
+        uniform vec2 vUVOffset;
+        uniform vec2 vUVScale;
+        
+        out vec4 fColor;
+        out vec2 fTextCoords;
+
+        void main() {
+           fTextCoords = vUVOffset + (vUVScale * vTextCoords);
+           gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
+           fColor = vUColor;
+        }
+    );
+    // clang-format on
+
+    // clang-format off
+    static const char* FSRC = GLSL(
+        in vec4 fColor; in vec2 fTextCoords;
+
+        uniform sampler2D texture0; uniform vec2 Texture0Resolution; uniform vec2 resolution; uniform float timer;
+        uniform int NFrame;
+        uniform int fChargingState;
+
+        out vec4 FragColor;
+
+        void main() {
+            vec4 txColor = texture(texture0, fTextCoords);
+            // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
+            // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
+            if (txColor.a < 0.01) {
+                discard;
+            }
+            // For blending to work here properly, its important that either texture is specified or texture
+            // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+            FragColor = txColor * fColor;
+        }
+    );
+    // clang-format on
+
+    static bool INIT = false;
+    static LShader SHADER = {0};
+
+    if (!INIT) {
+        INIT = true;
+        LShaderInit(&SHADER, VSRC, FSRC);
+        SHADER.enable_func = EnableNoiseShader;
+        SHADER.set_uniforms_func = NoiseShaderSetUniforms;
+    }
+
+    return SHADER;
+}
+
 LCORE void EnableEffectsShader(LShader* shader, ShaderPass* pass) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
@@ -3259,7 +3385,7 @@ static void SceneDefaultTick(GameState* gstate) {
 static void SceneNoiseTick(GameState* gstate) {
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+    ShaderPass* pass = BeginShaderPass(GetNoiseShader());
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
