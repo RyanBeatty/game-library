@@ -3145,12 +3145,7 @@ static const f32 GRID_DEPTH = 1.0f;
 
 typedef enum {
     SCENE_DEFAULT = 0,
-    SCENE_TITLE_SCREEN,
-    SCENE_STAGE_SELECT,
-    SCENE_STAGE,
-    SCENE_TRUE_TYPE,
-    SCENE_SUB_PIXEL_RENDER,
-    SCENE_BASIC,
+    SCENE_NOISE,
     SCENE_COUNT,
 } SceneId;
 
@@ -3261,6 +3256,21 @@ static void SceneDefaultTick(GameState* gstate) {
     EndRender();
 }
 
+static void SceneNoiseTick(GameState* gstate) {
+    BeginRender(gstate->dt);
+
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+    DrawQuad(Vec3Zero(), 100.0f, 100.0f, Mat4Identity(), LRED);
+
+    EndShaderPass();
+
+    EndRender();
+}
+
 ////////////////////////////////////////////////////////////
 
 static void TestL();
@@ -3306,10 +3316,11 @@ void GameInit() {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
+        gstate->scenefuncs[SCENE_NOISE] = SceneNoiseTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_DEFAULT);
+    GameStateLoadScene(gstate, SCENE_NOISE);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
