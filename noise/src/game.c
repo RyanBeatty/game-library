@@ -1732,6 +1732,19 @@ static LShader GetNoiseShader() {
 
         out vec4 FragColor;
 
+        // https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+        uint pcg_hash(uint x) {
+            uint state = x * 747796405u + 2891336453u;
+            uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+            return (word >> 22u) ^ word;
+        }
+
+        float whitenoisehash(vec2 uv, vec2 dims) {
+            vec2 texel = floor(uv * dims);
+            uint texelid = uint((texel.x * dims.y) + texel.y);
+            return float(pcg_hash(texelid)) / float(0xFFFFFFFFu);
+        }
+
         float whitenoise(vec3 value) {
             // Produce a random value by dotting it with a random direction vector.
             // The resulting random value will be how close our input vector is to the direciton vector
@@ -1755,7 +1768,9 @@ static LShader GetNoiseShader() {
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
             float noise = whitenoise(vec3(fTextCoords, 1.0));
-            FragColor.a = noise;
+            float noisehash = whitenoisehash(fTextCoords, textureSize(texture0, 0));
+            FragColor.rgb = vec3(noise, noise, noise);
+            FragColor.a = 1.0;
         }
     );
     // clang-format on
