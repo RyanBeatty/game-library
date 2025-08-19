@@ -1739,10 +1739,10 @@ static LShader GetNoiseShader() {
             return (word >> 22u) ^ word;
         }
 
-        float uv2whitenoise(vec2 uv, vec2 dims) {
-            vec2 texel = floor(uv * dims);
-            uint texelid = uint((texel.x * dims.y) + texel.y);
-            return float(pcg_hash(texelid)) / 4294967296.0;
+        float uv2whitenoise(vec2 uv, ivec2 dims) {
+            ivec2 texel = ivec2(floor(uv * dims));
+            uint seed = uint((texel.x * dims.y) + texel.y);
+            return float(pcg_hash(seed)) * (1.0 / 4294967295.0);
         }
 
         float whitenoise(vec3 value) {
@@ -1768,8 +1768,12 @@ static LShader GetNoiseShader() {
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
             float noise = whitenoise(vec3(fTextCoords, 1.0));
-            float noisehash = whitenoisehash(fTextCoords, textureSize(texture0, 0));
+            // Remember cant use texture dims as some textures are 1 pixel.
+            float noisehash = uv2whitenoise(fTextCoords, ivec2(10000, 10000));
             FragColor = vec4(vec3(noisehash), 1.0);
+            if (noisehash == 0.0) {
+                FragColor = vec4(1, 0, 0, 1);
+            }
         }
     );
     // clang-format on
