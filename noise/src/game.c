@@ -1769,7 +1769,7 @@ static LShader GetNoiseShader() {
             FragColor = txColor * fColor;
             float noise = whitenoise(vec3(fTextCoords, 1.0));
             float noisehash = whitenoisehash(fTextCoords, textureSize(texture0, 0));
-            FragColor.rgb = vec3(noise, noise, noise);
+            FragColor.rgb = vec3(noisehash, noisehash, noisehash);
             FragColor.a = 1.0;
         }
     );
