@@ -827,7 +827,6 @@ static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
             f32 noise = ((f32)rand) / ((f32)U32_MAX);
             // shift noise from [0-1] to [0-255]
             i32 rgb = (i32)(noise * 255.0f);
-            breakpoint();
             PushArrS(&buffer, rgb);
             PushArrS(&buffer, rgb);
             PushArrS(&buffer, rgb);
