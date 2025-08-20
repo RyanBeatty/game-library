@@ -3429,11 +3429,11 @@ static void SceneDefaultTick(GameState* gstate) {
 
 static void SceneNoiseTick(GameState* gstate) {
     static bool ROTATE = false;
-    static LTexture TEXTURE = {0};
+    static LTexture WHITENOISE_TX = {0};
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
-        TEXTURE = GenerateWhitenoiseTexture(&temp, 256, 256);
+        WHITENOISE_TX = GenerateWhitenoiseTexture(&temp, 128, 128);
     }
 
     if (PlatformKeyPressed(LKEY_ENTER)) {
@@ -3451,8 +3451,9 @@ static void SceneNoiseTick(GameState* gstate) {
     if (ROTATE) {
         rot = Mat4RotateZ(gstate->timer);
     }
-    DrawCmd* cmd = DrawQuad(Vec3Zero(), 150.0f, 150.0f, rot, LCLEAR);
-    cmd->meshcmd.tx = TEXTURE;
+    // DrawCmd* cmd = DrawQuad(Vec3Zero(), 150.0f, 150.0f, rot, LCLEAR);
+    // cmd->meshcmd.tx = TEXTURE;
+    DrawLTexture(WHITENOISE_TX, Vec2Zero(), 1.0f);
 
     EndShaderPass();
 
