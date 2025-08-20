@@ -735,6 +735,7 @@ static LTexture UploadTexture(const char* filename) {
 // :data - flattened 2d array of rgba data (e.g. 4 bytes, 1 byte per channel).
 // :width - length of width of buffer in rgba units.
 // :height - length of height of buffer in rgba units.
+// So size of buffer should be (width * 4 bytes) * (height * 4 bytes)
 LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height) {
     LTexture tx = {0};
     tx.width = width;
@@ -806,7 +807,21 @@ static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
     return pos_world;
 }
 
-static void GenerateWhitenoise(Arena* temp, u32 width, u32 height) { ByteBuffer* buffer = {0}; }
+static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
+    ByteBuffer buffer = {.cap = width * height * 4};  // * 4 is because we store rgba data
+    buffer.data = New(temp, buffer.cap, byte);
+
+    for (i32 i = 0; i < width; ++i) {
+        for (i32 j = 0; j < height; ++j) {
+            PushArrS(&buffer, 255);
+            PushArrS(&buffer, 0);
+            PushArrS(&buffer, 0);
+            PushArrS(&buffer, 255);
+        }
+    }
+
+    return TextureFromBuffer(buffer.data, width, height);
+}
 
 static void TexturesInit() {
     TextureCache* tcache = &TCACHE;
@@ -3398,6 +3413,12 @@ static void SceneDefaultTick(GameState* gstate) {
 
 static void SceneNoiseTick(GameState* gstate) {
     static bool ROTATE = false;
+    static LTexture TEXTURE = {0};
+
+    if (gstate->init) {
+        Arena temp = gstate->perm;
+        TEXTURE = GenerateWhitenoiseTexture(&temp, 256, 256);
+    }
 
     if (PlatformKeyPressed(LKEY_ENTER)) {
         ROTATE = !ROTATE;
@@ -3405,7 +3426,7 @@ static void SceneNoiseTick(GameState* gstate) {
 
     BeginRender(gstate->dt);
 
-    ShaderPass* pass = BeginShaderPass(GetNoiseShader());
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
@@ -3414,7 +3435,8 @@ static void SceneNoiseTick(GameState* gstate) {
     if (ROTATE) {
         rot = Mat4RotateZ(gstate->timer);
     }
-    DrawQuad(Vec3Zero(), 150.0f, 150.0f, rot, LBLACK);
+    DrawCmd* cmd = DrawQuad(Vec3Zero(), 150.0f, 150.0f, rot, LCLEAR);
+    cmd->meshcmd.tx = TEXTURE;
 
     EndShaderPass();
 
