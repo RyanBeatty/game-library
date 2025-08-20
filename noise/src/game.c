@@ -815,8 +815,8 @@ static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
 
     for (i32 i = 0; i < width; ++i) {
         for (i32 j = 0; j < height; ++j) {
-            PushArrS(&buffer, i == 0 ? 0 : 255);
-            PushArrS(&buffer, i == 0 ? 255 : 0);
+            PushArrS(&buffer, 255);
+            PushArrS(&buffer, 0);
             PushArrS(&buffer, 0);
             PushArrS(&buffer, 255);
         }
