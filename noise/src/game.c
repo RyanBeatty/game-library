@@ -806,6 +806,8 @@ static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
     return pos_world;
 }
 
+static void GenerateWhitenoise(Arena* temp, u32 width, u32 height) { ByteBuffer* buffer = {0}; }
+
 static void TexturesInit() {
     TextureCache* tcache = &TCACHE;
     tcache->txlen = 0;

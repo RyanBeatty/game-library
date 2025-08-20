@@ -517,7 +517,7 @@ SoundId PlatformLoadSound(const char* filename) {
 
         sound->cap = subchunk2_size;
         sound->len = 0;
-        sound->data = New(&AUDIO.soundmem, sound->cap, sizeof(byte));
+        sound->data = New(&AUDIO.soundmem, sound->cap, byte);
 
         byte* subchunk2_end = cur + subchunk2_size;
         while (cur < subchunk2_end) {

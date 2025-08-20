@@ -75,7 +75,7 @@ typedef struct {
 } Arena;
 
 // :a = arena, :count = num elems to alloc, :type = type to allocate
-#define New(a, count, type) (ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
+#define New(a, count, type) ((type*)ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
 
 void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment);
 Arena NewArena(byte* buffer, isize cap);
