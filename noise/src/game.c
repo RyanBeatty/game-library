@@ -816,6 +816,7 @@ u32 PCGHash(u32 x) {
     return (word >> 22u) ^ word;
 }
 
+// Generates a whitenoise texture with pixel dimension width x height
 static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
     ByteBuffer buffer = {.cap = width * height * 4};  // * 4 is because we store rgba data
     buffer.data = New(temp, buffer.cap, byte);
