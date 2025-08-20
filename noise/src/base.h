@@ -74,11 +74,11 @@ typedef struct {
     byte* end;
 } Arena;
 
-// :a = arena, :count = num elems to alloc, :type = type to allocate
-#define New(a, count, type) ((type*)ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
-
 void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment);
 Arena NewArena(byte* buffer, isize cap);
+
+// :a = arena, :count = num elems to alloc, :type = type to allocate
+#define New(a, count, type) ((type*)ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
 
 // Init array static. Inits a static buffer.
 #define InitArrS(s, d, c) \
