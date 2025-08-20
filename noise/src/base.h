@@ -80,12 +80,12 @@ typedef struct {
 void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment);
 Arena NewArena(byte* buffer, isize cap);
 
-// Init Static. Inits a static buffer.
-#define InitS(s, d, c)   \
-    do {                 \
-        (s)->data = (d); \
-        (s)->len = 0;    \
-        (s)->cap = (c);  \
+// Init array static. Inits a static buffer.
+#define InitArrS(s, d, c) \
+    do {                  \
+        (s)->data = (d);  \
+        (s)->len = 0;     \
+        (s)->cap = (c);   \
     } while (0)
 
 // Assumes that :s: is a struct with members

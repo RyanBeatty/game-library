@@ -4120,7 +4120,7 @@ static void TestMemory() {
                 isize cap;
             } ii = {0};
             i32* data = New(&a, 5, i32);
-            InitS(&ii, data, 5);
+            InitArrS(&ii, data, 5);
             TAssert(ii.len == 0, "PushS(int): len == 0");
 
             *PushS(&ii) = 0;
