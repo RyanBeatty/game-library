@@ -3310,6 +3310,7 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
     Arena perm;
+    Arena temp;
 
     bool debug;
     bool update;
@@ -3418,7 +3419,7 @@ static void SceneNoiseTick(GameState* gstate) {
     static LTexture TEXTURE = {0};
 
     if (gstate->init) {
-        Arena temp = gstate->perm;
+        Arena temp = TempArena(gstate->temp);
         TEXTURE = GenerateWhitenoiseTexture(&temp, 256, 256);
     }
 
@@ -3460,6 +3461,8 @@ void GameInit() {
     byte* buffer = PlatformAllocate(cap);
     Arena perm = NewArena(buffer, cap);
     gstate->perm = perm;
+    byte* temp_buffer = New(&gstate->perm, GB(1), byte);
+    gstate->temp = NewArena(temp_buffer, GB(1));
 
     gstate->renderw = 256.0f;
     gstate->renderh = 240.0f;
