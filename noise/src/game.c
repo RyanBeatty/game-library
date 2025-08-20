@@ -809,15 +809,28 @@ static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
     return pos_world;
 }
 
+// https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+u32 PCGHash(u32 x) {
+    u32 state = x * 747796405u + 2891336453u;
+    u32 word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
 static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
     ByteBuffer buffer = {.cap = width * height * 4};  // * 4 is because we store rgba data
     buffer.data = New(temp, buffer.cap, byte);
 
     for (i32 i = 0; i < width; ++i) {
         for (i32 j = 0; j < height; ++j) {
-            PushArrS(&buffer, 255);
-            PushArrS(&buffer, 0);
-            PushArrS(&buffer, 0);
+            u32 rand = PCGHash((i * width) + j);
+            // shift noise from [0-1] with some precision loss potentially due to large float division.
+            f32 noise = ((f32)rand) / ((f32)U32_MAX);
+            // shift noise from [0-1] to [0-255]
+            i32 rgb = (i32)(noise * 255.0f);
+            breakpoint();
+            PushArrS(&buffer, rgb);
+            PushArrS(&buffer, rgb);
+            PushArrS(&buffer, rgb);
             PushArrS(&buffer, 255);
         }
     }
@@ -1711,7 +1724,7 @@ LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
 }
 
-static LShader GetNoiseShader() {
+LCORE LShader GetNoiseShader() {
     // clang-format off
     static const char* VSRC = GLSL(
         layout (location = 0) in vec3 vPos;
