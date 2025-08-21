@@ -816,6 +816,11 @@ u32 PCGHash(u32 x) {
     return (word >> 22u) ^ word;
 }
 
+f32 PCGHash2D(u32 x, u32 y) {
+    u32 seed = (x * 1610612741u) + (y * 1791552031u);
+    return ((f32)PCGHash(seed)) / ((f32)U32_MAX);
+}
+
 // Generates a whitenoise texture with pixel dimension width x height
 static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
     ByteBuffer buffer = {.cap = width * height * 4};  // * 4 is because we store rgba data
@@ -831,6 +836,40 @@ static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
             PushArrS(&buffer, rgb);
             PushArrS(&buffer, rgb);
             PushArrS(&buffer, rgb);
+            PushArrS(&buffer, 255);
+        }
+    }
+
+    return TextureFromBuffer(buffer.data, width, height);
+}
+
+static LTexture GenValueNoiseTexture(Arena* temp, i32 width, i32 height, i32 cell_size) {
+    ByteBuffer buffer = {.cap = width * height * 4};
+    buffer.data = New(temp, buffer.cap, byte);
+
+    for (i32 i = 0; i < width; ++i) {
+        for (i32 j = 0; j < height; ++j) {
+            f32 bl = PCGHash2D(i, j);
+            f32 br = PCGHash2D(i + 1, j);
+            f32 tl = PCGHash2D(i, j + 1);
+            f32 tr = PCGHash2D(i + 1, j + 1);
+
+            // bilinear lerp between the bottom and top lerped values.
+            // Shift noise range from [0, 1], to [0, 255]
+            f32 l1 = f32lerp(bl, br, 0.5f);
+            f32 l2 = f32lerp(tl, tr, 0.5f);
+            u32 noise = (u32)(f32lerp(l1, l2, 0.5f) * 255.0f);
+            breakpoint();
+
+            // // Find bottom left corner uv.
+            // Vec2 bl = Vec2Lit((f32)i / (f32)width, (f32)j / (f32)height);
+            // Vec2 br = Vec2Add(bl, Vec2Lit(1.0f, 0.0f));
+            // Vec2 tl = Vec2Add(bl, Vec2Lit(0.0f, 1.0f));
+            // Vec2 tr = Vec2Add(bl, Vec2Lit(1.0f, 1.0f));
+
+            PushArrS(&buffer, noise);
+            PushArrS(&buffer, noise);
+            PushArrS(&buffer, noise);
             PushArrS(&buffer, 255);
         }
     }
@@ -3430,10 +3469,12 @@ static void SceneDefaultTick(GameState* gstate) {
 static void SceneNoiseTick(GameState* gstate) {
     static bool ROTATE = false;
     static LTexture WHITENOISE_TX = {0};
+    static LTexture VALUENOISE_TX = {0};
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
-        WHITENOISE_TX = GenerateWhitenoiseTexture(&temp, 128, 128);
+        WHITENOISE_TX = GenerateWhitenoiseTexture(&temp, 64, 64);
+        VALUENOISE_TX = GenValueNoiseTexture(&temp, 64, 64, 1);
     }
 
     if (PlatformKeyPressed(LKEY_ENTER)) {
@@ -3453,7 +3494,8 @@ static void SceneNoiseTick(GameState* gstate) {
     }
     // DrawCmd* cmd = DrawQuad(Vec3Zero(), 150.0f, 150.0f, rot, LCLEAR);
     // cmd->meshcmd.tx = TEXTURE;
-    DrawLTexture(WHITENOISE_TX, Vec2Zero(), 1.0f);
+    DrawLTexture(WHITENOISE_TX, Vec2Lit(-35.0f, 0.0f), 1.0f);
+    DrawLTexture(VALUENOISE_TX, Vec2Lit(35.0f, 0.0f), 1.0f);
 
     EndShaderPass();
 
