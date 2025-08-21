@@ -849,16 +849,25 @@ static LTexture GenValueNoiseTexture(Arena* temp, i32 width, i32 height, i32 cel
 
     for (i32 i = 0; i < width; ++i) {
         for (i32 j = 0; j < height; ++j) {
-            f32 bl = (f32)PCGHash2D(i, j) / ((f32)U32_MAX);
-            f32 br = (f32)PCGHash2D(i + 1, j) / ((f32)U32_MAX);
-            f32 tl = (f32)PCGHash2D(i, j + 1) / ((f32)U32_MAX);
-            f32 tr = (f32)PCGHash2D(i + 1, j + 1) / ((f32)U32_MAX);
+            // Determine bottom left corner coordinates based on lattice size.
+            u32 x = i / (u32)cell_size;
+            u32 y = j / (u32)cell_size;
+
+            f32 bl = (f32)PCGHash2D(x, y) / ((f32)U32_MAX);
+            f32 br = (f32)PCGHash2D(x + cell_size, y) / ((f32)U32_MAX);
+            f32 tl = (f32)PCGHash2D(x, y + cell_size) / ((f32)U32_MAX);
+            f32 tr = (f32)PCGHash2D(x + cell_size, y + cell_size) / ((f32)U32_MAX);
+
+            // Determine the percentage within the cell we are in x and y direction, that
+            // is our lerp factor.
+            f32 tx = ((f32)(i - x) / cell_size);
+            f32 ty = ((f32)(j - y) / cell_size);
 
             // bilinear lerp between the bottom and top lerped values.
             // Shift noise range from [0, 1], to [0, 255]
-            f32 l1 = f32lerp(bl, br, 0.5f);
-            f32 l2 = f32lerp(tl, tr, 0.5f);
-            u32 noise = (u32)(f32lerp(l1, l2, 0.5f) * 255.0f);
+            f32 l1 = f32lerp(bl, br, tx);
+            f32 l2 = f32lerp(tl, tr, tx);
+            u32 noise = (u32)(f32lerp(l1, l2, ty) * 255.0f);
             breakpoint();
 
             // // Find bottom left corner uv.
@@ -3474,7 +3483,7 @@ static void SceneNoiseTick(GameState* gstate) {
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
         WHITENOISE_TX = GenerateWhitenoiseTexture(&temp, 64, 64);
-        VALUENOISE_TX = GenValueNoiseTexture(&temp, 64, 64, 1);
+        VALUENOISE_TX = GenValueNoiseTexture(&temp, 64, 64, 3);
     }
 
     if (PlatformKeyPressed(LKEY_ENTER)) {
