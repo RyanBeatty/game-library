@@ -868,7 +868,6 @@ static LTexture GenValueNoiseTexture(Arena* temp, i32 width, i32 height, i32 cel
             f32 l1 = f32lerp(bl, br, tx);
             f32 l2 = f32lerp(tl, tr, tx);
             u32 noise = (u32)(f32lerp(l1, l2, ty) * 255.0f);
-            breakpoint();
 
             // // Find bottom left corner uv.
             // Vec2 bl = Vec2Lit((f32)i / (f32)width, (f32)j / (f32)height);
@@ -2223,6 +2222,19 @@ LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 co
     return cmd;
 }
 
+// Note assumes drawing in 2d. the z is just for depth ordering.
+LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 thickness, Vec4 color) {
+    Assert(start.z == end.z);
+    Vec3 pos = Vec3Lerp(start, end, 0.5f);
+    Vec3 span = Vec3Sub(end, start);
+    Vec3 dir = Vec3Normalize(span);
+    // We want to know angle difference between desired up and identity up.
+    f32 rad = Vec3Angle(dir, Vec3Lit(0.0f, 1.0f, 0.0f));
+    Mat4 rot = Mat4RotateZ(rad);
+    f32 height = Vec3Len(span);
+    return DrawQuad(pos, thickness, height, rot, color);
+}
+
 LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshcmd.meshid = GetMesh(M_CUBE);
@@ -3505,6 +3517,10 @@ static void SceneNoiseTick(GameState* gstate) {
     // cmd->meshcmd.tx = TEXTURE;
     DrawLTexture(WHITENOISE_TX, Vec2Lit(-35.0f, 0.0f), 1.0f);
     DrawLTexture(VALUENOISE_TX, Vec2Lit(35.0f, 0.0f), 1.0f);
+
+    DrawLine(Vec3Lit(-10.0f, -50.0f, 0.0f), Vec3Lit(30.0f, -50.0f, 0.0f), 1.0f, LRED);
+
+    DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 1.0f, LBLUE);
 
     EndShaderPass();
 
