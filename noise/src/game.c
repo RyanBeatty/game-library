@@ -816,9 +816,9 @@ u32 PCGHash(u32 x) {
     return (word >> 22u) ^ word;
 }
 
-f32 PCGHash2D(u32 x, u32 y) {
+u32 PCGHash2D(u32 x, u32 y) {
     u32 seed = (x * 1610612741u) + (y * 1791552031u);
-    return ((f32)PCGHash(seed)) / ((f32)U32_MAX);
+    return PCGHash(seed);
 }
 
 // Generates a whitenoise texture with pixel dimension width x height
@@ -849,10 +849,10 @@ static LTexture GenValueNoiseTexture(Arena* temp, i32 width, i32 height, i32 cel
 
     for (i32 i = 0; i < width; ++i) {
         for (i32 j = 0; j < height; ++j) {
-            f32 bl = PCGHash2D(i, j);
-            f32 br = PCGHash2D(i + 1, j);
-            f32 tl = PCGHash2D(i, j + 1);
-            f32 tr = PCGHash2D(i + 1, j + 1);
+            f32 bl = (f32)PCGHash2D(i, j) / ((f32)U32_MAX);
+            f32 br = (f32)PCGHash2D(i + 1, j) / ((f32)U32_MAX);
+            f32 tl = (f32)PCGHash2D(i, j + 1) / ((f32)U32_MAX);
+            f32 tr = (f32)PCGHash2D(i + 1, j + 1) / ((f32)U32_MAX);
 
             // bilinear lerp between the bottom and top lerped values.
             // Shift noise range from [0, 1], to [0, 255]
