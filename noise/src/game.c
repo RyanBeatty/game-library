@@ -2370,9 +2370,20 @@ LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 width, Vec4 color) {
     Vec3 pos = Vec3Lerp(start, end, 0.5f);
     Vec3 span = Vec3Sub(end, start);
     Vec3 dir = Vec3Normalize(span);
-    // We want to know angle difference between desired up and identity up.
-    f32 rad = Vec3Angle(dir, Vec3Lit(0.0f, 1.0f, 0.0f));
-    Mat4 rot = Mat4RotateZ(rad);
+
+    // Remember we aren't computing a rotation (which would be some displacement difference
+    // between identity orient and new orient), we are just computing an orientation.
+    // The direction of line is our up
+    Vec3 up = dir;
+    // Compute right basis vector by taking 2d normal (since z is assumed for depth only).
+    Vec3 right = Vec3Lit(dir.y, -dir.x, dir.z);
+    Vec3 forward = Vec3Lit(0.0f, 0.0f, 1.0f);
+
+    Mat4 rot = Mat4Identity();
+    rot.v.a = right;
+    rot.v.b = up;
+    rot.v.c = forward;
+
     f32 height = Vec3Len(span);
     return DrawQuad(pos, width, height, rot, color);
 }
