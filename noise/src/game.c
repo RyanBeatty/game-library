@@ -1819,7 +1819,9 @@ static LShader GetLineShader() {
             FragColor = txColor * fColor;
 
             float u = fTextCoords.x;
-            // aa radius
+            // aa radius. This represents the radius of a circle that determines how much alpha falloff
+            // the line pixels experience as our u coordinate goes from inside the line to outside the line.
+            // we are fully within the line in the range [r, 1-r] and outside the line outside of that range.
             float r = 0.3;
 
             float alpha = 1.0;
