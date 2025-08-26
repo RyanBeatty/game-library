@@ -2346,7 +2346,8 @@ LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 co
 }
 
 // Note assumes drawing in 2d. the z is just for depth ordering.
-LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 thickness, Vec4 color) {
+// We assume that the quad's up direction is oriented parallel to the line segment.
+LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 width, Vec4 color) {
     Assert(start.z == end.z);
     Vec3 pos = Vec3Lerp(start, end, 0.5f);
     Vec3 span = Vec3Sub(end, start);
@@ -2355,7 +2356,7 @@ LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 thickness, Vec4 color) {
     f32 rad = Vec3Angle(dir, Vec3Lit(0.0f, 1.0f, 0.0f));
     Mat4 rot = Mat4RotateZ(rad);
     f32 height = Vec3Len(span);
-    return DrawQuad(pos, thickness, height, rot, color);
+    return DrawQuad(pos, width, height, rot, color);
 }
 
 LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
