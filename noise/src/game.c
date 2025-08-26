@@ -1834,7 +1834,7 @@ static LShader GetLineShader() {
                 alpha = smoothstep(1.0, 0.0, (u - (1 - r)) / r);
             }
 
-            // FragColor.a = alpha;
+            FragColor.a = alpha;
         }
     );
     // clang-format on
