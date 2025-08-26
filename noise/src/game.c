@@ -1817,6 +1817,24 @@ static LShader GetLineShader() {
             // For blending to work here properly, its important that either texture is specified or texture
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
+
+            float u = fTextCoords.x;
+            // aa radius
+            float r = 0.3;
+
+            float alpha = 1.0;
+            if (u <= r) {
+                // FragColor.xyz = vec3(1, 0, 0);
+                alpha = smoothstep(0.0, 1.0, u / r);
+            } else if (u > r && u < 1.0 - r) {
+                // FragColor.xyz = vec3(0, 1, 0);
+                alpha = 1.0;
+            } else {
+                // FragColor.xyz = vec3(0, 0, 1);
+                alpha = smoothstep(1.0, 0.0, (u - (1 - r)) / r);
+            }
+
+            // FragColor.a = alpha;
         }
     );
     // clang-format on
@@ -3659,9 +3677,11 @@ static void SceneLineTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    DrawLine(Vec3Lit(-10.0f, -50.0f, 0.0f), Vec3Lit(30.0f, -50.0f, 0.0f), 1.0f, LRED);
+    Vec3 dir = Vec3RotateAxis(Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), gstate->timer);
 
-    DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 1.0f, LBLUE);
+    DrawLine(Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Scale(dir, 100.0f), 5.0f, LRED);
+
+    // DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 5.0f, LBLUE);
 
     EndShaderPass();
 
@@ -3686,10 +3706,10 @@ void GameInit() {
     byte* temp_buffer = New(&gstate->perm, GB(1), byte);
     gstate->temp = NewArena(temp_buffer, GB(1));
 
-    gstate->renderw = 256.0f;
-    gstate->renderh = 240.0f;
+    gstate->renderw = 1024.0f;
+    gstate->renderh = 1024.0f;
 
-    u32 scale = 3;
+    u32 scale = 1;
     PlatformInit(scale * gstate->renderw, scale * gstate->renderh, 60);
 
     isize sound_cap = GB(2);
