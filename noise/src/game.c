@@ -3376,6 +3376,7 @@ static const f32 GRID_DEPTH = 1.0f;
 typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_NOISE,
+    SCENE_LINE,
     SCENE_COUNT,
 } SceneId;
 
@@ -3509,7 +3510,6 @@ static void SceneNoiseTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    Mat4 rot = Mat4Identity();
     if (ROTATE) {
         rot = Mat4RotateZ(gstate->timer);
     }
@@ -3517,6 +3517,26 @@ static void SceneNoiseTick(GameState* gstate) {
     // cmd->meshcmd.tx = TEXTURE;
     DrawLTexture(WHITENOISE_TX, Vec2Lit(-35.0f, 0.0f), 1.0f);
     DrawLTexture(VALUENOISE_TX, Vec2Lit(35.0f, 0.0f), 1.0f);
+
+    DrawLine(Vec3Lit(-10.0f, -50.0f, 0.0f), Vec3Lit(30.0f, -50.0f, 0.0f), 1.0f, LRED);
+
+    DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 1.0f, LBLUE);
+
+    EndShaderPass();
+
+    EndRender();
+}
+
+static void SceneLineTick(GameState* gstate) {
+    if (gstate->init) {
+    }
+
+    BeginRender(gstate->dt);
+
+    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
     DrawLine(Vec3Lit(-10.0f, -50.0f, 0.0f), Vec3Lit(30.0f, -50.0f, 0.0f), 1.0f, LRED);
 
@@ -3575,10 +3595,11 @@ void GameInit() {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_NOISE] = SceneNoiseTick;
+        gstate->scenefuncs[SCENE_LINE] = SceneLineTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_NOISE);
+    GameStateLoadScene(gstate, SCENE_LINE);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
