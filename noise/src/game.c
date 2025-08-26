@@ -1822,6 +1822,8 @@ static LShader GetLineShader() {
             // aa radius. This represents the radius of a circle that determines how much alpha falloff
             // the line pixels experience as our u coordinate goes from inside the line to outside the line.
             // we are fully within the line in the range [r, 1-r] and outside the line outside of that range.
+            // Note that this assumes that the drawn line quad is oriented such that the u coordinate of each
+            // fragment lies along the width axis of the quad.
             float r = 0.3;
 
             float alpha = 1.0;
