@@ -1786,18 +1786,22 @@ static LShader GetLineShader() {
         
         out vec4 fColor;
         out vec2 fTextCoords;
+        out vec2 fPosLocal;
 
         void main() {
            fTextCoords = vUVOffset + (vUVScale * vTextCoords);
            gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
            fColor = vUColor;
+           fPosLocal = vPos.xy;
         }
     );
     // clang-format on
 
     // clang-format off
     static const char* FSRC = GLSL(
-        in vec4 fColor; in vec2 fTextCoords;
+        in vec4 fColor;
+        in vec2 fTextCoords;
+        in vec2 fPosLocal;
 
         uniform sampler2D texture0;
         uniform vec2 Texture0Resolution;
@@ -1818,19 +1822,38 @@ static LShader GetLineShader() {
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
 
-            float u = fTextCoords.x;
-            // aa radius. This represents the radius of a circle that determines how much alpha falloff
-            // the line pixels experience as our u coordinate goes from inside the line to outside the line.
-            // we are fully within the line in the range [r, 1-r] and outside the line outside of that range.
-            // Note that this assumes that the drawn line quad is oriented such that the u coordinate of each
-            // fragment lies along the width axis of the quad.
-            float r = 0.3;
+            float alpha_mask = 1.0;
 
-            // Construct a piecewise smoothing function that transitions smoothly from [0, 1] between the
-            // domain of [0, r], stays at 1 from [r, 1-r] and transitions smoothly decreasing from [1, 0]
-            // in the domain [1-r, r].
-            float alpha_mask = smoothstep(0.0, 1.0, u / r) - 
-                               smoothstep(0.0, 1.0, (max(u - 1 + r, 0.0)) / r);
+            // {
+            //     float u = fTextCoords.x;
+            //     // aa radius. This represents the radius of a circle that determines how much alpha falloff
+            //     // the line pixels experience as our u coordinate goes from inside the line to outside the line.
+            //     // we are fully within the line in the range [r, 1-r] and outside the line outside of that range.
+            //     // Note that this assumes that the drawn line quad is oriented such that the u coordinate of each
+            //     // fragment lies along the width axis of the quad.
+            //     float r = 0.3;
+            //     // Construct a piecewise smoothing function that transitions smoothly from [0, 1] between the
+            //     // domain of [0, r], stays at 1 from [r, 1-r] and transitions smoothly decreasing from [1, 0]
+            //     // in the domain [1-r, r].
+            //     alpha_mask = smoothstep(0.0, 1.0, u / r) - 
+            //                     smoothstep(0.0, 1.0, (max(u - 1 + r, 0.0)) / r);
+            // }
+
+            {
+                // Calculates AA in local space of the quad model. Assumes the quad has width of 0.5 in local space
+                // and that we are using an orthographic projection (I think due to perspective correct interpolation of 
+                // vertex attribute concerns.)
+                float x = abs(fPosLocal.x);  // pass in our vertex position in local space.
+                float edge = 0.5;            // Assume the quad model has edge vertex of 0.5
+                float w = fwidth(x);         // Get size of 1 pixel in screen space
+                alpha_mask *= 1.0 - smoothstep(edge - w, edge, x);  // Apply alpha blending of 1 pixel width at edge.
+            
+                // Do the same for AA the end edges of the line. Note that we use y for fwidth
+                // which I'm not 100% sure is correct.
+                float y = abs(fPosLocal.y);
+                float h = fwidth(y);  // Get ~size of 1 pixel in screen space in the y direction.
+                alpha_mask *= 1.0 - smoothstep(edge - h, edge, y);
+            }
 
             FragColor.a *= alpha_mask;
         }
@@ -3688,7 +3711,7 @@ static void SceneLineTick(GameState* gstate) {
 
     Vec3 dir = Vec3RotateAxis(Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), gstate->timer);
 
-    DrawLine(Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Scale(dir, 100.0f), 5.0f, LRED);
+    DrawLine(Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Scale(dir, 100.0f), 10.0f, LRED);
 
     // DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 5.0f, LBLUE);
 
