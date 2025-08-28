@@ -1827,7 +1827,7 @@ static LShader GetLineShader() {
                 // vertex attribute concerns.)
                 float x = abs(fPosLocal.x);  // pass in our vertex position in local space.
                 float edge = 0.5;            // Assume the quad model has edge vertex of 0.5
-                float w = fwidth(x);         // Get size of 1 pixel in screen space
+                float w = 2.0 * fwidth(x);         // Get size of 1 pixel in screen space
                 alpha_mask *= 1.0 - smoothstep(edge - w, edge, x);  // Apply alpha blending of 1 pixel width at edge.
             
                 // Do the same for AA the end edges of the line. Note that we use y for fwidth
@@ -2369,6 +2369,13 @@ LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 co
 // Note assumes drawing in 2d. the z is just for depth ordering.
 // We assume that the quad's up direction is oriented parallel to the line segment.
 LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 width, Vec4 color) {
+    // Assumption here is that we are applying anti aliasing in frag shader. That AA algo requires some
+    // area of the line quad to apply smoothing, so lets just bump the size of the requested line by
+    // that area amount to give us some buffer. This does put a cap on the smallest line we can draw.
+    // It maybe makes sense to make this slightly bigger than the aa radius.
+    static const f32 AA_BUFFER_X = 3.0;
+    static const f32 AA_BUFFER_Y = 1.0;
+
     Assert(start.z == end.z);
     Vec3 pos = Vec3Lerp(start, end, 0.5f);
     Vec3 span = Vec3Sub(end, start);
@@ -2388,7 +2395,7 @@ LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 width, Vec4 color) {
     rot.v.c = forward;
 
     f32 height = Vec3Len(span);
-    return DrawQuad(pos, width, height, rot, color);
+    return DrawQuad(pos, width + AA_BUFFER_X, height + AA_BUFFER_Y, rot, color);
 }
 
 LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
@@ -3693,7 +3700,7 @@ static void SceneLineTick(GameState* gstate) {
 
     Vec3 dir = Vec3RotateAxis(Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), gstate->timer);
 
-    DrawLine(Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Scale(dir, 100.0f), 10.0f, LRED);
+    DrawLine(Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Scale(dir, 100.0f), 1.0f, LRED);
 
     // DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 5.0f, LBLUE);
 
