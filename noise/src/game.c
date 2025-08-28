@@ -1826,19 +1826,13 @@ static LShader GetLineShader() {
             // fragment lies along the width axis of the quad.
             float r = 0.3;
 
-            float alpha = 1.0;
-            if (u <= r) {
-                // FragColor.xyz = vec3(1, 0, 0);
-                alpha = smoothstep(0.0, 1.0, u / r);
-            } else if (u > r && u < 1.0 - r) {
-                // FragColor.xyz = vec3(0, 1, 0);
-                alpha = 1.0;
-            } else {
-                // FragColor.xyz = vec3(0, 0, 1);
-                alpha = smoothstep(1.0, 0.0, (u - (1 - r)) / r);
-            }
+            // Construct a piecewise smoothing function that transitions smoothly from [0, 1] between the
+            // domain of [0, r], stays at 1 from [r, 1-r] and transitions smoothly decreasing from [1, 0]
+            // in the domain [1-r, r].
+            float alpha_mask = smoothstep(0.0, 1.0, u / r) - 
+                               smoothstep(0.0, 1.0, (max(u - 1 + r, 0.0)) / r);
 
-            FragColor.a *= alpha;
+            FragColor.a *= alpha_mask;
         }
     );
     // clang-format on
