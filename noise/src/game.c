@@ -1501,24 +1501,6 @@ struct LShader {
 
     EnableShaderFunc enable_func;
     SetUniformsFunc set_uniforms_func;
-
-    // TODO: Delete all below
-    // vert shader.
-    u32 vpos_loc;
-    u32 vnormal_loc;
-    u32 vmodel_loc;
-    u32 vview_loc;
-    u32 vproj_loc;
-    u32 vtextcoords_loc;
-    u32 vucolor_loc;
-    u32 vuvoffset_loc;
-    u32 vuvscale_loc;
-
-    // frag shader.
-    u32 ftexture0_resolution_loc;
-    u32 fresolution_loc;
-    u32 ftimer_loc;
-    u32 fnframe_loc;
 };
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
