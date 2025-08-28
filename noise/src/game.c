@@ -3700,7 +3700,7 @@ static void SceneLineTick(GameState* gstate) {
 
     Vec3 dir = Vec3RotateAxis(Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), gstate->timer);
 
-    DrawLine(Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Scale(dir, 100.0f), 1.0f, LRED);
+    DrawLine(Vec3Lit(0.0f, 0.0f, 0.0f), Vec3Scale(dir, 100.0f), 5.0f, LRED);
 
     // DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 5.0f, LBLUE);
 
