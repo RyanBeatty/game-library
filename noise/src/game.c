@@ -2374,7 +2374,6 @@ LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 width, Vec4 color) {
     // that area amount to give us some buffer. This does put a cap on the smallest line we can draw.
     // It maybe makes sense to make this slightly bigger than the aa radius.
     static const f32 AA_BUFFER_X = 3.0;
-    static const f32 AA_BUFFER_Y = 1.0;
 
     Assert(start.z == end.z);
     Vec3 pos = Vec3Lerp(start, end, 0.5f);
@@ -2395,7 +2394,7 @@ LCORE DrawCmd* DrawLine(Vec3 start, Vec3 end, f32 width, Vec4 color) {
     rot.v.c = forward;
 
     f32 height = Vec3Len(span);
-    return DrawQuad(pos, width + AA_BUFFER_X, height + AA_BUFFER_Y, rot, color);
+    return DrawQuad(pos, width + AA_BUFFER_X, height, rot, color);
 }
 
 LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
