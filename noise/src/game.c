@@ -3657,8 +3657,8 @@ static void SceneNoiseTick(GameState* gstate) {
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
-        WHITENOISE_TX = GenerateWhitenoiseTexture(&temp, 64, 64);
-        VALUENOISE_TX = GenValueNoiseTexture(&temp, 64, 64, 3);
+        WHITENOISE_TX = GenerateWhitenoiseTexture(&temp, 256, 256);
+        VALUENOISE_TX = GenValueNoiseTexture(&temp, 256, 256, 3);
     }
 
     if (PlatformKeyPressed(LKEY_ENTER)) {
@@ -3674,12 +3674,8 @@ static void SceneNoiseTick(GameState* gstate) {
 
     // DrawCmd* cmd = DrawQuad(Vec3Zero(), 150.0f, 150.0f, rot, LCLEAR);
     // cmd->meshcmd.tx = TEXTURE;
-    DrawLTexture(WHITENOISE_TX, Vec2Lit(-35.0f, 0.0f), 1.0f);
-    DrawLTexture(VALUENOISE_TX, Vec2Lit(35.0f, 0.0f), 1.0f);
-
-    DrawLine(Vec3Lit(-10.0f, -50.0f, 0.0f), Vec3Lit(30.0f, -50.0f, 0.0f), 1.0f, LRED);
-
-    DrawLine(Vec3Lit(-10.0f, -70.0f, 0.0f), Vec3Lit(30.0f, -80.0f, 0.0f), 1.0f, LBLUE);
+    DrawLTexture(WHITENOISE_TX, Vec2Lit(-250.0f, 0.0f), 1.0f);
+    DrawLTexture(VALUENOISE_TX, Vec2Lit(250.0f, 0.0f), 1.0f);
 
     EndShaderPass();
 
@@ -3760,7 +3756,7 @@ void GameInit() {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_LINE);
+    GameStateLoadScene(gstate, SCENE_NOISE);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
