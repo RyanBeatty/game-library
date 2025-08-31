@@ -700,44 +700,6 @@ typedef enum {
     FILTER_LINEAR = GL_LINEAR,
 } TextureFilter;
 
-static LTexture UploadTexture(const char* filename) {
-    LTexture tx = {0};
-    i32 n = 0;
-    stbi_set_flip_vertically_on_load(true);
-    u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
-    Assert(data != NULL);
-
-    GLenum format;
-    Assert(n == 3 || n == 4);
-    if (n == 3) {
-        format = GL_RGB;
-    } else if (n == 4) {
-        format = GL_RGBA;
-    } else {
-        Assert(false);
-    }
-
-    glGenTextures(1, &tx.id);
-    glBindTexture(GL_TEXTURE_2D, tx.id);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, format, tx.width, tx.height, 0, format, GL_UNSIGNED_BYTE, data);
-    // I don't think I want to mipmap since that can apparently cause texture bleeding when atlasing in 2d.
-    // glGenerateMipmap(GL_TEXTURE_2D);
-
-    // TODO: Should I always be using GL_CLAMP_TO_EDGE?
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                    format == GL_RGBA
-                        ? GL_CLAMP_TO_EDGE
-                        : GL_REPEAT);  // set texture wrapping to GL_CLAMP_TO_EDGE (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    stbi_image_free(data);
-    return tx;
-}
-
 // :data - flattened 2d array of rgba data (e.g. 4 bytes, 1 byte per channel).
 // :width - length of width of buffer in rgba units.
 // :height - length of height of buffer in rgba units.
@@ -757,6 +719,18 @@ LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height, TextureFilte
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return tx;
+}
+
+static LTexture TextureFromFile(const char* filename) {
+    LTexture tx = {0};
+    i32 n = 0;
+    stbi_set_flip_vertically_on_load(true);
+    u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
+    Assert(data != NULL);
+
+    tx = TextureFromBuffer(data, tx.width, tx.height, FILTER_NEAREST);
+    stbi_image_free(data);
     return tx;
 }
 
@@ -923,49 +897,49 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LFONT] = UploadTexture("assets/textures/LFont.png");
+        tcache->textures[TX_LFONT] = TextureFromFile("assets/textures/LFont.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LFONT2] = UploadTexture("assets/textures/lfont2.png");
+        tcache->textures[TX_LFONT2] = TextureFromFile("assets/textures/lfont2.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_WOODMAN_STAGE] = UploadTexture("assets/textures/woodman-stage.png");
+        tcache->textures[TX_WOODMAN_STAGE] = TextureFromFile("assets/textures/woodman-stage.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LADDER_TEST_STAGE] = UploadTexture("assets/textures/stages/ladder-test.png");
+        tcache->textures[TX_LADDER_TEST_STAGE] = TextureFromFile("assets/textures/stages/ladder-test.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_ROOM_TEST_STAGE] = UploadTexture("assets/textures/stages/room-test.png");
+        tcache->textures[TX_ROOM_TEST_STAGE] = TextureFromFile("assets/textures/stages/room-test.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_MEGAMAN] = UploadTexture("assets/textures/megaman.png");
+        tcache->textures[TX_MEGAMAN] = TextureFromFile("assets/textures/megaman.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_MEGAMAN2] = UploadTexture("assets/textures/megaman2.png");
+        tcache->textures[TX_MEGAMAN2] = TextureFromFile("assets/textures/megaman2.png");
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_BLUE_WIZARD] = UploadTexture("assets/textures/blue-wizard.png");
+        tcache->textures[TX_BLUE_WIZARD] = TextureFromFile("assets/textures/blue-wizard.png");
         ++tcache->txlen;
     }
 }
