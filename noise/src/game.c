@@ -786,6 +786,7 @@ typedef enum TextureLabel {
     TX_IMAGE_TEST,
     TX_IMAGE_TEST2,
     TX_IMAGE_TEST3,
+    TX_IMAGE_TEST4,
     TX_COUNT
 } TextureLabel;
 
@@ -830,7 +831,8 @@ typedef struct {
 } Sprite;
 
 LCORE Sprite SpriteFromLTexture(LTexture tx) {
-    Sprite sprite = {0};
+    // Init the min to be the max px index of the texture. If we don't do this, min will always be (0, 0).
+    Sprite sprite = {.min = Vec2Lit(tx.width - 1, tx.height - 1)};
 
     for (i32 i = 0; i < tx.width; ++i) {
         for (i32 j = 0; j < tx.height; ++j) {
@@ -941,6 +943,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_IMAGE_TEST3] = TextureFromFile("assets/textures/image-test3.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_IMAGE_TEST4] = TextureFromFile("assets/textures/image-test4.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 }
@@ -3818,8 +3826,8 @@ static void SceneVectorTick(GameState* gstate) {
 
     // LTexture tx = GetTexture(TX_BLUE_WIZARD);
     // LTexture tx = GetTexture(TX_IMAGE_TEST);
-    LTexture tx = GetTexture(TX_IMAGE_TEST3);
-
+    // LTexture tx = GetTexture(TX_IMAGE_TEST3);
+    LTexture tx = GetTexture(TX_IMAGE_TEST4);
     Sprite sprite = SpriteFromLTexture(tx);
 
     // TODO: test minuv.
