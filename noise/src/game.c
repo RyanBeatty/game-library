@@ -834,7 +834,6 @@ LCORE Sprite SpriteFromLTexture(LTexture tx) {
         for (i32 j = 0; j < tx.height; ++j) {
             Vec2 pos = Vec2Lit(i, j);
             RGBA256 rgba = LTextureGetPx(tx, i, j);
-            // breakpoint();
             if (rgba.a != 0.0f) {
                 sprite.min.x = f32min(sprite.min.x, pos.x);
                 sprite.min.y = f32min(sprite.min.y, pos.y);
@@ -843,8 +842,6 @@ LCORE Sprite SpriteFromLTexture(LTexture tx) {
             }
         }
     }
-
-    // breakpoint();
 
     return sprite;
 }
@@ -3810,16 +3807,14 @@ static void SceneVectorTick(GameState* gstate) {
 
     Sprite sprite = SpriteFromLTexture(tx);
 
-    Vec2 minuv = Vec2Lit(sprite.min.x / (tx.width - 1.0f), sprite.min.y / (tx.height - 1.0f));
-    Vec2 maxuv = Vec2Lit(sprite.max.x / (tx.width - 1.0f), sprite.max.y / (tx.height - 1.0f));
-    Vec2 uv = Vec2Lit(maxuv.x - minuv.x, maxuv.y - minuv.y);
-    breakpoint();
+    Vec2 dims = Vec2Sub(sprite.max, sprite.min);
+    Vec2 uv = Vec2Lit(dims.x / (tx.width - 1.0f), dims.y / (tx.height - 1.0f));
 
+    breakpoint();
     // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
     // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
     f32 scale = 10.0f;
-    DrawLTextureProUV(tx, Vec2Lit(0, 0), uv, Vec2Lit(POS.x, POS.y), Vec2Scale(Vec2Lit(tx.width, tx.height), scale), ROT,
-                      LCLEAR);
+    DrawLTextureProUV(tx, Vec2Lit(0, 0), uv, Vec2Lit(POS.x, POS.y), Vec2Scale(dims, scale), ROT, LCLEAR);
 
     EndShaderPass();
 
