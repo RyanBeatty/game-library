@@ -725,8 +725,8 @@ static LTexture UploadTexture(const char* filename) {
                         : GL_REPEAT);  // set texture wrapping to GL_CLAMP_TO_EDGE (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
     // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     stbi_image_free(data);
     return tx;
@@ -3714,6 +3714,7 @@ static void SceneLineTick(GameState* gstate) {
 
 static void SceneVectorTick(GameState* gstate) {
     static Vec3 POS = {0};
+    static f32 ROT = 0.0f;
 
     if (gstate->init) {
     }
@@ -3735,6 +3736,10 @@ static void SceneVectorTick(GameState* gstate) {
 
     POS = Vec3Add(POS, v);
 
+    if (PlatformKeyDown(LKEY_SPACE)) {
+        ROT *= Deg2Rad(180.0f) * gstate->dt;
+    }
+
     BeginRender(gstate->dt);
 
     ShaderPass* pass = BeginShaderPass(GetLineShader());
@@ -3742,7 +3747,11 @@ static void SceneVectorTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
+    LTexture tx = GetTexture(TX_BLUE_WIZARD);
+    // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
+    // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
+    DrawLTextureProUV(tx, Vec2Lit(0, 0), Vec2Lit(1, 1), Vec2Lit(POS.x, POS.y), Vec2Lit(tx.width, tx.height), ROT,
+                      LCLEAR);
 
     EndShaderPass();
 
