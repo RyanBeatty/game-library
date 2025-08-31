@@ -722,14 +722,14 @@ LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height, TextureFilte
     return tx;
 }
 
-static LTexture TextureFromFile(const char* filename) {
+static LTexture TextureFromFile(const char* filename, TextureFilter filter) {
     LTexture tx = {0};
     i32 n = 0;
     stbi_set_flip_vertically_on_load(true);
     u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
     Assert(data != NULL);
 
-    tx = TextureFromBuffer(data, tx.width, tx.height, FILTER_NEAREST);
+    tx = TextureFromBuffer(data, tx.width, tx.height, filter);
     stbi_image_free(data);
     return tx;
 }
@@ -897,49 +897,50 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LFONT] = TextureFromFile("assets/textures/LFont.png");
+        tcache->textures[TX_LFONT] = TextureFromFile("assets/textures/LFont.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LFONT2] = TextureFromFile("assets/textures/lfont2.png");
+        tcache->textures[TX_LFONT2] = TextureFromFile("assets/textures/lfont2.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_WOODMAN_STAGE] = TextureFromFile("assets/textures/woodman-stage.png");
+        tcache->textures[TX_WOODMAN_STAGE] = TextureFromFile("assets/textures/woodman-stage.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LADDER_TEST_STAGE] = TextureFromFile("assets/textures/stages/ladder-test.png");
+        tcache->textures[TX_LADDER_TEST_STAGE] =
+            TextureFromFile("assets/textures/stages/ladder-test.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_ROOM_TEST_STAGE] = TextureFromFile("assets/textures/stages/room-test.png");
+        tcache->textures[TX_ROOM_TEST_STAGE] = TextureFromFile("assets/textures/stages/room-test.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_MEGAMAN] = TextureFromFile("assets/textures/megaman.png");
+        tcache->textures[TX_MEGAMAN] = TextureFromFile("assets/textures/megaman.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_MEGAMAN2] = TextureFromFile("assets/textures/megaman2.png");
+        tcache->textures[TX_MEGAMAN2] = TextureFromFile("assets/textures/megaman2.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_BLUE_WIZARD] = TextureFromFile("assets/textures/blue-wizard.png");
+        tcache->textures[TX_BLUE_WIZARD] = TextureFromFile("assets/textures/blue-wizard.png", FILTER_LINEAR);
         ++tcache->txlen;
     }
 }
