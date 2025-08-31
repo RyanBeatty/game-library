@@ -692,6 +692,8 @@ typedef struct {
     TextureId id;
     i32 width;
     i32 height;
+
+    byte** data;
 } LTexture;
 
 typedef enum {
@@ -706,14 +708,16 @@ typedef enum {
 // So size of buffer should be (width * 4 bytes) * (height * 4 bytes)
 // (0, 0) in uv space maps to the bottom right corner of the texture visually which maps to
 // the start of the buffer.
+// NOTE: We take ownership of data here.
 LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height, TextureFilter filter) {
     LTexture tx = {0};
     tx.width = width;
     tx.height = height;
+    tx.data = data;
     glGenTextures(1, &tx.id);
     glBindTexture(GL_TEXTURE_2D, tx.id);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tx.data);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
@@ -725,12 +729,14 @@ LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height, TextureFilte
 static LTexture TextureFromFile(const char* filename, TextureFilter filter) {
     LTexture tx = {0};
     i32 n = 0;
+    // TODO: Change the allocator on stb.
     stbi_set_flip_vertically_on_load(true);
     u8* data = stbi_load(filename, &tx.width, &tx.height, &n, 0);
     Assert(data != NULL);
 
+    // The texture takes ownership of the data.
     tx = TextureFromBuffer(data, tx.width, tx.height, filter);
-    stbi_image_free(data);
+    // stbi_image_free(data);
     return tx;
 }
 
