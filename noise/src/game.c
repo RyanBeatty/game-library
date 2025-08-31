@@ -702,6 +702,16 @@ typedef enum {
     FILTER_LINEAR = GL_LINEAR,
 } TextureFilter;
 
+LCORE u32 LTextureGetPx(LTexture tx, i32 x, i32 y) {
+    i32 offset = (tx.width * y) + x;
+    u8 r = tx.data[offset + 0];
+    u8 g = tx.data[offset + 1];
+    u8 b = tx.data[offset + 2];
+    u8 a = tx.data[offset + 3];
+    u32 rgba = r | (g << 8) | (b << 16) | (a << 24);
+    return rgba;
+}
+
 // :data - flattened 2d array of rgba data (e.g. 4 bytes, 1 byte per channel).
 // :width - length of width of buffer in rgba units.
 // :height - length of height of buffer in rgba units.
@@ -808,14 +818,99 @@ LCORE Sprite SpriteFromLTexture(LTexture tx) {
     for (i32 i = 0; i < tx.width; ++i) {
         for (i32 j = 0; j < tx.height; ++j) {
             Vec2 pos = Vec2Lit(i, j);
-            sprite.min.x = f32min(sprite.min.x, pos.x);
-            sprite.min.y = f32min(sprite.min.y, pos.y);
-            sprite.max.x = f32max(sprite.max.x, pos.x);
-            sprite.max.y = f32max(sprite.max.y, pos.y);
+            u32 rgba = LTextureGetPx(tx, i, j);
+            if ((rgba & (0xFF)) != 0.0f) {
+                breakpoint();
+                sprite.min.x = f32min(sprite.min.x, pos.x);
+                sprite.min.y = f32min(sprite.min.y, pos.y);
+                sprite.max.x = f32max(sprite.max.x, pos.x);
+                sprite.max.y = f32max(sprite.max.y, pos.y);
+            }
         }
     }
 
+    breakpoint();
+
     return sprite;
+}
+
+static void TexturesInit() {
+    TextureCache* tcache = &TCACHE;
+    tcache->txlen = 0;
+    tcache->txcap = MAX_TEXTURES;
+
+    // Default black texture.
+    {
+        Assert(tcache->txlen < tcache->txcap);
+
+        LTexture tx = {0};
+        tx.width = 1;
+        tx.height = 1;
+        glGenTextures(1, &tx.id);
+        glBindTexture(GL_TEXTURE_2D, tx.id);
+
+        // The texture will be all white. Important to do this so that we can properly blend
+        // texture colors and uniform frag color.
+        GLubyte transparentPixel[] = {255, 255, 255, 255};
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        tcache->textures[TX_DEFAULT] = tx;
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_LFONT] = TextureFromFile("assets/textures/LFont.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_LFONT2] = TextureFromFile("assets/textures/lfont2.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_WOODMAN_STAGE] = TextureFromFile("assets/textures/woodman-stage.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_LADDER_TEST_STAGE] =
+            TextureFromFile("assets/textures/stages/ladder-test.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_ROOM_TEST_STAGE] = TextureFromFile("assets/textures/stages/room-test.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_MEGAMAN] = TextureFromFile("assets/textures/megaman.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_MEGAMAN2] = TextureFromFile("assets/textures/megaman2.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_BLUE_WIZARD] = TextureFromFile("assets/textures/blue-wizard.png", FILTER_LINEAR);
+        ++tcache->txlen;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -897,84 +992,8 @@ static LTexture GenValueNoiseTexture(Arena* temp, i32 width, i32 height, i32 cel
     return TextureFromBuffer(buffer.data, width, height, FILTER_NEAREST);
 }
 
-static void TexturesInit() {
-    TextureCache* tcache = &TCACHE;
-    tcache->txlen = 0;
-    tcache->txcap = MAX_TEXTURES;
-
-    // Default black texture.
-    {
-        Assert(tcache->txlen < tcache->txcap);
-
-        LTexture tx = {0};
-        tx.width = 1;
-        tx.height = 1;
-        glGenTextures(1, &tx.id);
-        glBindTexture(GL_TEXTURE_2D, tx.id);
-
-        // The texture will be all white. Important to do this so that we can properly blend
-        // texture colors and uniform frag color.
-        GLubyte transparentPixel[] = {255, 255, 255, 255};
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-        tcache->textures[TX_DEFAULT] = tx;
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LFONT] = TextureFromFile("assets/textures/LFont.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LFONT2] = TextureFromFile("assets/textures/lfont2.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_WOODMAN_STAGE] = TextureFromFile("assets/textures/woodman-stage.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_LADDER_TEST_STAGE] =
-            TextureFromFile("assets/textures/stages/ladder-test.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_ROOM_TEST_STAGE] = TextureFromFile("assets/textures/stages/room-test.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_MEGAMAN] = TextureFromFile("assets/textures/megaman.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_MEGAMAN2] = TextureFromFile("assets/textures/megaman2.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_BLUE_WIZARD] = TextureFromFile("assets/textures/blue-wizard.png", FILTER_LINEAR);
-        ++tcache->txlen;
-    }
-}
+///////////////////////////////////////////////////////////////////////////////
+// S:render
 
 typedef struct {
     u32 fbid;        // framebuffer id
