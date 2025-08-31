@@ -693,7 +693,7 @@ typedef struct {
     i32 width;
     i32 height;
 
-    byte** data;
+    byte* data;
 } LTexture;
 
 typedef enum {
@@ -794,6 +794,28 @@ static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
     Vec2 origin_offset = Vec2Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f));
     Vec2 pos_world = Vec2Add(pos_aseprite, origin_offset);
     return pos_world;
+}
+
+typedef struct {
+    // The min and max coordinate in image coordinates [0, with], [0, height]
+    Vec2 min;
+    Vec2 max;
+} Sprite;
+
+LCORE Sprite SpriteFromLTexture(LTexture tx) {
+    Sprite sprite = {0};
+
+    for (i32 i = 0; i < tx.width; ++i) {
+        for (i32 j = 0; j < tx.height; ++j) {
+            Vec2 pos = Vec2Lit(i, j);
+            sprite.min.x = f32min(sprite.min.x, pos.x);
+            sprite.min.y = f32min(sprite.min.y, pos.y);
+            sprite.max.x = f32max(sprite.max.x, pos.x);
+            sprite.max.y = f32max(sprite.max.y, pos.y);
+        }
+    }
+
+    return sprite;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3744,10 +3766,16 @@ static void SceneVectorTick(GameState* gstate) {
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
     LTexture tx = GetTexture(TX_BLUE_WIZARD);
+
+    Sprite sprite = SpriteFromLTexture(tx);
+
+    Vec2 minuv = Vec2Lit(sprite.min.x / tx.width, sprite.min.y / height);
+    Vec2 maxuv = Vec2Lit(sprite.max.x / tx.width, sprite.max.y / height);
+    Vec2 uv = Vec2Lit(maxuv.x - minuv.x, maxuv.y - minuv.y);
+
     // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
     // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
-    DrawLTextureProUV(tx, Vec2Lit(0, 0), Vec2Lit(1, 1), Vec2Lit(POS.x, POS.y), Vec2Lit(tx.width, tx.height), ROT,
-                      LCLEAR);
+    DrawLTextureProUV(tx, Vec2Lit(0, 0), uv, Vec2Lit(POS.x, POS.y), Vec2Lit(tx.width, tx.height), ROT, LCLEAR);
 
     EndShaderPass();
 
