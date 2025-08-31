@@ -785,6 +785,7 @@ typedef enum TextureLabel {
     TX_BLUE_WIZARD,
     TX_IMAGE_TEST,
     TX_IMAGE_TEST2,
+    TX_IMAGE_TEST3,
     TX_COUNT
 } TextureLabel;
 
@@ -934,6 +935,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_IMAGE_TEST2] = TextureFromFile("assets/textures/image-test2.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_IMAGE_TEST3] = TextureFromFile("assets/textures/image-test3.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 }
@@ -3810,7 +3817,8 @@ static void SceneVectorTick(GameState* gstate) {
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
     // LTexture tx = GetTexture(TX_BLUE_WIZARD);
-    LTexture tx = GetTexture(TX_IMAGE_TEST2);
+    // LTexture tx = GetTexture(TX_IMAGE_TEST2);
+    LTexture tx = GetTexture(TX_IMAGE_TEST3);
 
     Sprite sprite = SpriteFromLTexture(tx);
 
