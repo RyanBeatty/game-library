@@ -3737,7 +3737,7 @@ static void SceneVectorTick(GameState* gstate) {
     POS = Vec3Add(POS, v);
 
     if (PlatformKeyDown(LKEY_SPACE)) {
-        ROT *= Deg2Rad(180.0f) * gstate->dt;
+        ROT += Deg2Rad(180.0f) * gstate->dt;
     }
 
     BeginRender(gstate->dt);
