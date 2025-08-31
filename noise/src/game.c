@@ -796,6 +796,9 @@ static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
     return pos_world;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// S:noise
+
 // https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
 u32 PCGHash(u32 x) {
     u32 state = x * 747796405u + 2891336453u;
@@ -3211,6 +3214,9 @@ typedef struct {
 
             // n frames in animation.
             u32 nframes;
+            // TODO: The below should be moved out of texture info I think and into graphics info.
+            // If we do that then we can build textureinfos once and just swap assign them in the
+            // graphics info.
             // Index of what frame we are on in the animation.
             u32 frame;
             // Time spent in current frame.
@@ -3223,6 +3229,9 @@ typedef struct {
         } animation;
     };
 
+    // TODO: The below should be moved out of texture info I think and into graphics info.
+    // If we do that then we can build textureinfos once and just swap assign them in the
+    // graphics info.
     Vec4 tint;  // Color.
 } TextureInfo;
 
