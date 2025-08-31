@@ -694,6 +694,12 @@ typedef struct {
     i32 height;
 } LTexture;
 
+typedef enum {
+    FILTER_NONE = 0,
+    FILTER_NEAREST = GL_NEAREST,
+    FILTER_LINEAR = GL_LINEAR,
+} TextureFilter;
+
 static LTexture UploadTexture(const char* filename) {
     LTexture tx = {0};
     i32 n = 0;
@@ -738,7 +744,7 @@ static LTexture UploadTexture(const char* filename) {
 // So size of buffer should be (width * 4 bytes) * (height * 4 bytes)
 // (0, 0) in uv space maps to the bottom right corner of the texture visually which maps to
 // the start of the buffer.
-LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height) {
+LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height, TextureFilter filter) {
     LTexture tx = {0};
     tx.width = width;
     tx.height = height;
@@ -747,8 +753,8 @@ LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height) {
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     return tx;
@@ -841,7 +847,7 @@ static LTexture GenerateWhitenoiseTexture(Arena* temp, i32 width, i32 height) {
         }
     }
 
-    return TextureFromBuffer(buffer.data, width, height);
+    return TextureFromBuffer(buffer.data, width, height, FILTER_NEAREST);
 }
 
 static LTexture GenValueNoiseTexture(Arena* temp, i32 width, i32 height, i32 cell_size) {
@@ -883,7 +889,7 @@ static LTexture GenValueNoiseTexture(Arena* temp, i32 width, i32 height, i32 cel
         }
     }
 
-    return TextureFromBuffer(buffer.data, width, height);
+    return TextureFromBuffer(buffer.data, width, height, FILTER_NEAREST);
 }
 
 static void TexturesInit() {
