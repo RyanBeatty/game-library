@@ -764,7 +764,7 @@ static LTexture TextureFromFile(const char* filename, TextureFilter filter) {
     return tx;
 }
 
-#define MAX_TEXTURES 10
+#define MAX_TEXTURES 32
 typedef struct {
     u32 txlen;
     u32 txcap;
@@ -784,6 +784,7 @@ typedef enum TextureLabel {
     TX_MEGAMAN2,
     TX_BLUE_WIZARD,
     TX_IMAGE_TEST,
+    TX_IMAGE_TEST2,
     TX_COUNT
 } TextureLabel;
 
@@ -926,7 +927,13 @@ static void TexturesInit() {
 
     {
         Assert(tcache->txlen < tcache->txcap);
-        tcache->textures[TX_IMAGE_TEST] = TextureFromFile("assets/textures/image-test.png", FILTER_LINEAR);
+        tcache->textures[TX_IMAGE_TEST] = TextureFromFile("assets/textures/image-test.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_IMAGE_TEST2] = TextureFromFile("assets/textures/image-test2.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
 }
@@ -3803,17 +3810,17 @@ static void SceneVectorTick(GameState* gstate) {
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
     // LTexture tx = GetTexture(TX_BLUE_WIZARD);
-    LTexture tx = GetTexture(TX_IMAGE_TEST);
+    LTexture tx = GetTexture(TX_IMAGE_TEST2);
 
     Sprite sprite = SpriteFromLTexture(tx);
 
-    Vec2 dims = Vec2Sub(sprite.max, sprite.min);
-    Vec2 uv = Vec2Lit(dims.x / (tx.width - 1.0f), dims.y / (tx.height - 1.0f));
+    Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
+    Vec2 uv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
 
     breakpoint();
     // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
     // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
-    f32 scale = 10.0f;
+    f32 scale = 100.0f;
     DrawLTextureProUV(tx, Vec2Lit(0, 0), uv, Vec2Lit(POS.x, POS.y), Vec2Scale(dims, scale), ROT, LCLEAR);
 
     EndShaderPass();
