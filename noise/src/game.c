@@ -3824,13 +3824,12 @@ static void SceneVectorTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    // LTexture tx = GetTexture(TX_BLUE_WIZARD);
+    LTexture tx = GetTexture(TX_BLUE_WIZARD);
     // LTexture tx = GetTexture(TX_IMAGE_TEST);
     // LTexture tx = GetTexture(TX_IMAGE_TEST3);
-    LTexture tx = GetTexture(TX_IMAGE_TEST4);
+    // LTexture tx = GetTexture(TX_IMAGE_TEST4);
     Sprite sprite = SpriteFromLTexture(tx);
 
-    // TODO: test minuv.
     Vec2 minuv = Vec2Lit(sprite.min.x / tx.width, sprite.min.y / tx.height);
     Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
     Vec2 uv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
@@ -3838,7 +3837,7 @@ static void SceneVectorTick(GameState* gstate) {
     breakpoint();
     // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
     // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
-    f32 scale = 10.0f;
+    f32 scale = 1.0f;
     DrawLTextureProUV(tx, minuv, uv, Vec2Lit(POS.x, POS.y), Vec2Scale(dims, scale), ROT, LCLEAR);
 
     EndShaderPass();
