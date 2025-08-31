@@ -702,13 +702,27 @@ typedef enum {
     FILTER_LINEAR = GL_LINEAR,
 } TextureFilter;
 
-LCORE u32 LTextureGetPx(LTexture tx, i32 x, i32 y) {
-    i32 offset = (tx.width * y) + x;
-    u8 r = tx.data[offset + 0];
-    u8 g = tx.data[offset + 1];
-    u8 b = tx.data[offset + 2];
-    u8 a = tx.data[offset + 3];
-    u32 rgba = r | (g << 8) | (b << 16) | (a << 24);
+typedef struct {
+    union {
+        u32 rgba;
+
+        struct {
+            u8 r;
+            u8 g;
+            u8 b;
+            u8 a;
+        };
+    };
+} RGBA256;
+
+LCORE RGBA256 LTextureGetPx(LTexture tx, i32 x, i32 y) {
+    RGBA256 rgba = {0};
+    // Remember the size in bytes for each cell is sizeof(u32)
+    i32 offset = (tx.width * y * sizeof(u32)) + (x * sizeof(u32));
+    rgba.r = tx.data[offset + 0];
+    rgba.g = tx.data[offset + 1];
+    rgba.b = tx.data[offset + 2];
+    rgba.a = tx.data[offset + 3];
     return rgba;
 }
 
@@ -769,6 +783,7 @@ typedef enum TextureLabel {
     TX_MEGAMAN,
     TX_MEGAMAN2,
     TX_BLUE_WIZARD,
+    TX_IMAGE_TEST,
     TX_COUNT
 } TextureLabel;
 
@@ -818,9 +833,9 @@ LCORE Sprite SpriteFromLTexture(LTexture tx) {
     for (i32 i = 0; i < tx.width; ++i) {
         for (i32 j = 0; j < tx.height; ++j) {
             Vec2 pos = Vec2Lit(i, j);
-            u32 rgba = LTextureGetPx(tx, i, j);
-            if ((rgba & (0xFF)) != 0.0f) {
-                breakpoint();
+            RGBA256 rgba = LTextureGetPx(tx, i, j);
+            // breakpoint();
+            if (rgba.a != 0.0f) {
                 sprite.min.x = f32min(sprite.min.x, pos.x);
                 sprite.min.y = f32min(sprite.min.y, pos.y);
                 sprite.max.x = f32max(sprite.max.x, pos.x);
@@ -909,6 +924,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_BLUE_WIZARD] = TextureFromFile("assets/textures/blue-wizard.png", FILTER_LINEAR);
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_IMAGE_TEST] = TextureFromFile("assets/textures/image-test.png", FILTER_LINEAR);
         ++tcache->txlen;
     }
 }
@@ -3784,7 +3805,8 @@ static void SceneVectorTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    LTexture tx = GetTexture(TX_BLUE_WIZARD);
+    // LTexture tx = GetTexture(TX_BLUE_WIZARD);
+    LTexture tx = GetTexture(TX_IMAGE_TEST);
 
     Sprite sprite = SpriteFromLTexture(tx);
 
