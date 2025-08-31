@@ -772,6 +772,7 @@ typedef enum TextureLabel {
     TX_ROOM_TEST_STAGE,
     TX_MEGAMAN,
     TX_MEGAMAN2,
+    TX_BLUE_WIZARD,
     TX_COUNT
 } TextureLabel;
 
@@ -953,6 +954,12 @@ static void TexturesInit() {
     {
         Assert(tcache->txlen < tcache->txcap);
         tcache->textures[TX_MEGAMAN2] = UploadTexture("assets/textures/megaman2.png");
+        ++tcache->txlen;
+    }
+
+    {
+        Assert(tcache->txlen < tcache->txcap);
+        tcache->textures[TX_BLUE_WIZARD] = UploadTexture("assets/textures/blue-wizard.png");
         ++tcache->txlen;
     }
 }
@@ -3539,6 +3546,7 @@ typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_NOISE,
     SCENE_LINE,
+    SCENE_VECTOR,
     SCENE_COUNT,
 } SceneId;
 
@@ -3704,6 +3712,43 @@ static void SceneLineTick(GameState* gstate) {
     EndRender();
 }
 
+static void SceneVectorTick(GameState* gstate) {
+    static Vec3 POS = {0};
+
+    if (gstate->init) {
+    }
+
+    Vec3 v = Vec3Zero();
+    if (PlatformKeyDown(LKEY_UP)) {
+        v.y += 1.0f;
+    }
+    if (PlatformKeyDown(LKEY_DOWN)) {
+        v.y -= 1.0f;
+    }
+    if (PlatformKeyDown(LKEY_LEFT)) {
+        v.x -= 1.0f;
+    }
+    if (PlatformKeyDown(LKEY_RIGHT)) {
+        v.x += 1.0f;
+    }
+    v = Vec3Scale(v, 150.0f * gstate->dt);
+
+    POS = Vec3Add(POS, v);
+
+    BeginRender(gstate->dt);
+
+    ShaderPass* pass = BeginShaderPass(GetLineShader());
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+    DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
+
+    EndShaderPass();
+
+    EndRender();
+}
+
 ////////////////////////////////////////////////////////////
 
 static void TestL();
@@ -3753,10 +3798,11 @@ void GameInit() {
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_NOISE] = SceneNoiseTick;
         gstate->scenefuncs[SCENE_LINE] = SceneLineTick;
+        gstate->scenefuncs[SCENE_VECTOR] = SceneVectorTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_NOISE);
+    GameStateLoadScene(gstate, SCENE_VECTOR);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
