@@ -105,6 +105,7 @@ typedef struct {
 } Vec3;
 
 #define Vec3Lit(a, b, c) ((Vec3){.x = (a), .y = (b), .z = (c)})
+#define Vec3LitAll(a) (Vec3Lit(a, a, a))
 #define Vec3ToVec2(v) (Vec2Lit((v).x, (v).y))
 #define Vec2ToVec3(v) (Vec3Lit((v).x, (v).y, 0.0f))
 #define Vec3ToRVector3(v) ((Vector3){.x = (v).x, .y = (v).y, .z = (v.z)})
@@ -3328,6 +3329,72 @@ static void TextureInfoDefault(TextureInfo* txinfo) {
 }
 
 typedef struct {
+    // The underlying geometry info.
+    // These transform fields are "static", i.e. they are just set once on model load.
+    // Allows for easy persistent transform (i.e. load this model rotated by 90 degrees).
+    Vec3 pos;
+    Mat4 orient;
+    Vec3 scale;
+    LMesh mesh;
+
+    // This is like the material info basically.
+    LTexture tx;
+    TextureInfoType txtype;
+    union {
+        struct {
+            // Start min and dims of the window in uv space.
+            Vec2 minuv;
+            Vec2 dimsuv;
+        } sprite;
+
+        struct {
+            // Start min and dims of the first frame in uv space.
+            Vec2 minuv;
+            Vec2 dimsuv;
+
+            // How much to step each frame in uv.
+            Vec2 stepuv;
+
+            // n frames in animation.
+            u32 nframes;
+        } animation;
+    };
+
+    Vec4 tint;  // Color.
+} LModel;
+
+LCORE LModel LModelFromSprite(LTexture tx, Sprite sprite) {
+    Vec2 minuv = Vec2Lit(sprite.min.x / tx.width, sprite.min.y / tx.height);
+    Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
+    Vec2 uv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
+
+    LModel model = {
+        .pos = Vec3Zero(),
+        .orient = Mat4Identity(),
+        // By default init the model scale to match the pixel dimensions of the bb of the sprite.
+        .scale = Vec3Lit(dims.x, dims.y, 1.0f),
+        .mesh = GetMesh(M_QUAD),
+
+        .tx = tx,
+        .txtype = TI_SPRITE,
+        .sprite.minuv = minuv,
+        .sprite.dimsuv = uv,
+    };
+    return model;
+}
+
+// I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
+LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
+    Assert(model.txtype == TI_SPRITE);
+    DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scale.x + model.scale.x, scale.y + model.scale.y,
+                            Mat4Multiply(orient, model.orient), LCLEAR);
+    cmd->meshcmd.tx = model.tx;
+    cmd->meshcmd.uvoffset = model.sprite.minuv;
+    cmd->meshcmd.uvscale = model.sprite.dimsuv;
+    return cmd;
+}
+
+typedef struct {
     Vec3 pos;
     Vec3 scale;
     Mat4 orient;
@@ -3824,21 +3891,35 @@ static void SceneVectorTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    LTexture tx = GetTexture(TX_BLUE_WIZARD);
-    // LTexture tx = GetTexture(TX_IMAGE_TEST);
-    // LTexture tx = GetTexture(TX_IMAGE_TEST3);
-    // LTexture tx = GetTexture(TX_IMAGE_TEST4);
-    Sprite sprite = SpriteFromLTexture(tx);
+    // // Raw sprite.
+    // if (false) {
+    //     LTexture tx = GetTexture(TX_BLUE_WIZARD);
+    //     // LTexture tx = GetTexture(TX_IMAGE_TEST);
+    //     // LTexture tx = GetTexture(TX_IMAGE_TEST3);
+    //     // LTexture tx = GetTexture(TX_IMAGE_TEST4);
+    //     Sprite sprite = SpriteFromLTexture(tx);
 
-    Vec2 minuv = Vec2Lit(sprite.min.x / tx.width, sprite.min.y / tx.height);
-    Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
-    Vec2 uv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
+    //     Vec2 minuv = Vec2Lit(sprite.min.x / tx.width, sprite.min.y / tx.height);
+    //     Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
+    //     Vec2 uv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
 
-    breakpoint();
-    // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
-    // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
-    f32 scale = 1.0f;
-    DrawLTextureProUV(tx, minuv, uv, Vec2Lit(POS.x, POS.y), Vec2Scale(dims, scale), ROT, LCLEAR);
+    //     // // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
+    //     // // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
+    //     f32 scale = 1.0f;
+    //     DrawCmd* cmd = DrawLTextureProUV(tx, minuv, uv, Vec2Lit(POS.x, POS.y), Vec2Scale(dims, scale), ROT, LCLEAR);
+    //     breakpoint();
+    //     int a = 0;
+    // }
+
+    {
+        LTexture tx = GetTexture(TX_BLUE_WIZARD);
+        // LTexture tx = GetTexture(TX_IMAGE_TEST);
+        // LTexture tx = GetTexture(TX_IMAGE_TEST3);
+        // LTexture tx = GetTexture(TX_IMAGE_TEST4);
+        Sprite sprite = SpriteFromLTexture(tx);
+        LModel model = LModelFromSprite(tx, sprite);
+        DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+    }
 
     EndShaderPass();
 
