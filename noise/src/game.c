@@ -3328,6 +3328,9 @@ static void TextureInfoDefault(TextureInfo* txinfo) {
     *txinfo = res;
 }
 
+// A model is basically a "static" set of geometry and visual info data.
+// We can load a model that has been created and durably stored a priori once and then
+// just refer to it in many places (e.g. load the idle state model and swap out with jump state model).
 typedef struct {
     // The underlying geometry info.
     // These transform fields are "static", i.e. they are just set once on model load.
@@ -3337,7 +3340,8 @@ typedef struct {
     Vec3 scale;
     LMesh mesh;
 
-    // This is like the material info basically.
+    // This is like the material info basically. How the model "looks"
+    // Unclear where custom shader info will need to go, maybe on the graphics state?
     LTexture tx;
     TextureInfoType txtype;
     union {
