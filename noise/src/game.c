@@ -3864,6 +3864,9 @@ static void SceneVectorTick(GameState* gstate) {
     static Vec3 POS = {0};
     static f32 ROT = 0.0f;
     static LTexture TX_PACKED = {0};
+    static Sprite SPRITE_WIZARD = {0};
+    static Sprite SPRITE_MM = {0};
+    static Sprite SPRITE_WIZARD2 = {0};
 
     if (gstate->init) {
         isize width = 1024;
@@ -3877,6 +3880,8 @@ static void SceneVectorTick(GameState* gstate) {
             GetTexture(TX_BLUE_WIZARD),
         };
         isize txslen = ArraySizeOf(txs);
+
+        Sprite sprites[3] = {0};
 
         // Basic packing. Very inefficient. Optimize later.
         Vec2 offset = Vec2Zero();
@@ -3907,9 +3912,16 @@ static void SceneVectorTick(GameState* gstate) {
                 }
             }
 
+            sprites[i].min = offset;
+            sprites[i].max = Vec2Add(offset, Vec2Lit(tx.width - 1, tx.height - 1));
+
             // Move along the row.
             offset.x += tx.width;
         }
+
+        SPRITE_WIZARD = sprites[0];
+        SPRITE_MM = sprites[1];
+        SPRITE_WIZARD2 = sprites[2];
 
         TX_PACKED = TextureFromBuffer((byte*)data, width, height, FILTER_LINEAR);
     }
@@ -3981,12 +3993,21 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    {
+    if (false) {
         LTexture tx = TX_PACKED;
         // LTexture tx = GetTexture(TX_IMAGE_TEST);
         // LTexture tx = GetTexture(TX_IMAGE_TEST3);
         // LTexture tx = GetTexture(TX_IMAGE_TEST4);
         Sprite sprite = SpriteFromLTexture(tx);
+        LModel model = LModelFromSprite(tx, sprite);
+        DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+    }
+
+    {
+        LTexture tx = TX_PACKED;
+        // Sprite sprite = SPRITE_WIZARD;
+        // Sprite sprite = SPRITE_MM;
+        Sprite sprite = SPRITE_WIZARD2;
         LModel model = LModelFromSprite(tx, sprite);
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
