@@ -3863,8 +3863,44 @@ static void SceneLineTick(GameState* gstate) {
 static void SceneVectorTick(GameState* gstate) {
     static Vec3 POS = {0};
     static f32 ROT = 0.0f;
+    static LTexture TX_PACKED = {0};
 
     if (gstate->init) {
+        isize width = 1024;
+        isize height = 1024;
+        Arena temp = TempArena(gstate->temp);
+        RGBA256* data = New(&temp, width * height, RGBA256);
+
+        LTexture txs[] = {
+            GetTexture(TX_BLUE_WIZARD),
+            GetTexture(TX_MEGAMAN2),
+        };
+        isize txslen = ArraySizeOf(txs);
+
+        Vec2 offset = Vec2Zero();
+        isize max_y = 0;
+        for (isize i = 0; i < txslen; ++i) {
+            LTexture tx = txs[i];
+
+            isize rem_x = width - offset.x;
+            if (rem_x < tx.width) {
+                Assert(0);
+            }
+
+            for (isize x = 0; x < tx.width; ++x) {
+                for (isize y = 0; y < tx.height; ++y) {
+                    RGBA256 rgba = LTextureGetPx(tx, x, y);
+
+                    isize offsety = offset.y + y;
+                    isize offsetx = offset.x + x;
+                    data[(width * offsety) + offsetx] = rgba;
+                }
+            }
+
+            offset = Vec2Add(offset, Vec2Lit(tx.width, tx.height));
+        }
+
+        TX_PACKED = TextureFromBuffer((byte*)data, width, height, FILTER_LINEAR);
     }
 
     Vec3 v = Vec3Zero();
@@ -3915,21 +3951,33 @@ static void SceneVectorTick(GameState* gstate) {
     //     int a = 0;
     // }
 
+    if (false) {
+        {
+            LTexture tx = GetTexture(TX_BLUE_WIZARD);
+            // LTexture tx = GetTexture(TX_IMAGE_TEST);
+            // LTexture tx = GetTexture(TX_IMAGE_TEST3);
+            // LTexture tx = GetTexture(TX_IMAGE_TEST4);
+            Sprite sprite = SpriteFromLTexture(tx);
+            LModel model = LModelFromSprite(tx, sprite);
+            DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        }
+
+        {
+            LTexture tx = GetTexture(TX_IMAGE_TEST4);
+            Sprite sprite = SpriteFromLTexture(tx);
+            LModel model = LModelFromSprite(tx, sprite);
+            DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(100.0f));
+        }
+    }
+
     {
-        LTexture tx = GetTexture(TX_BLUE_WIZARD);
+        LTexture tx = TX_PACKED;
         // LTexture tx = GetTexture(TX_IMAGE_TEST);
         // LTexture tx = GetTexture(TX_IMAGE_TEST3);
         // LTexture tx = GetTexture(TX_IMAGE_TEST4);
         Sprite sprite = SpriteFromLTexture(tx);
         LModel model = LModelFromSprite(tx, sprite);
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-    }
-
-    {
-        LTexture tx = GetTexture(TX_IMAGE_TEST4);
-        Sprite sprite = SpriteFromLTexture(tx);
-        LModel model = LModelFromSprite(tx, sprite);
-        DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(100.0f));
     }
 
     EndShaderPass();
