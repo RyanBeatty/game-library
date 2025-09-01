@@ -3878,6 +3878,7 @@ static void SceneVectorTick(GameState* gstate) {
         };
         isize txslen = ArraySizeOf(txs);
 
+        // Basic packing. Very inefficient. Optimize later.
         Vec2 offset = Vec2Zero();
         isize max_y = 0;
         for (isize i = 0; i < txslen; ++i) {
@@ -3885,14 +3886,17 @@ static void SceneVectorTick(GameState* gstate) {
 
             isize rem_x = width - offset.x;
             if (rem_x < tx.width) {
+                // If we don't have enough width, then move up to our max height seen so far.
                 offset.x = 0;
                 offset.y = max_y;
             }
 
+            // Update max height, assert we have headroom to write.
             max_y = f32max(max_y, offset.y + tx.height);
             isize rem_y = height - max_y;
             Assert(rem_y >= 0);
 
+            // Copy the texture over.
             for (isize x = 0; x < tx.width; ++x) {
                 for (isize y = 0; y < tx.height; ++y) {
                     RGBA256 rgba = LTextureGetPx(tx, x, y);
@@ -3903,6 +3907,7 @@ static void SceneVectorTick(GameState* gstate) {
                 }
             }
 
+            // Move along the row.
             offset.x += tx.width;
         }
 
