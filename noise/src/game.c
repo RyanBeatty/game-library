@@ -3874,6 +3874,7 @@ static void SceneVectorTick(GameState* gstate) {
         LTexture txs[] = {
             GetTexture(TX_BLUE_WIZARD),
             GetTexture(TX_MEGAMAN2),
+            GetTexture(TX_BLUE_WIZARD),
         };
         isize txslen = ArraySizeOf(txs);
 
@@ -3884,20 +3885,25 @@ static void SceneVectorTick(GameState* gstate) {
 
             isize rem_x = width - offset.x;
             if (rem_x < tx.width) {
-                Assert(0);
+                offset.x = 0;
+                offset.y = max_y;
             }
+
+            max_y = f32max(max_y, offset.y + tx.height);
+            isize rem_y = height - max_y;
+            Assert(rem_y >= 0);
 
             for (isize x = 0; x < tx.width; ++x) {
                 for (isize y = 0; y < tx.height; ++y) {
                     RGBA256 rgba = LTextureGetPx(tx, x, y);
 
-                    isize offsety = offset.y + y;
                     isize offsetx = offset.x + x;
+                    isize offsety = offset.y + y;
                     data[(width * offsety) + offsetx] = rgba;
                 }
             }
 
-            offset = Vec2Add(offset, Vec2Lit(tx.width, tx.height));
+            offset.x += tx.width;
         }
 
         TX_PACKED = TextureFromBuffer((byte*)data, width, height, FILTER_LINEAR);
