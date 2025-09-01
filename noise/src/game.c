@@ -3921,6 +3921,13 @@ static void SceneVectorTick(GameState* gstate) {
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
 
+    {
+        LTexture tx = GetTexture(TX_IMAGE_TEST4);
+        Sprite sprite = SpriteFromLTexture(tx);
+        LModel model = LModelFromSprite(tx, sprite);
+        DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(100.0f));
+    }
+
     EndShaderPass();
 
     EndRender();
