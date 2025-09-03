@@ -4021,7 +4021,9 @@ static void SceneVectorTick(GameState* gstate) {
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
 
-    if (true) {
+    // Packed texture. I think leave this for now. Should figure out animations + consolidate the rendering
+    // model portion. then maybe how to properly do the packing will make sense.
+    if (false) {
         // Sprite sprite = SPRITE_WIZARD;
         // Sprite sprite = SPRITE_MM;
         Sprite sprite = SPRITE_WIZARD2;
