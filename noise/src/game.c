@@ -3896,12 +3896,13 @@ static void SceneVectorTick(GameState* gstate) {
         // Animation.
         {
             char dir[] = "assets/entities/wizard/idle_animation";
+            TextureFilter filter = FILTER_LINEAR;
             LTexture txs[20] = {0};
             isize cap = ArraySizeOf(txs);
             for (isize i = 0; i < cap; ++i) {
-                char buffer[256] = {0};
-                snprintf(buffer, ArraySizeOf(buffer) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
-                PlatformLog(LLOG_INFO, "animation file: %s", buffer);
+                char filename[256] = {0};
+                snprintf(filename, ArraySizeOf(filename) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
+                txs[i] = TextureFromFile(filename, filter);
             }
         }
 
