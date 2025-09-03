@@ -826,6 +826,8 @@ static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
 }
 
 typedef struct {
+    LTexture tx;
+
     // The min and max coordinate in image coordinates [0, with], [0, height]
     Vec2 min;
     Vec2 max;
@@ -833,7 +835,7 @@ typedef struct {
 
 LCORE Sprite SpriteFromLTexture(LTexture tx) {
     // Init the min to be the max px index of the texture. If we don't do this, min will always be (0, 0).
-    Sprite sprite = {.min = Vec2Lit(tx.width - 1, tx.height - 1)};
+    Sprite sprite = {.tx = tx, .min = Vec2Lit(tx.width - 1, tx.height - 1)};
 
     for (i32 i = 0; i < tx.width; ++i) {
         for (i32 j = 0; j < tx.height; ++j) {
@@ -3877,6 +3879,7 @@ static void SceneVectorTick(GameState* gstate) {
                 GetTexture(TX_BLUE_WIZARD),
                 GetTexture(TX_BLUE_WIZARD),
             };
+            isize txslen = ArraySizeOf(txs);
         }
 
         // Pack texture.
