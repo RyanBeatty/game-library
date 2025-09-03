@@ -3709,7 +3709,7 @@ typedef struct GameState {
     bool debug;
     bool update;
     bool game_over;
-    bool init;  // False on first frame of scene load. Used to tell update function to perform init.
+    bool init;  // True on first frame of scene, tells scene to run any init code.
 
     // TODO: Move this to RenderState and move a reference to RSTATE here. Or just get rid of this and have a
     // GetScreen/RenderWidth() function that reads RSTATE.
@@ -3761,7 +3761,7 @@ static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
     EntitySystemInit();
 
     // Signal to scene update func to run init.
-    gstate->init = false;
+    gstate->init = true;
     gstate->update = true;
     gstate->debug = false;
     gstate->debug_ever = false;
@@ -3874,13 +3874,16 @@ static void SceneVectorTick(GameState* gstate) {
         Arena temp = TempArena(gstate->temp);
 
         // Animation.
-        // {
-        //     LTexture txs[] = {
-        //         GetTexture(TX_BLUE_WIZARD),
-        //         GetTexture(TX_BLUE_WIZARD),
-        //     };
-        //     isize txslen = ArraySizeOf(txs);
-        // }
+        {
+            char dir[] = "assets/entities/wizard/idle_animation";
+            LTexture txs[20] = {0};
+            isize cap = ArraySizeOf(txs);
+            for (isize i = 0; i < cap; ++i) {
+                char buffer[256] = {0};
+                snprintf(buffer, ArraySizeOf(buffer) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
+                PlatformLog(LLOG_INFO, "animation file: %s", buffer);
+            }
+        }
 
         // Pack texture.
         {
@@ -4135,7 +4138,7 @@ void GameTick(f32 dt) {
     // Tick scene.
     gstate->scenefuncs[gstate->sceneid](gstate);
 
-    gstate->init = true;
+    gstate->init = false;
     ++gstate->nframe;
 
     // FPS count
