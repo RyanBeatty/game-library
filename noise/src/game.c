@@ -3889,6 +3889,7 @@ static void SceneVectorTick(GameState* gstate) {
     static Sprite SPRITE_WIZARD = {0};
     static Sprite SPRITE_MM = {0};
     static Sprite SPRITE_WIZARD2 = {0};
+    static LTexture ANIMATION_TXS[20] = {0};
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
@@ -3897,8 +3898,8 @@ static void SceneVectorTick(GameState* gstate) {
         {
             char dir[] = "assets/entities/wizard/idle_animation";
             TextureFilter filter = FILTER_LINEAR;
-            LTexture txs[20] = {0};
-            isize cap = ArraySizeOf(txs);
+            LTexture* txs = ANIMATION_TXS;
+            isize cap = ArraySizeOf(ANIMATION_TXS);
             for (isize i = 0; i < cap; ++i) {
                 char filename[256] = {0};
                 snprintf(filename, ArraySizeOf(filename) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
@@ -4035,7 +4036,7 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    if (true) {
+    if (false) {
         LTexture tx = TX_PACKED;
         // LTexture tx = GetTexture(TX_IMAGE_TEST);
         // LTexture tx = GetTexture(TX_IMAGE_TEST3);
