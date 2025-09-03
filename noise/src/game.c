@@ -3281,7 +3281,8 @@ LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
     Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
     Vec2 uv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
 
-    DrawCmd* cmd = DrawQuad(pos, scale.x, scale.y, orient, LCLEAR);
+    // By default scale of 1 will mean draw the sprite with same width/height
+    DrawCmd* cmd = DrawQuad(pos, dims.x * scale.x, dims.y * scale.y, orient, LCLEAR);
     cmd->meshcmd.tx = sprite.tx;
     cmd->meshcmd.uvoffset = minuv;
     cmd->meshcmd.uvscale = uv;
@@ -4082,9 +4083,9 @@ static void SceneVectorTick(GameState* gstate) {
             IDX = (IDX + 1) % cap;
         }
 
-        // Sprite sprite = SpriteFromLTexture(ANIMATION_TXS[IDX], SBB_FULL);
-        // DrawSprite(sprite, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-        DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
+        Sprite sprite = SpriteFromLTexture(ANIMATION_TXS[IDX], SBB_FULL);
+        DrawSprite(sprite, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
         // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
         // LModel model = LModelFromSprite(sprite);
         // DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
