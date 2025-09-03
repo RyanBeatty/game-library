@@ -4056,6 +4056,16 @@ static void SceneVectorTick(GameState* gstate) {
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
 
+    // Animation.
+    if (true) {
+        isize cap = ArraySizeOf(ANIMATION_TXS);
+        isize idx = gstate->nframe % cap;
+        DrawLTexture(ANIMATION_TXS[idx], Vec2Lit(POS.x, POS.y), 1.0f);
+        // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
+        // LModel model = LModelFromSprite(sprite);
+        // DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+    }
+
     EndShaderPass();
 
     EndRender();
