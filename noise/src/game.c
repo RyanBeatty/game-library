@@ -833,20 +833,40 @@ typedef struct {
     Vec2 max;
 } Sprite;
 
-LCORE Sprite SpriteFromLTexture(LTexture tx) {
-    // Init the min to be the max px index of the texture. If we don't do this, min will always be (0, 0).
-    Sprite sprite = {.tx = tx, .min = Vec2Lit(tx.width - 1, tx.height - 1)};
+typedef enum {
+    SBB_FULL = 0,  // bb = width, height of texture
+    SBB_CLOSEST_FIT,
+} SpriteBoundingBox;
 
-    for (i32 i = 0; i < tx.width; ++i) {
-        for (i32 j = 0; j < tx.height; ++j) {
-            Vec2 pos = Vec2Lit(i, j);
-            RGBA256 rgba = LTextureGetPx(tx, i, j);
-            if (rgba.a != 0.0f) {
-                sprite.min.x = f32min(sprite.min.x, pos.x);
-                sprite.min.y = f32min(sprite.min.y, pos.y);
-                sprite.max.x = f32max(sprite.max.x, pos.x);
-                sprite.max.y = f32max(sprite.max.y, pos.y);
+LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
+    // Init the min to be the max px index of the texture. If we don't do this, min will always be (0, 0).
+    Sprite sprite = {.tx = tx};
+
+    switch (bbox) {
+        case SBB_FULL: {
+            sprite.min = Vec2Zero();
+            sprite.max = Vec2Lit(tx.width - 1, tx.height - 1);
+            break;
+        }
+        case SBB_CLOSEST_FIT: {
+            sprite.min = Vec2Lit(tx.width - 1, tx.height - 1);
+            for (i32 i = 0; i < tx.width; ++i) {
+                for (i32 j = 0; j < tx.height; ++j) {
+                    Vec2 pos = Vec2Lit(i, j);
+                    RGBA256 rgba = LTextureGetPx(tx, i, j);
+                    if (rgba.a != 0.0f) {
+                        sprite.min.x = f32min(sprite.min.x, pos.x);
+                        sprite.min.y = f32min(sprite.min.y, pos.y);
+                        sprite.max.x = f32max(sprite.max.x, pos.x);
+                        sprite.max.y = f32max(sprite.max.y, pos.y);
+                    }
+                }
             }
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown sprite bounding box %d", bbox);
+            Assert(0);
         }
     }
 
@@ -4001,25 +4021,25 @@ static void SceneVectorTick(GameState* gstate) {
             // LTexture tx = GetTexture(TX_IMAGE_TEST);
             // LTexture tx = GetTexture(TX_IMAGE_TEST3);
             // LTexture tx = GetTexture(TX_IMAGE_TEST4);
-            Sprite sprite = SpriteFromLTexture(tx);
+            Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
             LModel model = LModelFromSprite(sprite);
             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         }
 
         {
             LTexture tx = GetTexture(TX_IMAGE_TEST4);
-            Sprite sprite = SpriteFromLTexture(tx);
+            Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
             LModel model = LModelFromSprite(sprite);
             DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(100.0f));
         }
     }
 
-    if (false) {
+    if (true) {
         LTexture tx = TX_PACKED;
         // LTexture tx = GetTexture(TX_IMAGE_TEST);
         // LTexture tx = GetTexture(TX_IMAGE_TEST3);
         // LTexture tx = GetTexture(TX_IMAGE_TEST4);
-        Sprite sprite = SpriteFromLTexture(tx);
+        Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
         LModel model = LModelFromSprite(sprite);
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
