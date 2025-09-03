@@ -3275,6 +3275,19 @@ LCORE void ParticleSystemTick(f32 dt) {
 
 ////////////////////////////////////////////////////////////
 
+// I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
+LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
+    Vec2 minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
+    Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
+    Vec2 uv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
+
+    DrawCmd* cmd = DrawQuad(pos, scale.x, scale.y, orient, LCLEAR);
+    cmd->meshcmd.tx = sprite.tx;
+    cmd->meshcmd.uvoffset = minuv;
+    cmd->meshcmd.uvscale = uv;
+    return cmd;
+}
+
 // Rect in aseprite pos space.
 typedef struct {
     Vec2 lc;  // bottom left corner.
@@ -4069,6 +4082,8 @@ static void SceneVectorTick(GameState* gstate) {
             IDX = (IDX + 1) % cap;
         }
 
+        // Sprite sprite = SpriteFromLTexture(ANIMATION_TXS[IDX], SBB_FULL);
+        // DrawSprite(sprite, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
         // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
         // LModel model = LModelFromSprite(sprite);
