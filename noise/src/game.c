@@ -3874,13 +3874,13 @@ static void SceneVectorTick(GameState* gstate) {
         Arena temp = TempArena(gstate->temp);
 
         // Animation.
-        {
-            LTexture txs[] = {
-                GetTexture(TX_BLUE_WIZARD),
-                GetTexture(TX_BLUE_WIZARD),
-            };
-            isize txslen = ArraySizeOf(txs);
-        }
+        // {
+        //     LTexture txs[] = {
+        //         GetTexture(TX_BLUE_WIZARD),
+        //         GetTexture(TX_BLUE_WIZARD),
+        //     };
+        //     isize txslen = ArraySizeOf(txs);
+        // }
 
         // Pack texture.
         {
@@ -3933,6 +3933,10 @@ static void SceneVectorTick(GameState* gstate) {
                 offset.x += tx.width;
             }
 
+            // TODO: Remove this.
+            sprites[0].tx = txs[0];
+            sprites[1].tx = txs[1];
+            sprites[2].tx = txs[2];
             SPRITE_WIZARD = sprites[0];
             SPRITE_MM = sprites[1];
             SPRITE_WIZARD2 = sprites[2];
