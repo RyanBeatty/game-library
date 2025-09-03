@@ -3869,61 +3869,73 @@ static void SceneVectorTick(GameState* gstate) {
     static Sprite SPRITE_WIZARD2 = {0};
 
     if (gstate->init) {
-        isize width = 1024;
-        isize height = 1024;
         Arena temp = TempArena(gstate->temp);
-        RGBA256* data = New(&temp, width * height, RGBA256);
 
-        LTexture txs[] = {
-            GetTexture(TX_BLUE_WIZARD),
-            GetTexture(TX_MEGAMAN2),
-            GetTexture(TX_BLUE_WIZARD),
-        };
-        isize txslen = ArraySizeOf(txs);
-
-        Sprite sprites[3] = {0};
-
-        // Basic packing. Very inefficient. Optimize later.
-        Vec2 offset = Vec2Zero();
-        isize max_y = 0;
-        for (isize i = 0; i < txslen; ++i) {
-            LTexture tx = txs[i];
-
-            isize rem_x = width - offset.x;
-            if (rem_x < tx.width) {
-                // If we don't have enough width, then move up to our max height seen so far.
-                offset.x = 0;
-                offset.y = max_y;
-            }
-
-            // Update max height, assert we have headroom to write.
-            max_y = f32max(max_y, offset.y + tx.height);
-            isize rem_y = height - max_y;
-            Assert(rem_y >= 0);
-
-            // Copy the texture over.
-            for (isize x = 0; x < tx.width; ++x) {
-                for (isize y = 0; y < tx.height; ++y) {
-                    RGBA256 rgba = LTextureGetPx(tx, x, y);
-
-                    isize offsetx = offset.x + x;
-                    isize offsety = offset.y + y;
-                    data[(width * offsety) + offsetx] = rgba;
-                }
-            }
-
-            sprites[i].min = offset;
-            sprites[i].max = Vec2Add(offset, Vec2Lit(tx.width - 1, tx.height - 1));
-
-            // Move along the row.
-            offset.x += tx.width;
+        // Animation.
+        {
+            LTexture txs[] = {
+                GetTexture(TX_BLUE_WIZARD),
+                GetTexture(TX_BLUE_WIZARD),
+            };
         }
 
-        SPRITE_WIZARD = sprites[0];
-        SPRITE_MM = sprites[1];
-        SPRITE_WIZARD2 = sprites[2];
+        // Pack texture.
+        {
+            isize width = 1024;
+            isize height = 1024;
+            RGBA256* data = New(&temp, width * height, RGBA256);
 
-        TX_PACKED = TextureFromBuffer((byte*)data, width, height, FILTER_LINEAR);
+            LTexture txs[] = {
+                GetTexture(TX_BLUE_WIZARD),
+                GetTexture(TX_MEGAMAN2),
+                GetTexture(TX_BLUE_WIZARD),
+            };
+            isize txslen = ArraySizeOf(txs);
+
+            Sprite sprites[3] = {0};
+
+            // Basic packing. Very inefficient. Optimize later.
+            Vec2 offset = Vec2Zero();
+            isize max_y = 0;
+            for (isize i = 0; i < txslen; ++i) {
+                LTexture tx = txs[i];
+
+                isize rem_x = width - offset.x;
+                if (rem_x < tx.width) {
+                    // If we don't have enough width, then move up to our max height seen so far.
+                    offset.x = 0;
+                    offset.y = max_y;
+                }
+
+                // Update max height, assert we have headroom to write.
+                max_y = f32max(max_y, offset.y + tx.height);
+                isize rem_y = height - max_y;
+                Assert(rem_y >= 0);
+
+                // Copy the texture over.
+                for (isize x = 0; x < tx.width; ++x) {
+                    for (isize y = 0; y < tx.height; ++y) {
+                        RGBA256 rgba = LTextureGetPx(tx, x, y);
+
+                        isize offsetx = offset.x + x;
+                        isize offsety = offset.y + y;
+                        data[(width * offsety) + offsetx] = rgba;
+                    }
+                }
+
+                sprites[i].min = offset;
+                sprites[i].max = Vec2Add(offset, Vec2Lit(tx.width - 1, tx.height - 1));
+
+                // Move along the row.
+                offset.x += tx.width;
+            }
+
+            SPRITE_WIZARD = sprites[0];
+            SPRITE_MM = sprites[1];
+            SPRITE_WIZARD2 = sprites[2];
+
+            TX_PACKED = TextureFromBuffer((byte*)data, width, height, FILTER_LINEAR);
+        }
     }
 
     Vec3 v = Vec3Zero();
