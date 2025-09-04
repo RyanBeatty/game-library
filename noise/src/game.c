@@ -912,7 +912,9 @@ i32 CountFilesInDir(const char* path) {
     return count;
 }
 
-LCORE Animation AnimationFromDisk(Arena* perm, const char* dir) {
+// Assumes that all files under :dir: follow the format of :filename_prefixNNNNN.png where NNNNN
+// is a 0 left padded number denoting the frame.
+LCORE Animation AnimationFromDisk(Arena* perm, const char* dir, const char* filename_prefix) {
     Animation animation = {0};
 
     SpriteArr* sprites = &animation.sprites;
@@ -922,7 +924,7 @@ LCORE Animation AnimationFromDisk(Arena* perm, const char* dir) {
     TextureFilter filter = FILTER_LINEAR;
     for (isize i = 0; i < sprites->cap; ++i) {
         char filename[256] = {0};
-        snprintf(filename, ArraySizeOf(filename) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
+        snprintf(filename, ArraySizeOf(filename) - 1, "%s/%s%05lld.png", dir, filename_prefix, i);
         LTexture tx = TextureFromFile(filename, filter);
         ArrPush(sprites, SpriteFromLTexture(tx, SBB_FULL));
     }
@@ -3965,7 +3967,7 @@ static void SceneVectorTick(GameState* gstate) {
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
 
-        IDLE_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/idle_animation");
+        IDLE_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/idle_animation", "Chara - BlueIdle");
 
         // Pack texture.
         {
