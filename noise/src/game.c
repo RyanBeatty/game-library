@@ -3964,12 +3964,14 @@ static void SceneVectorTick(GameState* gstate) {
     static Sprite SPRITE_WIZARD2 = {0};
     static Animation IDLE_ANIMATION = {0};
     static Animation WALK_ANIMATION = {0};
+    static Animation JUMP_ANIMATION = {0};
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
 
         IDLE_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/idle_animation", "Chara - BlueIdle");
         WALK_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/walk_animation", "Chara_BlueWalk");
+        JUMP_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/jump_animation", "CharaWizardJump_");
 
         // Pack texture.
         {
@@ -4143,7 +4145,7 @@ static void SceneVectorTick(GameState* gstate) {
         }
 
         // walk
-        if (true) {
+        if (false) {
             static isize IDX = 0;
             static f32 FRAME_DT = 0.0f;
             static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
@@ -4156,6 +4158,26 @@ static void SceneVectorTick(GameState* gstate) {
             }
 
             DrawSprite(ArrGet(&WALK_ANIMATION.sprites, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+            // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
+            // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
+            // LModel model = LModelFromSprite(sprite);
+            // DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        }
+
+        // jump
+        if (true) {
+            static isize IDX = 0;
+            static f32 FRAME_DT = 0.0f;
+            static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
+
+            isize cap = JUMP_ANIMATION.sprites.cap;
+            FRAME_DT += gstate->dt;
+            if (FRAME_DT >= DT_PER_FRAME) {
+                FRAME_DT = 0.0f;
+                IDX = (IDX + 1) % cap;
+            }
+
+            DrawSprite(ArrGet(&JUMP_ANIMATION.sprites, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
             // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
             // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
             // LModel model = LModelFromSprite(sprite);
