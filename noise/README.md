@@ -7,6 +7,10 @@ Conventions
 
 
 Engine Improvments/Thoughts
+* On asset loading (e.g. sprites, animations, etc). It feels like I want 2 style of functions
+    * one that deals with immediate loading of "raw" assets (e.g. LoadTextureFromFile). these will be used to actually load data from disk and upload to gpu
+    * higher level pipelined loading functions. These will operate on higher level constructs that will be a bit agnostic to how the underlying gpu data is stored. e.g. like LoadSprite, LoadAnimation. The user will provide these calls with options for loading (like which filter to use for textures, potentially spritesheet grouping affinity). The user will specifiy a PipelineRegion begin and end. Within the pipeline, it will make Loading calls which will not load and return immediately. Instead after the pipelineend, we will go and fetch all requested assets, load them, try to optimally store on GPU and then allow the user to query back the loaded details
+    * so first functions for immediate loading (and debuggging), second set for convenience and iteration.
 * The way shader passes work with multiple shaders is kind of clunky. Especially the render to texture and then to sreen bit. Seems like I don't have great support for switching framebuffers between shader passes. I'm not sure what the right structure here is at this time tbh.
 * The way graphics info is set is a bit weird. Really I should be able only have to initialize data from an aserect or aserpite animation once and then do some simple pointer swap of graphicsinfo state between these intialized things. Might need to take into account animation state. Maybe that should be moved though?
     - Having fame_dt be inside the textureinfo doesn't make much sense. This should probably be on the GraphicsInfo itself
