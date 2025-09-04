@@ -1,4 +1,6 @@
 #ifndef UNITY_BUILD
+#include <dirent.h>
+#include <errno.h>
 #include <math.h>
 #include <platform.h>
 #include <shared.h>
@@ -885,11 +887,36 @@ typedef struct {
     SpriteArr sprites;
 } Animation;
 
+// TODO: This should be some sort of platform layer thing.
+i32 CountFilesInDir(const char* path) {
+    DIR* dir;
+    struct dirent* entry;
+    i32 count = 0;
+
+    dir = opendir(path);
+    if (dir == NULL) {
+        PlatformLog(LLOG_ERROR, "error opening dir: %s", path);
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip "." and ".."
+        if (entry->d_name[0] == '.' &&
+            (entry->d_name[1] == '\0' || (entry->d_name[1] == '.' && entry->d_name[2] == '\0'))) {
+            continue;
+        }
+
+        count++;
+    }
+
+    closedir(dir);
+    return count;
+}
+
 LCORE Animation AnimationFromDisk(Arena* perm, const char* dir) {
     Animation animation = {0};
 
     SpriteArr* sprites = &animation.sprites;
-    sprites->cap = 20;
+    sprites->cap = CountFilesInDir(dir);
     sprites->data = New(perm, sprites->cap, Sprite);
 
     TextureFilter filter = FILTER_LINEAR;
