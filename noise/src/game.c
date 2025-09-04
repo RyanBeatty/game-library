@@ -879,6 +879,30 @@ LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
     return sprite;
 }
 
+// This extra layer of indirection might be redundant. But possible we will want to store other data here, so
+// leave for now.
+typedef struct {
+    SpriteArr sprites;
+} Animation;
+
+LCORE Animation AnimationFromDisk(Arena* perm, const char* dir) {
+    Animation animation = {0};
+
+    SpriteArr* sprites = &animation.sprites;
+    sprites->cap = 20;
+    sprites->data = New(perm, sprites->cap, Sprite);
+
+    TextureFilter filter = FILTER_LINEAR;
+    for (isize i = 0; i < sprites->cap; ++i) {
+        char filename[256] = {0};
+        snprintf(filename, ArraySizeOf(filename) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
+        LTexture tx = TextureFromFile(filename, filter);
+        ArrPush(sprites, SpriteFromLTexture(tx, SBB_FULL));
+    }
+
+    return animation;
+}
+
 static void TexturesInit() {
     TextureCache* tcache = &TCACHE;
     tcache->txlen = 0;
@@ -3909,28 +3933,12 @@ static void SceneVectorTick(GameState* gstate) {
     // static Sprite SPRITE_WIZARD = {0};
     // static Sprite SPRITE_MM = {0};
     static Sprite SPRITE_WIZARD2 = {0};
-    // static Sprite ANIMATION_SPRITES[20] = {0};
-    static SpriteArr ANIMATION_SPRITES = {0};
+    static Animation IDLE_ANIMATION = {0};
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
 
-        // Animation.
-        {
-            char dir[] = "assets/entities/wizard/idle_animation";
-            SpriteArr* sprites = &ANIMATION_SPRITES;
-
-            sprites->cap = 20;
-            sprites->data = New(&gstate->perm, sprites->cap, Sprite);
-
-            TextureFilter filter = FILTER_LINEAR;
-            for (isize i = 0; i < sprites->cap; ++i) {
-                char filename[256] = {0};
-                snprintf(filename, ArraySizeOf(filename) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
-                LTexture tx = TextureFromFile(filename, filter);
-                ArrPush(sprites, SpriteFromLTexture(tx, SBB_FULL));
-            }
-        }
+        IDLE_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/idle_animation");
 
         // Pack texture.
         {
@@ -4087,14 +4095,14 @@ static void SceneVectorTick(GameState* gstate) {
         static f32 FRAME_DT = 0.0f;
         static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
 
-        isize cap = ANIMATION_SPRITES.cap;
+        isize cap = IDLE_ANIMATION.sprites.cap;
         FRAME_DT += gstate->dt;
         if (FRAME_DT >= DT_PER_FRAME) {
             FRAME_DT = 0.0f;
             IDX = (IDX + 1) % cap;
         }
 
-        DrawSprite(ArrGet(&ANIMATION_SPRITES, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        DrawSprite(ArrGet(&IDLE_ANIMATION.sprites, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
         // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
         // LModel model = LModelFromSprite(sprite);
