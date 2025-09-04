@@ -833,6 +833,12 @@ typedef struct {
     Vec2 max;
 } Sprite;
 
+typedef struct {
+    Sprite* data;
+    isize len;
+    isize cap;
+} SpriteArr;
+
 typedef enum {
     SBB_FULL = 0,  // bb = width, height of texture
     SBB_CLOSEST_FIT,
@@ -3903,7 +3909,8 @@ static void SceneVectorTick(GameState* gstate) {
     // static Sprite SPRITE_WIZARD = {0};
     // static Sprite SPRITE_MM = {0};
     static Sprite SPRITE_WIZARD2 = {0};
-    static Sprite ANIMATION_SPRITES[20] = {0};
+    // static Sprite ANIMATION_SPRITES[20] = {0};
+    static SpriteArr ANIMATION_SPRITES = {0};
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
@@ -3911,13 +3918,16 @@ static void SceneVectorTick(GameState* gstate) {
         // Animation.
         {
             char dir[] = "assets/entities/wizard/idle_animation";
+
+            ANIMATION_SPRITES.cap = 20;
+            ANIMATION_SPRITES.data = New(&gstate->perm, ANIMATION_SPRITES.cap, Sprite);
+
             TextureFilter filter = FILTER_LINEAR;
-            isize cap = ArraySizeOf(ANIMATION_SPRITES);
-            for (isize i = 0; i < cap; ++i) {
+            for (isize i = 0; i < ANIMATION_SPRITES.cap; ++i) {
                 char filename[256] = {0};
                 snprintf(filename, ArraySizeOf(filename) - 1, "%s/Chara - BlueIdle%05lld.png", dir, i);
                 LTexture tx = TextureFromFile(filename, filter);
-                ANIMATION_SPRITES[i] = SpriteFromLTexture(tx, SBB_FULL);
+                ArrPush(&ANIMATION_SPRITES, SpriteFromLTexture(tx, SBB_FULL));
             }
         }
 
@@ -4076,14 +4086,14 @@ static void SceneVectorTick(GameState* gstate) {
         static f32 FRAME_DT = 0.0f;
         static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
 
-        isize cap = ArraySizeOf(ANIMATION_SPRITES);
+        isize cap = ANIMATION_SPRITES.cap;
         FRAME_DT += gstate->dt;
         if (FRAME_DT >= DT_PER_FRAME) {
             FRAME_DT = 0.0f;
             IDX = (IDX + 1) % cap;
         }
 
-        DrawSprite(ANIMATION_SPRITES[IDX], POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        DrawSprite(ArrGet(&ANIMATION_SPRITES, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
         // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
         // LModel model = LModelFromSprite(sprite);
