@@ -4093,6 +4093,8 @@ static void SceneVectorTick(GameState* gstate) {
                 }
                 v = Vec3Scale(v, 150.0f * gstate->dt);
 
+                pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
+
                 POS = Vec3Add(POS, v);
             } else {
                 ANIMATION = IDLE_ANIMATION;
