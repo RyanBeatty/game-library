@@ -3350,10 +3350,8 @@ LCORE void ParticleSystemTick(f32 dt) {
 
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
 LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
-    Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
-
     // By default scale of 1 will mean draw the sprite with same width/height
-    DrawCmd* cmd = DrawQuad(pos, dims.x * scale.x, dims.y * scale.y, orient, LCLEAR);
+    DrawCmd* cmd = DrawQuad(pos, sprite.dims.x * scale.x, sprite.dims.y * scale.y, orient, LCLEAR);
     cmd->meshcmd.tx = sprite.tx;
     cmd->meshcmd.uvoffset = sprite.minuv;
     cmd->meshcmd.uvscale = sprite.dimsuv;
