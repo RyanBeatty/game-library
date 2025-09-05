@@ -833,6 +833,10 @@ typedef struct {
     // The min and max coordinate in image coordinates [0, with], [0, height]
     Vec2 min;
     Vec2 max;
+
+    // UV space coordinates for drawing (computed once when loaded)
+    Vec2 minuv;
+    Vec2 dimuv;
 } Sprite;
 
 typedef struct {
@@ -845,6 +849,13 @@ typedef enum {
     SBB_FULL = 0,  // bb = width, height of texture
     SBB_CLOSEST_FIT,
 } SpriteBoundingBox;
+
+// Calculate/update the uvs on the Sprite.
+LCORE void SpriteCalcUVs(Sprite* sprite) {
+    sprite->minuv = Vec2Lit(sprite->min.x / sprite->tx.width, sprite->min.y / sprite->tx.height);
+    Vec2 dims = Vec2Sub(Vec2Add(sprite->max, Vec2Lit(1.0f, 1.0f)), sprite->min);
+    sprite->dimuv = Vec2Lit(dims.x / sprite->tx.width, dims.y / sprite->tx.height);
+}
 
 LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
     // Init the min to be the max px index of the texture. If we don't do this, min will always be (0, 0).
@@ -878,6 +889,7 @@ LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
         }
     }
 
+    SpriteCalcUVs(&sprite);
     return sprite;
 }
 
@@ -3336,15 +3348,13 @@ LCORE void ParticleSystemTick(f32 dt) {
 
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
 LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
-    Vec2 minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
     Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
-    Vec2 uv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
 
     // By default scale of 1 will mean draw the sprite with same width/height
     DrawCmd* cmd = DrawQuad(pos, dims.x * scale.x, dims.y * scale.y, orient, LCLEAR);
     cmd->meshcmd.tx = sprite.tx;
-    cmd->meshcmd.uvoffset = minuv;
-    cmd->meshcmd.uvscale = uv;
+    cmd->meshcmd.uvoffset = sprite.minuv;
+    cmd->meshcmd.uvscale = sprite.dimuv;
     return cmd;
 }
 
@@ -4035,6 +4045,7 @@ static void SceneVectorTick(GameState* gstate) {
 
                 sprites[i].min = offset;
                 sprites[i].max = Vec2Add(offset, Vec2Lit(tx.width - 1, tx.height - 1));
+                SpriteCalcUVs(&sprites[i]);
 
                 // Move along the row.
                 offset.x += tx.width;
@@ -4195,7 +4206,7 @@ static void SceneVectorTick(GameState* gstate) {
 
     // Packed texture. I think leave this for now. Should figure out animations + consolidate the rendering
     // model portion. then maybe how to properly do the packing will make sense.
-    if (false) {
+    if (true) {
         // Sprite sprite = SPRITE_WIZARD;
         // Sprite sprite = SPRITE_MM;
         Sprite sprite = SPRITE_WIZARD2;
@@ -4266,19 +4277,21 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    ANIMATION_PCT += pct_delta;
-    if (ANIMATION_PCT >= 1.0f) {
-        if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
-            ANIMATION_PCT = 0.0f;
-            ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
-        } else {
-            // We aren't cycling the animation and are at the end of the last frame's completion pct, at this
-            // point clamp the progress pct to 1 to avoid overflow if left alone forever.
-            ANIMATION_PCT = 1.0f;
+    if (false) {
+        ANIMATION_PCT += pct_delta;
+        if (ANIMATION_PCT >= 1.0f) {
+            if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
+                ANIMATION_PCT = 0.0f;
+                ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
+            } else {
+                // We aren't cycling the animation and are at the end of the last frame's completion pct, at this
+                // point clamp the progress pct to 1 to avoid overflow if left alone forever.
+                ANIMATION_PCT = 1.0f;
+            }
         }
-    }
 
-    DrawSprite(ArrGet(&ANIMATION.sprites, ANIMATION_IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        DrawSprite(ArrGet(&ANIMATION.sprites, ANIMATION_IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+    }
 
     EndShaderPass();
 
