@@ -3448,57 +3448,49 @@ typedef struct {
 
     // This is like the material info basically. How the model "looks"
     // Unclear where custom shader info will need to go, maybe on the graphics state?
-    LTexture tx;
-    TextureInfoType txtype;
-    union {
-        struct {
-            // Start min and dims of the window in uv space.
-            Vec2 minuv;
-            Vec2 dimsuv;
-        } sprite;
+    Sprite sprite;
+    // LTexture tx;
+    // TextureInfoType txtype;
+    // union {
+    //     struct {
+    //         // Start min and dims of the window in uv space.
+    //         Vec2 minuv;
+    //         Vec2 dimsuv;
+    //     } sprite;
 
-        struct {
-            // Start min and dims of the first frame in uv space.
-            Vec2 minuv;
-            Vec2 dimsuv;
+    //     struct {
+    //         // Start min and dims of the first frame in uv space.
+    //         Vec2 minuv;
+    //         Vec2 dimsuv;
 
-            // How much to step each frame in uv.
-            Vec2 stepuv;
+    //         // How much to step each frame in uv.
+    //         Vec2 stepuv;
 
-            // n frames in animation.
-            u32 nframes;
-        } animation;
-    };
+    //         // n frames in animation.
+    //         u32 nframes;
+    //     } animation;
+    // };
 
     Vec4 tint;  // Color.
 } LModel;
 
 LCORE LModel LModelFromSprite(Sprite sprite) {
-    Vec2 minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
-    Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
-    Vec2 uv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
-
     LModel model = {
         .pos = Vec3Zero(),
         .orient = Mat4Identity(),
         // By default init the model scale to match the pixel dimensions of the bb of the sprite.
-        .scale = Vec3Lit(dims.x, dims.y, 1.0f),
+        .scale = Vec3Lit(sprite.dims.x, sprite.dims.y, 1.0f),
         .mesh = GetMesh(M_QUAD),
-
-        .tx = sprite.tx,
-        .txtype = TI_SPRITE,
-        .sprite.minuv = minuv,
-        .sprite.dimsuv = uv,
+        .sprite = sprite,
     };
     return model;
 }
 
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
 LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
-    Assert(model.txtype == TI_SPRITE);
     DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scale.x + model.scale.x, scale.y + model.scale.y,
                             Mat4Multiply(orient, model.orient), LCLEAR);
-    cmd->meshcmd.tx = model.tx;
+    cmd->meshcmd.tx = model.sprite.tx;
     cmd->meshcmd.uvoffset = model.sprite.minuv;
     cmd->meshcmd.uvscale = model.sprite.dimsuv;
     return cmd;
@@ -4174,7 +4166,7 @@ static void SceneVectorTick(GameState* gstate) {
     //     int a = 0;
     // }
 
-    if (false) {
+    if (true) {
         {
             LTexture tx = GetTexture(TX_BLUE_WIZARD);
             // LTexture tx = GetTexture(TX_IMAGE_TEST);
@@ -4276,7 +4268,7 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    if (true) {
+    if (false) {
         ANIMATION_PCT += pct_delta;
         if (ANIMATION_PCT >= 1.0f) {
             if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
