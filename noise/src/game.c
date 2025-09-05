@@ -3955,6 +3955,12 @@ static void SceneLineTick(GameState* gstate) {
     EndRender();
 }
 
+typedef enum {
+    MS_IDLE = 0,
+    MS_WALK,
+    MS_JUMP,
+} MoveState;
+
 static void SceneVectorTick(GameState* gstate) {
     static Vec3 POS = {0};
     static f32 ROT = 0.0f;
@@ -3968,9 +3974,10 @@ static void SceneVectorTick(GameState* gstate) {
     static bool IDLE = true;
     static bool WALK = false;
     static bool JUMP = false;
+    static MoveState MOVESTATE = MS_IDLE;
     static Animation ANIMATION = {0};
     static isize ANIMATION_IDX = 0;
-    static f32 ANIMATION_DT = 0.0f;
+    static f32 ANIMATION_PCT = 0.0f;
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
@@ -4043,26 +4050,61 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    Vec3 v = Vec3Zero();
-    if (PlatformKeyDown(LKEY_UP)) {
-        v.y += 1.0f;
-    }
-    if (PlatformKeyDown(LKEY_DOWN)) {
-        v.y -= 1.0f;
-    }
-    if (PlatformKeyDown(LKEY_LEFT)) {
-        v.x -= 1.0f;
-    }
-    if (PlatformKeyDown(LKEY_RIGHT)) {
-        v.x += 1.0f;
-    }
-    v = Vec3Scale(v, 150.0f * gstate->dt);
+    f32 pct_delta = 0.0f;
 
-    POS = Vec3Add(POS, v);
+    MoveState movestate_next = MOVESTATE;
+    switch (MOVESTATE) {
+        case MS_IDLE: {
+            bool moved = PlatformKeyDown(LKEY_UP) || PlatformKeyDown(LKEY_DOWN) || PlatformKeyDown(LKEY_LEFT) ||
+                         PlatformKeyDown(LKEY_RIGHT);
+            if (moved) {
+                ANIMATION = WALK_ANIMATION;
+                ANIMATION_IDX = 0;
+                ANIMATION_PCT = 0.0f;
+                movestate_next = MS_WALK;
+            }
 
-    if (PlatformKeyDown(LKEY_SPACE)) {
-        ROT += Deg2Rad(180.0f) * gstate->dt;
+            if (PlatformKeyDown(LKEY_SPACE)) {
+                ROT += Deg2Rad(180.0f) * gstate->dt;
+            }
+
+            if (!moved) {
+                pct_delta = gstate->dt / (3.0f * (1 / 60.0f));
+            }
+            break;
+        }
+        case MS_WALK: {
+            bool moved = PlatformKeyDown(LKEY_UP) || PlatformKeyDown(LKEY_DOWN) || PlatformKeyDown(LKEY_LEFT) ||
+                         PlatformKeyDown(LKEY_RIGHT);
+
+            if (moved) {
+                Vec3 v = Vec3Zero();
+                if (PlatformKeyDown(LKEY_UP)) {
+                    v.y += 1.0f;
+                }
+                if (PlatformKeyDown(LKEY_DOWN)) {
+                    v.y -= 1.0f;
+                }
+                if (PlatformKeyDown(LKEY_LEFT)) {
+                    v.x -= 1.0f;
+                }
+                if (PlatformKeyDown(LKEY_RIGHT)) {
+                    v.x += 1.0f;
+                }
+                v = Vec3Scale(v, 150.0f * gstate->dt);
+
+                POS = Vec3Add(POS, v);
+            } else {
+                ANIMATION = IDLE_ANIMATION;
+                ANIMATION_IDX = 0;
+                ANIMATION_PCT = 0.0f;
+                movestate_next = MS_IDLE;
+            }
+            break;
+        }
     }
+
+    MOVESTATE = movestate_next;
 
     BeginRender(gstate->dt);
 
@@ -4193,9 +4235,9 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    ANIMATION_DT += gstate->dt / (3.0f * (1 / 60.0f));
-    if (ANIMATION_DT >= 1.0f) {
-        ANIMATION_DT = 0.0f;
+    ANIMATION_PCT += pct_delta;
+    if (ANIMATION_PCT >= 1.0f) {
+        ANIMATION_PCT = 0.0f;
         ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
     }
 
