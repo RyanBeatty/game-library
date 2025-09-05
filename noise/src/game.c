@@ -853,6 +853,7 @@ typedef enum {
 
 LCORE Sprite SpriteFromMinMax(LTexture tx, Vec2 min, Vec2 max) {
     Sprite sprite = {.tx = tx, .min = min, .max = max};
+    // think more about if adding 1,1 here is correct. I think it is.
     sprite.dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
     sprite.minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
     sprite.dimsuv = Vec2Lit(sprite.dims.x / sprite.tx.width, sprite.dims.y / sprite.tx.height);
@@ -4173,7 +4174,7 @@ static void SceneVectorTick(GameState* gstate) {
     //     int a = 0;
     // }
 
-    if (true) {
+    if (false) {
         {
             LTexture tx = GetTexture(TX_BLUE_WIZARD);
             // LTexture tx = GetTexture(TX_IMAGE_TEST);
@@ -4275,7 +4276,7 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    if (false) {
+    if (true) {
         ANIMATION_PCT += pct_delta;
         if (ANIMATION_PCT >= 1.0f) {
             if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
