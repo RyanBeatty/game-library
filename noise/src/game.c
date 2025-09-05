@@ -4065,6 +4065,11 @@ static void SceneVectorTick(GameState* gstate) {
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
                 movestate_next = MS_WALK;
+            } else if (jumped) {
+                ANIMATION = JUMP_ANIMATION;
+                ANIMATION_IDX = 0;
+                ANIMATION_PCT = 0.0f;
+                movestate_next = MS_JUMP;
             } else {
                 if (PlatformKeyDown(LKEY_SPACE)) {
                     ROT += Deg2Rad(180.0f) * gstate->dt;
@@ -4096,12 +4101,20 @@ static void SceneVectorTick(GameState* gstate) {
                 pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
 
                 POS = Vec3Add(POS, v);
+            } else if (jumped) {
+                ANIMATION = JUMP_ANIMATION;
+                ANIMATION_IDX = 0;
+                ANIMATION_PCT = 0.0f;
+                movestate_next = MS_JUMP;
             } else {
                 ANIMATION = IDLE_ANIMATION;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
                 movestate_next = MS_IDLE;
             }
+            break;
+        }
+        case MS_JUMP: {
             break;
         }
     }
