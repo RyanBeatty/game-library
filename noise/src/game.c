@@ -4120,7 +4120,16 @@ static void SceneVectorTick(GameState* gstate) {
             break;
         }
         case MS_JUMP: {
-            pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
+            if ((ANIMATION_IDX + 1 >= ANIMATION.sprites.cap) && (ANIMATION_PCT >= 1.0f)) {
+                // Animation finished.
+                ANIMATION = IDLE_ANIMATION;
+                ANIMATION_CYCLE = true;
+                ANIMATION_IDX = 0;
+                ANIMATION_PCT = 0.0f;
+                movestate_next = MS_IDLE;
+            } else {
+                pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
+            }
 
             break;
         }
@@ -4262,6 +4271,10 @@ static void SceneVectorTick(GameState* gstate) {
         if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
             ANIMATION_PCT = 0.0f;
             ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
+        } else {
+            // We aren't cycling the animation and are at the end of the last frame's completion pct, at this
+            // point clamp the progress pct to 1 to avoid overflow if left alone forever.
+            ANIMATION_PCT = 1.0f;
         }
     }
 
