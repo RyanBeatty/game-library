@@ -4053,30 +4053,30 @@ static void SceneVectorTick(GameState* gstate) {
     f32 pct_delta = 0.0f;
 
     MoveState movestate_next = MOVESTATE;
+
+    bool moved = PlatformKeyDown(LKEY_UP) || PlatformKeyDown(LKEY_DOWN) || PlatformKeyDown(LKEY_LEFT) ||
+                 PlatformKeyDown(LKEY_RIGHT);
+    bool jumped = PlatformKeyPressed(LKEY_A);
+
     switch (MOVESTATE) {
         case MS_IDLE: {
-            bool moved = PlatformKeyDown(LKEY_UP) || PlatformKeyDown(LKEY_DOWN) || PlatformKeyDown(LKEY_LEFT) ||
-                         PlatformKeyDown(LKEY_RIGHT);
             if (moved) {
                 ANIMATION = WALK_ANIMATION;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
                 movestate_next = MS_WALK;
-            }
+            } else {
+                if (PlatformKeyDown(LKEY_SPACE)) {
+                    ROT += Deg2Rad(180.0f) * gstate->dt;
+                }
 
-            if (PlatformKeyDown(LKEY_SPACE)) {
-                ROT += Deg2Rad(180.0f) * gstate->dt;
-            }
-
-            if (!moved) {
-                pct_delta = gstate->dt / (3.0f * (1 / 60.0f));
+                if (!moved) {
+                    pct_delta = gstate->dt / (3.0f * (1 / 60.0f));
+                }
             }
             break;
         }
         case MS_WALK: {
-            bool moved = PlatformKeyDown(LKEY_UP) || PlatformKeyDown(LKEY_DOWN) || PlatformKeyDown(LKEY_LEFT) ||
-                         PlatformKeyDown(LKEY_RIGHT);
-
             if (moved) {
                 Vec3 v = Vec3Zero();
                 if (PlatformKeyDown(LKEY_UP)) {
