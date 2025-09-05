@@ -3965,6 +3965,9 @@ static void SceneVectorTick(GameState* gstate) {
     static Animation IDLE_ANIMATION = {0};
     static Animation WALK_ANIMATION = {0};
     static Animation JUMP_ANIMATION = {0};
+    static bool IDLE = true;
+    static bool WALK = false;
+    static bool JUMP = false;
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
@@ -4125,7 +4128,7 @@ static void SceneVectorTick(GameState* gstate) {
     // Animation.
     if (true) {
         // idle
-        if (false) {
+        if (IDLE) {
             static isize IDX = 0;
             static f32 FRAME_DT = 0.0f;
             static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
@@ -4145,7 +4148,7 @@ static void SceneVectorTick(GameState* gstate) {
         }
 
         // walk
-        if (false) {
+        if (WALK) {
             static isize IDX = 0;
             static f32 FRAME_DT = 0.0f;
             static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
@@ -4165,7 +4168,7 @@ static void SceneVectorTick(GameState* gstate) {
         }
 
         // jump
-        if (true) {
+        if (JUMP) {
             static isize IDX = 0;
             static f32 FRAME_DT = 0.0f;
             static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
