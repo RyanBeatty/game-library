@@ -852,7 +852,7 @@ typedef enum {
 } SpriteBoundingBox;
 
 LCORE Sprite SpriteFromMinMax(LTexture tx, Vec2 min, Vec2 max) {
-    Sprite sprite = {.min = min, .max = max};
+    Sprite sprite = {.tx = tx, .min = min, .max = max};
     sprite.dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
     sprite.minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
     sprite.dimsuv = Vec2Lit(sprite.dims.x / sprite.tx.width, sprite.dims.y / sprite.tx.height);
@@ -4173,7 +4173,7 @@ static void SceneVectorTick(GameState* gstate) {
     //     int a = 0;
     // }
 
-    if (false) {
+    if (true) {
         {
             LTexture tx = GetTexture(TX_BLUE_WIZARD);
             // LTexture tx = GetTexture(TX_IMAGE_TEST);
@@ -4204,7 +4204,7 @@ static void SceneVectorTick(GameState* gstate) {
 
     // Packed texture. I think leave this for now. Should figure out animations + consolidate the rendering
     // model portion. then maybe how to properly do the packing will make sense.
-    if (true) {
+    if (false) {
         // Sprite sprite = SPRITE_WIZARD;
         // Sprite sprite = SPRITE_MM;
         Sprite sprite = SPRITE_WIZARD2;
