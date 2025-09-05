@@ -3444,34 +3444,13 @@ typedef struct {
     Vec3 pos;
     Mat4 orient;
     Vec3 scale;
+    Vec4 tint;  // Color.
     LMesh mesh;
 
     // This is like the material info basically. How the model "looks"
     // Unclear where custom shader info will need to go, maybe on the graphics state?
     Sprite sprite;
-    // LTexture tx;
-    // TextureInfoType txtype;
-    // union {
-    //     struct {
-    //         // Start min and dims of the window in uv space.
-    //         Vec2 minuv;
-    //         Vec2 dimsuv;
-    //     } sprite;
 
-    //     struct {
-    //         // Start min and dims of the first frame in uv space.
-    //         Vec2 minuv;
-    //         Vec2 dimsuv;
-
-    //         // How much to step each frame in uv.
-    //         Vec2 stepuv;
-
-    //         // n frames in animation.
-    //         u32 nframes;
-    //     } animation;
-    // };
-
-    Vec4 tint;  // Color.
 } LModel;
 
 LCORE LModel LModelFromSprite(Sprite sprite) {
