@@ -833,10 +833,11 @@ typedef struct {
     // The min and max coordinate in image coordinates [0, with], [0, height]
     Vec2 min;
     Vec2 max;
+    Vec2 dims;
 
     // UV space coordinates for drawing (computed once when loaded)
     Vec2 minuv;
-    Vec2 dimuv;
+    Vec2 dimsuv;
 } Sprite;
 
 typedef struct {
@@ -850,34 +851,35 @@ typedef enum {
     SBB_CLOSEST_FIT,
 } SpriteBoundingBox;
 
-// Calculate/update the uvs on the Sprite.
-LCORE void SpriteCalcUVs(Sprite* sprite) {
-    sprite->minuv = Vec2Lit(sprite->min.x / sprite->tx.width, sprite->min.y / sprite->tx.height);
-    Vec2 dims = Vec2Sub(Vec2Add(sprite->max, Vec2Lit(1.0f, 1.0f)), sprite->min);
-    sprite->dimuv = Vec2Lit(dims.x / sprite->tx.width, dims.y / sprite->tx.height);
+LCORE Sprite SpriteFromMinMax(LTexture tx, Vec2 min, Vec2 max) {
+    Sprite sprite = {.min = min, .max = max};
+    sprite.dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
+    sprite.minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
+    sprite.dimsuv = Vec2Lit(sprite.dims.x / sprite.tx.width, sprite.dims.y / sprite.tx.height);
+    return sprite;
 }
 
 LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
-    // Init the min to be the max px index of the texture. If we don't do this, min will always be (0, 0).
-    Sprite sprite = {.tx = tx};
-
+    Vec2 min = {0};
+    Vec2 max = {0};
     switch (bbox) {
         case SBB_FULL: {
-            sprite.min = Vec2Zero();
-            sprite.max = Vec2Lit(tx.width - 1, tx.height - 1);
+            min = Vec2Zero();
+            max = Vec2Lit(tx.width - 1, tx.height - 1);
             break;
         }
         case SBB_CLOSEST_FIT: {
-            sprite.min = Vec2Lit(tx.width - 1, tx.height - 1);
+            // Init the min to be the max px index of the texture. If we don't do this, min will always be (0, 0).
+            min = Vec2Lit(tx.width - 1, tx.height - 1);
             for (i32 i = 0; i < tx.width; ++i) {
                 for (i32 j = 0; j < tx.height; ++j) {
                     Vec2 pos = Vec2Lit(i, j);
                     RGBA256 rgba = LTextureGetPx(tx, i, j);
                     if (rgba.a != 0.0f) {
-                        sprite.min.x = f32min(sprite.min.x, pos.x);
-                        sprite.min.y = f32min(sprite.min.y, pos.y);
-                        sprite.max.x = f32max(sprite.max.x, pos.x);
-                        sprite.max.y = f32max(sprite.max.y, pos.y);
+                        min.x = f32min(min.x, pos.x);
+                        min.y = f32min(min.y, pos.y);
+                        max.x = f32max(max.x, pos.x);
+                        max.y = f32max(max.y, pos.y);
                     }
                 }
             }
@@ -889,7 +891,7 @@ LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
         }
     }
 
-    SpriteCalcUVs(&sprite);
+    Sprite sprite = SpriteFromMinMax(tx, min, max);
     return sprite;
 }
 
@@ -3354,7 +3356,7 @@ LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
     DrawCmd* cmd = DrawQuad(pos, dims.x * scale.x, dims.y * scale.y, orient, LCLEAR);
     cmd->meshcmd.tx = sprite.tx;
     cmd->meshcmd.uvoffset = sprite.minuv;
-    cmd->meshcmd.uvscale = sprite.dimuv;
+    cmd->meshcmd.uvscale = sprite.dimsuv;
     return cmd;
 }
 
@@ -4043,9 +4045,7 @@ static void SceneVectorTick(GameState* gstate) {
                     }
                 }
 
-                sprites[i].min = offset;
-                sprites[i].max = Vec2Add(offset, Vec2Lit(tx.width - 1, tx.height - 1));
-                SpriteCalcUVs(&sprites[i]);
+                sprites[i] = SpriteFromMinMax(tx, offset, Vec2Add(offset, Vec2Lit(tx.width - 1, tx.height - 1)));
 
                 // Move along the row.
                 offset.x += tx.width;
