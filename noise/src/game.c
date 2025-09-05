@@ -3978,6 +3978,7 @@ static void SceneVectorTick(GameState* gstate) {
     static Animation ANIMATION = {0};
     static isize ANIMATION_IDX = 0;
     static f32 ANIMATION_PCT = 0.0f;
+    static bool ANIMATION_CYCLE = true;
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
@@ -4062,11 +4063,13 @@ static void SceneVectorTick(GameState* gstate) {
         case MS_IDLE: {
             if (moved) {
                 ANIMATION = WALK_ANIMATION;
+                ANIMATION_CYCLE = true;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
                 movestate_next = MS_WALK;
             } else if (jumped) {
                 ANIMATION = JUMP_ANIMATION;
+                ANIMATION_CYCLE = false;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
                 movestate_next = MS_JUMP;
@@ -4103,11 +4106,13 @@ static void SceneVectorTick(GameState* gstate) {
                 POS = Vec3Add(POS, v);
             } else if (jumped) {
                 ANIMATION = JUMP_ANIMATION;
+                ANIMATION_CYCLE = false;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
                 movestate_next = MS_JUMP;
             } else {
                 ANIMATION = IDLE_ANIMATION;
+                ANIMATION_CYCLE = true;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
                 movestate_next = MS_IDLE;
@@ -4115,6 +4120,8 @@ static void SceneVectorTick(GameState* gstate) {
             break;
         }
         case MS_JUMP: {
+            pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
+
             break;
         }
     }
@@ -4252,8 +4259,10 @@ static void SceneVectorTick(GameState* gstate) {
 
     ANIMATION_PCT += pct_delta;
     if (ANIMATION_PCT >= 1.0f) {
-        ANIMATION_PCT = 0.0f;
-        ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
+        if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
+            ANIMATION_PCT = 0.0f;
+            ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
+        }
     }
 
     DrawSprite(ArrGet(&ANIMATION.sprites, ANIMATION_IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
