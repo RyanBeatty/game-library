@@ -3968,6 +3968,9 @@ static void SceneVectorTick(GameState* gstate) {
     static bool IDLE = true;
     static bool WALK = false;
     static bool JUMP = false;
+    static Animation ANIMATION = {0};
+    static isize ANIMATION_IDX = 0;
+    static f32 ANIMATION_DT = 0.0f;
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
@@ -3975,6 +3978,8 @@ static void SceneVectorTick(GameState* gstate) {
         IDLE_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/idle_animation", "Chara - BlueIdle");
         WALK_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/walk_animation", "Chara_BlueWalk");
         JUMP_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/jump_animation", "CharaWizardJump_");
+
+        ANIMATION = IDLE_ANIMATION;
 
         // Pack texture.
         {
@@ -4126,7 +4131,7 @@ static void SceneVectorTick(GameState* gstate) {
     }
 
     // Animation.
-    if (true) {
+    if (false) {
         // idle
         if (IDLE) {
             static isize IDX = 0;
@@ -4187,6 +4192,14 @@ static void SceneVectorTick(GameState* gstate) {
             // DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         }
     }
+
+    ANIMATION_DT += gstate->dt / (3.0f * (1 / 60.0f));
+    if (ANIMATION_DT >= 1.0f) {
+        ANIMATION_DT = 0.0f;
+        ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
+    }
+
+    DrawSprite(ArrGet(&ANIMATION.sprites, ANIMATION_IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
 
     EndShaderPass();
 
