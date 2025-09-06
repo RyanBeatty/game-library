@@ -906,7 +906,7 @@ typedef struct {
     SpriteArr sprites;
 } Animation;
 
-LCORE Animation AnimationFromSprite(Arena* perm, Sprite sprite) {
+LCORE Animation AnimationFromSprite(Sprite sprite) {
     Animation animation = {0};
     animation.sprites.cap = ArraySizeOf(animation.sprites.data);
     ArrPush(&animation.sprites, sprite);
@@ -3478,7 +3478,7 @@ LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec
 }
 
 LCORE LModel LModelFromSprite(Arena* perm, Sprite sprite) {
-    Animation animation = AnimationFromSprite(perm, sprite);
+    Animation animation = AnimationFromSprite(sprite);
     return LModelFromAnimation(animation, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
@@ -4189,8 +4189,8 @@ static void SceneVectorTick(GameState* gstate) {
         {
             LTexture tx = GetTexture(TX_IMAGE_TEST4);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-            LModel model = LModelFromAnimation(AnimationFromSprite(&gstate->perm, sprite), Vec3Zero(),
-                                               Mat4RotateZ(Deg2Rad(90.0f)), Vec3LitAll(1.0f), LCLEAR);
+            LModel model = LModelFromAnimation(AnimationFromSprite(sprite), Vec3Zero(), Mat4RotateZ(Deg2Rad(90.0f)),
+                                               Vec3LitAll(1.0f), LCLEAR);
             DrawLModel(model, Vec3Add(POS, Vec3Lit(0, 200, 0)), Mat4RotateZ(ROT), Vec3LitAll(20.0f));
         }
 
@@ -4198,9 +4198,8 @@ static void SceneVectorTick(GameState* gstate) {
         {
             LTexture tx = GetTexture(TX_BLUE_WIZARD);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-            LModel model =
-                LModelFromAnimation(AnimationFromSprite(&gstate->perm, sprite), Vec3Lit(-200.0f, -200.0f, 0.f),
-                                    Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
+            LModel model = LModelFromAnimation(AnimationFromSprite(sprite), Vec3Lit(-200.0f, -200.0f, 0.f),
+                                               Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         }
     }
