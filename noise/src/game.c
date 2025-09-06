@@ -3460,24 +3460,34 @@ typedef struct {
     Animation animation;
 } LModel;
 
-LCORE LModel LModelFromSprite(Arena* perm, Sprite sprite) {
+LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec3 scale, Vec4 tint) {
     LModel model = {
-        .pos = Vec3Zero(),
-        .orient = Mat4Identity(),
-        // By default init the model scale to match the pixel dimensions of the bb of the sprite.
-        .scale = Vec3Lit(sprite.dims.x, sprite.dims.y, 1.0f),
+        .pos = pos,
+        .orient = orient,
+        // By default init the model scale to match the pixel dimensions of the bb of the first frame
+        // of the animation.
+        .scale = scale,
+        .tint = tint,
         .mesh = GetMesh(M_QUAD),
-        .animation = AnimationFromSprite(perm, sprite),
+        .animation = animation,
     };
     return model;
 }
 
+LCORE LModel LModelFromSprite(Arena* perm, Sprite sprite) {
+    return LModelFromAnimation(AnimationFromSprite(perm, sprite), Vec3Zero(), Mat4Identity(), Vec3Zero(), LCLEAR);
+}
+
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
 LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
-    DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scale.x + model.scale.x, scale.y + model.scale.y,
-                            Mat4Multiply(orient, model.orient), LCLEAR);
-    // Draw first frame of animation (if its an animation, else same as Drawsprite).
     Assert(model.animation.sprites.len != 0);
+    // Always draw the sprite at a base width/height that matches the original sprite. Then we modify by the
+    // static scale of the model + any additional user scale here.
+    Sprite* sprite = ArrGetR(&model.animation.sprites, 0);
+    f32 scalex = scale.x + model.scale.x + sprite->dims.x;
+    f32 scaley = scale.y + model.scale.y + sprite->dims.y;
+    DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scalex, scaley, Mat4Multiply(orient, model.orient), LCLEAR);
+    // Draw first frame of animation (if its an animation, else same as Drawsprite).
     cmd->meshcmd.tx = model.animation.sprites.data[0].tx;
     cmd->meshcmd.uvoffset = model.animation.sprites.data[0].minuv;
     cmd->meshcmd.uvscale = model.animation.sprites.data[0].dimsuv;
