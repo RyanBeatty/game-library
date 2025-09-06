@@ -3503,6 +3503,7 @@ typedef struct {
     Vec3 posb;
     f32 posdt;
 
+    // TODO: Replace all of this with LModel
     //////////////////////////////////////
     // Final drawing related fields. For now think of this as the destination rectangle + texture coords
     LMesh mid;
