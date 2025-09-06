@@ -840,8 +840,12 @@ typedef struct {
     Vec2 dimsuv;
 } Sprite;
 
+#define MAX_SPRITES (32)
+
 typedef struct {
-    Sprite* data;
+    // TODO: Figure out memory later if we really need to make this dynamic. Remember that
+    // audio memory takes up so much that it might not make sense to focus on optimizing this.
+    Sprite data[MAX_SPRITES];
     isize len;
     isize cap;
 } SpriteArr;
@@ -904,8 +908,7 @@ typedef struct {
 
 LCORE Animation AnimationFromSprite(Arena* perm, Sprite sprite) {
     Animation animation = {0};
-    animation.sprites.cap = 1;
-    animation.sprites.data = New(perm, animation.sprites.cap, Sprite);
+    animation.sprites.cap = ArraySizeOf(animation.sprites.data);
     ArrPush(&animation.sprites, sprite);
     return animation;
 }
@@ -939,13 +942,13 @@ i32 CountFilesInDir(const char* path) {
 // is a 0 left padded number denoting the frame.
 LCORE Animation AnimationFromDisk(Arena* perm, const char* dir, const char* filename_prefix) {
     Animation animation = {0};
+    animation.sprites.cap = ArraySizeOf(animation.sprites.data);
 
     SpriteArr* sprites = &animation.sprites;
-    sprites->cap = CountFilesInDir(dir);
-    sprites->data = New(perm, sprites->cap, Sprite);
+    i32 nfiles = CountFilesInDir(dir);
 
     TextureFilter filter = FILTER_LINEAR;
-    for (isize i = 0; i < sprites->cap; ++i) {
+    for (isize i = 0; i < nfiles; ++i) {
         char filename[256] = {0};
         snprintf(filename, ArraySizeOf(filename) - 1, "%s/%s%05lld.png", dir, filename_prefix, i);
         LTexture tx = TextureFromFile(filename, filter);
@@ -3475,7 +3478,8 @@ LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec
 }
 
 LCORE LModel LModelFromSprite(Arena* perm, Sprite sprite) {
-    return LModelFromAnimation(AnimationFromSprite(perm, sprite), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
+    Animation animation = AnimationFromSprite(perm, sprite);
+    return LModelFromAnimation(animation, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
