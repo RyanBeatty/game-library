@@ -902,6 +902,14 @@ typedef struct {
     SpriteArr sprites;
 } Animation;
 
+LCORE Animation AnimationFromSprite(Arena* perm, Sprite sprite) {
+    Animation animation = {0};
+    animation.sprites.cap = 1;
+    animation.sprites.data = New(perm, animation.sprites.cap, Sprite);
+    ArrPush(&animation.sprites, sprite);
+    return animation;
+}
+
 // TODO: This should be some sort of platform layer thing.
 i32 CountFilesInDir(const char* path) {
     DIR* dir;
@@ -3449,18 +3457,17 @@ typedef struct {
 
     // This is like the material info basically. How the model "looks"
     // Unclear where custom shader info will need to go, maybe on the graphics state?
-    Sprite sprite;
-
+    Animation animation;
 } LModel;
 
-LCORE LModel LModelFromSprite(Sprite sprite) {
+LCORE LModel LModelFromSprite(Arena* perm, Sprite sprite) {
     LModel model = {
         .pos = Vec3Zero(),
         .orient = Mat4Identity(),
         // By default init the model scale to match the pixel dimensions of the bb of the sprite.
         .scale = Vec3Lit(sprite.dims.x, sprite.dims.y, 1.0f),
         .mesh = GetMesh(M_QUAD),
-        .sprite = sprite,
+        .animation = AnimationFromSprite(perm, sprite),
     };
     return model;
 }
@@ -3469,9 +3476,11 @@ LCORE LModel LModelFromSprite(Sprite sprite) {
 LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
     DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scale.x + model.scale.x, scale.y + model.scale.y,
                             Mat4Multiply(orient, model.orient), LCLEAR);
-    cmd->meshcmd.tx = model.sprite.tx;
-    cmd->meshcmd.uvoffset = model.sprite.minuv;
-    cmd->meshcmd.uvscale = model.sprite.dimsuv;
+    // Draw first frame of animation (if its an animation, else same as Drawsprite).
+    Assert(model.animation.sprites.len != 0);
+    cmd->meshcmd.tx = model.animation.sprites.data[0].tx;
+    cmd->meshcmd.uvoffset = model.animation.sprites.data[0].minuv;
+    cmd->meshcmd.uvscale = model.animation.sprites.data[0].dimsuv;
     return cmd;
 }
 
@@ -4152,14 +4161,14 @@ static void SceneVectorTick(GameState* gstate) {
             // LTexture tx = GetTexture(TX_IMAGE_TEST3);
             // LTexture tx = GetTexture(TX_IMAGE_TEST4);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-            LModel model = LModelFromSprite(sprite);
+            LModel model = LModelFromSprite(&gstate->perm, sprite);
             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         }
 
         {
             LTexture tx = GetTexture(TX_IMAGE_TEST4);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-            LModel model = LModelFromSprite(sprite);
+            LModel model = LModelFromSprite(&gstate->perm, sprite);
             DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(100.0f));
         }
     }
@@ -4170,7 +4179,7 @@ static void SceneVectorTick(GameState* gstate) {
         // LTexture tx = GetTexture(TX_IMAGE_TEST3);
         // LTexture tx = GetTexture(TX_IMAGE_TEST4);
         Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-        LModel model = LModelFromSprite(sprite);
+        LModel model = LModelFromSprite(&gstate->perm, sprite);
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
 
@@ -4180,7 +4189,7 @@ static void SceneVectorTick(GameState* gstate) {
         // Sprite sprite = SPRITE_WIZARD;
         // Sprite sprite = SPRITE_MM;
         Sprite sprite = SPRITE_WIZARD2;
-        LModel model = LModelFromSprite(sprite);
+        LModel model = LModelFromSprite(&gstate->perm, sprite);
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
 
