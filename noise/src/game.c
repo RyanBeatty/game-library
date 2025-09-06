@@ -3477,7 +3477,7 @@ LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec
     return model;
 }
 
-LCORE LModel LModelFromSprite(Arena* perm, Sprite sprite) {
+LCORE LModel LModelFromSprite(Sprite sprite) {
     Animation animation = AnimationFromSprite(sprite);
     return LModelFromAnimation(animation, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
@@ -4174,14 +4174,14 @@ static void SceneVectorTick(GameState* gstate) {
         {
             LTexture tx = GetTexture(TX_BLUE_WIZARD);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-            LModel model = LModelFromSprite(&gstate->perm, sprite);
+            LModel model = LModelFromSprite(sprite);
             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         }
 
         {
             LTexture tx = GetTexture(TX_IMAGE_TEST4);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-            LModel model = LModelFromSprite(&gstate->perm, sprite);
+            LModel model = LModelFromSprite(sprite);
             DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(20.0f));
         }
 
@@ -4210,7 +4210,7 @@ static void SceneVectorTick(GameState* gstate) {
         // LTexture tx = GetTexture(TX_IMAGE_TEST3);
         // LTexture tx = GetTexture(TX_IMAGE_TEST4);
         Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-        LModel model = LModelFromSprite(&gstate->perm, sprite);
+        LModel model = LModelFromSprite(sprite);
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
 
@@ -4220,7 +4220,7 @@ static void SceneVectorTick(GameState* gstate) {
         // Sprite sprite = SPRITE_WIZARD;
         // Sprite sprite = SPRITE_MM;
         Sprite sprite = SPRITE_WIZARD2;
-        LModel model = LModelFromSprite(&gstate->perm, sprite);
+        LModel model = LModelFromSprite(sprite);
         DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
     }
 
