@@ -900,6 +900,8 @@ LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
     return sprite;
 }
 
+LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT), SBB_FULL); }
+
 // This extra layer of indirection might be redundant. But possible we will want to store other data here, so
 // leave for now.
 typedef struct {
@@ -912,6 +914,8 @@ LCORE Animation AnimationFromSprite(Sprite sprite) {
     ArrPush(&animation.sprites, sprite);
     return animation;
 }
+
+LCORE Animation DefaultAnimation() { return AnimationFromSprite(DefaultSprite()); }
 
 // TODO: This should be some sort of platform layer thing.
 i32 CountFilesInDir(const char* path) {
@@ -3527,6 +3531,8 @@ typedef struct {
 
     // Gameplay fields
     u32 charging_state;
+
+    LModel model;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -3541,6 +3547,7 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->pos_offset = Vec3Zero();
 
     TextureInfoDefault(&graphics->txinfo);
+    graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
 // min - bottom left hand corner of sprite (in png space, not uvspace)
