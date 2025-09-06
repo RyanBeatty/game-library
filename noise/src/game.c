@@ -3475,7 +3475,7 @@ LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec
 }
 
 LCORE LModel LModelFromSprite(Arena* perm, Sprite sprite) {
-    return LModelFromAnimation(AnimationFromSprite(perm, sprite), Vec3Zero(), Mat4Identity(), Vec3Zero(), LCLEAR);
+    return LModelFromAnimation(AnimationFromSprite(perm, sprite), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
@@ -3484,8 +3484,8 @@ LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
     // Always draw the sprite at a base width/height that matches the original sprite. Then we modify by the
     // static scale of the model + any additional user scale here.
     Sprite* sprite = ArrGetR(&model.animation.sprites, 0);
-    f32 scalex = scale.x + model.scale.x + sprite->dims.x;
-    f32 scaley = scale.y + model.scale.y + sprite->dims.y;
+    f32 scalex = scale.x * model.scale.x * sprite->dims.x;
+    f32 scaley = scale.y * model.scale.y * sprite->dims.y;
     DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scalex, scaley, Mat4Multiply(orient, model.orient), LCLEAR);
     // Draw first frame of animation (if its an animation, else same as Drawsprite).
     cmd->meshcmd.tx = model.animation.sprites.data[0].tx;
@@ -4164,12 +4164,10 @@ static void SceneVectorTick(GameState* gstate) {
     //     int a = 0;
     // }
 
+    // Good load and draw model test
     if (true) {
         {
             LTexture tx = GetTexture(TX_BLUE_WIZARD);
-            // LTexture tx = GetTexture(TX_IMAGE_TEST);
-            // LTexture tx = GetTexture(TX_IMAGE_TEST3);
-            // LTexture tx = GetTexture(TX_IMAGE_TEST4);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
             LModel model = LModelFromSprite(&gstate->perm, sprite);
             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
@@ -4179,7 +4177,26 @@ static void SceneVectorTick(GameState* gstate) {
             LTexture tx = GetTexture(TX_IMAGE_TEST4);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
             LModel model = LModelFromSprite(&gstate->perm, sprite);
-            DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(100.0f));
+            DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(20.0f));
+        }
+
+        // Test static rotate by 90 degrees
+        {
+            LTexture tx = GetTexture(TX_IMAGE_TEST4);
+            Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
+            LModel model = LModelFromAnimation(AnimationFromSprite(&gstate->perm, sprite), Vec3Zero(),
+                                               Mat4RotateZ(Deg2Rad(90.0f)), Vec3LitAll(1.0f), LCLEAR);
+            DrawLModel(model, Vec3Add(POS, Vec3Lit(0, 200, 0)), Mat4RotateZ(ROT), Vec3LitAll(20.0f));
+        }
+
+        // Test static position
+        {
+            LTexture tx = GetTexture(TX_BLUE_WIZARD);
+            Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
+            LModel model =
+                LModelFromAnimation(AnimationFromSprite(&gstate->perm, sprite), Vec3Lit(-200.0f, -200.0f, 0.f),
+                                    Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
+            DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         }
     }
 
