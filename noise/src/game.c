@@ -3470,6 +3470,12 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
+LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) {
+    graphics->elapsed = f32mod(graphics->elapsed + elapsed_delta, graphics->model.animation.duration);
+    graphics->frame_idx = (isize)((graphics->elapsed / graphics->model.animation.duration) *
+                                  ((f32)graphics->model.animation.sprites.len));
+}
+
 LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
     graphics->model = model;
     graphics->elapsed = 0.0f;
@@ -4031,6 +4037,8 @@ static void SceneVectorTick(GameState* gstate) {
                 if (PlatformKeyDown(LKEY_SPACE)) {
                     ROT += Deg2Rad(180.0f) * gstate->dt;
                 }
+
+                GraphicsInfoTickAnimation(&GRAPHICS, gstate->dt);
 
                 if (!moved) {
                     pct_delta = gstate->dt / (3.0f * (1 / 60.0f));
