@@ -3511,27 +3511,6 @@ typedef struct {
     Vec3 posb;
     f32 posdt;
 
-    // TODO: Replace all of this with LModel
-    //////////////////////////////////////
-    // Final drawing related fields. For now think of this as the destination rectangle + texture coords
-    LMesh mid;
-    // Min (generally lower left hand corner) of the texture selection rect in uv space.
-    Vec2 uvoffset;
-    // Dimensions of the texture selection rect in uv space.
-    Vec2 uvscale;
-    //////////////////////////////////////
-
-    //////////////////////////////////////
-    // Add static offset to the visual position of the graphics. Useful for example when you want to
-    // offset a sprite so that it lines up with a different sprite of a different bounding box shape.
-    Vec3 pos_offset;
-    //////////////////////////////////////
-
-    TextureInfo txinfo;
-
-    // Gameplay fields
-    u32 charging_state;
-
     LModel model;
 } GraphicsInfo;
 
@@ -3541,90 +3520,99 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->pos = Vec3Zero();
     graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
 
-    graphics->uvscale = Vec2Lit(1.0f, 1.0f);
-    graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
-
-    graphics->pos_offset = Vec3Zero();
-
-    TextureInfoDefault(&graphics->txinfo);
     graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
+
+    // graphics->uvscale = Vec2Lit(1.0f, 1.0f);
+    // graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
+
+    // graphics->pos_offset = Vec3Zero();
+
+    // TextureInfoDefault(&graphics->txinfo);
 }
 
-// min - bottom left hand corner of sprite (in png space, not uvspace)
-// dims - full width/height of sprite in png space not uvspace.
-LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 min, Vec2 dims, f32 orient, f32 scale) {
-    graphics->scale = Vec3Lit(dims.x * scale, dims.y * scale, 1.0f);
-    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+// #define GraphicsInfoSetLModel(graphics, m) ((graphics)->model = (m))
 
-    graphics->mid = GetMesh(M_QUAD);
-
-    TextureInfo res = {0};
-    res.tx = tx;
-    res.type = TI_SPRITE;
-    res.sprite.minuv = Vec2Lit(min.x / tx.width, min.y / tx.height);
-    res.sprite.dimsuv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
-    res.tint = LCLEAR;
-    graphics->txinfo = res;
+LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
+    DrawLModel(graphics->model, graphics->pos, graphics->orient, graphics->scale);
 }
+// LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LModel model) { graphics->model = model; }
 
-// Remember rect coords are in aseprite space.
-// TODO: This feels inefficient. Feels like what I really want is to be able to save visual info loaded from aseprite
-// once as a constant and set an entities' visuals to the constant. problem is that I can't save entire graphics info
-// or else when I set entity graphics, I overwrite position. So I need some sort of notion for the "static" entity
-// data.
-// NOTE: We don't overwrite all graphics info data because we don't set GraphicsInfoMemset, so data like position
-// is preserved.
-LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx, AseRect src, f32 orient, f32 scale) {
-    graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
-    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+// // min - bottom left hand corner of sprite (in png space, not uvspace)
+// // dims - full width/height of sprite in png space not uvspace.
+// LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LTexture tx, Vec2 min, Vec2 dims, f32 orient, f32 scale) {
+//     graphics->scale = Vec3Lit(dims.x * scale, dims.y * scale, 1.0f);
+//     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
-    graphics->mid = GetMesh(M_QUAD);
+//     graphics->mid = GetMesh(M_QUAD);
 
-    src.lc = AsepritePosToFlipped(tx, src.lc);
+//     TextureInfo res = {0};
+//     res.tx = tx;
+//     res.type = TI_SPRITE;
+//     res.sprite.minuv = Vec2Lit(min.x / tx.width, min.y / tx.height);
+//     res.sprite.dimsuv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
+//     res.tint = LCLEAR;
+//     graphics->txinfo = res;
+// }
 
-    TextureInfo res = {0};
-    res.tx = tx;
-    res.type = TI_SPRITE;
-    res.sprite.minuv = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
-    res.sprite.dimsuv = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
-    res.tint = LCLEAR;
-    graphics->txinfo = res;
-}
+// // Remember rect coords are in aseprite space.
+// // TODO: This feels inefficient. Feels like what I really want is to be able to save visual info loaded from aseprite
+// // once as a constant and set an entities' visuals to the constant. problem is that I can't save entire graphics info
+// // or else when I set entity graphics, I overwrite position. So I need some sort of notion for the "static" entity
+// // data.
+// // NOTE: We don't overwrite all graphics info data because we don't set GraphicsInfoMemset, so data like position
+// // is preserved.
+// LCORE void GraphicsInfoSetSpriteFromAseprite(GraphicsInfo* graphics, LTexture tx, AseRect src, f32 orient, f32 scale)
+// {
+//     graphics->scale = Vec3Lit(src.r.x * scale, src.r.y * scale, 1.0f);
+//     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
-LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
-                                                f32 orient, f32 scale) {
-    graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
-    graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
+//     graphics->mid = GetMesh(M_QUAD);
 
-    graphics->mid = GetMesh(M_QUAD);
+//     src.lc = AsepritePosToFlipped(tx, src.lc);
 
-    animation.start.lc = AsepritePosToFlipped(tx, animation.start.lc);
+//     TextureInfo res = {0};
+//     res.tx = tx;
+//     res.type = TI_SPRITE;
+//     res.sprite.minuv = Vec2Lit(src.lc.x / tx.width, src.lc.y / tx.height);
+//     res.sprite.dimsuv = Vec2Lit(src.r.x / tx.width, src.r.y / tx.height);
+//     res.tint = LCLEAR;
+//     graphics->txinfo = res;
+// }
 
-    f32 width_inv = 1.0f / tx.width;
-    f32 height_inv = 1.0f / tx.height;
-    TextureInfo txinfo = {0};
-    txinfo.tx = tx;
-    txinfo.type = TI_ANIMATION;
-    txinfo.animation.minuv = Vec2Lit(animation.start.lc.x * width_inv, animation.start.lc.y * height_inv);
-    txinfo.animation.dimsuv = Vec2Lit(animation.start.r.x * width_inv, animation.start.r.y * height_inv);
-    txinfo.animation.stepuv = Vec2Lit(animation.step.x * width_inv, animation.step.y * height_inv);
-    txinfo.animation.nframes = animation.nframes;
-    txinfo.animation.frame = 0;
-    txinfo.animation.frame_dt = 0.0f;
-    txinfo.tint = LCLEAR;
+// LCORE void GraphicsInfoSetAnimationFromAseprite(GraphicsInfo* graphics, LTexture tx, AnimationAseRect animation,
+//                                                 f32 orient, f32 scale) {
+//     graphics->scale = Vec3Lit(animation.start.r.x * scale, animation.start.r.y * scale, 1.0f);
+//     graphics->orient = Mat4Rotate(orient, Vec3Lit(0.0f, 0.0f, 1.0f));
 
-    graphics->txinfo = txinfo;
-}
+//     graphics->mid = GetMesh(M_QUAD);
 
-LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
-    GraphicsInfoSetSprite(graphics, tx, Vec2Zero(), Vec2Lit(tx.width, tx.height), orient, scale);
-}
+//     animation.start.lc = AsepritePosToFlipped(tx, animation.start.lc);
 
-LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
-    graphics->mid = mesh;
-    graphics->scale = scale;
-    graphics->txinfo.tint = color;
-}
+//     f32 width_inv = 1.0f / tx.width;
+//     f32 height_inv = 1.0f / tx.height;
+//     TextureInfo txinfo = {0};
+//     txinfo.tx = tx;
+//     txinfo.type = TI_ANIMATION;
+//     txinfo.animation.minuv = Vec2Lit(animation.start.lc.x * width_inv, animation.start.lc.y * height_inv);
+//     txinfo.animation.dimsuv = Vec2Lit(animation.start.r.x * width_inv, animation.start.r.y * height_inv);
+//     txinfo.animation.stepuv = Vec2Lit(animation.step.x * width_inv, animation.step.y * height_inv);
+//     txinfo.animation.nframes = animation.nframes;
+//     txinfo.animation.frame = 0;
+//     txinfo.animation.frame_dt = 0.0f;
+//     txinfo.tint = LCLEAR;
+
+//     graphics->txinfo = txinfo;
+// }
+
+// LCORE void GraphicsInfoSetTexture(GraphicsInfo* graphics, LTexture tx, f32 orient, f32 scale) {
+//     GraphicsInfoSetSprite(graphics, tx, Vec2Zero(), Vec2Lit(tx.width, tx.height), orient, scale);
+// }
+
+// LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
+//     graphics->mid = mesh;
+//     graphics->scale = scale;
+//     graphics->txinfo.tint = color;
+// }
 
 ////////////////////////////////////////////////////////////
 
@@ -4208,6 +4196,20 @@ static void SceneVectorTick(GameState* gstate) {
             LModel model = LModelFromAnimation(AnimationFromSprite(sprite), Vec3Lit(-200.0f, -200.0f, 0.f),
                                                Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        }
+
+        // Test graphics info
+        {
+            LTexture tx = GetTexture(TX_BLUE_WIZARD);
+            Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
+            LModel model = LModelFromAnimation(AnimationFromSprite(sprite), Vec3Lit(-200.0f, 200.0f, 0.f),
+                                               Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
+            GraphicsInfo graphics = {0};
+            GraphicsInfoMemset(&graphics);
+            graphics.model = model;
+            graphics.pos = POS;
+            graphics.orient = Mat4RotateZ(ROT);
+            DrawGraphicsInfo(&graphics);
         }
     }
 
