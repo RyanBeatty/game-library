@@ -3470,7 +3470,11 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
-// #define GraphicsInfoSetLModel(graphics, m) ((graphics)->model = (m))
+LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
+    graphics->model = model;
+    graphics->elapsed = 0.0f;
+    graphics->frame_idx = 0;
+}
 
 LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
     DrawLModelEx(graphics->model, graphics->frame_idx, graphics->pos, graphics->orient, graphics->scale);
@@ -4139,8 +4143,9 @@ static void SceneVectorTick(GameState* gstate) {
             if (INIT) {
                 INIT = false;
                 GraphicsInfoMemset(&graphics);
-                graphics.model = LModelFromAnimation(IDLE_ANIMATION, Vec3Lit(0.0f, 400.0f, 0.f),
-                                                     Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
+                GraphicsInfoSetLModel(&graphics,
+                                      LModelFromAnimation(IDLE_ANIMATION, Vec3Lit(0.0f, 400.0f, 0.f),
+                                                          Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR));
             }
 
             graphics.elapsed = f32mod(graphics.elapsed + gstate->dt, graphics.model.animation.duration);
