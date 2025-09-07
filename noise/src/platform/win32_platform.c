@@ -709,8 +709,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 
         QueryPerformanceCounter(&ticks);
-        i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
-        f64 dt = ticks_dt * sec_per_ticks;
+        // i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
+        f64 dt = (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
         ticks_last = ticks;
 
         // This is a filthy hack, but we wait until dt is roughly 1/60th of a second to have a fixed
@@ -720,8 +720,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         // https://code.tutsplus.com/how-to-create-a-custom-2d-physics-engine-the-core-engine--gamedev-7493t#timestepping
         while (dt < 1 / 60.0f) {
             QueryPerformanceCounter(&ticks);
-            i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
-            dt += ticks_dt * sec_per_ticks;
+            dt += (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
             ticks_last = ticks;
         }
 

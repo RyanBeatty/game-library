@@ -2881,8 +2881,8 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
             c = Vec3WTransform(c, m);
             // TODO: I might actually want to project this vector onto the xy plane.
             shape.aabb2d.c = Vec2Lit(c.x, c.y);
-            Vec3 r = Vec3Transform(Vec2ToVec3(shape.aabb2d.r), m);
-            shape.aabb2d.r = Vec2Lit(r.x, r.y);
+            Vec3 r_bb = Vec3Transform(Vec2ToVec3(shape.aabb2d.r), m);
+            shape.aabb2d.r = Vec2Lit(r_bb.x, r_bb.y);
             break;
         }
         case PH_AABB: {
