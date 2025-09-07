@@ -3470,6 +3470,8 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
+// The key thing here is that elapsed_delta should be in the same units as the graphics elapsed.
+// Remember elapsed will not always be time in the case where it might be like distance traveled or something.
 LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) {
     graphics->elapsed = f32mod(graphics->elapsed + elapsed_delta, graphics->model.animation.duration);
     graphics->frame_idx = (isize)((graphics->elapsed / graphics->model.animation.duration) *
@@ -3938,7 +3940,7 @@ static void SceneVectorTick(GameState* gstate) {
         Arena temp = TempArena(gstate->temp);
 
         IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 1.0f);
-        WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 1.0f);
+        WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 75.0f);
         JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.1f);
 
         IDLE_MODEL = LModelFromAnimation(IDLE_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
@@ -4062,11 +4064,13 @@ static void SceneVectorTick(GameState* gstate) {
                 if (PlatformKeyDown(LKEY_RIGHT)) {
                     v.x += 1.0f;
                 }
-                v = Vec3Scale(v, 150.0f * gstate->dt);
+                v = Vec3Normalize(v);
+                Vec3 dx = Vec3Scale(v, 150.0f * gstate->dt);
 
                 pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
+                GraphicsInfoTickAnimation(&GRAPHICS, Vec3Len(dx));
 
-                POS = Vec3Add(POS, v);
+                POS = Vec3Add(POS, dx);
             } else if (jumped) {
                 ANIMATION = JUMP_ANIMATION;
                 ANIMATION_CYCLE = false;
