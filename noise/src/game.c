@@ -3915,6 +3915,9 @@ static void SceneVectorTick(GameState* gstate) {
     static Animation IDLE_ANIMATION = {0};
     static Animation WALK_ANIMATION = {0};
     static Animation JUMP_ANIMATION = {0};
+    static LModel IDLE_MODEL = {0};
+    static LModel WALK_MODEL = {0};
+    static LModel JUMP_MODEL = {0};
     static bool IDLE = true;
     static bool WALK = false;
     static bool JUMP = false;
@@ -3923,6 +3926,7 @@ static void SceneVectorTick(GameState* gstate) {
     static isize ANIMATION_IDX = 0;
     static f32 ANIMATION_PCT = 0.0f;
     static bool ANIMATION_CYCLE = true;
+    static GraphicsInfo GRAPHICS = {0};
 
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
@@ -3931,7 +3935,14 @@ static void SceneVectorTick(GameState* gstate) {
         WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 1.0f);
         JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.1f);
 
+        IDLE_MODEL = LModelFromAnimation(IDLE_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
+        WALK_MODEL = LModelFromAnimation(WALK_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
+        JUMP_MODEL = LModelFromAnimation(JUMP_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
+
         ANIMATION = IDLE_ANIMATION;
+
+        GraphicsInfoMemset(&GRAPHICS);
+        GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
 
         // Pack texture.
         {
@@ -4088,7 +4099,7 @@ static void SceneVectorTick(GameState* gstate) {
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
     // Good load and draw model test
-    if (true) {
+    if (false) {
         {
             LTexture tx = GetTexture(TX_BLUE_WIZARD);
             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
@@ -4240,20 +4251,26 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    if (false) {
-        ANIMATION_PCT += pct_delta;
-        if (ANIMATION_PCT >= 1.0f) {
-            if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
-                ANIMATION_PCT = 0.0f;
-                ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
-            } else {
-                // We aren't cycling the animation and are at the end of the last frame's completion pct, at this
-                // point clamp the progress pct to 1 to avoid overflow if left alone forever.
-                ANIMATION_PCT = 1.0f;
+    if (true) {
+        if (false) {
+            ANIMATION_PCT += pct_delta;
+            if (ANIMATION_PCT >= 1.0f) {
+                if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
+                    ANIMATION_PCT = 0.0f;
+                    ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
+                } else {
+                    // We aren't cycling the animation and are at the end of the last frame's completion pct, at this
+                    // point clamp the progress pct to 1 to avoid overflow if left alone forever.
+                    ANIMATION_PCT = 1.0f;
+                }
             }
+
+            DrawSprite(ArrGet(&ANIMATION.sprites, ANIMATION_IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
         }
 
-        DrawSprite(ArrGet(&ANIMATION.sprites, ANIMATION_IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
+        if (true) {
+            DrawGraphicsInfo(&GRAPHICS);
+        }
     }
 
     EndShaderPass();
