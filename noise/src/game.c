@@ -3133,11 +3133,6 @@ LCORE void FontCacheInit(FontCache* fcache) {
             fcache->fontsizes[i] = fontsize;
         }
     }
-}
-
-LCORE void InitFonts() {
-    FontCache* fcache = &FONT_CACHE;
-    FontCacheInit(fcache);
 
     memset(FONTS, 0, sizeof(LFont) * LFONT_COUNT);
 
@@ -3154,6 +3149,21 @@ LCORE void InitFonts() {
         font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/times.ttf", font.fontsize, font.cdata);
         FONTS[LFONT_SMALL] = font;
     }
+
+    // Push default font as current selected font.
+    fcache->fontstack.cap = ArraySizeOf(fcache->fontstack.data);
+    ArrPush(&fcache->fontstack, &FONTS[LFONT_DEFAULT]);
+}
+
+LCORE LFont GetActiveFont() {
+    FontCache* fcache = &FONT_CACHE;
+    Assert(fcache->fontstack.len);
+    return *ArrGet(&fcache->fontstack, fcache->fontstack.len - 1);
+}
+
+LCORE void InitFonts() {
+    FontCache* fcache = &FONT_CACHE;
+    FontCacheInit(fcache);
 }
 
 static LFont GetLFontByLabel(FontLabel label) {
@@ -3251,7 +3261,7 @@ LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
 // Characters (note the space beginning the sequence is included):
 // !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 LCORE void DrawLText(char* text, u32 len, Vec2 pos, Vec4 color) {
-    DrawLTextEx(GetLFontByLabel(LFONT_DEFAULT), text, len, Vec2Lit(pos.x, pos.y), color);
+    DrawLTextEx(GetActiveFont(), text, len, Vec2Lit(pos.x, pos.y), color);
 }
 
 LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
