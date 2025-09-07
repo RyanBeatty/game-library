@@ -4146,12 +4146,9 @@ static void SceneVectorTick(GameState* gstate) {
             graphics.elapsed = f32mod(graphics.elapsed + gstate->dt, graphics.model.animation.duration);
             graphics.frame_idx = (isize)((graphics.elapsed / graphics.model.animation.duration) *
                                          ((f32)graphics.model.animation.sprites.len));
-
             graphics.pos = POS;
             graphics.orient = Mat4RotateZ(ROT);
             DrawGraphicsInfo(&graphics);
-
-            // graphics.frame_idx = (graphics.frame_idx + 1) % graphics.model.animation.sprites.len;
         }
     }
 
