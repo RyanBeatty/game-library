@@ -3153,21 +3153,19 @@ static LFont GetLFontByLabel(FontLabel label) {
     return FONTS[label];
 }
 
-// Will get the closest font size in cache that is <= :fontsize:
+// Will get the closest font size in cache that is <= :fontsize: unless there is no such fontsize
+// in which case it will use the first/smallest fontsize
 static LFont GetLFontClosest(f32 desired_fontsize) {
     FontCache* fcache = &FONT_CACHE;
     isize choice = 0;
-    bool found = false;
     for (isize i = 0; i < ArraySizeOf(fcache->fonts); ++i) {
         if (fcache->fontsizes[i] > desired_fontsize) {
             break;
         }
 
         choice = i;
-        found = true;
     }
 
-    Assert(found);
     return fcache->fonts[choice];
 }
 
@@ -4332,8 +4330,12 @@ static void SceneBetterFontTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    char txt[] = "hello world";
-    DrawLTextEx(GetLFontClosest(16.3), txt, strlen(txt), Vec2Zero(), LBLACK);
+    // Resizing font
+    {
+        char txt[] = "hello world";
+        f32 fontsize = 32.0f + (f32sin(gstate->timer) * 24.0f);
+        DrawLTextEx(GetLFontClosest(fontsize), txt, strlen(txt), Vec2Zero(), LBLACK);
+    }
 
     EndShaderPass();
 
