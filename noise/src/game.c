@@ -3099,23 +3099,26 @@ static LFont FONTS[LFONT_COUNT] = {0};
 #define MAX_FONTS 128
 
 typedef struct {
+    LFont* data[10];
+    isize len;
+    isize cap;
+} FontStack;
+
+typedef struct {
     isize labels[LFONT_COUNT];
 
     // Font sizes acts as a map between fontsize and an LFont.
     f32 fontsizes[MAX_FONTS];
     LFont fonts[MAX_FONTS];
+
+    FontStack fontstack;
 } FontCache;
+
+static FontCache FONT_CACHE = {0};
 
 LCORE void FontCacheInit(FontCache* fcache) {
     FontCache zero = {0};
     *fcache = zero;
-}
-
-static FontCache FONT_CACHE = {0};
-
-LCORE void InitFonts() {
-    FontCache* fcache = &FONT_CACHE;
-    FontCacheInit(fcache);
 
     // Preload the cache with some amount of font sizes which we can use
     // for development purposes to draw at various fonts sizes without thinking much.
@@ -3130,6 +3133,11 @@ LCORE void InitFonts() {
             fcache->fontsizes[i] = fontsize;
         }
     }
+}
+
+LCORE void InitFonts() {
+    FontCache* fcache = &FONT_CACHE;
+    FontCacheInit(fcache);
 
     memset(FONTS, 0, sizeof(LFont) * LFONT_COUNT);
 
