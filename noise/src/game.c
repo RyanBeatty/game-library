@@ -3135,7 +3135,7 @@ LCORE void FontCacheInit(FontCache* fcache) {
             Assert(i < ArraySizeOf(fcache->fonts));
             LFont* font = &fcache->fonts[i];
             font->fontsize = fontsize;
-            font->tx = BakeTrueTypeFontBitmap("c:/windows/fonts/times.ttf", font->fontsize, font->cdata);
+            font->tx = BakeTrueTypeFontBitmap("c:/windows/fonts/CascadiaMono.ttf", font->fontsize, font->cdata);
             fcache->fontsizes[i] = fontsize;
         }
     }
@@ -3145,14 +3145,14 @@ LCORE void FontCacheInit(FontCache* fcache) {
     {
         LFont font = {0};
         font.fontsize = 32.0f;
-        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/times.ttf", font.fontsize, font.cdata);
+        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/CascadiaMono.ttf", font.fontsize, font.cdata);
         FONTS[LFONT_DEFAULT] = font;
     }
 
     {
         LFont font = {0};
         font.fontsize = 16.0f;
-        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/times.ttf", font.fontsize, font.cdata);
+        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/CascadiaMono.ttf", font.fontsize, font.cdata);
         FONTS[LFONT_SMALL] = font;
     }
 
