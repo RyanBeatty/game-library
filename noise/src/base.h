@@ -111,3 +111,10 @@ typedef struct {
     isize len;
     isize cap;
 } ByteBuffer;
+
+typedef struct {
+    char* data;
+    isize len;
+} Str8;
+
+#define Str8(s) ((Str8){.data = (s), .len = (ArraySizeOf((s)) - 1)})
