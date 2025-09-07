@@ -4026,6 +4026,7 @@ static void SceneVectorTick(GameState* gstate) {
                 ANIMATION_CYCLE = true;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
+                GraphicsInfoSetLModel(&GRAPHICS, WALK_MODEL);
                 movestate_next = MS_WALK;
             } else if (jumped) {
                 ANIMATION = JUMP_ANIMATION;
@@ -4077,6 +4078,7 @@ static void SceneVectorTick(GameState* gstate) {
                 ANIMATION_CYCLE = true;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
+                GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
                 movestate_next = MS_IDLE;
             }
             break;
@@ -4277,6 +4279,8 @@ static void SceneVectorTick(GameState* gstate) {
         }
 
         if (true) {
+            GRAPHICS.pos = POS;
+            GRAPHICS.orient = Mat4RotateZ(ROT);
             DrawGraphicsInfo(&GRAPHICS);
         }
     }
