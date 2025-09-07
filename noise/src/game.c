@@ -4387,6 +4387,15 @@ static void SceneBetterFontTick(GameState* gstate) {
             pos = Vec2Add(pos, Vec2Lit(0.0f, -100.0f));
         }
 
+        {
+            f32 fontsize = 42.0f;
+            PushLFont(GetLFontClosest(fontsize));
+            DrawLTextF(pos, LBLACK, "Font Size: %f", GetActiveFontsize());
+            PopLFont();
+
+            pos = Vec2Add(pos, Vec2Lit(0.0f, -100.0f));
+        }
+
         DrawLTextF(pos, LBLACK, "Font Size: %f", GetActiveFontsize());
     }
 
