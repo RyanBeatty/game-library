@@ -3457,7 +3457,7 @@ typedef struct {
     f32 posdt;
 
     LModel model;
-    f32 frame_idx;
+    isize frame_idx;
     f32 animation_pct;
 } GraphicsInfo;
 
@@ -4146,6 +4146,8 @@ static void SceneVectorTick(GameState* gstate) {
             graphics.pos = POS;
             graphics.orient = Mat4RotateZ(ROT);
             DrawGraphicsInfo(&graphics);
+
+            graphics.frame_idx = (graphics.frame_idx + 1) % graphics.model.animation.sprites.len;
         }
     }
 
