@@ -4130,6 +4130,23 @@ static void SceneVectorTick(GameState* gstate) {
             graphics.orient = Mat4RotateZ(ROT);
             DrawGraphicsInfo(&graphics);
         }
+
+        // Test graphics info animation
+        {
+            static GraphicsInfo graphics = {0};
+            static bool INIT = true;
+
+            if (INIT) {
+                INIT = false;
+                GraphicsInfoMemset(&graphics);
+                graphics.model = LModelFromAnimation(IDLE_ANIMATION, Vec3Lit(0.0f, 400.0f, 0.f),
+                                                     Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
+            }
+
+            graphics.pos = POS;
+            graphics.orient = Mat4RotateZ(ROT);
+            DrawGraphicsInfo(&graphics);
+        }
     }
 
     if (false) {
