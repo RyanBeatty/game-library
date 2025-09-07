@@ -3462,6 +3462,7 @@ typedef struct {
     LModel model;
     isize frame_idx;
     f32 elapsed;
+    i32 nloops;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -3480,8 +3481,10 @@ LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) 
     if (graphics->elapsed >= graphics->model.animation.duration) {
         if (graphics->model.animation.loops) {
             graphics->elapsed = f32mod(graphics->elapsed, graphics->model.animation.duration);
+            ++graphics->nloops;
         } else {
             graphics->elapsed = graphics->model.animation.duration;
+            graphics->nloops = 1;
         }
     }
 
@@ -3494,6 +3497,7 @@ LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
     graphics->model = model;
     graphics->elapsed = 0.0f;
     graphics->frame_idx = 0;
+    graphics->nloops = 0;
 }
 
 LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
@@ -4102,12 +4106,15 @@ static void SceneVectorTick(GameState* gstate) {
             break;
         }
         case MS_JUMP: {
-            if ((ANIMATION_IDX + 1 >= ANIMATION.sprites.cap) && (ANIMATION_PCT >= 1.0f)) {
+            bool animation_done = (ANIMATION_IDX + 1 >= ANIMATION.sprites.cap) && (ANIMATION_PCT >= 1.0f);
+            bool graphics_done = GRAPHICS.nloops >= 1;
+            if (graphics_done) {
                 // Animation finished.
                 ANIMATION = IDLE_ANIMATION;
                 ANIMATION_CYCLE = true;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
+                GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
                 movestate_next = MS_IDLE;
             } else {
                 pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
