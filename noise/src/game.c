@@ -3386,69 +3386,6 @@ typedef struct {
     u32 nframes;
 } AnimationAseRect;
 
-typedef enum {
-    TI_NONE = 0,
-    TI_SPRITE,
-    TI_ANIMATION,
-    TI_COUNT,
-} TextureInfoType;
-
-// Abstraction for texture data for a mesh. Essentially you can think of this at the moment as the information
-// required to subselect a rect inside of a 2d texture (animations are a subselected rect that are stepped
-// along through the texture at some time interval).
-typedef struct {
-    LTexture tx;
-
-    TextureInfoType type;
-    union {
-        struct {
-            // Start min and dims of the window in uv space.
-            Vec2 minuv;
-            Vec2 dimsuv;
-        } sprite;
-
-        struct {
-            // Start min and dims of the first frame in uv space.
-            Vec2 minuv;
-            Vec2 dimsuv;
-
-            // How much to step each frame in uv.
-            Vec2 stepuv;
-
-            // n frames in animation.
-            u32 nframes;
-            // TODO: The below should be moved out of texture info I think and into graphics info.
-            // If we do that then we can build textureinfos once and just swap assign them in the
-            // graphics info.
-            // Index of what frame we are on in the animation.
-            u32 frame;
-            // Time spent in current frame.
-            f32 frame_dt;
-
-            // // Delta time we've currently spent playing animation.
-            // f32 frames_dt;
-            // // Maximum time duration of the animation.
-            // f32 frames_time;
-        } animation;
-    };
-
-    // TODO: The below should be moved out of texture info I think and into graphics info.
-    // If we do that then we can build textureinfos once and just swap assign them in the
-    // graphics info.
-    Vec4 tint;  // Color.
-} TextureInfo;
-
-static void TextureInfoDefault(TextureInfo* txinfo) {
-    TextureInfo res = {0};
-    res.tx = GetTexture(TX_DEFAULT);
-    res.type = TI_SPRITE;
-    res.sprite.minuv = Vec2Zero();
-    res.sprite.dimsuv = Vec2Lit(1.0f, 1.0f);
-    res.tint = LCLEAR;
-
-    *txinfo = res;
-}
-
 // A model is basically a "static" set of geometry and visual info data.
 // We can load a model that has been created and durably stored a priori once and then
 // just refer to it in many places (e.g. load the idle state model and swap out with jump state model).
