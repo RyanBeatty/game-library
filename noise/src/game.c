@@ -3953,7 +3953,7 @@ static void SceneVectorTick(GameState* gstate) {
 
         IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 1.0f);
         WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 75.0f);
-        JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.1f);
+        JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.3f);
         JUMP_ANIMATION.loops = false;
 
         IDLE_MODEL = LModelFromAnimation(IDLE_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
