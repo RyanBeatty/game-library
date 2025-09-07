@@ -3458,13 +3458,6 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
 
     graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
-
-    // graphics->uvscale = Vec2Lit(1.0f, 1.0f);
-    // graphics->uvoffset = Vec2Lit(0.0f, 0.0f);
-
-    // graphics->pos_offset = Vec3Zero();
-
-    // TextureInfoDefault(&graphics->txinfo);
 }
 
 // #define GraphicsInfoSetLModel(graphics, m) ((graphics)->model = (m))
@@ -3472,7 +3465,6 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
     DrawLModel(graphics->model, graphics->pos, graphics->orient, graphics->scale);
 }
-// LCORE void GraphicsInfoSetSprite(GraphicsInfo* graphics, LModel model) { graphics->model = model; }
 
 // // min - bottom left hand corner of sprite (in png space, not uvspace)
 // // dims - full width/height of sprite in png space not uvspace.
