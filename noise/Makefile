@@ -38,7 +38,7 @@ EXT_INC_FLAGS := -Iexternal/glad -Iexternal/stb
 
 # The -MMD and -MP flags together generate Makefiles for us!
 # These files will have .d instead of .o as the output.
-CPPFLAGS := $(INC_FLAGS) $(EXT_INC_FLAGS) -MMD -MP -g3 -Wall
+CPPFLAGS := $(INC_FLAGS) $(EXT_INC_FLAGS) -MMD -MP -g3 -Wall -Wshadow
 
 PLATFORM_FLAG := WIN32
 BTFLAGS := -DUNITY_BUILD=1 

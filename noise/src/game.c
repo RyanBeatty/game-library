@@ -1566,8 +1566,8 @@ static void RenderDataInit() {
             Triangle ts2[MAX_TRIANGLES] = {0};
             u32 ts2size = 0;
             for (u32 ti = 0; ti < tsize; ++ti) {
-                Triangle t = ts[ti];
-                u32 edges[][2] = {{t.va, t.vb}, {t.vb, t.vc}, {t.vc, t.va}};
+                Triangle tri = ts[ti];
+                u32 edges[][2] = {{tri.va, tri.vb}, {tri.vb, tri.vc}, {tri.vc, tri.va}};
                 // compute midpoint of each edge.
                 for (u32 ei = 0; ei < ArraySizeOf(edges); ++ei) {
                     u32 va = edges[ei][0];
@@ -1585,16 +1585,16 @@ static void RenderDataInit() {
                     }
                 }
 
-                u32 a = midpoints[t.va][t.vb];
-                u32 b = midpoints[t.vb][t.vc];
-                u32 c = midpoints[t.vc][t.va];
+                u32 a = midpoints[tri.va][tri.vb];
+                u32 b = midpoints[tri.vb][tri.vc];
+                u32 c = midpoints[tri.vc][tri.va];
 
                 Assert(ts2size < ArraySizeOf(ts2));
-                ts2[ts2size++] = TriLit(t.va, a, c);
+                ts2[ts2size++] = TriLit(tri.va, a, c);
                 Assert(ts2size < ArraySizeOf(ts2));
-                ts2[ts2size++] = TriLit(t.vb, b, a);
+                ts2[ts2size++] = TriLit(tri.vb, b, a);
                 Assert(ts2size < ArraySizeOf(ts2));
-                ts2[ts2size++] = TriLit(t.vc, c, b);
+                ts2[ts2size++] = TriLit(tri.vc, c, b);
                 Assert(ts2size < ArraySizeOf(ts2));
                 ts2[ts2size++] = TriLit(a, b, c);
             }
