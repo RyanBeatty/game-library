@@ -4094,6 +4094,7 @@ static void SceneVectorTick(GameState* gstate) {
                 ANIMATION_CYCLE = false;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
+                GraphicsInfoSetLModel(&GRAPHICS, JUMP_MODEL);
                 movestate_next = MS_JUMP;
             } else {
                 ANIMATION = IDLE_ANIMATION;
