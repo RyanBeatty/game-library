@@ -2396,7 +2396,11 @@ typedef struct {
 
 static RenderState RSTATE;
 
-#define CurShaderPass() (&RSTATE.passes[RSTATE.passidx])
+// #define CurShaderPass() (&RSTATE.passes[RSTATE.passidx])
+static ShaderPass* CurShaderPass() {
+    Assert(RSTATE.passidx != PASSNULL);
+    return &RSTATE.passes[RSTATE.passidx];
+}
 
 static void RenderStateInit(u32 width, u32 height) {
     RenderState* rstate = &RSTATE;
@@ -3758,6 +3762,7 @@ typedef enum {
     SCENE_NOISE,
     SCENE_LINE,
     SCENE_VECTOR,
+    SCENE_BETTER_FONT,
     SCENE_COUNT,
 } SceneId;
 
@@ -4264,6 +4269,28 @@ static void SceneVectorTick(GameState* gstate) {
     EndRender();
 }
 
+static void SceneBetterFontTick(GameState* gstate) {
+    if (gstate->init) {
+    }
+
+    BeginRender(gstate->dt);
+
+    ShaderPass* pass = BeginShaderPass(GetLineShader());
+    u32 width = gstate->renderw;
+    u32 height = gstate->renderh;
+    pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+    EndShaderPass();
+
+    breakpoint();
+    char txt[] = "hello world";
+    DrawLText(txt, strlen(txt), Vec2Zero(), LBLACK);
+
+    DrawQuad(Vec3Zero(), 100, 100, Mat4Identity(), LRED);
+
+    EndRender();
+}
+
 ////////////////////////////////////////////////////////////
 
 static void TestL();
@@ -4314,6 +4341,7 @@ void GameInit() {
         gstate->scenefuncs[SCENE_NOISE] = SceneNoiseTick;
         gstate->scenefuncs[SCENE_LINE] = SceneLineTick;
         gstate->scenefuncs[SCENE_VECTOR] = SceneVectorTick;
+        gstate->scenefuncs[SCENE_BETTER_FONT] = SceneBetterFontTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
