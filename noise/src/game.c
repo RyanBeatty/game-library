@@ -4332,7 +4332,7 @@ static void SceneBetterFontTick(GameState* gstate) {
 
     // Resizing font
     {
-        char txt[] = "hello world";
+        char txt[] = "hello, Carly!";
         f32 fontsize = 32.0f + (f32sin(gstate->timer) * 24.0f);
         DrawLTextEx(GetLFontClosest(fontsize), txt, strlen(txt), Vec2Zero(), LBLACK);
     }
