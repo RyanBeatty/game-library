@@ -909,12 +909,14 @@ typedef struct {
     // For time based animations, this will be elapsed time in seconds for event based animations (like
     // walk cycles), this will be in range 0-1
     f32 duration;
+    bool loops;
 } Animation;
 
 LCORE Animation AnimationFromSprite(Sprite sprite) {
     Animation animation = {.duration = 0.0f};
     animation.sprites.cap = ArraySizeOf(animation.sprites.data);
     ArrPush(&animation.sprites, sprite);
+    animation.loops = true;
     return animation;
 }
 
@@ -962,6 +964,7 @@ LCORE Animation AnimationFromDisk(const char* dir, const char* filename_prefix, 
         ArrPush(sprites, SpriteFromLTexture(tx, SBB_FULL));
     }
 
+    animation.loops = true;
     return animation;
 }
 
@@ -3473,9 +3476,18 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 // The key thing here is that elapsed_delta should be in the same units as the graphics elapsed.
 // Remember elapsed will not always be time in the case where it might be like distance traveled or something.
 LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) {
-    graphics->elapsed = f32mod(graphics->elapsed + elapsed_delta, graphics->model.animation.duration);
+    graphics->elapsed += elapsed_delta;
+    if (graphics->elapsed >= graphics->model.animation.duration) {
+        if (graphics->model.animation.loops) {
+            graphics->elapsed = f32mod(graphics->elapsed, graphics->model.animation.duration);
+        } else {
+            graphics->elapsed = graphics->model.animation.duration;
+        }
+    }
+
+    // minus 1 is important for case where elapsed == duration.
     graphics->frame_idx = (isize)((graphics->elapsed / graphics->model.animation.duration) *
-                                  ((f32)graphics->model.animation.sprites.len));
+                                  ((f32)(graphics->model.animation.sprites.len - 1)));
 }
 
 LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
@@ -3942,6 +3954,7 @@ static void SceneVectorTick(GameState* gstate) {
         IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 1.0f);
         WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 75.0f);
         JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.1f);
+        JUMP_ANIMATION.loops = false;
 
         IDLE_MODEL = LModelFromAnimation(IDLE_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
         WALK_MODEL = LModelFromAnimation(WALK_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
@@ -4035,6 +4048,7 @@ static void SceneVectorTick(GameState* gstate) {
                 ANIMATION_CYCLE = false;
                 ANIMATION_IDX = 0;
                 ANIMATION_PCT = 0.0f;
+                GraphicsInfoSetLModel(&GRAPHICS, JUMP_MODEL);
                 movestate_next = MS_JUMP;
             } else {
                 if (PlatformKeyDown(LKEY_SPACE)) {
@@ -4097,6 +4111,7 @@ static void SceneVectorTick(GameState* gstate) {
                 movestate_next = MS_IDLE;
             } else {
                 pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
+                GraphicsInfoTickAnimation(&GRAPHICS, gstate->dt);
             }
 
             break;
