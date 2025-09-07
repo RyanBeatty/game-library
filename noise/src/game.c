@@ -4280,13 +4280,10 @@ static void SceneBetterFontTick(GameState* gstate) {
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    EndShaderPass();
-
-    breakpoint();
     char txt[] = "hello world";
     DrawLText(txt, strlen(txt), Vec2Zero(), LBLACK);
 
-    DrawQuad(Vec3Zero(), 100, 100, Mat4Identity(), LRED);
+    EndShaderPass();
 
     EndRender();
 }
@@ -4345,7 +4342,7 @@ void GameInit() {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_VECTOR);
+    GameStateLoadScene(gstate, SCENE_BETTER_FONT);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
