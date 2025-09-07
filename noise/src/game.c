@@ -906,10 +906,13 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 // leave for now.
 typedef struct {
     SpriteArr sprites;
+    // For time based animations, this will be elapsed time in seconds for event based animations (like
+    // walk cycles), this will be in range 0-1
+    f32 duration;
 } Animation;
 
 LCORE Animation AnimationFromSprite(Sprite sprite) {
-    Animation animation = {0};
+    Animation animation = {.duration = 0.0f};
     animation.sprites.cap = ArraySizeOf(animation.sprites.data);
     ArrPush(&animation.sprites, sprite);
     return animation;
@@ -944,8 +947,8 @@ i32 CountFilesInDir(const char* path) {
 
 // Assumes that all files under :dir: follow the format of :filename_prefixNNNNN.png where NNNNN
 // is a 0 left padded number denoting the frame.
-LCORE Animation AnimationFromDisk(Arena* perm, const char* dir, const char* filename_prefix) {
-    Animation animation = {0};
+LCORE Animation AnimationFromDisk(const char* dir, const char* filename_prefix, f32 duration) {
+    Animation animation = {.duration = duration};
     animation.sprites.cap = ArraySizeOf(animation.sprites.data);
 
     SpriteArr* sprites = &animation.sprites;
@@ -3423,20 +3426,25 @@ LCORE LModel LModelFromSprite(Sprite sprite) {
     return LModelFromAnimation(animation, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
 
-// I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
-LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
-    Assert(model.animation.sprites.len != 0);
+// Draw an lmodel animation for a specific frame. You can use this to animate over time.
+LCORE DrawCmd* DrawLModelEx(LModel model, isize frame_idx, Vec3 pos, Mat4 orient, Vec3 scale) {
+    Assert(model.animation.sprites.len > frame_idx);
     // Always draw the sprite at a base width/height that matches the original sprite. Then we modify by the
     // static scale of the model + any additional user scale here.
-    Sprite* sprite = ArrGetR(&model.animation.sprites, 0);
+    Sprite* sprite = ArrGetR(&model.animation.sprites, frame_idx);
     f32 scalex = scale.x * model.scale.x * sprite->dims.x;
     f32 scaley = scale.y * model.scale.y * sprite->dims.y;
     DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scalex, scaley, Mat4Multiply(orient, model.orient), LCLEAR);
     // Draw first frame of animation (if its an animation, else same as Drawsprite).
-    cmd->meshcmd.tx = model.animation.sprites.data[0].tx;
-    cmd->meshcmd.uvoffset = model.animation.sprites.data[0].minuv;
-    cmd->meshcmd.uvscale = model.animation.sprites.data[0].dimsuv;
+    cmd->meshcmd.tx = sprite->tx;
+    cmd->meshcmd.uvoffset = sprite->minuv;
+    cmd->meshcmd.uvscale = sprite->dimsuv;
     return cmd;
+}
+
+// I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
+LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
+    return DrawLModelEx(model, 0, pos, orient, scale);
 }
 
 typedef struct {
@@ -3449,6 +3457,8 @@ typedef struct {
     f32 posdt;
 
     LModel model;
+    f32 frame_idx;
+    f32 animation_pct;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -3463,7 +3473,7 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
 // #define GraphicsInfoSetLModel(graphics, m) ((graphics)->model = (m))
 
 LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
-    DrawLModel(graphics->model, graphics->pos, graphics->orient, graphics->scale);
+    DrawLModelEx(graphics->model, graphics->frame_idx, graphics->pos, graphics->orient, graphics->scale);
 }
 
 // // min - bottom left hand corner of sprite (in png space, not uvspace)
@@ -3913,9 +3923,9 @@ static void SceneVectorTick(GameState* gstate) {
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
 
-        IDLE_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/idle_animation", "Chara - BlueIdle");
-        WALK_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/walk_animation", "Chara_BlueWalk");
-        JUMP_ANIMATION = AnimationFromDisk(&gstate->perm, "assets/entities/wizard/jump_animation", "CharaWizardJump_");
+        IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 0.5f);
+        WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 1.0f);
+        JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.1f);
 
         ANIMATION = IDLE_ANIMATION;
 
@@ -4072,26 +4082,6 @@ static void SceneVectorTick(GameState* gstate) {
     u32 width = gstate->renderw;
     u32 height = gstate->renderh;
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
-
-    // // Raw sprite.
-    // if (false) {
-    //     LTexture tx = GetTexture(TX_BLUE_WIZARD);
-    //     // LTexture tx = GetTexture(TX_IMAGE_TEST);
-    //     // LTexture tx = GetTexture(TX_IMAGE_TEST3);
-    //     // LTexture tx = GetTexture(TX_IMAGE_TEST4);
-    //     Sprite sprite = SpriteFromLTexture(tx);
-
-    //     Vec2 minuv = Vec2Lit(sprite.min.x / tx.width, sprite.min.y / tx.height);
-    //     Vec2 dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
-    //     Vec2 uv = Vec2Lit(dims.x / tx.width, dims.y / tx.height);
-
-    //     // // DrawLTexture(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f);
-    //     // // DrawLTextureEx(GetTexture(TX_BLUE_WIZARD), Vec2Lit(POS.x, POS.y), 1.0f, 0.0f, LCLEAR);
-    //     f32 scale = 1.0f;
-    //     DrawCmd* cmd = DrawLTextureProUV(tx, minuv, uv, Vec2Lit(POS.x, POS.y), Vec2Scale(dims, scale), ROT, LCLEAR);
-    //     breakpoint();
-    //     int a = 0;
-    // }
 
     // Good load and draw model test
     if (true) {
