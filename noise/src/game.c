@@ -3076,14 +3076,7 @@ static LTexture BakeTrueTypeFontBitmap(char* filename, f32 fontsize, stbtt_baked
         bitmap[(i * 4) + 3] = bitmap_alpha[i];
     }
 
-    LTexture tx = {0};
-    tx.width = 512;
-    tx.height = 512;
-    glGenTextures(1, &tx.id);
-    glBindTexture(GL_TEXTURE_2D, tx.id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tx.width, tx.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
+    LTexture tx = TextureFromBuffer(bitmap, 512, 512, FILTER_LINEAR);
     // free(bitmap);
     return tx;
 }
