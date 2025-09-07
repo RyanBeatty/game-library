@@ -3148,10 +3148,8 @@ LCORE void InitFonts() {
     }
 }
 
-static LFont GetLFont(FontLabel label) {
-    Assert(label < LFONT_COUNT);
-    return FONTS[label];
-}
+// Will get the closest font size in cache that is <=:fontsize:
+static LFont GetLFontClosest(f32 fontsize) {}
 
 LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 color) {
     for (i32 i = 0; i < len; ++i) {
@@ -3227,7 +3225,7 @@ LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
 // Characters (note the space beginning the sequence is included):
 // !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 LCORE void DrawLText(char* text, u32 len, Vec2 pos, Vec4 color) {
-    DrawLTextEx(GetLFont(LFONT_DEFAULT), text, len, Vec2Lit(pos.x, pos.y), color);
+    DrawLTextEx(GetLFontByLabel(LFONT_DEFAULT), text, len, Vec2Lit(pos.x, pos.y), color);
 }
 
 LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
@@ -3895,7 +3893,7 @@ static void SceneDefaultTick(GameState* gstate) {
     char msg[] = "DEFAULT SCENE";
     u32 size = strlen(msg);
 
-    LFont font = GetLFont(LFONT_DEFAULT);
+    LFont font = GetLFontByLabel(LFONT_DEFAULT);
     Vec2 dim = LFontMeasureText(font, msg, size);
 
     // Center text by shifting center forward by half a text cell size and then shifting backward
