@@ -533,6 +533,12 @@ typedef struct {
 
 #define Vec4Lit(v0, v1, v2, v3) ((Vec4){.x = (v0), .y = (v1), .z = (v2), .w = (v3)})
 
+LCORE Vec4 Vec4Lerp(Vec4 start, Vec4 end, f32 t) {
+    // clang-format off
+    return Vec4Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t), f32lerp(start.w, end.w, t));
+    // clang-format on
+}
+
 // The positionless aspect is why we don't include the w component here.
 static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
     return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02),  //
@@ -4369,7 +4375,10 @@ static void SceneBetterFontTick(GameState* gstate) {
     {
         char txt[] = "hello, Carly!";
         f32 fontsize = 32.0f + (f32sin(gstate->timer) * 24.0f);
-        DrawLTextEx(GetLFontClosest(fontsize), txt, strlen(txt), Vec2Zero(), LBLACK);
+
+        f32 color_t = 0.5f * (f32sin(gstate->timer * 3.0f) + 1.0f);
+        Vec4 color = Vec4Lerp(LBLACK, LRED, color_t);
+        DrawLTextEx(GetLFontClosest(fontsize), txt, strlen(txt), Vec2Zero(), color);
     }
 
     // push/pop font
