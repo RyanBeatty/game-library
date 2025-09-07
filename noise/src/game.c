@@ -3458,7 +3458,7 @@ typedef struct {
 
     LModel model;
     isize frame_idx;
-    f32 animation_pct;
+    f32 elapsed;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -3923,7 +3923,7 @@ static void SceneVectorTick(GameState* gstate) {
     if (gstate->init) {
         Arena temp = TempArena(gstate->temp);
 
-        IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 0.5f);
+        IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 1.0f);
         WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 1.0f);
         JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.1f);
 
@@ -4143,11 +4143,15 @@ static void SceneVectorTick(GameState* gstate) {
                                                      Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
             }
 
+            graphics.elapsed = f32mod(graphics.elapsed + gstate->dt, graphics.model.animation.duration);
+            graphics.frame_idx = (isize)((graphics.elapsed / graphics.model.animation.duration) *
+                                         ((f32)graphics.model.animation.sprites.len));
+
             graphics.pos = POS;
             graphics.orient = Mat4RotateZ(ROT);
             DrawGraphicsInfo(&graphics);
 
-            graphics.frame_idx = (graphics.frame_idx + 1) % graphics.model.animation.sprites.len;
+            // graphics.frame_idx = (graphics.frame_idx + 1) % graphics.model.animation.sprites.len;
         }
     }
 
