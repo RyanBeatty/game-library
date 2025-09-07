@@ -3099,7 +3099,7 @@ static LFont FONTS[LFONT_COUNT] = {0};
 #define MAX_FONTS 128
 
 typedef struct {
-    LFont* data[10];
+    LFont data[10];
     isize len;
     isize cap;
 } FontStack;
@@ -3152,13 +3152,23 @@ LCORE void FontCacheInit(FontCache* fcache) {
 
     // Push default font as current selected font.
     fcache->fontstack.cap = ArraySizeOf(fcache->fontstack.data);
-    ArrPush(&fcache->fontstack, &FONTS[LFONT_DEFAULT]);
+    ArrPush(&fcache->fontstack, FONTS[LFONT_DEFAULT]);
 }
 
 LCORE LFont GetActiveFont() {
     FontCache* fcache = &FONT_CACHE;
     Assert(fcache->fontstack.len);
-    return *ArrGet(&fcache->fontstack, fcache->fontstack.len - 1);
+    return ArrGet(&fcache->fontstack, fcache->fontstack.len - 1);
+}
+
+LCORE void PushLFont(LFont font) {
+    FontCache* fcache = &FONT_CACHE;
+    ArrPush(&fcache->fontstack, font);
+}
+
+LCORE void PopLFont() {
+    FontCache* fcache = &FONT_CACHE;
+    Assert(fcache->fontstack.len > 1);
 }
 
 LCORE void InitFonts() {
@@ -4353,6 +4363,13 @@ static void SceneBetterFontTick(GameState* gstate) {
         char txt[] = "hello, Carly!";
         f32 fontsize = 32.0f + (f32sin(gstate->timer) * 24.0f);
         DrawLTextEx(GetLFontClosest(fontsize), txt, strlen(txt), Vec2Zero(), LBLACK);
+    }
+
+    // push/pop font
+    {
+        Vec2 pos = Vec2Lit(-300.0f, 300.0f);
+        char txt[] = "Big Font";
+        DrawLTextF(pos, LBLACK, txt, strlen(txt));
     }
 
     EndShaderPass();
