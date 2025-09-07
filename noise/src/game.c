@@ -3946,10 +3946,6 @@ static void SceneVectorTick(GameState* gstate) {
     static bool WALK = false;
     static bool JUMP = false;
     static MoveState MOVESTATE = MS_IDLE;
-    static Animation ANIMATION = {0};
-    static isize ANIMATION_IDX = 0;
-    static f32 ANIMATION_PCT = 0.0f;
-    static bool ANIMATION_CYCLE = true;
     static GraphicsInfo GRAPHICS = {0};
 
     if (gstate->init) {
@@ -3963,8 +3959,6 @@ static void SceneVectorTick(GameState* gstate) {
         IDLE_MODEL = LModelFromAnimation(IDLE_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
         WALK_MODEL = LModelFromAnimation(WALK_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
         JUMP_MODEL = LModelFromAnimation(JUMP_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
-
-        ANIMATION = IDLE_ANIMATION;
 
         GraphicsInfoMemset(&GRAPHICS);
         GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
@@ -4030,8 +4024,6 @@ static void SceneVectorTick(GameState* gstate) {
         }
     }
 
-    f32 pct_delta = 0.0f;
-
     MoveState movestate_next = MOVESTATE;
 
     bool moved = PlatformKeyDown(LKEY_UP) || PlatformKeyDown(LKEY_DOWN) || PlatformKeyDown(LKEY_LEFT) ||
@@ -4041,17 +4033,9 @@ static void SceneVectorTick(GameState* gstate) {
     switch (MOVESTATE) {
         case MS_IDLE: {
             if (moved) {
-                ANIMATION = WALK_ANIMATION;
-                ANIMATION_CYCLE = true;
-                ANIMATION_IDX = 0;
-                ANIMATION_PCT = 0.0f;
                 GraphicsInfoSetLModel(&GRAPHICS, WALK_MODEL);
                 movestate_next = MS_WALK;
             } else if (jumped) {
-                ANIMATION = JUMP_ANIMATION;
-                ANIMATION_CYCLE = false;
-                ANIMATION_IDX = 0;
-                ANIMATION_PCT = 0.0f;
                 GraphicsInfoSetLModel(&GRAPHICS, JUMP_MODEL);
                 movestate_next = MS_JUMP;
             } else {
@@ -4060,10 +4044,6 @@ static void SceneVectorTick(GameState* gstate) {
                 }
 
                 GraphicsInfoTickAnimation(&GRAPHICS, gstate->dt);
-
-                if (!moved) {
-                    pct_delta = gstate->dt / (3.0f * (1 / 60.0f));
-                }
             }
             break;
         }
@@ -4085,40 +4065,25 @@ static void SceneVectorTick(GameState* gstate) {
                 v = Vec3Normalize(v);
                 Vec3 dx = Vec3Scale(v, 150.0f * gstate->dt);
 
-                pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
                 GraphicsInfoTickAnimation(&GRAPHICS, Vec3Len(dx));
 
                 POS = Vec3Add(POS, dx);
             } else if (jumped) {
-                ANIMATION = JUMP_ANIMATION;
-                ANIMATION_CYCLE = false;
-                ANIMATION_IDX = 0;
-                ANIMATION_PCT = 0.0f;
                 GraphicsInfoSetLModel(&GRAPHICS, JUMP_MODEL);
                 movestate_next = MS_JUMP;
             } else {
-                ANIMATION = IDLE_ANIMATION;
-                ANIMATION_CYCLE = true;
-                ANIMATION_IDX = 0;
-                ANIMATION_PCT = 0.0f;
                 GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
                 movestate_next = MS_IDLE;
             }
             break;
         }
         case MS_JUMP: {
-            bool animation_done = (ANIMATION_IDX + 1 >= ANIMATION.sprites.cap) && (ANIMATION_PCT >= 1.0f);
             bool graphics_done = GRAPHICS.nloops >= 1;
             if (graphics_done) {
                 // Animation finished.
-                ANIMATION = IDLE_ANIMATION;
-                ANIMATION_CYCLE = true;
-                ANIMATION_IDX = 0;
-                ANIMATION_PCT = 0.0f;
                 GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
                 movestate_next = MS_IDLE;
             } else {
-                pct_delta = gstate->dt / (2.0f * (1 / 60.0f));
                 GraphicsInfoTickAnimation(&GRAPHICS, gstate->dt);
             }
 
@@ -4289,27 +4254,9 @@ static void SceneVectorTick(GameState* gstate) {
     }
 
     if (true) {
-        if (false) {
-            ANIMATION_PCT += pct_delta;
-            if (ANIMATION_PCT >= 1.0f) {
-                if (ANIMATION_CYCLE || ANIMATION_IDX + 1 < ANIMATION.sprites.cap) {
-                    ANIMATION_PCT = 0.0f;
-                    ANIMATION_IDX = (ANIMATION_IDX + 1) % ANIMATION.sprites.cap;
-                } else {
-                    // We aren't cycling the animation and are at the end of the last frame's completion pct, at this
-                    // point clamp the progress pct to 1 to avoid overflow if left alone forever.
-                    ANIMATION_PCT = 1.0f;
-                }
-            }
-
-            DrawSprite(ArrGet(&ANIMATION.sprites, ANIMATION_IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-        }
-
-        if (true) {
-            GRAPHICS.pos = POS;
-            GRAPHICS.orient = Mat4RotateZ(ROT);
-            DrawGraphicsInfo(&GRAPHICS);
-        }
+        GRAPHICS.pos = POS;
+        GRAPHICS.orient = Mat4RotateZ(ROT);
+        DrawGraphicsInfo(&GRAPHICS);
     }
 
     EndShaderPass();
