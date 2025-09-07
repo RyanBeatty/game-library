@@ -104,6 +104,7 @@ Arena NewArena(byte* buffer, isize cap);
 #define ArrGet(a, idx) ((a)->data[(idx)])
 // Get reference
 #define ArrGetR(a, idx) (&ArrGet(a, idx))
+#define ArrReserve(a) (PushS(s))
 
 typedef struct {
     byte* data;
