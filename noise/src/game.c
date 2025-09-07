@@ -3161,6 +3161,12 @@ LCORE LFont GetActiveFont() {
     return ArrGet(&fcache->fontstack, fcache->fontstack.len - 1);
 }
 
+LCORE f32 GetActiveFontsize() {
+    FontCache* fcache = &FONT_CACHE;
+    Assert(fcache->fontstack.len);
+    return ArrGet(&fcache->fontstack, fcache->fontstack.len - 1).fontsize;
+}
+
 LCORE void PushLFont(LFont font) {
     FontCache* fcache = &FONT_CACHE;
     ArrPush(&fcache->fontstack, font);
@@ -3169,6 +3175,7 @@ LCORE void PushLFont(LFont font) {
 LCORE void PopLFont() {
     FontCache* fcache = &FONT_CACHE;
     Assert(fcache->fontstack.len > 1);
+    ArrPop(&fcache->fontstack);
 }
 
 LCORE void InitFonts() {
@@ -4368,8 +4375,19 @@ static void SceneBetterFontTick(GameState* gstate) {
     // push/pop font
     {
         Vec2 pos = Vec2Lit(-300.0f, 300.0f);
-        char txt[] = "Big Font";
-        DrawLTextF(pos, LBLACK, txt, strlen(txt));
+        DrawLTextF(pos, LBLACK, "Font Size: %f", GetActiveFontsize());
+        pos = Vec2Add(pos, Vec2Lit(0.0f, -100.0f));
+
+        {
+            f32 fontsize = 24.0f;
+            PushLFont(GetLFontClosest(fontsize));
+            DrawLTextF(pos, LBLACK, "Font Size: %f", GetActiveFontsize());
+            PopLFont();
+
+            pos = Vec2Add(pos, Vec2Lit(0.0f, -100.0f));
+        }
+
+        DrawLTextF(pos, LBLACK, "Font Size: %f", GetActiveFontsize());
     }
 
     EndShaderPass();
