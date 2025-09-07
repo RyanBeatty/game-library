@@ -3156,17 +3156,19 @@ static LFont GetLFontByLabel(FontLabel label) {
 // Will get the closest font size in cache that is <= :fontsize:
 static LFont GetLFontClosest(f32 desired_fontsize) {
     FontCache* fcache = &FONT_CACHE;
-    isize* choice = NULL;
+    isize choice = 0;
+    bool found = false;
     for (isize i = 0; i < ArraySizeOf(fcache->fonts); ++i) {
         if (fcache->fontsizes[i] > desired_fontsize) {
             break;
         }
 
-        *choice = i;
+        choice = i;
+        found = true;
     }
 
-    Assert(choice != NULL);
-    return fcache->fonts[*choice];
+    Assert(found);
+    return fcache->fonts[choice];
 }
 
 LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 color) {
@@ -4331,7 +4333,7 @@ static void SceneBetterFontTick(GameState* gstate) {
     pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
     char txt[] = "hello world";
-    DrawLTextEx(GetLFontByLabel(LFONT_DEFAULT), txt, strlen(txt), Vec2Zero(), LBLACK);
+    DrawLTextEx(GetLFontClosest(16.3), txt, strlen(txt), Vec2Zero(), LBLACK);
 
     EndShaderPass();
 
