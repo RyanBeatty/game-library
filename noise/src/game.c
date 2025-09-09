@@ -3552,6 +3552,7 @@ typedef struct {
     f32 elapsed;
     i32 nloops;
 
+    // If true, we will render the animation flipped.
     bool facing_left;
 } GraphicsInfo;
 
