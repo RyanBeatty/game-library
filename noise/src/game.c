@@ -754,6 +754,8 @@ LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height, TextureFilte
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+    // Clamp to edge can be useful to avoid texture bleeding at edges when sampling
+    // from a texture atlas.
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     return tx;
@@ -3502,8 +3504,6 @@ LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec
     LModel model = {
         .pos = pos,
         .orient = orient,
-        // By default init the model scale to match the pixel dimensions of the bb of the first frame
-        // of the animation.
         .scale = scale,
         .tint = tint,
         .mesh = GetMesh(M_QUAD),
