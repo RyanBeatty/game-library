@@ -3551,6 +3551,8 @@ typedef struct {
     isize frame_idx;
     f32 elapsed;
     i32 nloops;
+
+    bool facing_left;
 } GraphicsInfo;
 
 static void GraphicsInfoMemset(GraphicsInfo* graphics) {
@@ -3558,6 +3560,7 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->orient = Mat4Identity();
     graphics->pos = Vec3Zero();
     graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+    graphics->facing_left = false;
 
     graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
@@ -3589,7 +3592,14 @@ LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
 }
 
 LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
-    DrawLModelEx(graphics->model, graphics->frame_idx, graphics->pos, graphics->orient, graphics->scale);
+    DrawCmd* cmd = DrawLModelEx(graphics->model, graphics->frame_idx, graphics->pos, graphics->orient, graphics->scale);
+
+    if (graphics->facing_left) {
+        breakpoint();
+        cmd->meshcmd.uvoffset.x += cmd->meshcmd.uvscale.x;
+        cmd->meshcmd.uvscale.x *= -1.0f;
+        breakpoint();
+    }
 }
 
 // LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
@@ -4076,9 +4086,11 @@ static void SceneVectorTick(GameState* gstate) {
                 }
                 if (PlatformKeyDown(LKEY_LEFT)) {
                     v.x -= 1.0f;
+                    GRAPHICS.facing_left = true;
                 }
                 if (PlatformKeyDown(LKEY_RIGHT)) {
                     v.x += 1.0f;
+                    GRAPHICS.facing_left = false;
                 }
                 v = Vec3Normalize(v);
                 Vec3 dx = Vec3Scale(v, 150.0f * gstate->dt);
@@ -4389,7 +4401,7 @@ void GameInit() {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_BETTER_FONT);
+    GameStateLoadScene(gstate, SCENE_VECTOR);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
