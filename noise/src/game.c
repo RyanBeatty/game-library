@@ -3649,15 +3649,8 @@ typedef struct {
     Vec3 scale;
     Mat4 orient;
 
+    // Velocity
     Vec3 v;
-    Vec3 forces;
-    f32 friction;
-    f32 restitution;
-
-    // TODO: Deprecate
-    LMesh mesh;
-
-    Vec4 color;
 
     Polyhedron shape;
 
@@ -3721,7 +3714,6 @@ LCORE Entity* AllocateEntity() {
     entity->flags = EFLAG_ACTIVE;
     entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
-    entity->color = Vec4Lit(0.0f, 0.0f, 0.0f, 1.0f);
     PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
