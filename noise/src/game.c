@@ -3594,11 +3594,11 @@ LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
 LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
     DrawCmd* cmd = DrawLModelEx(graphics->model, graphics->frame_idx, graphics->pos, graphics->orient, graphics->scale);
 
+    // If sprite is facing left, then we shift the bottom left corner to the bottom right corner
+    // and set a negative u dimension. This will cause us to interpolate from bottom right to top left.
     if (graphics->facing_left) {
-        breakpoint();
         cmd->meshcmd.uvoffset.x += cmd->meshcmd.uvscale.x;
         cmd->meshcmd.uvscale.x *= -1.0f;
-        breakpoint();
     }
 }
 
