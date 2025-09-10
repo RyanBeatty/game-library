@@ -3705,22 +3705,20 @@ static Entity* EntityFromId(EntityId id) {
     return entity;
 }
 
-static EntityId NextEntityId() {
+static Entity* NextFreeEntity() {
     EntityManager* em = GetEntityManager();
     // Always have a null entity at position 0
     for (uint32_t i = NULLID + 1; i < ArrLen(&em->entities); ++i) {
         Entity* entity = ArrGetPtr(&em->entities, i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
-            return i;
+            return entity;
         }
     }
-    Assert(false);
-    return 0;
+    return NULL;
 }
 
 LCORE Entity* AllocateEntity() {
-    EntityId id = NextEntityId();
-    Entity* entity = EntityFromId(id);
+    Entity* entity = NextFreeEntity();
     Assert(entity != NULL);
     memset(entity, 0, sizeof(*entity));
     entity->flags = EFLAG_ACTIVE;
