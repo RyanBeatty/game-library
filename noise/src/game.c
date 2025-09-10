@@ -3734,7 +3734,8 @@ static Entity* NextFreeEntity() {
 LCORE Entity* AllocateEntity() {
     Entity* entity = NextFreeEntity();
     Assert(entity != NULL);
-    memset(entity, 0, sizeof(*entity));
+    Entity zero = {.id = entity->id};
+    *entity = zero;
     entity->flags = EFLAG_ACTIVE;
     entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
@@ -3992,11 +3993,13 @@ static void SceneVectorTick(GameState* gstate) {
     static bool JUMP = false;
     static MoveState MOVESTATE = MS_IDLE;
     static GraphicsInfo GRAPHICS = {0};
+    static EntityId ENTITY_ID = NULLID;
 
     if (gstate->init) {
         {
             Entity* entity = AllocateEntity();
             Assert(entity != NULL);
+            ENTITY_ID = entity->id;
         }
 
         Arena temp = TempArena(gstate->temp);
@@ -4072,6 +4075,11 @@ static void SceneVectorTick(GameState* gstate) {
             // SPRITE_MM = sprites[1];
             SPRITE_WIZARD2 = sprites[2];
         }
+    }
+
+    {
+        Entity* entity = EntityFromId(ENTITY_ID);
+        Assert(entity);
     }
 
     MoveState movestate_next = MOVESTATE;
