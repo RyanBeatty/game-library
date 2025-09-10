@@ -3707,12 +3707,6 @@ static void EntitySystemInit() {
     }
 }
 
-static Entity* GetEntity(EntityId id) {
-    EntityManager* em = GetEntityManager();
-    Entity* entity = ArrGetPtr(&em->entities, id.idx);
-    return entity;
-}
-
 static Entity* EntityFromId(EntityId id) {
     EntityManager* em = GetEntityManager();
     Entity* entity = ArrGetPtr(&em->entities, id.idx);
