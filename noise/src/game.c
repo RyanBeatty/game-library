@@ -3692,6 +3692,11 @@ static void EntitySystemInit() {
     em->entities.len = em->entities.cap;
 
     em->inactive_to_be.cap = ArraySizeOf(em->inactive_to_be.data);
+
+    for (isize i = 0; i < ArrLen(&em->entities); ++i) {
+        Entity* entity = ArrGetPtr(&em->entities, i);
+        entity->id = i;
+    }
 }
 
 static Entity* GetEntity(EntityId id) {
@@ -3718,7 +3723,6 @@ LCORE Entity* AllocateEntity() {
     Entity* entity = GetEntity(id);
     Assert(entity != NULL);
     memset(entity, 0, sizeof(*entity));
-    entity->id = id;
     entity->flags = EFLAG_ACTIVE;
     entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
