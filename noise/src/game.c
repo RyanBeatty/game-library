@@ -3754,7 +3754,9 @@ LCORE void DeactivateEntities() {
     EntityManager* em = GetEntityManager();
     for (u32 i = 0; i < ArrLen(&em->inactive_to_be); ++i) {
         EntityId id = ArrGet(&em->inactive_to_be, i);
-        Entity* e = GetEntity(id);
+        Entity* e = EntityFromId(id);
+        // Tbh I wonder if it should be okay to do this and we just ignore it.
+        Assert(e != NULL);
         FlagOff(e->flags, EFLAG_ACTIVE);
     }
     ArrClear(&em->inactive_to_be);
