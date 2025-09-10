@@ -3633,8 +3633,11 @@ typedef enum EntityFlag {
     EFLAG_SURVIVE_HIT = 1 << 11,
 } EntityFlag;
 
-typedef u32 EntityId;
-static const EntityId NULLID = 0;
+typedef struct {
+    isize idx;
+    u64 generation;
+} EntityId;
+static const EntityId NULLID = {0};
 
 typedef struct {
     /////////////////////////////////////////////////////////////////
@@ -3695,20 +3698,21 @@ static void EntitySystemInit() {
 
     for (isize i = 0; i < ArrLen(&em->entities); ++i) {
         Entity* entity = ArrGetPtr(&em->entities, i);
-        entity->id = i;
+        entity->id.idx = i;
+        entity->id.generation = 0;
     }
 }
 
 static Entity* GetEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
-    Entity* entity = ArrGetPtr(&em->entities, id);
+    Entity* entity = ArrGetPtr(&em->entities, id.idx);
     return entity;
 }
 
 static Entity* NextFreeEntity() {
     EntityManager* em = GetEntityManager();
     // Always have a null entity at position 0
-    for (uint32_t i = NULLID + 1; i < ArrLen(&em->entities); ++i) {
+    for (isize i = NULLID.idx + 1; i < ArrLen(&em->entities); ++i) {
         Entity* entity = ArrGetPtr(&em->entities, i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             return entity;
