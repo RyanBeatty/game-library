@@ -3699,7 +3699,7 @@ static void EntitySystemInit() {
     }
 }
 
-static Entity* GetEntity(EntityId id) {
+static Entity* EntityFromId(EntityId id) {
     EntityManager* em = GetEntityManager();
     Entity* entity = ArrGetPtr(&em->entities, id);
     return entity;
@@ -3720,7 +3720,7 @@ static EntityId NextEntityId() {
 
 LCORE Entity* AllocateEntity() {
     EntityId id = NextEntityId();
-    Entity* entity = GetEntity(id);
+    Entity* entity = EntityFromId(id);
     Assert(entity != NULL);
     memset(entity, 0, sizeof(*entity));
     entity->flags = EFLAG_ACTIVE;
@@ -3741,7 +3741,7 @@ LCORE void DeactivateEntities() {
     EntityManager* em = GetEntityManager();
     for (u32 i = 0; i < ArrLen(&em->inactive_to_be); ++i) {
         EntityId id = ArrGet(&em->inactive_to_be, i);
-        Entity* e = GetEntity(id);
+        Entity* e = EntityFromId(id);
         FlagOff(e->flags, EFLAG_ACTIVE);
     }
     ArrClear(&em->inactive_to_be);
