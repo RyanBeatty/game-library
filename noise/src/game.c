@@ -3739,6 +3739,9 @@ LCORE Entity* AllocateEntity() {
     return entity;
 }
 
+// Mark entity as being deactivated at the next cleanup. We do it this way so that we have
+// precise control over when entities go out of scope. Mentally its easy to program against
+// All entities that are active during a frame stay active throughout the frame until the end.
 LCORE void SoftDeactivateEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
     ArrPush(&em->inactive_to_be, id);
