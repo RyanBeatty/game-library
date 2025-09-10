@@ -4088,6 +4088,11 @@ static void SceneVectorTick(GameState* gstate) {
     {
         Entity* entity = EntityFromId(ENTITY_ID);
         Assert(entity);
+
+        EntityId bad_id = ENTITY_ID;
+        ++bad_id.generation;
+        entity = EntityFromId(bad_id);
+        Assert(entity == NULL);
     }
 
     {
