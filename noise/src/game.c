@@ -3699,7 +3699,7 @@ static void EntitySystemInit() {
     }
 }
 
-static Entity* EntityFromId(EntityId id) {
+static Entity* GetEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
     Entity* entity = ArrGetPtr(&em->entities, id);
     return entity;
@@ -3739,7 +3739,7 @@ LCORE void DeactivateEntities() {
     EntityManager* em = GetEntityManager();
     for (u32 i = 0; i < ArrLen(&em->inactive_to_be); ++i) {
         EntityId id = ArrGet(&em->inactive_to_be, i);
-        Entity* e = EntityFromId(id);
+        Entity* e = GetEntity(id);
         FlagOff(e->flags, EFLAG_ACTIVE);
     }
     ArrClear(&em->inactive_to_be);
