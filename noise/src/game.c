@@ -3666,8 +3666,11 @@ typedef struct {
 #define ENTITY_INACTIVE_TO_BE_CAP 20
 
 typedef struct {
-    Entity entities[ENTITY_CAP];
-    u32 cap;
+    struct {
+        Entity data[ENTITY_CAP];
+        isize len;
+        isize cap;
+    } entities;
 
     EntityId inactive_to_be[ENTITY_INACTIVE_TO_BE_CAP];
     u32 inactive_cap;
@@ -3681,22 +3684,24 @@ static EntityManager EntityM = {0};
 #define GetNumEntities() (EntityM.cap)
 
 static void EntitySystemInit() {
-    memset(&EntityM, 0, sizeof(EntityM));
-    EntityM.cap = ENTITY_CAP;
-    EntityM.inactive_cap = ENTITY_INACTIVE_TO_BE_CAP;
+    EntityManager* em = &EntityM;
+    memset(em, 0, sizeof(*em));
+    em->entities.cap = ArraySizeOf(em->entities.data);
+    em->entities.len = em->entities.cap;
+    em->inactive_cap = ENTITY_INACTIVE_TO_BE_CAP;
 }
 
 static Entity* GetEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
-    Entity* entity = &em->entities[id];
+    Entity* entity = ArrGetPtr(&em->entities, id);
     return entity;
 }
 
 static EntityId NextEntityId() {
     EntityManager* em = GetEntityManager();
     // Always have a null entity at position 0
-    for (uint32_t i = NULLID + 1; i < ArraySizeOf(em->entities); ++i) {
-        Entity* entity = &em->entities[i];
+    for (uint32_t i = NULLID + 1; i < ArrLen(&em->entities); ++i) {
+        Entity* entity = ArrGetPtr(&em->entities, i);
         if (!TestFlag(entity->flags, EFLAG_ACTIVE)) {
             return i;
         }
@@ -3729,7 +3734,7 @@ LCORE void SoftDeactivateEntity(EntityId id) {
 LCORE void DeactivateEntities() {
     EntityManager* em = GetEntityManager();
     for (u32 i = 0; i < em->inactive_len; ++i) {
-        Entity* e = &em->entities[em->inactive_to_be[i]];
+        Entity* e = ArrGetPtr(&em->entities, em->inactive_to_be[i]);
         FlagOff(e->flags, EFLAG_ACTIVE);
     }
     em->inactive_len = 0;
@@ -3970,6 +3975,11 @@ static void SceneVectorTick(GameState* gstate) {
     static GraphicsInfo GRAPHICS = {0};
 
     if (gstate->init) {
+        {
+            Entity* entity = AllocateEntity();
+            Assert(entity != NULL);
+        }
+
         Arena temp = TempArena(gstate->temp);
 
         IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 1.0f);
