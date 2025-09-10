@@ -3994,12 +3994,21 @@ static void SceneVectorTick(GameState* gstate) {
     static MoveState MOVESTATE = MS_IDLE;
     static GraphicsInfo GRAPHICS = {0};
     static EntityId ENTITY_ID = NULLID;
+    static EntityId ENTITY_ID2 = NULLID;
 
     if (gstate->init) {
         {
             Entity* entity = AllocateEntity();
             Assert(entity != NULL);
             ENTITY_ID = entity->id;
+        }
+
+        {
+            Entity* entity = AllocateEntity();
+            Assert(entity != NULL);
+            ENTITY_ID2 = entity->id;
+            SoftDeactivateEntity(ENTITY_ID2);
+            DeactivateEntities();
         }
 
         Arena temp = TempArena(gstate->temp);
@@ -4080,6 +4089,11 @@ static void SceneVectorTick(GameState* gstate) {
     {
         Entity* entity = EntityFromId(ENTITY_ID);
         Assert(entity);
+    }
+
+    {
+        Entity* entity = EntityFromId(ENTITY_ID2);
+        Assert(entity == NULL);
     }
 
     MoveState movestate_next = MOVESTATE;
