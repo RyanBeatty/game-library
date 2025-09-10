@@ -3672,9 +3672,11 @@ typedef struct {
         isize cap;
     } entities;
 
-    EntityId inactive_to_be[ENTITY_INACTIVE_TO_BE_CAP];
-    u32 inactive_cap;
-    u32 inactive_len;
+    struct {
+        EntityId data[ENTITY_INACTIVE_TO_BE_CAP];
+        isize len;
+        isize cap;
+    } inactive_to_be;
 } EntityManager;
 
 static EntityManager EntityM = {0};
@@ -3688,7 +3690,8 @@ static void EntitySystemInit() {
     memset(em, 0, sizeof(*em));
     em->entities.cap = ArraySizeOf(em->entities.data);
     em->entities.len = em->entities.cap;
-    em->inactive_cap = ENTITY_INACTIVE_TO_BE_CAP;
+
+    em->inactive_to_be.cap = ArraySizeOf(em->inactive_to_be.data);
 }
 
 static Entity* GetEntity(EntityId id) {
@@ -3727,17 +3730,17 @@ LCORE Entity* AllocateEntity() {
 
 LCORE void SoftDeactivateEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
-    Assert(em->inactive_len < em->inactive_cap);
-    em->inactive_to_be[em->inactive_len++] = id;
+    ArrPush(&em->inactive_to_be, id);
 }
 
 LCORE void DeactivateEntities() {
     EntityManager* em = GetEntityManager();
-    for (u32 i = 0; i < em->inactive_len; ++i) {
-        Entity* e = ArrGetPtr(&em->entities, em->inactive_to_be[i]);
+    for (u32 i = 0; i < ArrLen(&em->inactive_to_be); ++i) {
+        EntityId id = ArrGet(&em->inactive_to_be, i);
+        Entity* e = GetEntity(id);
         FlagOff(e->flags, EFLAG_ACTIVE);
     }
-    em->inactive_len = 0;
+    ArrClear(&em->inactive_to_be);
 }
 
 ////////////////////////////////////////////////////

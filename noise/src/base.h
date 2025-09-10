@@ -109,6 +109,7 @@ Arena NewArena(byte* buffer, isize cap);
 #define ArrPop(a) (assert((a)->len != 0), (a)->data[(a)->len--])
 #define ArrCap(a) ((a)->cap)
 #define ArrLen(a) ((a)->len)
+#define ArrClear(a) ((a)->len = 0)
 
 typedef struct {
     byte* data;
