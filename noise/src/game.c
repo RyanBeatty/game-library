@@ -3639,6 +3639,8 @@ typedef struct {
 } EntityId;
 static const EntityId NULLID = {0};
 
+#define EntityIdEq(a, b) (((a).idx == (b).idx) && ((a).generation == (b).generation))
+
 typedef struct {
     /////////////////////////////////////////////////////////////////
     // Core field.
@@ -3699,7 +3701,9 @@ static void EntitySystemInit() {
     for (isize i = 0; i < ArrLen(&em->entities); ++i) {
         Entity* entity = ArrGetPtr(&em->entities, i);
         entity->id.idx = i;
-        entity->id.generation = 0;
+        // Set generation to be 1 so that we don't accidentally reference some entity
+        // with default value of 0.
+        entity->id.generation = 1;
     }
 }
 
@@ -3707,6 +3711,12 @@ static Entity* GetEntity(EntityId id) {
     EntityManager* em = GetEntityManager();
     Entity* entity = ArrGetPtr(&em->entities, id.idx);
     return entity;
+}
+
+static Entity* EntityFromId(EntityId id) {
+    EntityManager* em = GetEntityManager();
+    Entity* entity = ArrGetPtr(&em->entities, id.idx);
+    return TestFlag(entity->flags, EFLAG_ACTIVE) && EntityIdEq(entity->id, id) ? entity : NULL;
 }
 
 static Entity* NextFreeEntity() {
