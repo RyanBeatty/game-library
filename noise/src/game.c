@@ -3647,6 +3647,7 @@ typedef struct {
     EntityId id;
     // TODO: Convert to u64
     EntityFlag flags;
+    bool inactive_to_be;
 
     // Decomposition of model matrix.
     Vec3 pos;
@@ -3676,12 +3677,6 @@ typedef struct {
         isize len;
         isize cap;
     } entities;
-
-    struct {
-        EntityId data[ENTITY_INACTIVE_TO_BE_CAP];
-        isize len;
-        isize cap;
-    } inactive_to_be;
 } EntityManager;
 
 static EntityManager EntityM = {0};
@@ -3695,8 +3690,6 @@ static void EntitySystemInit() {
     memset(em, 0, sizeof(*em));
     em->entities.cap = ArraySizeOf(em->entities.data);
     em->entities.len = em->entities.cap;
-
-    em->inactive_to_be.cap = ArraySizeOf(em->inactive_to_be.data);
 
     for (isize i = 0; i < ArrLen(&em->entities); ++i) {
         Entity* entity = ArrGetPtr(&em->entities, i);
@@ -3743,20 +3736,21 @@ LCORE Entity* AllocateEntity() {
 // precise control over when entities go out of scope. Mentally its easy to program against
 // All entities that are active during a frame stay active throughout the frame until the end.
 LCORE void SoftDeactivateEntity(EntityId id) {
-    EntityManager* em = GetEntityManager();
-    ArrPush(&em->inactive_to_be, id);
+    Entity* entity = EntityFromId(id);
+    if (entity) {
+        entity->inactive_to_be = true;
+    }
 }
 
 LCORE void DeactivateEntities() {
     EntityManager* em = GetEntityManager();
-    for (u32 i = 0; i < ArrLen(&em->inactive_to_be); ++i) {
-        EntityId id = ArrGet(&em->inactive_to_be, i);
-        Entity* e = EntityFromId(id);
-        // Tbh I wonder if it should be okay to do this and we just ignore it.
-        Assert(e != NULL);
-        FlagOff(e->flags, EFLAG_ACTIVE);
+    // Always have a null entity at position 0
+    for (isize i = NULLID.idx + 1; i < ArrLen(&em->entities); ++i) {
+        Entity* entity = ArrGetPtr(&em->entities, i);
+        if (TestFlag(entity->flags, EFLAG_ACTIVE) && entity->inactive_to_be) {
+            FlagOff(entity->flags, EFLAG_ACTIVE);
+        }
     }
-    ArrClear(&em->inactive_to_be);
 }
 
 ////////////////////////////////////////////////////
