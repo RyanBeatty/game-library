@@ -4500,6 +4500,8 @@ void GameTick(f32 dt) {
 
         ACCUMULATED_TIME += dt;
 
+        // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
+        // https://gameprogrammingpatterns.com/game-loop.html#play-catch-up
         while (ACCUMULATED_TIME >= FIXED_DT) {
             // Tick scene.
             gstate->update = true;
