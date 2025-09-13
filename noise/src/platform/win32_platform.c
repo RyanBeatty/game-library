@@ -658,6 +658,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LARGE_INTEGER ticks_last = {0};
     QueryPerformanceCounter(&ticks_last);
 
+    DEVMODE dm = {};
+    dm.dmSize = sizeof(dm);
+    if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm)) {
+        PlatformLog(LLOG_INFO, "Refresh rate: %d Hz\n", dm.dmDisplayFrequency);
+    }
+
     LARGE_INTEGER ticks = {0};
 
     Win32Input zero_input = {0};
@@ -713,16 +719,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         f64 dt = (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
         ticks_last = ticks;
 
-        // This is a filthy hack, but we wait until dt is roughly 1/60th of a second to have a fixed
-        // timestep. I should really fix this by decoupling the update from render step and just update
-        // at fixed time intervals instead of having them be lock step like they are currently.
-        // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
+        // // This is a filthy hack, but we wait until dt is roughly 1/60th of a second to have a fixed
+        // // timestep. I should really fix this by decoupling the update from render step and just update
+        // // at fixed time intervals instead of having them be lock step like they are currently.
+        // // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
+        // //
         // https://code.tutsplus.com/how-to-create-a-custom-2d-physics-engine-the-core-engine--gamedev-7493t#timestepping
-        while (dt < 1 / 60.0f) {
-            QueryPerformanceCounter(&ticks);
-            dt += (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
-            ticks_last = ticks;
-        }
+        // while (dt < 1 / 60.0f) {
+        //     QueryPerformanceCounter(&ticks);
+        //     dt += (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
+        //     ticks_last = ticks;
+        // }
 
         // printf("dt: %f\n", dt);
 

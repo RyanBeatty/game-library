@@ -55,7 +55,7 @@ $(BUILD_DIR)/%.c.o: %.c
 
 raylib: PLATFORM_FLAG := RAYLIB
 raylib: LDFLAGS := -lraylib -L/raylib/raylib/src -I/raylib/raylib/src  -lwinmm $(LDFLAGS)
-raylib: BTFLAGS := -DPLATFORM_DESKTOP=1 -DNK_INCLUDE_DEFAULT_ALLOCATOR=1
+raylib: BTFLAGS := -DPLATFORM_DESKTOP=1 -DNK_INCLUDE_DEFAULT_ALLOCATOR=1 $(BTFLAGS)
 raylib: $(BUILD_DIR)/$(TARGET_EXEC)
 
 
