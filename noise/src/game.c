@@ -4503,7 +4503,7 @@ void GameTick(f32 dt) {
         // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
         // https://gameprogrammingpatterns.com/game-loop.html#play-catch-up
         while (ACCUMULATED_TIME >= FIXED_DT) {
-            // Tick scene.
+            // Update simulation with fixed delta time.
             gstate->update = true;
             gstate->dt = FIXED_DT;
             gstate->scenefuncs[gstate->sceneid](gstate);
@@ -4511,6 +4511,8 @@ void GameTick(f32 dt) {
             ACCUMULATED_TIME -= FIXED_DT;
         }
 
+        // Render
+        // Potentially we might want to interpolate here, but seems complicated.
         gstate->dt = 0.0f;
         gstate->update = false;
         gstate->render = true;
