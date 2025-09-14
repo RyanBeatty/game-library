@@ -3925,6 +3925,14 @@ static void ScenePhysicsTick(GameState* gstate) {
                 90.0f,
                 90.0f,
             };
+            Vec2 dims[] = {
+                Vec2Lit(box_width, box_height),
+                Vec2Lit(box_width, box_height),
+                // Remember we are using an AABB, so the orient of the entity will not propogate to the underlying
+                // AABB2D shape.
+                Vec2Lit(box_height, box_width),
+                Vec2Lit(box_height, box_width),
+            };
             for (i32 i = 0; i < ArraySizeOf(pos); ++i) {
                 Entity* e = AllocateEntity();
                 e->pos = Vec3Scale(pos[i], MPP);
@@ -3932,7 +3940,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                 GraphicsInfoSetLModel(
                     &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
                                                  Vec3Lit(Px2Meter(box_width), Px2Meter(box_height), 1.0f), LRED));
-                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(box_width), Px2Meter(box_height)));
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Scale(dims[i], MPP));
             }
         }
     }
@@ -3948,7 +3956,7 @@ static void ScenePhysicsTick(GameState* gstate) {
         }
 
         // Collision.
-        if (false) {
+        if (true) {
             CollisionInfo data[32] = {0};
             CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
 
@@ -3968,7 +3976,9 @@ static void ScenePhysicsTick(GameState* gstate) {
                     CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
                     bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
                     if (collides) {
-                        PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+                        if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+                            PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+                        }
                         ArrPush(&collisions, info);
                     }
                 }
