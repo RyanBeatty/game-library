@@ -3905,8 +3905,11 @@ static void ScenePhysicsTick(GameState* gstate) {
             };
             for (i32 i = 0; i < ArraySizeOf(pos); ++i) {
                 Entity* e = AllocateEntity();
-                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), pos[i],
-                                                                   Mat4RotateZ(Deg2Rad(rot[i])), scale, LRED));
+                e->pos = pos[i];
+                e->orient = Mat4RotateZ(Deg2Rad(rot[i]));
+                e->scale = scale;
+                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                                   Mat4Identity(), Vec3LitAll(1.0f), LRED));
             }
         }
     }
@@ -3928,6 +3931,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 e->graphics.pos = e->pos;
                 e->graphics.orient = e->orient;
+                e->graphics.scale = e->scale;
                 GraphicsInfoTickAnimation(&e->graphics, gstate->dt);
 
                 DrawGraphicsInfo(&e->graphics);
