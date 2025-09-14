@@ -3876,9 +3876,11 @@ static void ScenePhysicsTick(GameState* gstate) {
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Zero();
-            e->scale = Vec3Lit(100, 100, 1.0f);
+            f32 radius = 30.0f;
+            e->scale = Vec3Lit(radius, radius, 1.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3LitAll(1.0f), LBLUE));
+            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
         }
 
         {
