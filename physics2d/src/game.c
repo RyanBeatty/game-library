@@ -3875,8 +3875,10 @@ static void ScenePhysicsTick(GameState* gstate) {
     if (gstate->init) {
         {
             Entity* e = AllocateEntity();
+            e->pos = Vec3Zero();
+            e->scale = Vec3Lit(100, 100, 1.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(100, 100, 1.0f), LBLUE));
+                                                               Mat4Identity(), Vec3LitAll(1.0f), LBLUE));
         }
 
         {
