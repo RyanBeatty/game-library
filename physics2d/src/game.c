@@ -2740,6 +2740,8 @@ typedef struct {
     };
 } Polyhedron;
 
+#define PolyhedronIsNull(p) ((p)->type == PH_NONE)
+
 LCORE void PolyhedronInit(Polyhedron* p) {
     memset(p, 0, sizeof(Polyhedron));
     p->type = PH_NONE;
@@ -3715,6 +3717,12 @@ typedef struct {
     Vec3 normal;
 } CollisionInfo;
 
+typedef struct {
+    CollisionInfo* data;
+    isize len;
+    isize cap;
+} CollisionArr;
+
 ////////////////////////////////////////////////////
 
 typedef struct {
@@ -3920,7 +3928,6 @@ static void ScenePhysicsTick(GameState* gstate) {
             for (i32 i = 0; i < ArraySizeOf(pos); ++i) {
                 Entity* e = AllocateEntity();
                 e->pos = Vec3Scale(pos[i], MPP);
-                breakpoint();
                 e->orient = Mat4RotateZ(Deg2Rad(rot[i]));
                 GraphicsInfoSetLModel(
                     &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
@@ -3937,6 +3944,34 @@ static void ScenePhysicsTick(GameState* gstate) {
                 Vec3 a = Vec3Lit(0.0f, -9.8, 0.0f);
                 e->v = Vec3Add(e->v, Vec3Scale(a, dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+            }
+        }
+
+        // Collision.
+        if (false) {
+            CollisionInfo data[32] = {0};
+            CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
+
+            for (Entity* ea = NULL; IncrementEntity(&ea);) {
+                if (PolyhedronIsNull(&ea->shape)) {
+                    continue;
+                }
+                Polyhedron pa = PolyhedronTransform(ea->shape, ea->scale, ea->orient, ea->pos);
+
+                for (Entity* eb = ea; IncrementEntity(&eb);) {
+                    if (ea == eb || PolyhedronIsNull(&eb->shape)) {
+                        continue;
+                    }
+
+                    Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
+
+                    CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
+                    bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
+                    if (collides) {
+                        PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+                        ArrPush(&collisions, info);
+                    }
+                }
             }
         }
     }
@@ -4141,6 +4176,7 @@ void GameTick(f32 dt) {
         gstate->update = false;
         gstate->render = true;
         gstate->scenefuncs[gstate->sceneid](gstate);
+        gstate->init = false;
     }
 
     ++gstate->nframe;
