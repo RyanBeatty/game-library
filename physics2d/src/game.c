@@ -3875,8 +3875,9 @@ static void SceneDefaultTick(GameState* gstate) {
 
 // 1 meter = N pixels scale factor.
 #define PPM (100.0f)
+#define MPP (1.0f / PPM)
 #define Meter2Px(m) ((m) * PPM)
-#define Px2Meter(px) ((px) / PPM)
+#define Px2Meter(px) ((px) * MPP)
 
 static void ScenePhysicsTick(GameState* gstate) {
     f32 dt = gstate->dt;
@@ -3918,7 +3919,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             };
             for (i32 i = 0; i < ArraySizeOf(pos); ++i) {
                 Entity* e = AllocateEntity();
-                e->pos = Vec3Scale(pos[i], 1.0f / PPM);
+                e->pos = Vec3Scale(pos[i], MPP);
                 breakpoint();
                 e->orient = Mat4RotateZ(Deg2Rad(rot[i]));
                 GraphicsInfoSetLModel(
