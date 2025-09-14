@@ -3874,8 +3874,9 @@ static void SceneDefaultTick(GameState* gstate) {
 // } MoveState;
 
 // 1 meter = N pixels scale factor.
-#define Meter2Px(m) ((m) * 100.0f)
-#define Px2Meter(px) ((px) / 100.0f)
+#define PPM (100.0f)
+#define Meter2Px(m) ((m) * PPM)
+#define Px2Meter(px) ((px) / PPM)
 
 static void ScenePhysicsTick(GameState* gstate) {
     f32 dt = gstate->dt;
@@ -3892,39 +3893,40 @@ static void ScenePhysicsTick(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PROJECTILE);
         }
 
-        // {
-        //     i32 hwidth = 0.5f * gstate->renderw;
-        //     i32 hheight = 0.5f * gstate->renderh;
+        {
+            i32 hwidth = 0.5f * gstate->renderw;
+            i32 hheight = 0.5f * gstate->renderh;
 
-        //     f32 width_padding = 5.0f;
-        //     f32 height_padding = 20.0f;
+            f32 width_padding = 5.0f;
+            f32 height_padding = 20.0f;
 
-        //     f32 box_width = 20.0f - width_padding;
-        //     f32 box_height = gstate->renderh - height_padding;
+            f32 box_width = 20.0f - width_padding;
+            f32 box_height = gstate->renderh - height_padding;
 
-        //     // left, right, top, bottom.
-        //     Vec3 pos[] = {
-        //         Vec3Lit(-hwidth + box_width, 0.0f, 0.0f),
-        //         Vec3Lit(hwidth - box_width, 0.0f, 0.0f),
-        //         Vec3Lit(0.0f, hheight - box_width, 0.0f),
-        //         Vec3Lit(0.0f, -1.0f * (hheight - box_width), 0.0f),
-        //     };
-        //     f32 rot[] = {
-        //         0.0f,
-        //         0.0f,
-        //         90.0f,
-        //         90.0f,
-        //     };
-        //     for (i32 i = 0; i < ArraySizeOf(pos); ++i) {
-        //         Entity* e = AllocateEntity();
-        //         e->pos = pos[i];
-        //         e->orient = Mat4RotateZ(Deg2Rad(rot[i]));
-        //         GraphicsInfoSetLModel(
-        //             &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-        //                                          Vec3Lit(box_width, box_height, 1.0f), LRED));
-        //         PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(box_width, box_height));
-        //     }
-        // }
+            // left, right, top, bottom.
+            Vec3 pos[] = {
+                Vec3Lit(-hwidth + box_width, 0.0f, 0.0f),
+                Vec3Lit(hwidth - box_width, 0.0f, 0.0f),
+                Vec3Lit(0.0f, hheight - box_width, 0.0f),
+                Vec3Lit(0.0f, -1.0f * (hheight - box_width), 0.0f),
+            };
+            f32 rot[] = {
+                0.0f,
+                0.0f,
+                90.0f,
+                90.0f,
+            };
+            for (i32 i = 0; i < ArraySizeOf(pos); ++i) {
+                Entity* e = AllocateEntity();
+                e->pos = Vec3Scale(pos[i], 1.0f / PPM);
+                breakpoint();
+                e->orient = Mat4RotateZ(Deg2Rad(rot[i]));
+                GraphicsInfoSetLModel(
+                    &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Lit(Px2Meter(box_width), Px2Meter(box_height), 1.0f), LRED));
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(box_width), Px2Meter(box_height)));
+            }
+        }
     }
 
     if (gstate->update) {
