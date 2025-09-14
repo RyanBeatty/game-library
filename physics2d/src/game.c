@@ -3705,6 +3705,7 @@ static const f32 GRID_DEPTH = 1.0f;
 
 typedef enum {
     SCENE_DEFAULT = 0,
+    SCENE_PHYSICS,
     SCENE_BETTER_FONT,
     SCENE_COUNT,
 } SceneId;
@@ -3829,379 +3830,28 @@ static void SceneDefaultTick(GameState* gstate) {
 //     MS_JUMP,
 // } MoveState;
 
-// static void SceneVectorTick(GameState* gstate) {
-//     static Vec3 POS = {0};
-//     static f32 ROT = 0.0f;
-//     static LTexture TX_PACKED = {0};
-//     // static Sprite SPRITE_WIZARD = {0};
-//     // static Sprite SPRITE_MM = {0};
-//     static Sprite SPRITE_WIZARD2 = {0};
-//     static Animation IDLE_ANIMATION = {0};
-//     static Animation WALK_ANIMATION = {0};
-//     static Animation JUMP_ANIMATION = {0};
-//     static LModel IDLE_MODEL = {0};
-//     static LModel WALK_MODEL = {0};
-//     static LModel JUMP_MODEL = {0};
-//     static bool IDLE = true;
-//     static bool WALK = false;
-//     static bool JUMP = false;
-//     static MoveState MOVESTATE = MS_IDLE;
-//     static GraphicsInfo GRAPHICS = {0};
-//     static EntityId ENTITY_ID = NULLID;
-//     static EntityId ENTITY_ID2 = NULLID;
+static void ScenePhysicsTick(GameState* gstate) {
+    if (gstate->init) {
+    }
 
-//     if (gstate->init) {
-//         {
-//             Entity* entity = AllocateEntity();
-//             Assert(entity != NULL);
-//             ENTITY_ID = entity->id;
-//         }
+    if (gstate->update) {
+    }
 
-//         {
-//             Entity* entity = AllocateEntity();
-//             Assert(entity != NULL);
-//             ENTITY_ID2 = entity->id;
-//             SoftDeactivateEntity(ENTITY_ID2);
-//             DeactivateEntities();
-//         }
+    if (gstate->render) {
+        BeginRender(gstate->dt);
 
-//         Arena temp = TempArena(gstate->temp);
+        ShaderPass* pass = BeginShaderPass(GetLineShader());
+        u32 width = gstate->renderw;
+        u32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-//         IDLE_ANIMATION = AnimationFromDisk("assets/entities/wizard/idle_animation", "Chara - BlueIdle", 1.0f);
-//         WALK_ANIMATION = AnimationFromDisk("assets/entities/wizard/walk_animation", "Chara_BlueWalk", 75.0f);
-//         JUMP_ANIMATION = AnimationFromDisk("assets/entities/wizard/jump_animation", "CharaWizardJump_", 0.3f);
-//         JUMP_ANIMATION.loops = false;
+        DrawQuad(Vec3Zero(), 100, 100, Mat4Identity(), LRED);
 
-//         IDLE_MODEL = LModelFromAnimation(IDLE_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
-//         WALK_MODEL = LModelFromAnimation(WALK_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
-//         JUMP_MODEL = LModelFromAnimation(JUMP_ANIMATION, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
+        EndShaderPass();
 
-//         GraphicsInfoMemset(&GRAPHICS);
-//         GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
-
-//         // Pack texture.
-//         {
-//             isize width = 1024;
-//             isize height = 1024;
-//             RGBA256* data = New(&temp, width * height, RGBA256);
-
-//             LTexture txs[] = {
-//                 GetTexture(TX_BLUE_WIZARD),
-//                 GetTexture(TX_MEGAMAN2),
-//                 GetTexture(TX_BLUE_WIZARD),
-//             };
-//             isize txslen = ArraySizeOf(txs);
-
-//             Sprite sprites[3] = {0};
-
-//             // Basic packing. Very inefficient. Optimize later.
-//             Vec2 offset = Vec2Zero();
-//             isize max_y = 0;
-//             for (isize i = 0; i < txslen; ++i) {
-//                 LTexture tx = txs[i];
-
-//                 isize rem_x = width - offset.x;
-//                 if (rem_x < tx.width) {
-//                     // If we don't have enough width, then move up to our max height seen so far.
-//                     offset.x = 0;
-//                     offset.y = max_y;
-//                 }
-
-//                 // Update max height, assert we have headroom to write.
-//                 max_y = f32max(max_y, offset.y + tx.height);
-//                 isize rem_y = height - max_y;
-//                 Assert(rem_y >= 0);
-
-//                 // Copy the texture over.
-//                 for (isize x = 0; x < tx.width; ++x) {
-//                     for (isize y = 0; y < tx.height; ++y) {
-//                         RGBA256 rgba = LTextureGetPx(tx, x, y);
-
-//                         isize offsetx = offset.x + x;
-//                         isize offsety = offset.y + y;
-//                         data[(width * offsety) + offsetx] = rgba;
-//                     }
-//                 }
-
-//                 sprites[i] = SpriteFromMinMax(tx, offset, Vec2Add(offset, Vec2Lit(tx.width - 1, tx.height - 1)));
-
-//                 // Move along the row.
-//                 offset.x += tx.width;
-//             }
-
-//             TX_PACKED = TextureFromBuffer((byte*)data, width, height, FILTER_LINEAR);
-//             // TODO: Remove this.
-//             sprites[0].tx = TX_PACKED;
-//             sprites[1].tx = TX_PACKED;
-//             sprites[2].tx = TX_PACKED;
-//             // SPRITE_WIZARD = sprites[0];
-//             // SPRITE_MM = sprites[1];
-//             SPRITE_WIZARD2 = sprites[2];
-//         }
-//     }
-
-//     if (gstate->update) {
-//         {
-//             Entity* entity = EntityFromId(ENTITY_ID);
-//             Assert(entity);
-
-//             EntityId bad_id = ENTITY_ID;
-//             ++bad_id.generation;
-//             entity = EntityFromId(bad_id);
-//             Assert(entity == NULL);
-//         }
-
-//         {
-//             Entity* entity = EntityFromId(ENTITY_ID2);
-//             Assert(entity == NULL);
-//         }
-
-//         MoveState movestate_next = MOVESTATE;
-
-//         bool moved = PlatformKeyDown(LKEY_UP) || PlatformKeyDown(LKEY_DOWN) || PlatformKeyDown(LKEY_LEFT) ||
-//                      PlatformKeyDown(LKEY_RIGHT);
-//         bool jumped = PlatformKeyPressed(LKEY_A);
-
-//         switch (MOVESTATE) {
-//             case MS_IDLE: {
-//                 if (moved) {
-//                     GraphicsInfoSetLModel(&GRAPHICS, WALK_MODEL);
-//                     movestate_next = MS_WALK;
-//                 } else if (jumped) {
-//                     GraphicsInfoSetLModel(&GRAPHICS, JUMP_MODEL);
-//                     movestate_next = MS_JUMP;
-//                 } else {
-//                     if (PlatformKeyDown(LKEY_SPACE)) {
-//                         ROT += Deg2Rad(180.0f) * gstate->dt;
-//                     }
-
-//                     GraphicsInfoTickAnimation(&GRAPHICS, gstate->dt);
-//                 }
-//                 break;
-//             }
-//             case MS_WALK: {
-//                 if (moved) {
-//                     Vec3 v = Vec3Zero();
-//                     if (PlatformKeyDown(LKEY_UP)) {
-//                         v.y += 1.0f;
-//                     }
-//                     if (PlatformKeyDown(LKEY_DOWN)) {
-//                         v.y -= 1.0f;
-//                     }
-//                     if (PlatformKeyDown(LKEY_LEFT)) {
-//                         v.x -= 1.0f;
-//                         GRAPHICS.facing_left = true;
-//                     }
-//                     if (PlatformKeyDown(LKEY_RIGHT)) {
-//                         v.x += 1.0f;
-//                         GRAPHICS.facing_left = false;
-//                     }
-//                     v = Vec3Normalize(v);
-//                     Vec3 dx = Vec3Scale(v, 150.0f * gstate->dt);
-
-//                     GraphicsInfoTickAnimation(&GRAPHICS, Vec3Len(dx));
-
-//                     POS = Vec3Add(POS, dx);
-//                 } else if (jumped) {
-//                     GraphicsInfoSetLModel(&GRAPHICS, JUMP_MODEL);
-//                     movestate_next = MS_JUMP;
-//                 } else {
-//                     GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
-//                     movestate_next = MS_IDLE;
-//                 }
-//                 break;
-//             }
-//             case MS_JUMP: {
-//                 bool graphics_done = GRAPHICS.nloops >= 1;
-//                 if (graphics_done) {
-//                     // Animation finished.
-//                     GraphicsInfoSetLModel(&GRAPHICS, IDLE_MODEL);
-//                     movestate_next = MS_IDLE;
-//                 } else {
-//                     GraphicsInfoTickAnimation(&GRAPHICS, gstate->dt);
-//                 }
-
-//                 break;
-//             }
-//         }
-
-//         MOVESTATE = movestate_next;
-//     }
-
-//     if (gstate->render) {
-//         BeginRender(gstate->dt);
-
-//         ShaderPass* pass = BeginShaderPass(GetLineShader());
-//         u32 width = gstate->renderw;
-//         u32 height = gstate->renderh;
-//         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
-
-//         // Good load and draw model test
-//         if (false) {
-//             {
-//                 LTexture tx = GetTexture(TX_BLUE_WIZARD);
-//                 Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 LModel model = LModelFromSprite(sprite);
-//                 DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//             }
-
-//             {
-//                 LTexture tx = GetTexture(TX_IMAGE_TEST4);
-//                 Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 LModel model = LModelFromSprite(sprite);
-//                 DrawLModel(model, Vec3Add(POS, Vec3Lit(100, 0, 0)), Mat4RotateZ(ROT), Vec3LitAll(20.0f));
-//             }
-
-//             // Test static rotate by 90 degrees
-//             {
-//                 LTexture tx = GetTexture(TX_IMAGE_TEST4);
-//                 Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 LModel model = LModelFromAnimation(AnimationFromSprite(sprite), Vec3Zero(),
-//                 Mat4RotateZ(Deg2Rad(90.0f)),
-//                                                    Vec3LitAll(1.0f), LCLEAR);
-//                 DrawLModel(model, Vec3Add(POS, Vec3Lit(0, 200, 0)), Mat4RotateZ(ROT), Vec3LitAll(20.0f));
-//             }
-
-//             // Test static position
-//             {
-//                 LTexture tx = GetTexture(TX_BLUE_WIZARD);
-//                 Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 LModel model = LModelFromAnimation(AnimationFromSprite(sprite), Vec3Lit(-200.0f, -200.0f, 0.f),
-//                                                    Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
-//                 DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//             }
-
-//             // Test graphics info
-//             {
-//                 LTexture tx = GetTexture(TX_BLUE_WIZARD);
-//                 Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 LModel model = LModelFromAnimation(AnimationFromSprite(sprite), Vec3Lit(-200.0f, 200.0f, 0.f),
-//                                                    Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f), LCLEAR);
-//                 GraphicsInfo graphics = {0};
-//                 GraphicsInfoMemset(&graphics);
-//                 graphics.model = model;
-//                 graphics.pos = POS;
-//                 graphics.orient = Mat4RotateZ(ROT);
-//                 DrawGraphicsInfo(&graphics);
-//             }
-
-//             // Test graphics info animation
-//             {
-//                 static GraphicsInfo graphics = {0};
-//                 static bool INIT = true;
-
-//                 if (INIT) {
-//                     INIT = false;
-//                     GraphicsInfoMemset(&graphics);
-//                     GraphicsInfoSetLModel(&graphics,
-//                                           LModelFromAnimation(IDLE_ANIMATION, Vec3Lit(0.0f, 400.0f, 0.f),
-//                                                               Mat4RotateZ(Deg2Rad(45.0f)), Vec3LitAll(0.5f),
-//                                                               LCLEAR));
-//                 }
-
-//                 graphics.elapsed = f32mod(graphics.elapsed + gstate->dt, graphics.model.animation.duration);
-//                 graphics.frame_idx = (isize)((graphics.elapsed / graphics.model.animation.duration) *
-//                                              ((f32)graphics.model.animation.sprites.len));
-//                 graphics.pos = POS;
-//                 graphics.orient = Mat4RotateZ(ROT);
-//                 DrawGraphicsInfo(&graphics);
-//             }
-//         }
-
-//         if (false) {
-//             LTexture tx = TX_PACKED;
-//             // LTexture tx = GetTexture(TX_IMAGE_TEST);
-//             // LTexture tx = GetTexture(TX_IMAGE_TEST3);
-//             // LTexture tx = GetTexture(TX_IMAGE_TEST4);
-//             Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//             LModel model = LModelFromSprite(sprite);
-//             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//         }
-
-//         // Packed texture. I think leave this for now. Should figure out animations + consolidate the rendering
-//         // model portion. then maybe how to properly do the packing will make sense.
-//         if (false) {
-//             // Sprite sprite = SPRITE_WIZARD;
-//             // Sprite sprite = SPRITE_MM;
-//             Sprite sprite = SPRITE_WIZARD2;
-//             LModel model = LModelFromSprite(sprite);
-//             DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//         }
-
-//         // Animation.
-//         if (false) {
-//             // idle
-//             if (IDLE) {
-//                 static isize IDX = 0;
-//                 static f32 FRAME_DT = 0.0f;
-//                 static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
-
-//                 isize cap = IDLE_ANIMATION.sprites.cap;
-//                 FRAME_DT += gstate->dt;
-//                 if (FRAME_DT >= DT_PER_FRAME) {
-//                     FRAME_DT = 0.0f;
-//                     IDX = (IDX + 1) % cap;
-//                 }
-
-//                 DrawSprite(ArrGet(&IDLE_ANIMATION.sprites, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//                 // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
-//                 // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 // LModel model = LModelFromSprite(sprite);
-//                 // DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//             }
-
-//             // walk
-//             if (WALK) {
-//                 static isize IDX = 0;
-//                 static f32 FRAME_DT = 0.0f;
-//                 static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
-
-//                 isize cap = WALK_ANIMATION.sprites.cap;
-//                 FRAME_DT += gstate->dt;
-//                 if (FRAME_DT >= DT_PER_FRAME) {
-//                     FRAME_DT = 0.0f;
-//                     IDX = (IDX + 1) % cap;
-//                 }
-
-//                 DrawSprite(ArrGet(&WALK_ANIMATION.sprites, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//                 // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
-//                 // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 // LModel model = LModelFromSprite(sprite);
-//                 // DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//             }
-
-//             // jump
-//             if (JUMP) {
-//                 static isize IDX = 0;
-//                 static f32 FRAME_DT = 0.0f;
-//                 static f32 DT_PER_FRAME = 3.0f * (1 / 60.0f);
-
-//                 isize cap = JUMP_ANIMATION.sprites.cap;
-//                 FRAME_DT += gstate->dt;
-//                 if (FRAME_DT >= DT_PER_FRAME) {
-//                     FRAME_DT = 0.0f;
-//                     IDX = (IDX + 1) % cap;
-//                 }
-
-//                 DrawSprite(ArrGet(&JUMP_ANIMATION.sprites, IDX), POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//                 // DrawLTexture(ANIMATION_TXS[IDX], Vec2Lit(POS.x, POS.y), 1.0f);
-//                 // Sprite sprite = SpriteFromLTexture(tx, SBB_CLOSEST_FIT);
-//                 // LModel model = LModelFromSprite(sprite);
-//                 // DrawLModel(model, POS, Mat4RotateZ(ROT), Vec3LitAll(1.0f));
-//             }
-//         }
-
-//         if (true) {
-//             GRAPHICS.pos = POS;
-//             GRAPHICS.orient = Mat4RotateZ(ROT);
-//             DrawGraphicsInfo(&GRAPHICS);
-//         }
-
-//         EndShaderPass();
-
-//         EndRender();
-//     }
-// }
+        EndRender();
+    }
+}
 
 static void SceneBetterFontTick(GameState* gstate) {
     if (gstate->init) {
@@ -4306,11 +3956,12 @@ void GameInit() {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
+        gstate->scenefuncs[SCENE_PHYSICS] = ScenePhysicsTick;
         gstate->scenefuncs[SCENE_BETTER_FONT] = SceneBetterFontTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_BETTER_FONT);
+    GameStateLoadScene(gstate, SCENE_PHYSICS);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
