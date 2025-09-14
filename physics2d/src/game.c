@@ -3872,6 +3872,8 @@ static void SceneDefaultTick(GameState* gstate) {
 // } MoveState;
 
 static void ScenePhysicsTick(GameState* gstate) {
+    f32 dt = gstate->dt;
+
     if (gstate->init) {
         {
             Entity* e = AllocateEntity();
@@ -3881,6 +3883,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+            FlagOn(e->flags, EFLAG_PROJECTILE);
         }
 
         {
@@ -3920,6 +3923,11 @@ static void ScenePhysicsTick(GameState* gstate) {
 
     if (gstate->update) {
         for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                Vec3 a = Vec3Lit(0.0f, -9.8, 0.0f);
+                e->v = Vec3Add(e->v, Vec3Scale(a, dt));
+                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+            }
         }
     }
 
