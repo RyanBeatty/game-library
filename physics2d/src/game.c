@@ -3894,7 +3894,6 @@ static void ScenePhysicsTick(GameState* gstate) {
             f32 box_height = gstate->renderh - height_padding;
 
             // left, right, top, bottom.
-            Vec3 scale = Vec3Lit(box_width, box_height, 1.0f);
             Vec3 pos[] = {
                 Vec3Lit(-hwidth + box_width, 0.0f, 0.0f),
                 Vec3Lit(hwidth - box_width, 0.0f, 0.0f),
@@ -3911,9 +3910,10 @@ static void ScenePhysicsTick(GameState* gstate) {
                 Entity* e = AllocateEntity();
                 e->pos = pos[i];
                 e->orient = Mat4RotateZ(Deg2Rad(rot[i]));
-                e->scale = scale;
-                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                                   Mat4Identity(), Vec3LitAll(1.0f), LRED));
+                GraphicsInfoSetLModel(
+                    &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Lit(box_width, box_height, 1.0f), LRED));
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(box_width, box_height));
             }
         }
     }
