@@ -3454,7 +3454,8 @@ LCORE DrawCmd* DrawLModelEx(LModel model, isize frame_idx, Vec3 pos, Mat4 orient
 
     DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshcmd.meshid = model.mesh;
-    cmd->meshcmd.modelm = Mat4SVRT(Vec3Lit(scalex, scaley, scalez), orient, Vec3Add(pos, model.pos));
+    cmd->meshcmd.modelm =
+        Mat4SVRT(Vec3Lit(scalex, scaley, scalez), Mat4Multiply(orient, model.orient), Vec3Add(pos, model.pos));
     cmd->meshcmd.color = model.tint;
 
     // Draw first frame of animation (if its an animation, else same as Drawsprite).
@@ -3876,6 +3877,50 @@ static void ScenePhysicsTick(GameState* gstate) {
             Entity* e = AllocateEntity();
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(100, 100, 1.0f), LBLUE));
+        }
+
+        {
+            i32 hwidth = 0.5f * gstate->renderw;
+            i32 hheight = 0.5f * gstate->renderh;
+
+            f32 width_padding = 5.0f;
+            f32 height_padding = 20.0f;
+
+            f32 box_width = 20.0f - width_padding;
+            f32 box_height = gstate->renderh - height_padding;
+
+            // left
+            {
+                Entity* e = AllocateEntity();
+                GraphicsInfoSetLModel(
+                    &e->graphics,
+                    LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Lit(-hwidth + box_width, 0.0f, 0.0f),
+                                   Mat4Identity(), Vec3Lit(box_width, box_height, 1.0f), LRED));
+            }
+            // right
+            {
+                Entity* e = AllocateEntity();
+                GraphicsInfoSetLModel(
+                    &e->graphics,
+                    LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Lit(hwidth - box_width, 0.0f, 0.0f),
+                                   Mat4Identity(), Vec3Lit(box_width, box_height, 1.0f), LRED));
+            }
+            // top
+            {
+                Entity* e = AllocateEntity();
+                GraphicsInfoSetLModel(
+                    &e->graphics,
+                    LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Lit(0.0f, hheight - box_width, 0.0f),
+                                   Mat4RotateZ(Deg2Rad(90.0f)), Vec3Lit(box_width, box_height, 1.0f), LRED));
+            }
+            // bottom
+            {
+                Entity* e = AllocateEntity();
+                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT),
+                                                                   Vec3Lit(0.0f, -1.0f * (hheight - box_width), 0.0f),
+                                                                   Mat4RotateZ(Deg2Rad(90.0f)),
+                                                                   Vec3Lit(box_width, box_height, 1.0f), LRED));
+            }
         }
     }
 
