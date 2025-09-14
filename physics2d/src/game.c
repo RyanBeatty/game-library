@@ -3431,16 +3431,32 @@ LCORE LModel LModelFromSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale, 
     return LModelFromAnimation(AnimationFromSprite(sprite), pos, orient, scale, tint);
 }
 
-// Draw an lmodel animation for a specific frame. You can use this to animate over time.
+LCORE LModel LModelFromMesh(LMesh mesh, LTexture texture, Vec3 pos, Mat4 orient, Vec3 scale, Vec4 tint) {
+    LModel model = {
+        .pos = pos,
+        .orient = orient,
+        .scale = scale,
+        .tint = tint,
+        .mesh = mesh,
+        .animation = AnimationFromSprite(SpriteFromLTexture(texture, SBB_FULL)),
+    };
+    return model;
+}
+
 // TODO: We should take in a blend tint here.
 LCORE DrawCmd* DrawLModelEx(LModel model, isize frame_idx, Vec3 pos, Mat4 orient, Vec3 scale) {
     Assert(model.animation.sprites.len > frame_idx);
-    // Always draw the sprite at a base width/height that matches the original sprite. Then we modify by the
-    // static scale of the model + any additional user scale here.
+    // Draw the model at its base scale multiplied by the passed in scale.
     Sprite* sprite = ArrGetR(&model.animation.sprites, frame_idx);
-    f32 scalex = scale.x * model.scale.x * sprite->dims.x;
-    f32 scaley = scale.y * model.scale.y * sprite->dims.y;
-    DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scalex, scaley, Mat4Multiply(orient, model.orient), model.tint);
+    f32 scalex = scale.x * model.scale.x;  // * sprite->dims.x;
+    f32 scaley = scale.y * model.scale.y;  // * sprite->dims.y;
+    f32 scalez = scale.z * model.scale.z;  // * sprite->dims.z;
+
+    DrawCmd* cmd = AddDrawMeshCmd();
+    cmd->meshcmd.meshid = model.mesh;
+    cmd->meshcmd.modelm = Mat4SVRT(Vec3Lit(scalex, scaley, scalez), orient, Vec3Add(pos, model.pos));
+    cmd->meshcmd.color = model.tint;
+
     // Draw first frame of animation (if its an animation, else same as Drawsprite).
     cmd->meshcmd.tx = sprite->tx;
     cmd->meshcmd.uvoffset = sprite->minuv;
@@ -3858,25 +3874,30 @@ static void ScenePhysicsTick(GameState* gstate) {
     if (gstate->init) {
         {
             Entity* e = AllocateEntity();
-            GraphicsInfoSetLModel(&e->graphics,
-                                  LModelFromSprite(SpriteFromLTexture(GetTexture(TX_DEFAULT), SBB_FULL), Vec3Zero(),
-                                                   Mat4Identity(), Vec3Lit(100, 100, 1.0f), LBLUE));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(100, 100, 1.0f), LBLUE));
         }
     }
 
     if (gstate->update) {
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+        }
     }
 
     if (gstate->render) {
         BeginRender(gstate->dt);
 
-        ShaderPass* pass = BeginShaderPass(GetLineShader());
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
         u32 width = gstate->renderw;
         u32 height = gstate->renderh;
         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
+                e->graphics.pos = e->pos;
+                e->graphics.orient = e->orient;
+                GraphicsInfoTickAnimation(&e->graphics, gstate->dt);
+
                 DrawGraphicsInfo(&e->graphics);
             }
         }
