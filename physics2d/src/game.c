@@ -3767,6 +3767,8 @@ typedef struct GameState {
     // GetScreen/RenderWidth() function that reads RSTATE.
     u32 renderw;
     u32 renderh;
+    f32 renderw_world;  // in meters
+    f32 renderh_world;  // in meters
     u32 screenw;
     u32 screenh;
 
@@ -3872,8 +3874,8 @@ static void SceneDefaultTick(GameState* gstate) {
 // } MoveState;
 
 // 1 meter = N pixels scale factor.
-#define Meter2Px (100.0f)
-#define Px2Meter (1.0f / Meter2Px)
+#define Meter2Px(m) ((m) * 100.0f)
+#define Px2Meter(px) ((px) / 100.0f)
 
 static void ScenePhysicsTick(GameState* gstate) {
     f32 dt = gstate->dt;
@@ -3882,7 +3884,7 @@ static void ScenePhysicsTick(GameState* gstate) {
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Zero();
-            f32 radius = 30.0f;
+            f32 radius = Px2Meter(30.0f);
             e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
@@ -3939,8 +3941,8 @@ static void ScenePhysicsTick(GameState* gstate) {
         BeginRender(gstate->dt);
 
         ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-        u32 width = gstate->renderw;
-        u32 height = gstate->renderh;
+        f32 width = gstate->renderw_world;
+        f32 height = gstate->renderh_world;
         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
         for (Entity* e = NULL; IncrementEntity(&e);) {
@@ -4033,6 +4035,8 @@ void GameInit() {
 
     gstate->renderw = 1024.0f;
     gstate->renderh = 1024.0f;
+    gstate->renderw_world = Px2Meter(gstate->renderw);
+    gstate->renderh_world = Px2Meter(gstate->renderh);
 
     gstate->target_fps = 60;
     gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
