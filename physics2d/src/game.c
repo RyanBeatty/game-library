@@ -556,6 +556,9 @@ static Vec3 Vec3WTransform(Vec3 v, Mat4 m) {
                    (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22) + (1.0f * m.mm.m23));
 }
 
+// Combine two colors with component wise multiply. Normally these vec4s are colors.
+LCORE Vec4 Vec4Moduluate(Vec4 a, Vec4 b) { return Vec4Lit(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w); }
+
 // Quaternion. assume unit quaternion use throughout code.
 typedef struct {
     f32 x;
@@ -3424,12 +3427,12 @@ LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec
     return model;
 }
 
-LCORE LModel LModelFromSprite(Sprite sprite) {
-    Animation animation = AnimationFromSprite(sprite);
-    return LModelFromAnimation(animation, Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
+LCORE LModel LModelFromSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale, Vec4 tint) {
+    return LModelFromAnimation(AnimationFromSprite(sprite), pos, orient, scale, tint);
 }
 
 // Draw an lmodel animation for a specific frame. You can use this to animate over time.
+// TODO: We should take in a blend tint here.
 LCORE DrawCmd* DrawLModelEx(LModel model, isize frame_idx, Vec3 pos, Mat4 orient, Vec3 scale) {
     Assert(model.animation.sprites.len > frame_idx);
     // Always draw the sprite at a base width/height that matches the original sprite. Then we modify by the
@@ -3437,7 +3440,7 @@ LCORE DrawCmd* DrawLModelEx(LModel model, isize frame_idx, Vec3 pos, Mat4 orient
     Sprite* sprite = ArrGetR(&model.animation.sprites, frame_idx);
     f32 scalex = scale.x * model.scale.x * sprite->dims.x;
     f32 scaley = scale.y * model.scale.y * sprite->dims.y;
-    DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scalex, scaley, Mat4Multiply(orient, model.orient), LCLEAR);
+    DrawCmd* cmd = DrawQuad(Vec3Add(pos, model.pos), scalex, scaley, Mat4Multiply(orient, model.orient), model.tint);
     // Draw first frame of animation (if its an animation, else same as Drawsprite).
     cmd->meshcmd.tx = sprite->tx;
     cmd->meshcmd.uvoffset = sprite->minuv;
@@ -3665,6 +3668,27 @@ LCORE void DeactivateEntities() {
     }
 }
 
+LCORE bool IncrementEntity(Entity** entity_ptr) {
+    Entity* e = *entity_ptr;
+
+    // Remember the null handle is at idx 0.
+    i32 start_idx = NULLID.idx + 1;
+    if (e != NULL) {
+        start_idx = e->id.idx + 1;
+    }
+
+    EntityManager* em = GetEntityManager();
+    for (i32 i = start_idx; i < ArrLen(&em->entities); ++i) {
+        Entity* entity = ArrGetPtr(&em->entities, i);
+        if (TestFlag(entity->flags, EFLAG_ACTIVE)) {
+            *entity_ptr = entity;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 ////////////////////////////////////////////////////
 typedef struct {
     EntityId id0;
@@ -3832,6 +3856,12 @@ static void SceneDefaultTick(GameState* gstate) {
 
 static void ScenePhysicsTick(GameState* gstate) {
     if (gstate->init) {
+        {
+            Entity* e = AllocateEntity();
+            GraphicsInfoSetLModel(&e->graphics,
+                                  LModelFromSprite(SpriteFromLTexture(GetTexture(TX_DEFAULT), SBB_FULL), Vec3Zero(),
+                                                   Mat4Identity(), Vec3Lit(100, 100, 1.0f), LBLUE));
+        }
     }
 
     if (gstate->update) {
@@ -3845,7 +3875,11 @@ static void ScenePhysicsTick(GameState* gstate) {
         u32 height = gstate->renderh;
         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-        DrawQuad(Vec3Zero(), 100, 100, Mat4Identity(), LRED);
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_DRAW)) {
+                DrawGraphicsInfo(&e->graphics);
+            }
+        }
 
         EndShaderPass();
 
