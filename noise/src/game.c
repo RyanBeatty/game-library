@@ -3828,6 +3828,7 @@ typedef struct GameState {
     i32 fts_tail;
     i32 fts_head;
     u32 fps;
+    f32 accumulated_time;  // Time we have yet to simulate.
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*);
     u32 scenefuncssize;
@@ -4492,23 +4493,22 @@ void GameTick(f32 dt) {
     }
 
     {
-        static f32 ACCUMULATED_TIME = 0.0f;
         static f32 FIXED_DT = 1.0f / 120.0f;
 
         gstate->update = false;
         gstate->render = false;
 
-        ACCUMULATED_TIME += dt;
+        gstate->accumulated_time += dt;
 
         // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
         // https://gameprogrammingpatterns.com/game-loop.html#play-catch-up
-        while (ACCUMULATED_TIME >= FIXED_DT) {
+        while (gstate->accumulated_time >= FIXED_DT) {
             // Update simulation with fixed delta time.
             gstate->update = true;
             gstate->dt = FIXED_DT;
             gstate->scenefuncs[gstate->sceneid](gstate);
             gstate->init = false;
-            ACCUMULATED_TIME -= FIXED_DT;
+            gstate->accumulated_time -= FIXED_DT;
         }
 
         // Render
