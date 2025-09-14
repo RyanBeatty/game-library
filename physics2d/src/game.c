@@ -3872,7 +3872,7 @@ static void SceneDefaultTick(GameState* gstate) {
 // } MoveState;
 
 // 1 meter = N pixels scale factor.
-#define MeterToPx (30.0f)
+#define MeterToPx (100.0f)
 
 static void ScenePhysicsTick(GameState* gstate) {
     f32 dt = gstate->dt;
