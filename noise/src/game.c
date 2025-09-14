@@ -3828,7 +3828,7 @@ typedef struct GameState {
     i32 fts_tail;
     i32 fts_head;
     u32 fps;
-    f32 target_fps;        // render fps we are targetting.
+    i32 target_fps;        // render fps we are targetting.
     f32 fixed_dt;          // fixed dt we will update the simulation with for stability.
     f32 accumulated_time;  // Time we have yet to simulate.
 
@@ -3852,6 +3852,8 @@ static GameState GState;
 #define GetGameState() (&GState)
 
 typedef void (*SceneTickFunc)(GameState* gstate);
+
+i32 GameGetTargetFps() { return GetGameState()->target_fps; }
 
 // Resets global state/system state that contains per scene info. Experimental approach
 // for use in scene switching as opposed to putting all this state into GameState object
@@ -4418,6 +4420,9 @@ void GameInit() {
     gstate->renderw = 1024.0f;
     gstate->renderh = 1024.0f;
 
+    gstate->target_fps = 60;
+    gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
+
     u32 scale = 1;
     PlatformInit(scale * gstate->renderw, scale * gstate->renderh, 60);
 
@@ -4458,9 +4463,6 @@ void GameInit() {
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
-
-    gstate->target_fps = 60.0f;
-    gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
 }
 
 void GameTick(f32 dt) {

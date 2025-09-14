@@ -627,9 +627,26 @@ LCORE void PlatformInit(u32 width, u32 height, u32 target_fps) {
     w32state->window_handle = Win32CreateWindow(w32state->hinstance, width, height, &w32state->dc);
     {
         Win32CreateOpengGLCtx(w32state->dc);
-        // Sync buffer flip on vsync
-        // https://www.khronos.org/opengl/wiki/Swap_Interval
-        Assert(wglSwapIntervalEXT(1));
+
+        // Set Vsync based on target FPS.
+        {
+            // Query the monitor refresh rate.
+            DEVMODE dm = {};
+            dm.dmSize = sizeof(dm);
+            if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm)) {
+                PlatformLog(LLOG_INFO, "Refresh rate: %d Hz\n", dm.dmDisplayFrequency);
+            }
+
+            // Require the display fps to be some multiple of what we want to render at.
+            // TODO: Make this more robust in the future.
+            u32 display_fps = dm.dmDisplayFrequency;
+            Assert(target_fps <= display_fps && display_fps % target_fps == 0);
+
+            // Sync buffer flip on vsync
+            // https://www.khronos.org/opengl/wiki/Swap_Interval
+            u32 swap_interval = display_fps / target_fps;
+            Assert(wglSwapIntervalEXT(swap_interval));
+        }
     }
 
     if (!GetClientRect(w32state->window_handle, &w32state->client_rect)) {
@@ -657,12 +674,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER ticks_last = {0};
     QueryPerformanceCounter(&ticks_last);
-
-    DEVMODE dm = {};
-    dm.dmSize = sizeof(dm);
-    if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm)) {
-        PlatformLog(LLOG_INFO, "Refresh rate: %d Hz\n", dm.dmDisplayFrequency);
-    }
 
     LARGE_INTEGER ticks = {0};
 
