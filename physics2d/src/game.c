@@ -3889,37 +3889,24 @@ static void ScenePhysicsTick(GameState* gstate) {
             f32 box_width = 20.0f - width_padding;
             f32 box_height = gstate->renderh - height_padding;
 
-            // left
-            {
+            // left, right, top, bottom.
+            Vec3 scale = Vec3Lit(box_width, box_height, 1.0f);
+            Vec3 pos[] = {
+                Vec3Lit(-hwidth + box_width, 0.0f, 0.0f),
+                Vec3Lit(hwidth - box_width, 0.0f, 0.0f),
+                Vec3Lit(0.0f, hheight - box_width, 0.0f),
+                Vec3Lit(0.0f, -1.0f * (hheight - box_width), 0.0f),
+            };
+            f32 rot[] = {
+                0.0f,
+                0.0f,
+                90.0f,
+                90.0f,
+            };
+            for (i32 i = 0; i < ArraySizeOf(pos); ++i) {
                 Entity* e = AllocateEntity();
-                GraphicsInfoSetLModel(
-                    &e->graphics,
-                    LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Lit(-hwidth + box_width, 0.0f, 0.0f),
-                                   Mat4Identity(), Vec3Lit(box_width, box_height, 1.0f), LRED));
-            }
-            // right
-            {
-                Entity* e = AllocateEntity();
-                GraphicsInfoSetLModel(
-                    &e->graphics,
-                    LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Lit(hwidth - box_width, 0.0f, 0.0f),
-                                   Mat4Identity(), Vec3Lit(box_width, box_height, 1.0f), LRED));
-            }
-            // top
-            {
-                Entity* e = AllocateEntity();
-                GraphicsInfoSetLModel(
-                    &e->graphics,
-                    LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Lit(0.0f, hheight - box_width, 0.0f),
-                                   Mat4RotateZ(Deg2Rad(90.0f)), Vec3Lit(box_width, box_height, 1.0f), LRED));
-            }
-            // bottom
-            {
-                Entity* e = AllocateEntity();
-                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT),
-                                                                   Vec3Lit(0.0f, -1.0f * (hheight - box_width), 0.0f),
-                                                                   Mat4RotateZ(Deg2Rad(90.0f)),
-                                                                   Vec3Lit(box_width, box_height, 1.0f), LRED));
+                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), pos[i],
+                                                                   Mat4RotateZ(Deg2Rad(rot[i])), scale, LRED));
             }
         }
     }
