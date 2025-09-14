@@ -3872,8 +3872,8 @@ static void SceneDefaultTick(GameState* gstate) {
 // } MoveState;
 
 // 1 meter = N pixels scale factor.
-#define PxPerMeter (100.0f)
-#define MeterPerPx (1.0f / PxPerMeter)
+#define Meter2Px (100.0f)
+#define Px2Meter (1.0f / Meter2Px)
 
 static void ScenePhysicsTick(GameState* gstate) {
     f32 dt = gstate->dt;
@@ -3928,7 +3928,7 @@ static void ScenePhysicsTick(GameState* gstate) {
     if (gstate->update) {
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                Vec3 a = Vec3Lit(0.0f, -9.8 * PxPerMeter, 0.0f);
+                Vec3 a = Vec3Lit(0.0f, -9.8 * Meter2Px, 0.0f);
                 e->v = Vec3Add(e->v, Vec3Scale(a, dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
             }
