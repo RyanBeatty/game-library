@@ -41,6 +41,8 @@ typedef unsigned char byte;
 
 #define GB(x) ((u64)1024 * 1024 * 1024 * (x))
 
+#define Hz(x) (1.0f / (x))
+
 #define LPI ((f32)3.1415926535)
 #define LTAU ((f32)6.2831853071)
 #define LPHI ((f32)1.6180339887)  // golden ratio
