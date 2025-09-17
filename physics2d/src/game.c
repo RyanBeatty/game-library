@@ -3999,11 +3999,13 @@ static void ScenePhysicsTick(GameState* gstate) {
                     ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
                     // ea->v = Vec3Zero();
 
+                    // TODO: only do anything if the relative velocity along the normal is > 0
                     Vec3 v_rel = Vec3Sub(ea->v, eb->v);
                     // Restitution of 0 means objects will stick since impulse generated will equal V. anything greater
                     // than 0 and we bounce.
                     f32 restitution = 0.9f;
                     f32 delta_speed = -1.0f * (Vec3Dot(v_rel, info->normal)) * (1.0f + restitution);
+                    // TODO: Factor in total mass.
                     Vec3 impulse = Vec3Scale(info->normal, delta_speed);
 
                     // TODO: factor in 1 / mass
