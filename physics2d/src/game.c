@@ -2717,7 +2717,7 @@ LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* dep
 
     // If the center is inside of the aabb, then the normal and depth will not be corAserect, since the
     // closest point will be the center itself. But at least we will report the collision happened.
-    *depth = f32sqrt(d) - circle.r;
+    *depth = f32abs(f32sqrt(d) - circle.r);
     *normal = Vec2Normalize(disp);
     return true;
 }
@@ -3713,8 +3713,9 @@ typedef struct {
     EntityId id0;
     EntityId id1;
 
-    f32 depth;
-    Vec3 normal;
+    f32 depth;  // positive value denoting how far you would need to push obj a along the contact normal to depenetrate.
+    Vec3 normal;  // For most collision processing, we assume that this points from id1 -> id0 (or b -> a depending on
+                  // terminology).
 } CollisionInfo;
 
 typedef struct {
@@ -3983,6 +3984,29 @@ static void ScenePhysicsTick(GameState* gstate) {
                     }
                 }
             }
+
+            for (isize cidx = 0; cidx < ArrLen(&collisions); ++cidx) {
+                CollisionInfo* info = ArrGetPtr(&collisions, cidx);
+                Entity* ea = EntityFromId(info->id0);
+                Entity* eb = EntityFromId(info->id1);
+
+                if (TestFlag(ea->flags, EFLAG_PROJECTILE)) {
+                    ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
+                    ea->v = Vec3Zero();
+                }
+            }
+
+            // for (isize cidx = 0; cidx < ArrLen(&collisions); ++cidx) {
+            //     CollisionInfo* info_orig = ArrGetPtr(&collisions, cidx);
+
+            //     // Reverse the info because we need to check both sides of the collision.
+            //     CollisionInfo info_reverse = {
+            //         .id0 = info_orig->id1,
+            //         .id1 = info_orig->id0,
+            //         .depth = info_orig->depth,
+            //         .normal = Vec3Negate(info_orig->normal),
+            //     };
+            // }
         }
     }
 
