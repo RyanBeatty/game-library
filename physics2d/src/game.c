@@ -3990,9 +3990,27 @@ static void ScenePhysicsTick(GameState* gstate) {
                 Entity* ea = EntityFromId(info->id0);
                 Entity* eb = EntityFromId(info->id1);
 
+                // TODO: We are losing something here potentially. We adjust velocities but this will essentially stop
+                // positions to be at the point of contact which is probably not technically correct when we are
+                // integrating over dt (i.e. it is not likely that at the end of dt, the objects would be just after the
+                // point of collision. they would have collided and ended up in different locations already)
                 if (TestFlag(ea->flags, EFLAG_PROJECTILE)) {
+                    // TODO: Figure out what this position constraint shoudl really be?
                     ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
-                    ea->v = Vec3Zero();
+                    // ea->v = Vec3Zero();
+
+                    Vec3 v_rel = Vec3Sub(ea->v, eb->v);
+                    // Restitution of 0 means objects will stick since impulse generated will equal V. anything greater
+                    // than 0 and we bounce.
+                    f32 restitution = 0.9f;
+                    f32 delta_speed = -1.0f * (Vec3Dot(v_rel, info->normal)) * (1.0f + restitution);
+                    Vec3 impulse = Vec3Scale(info->normal, delta_speed);
+
+                    // TODO: factor in 1 / mass
+                    breakpoint();
+                    ea->v = Vec3Add(ea->v, impulse);
+
+                    // TODO: add impulse to b
                 }
             }
 
