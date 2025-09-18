@@ -4056,7 +4056,9 @@ static void ScenePhysicsTick(GameState* gstate) {
 
                         // Add bias term to velocity to prevent objects from sinking into one another. This might be too
                         // much bias though as we don't lose much energy at higher restitutions.
-                        delta_speed += (0.2f / dt) * f32max(0.0f, info->depth - (F32_EPSILON));
+                        // Slop of 0.5mm. http://allenchou.net/2014/01/game-physics-stability-slops/
+                        f32 slop = 0.5f / 100.0f;
+                        delta_speed += (0.2f / dt) * f32max(0.0f, info->depth - slop);
 
                         // Scale the delta velocity by the total mass so that we can apply it to each object
                         // proportional to each object's mass
@@ -4079,6 +4081,13 @@ static void ScenePhysicsTick(GameState* gstate) {
                         // eb->v = Vec3Add(eb->v, Vec3Scale(impulse_tangent, -b_mass_inv));
                     }
 
+                    static i32 COUNT = 0;
+                    if (TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+                        ++COUNT;
+                        if (COUNT >= 1) {
+                            breakpoint();
+                        }
+                    }
                     // New velocities are governed by v' = v + (J * (1 / mass)) * normal.
                     // Negative sign for the other body since its pushed in opposite direction.
                     // TODO: Give normal impulse some "oomf". Why? If we are just applying impulses and are
