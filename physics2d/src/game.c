@@ -3926,7 +3926,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             f32 radius = Px2Meter(30.0f);
             e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
             FlagOn(e->flags, EFLAG_PROJECTILE);
 
@@ -3990,6 +3990,10 @@ static void ScenePhysicsTick(GameState* gstate) {
 
         // Collision.
         if (true) {
+            static u32 PHYSICS_TICK = 0;
+
+            ++PHYSICS_TICK;
+
             CollisionInfo data[32] = {0};
             CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
 
@@ -4003,6 +4007,9 @@ static void ScenePhysicsTick(GameState* gstate) {
                     if (ea == eb || PolyhedronIsNull(&eb->shape)) {
                         continue;
                     }
+                    // if (ea->id.idx == 5 && eb->id.idx == 6 && gstate->nframe >= 3) {
+                    //     breakpoint();
+                    // }
 
                     Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
 
@@ -4011,6 +4018,9 @@ static void ScenePhysicsTick(GameState* gstate) {
                     if (collides) {
                         // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
                         //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+                        // }
+                        // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+                        //     breakpoint();
                         // }
                         ArrPush(&collisions, info);
                     }
@@ -4096,7 +4106,9 @@ static void ScenePhysicsTick(GameState* gstate) {
                     ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
                     eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
 
+                    PlatformLog(LLOG_INFO, "Tick %d collision", PHYSICS_TICK);
                     PlatformLog(LLOG_INFO, "penetration depth: %f", info->depth);
+                    PlatformLog(LLOG_INFO, "relative_speed: %f", speed_rel_normal);
 
                     PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
                     PlatformLog(LLOG_INFO, "ea p: %f %f %f", ea->pos.x, ea->pos.y, ea->pos.z);
