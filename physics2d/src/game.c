@@ -3917,20 +3917,23 @@ static void ScenePhysicsTick(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PROJECTILE);
 
             EntitySetMass(e, 1.0f);
+            e->v = Vec3Lit(1.0f, 10.0f, 0.0f);
         }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(Px2Meter(-100.0f), 0.0f, 0.0f);
-            f32 radius = Px2Meter(30.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
-            FlagOn(e->flags, EFLAG_PROJECTILE);
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(Px2Meter(-100.0f), 0.0f, 0.0f);
+        //     f32 radius = Px2Meter(30.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT),
+        //     Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LBLUE));
+        //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+        //     FlagOn(e->flags, EFLAG_PROJECTILE);
 
-            EntitySetMass(e, 100.0f);
-        }
+        //     EntitySetMass(e, 100.0f);
+        // }
 
         {
             i32 hwidth = 0.5f * gstate->renderw;
@@ -4048,6 +4051,7 @@ static void ScenePhysicsTick(GameState* gstate) {
 
                     // New velocities are governed by v' = v + (J * (1 / mass)) * normal.
                     // Negative sign for the other body since its pushed in opposite direction.
+                    // TODO: Give normal impulse some "oomf"
                     Vec3 impulse = Vec3Scale(info->normal, delta_speed);
                     ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
                     eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
