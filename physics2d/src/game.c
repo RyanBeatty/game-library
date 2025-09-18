@@ -4041,6 +4041,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                     Vec3 impulse_normal = Vec3Zero();
                     Vec3 impulse_tangent = Vec3Zero();
 
+                    // Compute bounce/normal impulse.
                     {
                         // Restitution of 0 means objects will stick since impulse generated will equal V. anything
                         // greater than 0 and we bounce. Separating velocity after collision is v_s' = -e * v_s. To
@@ -4056,12 +4057,12 @@ static void ScenePhysicsTick(GameState* gstate) {
 
                         // Scale the delta velocity by the total mass so that we can apply it to each object
                         // proportional to each object's mass
-                        delta_speed /= a_mass_inv + b_mass_inv;
-                        impulse_normal = Vec3Scale(info->normal, delta_speed);
+                        f32 impulse_normal_magnitude = delta_speed / (a_mass_inv + b_mass_inv);
+                        impulse_normal = Vec3Scale(info->normal, impulse_normal_magnitude);
                     }
 
+                    // Compute friction/tangential impulse.
                     {
-                        // Compute friction.
                         Vec3 v_rel_tangent = Vec3Sub(v_rel, Vec3Scale(info->normal, speed_rel_normal));
                         Vec3 tangent = Vec3Normalize(v_rel_tangent);
                         f32 speed_rel_tangent = Vec3Len(v_rel_tangent);
