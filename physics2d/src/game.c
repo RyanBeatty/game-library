@@ -4070,6 +4070,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                         Vec3 v_rel_tangent = Vec3Sub(v_rel, Vec3Scale(info->normal, speed_rel_normal));
                         Vec3 tangent = Vec3Normalize(v_rel_tangent);
                         f32 speed_rel_tangent = Vec3Len(v_rel_tangent);
+                        // Higher values imply stronger friction. Between 0 and 1
                         f32 friction_coefficient = 0.2f;
                         f32 delta_speed_tangent = -friction_coefficient * speed_rel_tangent;
                         // TODO: Erin Catto clamps this to fit Coloumb's friction model I think.
