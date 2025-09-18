@@ -4038,6 +4038,9 @@ static void ScenePhysicsTick(GameState* gstate) {
                         continue;
                     }
 
+                    // Remember an impulse is a Force applied across a small amount of time.
+                    // J = Fdt = m(dv/dt)dt = mdv
+                    // So really its a change of velocity and has units kg * (meter / sec)
                     Vec3 impulse_normal = Vec3Zero();
                     Vec3 impulse_tangent = Vec3Zero();
 
