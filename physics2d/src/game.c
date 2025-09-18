@@ -3995,24 +3995,40 @@ static void ScenePhysicsTick(GameState* gstate) {
                 // integrating over dt (i.e. it is not likely that at the end of dt, the objects would be just after the
                 // point of collision. they would have collided and ended up in different locations already)
                 if (TestFlag(ea->flags, EFLAG_PROJECTILE)) {
-                    // TODO: Figure out what this position constraint shoudl really be?
-                    ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
-                    // ea->v = Vec3Zero();
+                    Vec3 v_a_prev = ea->v;
+                    Vec3 v_b_prev = eb->v;
 
-                    // TODO: only do anything if the relative velocity along the normal is > 0
+                    f32 a_mass_inv = 1.0f;
+                    f32 b_mass_inv = 0.0f;
+
                     Vec3 v_rel = Vec3Sub(ea->v, eb->v);
+                    f32 v_rel_normal = Vec3Dot(v_rel, info->normal);
+                    if (v_rel_normal > 0.0f) {
+                        continue;
+                    }
+
                     // Restitution of 0 means objects will stick since impulse generated will equal V. anything greater
                     // than 0 and we bounce.
-                    f32 restitution = 0.9f;
-                    f32 delta_speed = -1.0f * (Vec3Dot(v_rel, info->normal)) * (1.0f + restitution);
-                    // TODO: Factor in total mass.
+                    f32 restitution = 1.0f;
+                    f32 delta_speed = (1.0f + restitution) * (-v_rel_normal);
+                    // Scale the delta velocity by the total mass so that we can apply it to each object proportional to
+                    // each object's mass
+                    delta_speed /= a_mass_inv + b_mass_inv;
                     Vec3 impulse = Vec3Scale(info->normal, delta_speed);
 
-                    // TODO: factor in 1 / mass
                     breakpoint();
-                    ea->v = Vec3Add(ea->v, impulse);
+                    ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
+                    eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
 
-                    // TODO: add impulse to b
+                    // Sanity check. Verify we conserve momentum before and after collision.
+                    f32 momentum_a_prev = Vec3Len(v_a_prev) * (1.0f / a_mass_inv);
+                    f32 momentum_b_prev = Vec3Len(v_b_prev) * 0.0f;
+                    f32 momentum_a = Vec3Len(ea->v) * (1.0f / a_mass_inv);
+                    f32 momentum_b = 0.0f;
+                    Assert(f32eq(momentum_a + momentum_b, momentum_a_prev + momentum_b_prev));
+
+                    // TODO: Figure out what this position constraint shoudl really be?
+                    ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
                 }
             }
 
