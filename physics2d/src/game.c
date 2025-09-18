@@ -2630,7 +2630,7 @@ static bool TestCircleCircle(Circle a, Circle b, Vec2* normal, f32* depth) {
 
     f32 d = f32sqrt(dsquared);
     *normal = Vec2Scale(ba, 1.0f / d);
-    *depth = d - r;
+    *depth = r - d;
     return true;
 }
 
@@ -3920,21 +3920,19 @@ static void ScenePhysicsTick(GameState* gstate) {
             e->v = Vec3Lit(-10.0f, 0.0f, 0.0f);
         }
 
-        // {
-        //     Entity* e = AllocateEntity();
-        //     e->pos = Vec3Lit(Px2Meter(-100.0f), 0.0f, 0.0f);
-        //     f32 radius = Px2Meter(30.0f);
-        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT),
-        //     Vec3Zero(),
-        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
-        //                                                        LBLUE));
-        //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
-        //     FlagOn(e->flags, EFLAG_PROJECTILE);
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Lit(Px2Meter(-100.0f), 0.0f, 0.0f);
+            f32 radius = Px2Meter(30.0f);
+            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
+            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+            FlagOn(e->flags, EFLAG_PROJECTILE);
 
-        //     EntitySetMass(e, 1.0f);
-        //     e->v = Vec3Lit(10.0f, 0.0f, 0.0f);
-        // }
+            EntitySetMass(e, 1.0f);
+            e->v = Vec3Lit(10.0f, 0.0f, 0.0f);
+        }
 
         {
             i32 hwidth = 0.5f * gstate->renderw;
@@ -4011,9 +4009,9 @@ static void ScenePhysicsTick(GameState* gstate) {
                     CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
                     bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
                     if (collides) {
-                        if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                            PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
-                        }
+                        // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+                        //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+                        // }
                         ArrPush(&collisions, info);
                     }
                 }
@@ -4098,7 +4096,13 @@ static void ScenePhysicsTick(GameState* gstate) {
                     ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
                     eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
 
+                    PlatformLog(LLOG_INFO, "penetration depth: %f", info->depth);
+
                     PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
+                    PlatformLog(LLOG_INFO, "ea p: %f %f %f", ea->pos.x, ea->pos.y, ea->pos.z);
+
+                    PlatformLog(LLOG_INFO, "eb v: %f %f %f", eb->v.x, eb->v.y, eb->v.z);
+                    PlatformLog(LLOG_INFO, "eb p: %f %f %f", eb->pos.x, eb->pos.y, eb->pos.z);
                     // TODO: Do I need to do this?? What do I do about obj b??
                     // ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
                 }
