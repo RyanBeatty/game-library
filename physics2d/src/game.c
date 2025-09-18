@@ -4049,7 +4049,7 @@ static void ScenePhysicsTick(GameState* gstate) {
 
                     // Add bias term to velocity to prevent objects from sinking into one another. This might be too
                     // much bias though as we don't lose much energy at higher restitutions.
-                    delta_speed += (0.2f / dt) * f32max(0.0f, info->depth - (F32_EPSILON * 3.0f));
+                    delta_speed += (0.2f / dt) * f32max(0.0f, info->depth - (F32_EPSILON));
 
                     // Scale the delta velocity by the total mass so that we can apply it to each object
                     // proportional to each object's mass
