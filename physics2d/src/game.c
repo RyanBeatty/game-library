@@ -2619,7 +2619,7 @@ typedef struct {
 // Returns normal pointing from b to a if there is a collision. Assumes both
 // circles are in same coordinate space.
 static bool TestCircleCircle(Circle a, Circle b, Vec2* normal, f32* depth) {
-    Vec2 ba = Vec2Sub(b.c, a.c);
+    Vec2 ba = Vec2Sub(a.c, b.c);
     f32 dsquared = (ba.x * ba.x) + (ba.y * ba.y);
     f32 r = a.r + b.r;
     // if (squared) distance between a and b is greater than the (squared) distance of the
@@ -4092,7 +4092,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                     static i32 COUNT = 0;
                     if (TestFlag(eb->flags, EFLAG_PROJECTILE)) {
                         ++COUNT;
-                        if (COUNT >= 1) {
+                        if (COUNT >= 2) {
                             breakpoint();
                         }
                     }
@@ -4110,6 +4110,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                     PlatformLog(LLOG_INFO, "penetration depth: %f", info->depth);
                     PlatformLog(LLOG_INFO, "relative_speed: %f", speed_rel_normal);
 
+                    PlatformLog(LLOG_INFO, "ea id: %d eb id: %d", ea->id.idx, eb->id.idx);
                     PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
                     PlatformLog(LLOG_INFO, "ea p: %f %f %f", ea->pos.x, ea->pos.y, ea->pos.z);
 
