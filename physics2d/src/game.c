@@ -3917,7 +3917,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PROJECTILE);
 
             EntitySetMass(e, 1.0f);
-            e->v = Vec3Lit(1.0f, 10.0f, 0.0f);
+            e->v = Vec3Lit(-10.0f, 0.0f, 0.0f);
         }
 
         // {
@@ -3932,7 +3932,8 @@ static void ScenePhysicsTick(GameState* gstate) {
         //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
         //     FlagOn(e->flags, EFLAG_PROJECTILE);
 
-        //     EntitySetMass(e, 100.0f);
+        //     EntitySetMass(e, 1.0f);
+        //     e->v = Vec3Lit(10.0f, 0.0f, 0.0f);
         // }
 
         {
@@ -4051,13 +4052,16 @@ static void ScenePhysicsTick(GameState* gstate) {
 
                     // New velocities are governed by v' = v + (J * (1 / mass)) * normal.
                     // Negative sign for the other body since its pushed in opposite direction.
-                    // TODO: Give normal impulse some "oomf"
+                    // TODO: Give normal impulse some "oomf". Why? If we are just applying impulses and are
+                    // not resolving penetration, then when a ball eventually starts to lose energy as it bounces
+                    // against a wall it will start to sink into the wall because we are not impulsing enough to get it
+                    // out of the wall on the next frame.
                     Vec3 impulse = Vec3Scale(info->normal, delta_speed);
                     ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
                     eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
 
                     // TODO: Do I need to do this?? What do I do about obj b??
-                    ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
+                    // ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
                 }
             }
 
