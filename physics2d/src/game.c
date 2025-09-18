@@ -4033,8 +4033,8 @@ static void ScenePhysicsTick(GameState* gstate) {
                     f32 b_mass_inv = EntityGetMassInv(eb);
 
                     Vec3 v_rel = Vec3Sub(ea->v, eb->v);
-                    f32 v_rel_normal = Vec3Dot(v_rel, info->normal);
-                    if (v_rel_normal > 0.0f) {
+                    f32 speed_rel_normal = Vec3Dot(v_rel, info->normal);
+                    if (speed_rel_normal > 0.0f) {
                         continue;
                     }
 
@@ -4045,7 +4045,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                     //
                     // subbing in for v_s', we have dv = (-e * v_s) * v_s = -v_s * (e + 1)
                     f32 restitution = 0.8f;
-                    f32 delta_speed = (1.0f + restitution) * (-v_rel_normal);
+                    f32 delta_speed = (1.0f + restitution) * (-speed_rel_normal);
 
                     // Add bias term to velocity to prevent objects from sinking into one another. This might be too
                     // much bias though as we don't lose much energy at higher restitutions.
@@ -4065,6 +4065,21 @@ static void ScenePhysicsTick(GameState* gstate) {
                     ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
                     eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
 
+                    {
+                        // Compute friction.
+                        Vec3 v_rel_tangent = Vec3Sub(v_rel, Vec3Scale(info->normal, speed_rel_normal));
+                        Vec3 tangent = Vec3Normalize(v_rel_tangent);
+                        f32 speed_rel_tangent = Vec3Len(v_rel_tangent);
+                        f32 friction_coefficient = 0.2f;
+                        f32 delta_speed_tangent = -friction_coefficient * speed_rel_tangent;
+                        // TODO: Erin Catto clamps this to fit Coloumb's friction model I think.
+                        f32 j_tangent_magnitude = delta_speed_tangent / (a_mass_inv + b_mass_inv);
+                        Vec3 impulse_tangent = Vec3Scale(tangent, j_tangent_magnitude);
+                        ea->v = Vec3Add(ea->v, Vec3Scale(impulse_tangent, a_mass_inv));
+                        eb->v = Vec3Add(eb->v, Vec3Scale(impulse_tangent, -b_mass_inv));
+                    }
+
+                    PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
                     // TODO: Do I need to do this?? What do I do about obj b??
                     // ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
                 }
