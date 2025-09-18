@@ -4044,10 +4044,15 @@ static void ScenePhysicsTick(GameState* gstate) {
                     // objects We take dv = v_s' - v_s
                     //
                     // subbing in for v_s', we have dv = (-e * v_s) * v_s = -v_s * (e + 1)
-                    f32 restitution = 0.9f;
+                    f32 restitution = 0.8f;
                     f32 delta_speed = (1.0f + restitution) * (-v_rel_normal);
-                    // Scale the delta velocity by the total mass so that we can apply it to each object proportional to
-                    // each object's mass
+
+                    // Add bias term to velocity to prevent objects from sinking into one another. This might be too
+                    // much bias though as we don't lose much energy at higher restitutions.
+                    delta_speed += (0.2f / dt) * f32max(0.0f, info->depth - (F32_EPSILON * 3.0f));
+
+                    // Scale the delta velocity by the total mass so that we can apply it to each object
+                    // proportional to each object's mass
                     delta_speed /= a_mass_inv + b_mass_inv;
 
                     // New velocities are governed by v' = v + (J * (1 / mass)) * normal.
