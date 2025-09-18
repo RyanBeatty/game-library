@@ -3931,7 +3931,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PROJECTILE);
 
             EntitySetMass(e, 1.0f);
-            e->v = Vec3Lit(10.0f, 0.0f, 0.0f);
+            e->v = Vec3Lit(5.0f, 0.0f, 0.0f);
         }
 
         {
@@ -4106,16 +4106,18 @@ static void ScenePhysicsTick(GameState* gstate) {
                     ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
                     eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
 
-                    PlatformLog(LLOG_INFO, "Tick %d collision", PHYSICS_TICK);
-                    PlatformLog(LLOG_INFO, "penetration depth: %f", info->depth);
-                    PlatformLog(LLOG_INFO, "relative_speed: %f", speed_rel_normal);
+                    if (false) {
+                        PlatformLog(LLOG_INFO, "Tick %d collision", PHYSICS_TICK);
+                        PlatformLog(LLOG_INFO, "penetration depth: %f", info->depth);
+                        PlatformLog(LLOG_INFO, "relative_speed: %f", speed_rel_normal);
 
-                    PlatformLog(LLOG_INFO, "ea id: %d eb id: %d", ea->id.idx, eb->id.idx);
-                    PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
-                    PlatformLog(LLOG_INFO, "ea p: %f %f %f", ea->pos.x, ea->pos.y, ea->pos.z);
+                        PlatformLog(LLOG_INFO, "ea id: %d eb id: %d", ea->id.idx, eb->id.idx);
+                        PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
+                        PlatformLog(LLOG_INFO, "ea p: %f %f %f", ea->pos.x, ea->pos.y, ea->pos.z);
 
-                    PlatformLog(LLOG_INFO, "eb v: %f %f %f", eb->v.x, eb->v.y, eb->v.z);
-                    PlatformLog(LLOG_INFO, "eb p: %f %f %f", eb->pos.x, eb->pos.y, eb->pos.z);
+                        PlatformLog(LLOG_INFO, "eb v: %f %f %f", eb->v.x, eb->v.y, eb->v.z);
+                        PlatformLog(LLOG_INFO, "eb p: %f %f %f", eb->pos.x, eb->pos.y, eb->pos.z);
+                    }
                     // TODO: Do I need to do this?? What do I do about obj b??
                     // ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
                 }
