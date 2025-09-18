@@ -3589,8 +3589,10 @@ typedef struct {
     Vec3 scale;
     Mat4 orient;
 
+    // Physics related properties
     // Velocity
     Vec3 v;
+    f32 mass_inv;  // Inverse mass. 0 == infinite mass.
 
     Polyhedron shape;
 
@@ -3618,6 +3620,11 @@ static EntityManager EntityM = {0};
 #define GetEntityManager() &EntityM
 
 #define GetNumEntities() (EntityM.cap)
+
+// TODO: Move these
+#define EntitySetMass(e, m) ((e)->mass_inv = (m) != 0.0f ? 1.0f / (m) : 0.0f)
+#define EntityGetMass(e) ((e)->mass_inv != 0.0f ? 1.0f / (e)->mass_inv : 0.0f)
+#define EntityGetMassInv(e) ((e)->mass_inv)
 
 static void EntitySystemInit() {
     EntityManager* em = &EntityM;
@@ -3660,6 +3667,13 @@ LCORE Entity* AllocateEntity() {
     entity->flags = EFLAG_ACTIVE;
     entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     entity->orient = Mat4Identity();
+
+    // Physics stuff.
+    {
+        entity->v = Vec3Zero();
+        EntitySetMass(entity, 0.0f);  // Set infinite mass
+    }
+
     PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
@@ -3901,6 +3915,8 @@ static void ScenePhysicsTick(GameState* gstate) {
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
             FlagOn(e->flags, EFLAG_PROJECTILE);
+
+            EntitySetMass(e, 1.0f);
         }
 
         {
@@ -3942,6 +3958,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                     &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
                                                  Vec3Lit(Px2Meter(box_width), Px2Meter(box_height), 1.0f), LRED));
                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Scale(dims[i], MPP));
+                EntitySetMass(e, 0.0f);
             }
         }
     }
@@ -3995,8 +4012,8 @@ static void ScenePhysicsTick(GameState* gstate) {
                 // integrating over dt (i.e. it is not likely that at the end of dt, the objects would be just after the
                 // point of collision. they would have collided and ended up in different locations already)
                 if (TestFlag(ea->flags, EFLAG_PROJECTILE)) {
-                    f32 a_mass_inv = 1.0f;
-                    f32 b_mass_inv = 0.0f;
+                    f32 a_mass_inv = EntityGetMassInv(ea);
+                    f32 b_mass_inv = EntityGetMassInv(eb);
 
                     Vec3 v_rel = Vec3Sub(ea->v, eb->v);
                     f32 v_rel_normal = Vec3Dot(v_rel, info->normal);
