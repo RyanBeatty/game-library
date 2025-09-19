@@ -3930,7 +3930,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
             FlagOn(e->flags, EFLAG_PROJECTILE);
 
-            EntitySetMass(e, 1.0f);
+            EntitySetMass(e, 10.0f);
             e->v = Vec3Lit(5.0f, 0.0f, 0.0f);
         }
 
@@ -4022,6 +4022,9 @@ static void ScenePhysicsTick(GameState* gstate) {
                         // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
                         //     breakpoint();
                         // }
+                        // TODO: Should I just continue on here? At the moment we detect all collisions, but need to
+                        // verify that works if for say we collide with a wall that has multiple geometry entities
+                        // inside of it
                         ArrPush(&collisions, info);
                     }
                 }
