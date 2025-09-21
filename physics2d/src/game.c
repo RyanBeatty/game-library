@@ -4122,13 +4122,6 @@ static void ScenePhysicsTick(GameState* gstate) {
                     // eb->v = Vec3Add(eb->v, Vec3Scale(impulse_tangent, -b_mass_inv));
                 }
 
-                static i32 COUNT = 0;
-                if (TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                    ++COUNT;
-                    if (COUNT >= 2) {
-                        breakpoint();
-                    }
-                }
                 // New velocities are governed by v' = v + (J * (1 / mass)) * normal.
                 // Negative sign for the other body since its pushed in opposite direction.
                 // TODO: Give normal impulse some "oomf". Why? If we are just applying impulses and are
