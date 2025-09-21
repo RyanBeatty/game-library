@@ -4067,97 +4067,94 @@ static void ScenePhysicsTick(GameState* gstate) {
                 // positions to be at the point of contact which is probably not technically correct when we are
                 // integrating over dt (i.e. it is not likely that at the end of dt, the objects would be just after the
                 // point of collision. they would have collided and ended up in different locations already)
-                // if (TestFlag(ea->flags, EFLAG_PROJECTILE))
-                {
-                    f32 a_mass_inv = EntityGetMassInv(ea);
-                    f32 b_mass_inv = EntityGetMassInv(eb);
-                    f32 total_mass_inv = a_mass_inv + b_mass_inv;
+                f32 a_mass_inv = EntityGetMassInv(ea);
+                f32 b_mass_inv = EntityGetMassInv(eb);
+                f32 total_mass_inv = a_mass_inv + b_mass_inv;
 
-                    Vec3 v_rel = Vec3Sub(ea->v, eb->v);
-                    f32 speed_rel_normal = Vec3Dot(v_rel, info->normal);
-                    if (speed_rel_normal > 0.0f || total_mass_inv == 0.0f) {
-                        // If two objects are moving away from eachother or cannot be moved (i.e. both are static
-                        // infinite mass walls), continue.
-                        continue;
-                    }
-
-                    // Remember an impulse is a Force applied across a small amount of time.
-                    // J = Fdt = m(dv/dt)dt = mdv
-                    // So really its a change of velocity and has units kg * (meter / sec)
-                    Vec3 impulse_normal = Vec3Zero();
-                    Vec3 impulse_tangent = Vec3Zero();
-
-                    // Compute bounce/normal impulse.
-                    {
-                        // Restitution of 0 means objects will stick since impulse generated will equal V. anything
-                        // greater than 0 and we bounce. Separating velocity after collision is v_s' = -e * v_s. To
-                        // adjust the existing velocities of objects We take dv = v_s' - v_s
-                        //
-                        // subbing in for v_s', we have dv = (-e * v_s) * v_s = -v_s * (e + 1)
-                        f32 restitution = 0.8f;
-                        f32 delta_speed = (1.0f + restitution) * (-speed_rel_normal);
-
-                        // Add bias term to velocity to prevent objects from sinking into one another. This might be too
-                        // much bias though as we don't lose much energy at higher restitutions.
-                        // Slop of 0.5mm. http://allenchou.net/2014/01/game-physics-stability-slops/
-                        f32 slop = 0.5f / 100.0f;
-                        delta_speed += (0.2f / dt) * f32max(0.0f, info->depth - slop);
-
-                        // Scale the delta velocity by the total mass so that we can apply it to each object
-                        // proportional to each object's mass
-                        f32 impulse_normal_magnitude = delta_speed / total_mass_inv;
-                        impulse_normal = Vec3Scale(info->normal, impulse_normal_magnitude);
-                    }
-
-                    // Compute friction/tangential impulse.
-                    {
-                        Vec3 v_rel_tangent = Vec3Sub(v_rel, Vec3Scale(info->normal, speed_rel_normal));
-                        Vec3 tangent = Vec3Normalize(v_rel_tangent);
-                        f32 speed_rel_tangent = Vec3Len(v_rel_tangent);
-                        // Higher values imply stronger friction. Between 0 and 1
-                        f32 friction_coefficient = 0.2f;
-                        f32 delta_speed_tangent = -friction_coefficient * speed_rel_tangent;
-                        // TODO: Erin Catto clamps this to fit Coloumb's friction model I think.
-                        f32 j_tangent_magnitude = delta_speed_tangent / total_mass_inv;
-                        impulse_tangent = Vec3Scale(tangent, j_tangent_magnitude);
-                        // ea->v = Vec3Add(ea->v, Vec3Scale(impulse_tangent, a_mass_inv));
-                        // eb->v = Vec3Add(eb->v, Vec3Scale(impulse_tangent, -b_mass_inv));
-                    }
-
-                    static i32 COUNT = 0;
-                    if (TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                        ++COUNT;
-                        if (COUNT >= 2) {
-                            breakpoint();
-                        }
-                    }
-                    // New velocities are governed by v' = v + (J * (1 / mass)) * normal.
-                    // Negative sign for the other body since its pushed in opposite direction.
-                    // TODO: Give normal impulse some "oomf". Why? If we are just applying impulses and are
-                    // not resolving penetration, then when a ball eventually starts to lose energy as it bounces
-                    // against a wall it will start to sink into the wall because we are not impulsing enough to get it
-                    // out of the wall on the next frame.
-                    Vec3 impulse = Vec3Add(impulse_normal, impulse_tangent);
-                    ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
-                    eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
-
-                    if (false) {
-                        PlatformLog(LLOG_INFO, "Tick %d collision", PHYSICS_TICK);
-                        PlatformLog(LLOG_INFO, "penetration depth: %f", info->depth);
-                        PlatformLog(LLOG_INFO, "relative_speed: %f", speed_rel_normal);
-
-                        PlatformLog(LLOG_INFO, "ea id: %d eb id: %d", ea->id.idx, eb->id.idx);
-                        PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
-                        PlatformLog(LLOG_INFO, "ea p: %f %f %f", ea->pos.x, ea->pos.y, ea->pos.z);
-
-                        PlatformLog(LLOG_INFO, "eb v: %f %f %f", eb->v.x, eb->v.y, eb->v.z);
-                        PlatformLog(LLOG_INFO, "eb p: %f %f %f", eb->pos.x, eb->pos.y, eb->pos.z);
-
-                        // breakpoint();
-                    }
-                    // TODO: Do I need to do this?? What do I do about obj b??
-                    // ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
+                Vec3 v_rel = Vec3Sub(ea->v, eb->v);
+                f32 speed_rel_normal = Vec3Dot(v_rel, info->normal);
+                if (speed_rel_normal > 0.0f || total_mass_inv == 0.0f) {
+                    // If two objects are moving away from eachother or cannot be moved (i.e. both are static
+                    // infinite mass walls), continue.
+                    continue;
                 }
+
+                // Remember an impulse is a Force applied across a small amount of time.
+                // J = Fdt = m(dv/dt)dt = mdv
+                // So really its a change of velocity and has units kg * (meter / sec)
+                Vec3 impulse_normal = Vec3Zero();
+                Vec3 impulse_tangent = Vec3Zero();
+
+                // Compute bounce/normal impulse.
+                {
+                    // Restitution of 0 means objects will stick since impulse generated will equal V. anything
+                    // greater than 0 and we bounce. Separating velocity after collision is v_s' = -e * v_s. To
+                    // adjust the existing velocities of objects We take dv = v_s' - v_s
+                    //
+                    // subbing in for v_s', we have dv = (-e * v_s) * v_s = -v_s * (e + 1)
+                    f32 restitution = 0.8f;
+                    f32 delta_speed = (1.0f + restitution) * (-speed_rel_normal);
+
+                    // Add bias term to velocity to prevent objects from sinking into one another. This might be too
+                    // much bias though as we don't lose much energy at higher restitutions.
+                    // Slop of 0.5mm. http://allenchou.net/2014/01/game-physics-stability-slops/
+                    f32 slop = 0.5f / 100.0f;
+                    delta_speed += (0.2f / dt) * f32max(0.0f, info->depth - slop);
+
+                    // Scale the delta velocity by the total mass so that we can apply it to each object
+                    // proportional to each object's mass
+                    f32 impulse_normal_magnitude = delta_speed / total_mass_inv;
+                    impulse_normal = Vec3Scale(info->normal, impulse_normal_magnitude);
+                }
+
+                // Compute friction/tangential impulse.
+                {
+                    Vec3 v_rel_tangent = Vec3Sub(v_rel, Vec3Scale(info->normal, speed_rel_normal));
+                    Vec3 tangent = Vec3Normalize(v_rel_tangent);
+                    f32 speed_rel_tangent = Vec3Len(v_rel_tangent);
+                    // Higher values imply stronger friction. Between 0 and 1
+                    f32 friction_coefficient = 0.2f;
+                    f32 delta_speed_tangent = -friction_coefficient * speed_rel_tangent;
+                    // TODO: Erin Catto clamps this to fit Coloumb's friction model I think.
+                    f32 j_tangent_magnitude = delta_speed_tangent / total_mass_inv;
+                    impulse_tangent = Vec3Scale(tangent, j_tangent_magnitude);
+                    // ea->v = Vec3Add(ea->v, Vec3Scale(impulse_tangent, a_mass_inv));
+                    // eb->v = Vec3Add(eb->v, Vec3Scale(impulse_tangent, -b_mass_inv));
+                }
+
+                static i32 COUNT = 0;
+                if (TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+                    ++COUNT;
+                    if (COUNT >= 2) {
+                        breakpoint();
+                    }
+                }
+                // New velocities are governed by v' = v + (J * (1 / mass)) * normal.
+                // Negative sign for the other body since its pushed in opposite direction.
+                // TODO: Give normal impulse some "oomf". Why? If we are just applying impulses and are
+                // not resolving penetration, then when a ball eventually starts to lose energy as it bounces
+                // against a wall it will start to sink into the wall because we are not impulsing enough to get it
+                // out of the wall on the next frame.
+                Vec3 impulse = Vec3Add(impulse_normal, impulse_tangent);
+                ea->v = Vec3Add(ea->v, Vec3Scale(impulse, a_mass_inv));
+                eb->v = Vec3Add(eb->v, Vec3Scale(impulse, -b_mass_inv));
+
+                if (false) {
+                    PlatformLog(LLOG_INFO, "Tick %d collision", PHYSICS_TICK);
+                    PlatformLog(LLOG_INFO, "penetration depth: %f", info->depth);
+                    PlatformLog(LLOG_INFO, "relative_speed: %f", speed_rel_normal);
+
+                    PlatformLog(LLOG_INFO, "ea id: %d eb id: %d", ea->id.idx, eb->id.idx);
+                    PlatformLog(LLOG_INFO, "ea v: %f %f %f", ea->v.x, ea->v.y, ea->v.z);
+                    PlatformLog(LLOG_INFO, "ea p: %f %f %f", ea->pos.x, ea->pos.y, ea->pos.z);
+
+                    PlatformLog(LLOG_INFO, "eb v: %f %f %f", eb->v.x, eb->v.y, eb->v.z);
+                    PlatformLog(LLOG_INFO, "eb p: %f %f %f", eb->pos.x, eb->pos.y, eb->pos.z);
+
+                    // breakpoint();
+                }
+                // TODO: Do I need to do this?? What do I do about obj b??
+                // ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
             }
 
             // for (isize cidx = 0; cidx < ArrLen(&collisions); ++cidx) {
