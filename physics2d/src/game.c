@@ -3920,47 +3920,52 @@ static void ScenePhysicsTick(GameState* gstate) {
             e->v = Vec3Lit(-10.0f, 0.0f, 0.0f);
         }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(Px2Meter(-100.0f), 0.0f, 0.0f);
-            f32 radius = Px2Meter(30.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
-            FlagOn(e->flags, EFLAG_PROJECTILE);
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(Px2Meter(-100.0f), 0.0f, 0.0f);
+        //     f32 radius = Px2Meter(30.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT),
+        //     Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LGREEN));
+        //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+        //     FlagOn(e->flags, EFLAG_PROJECTILE);
 
-            EntitySetMass(e, 2.0f);
-            e->v = Vec3Lit(5.0f, 0.0f, 0.0f);
-        }
+        //     EntitySetMass(e, 2.0f);
+        //     e->v = Vec3Lit(5.0f, 0.0f, 0.0f);
+        // }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(Px2Meter(-100.0f), Px2Meter(50.0f), 0.0f);
-            f32 radius = Px2Meter(30.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
-            FlagOn(e->flags, EFLAG_PROJECTILE);
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(Px2Meter(-100.0f), Px2Meter(50.0f), 0.0f);
+        //     f32 radius = Px2Meter(30.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT),
+        //     Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LGREEN));
+        //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+        //     FlagOn(e->flags, EFLAG_PROJECTILE);
 
-            EntitySetMass(e, 2.0f);
-            e->v = Vec3Lit(5.0f, -5.0f, 0.0f);
-        }
+        //     EntitySetMass(e, 2.0f);
+        //     e->v = Vec3Lit(5.0f, -5.0f, 0.0f);
+        // }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(Px2Meter(100.0f), Px2Meter(20.0f), 0.0f);
-            f32 radius = Px2Meter(30.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
-            FlagOn(e->flags, EFLAG_PROJECTILE);
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(Px2Meter(100.0f), Px2Meter(20.0f), 0.0f);
+        //     f32 radius = Px2Meter(30.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT),
+        //     Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
+        //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+        //     FlagOn(e->flags, EFLAG_PROJECTILE);
 
-            EntitySetMass(e, 2.0f);
-            e->v = Vec3Lit(-5.0f, 5.0f, 0.0f);
-        }
+        //     EntitySetMass(e, 2.0f);
+        //     e->v = Vec3Lit(-5.0f, 5.0f, 0.0f);
+        // }
 
         {
             i32 hwidth = 0.5f * gstate->renderw;
@@ -4067,13 +4072,17 @@ static void ScenePhysicsTick(GameState* gstate) {
                 // positions to be at the point of contact which is probably not technically correct when we are
                 // integrating over dt (i.e. it is not likely that at the end of dt, the objects would be just after the
                 // point of collision. they would have collided and ended up in different locations already)
-                if (TestFlag(ea->flags, EFLAG_PROJECTILE)) {
+                // if (TestFlag(ea->flags, EFLAG_PROJECTILE))
+                {
                     f32 a_mass_inv = EntityGetMassInv(ea);
                     f32 b_mass_inv = EntityGetMassInv(eb);
+                    f32 total_mass_inv = a_mass_inv + b_mass_inv;
 
                     Vec3 v_rel = Vec3Sub(ea->v, eb->v);
                     f32 speed_rel_normal = Vec3Dot(v_rel, info->normal);
-                    if (speed_rel_normal > 0.0f) {
+                    if (speed_rel_normal > 0.0f || total_mass_inv == 0.0f) {
+                        // If two objects are moving away from eachother or cannot be moved (i.e. both are static
+                        // infinite mass walls), continue.
                         continue;
                     }
 
@@ -4101,7 +4110,7 @@ static void ScenePhysicsTick(GameState* gstate) {
 
                         // Scale the delta velocity by the total mass so that we can apply it to each object
                         // proportional to each object's mass
-                        f32 impulse_normal_magnitude = delta_speed / (a_mass_inv + b_mass_inv);
+                        f32 impulse_normal_magnitude = delta_speed / total_mass_inv;
                         impulse_normal = Vec3Scale(info->normal, impulse_normal_magnitude);
                     }
 
@@ -4114,7 +4123,7 @@ static void ScenePhysicsTick(GameState* gstate) {
                         f32 friction_coefficient = 0.2f;
                         f32 delta_speed_tangent = -friction_coefficient * speed_rel_tangent;
                         // TODO: Erin Catto clamps this to fit Coloumb's friction model I think.
-                        f32 j_tangent_magnitude = delta_speed_tangent / (a_mass_inv + b_mass_inv);
+                        f32 j_tangent_magnitude = delta_speed_tangent / total_mass_inv;
                         impulse_tangent = Vec3Scale(tangent, j_tangent_magnitude);
                         // ea->v = Vec3Add(ea->v, Vec3Scale(impulse_tangent, a_mass_inv));
                         // eb->v = Vec3Add(eb->v, Vec3Scale(impulse_tangent, -b_mass_inv));
@@ -4148,6 +4157,8 @@ static void ScenePhysicsTick(GameState* gstate) {
 
                         PlatformLog(LLOG_INFO, "eb v: %f %f %f", eb->v.x, eb->v.y, eb->v.z);
                         PlatformLog(LLOG_INFO, "eb p: %f %f %f", eb->pos.x, eb->pos.y, eb->pos.z);
+
+                        // breakpoint();
                     }
                     // TODO: Do I need to do this?? What do I do about obj b??
                     // ea->pos = Vec3Add(ea->pos, Vec3Scale(info->normal, info->depth));
