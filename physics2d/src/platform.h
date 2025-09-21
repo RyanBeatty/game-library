@@ -199,6 +199,7 @@ typedef enum {
 LCORE bool PlatformKeyPressed(LKey key);
 LCORE bool PlatformKeyReleased(LKey key);
 LCORE bool PlatformKeyDown(LKey key);
+LCORE Vec2 PlatformMousePosition();
 
 // TODO: Do we really need this? maybe can remove.
 u32 PlatformScreenWidth();

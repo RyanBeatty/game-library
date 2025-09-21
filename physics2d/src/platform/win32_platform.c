@@ -50,6 +50,8 @@ LCORE bool PlatformKeyReleased(LKey key) {
 }
 LCORE bool PlatformKeyDown(LKey key) { return GetWin32State()->cur_input->down[key]; }
 
+LCORE Vec2 PlatformMousePosition() { return Vec2Zero(); }
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_DESTROY: {
