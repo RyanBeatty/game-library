@@ -718,11 +718,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             Win32Input* temp = w32state->prev_input;
             w32state->prev_input = w32state->cur_input;
             w32state->cur_input = temp;
-            // Zero out cur input and set down state from the prev input state.
             Win32Input* cur_input = w32state->cur_input;
-            *cur_input = zero_input;
-            for (i32 i = 0; i < ArraySizeOf(cur_input->down); ++i) {
-                cur_input->down[i] = w32state->prev_input->down[i];
+
+            // Zero out cur input and set down state from the prev input state.
+            {
+                *cur_input = zero_input;
+                for (i32 i = 0; i < ArraySizeOf(cur_input->down); ++i) {
+                    cur_input->down[i] = w32state->prev_input->down[i];
+                }
+                cur_input->mouse_pos_screen = w32state->prev_input->mouse_pos_screen;
             }
 
             while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {

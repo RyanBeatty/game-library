@@ -3406,7 +3406,8 @@ static void ScenePhysicsTick(GameState* gstate) {
         }
 
         if (PlatformKeyDown(LKEY_LEFT)) {
-            PlatformLog(LLOG_INFO, "left click");
+            Vec2 mouse_pos = PlatformMousePositionScreen();
+            PlatformLog(LLOG_INFO, "left click %f %f", mouse_pos.x, mouse_pos.y);
         }
 
         // Collision.
