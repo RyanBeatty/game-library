@@ -3405,6 +3405,10 @@ static void ScenePhysicsTick(GameState* gstate) {
             }
         }
 
+        if (PlatformKeyDown(LKEY_LEFT)) {
+            PlatformLog(LLOG_INFO, "left click");
+        }
+
         // Collision.
         if (true) {
             static u32 PHYSICS_TICK = 0;

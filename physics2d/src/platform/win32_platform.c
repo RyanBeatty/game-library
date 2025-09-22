@@ -91,6 +91,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 }
 
+void Win32InputMarkKeyEvent(Win32Input* input, LKey key, bool down) {
+    if (down != input->down[key]) {
+        ++input->half_transitions[key];
+    }
+    input->down[key] = down;
+}
+
 HWND Win32CreateWindow(HINSTANCE hinstance, u32 width, u32 height, HDC* dc) {
     static char CLASS_NAME[] = "L Engine";
 
@@ -725,10 +732,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 } else if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) {
                     LKey key = (LKey)msg.wParam;
                     bool down = msg.message == WM_KEYDOWN;
-                    if (down != cur_input->down[key]) {
-                        ++cur_input->half_transitions[key];
-                    }
-                    cur_input->down[key] = down;
+                    Win32InputMarkKeyEvent(cur_input, key, down);
 
                     // PlatformLog(LLOG_DEBUG, "key event: %c down: %d half_transitions: %d", key, cur_input->down[key],
                     //             cur_input->half_transitions[key]);
