@@ -199,7 +199,8 @@ typedef enum {
 LCORE bool PlatformKeyPressed(LKey key);
 LCORE bool PlatformKeyReleased(LKey key);
 LCORE bool PlatformKeyDown(LKey key);
-LCORE Vec2 PlatformMousePosition();
+// Returns the coordinate of the mouse click in screen space. Origin (0, 0) assumed to be bottom left corner.
+LCORE Vec2 PlatformMousePositionScreen();
 
 // TODO: Do we really need this? maybe can remove.
 u32 PlatformScreenWidth();

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "base.h"
 #include "glad.h"
 #include "stb_truetype.h"
 #endif

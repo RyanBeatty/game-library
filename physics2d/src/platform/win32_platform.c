@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
+#include <windowsx.h>
 // Include after windows.h
 
 #ifndef UNITY_BUILD
@@ -17,6 +18,9 @@ typedef struct {
     bool down[MAX_KEYS];
     // How many half transitions did the key go though during the polling window.
     u32 half_transitions[MAX_KEYS];
+
+    // Origin (0, 0) is top left corner.
+    Vec2 mouse_pos_screen;
 } Win32Input;
 
 typedef struct {
@@ -50,9 +54,11 @@ LCORE bool PlatformKeyReleased(LKey key) {
 }
 LCORE bool PlatformKeyDown(LKey key) { return GetWin32State()->cur_input->down[key]; }
 
-LCORE Vec2 PlatformMousePosition() { return Vec2Zero(); }
+LCORE Vec2 PlatformMousePositionScreen() { return GetWin32State()->cur_input->mouse_pos_screen; }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    Win32State* w32state = GetWin32State();
+
     switch (uMsg) {
         case WM_DESTROY: {
             PostQuitMessage(0);
@@ -63,6 +69,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             PlatformLog(LLOG_ERROR, "windows proc message for key up/down should be hanlded by ProcessInput. Key: %d",
                         wParam);
             Assert(false);
+            return 0;
+        }
+        // Captures when the mouse is moved while over the active window.
+        case WM_MOUSEMOVE: {
+            i32 xpos = GET_X_LPARAM(lParam);
+            i32 ypos = GET_Y_LPARAM(lParam);
+            w32state->cur_input->mouse_pos_screen = Vec2Lit(xpos, ypos);
             return 0;
         }
         default: {
