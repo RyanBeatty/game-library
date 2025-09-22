@@ -75,7 +75,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_MOUSEMOVE: {
             i32 xpos = GET_X_LPARAM(lParam);
             i32 ypos = GET_Y_LPARAM(lParam);
-            w32state->cur_input->mouse_pos_screen = Vec2Lit(xpos, ypos);
+            // Convert from origin top left to bottom right.
+            Vec3 pos_screen = Vec3Lit(xpos, ypos, 0.0f);
+            Mat4 rot =
+                Mat4Multiply(Mat4TranslateV(Vec3Lit(0.0f, PlatformScreenHeight(), 0.0f)), Mat4RotateX(Deg2Rad(180.0f)));
+            pos_screen = Vec3WTransform(pos_screen, rot);
+            w32state->cur_input->mouse_pos_screen = Vec2Lit(pos_screen.x, pos_screen.y);
+            // PlatformLog(LLOG_DEBUG, "Win32 Screen Space Mouse Pos: %d %d. Xformed: %f %f", xpos, ypos, pos_screen.x,
+            //             pos_screen.y);
             return 0;
         }
         default: {
