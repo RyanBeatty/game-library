@@ -3255,6 +3255,39 @@ typedef enum {
     PS_COUNT,
 } PlayerState;
 
+LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
+    if (PolyhedronIsNull(&ea->shape)) {
+        return;
+    }
+    Polyhedron pa = PolyhedronTransform(ea->shape, ea->scale, ea->orient, ea->pos);
+
+    for (Entity* eb = ea; IncrementEntity(&eb);) {
+        if (ea == eb || PolyhedronIsNull(&eb->shape)) {
+            continue;
+        }
+        // if (ea->id.idx == 5 && eb->id.idx == 6 && gstate->nframe >= 3) {
+        //     breakpoint();
+        // }
+
+        Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
+
+        CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
+        bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
+        if (collides) {
+            // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+            //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+            // }
+            // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+            //     breakpoint();
+            // }
+            // TODO: Should I just continue on here? At the moment we detect all collisions, but need to
+            // verify that works if for say we collide with a wall that has multiple geometry entities
+            // inside of it
+            ArrPush(collisions, info);
+        }
+    }
+}
+
 static void SceneDefaultTick(GameState* gstate) {
     BeginRender(gstate->dt);
 
@@ -3420,36 +3453,7 @@ static void ScenePhysicsTick(GameState* gstate) {
             CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
 
             for (Entity* ea = NULL; IncrementEntity(&ea);) {
-                if (PolyhedronIsNull(&ea->shape)) {
-                    continue;
-                }
-                Polyhedron pa = PolyhedronTransform(ea->shape, ea->scale, ea->orient, ea->pos);
-
-                for (Entity* eb = ea; IncrementEntity(&eb);) {
-                    if (ea == eb || PolyhedronIsNull(&eb->shape)) {
-                        continue;
-                    }
-                    // if (ea->id.idx == 5 && eb->id.idx == 6 && gstate->nframe >= 3) {
-                    //     breakpoint();
-                    // }
-
-                    Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
-
-                    CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
-                    bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
-                    if (collides) {
-                        // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                        //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
-                        // }
-                        // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-                        //     breakpoint();
-                        // }
-                        // TODO: Should I just continue on here? At the moment we detect all collisions, but need to
-                        // verify that works if for say we collide with a wall that has multiple geometry entities
-                        // inside of it
-                        ArrPush(&collisions, info);
-                    }
-                }
+                EntityCollideWorld(ea, &collisions);
             }
 
             for (isize cidx = 0; cidx < ArrLen(&collisions); ++cidx) {
