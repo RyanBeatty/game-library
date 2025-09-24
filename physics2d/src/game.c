@@ -3160,6 +3160,7 @@ typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_PHYSICS,
     SCENE_BETTER_FONT,
+    SCENE_COLLISION_TICK,
     SCENE_COUNT,
 } SceneId;
 
@@ -3587,6 +3588,58 @@ static void ScenePhysicsTick(GameState* gstate) {
     }
 }
 
+static void SceneCollisionTick(GameState* gstate) {
+    f32 dt = gstate->dt;
+
+    if (gstate->init) {
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Zero();
+            f32 radius = Px2Meter(30.0f);
+            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
+            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+        }
+    }
+
+    if (gstate->update) {
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            e->ppos = e->pos;
+            if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
+                Vec3 a = Vec3Lit(0.0f, -9.8, 0.0f);
+                e->v = Vec3Add(e->v, Vec3Scale(a, dt));
+                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+            }
+        }
+    }
+
+    if (gstate->render) {
+        BeginRender(gstate->dt);
+
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+        f32 width = gstate->renderw_world;
+        f32 height = gstate->renderh_world;
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_DRAW)) {
+                e->graphics.pos = e->pos;
+                e->graphics.orient = e->orient;
+                e->graphics.scale = e->scale;
+                GraphicsInfoTickAnimation(&e->graphics, gstate->dt);
+
+                DrawGraphicsInfo(&e->graphics);
+            }
+        }
+
+        EndShaderPass();
+
+        EndRender();
+    }
+}
+
 static void SceneBetterFontTick(GameState* gstate) {
     if (gstate->init) {
     }
@@ -3694,10 +3747,11 @@ void GameInit() {
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_PHYSICS] = ScenePhysicsTick;
         gstate->scenefuncs[SCENE_BETTER_FONT] = SceneBetterFontTick;
+        gstate->scenefuncs[SCENE_COLLISION_TICK] = SceneCollisionTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_PHYSICS);
+    GameStateLoadScene(gstate, SCENE_COLLISION_TICK);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
