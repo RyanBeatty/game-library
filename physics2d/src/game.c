@@ -3601,6 +3601,7 @@ static void SceneCollisionTick(GameState* gstate) {
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+            EntitySetMass(e, 1.0f);
         }
 
         {
@@ -3612,6 +3613,7 @@ static void SceneCollisionTick(GameState* gstate) {
             // TODO: Implement LModelFromShape for easier prototyping.
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
+            EntitySetMass(e, 0.0f);
         }
     }
 
@@ -3636,6 +3638,31 @@ static void SceneCollisionTick(GameState* gstate) {
                 dir = Vec3Normalize(dir);
                 e->pos = Vec3Add(e->pos, Vec3Scale(dir, 2.0f * dt));
             }
+        }
+
+        CollisionInfo cdata[16] = {0};
+        CollisionArr collisions = {
+            .data = cdata,
+            .cap = ArraySizeOf(cdata),
+        };
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            EntityCollideWorld(e, &collisions);
+        }
+
+        for (isize i = 0; i < ArrLen(&collisions); ++i) {
+            CollisionInfo* info = ArrGetPtr(&collisions, i);
+
+            Entity* ea = EntityFromId(info->id0);
+            Entity* eb = EntityFromId(info->id1);
+
+            f32 minv_a = EntityGetMassInv(ea);
+            f32 minv_b = EntityGetMassInv(eb);
+
+            f32 d = info->depth * (minv_a + minv_b);
+
+            Vec3 push = Vec3Scale(info->normal, d);
+            ea->pos = Vec3Add(ea->pos, Vec3Scale(push, EntityGetMass(ea)));
+            ea->pos = Vec3Add(ea->pos, Vec3Scale(push, -EntityGetMass(eb)));
         }
     }
 
