@@ -3602,6 +3602,17 @@ static void SceneCollisionTick(GameState* gstate) {
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Lit(0.0f, Px2Meter(100.0f), 0.0f);
+            f32 radius = Px2Meter(50.0f);
+            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
+            // TODO: Implement LModelFromShape for easier prototyping.
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
+        }
     }
 
     if (gstate->update) {
