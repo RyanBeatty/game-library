@@ -3607,10 +3607,23 @@ static void SceneCollisionTick(GameState* gstate) {
     if (gstate->update) {
         for (Entity* e = NULL; IncrementEntity(&e);) {
             e->ppos = e->pos;
-            if (TestFlag(e->flags, EFLAG_PROJECTILE)) {
-                Vec3 a = Vec3Lit(0.0f, -9.8, 0.0f);
-                e->v = Vec3Add(e->v, Vec3Scale(a, dt));
-                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+            if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                Vec3 dir = Vec3Zero();
+                if (PlatformKeyDown(LKEY_UP)) {
+                    dir.y += 1.0f;
+                }
+                if (PlatformKeyDown(LKEY_DOWN)) {
+                    dir.y -= 1.0f;
+                }
+                if (PlatformKeyDown(LKEY_LEFT)) {
+                    dir.x -= 1.0f;
+                }
+                if (PlatformKeyDown(LKEY_RIGHT)) {
+                    dir.x += 1.0f;
+                }
+
+                dir = Vec3Normalize(dir);
+                e->pos = Vec3Add(e->pos, Vec3Scale(dir, 2.0f * dt));
             }
         }
     }
