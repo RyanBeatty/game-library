@@ -2117,7 +2117,41 @@ typedef struct {
     Mat2 orient;  // The local to world 2d rotation matrix. orthonormal basis vectors.
 } OBB2D;
 
-LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth) { return false; }
+LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth) {
+    // Determine closest point from circle center to obb (which might be inside obb).
+    // Get the vector from obb center to circle center as we are going to transform this
+    // into the local coordinate space of the untransalated obb. We need to first remove the translation,
+    // Then we can undo the rotation.
+    Vec2 q = Vec2Sub(circle.c, obb.c);
+
+    // Reminder that a rotation matrix inverse is its transpose, so transforming a vector
+    // by the inverse of a rotation matrix is the same as projecting the vector onto each
+    // basis vector (column vector) of the rotation matrix. This shifts the coordinates from
+    // world to local.
+    f32 x = Vec2Dot(q, obb.orient.v.a);
+    // Clamp the projected value (which is now in local space of obb) to be within the dimenions of the
+    // axis we projected along.
+    x = f32clamp(x, -obb.hdims.x, obb.hdims.x);
+    // To get back to world, scale the basis vector of the local to world rotation matrix by the
+    // local projected amounted. This gets us back from local to world.
+    Vec2 qx = Vec2Scale(obb.orient.v.a, x);
+
+    f32 y = Vec2Dot(q, obb.orient.v.b);
+    y = f32clamp(y, -obb.hdims.y, obb.hdims.y);
+    Vec2 qy = Vec2Scale(obb.orient.v.b, y);
+
+    // We now have our closest point in world space from the circle center to the obb (which again might be inside the
+    // obb).
+    q = Vec2Add(obb.c, Vec2Add(qx, qy));
+
+    Vec2 direction = Vec2Sub(circle.c, q);
+    f32 squared_dist = (direction.x * direction.x) + (direction.y * direction.y);
+    if (squared_dist > circle.r * circle.r) {
+        return false;
+    }
+    PlatformLog(LLOG_INFO, "Penetrating!");
+    return false;
+}
 
 typedef struct {
     Vec3 c;  // center.
