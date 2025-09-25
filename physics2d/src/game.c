@@ -2328,6 +2328,29 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                     n = Vec3Lit(n2d.x, n2d.y, 0.0f);
                     break;
                 }
+                case PH_OBB2D: {
+                    collides = false;
+                    break;
+                }
+                default: {
+                    // Collision not supported.
+                    PlatformLog(LLOG_WARN, "Collision type between %d and %d not supported", a->type, b->type);
+                    break;
+                }
+            }
+            break;
+        }
+        case PH_OBB2D: {
+            switch (b->type) {
+                case PH_CIRCLE: {
+                    break;
+                }
+                case PH_AABB2D: {
+                    break;
+                }
+                case PH_OBB2D: {
+                    break;
+                }
                 default: {
                     // Collision not supported.
                     PlatformLog(LLOG_WARN, "Collision type between %d and %d not supported", a->type, b->type);
