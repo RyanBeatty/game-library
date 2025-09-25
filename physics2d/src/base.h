@@ -647,6 +647,12 @@ static Mat2 Mat2Identity() {
     return m;
 }
 
+static Mat2 Mat2Multiply(Mat2 b, Mat2 a) {
+    return Mat2Lit((b.mm.m00 * a.mm.m00) + (b.mm.m01 * a.mm.m10), (b.mm.m00 * a.mm.m01) + (b.mm.m01 * a.mm.m11),  //
+                   (b.mm.m10 * a.mm.m00) + (b.mm.m11 * a.mm.m10), (b.mm.m10 * a.mm.m01) + (b.mm.m11 * a.mm.m11)   //
+    );
+}
+
 // Used for debug.
 typedef struct {
     union {

@@ -2206,6 +2206,7 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
         case PH_NONE: {
             break;
         }
+        // TODO: look at what we do for obb2d.
         case PH_CIRCLE: {
             Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
 
@@ -2226,22 +2227,22 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
             c = Vec3WTransform(c, m);
             shape.aabb2d.c = Vec2Lit(c.x, c.y);
             Vec3 r_bb = Vec3Transform(Vec2ToVec3(shape.aabb2d.r), m);
-            // Is this correct? This will be translated. I think maybe I should just apply scale to these half extents
-            // since the center will be translated properly in world space.
+            // TODO: Is this correct? This will be translated. I think maybe I should just apply scale to these half
+            // extents since the center will be translated properly in world space. Look at what we do for obb2d
             shape.aabb2d.r = Vec2Lit(r_bb.x, r_bb.y);
             break;
         }
         case PH_OBB2D: {
-            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
+            Mat4 mtranslate = Mat4TranslateV(t);
+            // This should still result in an orthonormal matrix assuming r is already ortho normal.
+            Mat2 mrotate = Mat4ToMat2(r);
 
             // This might be a bit jank. but I transform the center with translation and then
             // transform the radius vector (no translation) and take the length.
-            Vec3 c = Vec2ToVec3(shape.aabb2d.c);
-            c = Vec3WTransform(c, m);
-            // TODO: I might actually want to project this vector onto the xy plane.
-            shape.aabb2d.c = Vec2Lit(c.x, c.y);
-            Vec3 r_bb = Vec3Transform(Vec2ToVec3(shape.aabb2d.r), m);
-            shape.aabb2d.r = Vec2Lit(r_bb.x, r_bb.y);
+            shape.obb2d.c = Vec3ToVec2(Vec3WTransform(Vec2ToVec3(shape.obb2d.c), mtranslate));
+            shape.obb2d.hdims.x *= s.x;
+            shape.obb2d.hdims.y *= s.y;
+            shape.obb2d.orient = Mat2Multiply(mrotate, shape.obb2d.orient);
             break;
         }
         case PH_AABB: {
