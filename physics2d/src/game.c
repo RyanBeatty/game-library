@@ -2118,6 +2118,10 @@ typedef struct {
 } OBB2D;
 
 LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth) {
+    // The broad idea here is to find the closest point from the circle center to the obb. We do this
+    // by transforming the circle center into the local coordinate space of th obb (i.e. we take away translation and
+    // rotation). Then we clamp the transformed center to be within the obb if necessary.
+
     // Determine closest point from circle center to obb (which might be inside obb).
     // Get the vector from obb center to circle center as we are going to transform this
     // into the local coordinate space of the untransalated obb. We need to first remove the translation,
