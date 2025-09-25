@@ -2153,8 +2153,16 @@ LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth)
     if (squared_dist > circle.r * circle.r) {
         return false;
     }
-    PlatformLog(LLOG_INFO, "Penetrating!");
-    return false;
+
+    // Compute the collision normal (which is just the direction from the point on obb to the circle center).
+    // And the penetration depth which is just the difference between the circle radius and distance from the closest
+    // point to the circle center
+    f32 dist = f32sqrt(squared_dist);
+    direction.x /= dist;
+    direction.y /= dist;
+    *depth = circle.r - dist;
+    *normal = direction;
+    return true;
 }
 
 typedef struct {
