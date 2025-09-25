@@ -636,10 +636,16 @@ typedef struct {
     };
 } Mat2;
 
-// Take matrix notation as viewed on textbook page and convert to mat4
+// Take matrix notation as viewed on textbook page and convert to mat4. This is in row major format.
 #define Mat2Lit(m00, m01, m10, m11) ((Mat2){.mm = {(m00), (m10), (m01), (m11)}})
 
 LCORE Mat2 Mat4ToMat2(Mat4 m) { return Mat2Lit(m.mm.m00, m.mm.m01, m.mm.m10, m.mm.m11); }
+
+static Mat2 Mat2Identity() {
+    static Mat2 m = Mat2Lit(1.0f, 0.0f,  //
+                            0.0f, 1.0f);
+    return m;
+}
 
 // Used for debug.
 typedef struct {

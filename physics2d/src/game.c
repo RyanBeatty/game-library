@@ -2213,12 +2213,25 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
             // transform the radius vector (no translation) and take the length.
             Vec3 c = Vec2ToVec3(shape.circle.c);
             c = Vec3WTransform(c, m);
-            // TODO: I might actually want to project this vector onto the xy plane.
             shape.circle.c = Vec2Lit(c.x, c.y);
             shape.circle.r = Vec3Len(Vec3Transform(Vec3Lit(shape.circle.r, 0.0f, 0.0f), m));
             break;
         }
         case PH_AABB2D: {
+            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
+
+            // This might be a bit jank. but I transform the center with translation and then
+            // transform the radius vector (no translation) and take the length.
+            Vec3 c = Vec2ToVec3(shape.aabb2d.c);
+            c = Vec3WTransform(c, m);
+            shape.aabb2d.c = Vec2Lit(c.x, c.y);
+            Vec3 r_bb = Vec3Transform(Vec2ToVec3(shape.aabb2d.r), m);
+            // Is this correct? This will be translated. I think maybe I should just apply scale to these half extents
+            // since the center will be translated properly in world space.
+            shape.aabb2d.r = Vec2Lit(r_bb.x, r_bb.y);
+            break;
+        }
+        case PH_OBB2D: {
             Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
 
             // This might be a bit jank. but I transform the center with translation and then
@@ -3647,6 +3660,18 @@ static void SceneCollisionTick(GameState* gstate) {
             // TODO: Implement LModelFromShape for easier prototyping.
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
+            EntitySetMass(e, 0.0f);
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Lit(Px2Meter(100.0f), 0.0f, 0.0f);
+            f32 radius = Px2Meter(50.0f);
+            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
+            // TODO: Implement LModelFromShape for easier prototyping.
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
             EntitySetMass(e, 0.0f);
         }
     }
