@@ -2112,11 +2112,27 @@ LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* dep
 }
 
 typedef struct {
+    Vec2 c;      // center
+    Vec2 hdims;  // half width/height extents along the orient.
+    Mat4 orient;
+} OBB2D;
+
+LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth) { return false; }
+
+typedef struct {
     Vec3 c;  // center.
     Vec3 r;  // half width extents along each axis.
 } AABB;
 
-typedef enum PolyhedronType { PH_NONE = 0, PH_CIRCLE, PH_SPHERE, PH_AABB2D, PH_AABB, PH_COUNT } PolyhedronType;
+typedef enum PolyhedronType {
+    PH_NONE = 0,
+    PH_CIRCLE,
+    PH_SPHERE,
+    PH_AABB2D,
+    PH_OBB2D,
+    PH_AABB,
+    PH_COUNT
+} PolyhedronType;
 
 typedef struct {
     PolyhedronType type;
@@ -2124,6 +2140,7 @@ typedef struct {
     union {
         Circle circle;
         AABB2D aabb2d;
+        OBB2D obb2d;
         Sphere sphere;
         AABB aabb;
     };
@@ -2262,9 +2279,16 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                 case PH_AABB2D: {
                     collides = TestCircleVsAABB2D(a->circle, b->aabb2d, &n2d, &d);
                     n = Vec3Lit(n2d.x, n2d.y, 0.0f);
+                    break;
+                }
+                case PH_OBB2D: {
+                    collides = TestCircleVsOBB2D(a->circle, b->obb2d, &n2d, &d);
+                    n = Vec3Lit(n2d.x, n2d.y, 0.0f);
+                    break;
                 }
                 default: {
                     // Collision not supported.
+                    PlatformLog(LLOG_WARN, "Collision type between %d and %d not supported", a->type, b->type);
                     break;
                 }
             }
@@ -2284,6 +2308,7 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                 }
                 default: {
                     // Collision not supported.
+                    PlatformLog(LLOG_WARN, "Collision type between %d and %d not supported", a->type, b->type);
                     break;
                 }
             }
@@ -2291,6 +2316,7 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
         }
         default: {
             // Collision not supported.
+            PlatformLog(LLOG_WARN, "Collision type between %d and %d not supported", a->type, b->type);
             break;
         }
     }
