@@ -2112,9 +2112,9 @@ LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* dep
 }
 
 typedef struct {
-    Vec2 c;      // center
-    Vec2 hdims;  // half width/height extents along the orient.
-    Mat4 orient;
+    Vec2 c;       // center
+    Vec2 hdims;   // half width/height extents along the orient.
+    Mat2 orient;  // The local to world 2d rotation matrix. orthonormal basis vectors.
 } OBB2D;
 
 LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth) { return false; }
@@ -2187,6 +2187,14 @@ LCORE void PolyhedronSetCircle(Polyhedron* shape, Vec2 c, f32 r) {
     shape->type = PH_CIRCLE;
     shape->circle.c = c;
     shape->circle.r = r;
+}
+
+// Set AABB2D From center and full width and height.
+LCORE void PolyHedronSetOBB2D(Polyhedron* shape, Vec2 c, Vec2 dims, Mat2 orient) {
+    shape->type = PH_OBB2D;
+    shape->obb2d.c = c;
+    shape->obb2d.hdims = Vec2Lit(0.5f * dims.x, 0.5f * dims.y);
+    shape->obb2d.orient = orient;
 }
 
 // Important to pass decomposed transformation matrix (scale, rot, translate) because some polyhedron

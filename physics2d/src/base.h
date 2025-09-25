@@ -618,6 +618,29 @@ LCORE bool Mat4Eq(Mat4 a, Mat4 b) {
     return result;
 }
 
+typedef struct {
+    union {
+        f32 fs[4];
+
+        struct {
+            f32 m00;
+            f32 m10;
+            f32 m01;
+            f32 m11;
+        } mm;
+
+        struct {
+            Vec2 a;
+            Vec2 b;
+        } v;
+    };
+} Mat2;
+
+// Take matrix notation as viewed on textbook page and convert to mat4
+#define Mat2Lit(m00, m01, m10, m11) ((Mat2){.mm = {(m00), (m10), (m01), (m11)}})
+
+LCORE Mat2 Mat4ToMat2(Mat4 m) { return Mat2Lit(m.mm.m00, m.mm.m01, m.mm.m10, m.mm.m11); }
+
 // Used for debug.
 typedef struct {
     union {
