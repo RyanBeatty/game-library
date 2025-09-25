@@ -2145,7 +2145,9 @@ LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth)
     Vec2 qy = Vec2Scale(obb.orient.v.b, y);
 
     // We now have our closest point in world space from the circle center to the obb (which again might be inside the
-    // obb).
+    // obb). Remember that qx and qy are essentially our closest point in world space expressed in terms of the obb
+    // local to world basis vectors. So x_local * x_basis + y_local * y_basis. Adding these together plus adding the
+    // obb center world coordinate yields the point's location in world space.
     q = Vec2Add(obb.c, Vec2Add(qx, qy));
 
     Vec2 direction = Vec2Sub(circle.c, q);
