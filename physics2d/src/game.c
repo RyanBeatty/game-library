@@ -2391,6 +2391,8 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
         case PH_OBB2D: {
             switch (b->type) {
                 case PH_CIRCLE: {
+                    collides = TestCircleVsOBB2D(b->circle, a->obb2d, &n2d, &d);
+                    n = Vec3Negate(Vec3Lit(n2d.x, n2d.y, 0.0f));
                     break;
                 }
                 case PH_AABB2D: {
