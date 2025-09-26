@@ -2117,7 +2117,7 @@ typedef struct {
     Mat2 orient;  // The local to world 2d rotation matrix. orthonormal basis vectors.
 } OBB2D;
 
-LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth) {
+LCORE Vec2 ClosestPointToOBB2D(Vec2 start, OBB2D obb) {
     // The broad idea here is to find the closest point from the circle center to the obb. We do this
     // by transforming the circle center into the local coordinate space of th obb (i.e. we take away translation and
     // rotation). Then we clamp the transformed center to be within the obb if necessary.
@@ -2126,7 +2126,7 @@ LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth)
     // Get the vector from obb center to circle center as we are going to transform this
     // into the local coordinate space of the untransalated obb. We need to first remove the translation,
     // Then we can undo the rotation.
-    Vec2 q = Vec2Sub(circle.c, obb.c);
+    Vec2 q = Vec2Sub(start, obb.c);
 
     // Reminder that a rotation matrix inverse is its transpose, so transforming a vector
     // by the inverse of a rotation matrix is the same as projecting the vector onto each
@@ -2149,6 +2149,11 @@ LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth)
     // local to world basis vectors. So x_local * x_basis + y_local * y_basis. Adding these together plus adding the
     // obb center world coordinate yields the point's location in world space.
     q = Vec2Add(obb.c, Vec2Add(qx, qy));
+    return q;
+}
+
+LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth) {
+    Vec2 q = ClosestPointToOBB2D(circle.c, obb);
 
     Vec2 direction = Vec2Sub(circle.c, q);
     f32 squared_dist = (direction.x * direction.x) + (direction.y * direction.y);
