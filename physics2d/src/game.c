@@ -2304,17 +2304,11 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
             break;
         }
         case PH_AABB2D: {
-            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
-
             // This might be a bit jank. but I transform the center with translation and then
-            // transform the radius vector (no translation) and take the length.
-            Vec3 c = Vec2ToVec3(shape.aabb2d.c);
-            c = Vec3WTransform(c, m);
-            shape.aabb2d.c = Vec2Lit(c.x, c.y);
-            Vec3 r_bb = Vec3Transform(Vec2ToVec3(shape.aabb2d.r), m);
-            // TODO: Is this correct? This will be translated. I think maybe I should just apply scale to these half
-            // extents since the center will be translated properly in world space. Look at what we do for obb2d
-            shape.aabb2d.r = Vec2Lit(r_bb.x, r_bb.y);
+            // drop the 3rd dimension (essentially projecting back to 2d).
+            shape.aabb2d.c = Vec3ToVec2(Vec3Add(Vec2ToVec3(shape.aabb2d.c), t));
+            shape.aabb2d.r.x *= s.x;
+            shape.aabb2d.r.y *= s.y;
             break;
         }
         case PH_OBB2D: {
@@ -3752,30 +3746,31 @@ static void SceneCollisionTick(GameState* gstate) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Zero();
-            f32 radius = Px2Meter(30.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
-            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
-            EntitySetMass(e, 1.0f);
-        }
-
         // {
         //     Entity* e = AllocateEntity();
         //     e->pos = Vec3Zero();
         //     f32 radius = Px2Meter(30.0f);
         //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT),
+        //     Vec3Zero(),
         //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
         //                                                        LBLUE));
-        //     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
+        //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
         //     FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         //     EntitySetMass(e, 1.0f);
         // }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Zero();
+            f32 radius = Px2Meter(30.0f);
+            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
+            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+            EntitySetMass(e, 1.0f);
+        }
 
         {
             Entity* e = AllocateEntity();
