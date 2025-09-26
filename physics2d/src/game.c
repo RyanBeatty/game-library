@@ -2296,14 +2296,11 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
         }
         // TODO: look at what we do for obb2d.
         case PH_CIRCLE: {
-            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
-
             // This might be a bit jank. but I transform the center with translation and then
-            // transform the radius vector (no translation) and take the length.
-            Vec3 c = Vec2ToVec3(shape.circle.c);
-            c = Vec3WTransform(c, m);
-            shape.circle.c = Vec2Lit(c.x, c.y);
-            shape.circle.r = Vec3Len(Vec3Transform(Vec3Lit(shape.circle.r, 0.0f, 0.0f), m));
+            // drop the 3rd dimension (essentially projecting back to 2d).
+            shape.circle.c = Vec3ToVec2(Vec3Add(Vec2ToVec3(shape.circle.c), t));
+            // Essentially for scaling since a radius is directionless, we just scale by the maximal scale factor in 2d.
+            shape.circle.r *= f32max(s.x, s.y);
             break;
         }
         case PH_AABB2D: {
