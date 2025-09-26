@@ -3708,6 +3708,8 @@ static void ScenePhysicsTick(GameState* gstate) {
 }
 
 static void SceneCollisionTick(GameState* gstate) {
+    static EntityId ROTATE_ID = {0};
+
     f32 dt = gstate->dt;
 
     if (gstate->init) {
@@ -3759,6 +3761,19 @@ static void SceneCollisionTick(GameState* gstate) {
                                                                orient, Vec3Lit(radius, radius, 1.0f), LGREEN));
             EntitySetMass(e, 0.0f);
         }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Lit(Px2Meter(-300.0f), Px2Meter(-300.0f), 0.0f);
+            f32 radius = Px2Meter(50.0f);
+            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
+            // TODO: Implement LModelFromShape for easier prototyping.
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
+            EntitySetMass(e, 0.0f);
+            ROTATE_ID = e->id;
+        }
     }
 
     if (gstate->update) {
@@ -3781,6 +3796,10 @@ static void SceneCollisionTick(GameState* gstate) {
 
                 dir = Vec3Normalize(dir);
                 e->pos = Vec3Add(e->pos, Vec3Scale(dir, 2.0f * dt));
+            }
+
+            if (e->id.idx == ROTATE_ID.idx) {
+                e->orient = Mat4RotateZ(gstate->timer);
             }
         }
 
