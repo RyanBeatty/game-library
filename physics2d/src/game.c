@@ -2172,6 +2172,41 @@ LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth)
     return true;
 }
 
+LCORE bool TestAABB2DVsOBB2D(AABB2D aabb2d, OBB2D obb, Vec2* normal, f32* depth) {
+    Vec2 q = ClosestPointToOBB2D(aabb2d.c, obb);
+
+    Vec2 direction = Vec2Sub(aabb2d.c, q);
+
+    // If the magnitude of the x distance to our closest point is greater than the aabb width, then we have found a
+    // separating axis and are not colliding.
+    f32 depthx = aabb2d.r.x - f32abs(direction.x);
+    if (depthx < 0.0f) {
+        // PlatformLog(LLOG_INFO, "separating along x: %f %f %f", depthx, aabb2d.r.x, direction.x);
+        return false;
+    }
+
+    // Same check here for the y axis (the other axis).
+    f32 depthy = aabb2d.r.y - f32abs(direction.y);
+    if (depthy < 0.0f) {
+        // PlatformLog(LLOG_INFO, "separating along y: %f %f %f", depthy, aabb2d.r.y, direction.y);
+        return false;
+    }
+
+    // No separating axis found, so we have a collision. pick the axis which has the minimal penetration depth as the
+    // collision axis.
+    if (depthx <= depthy) {
+        // This will handle both +x/-x as the axis of collision.
+        f32 dir = direction.x <= 0.0f ? -1.0f : 1;
+        *normal = Vec2Lit(dir, 0.0f);
+        *depth = depthx;
+    } else {
+        f32 dir = direction.y <= 0.0f ? -1.0f : 1;
+        *normal = Vec2Lit(0.0f, dir);
+        *depth = depthy;
+    }
+    return true;
+}
+
 typedef struct {
     Vec3 c;  // center.
     Vec3 r;  // half width extents along each axis.
@@ -2382,7 +2417,8 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                     break;
                 }
                 case PH_OBB2D: {
-                    collides = false;
+                    collides = TestAABB2DVsOBB2D(a->aabb2d, b->obb2d, &n2d, &d);
+                    n = Vec3Lit(n2d.x, n2d.y, 0.0f);
                     break;
                 }
                 default: {
@@ -3720,29 +3756,43 @@ static void SceneCollisionTick(GameState* gstate) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Zero();
+        //     f32 radius = Px2Meter(30.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT),
+        //     Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LBLUE));
+        //     PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+        //     FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+        //     EntitySetMass(e, 1.0f);
+        // }
+
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Zero();
             f32 radius = Px2Meter(30.0f);
             e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
             EntitySetMass(e, 1.0f);
         }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(0.0f, Px2Meter(100.0f), 0.0f);
-            f32 radius = Px2Meter(50.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
-            // TODO: Implement LModelFromShape for easier prototyping.
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
-            EntitySetMass(e, 0.0f);
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(0.0f, Px2Meter(100.0f), 0.0f);
+        //     f32 radius = Px2Meter(50.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
+        //     // TODO: Implement LModelFromShape for easier prototyping.
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
+        //     EntitySetMass(e, 0.0f);
+        // }
 
         {
             Entity* e = AllocateEntity();
@@ -3756,31 +3806,32 @@ static void SceneCollisionTick(GameState* gstate) {
             EntitySetMass(e, 0.0f);
         }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(-Px2Meter(100.0f), 0.0f, 0.0f);
-            f32 radius = Px2Meter(50.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            Mat4 orient = Mat4RotateZ(Deg2Rad(45.0f));
-            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat4ToMat2(orient));
-            // TODO: Implement LModelFromShape for easier prototyping.
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               orient, Vec3Lit(radius, radius, 1.0f), LGREEN));
-            EntitySetMass(e, 0.0f);
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(-Px2Meter(100.0f), 0.0f, 0.0f);
+        //     f32 radius = Px2Meter(50.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     Mat4 orient = Mat4RotateZ(Deg2Rad(45.0f));
+        //     PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat4ToMat2(orient));
+        //     // TODO: Implement LModelFromShape for easier prototyping.
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //                                                        orient, Vec3Lit(radius, radius, 1.0f), LGREEN));
+        //     EntitySetMass(e, 0.0f);
+        // }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(Px2Meter(-300.0f), Px2Meter(-300.0f), 0.0f);
-            f32 radius = Px2Meter(50.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
-            // TODO: Implement LModelFromShape for easier prototyping.
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
-            EntitySetMass(e, 0.0f);
-            ROTATE_ID = e->id;
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(Px2Meter(-300.0f), Px2Meter(-300.0f), 0.0f);
+        //     f32 radius = Px2Meter(50.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
+        //     // TODO: Implement LModelFromShape for easier prototyping.
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LGREEN));
+        //     EntitySetMass(e, 0.0f);
+        //     ROTATE_ID = e->id;
+        // }
     }
 
     if (gstate->update) {
