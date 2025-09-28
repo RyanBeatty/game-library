@@ -2172,6 +2172,7 @@ LCORE bool TestCircleVsOBB2D(Circle circle, OBB2D obb, Vec2* normal, f32* depth)
     return true;
 }
 
+// TODO: This is incorrect and we should probably just try using the SAT to test.
 LCORE bool TestAABB2DVsOBB2D(AABB2D aabb2d, OBB2D obb, Vec2* normal, f32* depth) {
     Vec2 q = ClosestPointToOBB2D(aabb2d.c, obb);
 
@@ -2204,6 +2205,155 @@ LCORE bool TestAABB2DVsOBB2D(AABB2D aabb2d, OBB2D obb, Vec2* normal, f32* depth)
         *normal = Vec2Lit(0.0f, dir);
         *depth = depthy;
     }
+    return true;
+}
+
+LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* depth) {
+    static bool DEBUG = false;
+    static i32 NUMBER = 0;
+    if (PlatformKeyDown(LKEY_ENTER)) {
+        DEBUG = true;
+    }
+
+    *depth = F32_MAX;
+
+    // Test AABB axis
+    {
+        // x axis. Reminder that this is the separating axis. so the direction normal would be.
+        {
+            Vec2 axis = Vec2Lit(1.0f, 0.0f);
+            f32 ca = Vec2Dot(aabb2d.c, axis);
+            f32 pa = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
+            f32 ra = f32abs(pa - ca);
+
+            f32 cb = Vec2Dot(obb2d.c, axis);
+            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(1.0f, 0.0f), obb2d.orient)), axis);
+            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, 1.0f), obb2d.orient)), axis);
+            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
+            f32 rb = f32abs(pb - cb);
+
+            f32 d = (ra + rb) - f32abs(ca - cb);
+            if (d < 0.0f) {
+                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: aabb2d x separates");
+                return false;
+            }
+
+            if (d <= *depth) {
+                *depth = d;
+                f32 sign = ca >= cb ? 1.0f : -1.0f;
+                *normal = Vec2Lit(sign * axis.x, axis.y);
+                if (DEBUG) {
+                    breakpoint();
+                }
+                NUMBER = 1;
+            }
+        }
+
+        // y axis
+        {
+            Vec2 axis = Vec2Lit(0.0f, 1.0f);
+            f32 ca = Vec2Dot(aabb2d.c, axis);
+            f32 pa = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
+            f32 ra = f32abs(pa - ca);
+
+            f32 cb = Vec2Dot(obb2d.c, axis);
+            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
+            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
+            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
+            f32 rb = f32abs(pb - cb);
+
+            f32 d = (ra + rb) - f32abs(ca - cb);
+            if (d < 0.0f) {
+                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: aabb2d y separates");
+                return false;
+            }
+
+            if (d <= *depth) {
+                *depth = d;
+                f32 sign = ca >= cb ? 1.0f : -1.0f;
+                *normal = Vec2Lit(axis.x, sign * axis.y);
+                if (DEBUG) {
+                    breakpoint();
+                }
+                NUMBER = 2;
+            }
+        }
+    }
+
+    // Test OBB axis
+    {
+        // x axis
+        {
+            Vec2 axis = obb2d.orient.v.a;
+            f32 cb = Vec2Dot(obb2d.c, axis);
+            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
+            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
+            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
+            f32 rb = f32abs(pb - cb);
+
+            f32 ca = Vec2Dot(aabb2d.c, axis);
+            f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
+            f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
+            f32 pa = f32abs(pa1) >= f32abs(pa2) ? pa1 : pa2;
+            f32 ra = f32abs(pa - ca);
+
+            f32 d = (ra + rb) - f32abs(ca - cb);
+            if (d < 0.0f) {
+                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: obb x separates");
+                return false;
+            }
+
+            if (d <= *depth) {
+                *depth = d;
+                f32 sign = ca >= cb ? 1.0f : -1.0f;
+                *normal = Vec2Lit(sign * axis.x, axis.y);
+                breakpoint();
+
+                if (DEBUG) {
+                    breakpoint();
+                }
+                NUMBER = 3;
+            }
+        }
+
+        // y axis
+        {
+            Vec2 axis = obb2d.orient.v.b;
+            f32 cb = Vec2Dot(obb2d.c, axis);
+            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
+            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
+            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
+            f32 rb = f32abs(pb - cb);
+
+            f32 ca = Vec2Dot(aabb2d.c, axis);
+            f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
+            f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
+            f32 pa = f32abs(pa1) >= f32abs(pa2) ? pa1 : pa2;
+            f32 ra = f32abs(pa - ca);
+
+            f32 d = (ra + rb) - f32abs(ca - cb);
+            if (d < 0.0f) {
+                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: obb y separates");
+                return false;
+            }
+
+            if (d <= *depth) {
+                *depth = d;
+                f32 sign = ca >= cb ? 1.0f : -1.0f;
+                *normal = Vec2Lit(axis.x, sign * axis.y);
+                if (DEBUG) {
+                    breakpoint();
+                }
+                NUMBER = 4;
+            }
+        }
+    }
+
+    if (DEBUG) {
+        breakpoint();
+    }
+    PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->x,
+                *depth);
     return true;
 }
 
@@ -2407,7 +2557,7 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                     break;
                 }
                 case PH_OBB2D: {
-                    collides = TestAABB2DVsOBB2D(a->aabb2d, b->obb2d, &n2d, &d);
+                    collides = TestAABB2DvsOBB2D2(a->aabb2d, b->obb2d, &n2d, &d);
                     n = Vec3Lit(n2d.x, n2d.y, 0.0f);
                     break;
                 }
@@ -3772,17 +3922,17 @@ static void SceneCollisionTick(GameState* gstate) {
             EntitySetMass(e, 1.0f);
         }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(0.0f, Px2Meter(100.0f), 0.0f);
-            f32 radius = Px2Meter(50.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
-            // TODO: Implement LModelFromShape for easier prototyping.
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
-            EntitySetMass(e, 0.0f);
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(0.0f, Px2Meter(100.0f), 0.0f);
+        //     f32 radius = Px2Meter(50.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
+        //     // TODO: Implement LModelFromShape for easier prototyping.
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LRED));
+        //     EntitySetMass(e, 0.0f);
+        // }
 
         {
             Entity* e = AllocateEntity();
@@ -3796,31 +3946,32 @@ static void SceneCollisionTick(GameState* gstate) {
             EntitySetMass(e, 0.0f);
         }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(-Px2Meter(100.0f), 0.0f, 0.0f);
-            f32 radius = Px2Meter(50.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            Mat4 orient = Mat4RotateZ(Deg2Rad(45.0f));
-            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat4ToMat2(orient));
-            // TODO: Implement LModelFromShape for easier prototyping.
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               orient, Vec3Lit(radius, radius, 1.0f), LGREEN));
-            EntitySetMass(e, 0.0f);
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(-Px2Meter(100.0f), 0.0f, 0.0f);
+        //     f32 radius = Px2Meter(50.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     Mat4 orient = Mat4RotateZ(Deg2Rad(45.0f));
+        //     PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat4ToMat2(orient));
+        //     // TODO: Implement LModelFromShape for easier prototyping.
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //                                                        orient, Vec3Lit(radius, radius, 1.0f), LGREEN));
+        //     EntitySetMass(e, 0.0f);
+        // }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(Px2Meter(-300.0f), Px2Meter(-300.0f), 0.0f);
-            f32 radius = Px2Meter(50.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
-            // TODO: Implement LModelFromShape for easier prototyping.
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
-            EntitySetMass(e, 0.0f);
-            ROTATE_ID = e->id;
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Lit(Px2Meter(-300.0f), Px2Meter(-300.0f), 0.0f);
+        //     f32 radius = Px2Meter(50.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
+        //     // TODO: Implement LModelFromShape for easier prototyping.
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LGREEN));
+        //     EntitySetMass(e, 0.0f);
+        //     ROTATE_ID = e->id;
+        // }
     }
 
     if (gstate->update) {

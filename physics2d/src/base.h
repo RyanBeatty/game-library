@@ -653,6 +653,11 @@ static Mat2 Mat2Multiply(Mat2 b, Mat2 a) {
     );
 }
 
+LCORE Vec2 Vec2Transform(Vec2 v, Mat2 m) {
+    return Vec2Lit((m.mm.m00 * v.x) + (m.mm.m01 * v.y),  //
+                   (m.mm.m10 * v.x) + (m.mm.m11 * v.y));
+}
+
 // Used for debug.
 typedef struct {
     union {
