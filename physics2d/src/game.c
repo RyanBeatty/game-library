@@ -2239,8 +2239,10 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
 
             if (d <= *depth) {
                 *depth = d;
-                f32 sign = ca >= cb ? 1.0f : -1.0f;
-                *normal = Vec2Lit(sign * axis.x, axis.y);
+                // If ca is further along the axis than cb, we have the correct normal direction.
+                // otherwise we need to negate the axis.
+                *normal = ca >= cb ? axis : Vec2Negate(axis);
+
                 // if (DEBUG) {
                 //     breakpoint();
                 // }
@@ -2268,8 +2270,8 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
 
             if (d <= *depth) {
                 *depth = d;
-                f32 sign = ca >= cb ? 1.0f : -1.0f;
-                *normal = Vec2Lit(axis.x, sign * axis.y);
+                *normal = ca >= cb ? axis : Vec2Negate(axis);
+
                 // if (DEBUG) {
                 //     breakpoint();
                 // }
@@ -2301,8 +2303,7 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
 
             if (d <= *depth) {
                 *depth = d;
-                f32 sign = ca >= cb ? 1.0f : -1.0f;
-                *normal = Vec2Lit(sign * axis.x, axis.y);
+                *normal = ca >= cb ? axis : Vec2Negate(axis);
                 // breakpoint();
 
                 // if (DEBUG) {
@@ -2333,8 +2334,7 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
 
             if (d <= *depth) {
                 *depth = d;
-                f32 sign = ca >= cb ? 1.0f : -1.0f;
-                *normal = Vec2Lit(axis.x, sign * axis.y);
+                *normal = ca >= cb ? axis : Vec2Negate(axis);
                 // if (DEBUG) {
                 //     breakpoint();
                 // }
@@ -2346,8 +2346,8 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
     // if (DEBUG) {
     //     breakpoint();
     // }
-    // PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->y,
-    //             *depth);
+    PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->y,
+                *depth);
     return true;
 }
 
@@ -3928,30 +3928,31 @@ static void SceneCollisionTick(GameState* gstate) {
         //     EntitySetMass(e, 0.0f);
         // }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(Px2Meter(100.0f), 0.0f, 0.0f);
-            f32 radius = Px2Meter(50.0f);
-            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
-            // TODO: Implement LModelFromShape for easier prototyping.
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LGREEN));
-            EntitySetMass(e, 0.0f);
-        }
-
         // {
         //     Entity* e = AllocateEntity();
-        //     e->pos = Vec3Lit(-Px2Meter(100.0f), 0.0f, 0.0f);
+        //     e->pos = Vec3Lit(Px2Meter(100.0f), 0.0f, 0.0f);
         //     f32 radius = Px2Meter(50.0f);
         //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-        //     Mat4 orient = Mat4RotateZ(Deg2Rad(45.0f));
-        //     PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat4ToMat2(orient));
+        //     PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat2Identity());
         //     // TODO: Implement LModelFromShape for easier prototyping.
         //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-        //                                                        orient, Vec3Lit(radius, radius, 1.0f), LGREEN));
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LGREEN));
         //     EntitySetMass(e, 0.0f);
         // }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Lit(-Px2Meter(100.0f), 0.0f, 0.0f);
+            f32 radius = Px2Meter(50.0f);
+            e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+            Mat4 orient = Mat4RotateZ(Deg2Rad(45.0f));
+            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat4ToMat2(orient));
+            // TODO: Implement LModelFromShape for easier prototyping.
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               orient, Vec3Lit(radius, radius, 1.0f), LGREEN));
+            EntitySetMass(e, 0.0f);
+        }
 
         // {
         //     Entity* e = AllocateEntity();

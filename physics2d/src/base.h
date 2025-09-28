@@ -180,7 +180,7 @@ static Vec2 Vec2Zero() {
     static Vec2 v = Vec2Lit(0.0f, 0.0f);
     return v;
 }
-
+static Vec2 Vec2Negate(Vec2 v) { return Vec2Lit(-v.x, -v.y); }
 static Vec2 Vec2Add(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x + v2.x, v1.y + v2.y); }
 static Vec2 Vec2Sub(Vec2 v1, Vec2 v2) { return Vec2Lit(v1.x - v2.x, v1.y - v2.y); }
 static Vec2 Vec2Scale(Vec2 v, f32 s) { return Vec2Lit(v.x * s, v.y * s); }
