@@ -2229,8 +2229,7 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
             f32 cb = Vec2Dot(obb2d.c, axis);
             f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(1.0f, 0.0f), obb2d.orient)), axis);
             f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, 1.0f), obb2d.orient)), axis);
-            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
-            f32 rb = f32abs(pb - cb);
+            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
 
             f32 d = (ra + rb) - f32abs(ca - cb);
             if (d < 0.0f) {
@@ -2242,9 +2241,9 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
                 *depth = d;
                 f32 sign = ca >= cb ? 1.0f : -1.0f;
                 *normal = Vec2Lit(sign * axis.x, axis.y);
-                if (DEBUG) {
-                    breakpoint();
-                }
+                // if (DEBUG) {
+                //     breakpoint();
+                // }
                 NUMBER = 1;
             }
         }
@@ -2259,8 +2258,7 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
             f32 cb = Vec2Dot(obb2d.c, axis);
             f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
             f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
-            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
-            f32 rb = f32abs(pb - cb);
+            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
 
             f32 d = (ra + rb) - f32abs(ca - cb);
             if (d < 0.0f) {
@@ -2272,9 +2270,9 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
                 *depth = d;
                 f32 sign = ca >= cb ? 1.0f : -1.0f;
                 *normal = Vec2Lit(axis.x, sign * axis.y);
-                if (DEBUG) {
-                    breakpoint();
-                }
+                // if (DEBUG) {
+                //     breakpoint();
+                // }
                 NUMBER = 2;
             }
         }
@@ -2288,14 +2286,12 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
             f32 cb = Vec2Dot(obb2d.c, axis);
             f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
             f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
-            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
-            f32 rb = f32abs(pb - cb);
+            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
 
             f32 ca = Vec2Dot(aabb2d.c, axis);
             f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
             f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
-            f32 pa = f32abs(pa1) >= f32abs(pa2) ? pa1 : pa2;
-            f32 ra = f32abs(pa - ca);
+            f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
 
             f32 d = (ra + rb) - f32abs(ca - cb);
             if (d < 0.0f) {
@@ -2307,11 +2303,11 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
                 *depth = d;
                 f32 sign = ca >= cb ? 1.0f : -1.0f;
                 *normal = Vec2Lit(sign * axis.x, axis.y);
-                breakpoint();
+                // breakpoint();
 
-                if (DEBUG) {
-                    breakpoint();
-                }
+                // if (DEBUG) {
+                //     breakpoint();
+                // }
                 NUMBER = 3;
             }
         }
@@ -2322,14 +2318,12 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
             f32 cb = Vec2Dot(obb2d.c, axis);
             f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
             f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
-            f32 pb = f32abs(pb1) >= f32abs(pb2) ? pb1 : pb2;
-            f32 rb = f32abs(pb - cb);
+            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
 
             f32 ca = Vec2Dot(aabb2d.c, axis);
             f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
             f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
-            f32 pa = f32abs(pa1) >= f32abs(pa2) ? pa1 : pa2;
-            f32 ra = f32abs(pa - ca);
+            f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
 
             f32 d = (ra + rb) - f32abs(ca - cb);
             if (d < 0.0f) {
@@ -2341,19 +2335,19 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
                 *depth = d;
                 f32 sign = ca >= cb ? 1.0f : -1.0f;
                 *normal = Vec2Lit(axis.x, sign * axis.y);
-                if (DEBUG) {
-                    breakpoint();
-                }
+                // if (DEBUG) {
+                //     breakpoint();
+                // }
                 NUMBER = 4;
             }
         }
     }
 
-    if (DEBUG) {
-        breakpoint();
-    }
-    PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->x,
-                *depth);
+    // if (DEBUG) {
+    //     breakpoint();
+    // }
+    // PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->y,
+    //             *depth);
     return true;
 }
 
