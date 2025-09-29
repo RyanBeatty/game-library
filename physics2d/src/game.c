@@ -2359,13 +2359,13 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
         // Find the largest projection along the axis. Since the aabb is symmetric, we just need to check corners on the
         // same side to have checked all points.
         f32 ca = Vec2Dot(aabb2d.c, axis);
-        f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, aabb2d.r.y)), axis);
+        f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, aabb2d.r), axis);
         f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(-aabb2d.r.x, aabb2d.r.y)), axis);
         // Save the max projected distance
         f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
 
         f32 cb = Vec2Dot(obb2d.c, axis);
-        f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, obb2d.hdims.y), obb2d.orient)), axis);
+        f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(obb2d.hdims, obb2d.orient)), axis);
         f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(-obb2d.hdims.x, obb2d.hdims.y), obb2d.orient)), axis);
         f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
 
