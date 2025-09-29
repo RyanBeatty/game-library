@@ -2209,11 +2209,11 @@ LCORE bool TestAABB2DVsOBB2D(AABB2D aabb2d, OBB2D obb, Vec2* normal, f32* depth)
 }
 
 LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* depth) {
-    static bool DEBUG = false;
-    static i32 NUMBER = 0;
-    if (PlatformKeyDown(LKEY_ENTER)) {
-        DEBUG = true;
-    }
+    // static bool DEBUG = false;
+    // static i32 NUMBER = 0;
+    // if (PlatformKeyDown(LKEY_ENTER)) {
+    //     DEBUG = true;
+    // }
 
     *depth = F32_MAX;
 
@@ -2373,28 +2373,28 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
         // we have found a separating axis and have no collision.
         f32 d = (ra + rb) - f32abs(ca - cb);
         if (d < 0.0f) {
-            if (DEBUG) {
-                breakpoint();
-            }
-            PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: ith: %d axis %f %f separates", i, axis.x, axis.y);
+            // if (DEBUG) {
+            //     breakpoint();
+            // }
+            // PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: ith: %d axis %f %f separates", i, axis.x, axis.y);
             return false;
         }
 
         if (d <= *depth) {
             *depth = d;
             *normal = ca >= cb ? axis : Vec2Negate(axis);
-            if (DEBUG) {
-                breakpoint();
-            }
-            NUMBER = i;
+            // if (DEBUG) {
+            //     breakpoint();
+            // }
+            // NUMBER = i;
         }
     }
 
     // if (DEBUG) {
     //     breakpoint();
     // }
-    PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->y,
-                *depth);
+    // PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->y,
+    //             *depth);
     return true;
 }
 
