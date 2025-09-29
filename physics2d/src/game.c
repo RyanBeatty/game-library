@@ -2217,129 +2217,176 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
 
     *depth = F32_MAX;
 
-    // Test AABB axis
-    {
-        // x axis. Reminder that this is the separating axis. so the direction normal would be.
-        {
-            Vec2 axis = Vec2Lit(1.0f, 0.0f);
-            f32 ca = Vec2Dot(aabb2d.c, axis);
-            f32 pa = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
-            f32 ra = f32abs(pa - ca);
+    // // Test AABB axis
+    // {
+    //     // x axis. Reminder that this is the separating axis. so the direction normal would be.
+    //     {
+    //         Vec2 axis = Vec2Lit(1.0f, 0.0f);
+    //         f32 ca = Vec2Dot(aabb2d.c, axis);
+    //         f32 pa = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
+    //         f32 ra = f32abs(pa - ca);
 
-            f32 cb = Vec2Dot(obb2d.c, axis);
-            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(1.0f, 0.0f), obb2d.orient)), axis);
-            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, 1.0f), obb2d.orient)), axis);
-            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
+    //         f32 cb = Vec2Dot(obb2d.c, axis);
+    //         f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(1.0f, 0.0f), obb2d.orient)), axis);
+    //         f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, 1.0f), obb2d.orient)), axis);
+    //         f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
 
-            f32 d = (ra + rb) - f32abs(ca - cb);
-            if (d < 0.0f) {
-                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: aabb2d x separates");
-                return false;
+    //         f32 d = (ra + rb) - f32abs(ca - cb);
+    //         if (d < 0.0f) {
+    //             PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: aabb2d x separates");
+    //             return false;
+    //         }
+
+    //         if (d <= *depth) {
+    //             *depth = d;
+    //             // If ca is further along the axis than cb, we have the correct normal direction.
+    //             // otherwise we need to negate the axis.
+    //             *normal = ca >= cb ? axis : Vec2Negate(axis);
+
+    //             // if (DEBUG) {
+    //             //     breakpoint();
+    //             // }
+    //             NUMBER = 1;
+    //         }
+    //     }
+
+    //     // y axis
+    //     {
+    //         Vec2 axis = Vec2Lit(0.0f, 1.0f);
+    //         f32 ca = Vec2Dot(aabb2d.c, axis);
+    //         f32 pa = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
+    //         f32 ra = f32abs(pa - ca);
+
+    //         f32 cb = Vec2Dot(obb2d.c, axis);
+    //         f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
+    //         f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
+    //         f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
+
+    //         f32 d = (ra + rb) - f32abs(ca - cb);
+    //         if (d < 0.0f) {
+    //             PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: aabb2d y separates");
+    //             return false;
+    //         }
+
+    //         if (d <= *depth) {
+    //             *depth = d;
+    //             *normal = ca >= cb ? axis : Vec2Negate(axis);
+
+    //             // if (DEBUG) {
+    //             //     breakpoint();
+    //             // }
+    //             NUMBER = 2;
+    //         }
+    //     }
+    // }
+
+    // // Test OBB axis
+    // {
+    //     // x axis
+    //     {
+    //         Vec2 axis = obb2d.orient.v.a;
+    //         f32 cb = Vec2Dot(obb2d.c, axis);
+    //         f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
+    //         f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
+    //         f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
+
+    //         f32 ca = Vec2Dot(aabb2d.c, axis);
+    //         f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
+    //         f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
+    //         f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
+
+    //         f32 d = (ra + rb) - f32abs(ca - cb);
+    //         if (d < 0.0f) {
+    //             PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: obb x separates");
+    //             return false;
+    //         }
+
+    //         if (d <= *depth) {
+    //             *depth = d;
+    //             *normal = ca >= cb ? axis : Vec2Negate(axis);
+    //             // breakpoint();
+
+    //             // if (DEBUG) {
+    //             //     breakpoint();
+    //             // }
+    //             NUMBER = 3;
+    //         }
+    //     }
+
+    //     // y axis
+    //     {
+    //         Vec2 axis = obb2d.orient.v.b;
+    //         f32 cb = Vec2Dot(obb2d.c, axis);
+    //         f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
+    //         f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
+    //         f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
+
+    //         f32 ca = Vec2Dot(aabb2d.c, axis);
+    //         f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
+    //         f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
+    //         f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
+
+    //         f32 d = (ra + rb) - f32abs(ca - cb);
+    //         if (d < 0.0f) {
+    //             if (DEBUG) {
+    //                 breakpoint();
+    //             }
+    //             PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: obb y separates");
+    //             return false;
+    //         }
+
+    //         if (d <= *depth) {
+    //             *depth = d;
+    //             *normal = ca >= cb ? axis : Vec2Negate(axis);
+    //             if (DEBUG) {
+    //                 breakpoint();
+    //             }
+    //             NUMBER = 4;
+    //         }
+    //     }
+    // }
+    // Note, we could unroll this loop and eliminate a few operations when checking the aabb to make this faster,
+    // but lets just focus on correctness for now.
+    Vec2 axiss[] = {
+        Vec2Lit(1.0f, 0.0f),
+        Vec2Lit(0.0f, 1.0f),
+        obb2d.orient.v.a,
+        obb2d.orient.v.b,
+    };
+    for (isize i = 0; i < ArraySizeOf(axiss); ++i) {
+        Vec2 axis = axiss[i];
+
+        // Find the largest projection along the axis. Since the aabb is symmetric, we just need to check corners on the
+        // same side to have checked all points.
+        f32 ca = Vec2Dot(aabb2d.c, axis);
+        f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, aabb2d.r.y)), axis);
+        f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(-aabb2d.r.x, aabb2d.r.y)), axis);
+        // Save the max projected distance
+        f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
+
+        f32 cb = Vec2Dot(obb2d.c, axis);
+        f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, obb2d.hdims.y), obb2d.orient)), axis);
+        f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(-obb2d.hdims.x, obb2d.hdims.y), obb2d.orient)), axis);
+        f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
+
+        // If the combined projected interval is less than the projected interval between the centers, then
+        // we have found a separating axis and have no collision.
+        f32 d = (ra + rb) - f32abs(ca - cb);
+        if (d < 0.0f) {
+            if (DEBUG) {
+                breakpoint();
             }
-
-            if (d <= *depth) {
-                *depth = d;
-                // If ca is further along the axis than cb, we have the correct normal direction.
-                // otherwise we need to negate the axis.
-                *normal = ca >= cb ? axis : Vec2Negate(axis);
-
-                // if (DEBUG) {
-                //     breakpoint();
-                // }
-                NUMBER = 1;
-            }
+            PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: ith: %d axis %f %f separates", i, axis.x, axis.y);
+            return false;
         }
 
-        // y axis
-        {
-            Vec2 axis = Vec2Lit(0.0f, 1.0f);
-            f32 ca = Vec2Dot(aabb2d.c, axis);
-            f32 pa = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
-            f32 ra = f32abs(pa - ca);
-
-            f32 cb = Vec2Dot(obb2d.c, axis);
-            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
-            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
-            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
-
-            f32 d = (ra + rb) - f32abs(ca - cb);
-            if (d < 0.0f) {
-                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: aabb2d y separates");
-                return false;
+        if (d <= *depth) {
+            *depth = d;
+            *normal = ca >= cb ? axis : Vec2Negate(axis);
+            if (DEBUG) {
+                breakpoint();
             }
-
-            if (d <= *depth) {
-                *depth = d;
-                *normal = ca >= cb ? axis : Vec2Negate(axis);
-
-                // if (DEBUG) {
-                //     breakpoint();
-                // }
-                NUMBER = 2;
-            }
-        }
-    }
-
-    // Test OBB axis
-    {
-        // x axis
-        {
-            Vec2 axis = obb2d.orient.v.a;
-            f32 cb = Vec2Dot(obb2d.c, axis);
-            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
-            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
-            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
-
-            f32 ca = Vec2Dot(aabb2d.c, axis);
-            f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
-            f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
-            f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
-
-            f32 d = (ra + rb) - f32abs(ca - cb);
-            if (d < 0.0f) {
-                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: obb x separates");
-                return false;
-            }
-
-            if (d <= *depth) {
-                *depth = d;
-                *normal = ca >= cb ? axis : Vec2Negate(axis);
-                // breakpoint();
-
-                // if (DEBUG) {
-                //     breakpoint();
-                // }
-                NUMBER = 3;
-            }
-        }
-
-        // y axis
-        {
-            Vec2 axis = obb2d.orient.v.b;
-            f32 cb = Vec2Dot(obb2d.c, axis);
-            f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(obb2d.hdims.x, 0.0f), obb2d.orient)), axis);
-            f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(0.0f, obb2d.hdims.y), obb2d.orient)), axis);
-            f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
-
-            f32 ca = Vec2Dot(aabb2d.c, axis);
-            f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(aabb2d.r.x, 0.0f)), axis);
-            f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(0.0f, aabb2d.r.y)), axis);
-            f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
-
-            f32 d = (ra + rb) - f32abs(ca - cb);
-            if (d < 0.0f) {
-                PlatformLog(LLOG_DEBUG, "aabb2d vs obb2d: obb y separates");
-                return false;
-            }
-
-            if (d <= *depth) {
-                *depth = d;
-                *normal = ca >= cb ? axis : Vec2Negate(axis);
-                // if (DEBUG) {
-                //     breakpoint();
-                // }
-                NUMBER = 4;
-            }
+            NUMBER = i;
         }
     }
 
