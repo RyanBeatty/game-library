@@ -2181,6 +2181,11 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
 
     *depth = F32_MAX;
 
+    Vec2 a1 = Vec2Add(aabb2d.c, aabb2d.r);
+    Vec2 a2 = Vec2Add(aabb2d.c, Vec2Lit(-aabb2d.r.x, aabb2d.r.y));
+    Vec2 b1 = Vec2Add(obb2d.c, Vec2Transform(obb2d.hdims, obb2d.orient));
+    Vec2 b2 = Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(-obb2d.hdims.x, obb2d.hdims.y), obb2d.orient));
+
     // Use the SAT test to determine collision.
     // Note, we could unroll this loop and eliminate a few operations when checking the aabb to make this faster,
     // but lets just focus on correctness for now.
@@ -2196,14 +2201,14 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
         // Find the largest projection along the axis. Since the aabb is symmetric, we just need to check corners on the
         // same side to have checked all points.
         f32 ca = Vec2Dot(aabb2d.c, axis);
-        f32 pa1 = Vec2Dot(Vec2Add(aabb2d.c, aabb2d.r), axis);
-        f32 pa2 = Vec2Dot(Vec2Add(aabb2d.c, Vec2Lit(-aabb2d.r.x, aabb2d.r.y)), axis);
+        f32 pa1 = Vec2Dot(a1, axis);
+        f32 pa2 = Vec2Dot(a2, axis);
         // Save the max projected distance
         f32 ra = f32max(f32abs(pa1 - ca), f32abs(pa2 - ca));
 
         f32 cb = Vec2Dot(obb2d.c, axis);
-        f32 pb1 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(obb2d.hdims, obb2d.orient)), axis);
-        f32 pb2 = Vec2Dot(Vec2Add(obb2d.c, Vec2Transform(Vec2Lit(-obb2d.hdims.x, obb2d.hdims.y), obb2d.orient)), axis);
+        f32 pb1 = Vec2Dot(b1, axis);
+        f32 pb2 = Vec2Dot(b2, axis);
         f32 rb = f32max(f32abs(pb1 - cb), f32abs(pb2 - cb));
 
         // If the combined projected interval is less than the projected interval between the centers, then
