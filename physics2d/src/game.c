@@ -2222,7 +2222,7 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
             return false;
         }
 
-        if (d <= *depth) {
+        if (d < *depth) {
             *depth = d;
             // If the projected center of a is not further along the axis than projected center of b, we need to negate
             // the separating axis so that we point towards body a.
@@ -2239,6 +2239,50 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
     // }
     // PlatformLog(LLOG_DEBUG, "aabb2d vs obb collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->y,
     //             *depth);
+    return true;
+}
+
+// Uses SAT test. See AABB2D vs OBB2D for more comments.
+LCORE bool TestOBB2DVsOBB2D(OBB2D a, OBB2D b, Vec2* normal, f32* depth) {
+    *depth = F32_MAX;
+
+    Vec2 a1 = Vec2Add(a.c, Vec2Transform(a.hdims, a.orient));
+    Vec2 a2 = Vec2Add(a.c, Vec2Transform(Vec2Lit(-a.hdims.x, a.hdims.y), a.orient));
+
+    Vec2 b1 = Vec2Add(b.c, Vec2Transform(b.hdims, b.orient));
+    Vec2 b2 = Vec2Add(b.c, Vec2Transform(Vec2Lit(-b.hdims.x, b.hdims.y), b.orient));
+
+    Vec2 axiss[] = {
+        a.orient.v.a,
+        a.orient.v.b,
+        b.orient.v.a,
+        b.orient.v.b,
+    };
+    isize size = ArraySizeOf(axiss);
+    for (isize i = 0; i < size; ++i) {
+        Vec2 axis = axiss[i];
+
+        f32 pac = Vec2Dot(a.c, axis);
+        f32 pa1 = Vec2Dot(a1, axis);
+        f32 pa2 = Vec2Dot(a2, axis);
+        f32 ra = f32max(f32abs(pa1 - pac), f32abs(pa2 - pac));
+
+        f32 pbc = Vec2Dot(b.c, axis);
+        f32 pb1 = Vec2Dot(b1, axis);
+        f32 pb2 = Vec2Dot(b2, axis);
+        f32 rb = f32max(f32abs(pb1 - pbc), f32abs(pb2 - pbc));
+
+        f32 d = (ra + rb) - (pac - pbc);
+        if (d < 0.0f) {
+            return false;
+        }
+
+        if (d < *depth) {
+            *depth = d;
+            *normal = pac >= pbc ? axis : Vec2Negate(axis);
+        }
+    }
+
     return true;
 }
 
@@ -2467,6 +2511,8 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
                     break;
                 }
                 case PH_OBB2D: {
+                    collides = TestOBB2DVsOBB2D(a->obb2d, b->obb2d, &n2d, &d);
+                    n = Vec2ToVec3(n2d);
                     break;
                 }
                 default: {
@@ -3797,14 +3843,28 @@ static void SceneCollisionTick(GameState* gstate) {
         //     EntitySetMass(e, 1.0f);
         // }
 
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3Zero();
+        //     f32 radius = Px2Meter(30.0f);
+        //     e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+        //     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+        //                                                        Mat4Identity(), Vec3Lit(radius, radius, 1.0f),
+        //                                                        LBLUE));
+        //     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
+        //     FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+        //     EntitySetMass(e, 1.0f);
+        // }
+
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Zero();
             f32 radius = Px2Meter(30.0f);
             e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(radius, radius));
+            Mat4 rot = Mat4RotateZ(Deg2Rad(45.0f + 22.5f));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), rot,
+                                                               Vec3Lit(radius, radius, 1.0f), LBLUE));
+            PolyHedronSetOBB2D(&e->shape, Vec2Zero(), Vec2Lit(radius, radius), Mat4ToMat2(rot));
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
             EntitySetMass(e, 1.0f);
         }
