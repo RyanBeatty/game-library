@@ -2244,6 +2244,9 @@ LCORE bool TestAABB2DvsOBB2D2(AABB2D aabb2d, OBB2D obb2d, Vec2* normal, f32* dep
 
 // Uses SAT test. See AABB2D vs OBB2D for more comments.
 LCORE bool TestOBB2DVsOBB2D(OBB2D a, OBB2D b, Vec2* normal, f32* depth) {
+    // static u32 NUMBER = 0;
+    // static bool DEBUG = false;
+
     *depth = F32_MAX;
 
     Vec2 a1 = Vec2Add(a.c, Vec2Transform(a.hdims, a.orient));
@@ -2272,16 +2275,26 @@ LCORE bool TestOBB2DVsOBB2D(OBB2D a, OBB2D b, Vec2* normal, f32* depth) {
         f32 pb2 = Vec2Dot(b2, axis);
         f32 rb = f32max(f32abs(pb1 - pbc), f32abs(pb2 - pbc));
 
-        f32 d = (ra + rb) - (pac - pbc);
+        f32 d = (ra + rb) - f32abs(pac - pbc);
         if (d < 0.0f) {
             return false;
         }
 
+        // if (DEBUG) {
+        //     breakpoint();
+        // }
+
         if (d < *depth) {
             *depth = d;
             *normal = pac >= pbc ? axis : Vec2Negate(axis);
+            // NUMBER = i;
         }
     }
+
+    // breakpoint();
+    // DEBUG = true;
+    // PlatformLog(LLOG_DEBUG, "obb2d vs obb2d collision: %d. normal %f %f. depth: %f", NUMBER, normal->x, normal->y,
+    //             *depth);
 
     return true;
 }
