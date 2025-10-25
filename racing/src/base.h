@@ -551,7 +551,8 @@ LCORE Mat4 Mat4PointAt(Vec3 forward) {
     static const Vec3 UP = Vec3Lit(0.0f, 1.0f, 0.0);
 
     // We assume the forward vector points in the opposite diAserection of the z axis of the coordinate
-    // space, so invert the z axis here.
+    // space (i.e. we assume that forward == -z or inverse(forward) == +z of the rotation we need to construct), so
+    // invert the z axis here.
     Vec3 z = Vec3Normalize(Vec3Scale(forward, -1.0f));
 
     // Get the right camera axis by using the +z and a vector pointing up (but not necessarily

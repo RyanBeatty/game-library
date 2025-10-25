@@ -3577,9 +3577,10 @@ static void SceneRacingTick(GameState* gstate) {
             Entity* e = AllocateEntity();
             e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
             e->scale = Vec3LitAll(1.0f);
+            e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
             f32 radius = Px2Meter(20.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
+                                                               Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
     }
@@ -3589,14 +3590,17 @@ static void SceneRacingTick(GameState* gstate) {
             e->ppos = e->pos;
 
             {
+            }
+
+            {
                 static const f32 LONGITUDINAL_ACC = 5.0f;
                 Vec3 acc = Vec3Zero();
-                if (PlatformKeyDown(LKEY_RIGHT)) {
-                    acc = Vec3Add(acc, Vec3Lit(LONGITUDINAL_ACC, 0.0f, 0.0f));
-                }
-                if (PlatformKeyDown(LKEY_LEFT)) {
-                    acc = Vec3Add(acc, Vec3Lit(-LONGITUDINAL_ACC, 0.0f, 0.0f));
-                }
+                // if (PlatformKeyDown(LKEY_RIGHT)) {
+                //     acc = Vec3Add(acc, Vec3Lit(LONGITUDINAL_ACC, 0.0f, 0.0f));
+                // }
+                // if (PlatformKeyDown(LKEY_LEFT)) {
+                //     acc = Vec3Add(acc, Vec3Lit(-LONGITUDINAL_ACC, 0.0f, 0.0f));
+                // }
 
                 e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
@@ -3610,7 +3614,7 @@ static void SceneRacingTick(GameState* gstate) {
         ShaderPass* pass = BeginShaderPass(GetDefaultShader());
         f32 width = gstate->renderw_world;
         f32 height = gstate->renderh_world;
-        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
 
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
