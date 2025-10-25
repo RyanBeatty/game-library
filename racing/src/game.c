@@ -3606,27 +3606,26 @@ static void SceneRacingTick(GameState* gstate) {
             }
 
             {
-                static const f32 LONGITUDINAL_ACC = 5.0f;
+                static const f32 LONGITUDINAL_ACC = 7.0f;
 
                 // We might not need to normalize here, but do it to be safe.
                 Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
 
-                Vec3 acc = Vec3Zero();
+                // Determine acceleration due to engine thrust.
+                Vec3 thrust_acc = Vec3Zero();
                 if (PlatformKeyDown(LKEY_SPACE)) {
-                    acc = Vec3Scale(heading, LONGITUDINAL_ACC);
+                    thrust_acc = Vec3Scale(heading, LONGITUDINAL_ACC);
                 }
 
                 // Find the portions of velocity that are parallel and perp to the current vehicle heading. Calculate
                 // friction for these two portions independently.
-                f32 speed = Vec3Len(e->v);
-                f32 v_parallel = Vec3Dot(heading, e->v);
-                f32 v_perp = speed - v_parallel;
-                v_perp = 0.0f;
+                f32 speed_parallel = Vec3Dot(heading, e->v);
+                f32 desired_change_speed_parallel = -speed_parallel * 0.01f;
+                PlatformLog(LLOG_INFO, "speed: %f, speed para: %f, desired change: %f", Vec3Len(e->v), speed_parallel,
+                            desired_change_speed_parallel);
+                Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
 
-                // TODO: factor in delta time here.
-                // PlatformLog(LLOG_INFO, "speed: %f , parallel: %f", speed, v_parallel);
-                e->v = Vec3Scale(heading, v_parallel);
-
+                Vec3 acc = Vec3Add(thrust_acc, friction_parallel_acc);
                 e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
             }
