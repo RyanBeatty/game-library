@@ -3607,7 +3607,13 @@ static void SceneRacingTick(GameState* gstate) {
 
             {
                 static const f32 LONGITUDINAL_ACC = 5.0f;
+
+                Vec3 heading = Vec3Negate(e->orient.v.c);
+
                 Vec3 acc = Vec3Zero();
+                if (PlatformKeyDown(LKEY_SPACE)) {
+                    acc = Vec3Scale(heading, LONGITUDINAL_ACC);
+                }
                 // if (PlatformKeyDown(LKEY_RIGHT)) {
                 //     acc = Vec3Add(acc, Vec3Lit(LONGITUDINAL_ACC, 0.0f, 0.0f));
                 // }
