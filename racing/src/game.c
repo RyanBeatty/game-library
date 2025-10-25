@@ -3407,6 +3407,7 @@ static const f32 GRID_DEPTH = 1.0f;
 typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_COLLISION_TICK,
+    SCENE_RACING_TICK,
     SCENE_COUNT,
 } SceneId;
 
@@ -3533,27 +3534,34 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
 }
 
 static void SceneDefaultTick(GameState* gstate) {
-    BeginRender(gstate->dt);
+    f32 dt = gstate->dt;
 
-    ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-    u32 width = gstate->renderw;
-    u32 height = gstate->renderh;
-    pass->proj = Mat4Ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+    if (gstate->init) {
+    }
 
-    char msg[] = "DEFAULT SCENE";
-    u32 size = strlen(msg);
+    if (gstate->update) {
+    }
 
-    LFont font = GetLFontByLabel(LFONT_DEFAULT);
-    Vec2 dim = LFontMeasureText(font, msg, size);
+    if (gstate->render) {
+        BeginRender(dt);
 
-    // Center text by shifting center forward by half a text cell size and then shifting backward
-    // by half the text size.
-    Vec2 pos = Vec2Lit(0.5f * (width - dim.x), 0.70f * height);
-    DrawLTextEx(font, msg, size, pos, LYELLOW);
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
+        // _world sizes from gstate.
+        f32 width = gstate->renderw;
+        f32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-    EndShaderPass();
+        char msg[] = "DEFAULT SCENE";
+        u32 size = strlen(msg);
 
-    EndRender();
+        LFont font = GetLFontClosest(20.0f);
+        DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
+
+        EndShaderPass();
+
+        EndRender();
+    }
 }
 
 // 1 meter = N pixels scale factor.
@@ -3561,6 +3569,37 @@ static void SceneDefaultTick(GameState* gstate) {
 #define MPP (1.0f / PPM)
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
+
+static void SceneRacingTick(GameState* gstate) {
+    f32 dt = gstate->dt;
+
+    if (gstate->init) {
+    }
+
+    if (gstate->update) {
+    }
+
+    if (gstate->render) {
+        BeginRender(dt);
+
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
+        // _world sizes from gstate.
+        f32 width = gstate->renderw;
+        f32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+        char msg[] = "DEFAULT SCENE";
+        u32 size = strlen(msg);
+
+        LFont font = GetLFontClosest(20.0f);
+        DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
+
+        EndShaderPass();
+
+        EndRender();
+    }
+}
 
 static void SceneCollisionTick(GameState* gstate) {
     static EntityId ROTATE_ID = {0};
@@ -3790,10 +3829,11 @@ void GameInit() {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_COLLISION_TICK] = SceneCollisionTick;
+        gstate->scenefuncs[SCENE_RACING_TICK] = SceneRacingTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_COLLISION_TICK);
+    GameStateLoadScene(gstate, SCENE_RACING_TICK);
 
     gstate->lecap = ArraySizeOf(gstate->loadable_entities);
     gstate->lelen = 0;
