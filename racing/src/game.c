@@ -3585,6 +3585,23 @@ static void SceneRacingTick(GameState* gstate) {
     }
 
     if (gstate->update) {
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            e->ppos = e->pos;
+
+            {
+                static const f32 LONGITUDINAL_ACC = 5.0f;
+                Vec3 acc = Vec3Zero();
+                if (PlatformKeyDown(LKEY_RIGHT)) {
+                    acc = Vec3Add(acc, Vec3Lit(LONGITUDINAL_ACC, 0.0f, 0.0f));
+                }
+                if (PlatformKeyDown(LKEY_LEFT)) {
+                    acc = Vec3Add(acc, Vec3Lit(-LONGITUDINAL_ACC, 0.0f, 0.0f));
+                }
+
+                e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
+                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+            }
+        }
     }
 
     if (gstate->render) {
