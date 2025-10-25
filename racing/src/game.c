@@ -3572,8 +3572,16 @@ static void SceneDefaultTick(GameState* gstate) {
 
 static void SceneRacingTick(GameState* gstate) {
     f32 dt = gstate->dt;
-
     if (gstate->init) {
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
+            e->scale = Vec3LitAll(1.0f);
+            f32 radius = Px2Meter(30.0f);
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
+            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+        }
     }
 
     if (gstate->update) {
@@ -3583,17 +3591,19 @@ static void SceneRacingTick(GameState* gstate) {
         BeginRender(dt);
 
         ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
-        // _world sizes from gstate.
-        f32 width = gstate->renderw;
-        f32 height = gstate->renderh;
+        f32 width = gstate->renderw_world;
+        f32 height = gstate->renderh_world;
         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-        char msg[] = "DEFAULT SCENE";
-        u32 size = strlen(msg);
-
-        LFont font = GetLFontClosest(20.0f);
-        DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_DRAW)) {
+                e->graphics.pos = e->pos;
+                e->graphics.orient = e->orient;
+                e->graphics.scale = e->scale;
+                GraphicsInfoTickAnimation(&e->graphics, dt);
+                DrawGraphicsInfo(&e->graphics);
+            }
+        }
 
         EndShaderPass();
 
