@@ -3577,7 +3577,7 @@ static void SceneRacingTick(GameState* gstate) {
             Entity* e = AllocateEntity();
             e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
             e->scale = Vec3LitAll(1.0f);
-            f32 radius = Px2Meter(30.0f);
+            f32 radius = Px2Meter(20.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, 1.0f), LBLUE));
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
