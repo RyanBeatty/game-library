@@ -3608,18 +3608,24 @@ static void SceneRacingTick(GameState* gstate) {
             {
                 static const f32 LONGITUDINAL_ACC = 5.0f;
 
-                Vec3 heading = Vec3Negate(e->orient.v.c);
+                // We might not need to normalize here, but do it to be safe.
+                Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
 
                 Vec3 acc = Vec3Zero();
                 if (PlatformKeyDown(LKEY_SPACE)) {
                     acc = Vec3Scale(heading, LONGITUDINAL_ACC);
                 }
-                // if (PlatformKeyDown(LKEY_RIGHT)) {
-                //     acc = Vec3Add(acc, Vec3Lit(LONGITUDINAL_ACC, 0.0f, 0.0f));
-                // }
-                // if (PlatformKeyDown(LKEY_LEFT)) {
-                //     acc = Vec3Add(acc, Vec3Lit(-LONGITUDINAL_ACC, 0.0f, 0.0f));
-                // }
+
+                // Find the portions of velocity that are parallel and perp to the current vehicle heading. Calculate
+                // friction for these two portions independently.
+                f32 speed = Vec3Len(e->v);
+                f32 v_parallel = Vec3Dot(heading, e->v);
+                f32 v_perp = speed - v_parallel;
+                v_perp = 0.0f;
+
+                // TODO: factor in delta time here.
+                // PlatformLog(LLOG_INFO, "speed: %f , parallel: %f", speed, v_parallel);
+                e->v = Vec3Scale(heading, v_parallel);
 
                 e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
                 e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
