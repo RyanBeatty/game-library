@@ -3598,6 +3598,7 @@ static void SceneRacingTick(GameState* gstate) {
     }
 
     if (gstate->update) {
+        // Entity update.
         for (Entity* e = NULL; IncrementEntity(&e);) {
             e->ppos = e->pos;
 
@@ -3648,6 +3649,19 @@ static void SceneRacingTick(GameState* gstate) {
                     e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
                     e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                 }
+            }
+        }
+
+        // Collision detection.
+        {
+            CollisionInfo data[32] = {0};
+            CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
+            for (Entity* e = NULL; IncrementEntity(&e);) {
+                EntityCollideWorld(e, &collisions);
+            }
+
+            if (ArrLen(&collisions)) {
+                PlatformLog(LLOG_INFO, "collision detected!");
             }
         }
     }
