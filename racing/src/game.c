@@ -3573,6 +3573,7 @@ static void SceneDefaultTick(GameState* gstate) {
 static void SceneRacingTick(GameState* gstate) {
     f32 dt = gstate->dt;
     if (gstate->init) {
+        // Player
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Scale(Vec3Lit(0.0f, -200.0f, 0.0f), MPP);
@@ -3586,16 +3587,28 @@ static void SceneRacingTick(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
 
+        // Wall
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
             e->scale = Vec3LitAll(1.0f);
             e->orient = Mat4Identity();
-            Vec3 dims = Vec3Lit(Px2Meter(1152.0f), Px2Meter(54.0f), Px2Meter(1.0f));
+            Vec3 dims = Vec3Lit(Px2Meter(1920.0f * 0.6f), Px2Meter(1080.0f * 0.05f), Px2Meter(1.0f));
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), dims, LRED));
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
             EntitySetMass(e, 0.0f);
+        }
+
+        // Start/finish line.
+        {
+            Entity* e = AllocateEntity();
+            f32 wall_height = Px2Meter(1080.0f * 0.05f);
+            f32 height = Px2Meter(1080.0f * 0.475f);
+            e->pos = Vec3Lit(Px2Meter(-200.0f), (-0.5f * height) + (-0.5f * wall_height), Px2Meter(0.0f));
+            Vec3 dims = Vec3Lit(Px2Meter(20.0f), height, Px2Meter(1.0f));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), dims, LBLACK));
         }
     }
 
