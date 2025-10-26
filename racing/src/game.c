@@ -3581,6 +3581,7 @@ static void SceneRacingTick(GameState* gstate) {
             f32 radius = Px2Meter(20.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
+            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
 
@@ -3592,6 +3593,7 @@ static void SceneRacingTick(GameState* gstate) {
             Vec3 dims = Vec3Lit(Px2Meter(1152.0f), Px2Meter(54.0f), Px2Meter(1.0f));
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), dims, LRED));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
         }
     }
 
