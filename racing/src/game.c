@@ -3622,14 +3622,11 @@ static void SceneRacingTick(GameState* gstate) {
                 // Find the portions of velocity that are parallel and perp to the current vehicle heading. Calculate
                 // friction for these two portions independently.
                 f32 speed_parallel = Vec3Dot(heading, e->v);
-                f32 desired_change_speed_parallel = -speed_parallel * 0.01f;
-                // PlatformLog(LLOG_INFO, "speed: %f, speed para: %f, desired change: %f", Vec3Len(e->v),
-                // speed_parallel,
-                //             desired_change_speed_parallel);
+                f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
                 Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
 
                 f32 speed_perp = Vec3Dot(slip, e->v);
-                f32 desired_change_speed_perp = -speed_perp * 0.8f;
+                f32 desired_change_speed_perp = -speed_perp * 0.9f;
                 Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
 
                 Vec3 acc = Vec3Add(thrust_acc, Vec3Add(friction_parallel_acc, friction_perp_acc));
