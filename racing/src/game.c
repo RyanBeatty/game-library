@@ -3609,6 +3609,7 @@ static void SceneRacingTick(GameState* gstate) {
             Vec3 dims = Vec3Lit(Px2Meter(20.0f), height, Px2Meter(1.0f));
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), dims, LBLACK));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
         }
     }
 
