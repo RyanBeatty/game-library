@@ -3582,6 +3582,7 @@ static void SceneRacingTick(GameState* gstate) {
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+            EntitySetMass(e, 1.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
 
@@ -3594,6 +3595,7 @@ static void SceneRacingTick(GameState* gstate) {
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), dims, LRED));
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
+            EntitySetMass(e, 0.0f);
         }
     }
 
@@ -3658,6 +3660,32 @@ static void SceneRacingTick(GameState* gstate) {
             CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
             for (Entity* e = NULL; IncrementEntity(&e);) {
                 EntityCollideWorld(e, &collisions);
+            }
+
+            for (isize i = 0; i < ArrLen(&collisions); ++i) {
+                CollisionInfo* collision = ArrGetPtr(&collisions, i);
+
+                Entity* e0 = EntityFromId(collision->id0);
+                Entity* e1 = EntityFromId(collision->id1);
+
+                // Determine how much we push an object per unit of mass (dividing by the total mass yields this).
+                f32 d = collision->depth * (EntityGetMassInv(e0) + EntityGetMassInv(e1));
+                Vec3 push = Vec3Scale(collision->normal, d);
+
+                // Scale the push for each object by their mass to get the proportion of the total push we should
+                // apply to each object. Remember to negate the e1 push since we need to push that in opposite
+                // direction.
+                e0->pos = Vec3Add(e0->pos, Vec3Scale(push, EntityGetMass(e0)));
+                e1->pos = Vec3Add(e1->pos, Vec3Scale(push, -EntityGetMass(e1)));
+
+                // CollisionInfo reverse = {
+                //     .depth = collision->depth,
+                //     .normal = Vec3Negate(collision->normal),
+                //     .id0 = collision->id1,
+                //     .id1 = collision->id0,
+                // };
+
+                // CollisionInfo cs[2] = {*collision, reverse};
             }
 
             if (ArrLen(&collisions)) {
