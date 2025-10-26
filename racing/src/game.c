@@ -3589,49 +3589,53 @@ static void SceneRacingTick(GameState* gstate) {
         for (Entity* e = NULL; IncrementEntity(&e);) {
             e->ppos = e->pos;
 
-            {
-                static const f32 TURN_SPEED = Deg2Rad(180.0f);
+            if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                // Turning.
+                {
+                    static const f32 TURN_SPEED = Deg2Rad(180.0f);
 
-                // Turning in 2d plane. assume that counter clockwise rotation is positive.
-                f32 turn_dir = 0.0f;
-                if (PlatformKeyDown(LKEY_LEFT)) {
-                    turn_dir += 1.0f;
-                }
-                if (PlatformKeyDown(LKEY_RIGHT)) {
-                    turn_dir -= 1.0f;
-                }
+                    // Turning in 2d plane. assume that counter clockwise rotation is positive.
+                    f32 turn_dir = 0.0f;
+                    if (PlatformKeyDown(LKEY_LEFT)) {
+                        turn_dir += 1.0f;
+                    }
+                    if (PlatformKeyDown(LKEY_RIGHT)) {
+                        turn_dir -= 1.0f;
+                    }
 
-                Mat4 rot = Mat4RotateZ(turn_dir * TURN_SPEED * dt);
-                e->orient = Mat4Multiply(rot, e->orient);
-            }
-
-            {
-                static const f32 LONGITUDINAL_ACC = 7.0f;
-
-                // We might not need to normalize here, but do it to be safe.
-                Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
-                Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
-                // PlatformLog(LLOG_INFO, "slip %f %f %f", slip.x, slip.y, slip.z);
-
-                // Determine acceleration due to engine thrust.
-                Vec3 thrust_acc = Vec3Zero();
-                if (PlatformKeyDown(LKEY_SPACE)) {
-                    thrust_acc = Vec3Scale(heading, LONGITUDINAL_ACC);
+                    Mat4 rot = Mat4RotateZ(turn_dir * TURN_SPEED * dt);
+                    e->orient = Mat4Multiply(rot, e->orient);
                 }
 
-                // Find the portions of velocity that are parallel and perp to the current vehicle heading. Calculate
-                // friction for these two portions independently.
-                f32 speed_parallel = Vec3Dot(heading, e->v);
-                f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
-                Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
+                // Thrust + movement.
+                {
+                    static const f32 LONGITUDINAL_ACC = 7.0f;
 
-                f32 speed_perp = Vec3Dot(slip, e->v);
-                f32 desired_change_speed_perp = -speed_perp * 0.9f;
-                Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
+                    // We might not need to normalize here, but do it to be safe.
+                    Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
+                    Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
+                    // PlatformLog(LLOG_INFO, "slip %f %f %f", slip.x, slip.y, slip.z);
 
-                Vec3 acc = Vec3Add(thrust_acc, Vec3Add(friction_parallel_acc, friction_perp_acc));
-                e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
-                e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                    // Determine acceleration due to engine thrust.
+                    Vec3 thrust_acc = Vec3Zero();
+                    if (PlatformKeyDown(LKEY_SPACE)) {
+                        thrust_acc = Vec3Scale(heading, LONGITUDINAL_ACC);
+                    }
+
+                    // Find the portions of velocity that are parallel and perp to the current vehicle heading.
+                    // Calculate friction for these two portions independently.
+                    f32 speed_parallel = Vec3Dot(heading, e->v);
+                    f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
+                    Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
+
+                    f32 speed_perp = Vec3Dot(slip, e->v);
+                    f32 desired_change_speed_perp = -speed_perp * 0.9f;
+                    Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
+
+                    Vec3 acc = Vec3Add(thrust_acc, Vec3Add(friction_parallel_acc, friction_perp_acc));
+                    e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
+                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                }
             }
         }
     }
