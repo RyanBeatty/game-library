@@ -3575,13 +3575,17 @@ static void SceneRacingTick(GameState* gstate) {
     if (gstate->init) {
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
+            e->pos = Vec3Scale(Vec3Lit(0.0f, -200.0f, 0.0f), MPP);
             e->scale = Vec3LitAll(1.0f);
             e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
             f32 radius = Px2Meter(20.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+        }
+
+        {
+            Entity* e = AllocateEntity();
         }
     }
 
@@ -3857,8 +3861,8 @@ void GameInit() {
     byte* temp_buffer = New(&gstate->perm, GB(1), byte);
     gstate->temp = NewArena(temp_buffer, GB(1));
 
-    gstate->renderw = 1024.0f;
-    gstate->renderh = 1024.0f;
+    gstate->renderw = 1920.0f;
+    gstate->renderh = 1080.0f;
     gstate->renderw_world = Px2Meter(gstate->renderw);
     gstate->renderh_world = Px2Meter(gstate->renderh);
 
