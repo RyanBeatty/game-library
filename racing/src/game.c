@@ -3452,9 +3452,6 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
-    EntityId loadable_entities[100];
-    u32 lelen;
-    u32 lecap;
 } GameState;
 
 static GameState GState;
@@ -3965,9 +3962,6 @@ void GameInit() {
         gstate->scenefuncssize = idx;
     }
     GameStateLoadScene(gstate, SCENE_RACING_TICK);
-
-    gstate->lecap = ArraySizeOf(gstate->loadable_entities);
-    gstate->lelen = 0;
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
