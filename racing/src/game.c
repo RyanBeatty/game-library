@@ -3729,6 +3729,7 @@ static void SceneRacingTick(GameState* gstate) {
 
         BeginRender(dt);
 
+        // Render Entities
         {
             ShaderPass* pass = BeginShaderPass(GetDefaultShader());
             f32 width = gstate->renderw_world;
@@ -3748,6 +3749,7 @@ static void SceneRacingTick(GameState* gstate) {
             EndShaderPass();
         }
 
+        // 2D HUD
         {
             ShaderPass* pass = BeginShaderPass(GetDefaultShader());
             f32 width = gstate->renderw;
