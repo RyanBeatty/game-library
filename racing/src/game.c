@@ -3205,14 +3205,6 @@ typedef enum EntityFlag {
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_COLLIDER = 1 << 3,
-    EFLAG_PROJECTILE = 1 << 4,
-    EFLAG_WALL = 1 << 5,
-    EFLAG_MOB = 1 << 6,
-    EFLAG_CLIMABLE = 1 << 7,
-    EFLAG_EXIT = 1 << 8,
-    EFLAG_IGNORE_WALL_ON_HIT = 1 << 9,
-    EFLAG_SPAWNER = 1 << 10,
-    EFLAG_SURVIVE_HIT = 1 << 11,
 } EntityFlag;
 
 typedef struct {
