@@ -3719,6 +3719,14 @@ static void SceneRacingTick(GameState* gstate) {
     }
 
     if (gstate->render) {
+        Entity* player = NULL;
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                player = e;
+                break;
+            }
+        }
+
         BeginRender(dt);
 
         {
@@ -3750,12 +3758,28 @@ static void SceneRacingTick(GameState* gstate) {
             Vec2 padding = Vec2Lit(20.0f, 10.0f);
 
             LFont font = GetLFontClosest(40.0f);
-            char txt[32] = {0};
-            isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d", gstate->lap);
-            Vec2 dims = LFontMeasureText(font, txt, len);
+            {
+                char txt[32] = {0};
+                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d", gstate->lap);
+                Vec2 dims = LFontMeasureText(font, txt, len);
 
-            pos = Vec2Lit(width - dims.x - padding.x, height - dims.y - padding.y);
-            DrawLTextEx(font, txt, len, pos, LBLACK);
+                pos = Vec2Lit(padding.x, height - dims.y - padding.y);
+                DrawLTextEx(font, txt, len, pos, LBLACK);
+            }
+
+            pos.y -= padding.y;
+
+            if (player != NULL) {
+                char txt[32] = {0};
+                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Speed: %.1f", Vec3Len(player->v));
+                Vec2 dims = LFontMeasureText(font, txt, len);
+
+                pos.y -= dims.y;
+                DrawLTextEx(font, txt, len, pos, LBLACK);
+            }
+
+            pos.y -= padding.y;
+
             EndShaderPass();
         }
 
