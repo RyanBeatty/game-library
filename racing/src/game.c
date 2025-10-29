@@ -3205,6 +3205,7 @@ typedef enum EntityFlag {
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_START_FINISH_LINE = 1 << 3,
+    EFLAG_WALL = 1 << 4,
 } EntityFlag;
 
 typedef struct {
@@ -3600,6 +3601,7 @@ static void SceneRacingTick(GameState* gstate) {
                                                                Mat4Identity(), dims, LRED));
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
             EntitySetMass(e, 0.0f);
+            FlagOn(e->flags, EFLAG_WALL);
         }
 
         // Start/finish line.
@@ -3696,15 +3698,18 @@ static void SceneRacingTick(GameState* gstate) {
                     Entity* e0 = EntityFromId(collision->id0);
                     Entity* e1 = EntityFromId(collision->id1);
 
-                    // Determine how much we push an object per unit of mass (dividing by the total mass yields this).
-                    f32 d = collision->depth * (EntityGetMassInv(e0) + EntityGetMassInv(e1));
-                    Vec3 push = Vec3Scale(collision->normal, d);
+                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
+                        // Determine how much we push an object per unit of mass (dividing by the total mass yields
+                        // this).
+                        f32 d = collision->depth * (EntityGetMassInv(e0) + EntityGetMassInv(e1));
+                        Vec3 push = Vec3Scale(collision->normal, d);
 
-                    // Scale the push for each object by their mass to get the proportion of the total push we should
-                    // apply to each object. Remember to negate the e1 push since we need to push that in opposite
-                    // direction.
-                    e0->pos = Vec3Add(e0->pos, Vec3Scale(push, EntityGetMass(e0)));
-                    e1->pos = Vec3Add(e1->pos, Vec3Scale(push, -EntityGetMass(e1)));
+                        // Scale the push for each object by their mass to get the proportion of the total push we
+                        // should apply to each object. Remember to negate the e1 push since we need to push that in
+                        // opposite direction.
+                        e0->pos = Vec3Add(e0->pos, Vec3Scale(push, EntityGetMass(e0)));
+                        e1->pos = Vec3Add(e1->pos, Vec3Scale(push, -EntityGetMass(e1)));
+                    }
                 }
             }
         }
