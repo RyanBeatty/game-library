@@ -2804,6 +2804,17 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
     return baseline_pos;
 }
 
+LCORE void DrawLTextExF(LFont font, Vec2 pos, Vec4 color, const char* format, ...) {
+    char buffer[1024];
+
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    DrawLTextEx(font, buffer, strlen(buffer), pos, color);
+}
+
 // This will return the dimensions of the quad that would be necessary to span the entire text (i.e. if somehow
 // the text was baked into a texture, what quad dims would be needed to draw the texture).
 LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
@@ -3452,6 +3463,8 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
+
+    u32 lap;
 } GameState;
 
 static GameState GState;
@@ -3708,22 +3721,43 @@ static void SceneRacingTick(GameState* gstate) {
     if (gstate->render) {
         BeginRender(dt);
 
-        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-        f32 width = gstate->renderw_world;
-        f32 height = gstate->renderh_world;
-        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
+        {
+            ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+            f32 width = gstate->renderw_world;
+            f32 height = gstate->renderh_world;
+            pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
 
-        for (Entity* e = NULL; IncrementEntity(&e);) {
-            if (TestFlag(e->flags, EFLAG_DRAW)) {
-                e->graphics.pos = e->pos;
-                e->graphics.orient = e->orient;
-                e->graphics.scale = e->scale;
-                GraphicsInfoTickAnimation(&e->graphics, dt);
-                DrawGraphicsInfo(&e->graphics);
+            for (Entity* e = NULL; IncrementEntity(&e);) {
+                if (TestFlag(e->flags, EFLAG_DRAW)) {
+                    e->graphics.pos = e->pos;
+                    e->graphics.orient = e->orient;
+                    e->graphics.scale = e->scale;
+                    GraphicsInfoTickAnimation(&e->graphics, dt);
+                    DrawGraphicsInfo(&e->graphics);
+                }
             }
+
+            EndShaderPass();
         }
 
-        EndShaderPass();
+        {
+            ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+            f32 width = gstate->renderw;
+            f32 height = gstate->renderh;
+            pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
+
+            Vec2 pos = Vec2Zero();
+            Vec2 padding = Vec2Lit(20.0f, 10.0f);
+
+            LFont font = GetLFontClosest(40.0f);
+            char txt[32] = {0};
+            isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d", gstate->lap);
+            Vec2 dims = LFontMeasureText(font, txt, len);
+
+            pos = Vec2Lit(width - dims.x - padding.x, height - dims.y - padding.y);
+            DrawLTextEx(font, txt, len, pos, LBLACK);
+            EndShaderPass();
+        }
 
         EndRender();
     }
