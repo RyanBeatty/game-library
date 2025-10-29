@@ -3710,6 +3710,10 @@ static void SceneRacingTick(GameState* gstate) {
                         e0->pos = Vec3Add(e0->pos, Vec3Scale(push, EntityGetMass(e0)));
                         e1->pos = Vec3Add(e1->pos, Vec3Scale(push, -EntityGetMass(e1)));
                     }
+
+                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_START_FINISH_LINE)) {
+                        ++gstate->lap;
+                    }
                 }
             }
         }
