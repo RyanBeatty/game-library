@@ -3751,7 +3751,8 @@ static void SceneRacingTick(GameState* gstate) {
                     }
 
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_START_FINISH_LINE)) {
-                        if (ArrLen(&e0->sector_ids.ids) == 1) {
+                        // TODO: This should become a check where we verify the contents of the sectors visited.
+                        if (ArrLen(&e0->sector_ids.ids) == 2) {
                             ++gstate->lap;
                         }
                     }
