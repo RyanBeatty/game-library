@@ -3197,6 +3197,26 @@ static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 
 ////////////////////////////////////////////////////////////
+
+typedef u8 SectorId;
+
+typedef struct {
+    SectorId* data;
+    isize len;
+    isize cap;
+} SectorIdArr;
+
+#define MAX_SECTORS 16
+
+typedef struct {
+    SectorId data[MAX_SECTORS];
+    SectorIdArr ids;
+} SectorIds;
+
+#define SectorIdsInit(sector_ids) \
+    ((sector_ids)->ids = (SectorIdArr){.data = (sector_ids)->data, .cap = ArraySizeOf((sector_ids)->data)})
+
+////////////////////////////////////////////////////////////
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
 
 typedef enum EntityFlag {
@@ -3206,6 +3226,7 @@ typedef enum EntityFlag {
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_START_FINISH_LINE = 1 << 3,
     EFLAG_WALL = 1 << 4,
+    EFLAG_SECTOR = 1 << 5,
 } EntityFlag;
 
 typedef struct {
@@ -3243,6 +3264,8 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
+    SectorId sector_id;    // If sector, this is your id.
+    SectorIds sector_ids;  // If racer, then the sectors you've hit.
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3317,6 +3340,7 @@ LCORE Entity* AllocateEntity() {
 
     PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
+    SectorIdsInit(&entity->sector_ids);
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -3616,6 +3640,21 @@ static void SceneRacingTick(GameState* gstate) {
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
             FlagOn(e->flags, EFLAG_START_FINISH_LINE);
         }
+
+        // Sectors.
+        {
+            Entity* e = AllocateEntity();
+            Vec2 track_dims = Vec2Lit(gstate->renderw_world, gstate->renderh_world);
+            e->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
+            Vec3 dims = Vec3Lit(track_dims.x, track_dims.y, Px2Meter(1.0f));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), dims, LYELLOW));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
+
+            e->sector_id = 1;
+            FlagOn(e->flags, EFLAG_SECTOR);
+            FlagOff(e->flags, EFLAG_DRAW);
+        }
     }
 
     if (gstate->update) {
@@ -3712,7 +3751,25 @@ static void SceneRacingTick(GameState* gstate) {
                     }
 
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_START_FINISH_LINE)) {
-                        ++gstate->lap;
+                        if (ArrLen(&e0->sector_ids.ids) == 1) {
+                            ++gstate->lap;
+                        }
+                    }
+
+                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_SECTOR)) {
+                        SectorId sector_id_currently_occupied = e1->sector_id;
+                        bool found = false;
+                        for (isize z = 0; z < ArrLen(&e0->sector_ids.ids); ++z) {
+                            SectorId id = ArrGet(&e0->sector_ids.ids, z);
+                            if (id == sector_id_currently_occupied) {
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (!found) {
+                            ArrPush(&e0->sector_ids.ids, sector_id_currently_occupied);
+                        }
                     }
                 }
             }
