@@ -3603,7 +3603,7 @@ static void SceneRacingTick(GameState* gstate) {
         // Player
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3Scale(Vec3Lit(0.0f, -200.0f, 0.0f), MPP);
+            e->pos = Vec3Scale(Vec3Lit(-200.0f, -200.0f, 0.0f), MPP);
             e->scale = Vec3LitAll(1.0f);
             e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
             f32 radius = Px2Meter(20.0f);
@@ -3643,17 +3643,23 @@ static void SceneRacingTick(GameState* gstate) {
 
         // Sectors.
         {
-            Entity* e = AllocateEntity();
             Vec2 track_dims = Vec2Lit(gstate->renderw_world, gstate->renderh_world);
-            e->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
-            Vec3 dims = Vec3Lit(track_dims.x, track_dims.y, Px2Meter(1.0f));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), dims, LYELLOW));
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
+            Vec3 sector_dims = Vec3Lit(track_dims.x / 2.0f, track_dims.y, Px2Meter(1.0f));
 
-            e->sector_id = 1;
-            FlagOn(e->flags, EFLAG_SECTOR);
-            FlagOff(e->flags, EFLAG_DRAW);
+            SectorId sector_id = 1;
+            for (isize i = 0; i < 2; ++i) {
+                Entity* e = AllocateEntity();
+                e->pos = Vec3Lit((sector_dims.x * 0.5f) * (i % 2 == 0 ? -1.0f : 1.0f), 0.0f, Px2Meter(0.0f));
+                breakpoint();
+                GraphicsInfoSetLModel(
+                    &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Scale(sector_dims, 0.99f), LYELLOW));
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(sector_dims));
+
+                e->sector_id = sector_id++;
+                FlagOn(e->flags, EFLAG_SECTOR);
+                FlagOff(e->flags, EFLAG_DRAW);
+            }
         }
     }
 
