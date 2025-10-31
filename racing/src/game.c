@@ -3218,6 +3218,7 @@ typedef struct {
 
 typedef struct {
     SectorIds sector_ids;
+    Vec3 start_pos;
 } Track;
 
 ////////////////////////////////////////////////////////////
@@ -3613,15 +3614,19 @@ static void SceneRacingTick(GameState* gstate) {
                 ArrPush(&track.sector_ids.ids, i);
             }
 
+            track.start_pos = Vec3Lit(Px2Meter(-200.0f), Px2Meter(-200.0f), Px2Meter(0.0f));
+
             gstate->track = track;
         }
 
         // Track loading.
         {
+            Track* track = &gstate->track;
+
             // Player
             {
                 Entity* e = AllocateEntity();
-                e->pos = Vec3Scale(Vec3Lit(-200.0f, -200.0f, 0.0f), MPP);
+                e->pos = track->start_pos;
                 e->scale = Vec3LitAll(1.0f);
                 e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
                 f32 radius = Px2Meter(20.0f);
@@ -3676,7 +3681,7 @@ static void SceneRacingTick(GameState* gstate) {
                                                              Mat4Identity(), Vec3Scale(sector_dims, 0.99f), LYELLOW));
                         PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(sector_dims));
 
-                        e->sector_id = ArrGet(&gstate->track.sector_ids.ids, sector_id_idx);
+                        e->sector_id = ArrGet(&track->sector_ids.ids, sector_id_idx);
                         FlagOn(e->flags, EFLAG_SECTOR);
                         FlagOff(e->flags, EFLAG_DRAW);
                     }
