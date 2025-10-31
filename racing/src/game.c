@@ -3765,6 +3765,9 @@ static void SceneRacingTick(GameState* gstate) {
                     }
 
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_SECTOR)) {
+                        // TODO: Issue here where we start with the sector that start position is in (which might be the
+                        // final sector). Should probably handle this to avoid case where you could cut through the
+                        // track.
                         SectorId sector_id_currently_occupied = e1->sector_id;
                         bool found = false;
                         for (isize z = 0; z < ArrLen(&e0->sector_ids.ids); ++z) {
