@@ -3644,21 +3644,23 @@ static void SceneRacingTick(GameState* gstate) {
         // Sectors.
         {
             Vec2 track_dims = Vec2Lit(gstate->renderw_world, gstate->renderh_world);
-            Vec3 sector_dims = Vec3Lit(track_dims.x / 2.0f, track_dims.y, Px2Meter(1.0f));
+            Vec3 sector_dims = Vec3Lit(track_dims.x / 2.0f, track_dims.y / 2.0f, Px2Meter(1.0f));
 
             SectorId sector_id = 1;
             for (isize i = 0; i < 2; ++i) {
-                Entity* e = AllocateEntity();
-                e->pos = Vec3Lit((sector_dims.x * 0.5f) * (i % 2 == 0 ? -1.0f : 1.0f), 0.0f, Px2Meter(0.0f));
-                breakpoint();
-                GraphicsInfoSetLModel(
-                    &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                                 Vec3Scale(sector_dims, 0.99f), LYELLOW));
-                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(sector_dims));
+                for (isize j = 0; j < 2; ++j) {
+                    Entity* e = AllocateEntity();
+                    e->pos = Vec3Lit((sector_dims.x * 0.5f) * (i % 2 == 0 ? -1.0f : 1.0f),
+                                     (sector_dims.y * 0.5f) * (j % 2 == 0 ? -1.0f : 1.0f), Px2Meter(0.0f));
+                    GraphicsInfoSetLModel(&e->graphics,
+                                          LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                         Mat4Identity(), Vec3Scale(sector_dims, 0.99f), LYELLOW));
+                    PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(sector_dims));
 
-                e->sector_id = sector_id++;
-                FlagOn(e->flags, EFLAG_SECTOR);
-                FlagOff(e->flags, EFLAG_DRAW);
+                    e->sector_id = sector_id++;
+                    FlagOn(e->flags, EFLAG_SECTOR);
+                    FlagOff(e->flags, EFLAG_DRAW);
+                }
             }
         }
     }
