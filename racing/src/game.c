@@ -3604,71 +3604,8 @@ static void SceneDefaultTick(GameState* gstate) {
 static void SceneRacingTick(GameState* gstate) {
     f32 dt = gstate->dt;
     if (gstate->init) {
-        // Player
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Scale(Vec3Lit(-200.0f, -200.0f, 0.0f), MPP);
-            e->scale = Vec3LitAll(1.0f);
-            e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
-            f32 radius = Px2Meter(20.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
-            EntitySetMass(e, 1.0f);
-            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
-        }
-
-        // Wall
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
-            e->scale = Vec3LitAll(1.0f);
-            e->orient = Mat4Identity();
-            Vec3 dims = Vec3Lit(Px2Meter(1920.0f * 0.6f), Px2Meter(1080.0f * 0.05f), Px2Meter(1.0f));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), dims, LRED));
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
-            EntitySetMass(e, 0.0f);
-            FlagOn(e->flags, EFLAG_WALL);
-        }
-
-        // Start/finish line.
-        {
-            Entity* e = AllocateEntity();
-            f32 wall_height = Px2Meter(1080.0f * 0.05f);
-            f32 height = Px2Meter(1080.0f * 0.475f);
-            e->pos = Vec3Lit(Px2Meter(-200.0f), (-0.5f * height) + (-0.5f * wall_height), Px2Meter(0.0f));
-            Vec3 dims = Vec3Lit(Px2Meter(20.0f), height, Px2Meter(1.0f));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), dims, LBLACK));
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
-            FlagOn(e->flags, EFLAG_START_FINISH_LINE);
-        }
-
-        // Sectors.
-        {
-            Vec2 track_dims = Vec2Lit(gstate->renderw_world, gstate->renderh_world);
-            Vec3 sector_dims = Vec3Lit(track_dims.x / 2.0f, track_dims.y / 2.0f, Px2Meter(1.0f));
-
-            SectorId sector_id = 1;
-            for (isize i = 0; i < 2; ++i) {
-                for (isize j = 0; j < 2; ++j) {
-                    Entity* e = AllocateEntity();
-                    e->pos = Vec3Lit((sector_dims.x * 0.5f) * (i % 2 == 0 ? -1.0f : 1.0f),
-                                     (sector_dims.y * 0.5f) * (j % 2 == 0 ? -1.0f : 1.0f), Px2Meter(0.0f));
-                    GraphicsInfoSetLModel(&e->graphics,
-                                          LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                         Mat4Identity(), Vec3Scale(sector_dims, 0.99f), LYELLOW));
-                    PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(sector_dims));
-
-                    e->sector_id = sector_id++;
-                    FlagOn(e->flags, EFLAG_SECTOR);
-                    FlagOff(e->flags, EFLAG_DRAW);
-                }
-            }
-        }
-
         // Track.
+        // TODO: Should eventually move more and more init stuff into here.
         {
             Track track = {0};
             SectorIdsInit(&track.sector_ids);
@@ -3677,6 +3614,74 @@ static void SceneRacingTick(GameState* gstate) {
             }
 
             gstate->track = track;
+        }
+
+        // Track loading.
+        {
+            // Player
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Vec3Scale(Vec3Lit(-200.0f, -200.0f, 0.0f), MPP);
+                e->scale = Vec3LitAll(1.0f);
+                e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
+                f32 radius = Px2Meter(20.0f);
+                GraphicsInfoSetLModel(&e->graphics,
+                                      LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                     Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
+                PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+                EntitySetMass(e, 1.0f);
+                FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+            }
+
+            // Wall
+            {
+                Entity* e = AllocateEntity();
+                e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
+                e->scale = Vec3LitAll(1.0f);
+                e->orient = Mat4Identity();
+                Vec3 dims = Vec3Lit(Px2Meter(1920.0f * 0.6f), Px2Meter(1080.0f * 0.05f), Px2Meter(1.0f));
+                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                                   Mat4Identity(), dims, LRED));
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
+                EntitySetMass(e, 0.0f);
+                FlagOn(e->flags, EFLAG_WALL);
+            }
+
+            // Start/finish line.
+            {
+                Entity* e = AllocateEntity();
+                f32 wall_height = Px2Meter(1080.0f * 0.05f);
+                f32 height = Px2Meter(1080.0f * 0.475f);
+                e->pos = Vec3Lit(Px2Meter(-200.0f), (-0.5f * height) + (-0.5f * wall_height), Px2Meter(0.0f));
+                Vec3 dims = Vec3Lit(Px2Meter(20.0f), height, Px2Meter(1.0f));
+                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                                   Mat4Identity(), dims, LBLACK));
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
+                FlagOn(e->flags, EFLAG_START_FINISH_LINE);
+            }
+
+            // Sectors.
+            {
+                Vec2 track_dims = Vec2Lit(gstate->renderw_world, gstate->renderh_world);
+                Vec3 sector_dims = Vec3Lit(track_dims.x / 2.0f, track_dims.y / 2.0f, Px2Meter(1.0f));
+
+                SectorId sector_id = 1;
+                for (isize i = 0; i < 2; ++i) {
+                    for (isize j = 0; j < 2; ++j) {
+                        Entity* e = AllocateEntity();
+                        e->pos = Vec3Lit((sector_dims.x * 0.5f) * (i % 2 == 0 ? -1.0f : 1.0f),
+                                         (sector_dims.y * 0.5f) * (j % 2 == 0 ? -1.0f : 1.0f), Px2Meter(0.0f));
+                        GraphicsInfoSetLModel(&e->graphics,
+                                              LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                             Mat4Identity(), Vec3Scale(sector_dims, 0.99f), LYELLOW));
+                        PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(sector_dims));
+
+                        e->sector_id = sector_id++;
+                        FlagOn(e->flags, EFLAG_SECTOR);
+                        FlagOff(e->flags, EFLAG_DRAW);
+                    }
+                }
+            }
         }
     }
 
