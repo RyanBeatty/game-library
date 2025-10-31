@@ -3216,6 +3216,10 @@ typedef struct {
 #define SectorIdsInit(sector_ids) \
     ((sector_ids)->ids = (SectorIdArr){.data = (sector_ids)->data, .cap = ArraySizeOf((sector_ids)->data)})
 
+typedef struct {
+    SectorIds sector_ids;
+} Track;
+
 ////////////////////////////////////////////////////////////
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
 
@@ -3480,7 +3484,7 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
-
+    Track track;
     u32 lap;
 } GameState;
 
@@ -3663,6 +3667,17 @@ static void SceneRacingTick(GameState* gstate) {
                 }
             }
         }
+
+        // Track.
+        {
+            Track track = {0};
+            SectorIdsInit(&track.sector_ids);
+            for (SectorId i = 1; i < 5; ++i) {
+                ArrPush(&track.sector_ids.ids, i);
+            }
+
+            gstate->track = track;
+        }
     }
 
     if (gstate->update) {
@@ -3760,7 +3775,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_START_FINISH_LINE)) {
                         // TODO: This should become a check where we verify the contents of the sectors visited.
-                        if (ArrLen(&e0->sector_ids.ids) == 2) {
+                        if (ArrLen(&e0->sector_ids.ids) == ArrLen(&gstate->track.sector_ids.ids)) {
                             ++gstate->lap;
                             ArrClear(&e0->sector_ids.ids);
                         }
