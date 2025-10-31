@@ -3760,6 +3760,7 @@ static void SceneRacingTick(GameState* gstate) {
                         // TODO: This should become a check where we verify the contents of the sectors visited.
                         if (ArrLen(&e0->sector_ids.ids) == 2) {
                             ++gstate->lap;
+                            ArrClear(&e0->sector_ids.ids);
                         }
                     }
 
