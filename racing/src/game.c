@@ -3665,7 +3665,7 @@ static void SceneRacingTick(GameState* gstate) {
                 Vec2 track_dims = Vec2Lit(gstate->renderw_world, gstate->renderh_world);
                 Vec3 sector_dims = Vec3Lit(track_dims.x / 2.0f, track_dims.y / 2.0f, Px2Meter(1.0f));
 
-                SectorId sector_id = 1;
+                isize sector_id_idx = 0;
                 for (isize i = 0; i < 2; ++i) {
                     for (isize j = 0; j < 2; ++j) {
                         Entity* e = AllocateEntity();
@@ -3676,7 +3676,7 @@ static void SceneRacingTick(GameState* gstate) {
                                                              Mat4Identity(), Vec3Scale(sector_dims, 0.99f), LYELLOW));
                         PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(sector_dims));
 
-                        e->sector_id = sector_id++;
+                        e->sector_id = ArrGet(&gstate->track.sector_ids.ids, sector_id_idx);
                         FlagOn(e->flags, EFLAG_SECTOR);
                         FlagOff(e->flags, EFLAG_DRAW);
                     }
