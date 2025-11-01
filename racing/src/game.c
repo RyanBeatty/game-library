@@ -679,15 +679,20 @@ static void RenderDataInit() {
         AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
-    // ISO TRIANGLE Mesh.
+    // ISO TRIANGLE Mesh. triangle with all sides length 1 centered at 0, 0
     {
         Vec3 vs[] = {
-            Vec3Lit(0.0f, 1.0f, 0.0f),
-            Vec3Lit(-1.0f, 0.0f, 0.0f),
-            Vec3Lit(1.0f, 0.0f, 0.0f),
+            Vec3Lit(0.0f, 0.57735027f, 0.0f),
+            Vec3Lit(-0.5f, -0.28867513f, 0.0f),
+            Vec3Lit(0.5f, -0.28867513f, 0.0f),
+        };
+        Vec2 uvs[] = {
+            Vec2Lit(0.5f, 1.0f),
+            Vec2Lit(0.0f, 0.0f),
+            Vec2Lit(1.0f, 0.0f),
         };
         Triangle ts[] = {TriLit(0, 1, 2)};
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
     // PYRAMID Mesh.
