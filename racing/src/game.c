@@ -3233,6 +3233,7 @@ typedef struct {
     u32 lap;
     RacePhase phase;
     f32 start_countdown_dt;  // Counts from N to 0
+    f32 racing_dt;           // Counts upward from 0 for how long since race has started.
 } RaceState;
 
 ////////////////////////////////////////////////////////////
@@ -3714,6 +3715,8 @@ static void SceneRacingTick(GameState* gstate) {
     if (gstate->update) {
         switch (race_state->phase) {
             case RP_RACING: {
+                race_state->racing_dt += dt;
+
                 // Entity update.
                 for (Entity* e = NULL; IncrementEntity(&e);) {
                     e->ppos = e->pos;
@@ -3891,12 +3894,22 @@ static void SceneRacingTick(GameState* gstate) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            if (race_state->phase == RP_START) {
-                char txt[] = "Ready";
-                isize len = strlen(txt);
+            // Countdown.
+            {
                 LFont font = GetLFontClosest(56.0f);
-                Vec2 dims = LFontMeasureText(font, txt, len);
-                DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), height * 0.6f), LBLACK);
+                f32 pos_y = height * 0.6f;
+
+                if (race_state->phase == RP_START) {
+                    char txt[] = "Ready";
+                    isize len = strlen(txt);
+                    Vec2 dims = LFontMeasureText(font, txt, len);
+                    DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), pos_y), LBLACK);
+                } else if (race_state->phase == RP_RACING) {
+                    char txt[] = "Go!";
+                    isize len = strlen(txt);
+                    Vec2 dims = LFontMeasureText(font, txt, len);
+                    DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), pos_y), LBLACK);
+                }
             }
 
             // Lap and speed hud.
