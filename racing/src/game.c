@@ -3222,6 +3222,11 @@ typedef struct {
     Vec3 start_pos;
 } Track;
 
+typedef struct {
+    Track track;
+    u32 lap;
+} RaceState;
+
 ////////////////////////////////////////////////////////////
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
 
@@ -3486,8 +3491,7 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
-    Track track;
-    u32 lap;
+    RaceState race_state;
 } GameState;
 
 static GameState GState;
@@ -3606,6 +3610,8 @@ static void SceneDefaultTick(GameState* gstate) {
 static void SceneRacingTick(GameState* gstate) {
     f32 dt = gstate->dt;
     if (gstate->init) {
+        RaceState* race_state = &gstate->race_state;
+
         // Track.
         // TODO: Should eventually move more and more init stuff into here.
         {
@@ -3619,12 +3625,12 @@ static void SceneRacingTick(GameState* gstate) {
 
             track.start_pos = Vec3Lit(Px2Meter(-260.0f), Px2Meter(-200.0f), Px2Meter(0.0f));
 
-            gstate->track = track;
+            race_state->track = track;
         }
 
         // Track loading.
         {
-            Track* track = &gstate->track;
+            Track* track = &race_state->track;
 
             // Player
             {
@@ -3675,7 +3681,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                 isize sector_id_idx = 0;
                 for (isize i = 0; i < 2; ++i) {
-                    for (isize j = 0; j < 2; ++j) {
+                    for (isize j = 0; j < 2; ++j, ++sector_id_idx) {
                         Entity* e = AllocateEntity();
                         e->pos = Vec3Lit((sector_dims.x * 0.5f) * (i % 2 == 0 ? -1.0f : 1.0f),
                                          (sector_dims.y * 0.5f) * (j % 2 == 0 ? -1.0f : 1.0f), Px2Meter(0.0f));
@@ -3788,8 +3794,8 @@ static void SceneRacingTick(GameState* gstate) {
 
                     if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_START_FINISH_LINE)) {
                         // TODO: This should become a check where we verify the contents of the sectors visited.
-                        if (ArrLen(&e0->sector_ids.ids) == ArrLen(&gstate->track.sector_ids.ids)) {
-                            ++gstate->lap;
+                        if (ArrLen(&e0->sector_ids.ids) == ArrLen(&gstate->race_state.track.sector_ids.ids)) {
+                            ++gstate->race_state.lap;
                             ArrClear(&e0->sector_ids.ids);
                         }
                     }
@@ -3809,6 +3815,7 @@ static void SceneRacingTick(GameState* gstate) {
                         }
 
                         if (!found) {
+                            PlatformLog(LLOG_DEBUG, "Sector entered: %d", sector_id_currently_occupied);
                             ArrPush(&e0->sector_ids.ids, sector_id_currently_occupied);
                         }
                     }
@@ -3861,7 +3868,8 @@ static void SceneRacingTick(GameState* gstate) {
             LFont font = GetLFontClosest(40.0f);
             {
                 char txt[32] = {0};
-                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d/%d", gstate->lap, gstate->track.lap_count);
+                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d/%d", gstate->race_state.lap,
+                                     gstate->race_state.track.lap_count);
                 Vec2 dims = LFontMeasureText(font, txt, len);
 
                 pos = Vec2Lit(padding.x, height - dims.y - padding.y);
