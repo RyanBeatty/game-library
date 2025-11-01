@@ -3225,6 +3225,7 @@ typedef struct {
 typedef enum {
     RP_START = 0,
     RP_RACING,
+    RP_FINISHED,
     RP_COUNT,
 } RacePhase;
 
@@ -3840,6 +3841,11 @@ static void SceneRacingTick(GameState* gstate) {
                         }
                     }
                 }
+
+                if (race_state->lap == race_state->track.lap_count) {
+                    race_state->phase = RP_FINISHED;
+                }
+
                 break;
             }
             case RP_START: {
@@ -3848,6 +3854,9 @@ static void SceneRacingTick(GameState* gstate) {
                     race_state->start_countdown_dt = 0.0f;
                     race_state->phase = RP_RACING;
                 }
+                break;
+            }
+            case RP_FINISHED: {
                 break;
             }
             default: {
@@ -3912,6 +3921,11 @@ static void SceneRacingTick(GameState* gstate) {
                     // TODO: Use some interpolation that fades more quickly.
                     color.a = f32lerp(1.0f, 0.0f, f32clamp01(race_state->racing_dt / 2.0f));
                     DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), pos_y), color);
+                } else if (race_state->phase == RP_FINISHED) {
+                    char txt[] = "Finished!";
+                    isize len = strlen(txt);
+                    Vec2 dims = LFontMeasureText(font, txt, len);
+                    DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), pos_y), LBLACK);
                 }
             }
 
