@@ -3217,6 +3217,7 @@ typedef struct {
     ((sector_ids)->ids = (SectorIdArr){.data = (sector_ids)->data, .cap = ArraySizeOf((sector_ids)->data)})
 
 typedef struct {
+    u8 lap_count;
     SectorIds sector_ids;
     Vec3 start_pos;
 } Track;
@@ -3609,12 +3610,14 @@ static void SceneRacingTick(GameState* gstate) {
         // TODO: Should eventually move more and more init stuff into here.
         {
             Track track = {0};
+            track.lap_count = 2;
+
             SectorIdsInit(&track.sector_ids);
             for (SectorId i = 1; i < 5; ++i) {
                 ArrPush(&track.sector_ids.ids, i);
             }
 
-            track.start_pos = Vec3Lit(Px2Meter(-200.0f), Px2Meter(-200.0f), Px2Meter(0.0f));
+            track.start_pos = Vec3Lit(Px2Meter(-260.0f), Px2Meter(-200.0f), Px2Meter(0.0f));
 
             gstate->track = track;
         }
@@ -3858,7 +3861,7 @@ static void SceneRacingTick(GameState* gstate) {
             LFont font = GetLFontClosest(40.0f);
             {
                 char txt[32] = {0};
-                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d", gstate->lap);
+                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d/%d", gstate->lap, gstate->track.lap_count);
                 Vec2 dims = LFontMeasureText(font, txt, len);
 
                 pos = Vec2Lit(padding.x, height - dims.y - padding.y);
