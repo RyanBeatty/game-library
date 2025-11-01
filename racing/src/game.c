@@ -3909,6 +3909,7 @@ static void SceneRacingTick(GameState* gstate) {
                     isize len = strlen(txt);
                     Vec2 dims = LFontMeasureText(font, txt, len);
                     Vec4 color = LBLACK;
+                    // TODO: Use some interpolation that fades more quickly.
                     color.a = f32lerp(1.0f, 0.0f, f32clamp01(race_state->racing_dt / 2.0f));
                     DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), pos_y), color);
                 }
