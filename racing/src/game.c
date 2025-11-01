@@ -3222,9 +3222,16 @@ typedef struct {
     Vec3 start_pos;
 } Track;
 
+typedef enum {
+    RP_START = 0,
+    RP_RACING,
+    RP_COUNT,
+} RacePhase;
+
 typedef struct {
     Track track;
     u32 lap;
+    RacePhase phase;
 } RaceState;
 
 ////////////////////////////////////////////////////////////
@@ -3609,8 +3616,10 @@ static void SceneDefaultTick(GameState* gstate) {
 
 static void SceneRacingTick(GameState* gstate) {
     f32 dt = gstate->dt;
+
+    RaceState* race_state = &gstate->race_state;
     if (gstate->init) {
-        RaceState* race_state = &gstate->race_state;
+        race_state->phase = RP_RACING;
 
         // Track.
         // TODO: Should eventually move more and more init stuff into here.
@@ -3700,126 +3709,138 @@ static void SceneRacingTick(GameState* gstate) {
     }
 
     if (gstate->update) {
-        // Entity update.
-        for (Entity* e = NULL; IncrementEntity(&e);) {
-            e->ppos = e->pos;
+        switch (race_state->phase) {
+            case RP_RACING: {
+                // Entity update.
+                for (Entity* e = NULL; IncrementEntity(&e);) {
+                    e->ppos = e->pos;
 
-            if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                // Turning.
-                {
-                    static const f32 TURN_SPEED = Deg2Rad(180.0f);
+                    if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        // Turning.
+                        {
+                            static const f32 TURN_SPEED = Deg2Rad(180.0f);
 
-                    // Turning in 2d plane. assume that counter clockwise rotation is positive.
-                    f32 turn_dir = 0.0f;
-                    if (PlatformKeyDown(LKEY_LEFT)) {
-                        turn_dir += 1.0f;
-                    }
-                    if (PlatformKeyDown(LKEY_RIGHT)) {
-                        turn_dir -= 1.0f;
-                    }
+                            // Turning in 2d plane. assume that counter clockwise rotation is positive.
+                            f32 turn_dir = 0.0f;
+                            if (PlatformKeyDown(LKEY_LEFT)) {
+                                turn_dir += 1.0f;
+                            }
+                            if (PlatformKeyDown(LKEY_RIGHT)) {
+                                turn_dir -= 1.0f;
+                            }
 
-                    Mat4 rot = Mat4RotateZ(turn_dir * TURN_SPEED * dt);
-                    e->orient = Mat4Multiply(rot, e->orient);
-                }
+                            Mat4 rot = Mat4RotateZ(turn_dir * TURN_SPEED * dt);
+                            e->orient = Mat4Multiply(rot, e->orient);
+                        }
 
-                // Thrust + movement.
-                {
-                    static const f32 LONGITUDINAL_ACC = 7.0f;
+                        // Thrust + movement.
+                        {
+                            static const f32 LONGITUDINAL_ACC = 7.0f;
 
-                    // We might not need to normalize here, but do it to be safe.
-                    Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
-                    Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
-                    // PlatformLog(LLOG_INFO, "slip %f %f %f", slip.x, slip.y, slip.z);
+                            // We might not need to normalize here, but do it to be safe.
+                            Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
+                            Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
+                            // PlatformLog(LLOG_INFO, "slip %f %f %f", slip.x, slip.y, slip.z);
 
-                    // Determine acceleration due to engine thrust.
-                    Vec3 thrust_acc = Vec3Zero();
-                    if (PlatformKeyDown(LKEY_SPACE)) {
-                        thrust_acc = Vec3Scale(heading, LONGITUDINAL_ACC);
-                    }
+                            // Determine acceleration due to engine thrust.
+                            Vec3 thrust_acc = Vec3Zero();
+                            if (PlatformKeyDown(LKEY_SPACE)) {
+                                thrust_acc = Vec3Scale(heading, LONGITUDINAL_ACC);
+                            }
 
-                    // Find the portions of velocity that are parallel and perp to the current vehicle heading.
-                    // Calculate friction for these two portions independently.
-                    f32 speed_parallel = Vec3Dot(heading, e->v);
-                    f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
-                    Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
+                            // Find the portions of velocity that are parallel and perp to the current vehicle heading.
+                            // Calculate friction for these two portions independently.
+                            f32 speed_parallel = Vec3Dot(heading, e->v);
+                            f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
+                            Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
 
-                    f32 speed_perp = Vec3Dot(slip, e->v);
-                    f32 desired_change_speed_perp = -speed_perp * 0.9f;
-                    Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
+                            f32 speed_perp = Vec3Dot(slip, e->v);
+                            f32 desired_change_speed_perp = -speed_perp * 0.9f;
+                            Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
 
-                    Vec3 acc = Vec3Add(thrust_acc, Vec3Add(friction_parallel_acc, friction_perp_acc));
-                    e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
-                    e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
-                }
-            }
-        }
-
-        // Collision detection.
-        {
-            CollisionInfo data[32] = {0};
-            CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
-            for (Entity* e = NULL; IncrementEntity(&e);) {
-                EntityCollideWorld(e, &collisions);
-            }
-
-            for (isize j = 0; j < ArrLen(&collisions); ++j) {
-                // Check both sides of the collision.
-                CollisionInfo* coll = ArrGetPtr(&collisions, j);
-                CollisionInfo reverse = {
-                    .depth = coll->depth,
-                    .normal = Vec3Negate(coll->normal),
-                    .id0 = coll->id1,
-                    .id1 = coll->id0,
-                };
-                CollisionInfo* cs[2] = {coll, &reverse};
-
-                for (isize i = 0; i < ArraySizeOf(cs); ++i) {
-                    CollisionInfo* collision = cs[i];
-
-                    Entity* e0 = EntityFromId(collision->id0);
-                    Entity* e1 = EntityFromId(collision->id1);
-
-                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
-                        // Determine how much we push an object per unit of mass (dividing by the total mass yields
-                        // this).
-                        f32 d = collision->depth * (EntityGetMassInv(e0) + EntityGetMassInv(e1));
-                        Vec3 push = Vec3Scale(collision->normal, d);
-
-                        // Scale the push for each object by their mass to get the proportion of the total push we
-                        // should apply to each object. Remember to negate the e1 push since we need to push that in
-                        // opposite direction.
-                        e0->pos = Vec3Add(e0->pos, Vec3Scale(push, EntityGetMass(e0)));
-                        e1->pos = Vec3Add(e1->pos, Vec3Scale(push, -EntityGetMass(e1)));
-                    }
-
-                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_START_FINISH_LINE)) {
-                        // TODO: This should become a check where we verify the contents of the sectors visited.
-                        if (ArrLen(&e0->sector_ids.ids) == ArrLen(&gstate->race_state.track.sector_ids.ids)) {
-                            ++gstate->race_state.lap;
-                            ArrClear(&e0->sector_ids.ids);
+                            Vec3 acc = Vec3Add(thrust_acc, Vec3Add(friction_parallel_acc, friction_perp_acc));
+                            e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
+                            e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         }
                     }
+                }
 
-                    if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_SECTOR)) {
-                        // TODO: Issue here where we start with the sector that start position is in (which might be the
-                        // final sector). Should probably handle this to avoid case where you could cut through the
-                        // track.
-                        SectorId sector_id_currently_occupied = e1->sector_id;
-                        bool found = false;
-                        for (isize z = 0; z < ArrLen(&e0->sector_ids.ids); ++z) {
-                            SectorId id = ArrGet(&e0->sector_ids.ids, z);
-                            if (id == sector_id_currently_occupied) {
-                                found = true;
-                                break;
+                // Collision detection.
+                {
+                    CollisionInfo data[32] = {0};
+                    CollisionArr collisions = {.data = data, .cap = ArraySizeOf(data)};
+                    for (Entity* e = NULL; IncrementEntity(&e);) {
+                        EntityCollideWorld(e, &collisions);
+                    }
+
+                    for (isize j = 0; j < ArrLen(&collisions); ++j) {
+                        // Check both sides of the collision.
+                        CollisionInfo* coll = ArrGetPtr(&collisions, j);
+                        CollisionInfo reverse = {
+                            .depth = coll->depth,
+                            .normal = Vec3Negate(coll->normal),
+                            .id0 = coll->id1,
+                            .id1 = coll->id0,
+                        };
+                        CollisionInfo* cs[2] = {coll, &reverse};
+
+                        for (isize i = 0; i < ArraySizeOf(cs); ++i) {
+                            CollisionInfo* collision = cs[i];
+
+                            Entity* e0 = EntityFromId(collision->id0);
+                            Entity* e1 = EntityFromId(collision->id1);
+
+                            if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_WALL)) {
+                                // Determine how much we push an object per unit of mass (dividing by the total mass
+                                // yields this).
+                                f32 d = collision->depth * (EntityGetMassInv(e0) + EntityGetMassInv(e1));
+                                Vec3 push = Vec3Scale(collision->normal, d);
+
+                                // Scale the push for each object by their mass to get the proportion of the total push
+                                // we should apply to each object. Remember to negate the e1 push since we need to push
+                                // that in opposite direction.
+                                e0->pos = Vec3Add(e0->pos, Vec3Scale(push, EntityGetMass(e0)));
+                                e1->pos = Vec3Add(e1->pos, Vec3Scale(push, -EntityGetMass(e1)));
+                            }
+
+                            if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) &&
+                                TestFlag(e1->flags, EFLAG_START_FINISH_LINE)) {
+                                // TODO: This should become a check where we verify the contents of the sectors visited.
+                                if (ArrLen(&e0->sector_ids.ids) == ArrLen(&gstate->race_state.track.sector_ids.ids)) {
+                                    ++gstate->race_state.lap;
+                                    ArrClear(&e0->sector_ids.ids);
+                                }
+                            }
+
+                            if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_SECTOR)) {
+                                // TODO: Issue here where we start with the sector that start position is in (which
+                                // might be the final sector). Should probably handle this to avoid case where you could
+                                // cut through the track.
+                                SectorId sector_id_currently_occupied = e1->sector_id;
+                                bool found = false;
+                                for (isize z = 0; z < ArrLen(&e0->sector_ids.ids); ++z) {
+                                    SectorId id = ArrGet(&e0->sector_ids.ids, z);
+                                    if (id == sector_id_currently_occupied) {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!found) {
+                                    PlatformLog(LLOG_DEBUG, "Sector entered: %d", sector_id_currently_occupied);
+                                    ArrPush(&e0->sector_ids.ids, sector_id_currently_occupied);
+                                }
                             }
                         }
-
-                        if (!found) {
-                            PlatformLog(LLOG_DEBUG, "Sector entered: %d", sector_id_currently_occupied);
-                            ArrPush(&e0->sector_ids.ids, sector_id_currently_occupied);
-                        }
                     }
                 }
+                break;
+            }
+            case RP_START: {
+                break;
+            }
+            default: {
+                exit(1);
             }
         }
     }
