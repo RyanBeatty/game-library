@@ -3751,7 +3751,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                         // Thrust + movement.
                         {
-                            static const f32 LONGITUDINAL_ACC = 7.0f;
+                            static const f32 LONGITUDINAL_ACC = 14.0f;
 
                             // We might not need to normalize here, but do it to be safe.
                             Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
