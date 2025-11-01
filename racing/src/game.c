@@ -3908,7 +3908,9 @@ static void SceneRacingTick(GameState* gstate) {
                     char txt[] = "Go!";
                     isize len = strlen(txt);
                     Vec2 dims = LFontMeasureText(font, txt, len);
-                    DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), pos_y), LBLACK);
+                    Vec4 color = LBLACK;
+                    color.a = f32lerp(1.0f, 0.0f, f32clamp01(race_state->racing_dt / 2.0f));
+                    DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), pos_y), color);
                 }
             }
 
