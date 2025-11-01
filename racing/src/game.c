@@ -3232,6 +3232,7 @@ typedef struct {
     Track track;
     u32 lap;
     RacePhase phase;
+    f32 start_countdown_dt;  // Counts from N to 0
 } RaceState;
 
 ////////////////////////////////////////////////////////////
@@ -3619,7 +3620,9 @@ static void SceneRacingTick(GameState* gstate) {
 
     RaceState* race_state = &gstate->race_state;
     if (gstate->init) {
-        race_state->phase = RP_RACING;
+        race_state->phase = RP_START;
+
+        race_state->start_countdown_dt = 1.0f;
 
         // Track.
         // TODO: Should eventually move more and more init stuff into here.
@@ -3837,6 +3840,11 @@ static void SceneRacingTick(GameState* gstate) {
                 break;
             }
             case RP_START: {
+                race_state->start_countdown_dt -= dt;
+                if (race_state->start_countdown_dt <= 0.0f) {
+                    race_state->start_countdown_dt = 0.0f;
+                    race_state->phase = RP_RACING;
+                }
                 break;
             }
             default: {
