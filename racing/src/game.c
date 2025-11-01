@@ -695,32 +695,120 @@ static void RenderDataInit() {
         AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
-    // PYRAMID Mesh.
+    // PYRAMID Mesh. centered at 0, 0, 0. all sides 1, forward along -z
     {
+        // Vec3 vs[] = {
+        //     Vec3Lit(0.0, 0.0, -0.61237243),          //
+        //     Vec3Lit(-0.5, -0.28867513, 0.20412415),  //
+        //     Vec3Lit(0.5, -0.28867513, 0.20412415),   //
+        //                                              //
+        //     Vec3Lit(0.0, 0.0, -0.61237243),          //
+        //     Vec3Lit(0.5, -0.28867513, 0.20412415),   //
+        //     Vec3Lit(0.0, 0.57735027, 0.20412415),    //
+        //                                              //
+        //     Vec3Lit(0.0, 0.0, -0.61237243),          //
+        //     Vec3Lit(0.0, 0.57735027, 0.20412415),    //
+        //     Vec3Lit(-0.5, -0.28867513, 0.20412415),  //
+        //                                              //
+        //     Vec3Lit(-0.5, -0.28867513, 0.20412415),  //
+        //     Vec3Lit(0.5, -0.28867513, 0.20412415),   //
+        //     Vec3Lit(0.0, 0.57735027, 0.20412415),    //
+        // };
+        // Triangle ts[] = {
+        //     TriLit(0, 1, 2),    //
+        //     TriLit(3, 4, 5),    //
+        //     TriLit(6, 7, 8),    //
+        //     TriLit(9, 10, 11),  //
+        // };
+        // Vec2 uvs[] = {
+        //     Vec2Lit(0.5, 0.8660254),
+        //     Vec2Lit(0.0f, 0.0f),
+        //     Vec2Lit(1.0f, 0.0f),
+        //     //
+        //     Vec2Lit(0.5, 0.8660254),
+        //     Vec2Lit(0.0f, 0.0f),
+        //     Vec2Lit(1.0f, 0.0f),
+        //     //
+        //     Vec2Lit(0.5, 0.8660254),
+        //     Vec2Lit(0.0f, 0.0f),
+        //     Vec2Lit(1.0f, 0.0f),
+        //     //
+        //     Vec2Lit(0.0f, 0.0f),
+        //     Vec2Lit(1.0f, 0.0f),
+        //     Vec2Lit(0.5, 0.8660254),
+        // };
         Vec3 vs[] = {
-            // Base
-            Vec3Lit(-1.0f, 1.0f, 0.0f),   //
-            Vec3Lit(-1.0f, -1.0f, 0.0f),  //
-            Vec3Lit(1.0f, -1.0f, 0.0f),   //
-            Vec3Lit(1.0f, 1.0f, 0.0f),    //
+            // Face 1: A-B-C
+            Vec3Lit(0.0, 0.0, -0.35355339),
+            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
+            Vec3Lit(0.35355339, -0.35355339, 0.35355339),
 
-            // Top point.
-            Vec3Lit(0.0f, 0.0f, -1.0f),  //
+            // Face 2: A-C-D
+            Vec3Lit(0.0, 0.0, -0.35355339),
+            Vec3Lit(0.35355339, -0.35355339, 0.35355339),
+            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
+
+            // Face 3: A-D-E
+            Vec3Lit(0.0, 0.0, -0.35355339),
+            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
+            Vec3Lit(-0.35355339, 0.35355339, 0.35355339),
+
+            // Face 4: A-E-B
+            Vec3Lit(0.0, 0.0, -0.35355339),
+            Vec3Lit(-0.35355339, 0.35355339, 0.35355339),
+            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
+
+            // Base: B-C-D-E (split into two triangles)
+            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
+            Vec3Lit(0.35355339, -0.35355339, 0.35355339),
+            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
+
+            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
+            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
+            Vec3Lit(-0.35355339, 0.35355339, 0.35355339),
         };
+
         Triangle ts[] = {
-            // Base
-            TriLit(0, 1, 2),  //
-            TriLit(2, 3, 0),  //
-            // Top
-            TriLit(0, 3, 4),  //
-            // Left
-            TriLit(1, 0, 4),  //
-            // Right
-            TriLit(3, 2, 4),  //
-            // Bottom
-            TriLit(2, 1, 4),  //
+            TriLit(0, 1, 2),     // A-B-C
+            TriLit(3, 4, 5),     // A-C-D
+            TriLit(6, 7, 8),     // A-D-E
+            TriLit(9, 10, 11),   // A-E-B
+            TriLit(12, 13, 14),  // base tri 1
+            TriLit(15, 16, 17),  // base tri 2
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+
+        Vec2 uvs[] = {
+            // Face 1: A-B-C
+            Vec2Lit(0.5, 0.8660254),
+            Vec2Lit(0.0, 0.0),
+            Vec2Lit(1.0, 0.0),
+
+            // Face 2: A-C-D
+            Vec2Lit(0.5, 0.8660254),
+            Vec2Lit(0.0, 0.0),
+            Vec2Lit(1.0, 0.0),
+
+            // Face 3: A-D-E
+            Vec2Lit(0.5, 0.8660254),
+            Vec2Lit(0.0, 0.0),
+            Vec2Lit(1.0, 0.0),
+
+            // Face 4: A-E-B
+            Vec2Lit(0.5, 0.8660254),
+            Vec2Lit(0.0, 0.0),
+            Vec2Lit(1.0, 0.0),
+
+            // Base tri 1: B-C-D
+            Vec2Lit(0.0, 0.0),
+            Vec2Lit(1.0, 0.0),
+            Vec2Lit(1.0, 1.0),
+
+            // Base tri 2: B-D-E
+            Vec2Lit(0.0, 0.0),
+            Vec2Lit(1.0, 1.0),
+            Vec2Lit(0.0, 1.0),
+        };
+        AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
     // 2S ISO TRIANGLE Mesh.
@@ -3657,8 +3745,9 @@ static void NewRace(GameState* gstate) {
             e->pos = track->start_pos;
             e->scale = Vec3LitAll(1.0f);
             e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
+            // e->orient = Mat4RotateY(Deg2Rad(-90.0f));
             f32 radius = Px2Meter(20.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_PYRAMID), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
             EntitySetMass(e, 1.0f);
