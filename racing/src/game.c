@@ -739,33 +739,33 @@ static void RenderDataInit() {
         // };
         Vec3 vs[] = {
             // Face 1: A-B-C
-            Vec3Lit(0.0, 0.0, -0.35355339),
-            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
-            Vec3Lit(0.35355339, -0.35355339, 0.35355339),
+            Vec3Normalize(Vec3Lit(0.0, 0.0, -0.35355339)),
+            Vec3Normalize(Vec3Lit(-0.35355339, -0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(0.35355339, -0.35355339, 0.35355339)),
 
             // Face 2: A-C-D
-            Vec3Lit(0.0, 0.0, -0.35355339),
-            Vec3Lit(0.35355339, -0.35355339, 0.35355339),
-            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
+            Vec3Normalize(Vec3Lit(0.0, 0.0, -0.35355339)),
+            Vec3Normalize(Vec3Lit(0.35355339, -0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(0.35355339, 0.35355339, 0.35355339)),
 
             // Face 3: A-D-E
-            Vec3Lit(0.0, 0.0, -0.35355339),
-            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
-            Vec3Lit(-0.35355339, 0.35355339, 0.35355339),
+            Vec3Normalize(Vec3Lit(0.0, 0.0, -0.35355339)),
+            Vec3Normalize(Vec3Lit(0.35355339, 0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(-0.35355339, 0.35355339, 0.35355339)),
 
             // Face 4: A-E-B
-            Vec3Lit(0.0, 0.0, -0.35355339),
-            Vec3Lit(-0.35355339, 0.35355339, 0.35355339),
-            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
+            Vec3Normalize(Vec3Lit(0.0, 0.0, -0.35355339)),
+            Vec3Normalize(Vec3Lit(-0.35355339, 0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(-0.35355339, -0.35355339, 0.35355339)),
 
             // Base: B-C-D-E (split into two triangles)
-            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
-            Vec3Lit(0.35355339, -0.35355339, 0.35355339),
-            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
+            Vec3Normalize(Vec3Lit(-0.35355339, -0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(0.35355339, -0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(0.35355339, 0.35355339, 0.35355339)),
 
-            Vec3Lit(-0.35355339, -0.35355339, 0.35355339),
-            Vec3Lit(0.35355339, 0.35355339, 0.35355339),
-            Vec3Lit(-0.35355339, 0.35355339, 0.35355339),
+            Vec3Normalize(Vec3Lit(-0.35355339, -0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(0.35355339, 0.35355339, 0.35355339)),
+            Vec3Normalize(Vec3Lit(-0.35355339, 0.35355339, 0.35355339)),
         };
 
         Triangle ts[] = {
@@ -3745,8 +3745,7 @@ static void NewRace(GameState* gstate) {
             e->pos = track->start_pos;
             e->scale = Vec3LitAll(1.0f);
             e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
-            // e->orient = Mat4RotateY(Deg2Rad(-90.0f));
-            f32 radius = Px2Meter(20.0f);
+            f32 radius = Px2Meter(25.0f);
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_PYRAMID), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
             PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
