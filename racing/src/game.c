@@ -3891,32 +3891,43 @@ static void SceneRacingTick(GameState* gstate) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            Vec2 pos = Vec2Zero();
-            Vec2 padding = Vec2Lit(20.0f, 10.0f);
+            if (race_state->phase == RP_START) {
+                char txt[] = "Ready";
+                isize len = strlen(txt);
+                LFont font = GetLFontClosest(56.0f);
+                Vec2 dims = LFontMeasureText(font, txt, len);
+                DrawLTextEx(font, txt, strlen(txt), Vec2Lit(0.5f * (width - dims.x), height * 0.6f), LBLACK);
+            }
 
-            LFont font = GetLFontClosest(40.0f);
+            // Lap and speed hud.
             {
-                char txt[32] = {0};
-                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d/%d", gstate->race_state.lap,
-                                     gstate->race_state.track.lap_count);
-                Vec2 dims = LFontMeasureText(font, txt, len);
+                Vec2 pos = Vec2Zero();
+                Vec2 padding = Vec2Lit(20.0f, 10.0f);
 
-                pos = Vec2Lit(padding.x, height - dims.y - padding.y);
-                DrawLTextEx(font, txt, len, pos, LBLACK);
+                LFont font = GetLFontClosest(40.0f);
+                {
+                    char txt[32] = {0};
+                    isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Lap: %d/%d", gstate->race_state.lap,
+                                         gstate->race_state.track.lap_count);
+                    Vec2 dims = LFontMeasureText(font, txt, len);
+
+                    pos = Vec2Lit(padding.x, height - dims.y - padding.y);
+                    DrawLTextEx(font, txt, len, pos, LBLACK);
+                }
+
+                pos.y -= padding.y;
+
+                if (player != NULL) {
+                    char txt[32] = {0};
+                    isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Speed: %.1f", Vec3Len(player->v));
+                    Vec2 dims = LFontMeasureText(font, txt, len);
+
+                    pos.y -= dims.y;
+                    DrawLTextEx(font, txt, len, pos, LBLACK);
+                }
+
+                pos.y -= padding.y;
             }
-
-            pos.y -= padding.y;
-
-            if (player != NULL) {
-                char txt[32] = {0};
-                isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Speed: %.1f", Vec3Len(player->v));
-                Vec2 dims = LFontMeasureText(font, txt, len);
-
-                pos.y -= dims.y;
-                DrawLTextEx(font, txt, len, pos, LBLACK);
-            }
-
-            pos.y -= padding.y;
 
             EndShaderPass();
         }
