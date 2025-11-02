@@ -3832,6 +3832,13 @@ static void SceneRacingTick(GameState* gstate) {
                         // Turning.
                         {
                             static const f32 TURN_SPEED = Deg2Rad(180.0f);
+                            // Higher μ_slip → faster removal of sideways motion (shorter drifts).
+                            // Higher μ_turn → stronger ability to inject sideways acceleration so you can redirect
+                            // velocity faster without losing forward speed. If μ_turn ≪ μ_slip, turns will feel weak
+                            // and you’ll lose speed when trying to redirect. If μ_turn ≫ μ_slip, you’ll have snappy
+                            // steering and very short-lived drift (can feel “twitchy” if too high).
+                            static const f32 MU_TURN = 1.8f;
+                            static const f32 MU_SLIP = 4.0f;
 
                             // Turning in 2d plane. assume that counter clockwise rotation is positive.
                             f32 turn_dir = 0.0f;
@@ -3847,15 +3854,11 @@ static void SceneRacingTick(GameState* gstate) {
 
                             Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
                             Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
-                            Vec3 turn_f = Vec3Scale(slip, -turn_dir * 0.7f * Vec3Len(e->v));
+                            Vec3 turn_f = Vec3Scale(slip, -turn_dir * MU_TURN * Vec3Len(e->v));
                             // turn_f = Vec3Zero();
 
                             Vec3 v_lat = Vec3Sub(e->v, Vec3Scale(heading, Vec3Dot(e->v, heading)));
-                            Vec3 friction_perp_f = Vec3Scale(v_lat, -0.02f);
-                            // f32 speed_perp = Vec3Dot(slip, e->v);
-                            // f32 desired_change_speed_perp = -speed_perp * 0.02f;
-                            // Vec3 friction_perp_f = Vec3Scale(slip, (desired_change_speed_perp / dt) *
-                            // EntityGetMass(e)); friction_perp_f = Vec3Zero();
+                            Vec3 friction_perp_f = Vec3Scale(v_lat, -MU_SLIP);
 
                             F = Vec3Add(F, Vec3Add(turn_f, friction_perp_f));
                         }
