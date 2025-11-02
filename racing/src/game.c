@@ -3861,14 +3861,23 @@ static void SceneRacingTick(GameState* gstate) {
                             // Calculate friction for these two portions independently.
                             f32 speed_parallel = Vec3Dot(heading, e->v);
                             f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
+                            desired_change_speed_parallel = 0.0f;
                             Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
 
                             f32 speed_perp = Vec3Dot(slip, e->v);
                             f32 desired_change_speed_perp = -speed_perp * 0.9f;
+                            desired_change_speed_perp = 0.0f;
                             Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
 
                             Vec3 acc = Vec3Add(thrust_acc, Vec3Add(friction_parallel_acc, friction_perp_acc));
                             e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
+
+                            // Top speed.
+                            f32 speed = Vec3Len(e->v);
+                            f32 top_speed = 7.0f;
+                            f32 speed_damp_factor = speed > top_speed ? top_speed / speed : 1.0f;
+                            e->v = Vec3Scale(e->v, speed_damp_factor);
+
                             e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                         }
                     }
