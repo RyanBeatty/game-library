@@ -3842,6 +3842,16 @@ static void SceneRacingTick(GameState* gstate) {
 
                             Mat4 rot = Mat4RotateZ(turn_dir * TURN_SPEED * dt);
                             e->orient = Mat4Multiply(rot, e->orient);
+
+                            Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
+                            Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
+                            Vec3 turn_f = Vec3Scale(slip, -turn_dir * 0.8f * Vec3Len(e->v));
+
+                            f32 speed_perp = Vec3Dot(slip, e->v);
+                            f32 desired_change_speed_perp = -speed_perp * 0.3f;
+                            Vec3 friction_perp_f = Vec3Scale(slip, (desired_change_speed_perp / dt) * EntityGetMass(e));
+
+                            F = Vec3Add(F, Vec3Add(turn_f, friction_perp_f));
                         }
 
                         // Thrust + movement.
@@ -3871,11 +3881,6 @@ static void SceneRacingTick(GameState* gstate) {
                             f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
                             desired_change_speed_parallel = 0.0f;
                             Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
-
-                            f32 speed_perp = Vec3Dot(slip, e->v);
-                            f32 desired_change_speed_perp = -speed_perp * 0.9f;
-                            desired_change_speed_perp = 0.0f;
-                            Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
 
                             F = Vec3Add(F, Vec3Add(thrust_f, braking_f));
                         }
