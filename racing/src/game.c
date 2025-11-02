@@ -3849,12 +3849,18 @@ static void SceneRacingTick(GameState* gstate) {
                             // We might not need to normalize here, but do it to be safe.
                             Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
                             Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
+                            Vec3 speed_dir = Vec3Normalize(e->v);
                             // PlatformLog(LLOG_INFO, "slip %f %f %f", slip.x, slip.y, slip.z);
 
                             // Determine acceleration due to engine thrust.
                             Vec3 thrust_acc = Vec3Zero();
                             if (PlatformKeyDown(LKEY_SPACE)) {
                                 thrust_acc = Vec3Scale(heading, LONGITUDINAL_ACC);
+                            }
+
+                            Vec3 braking_acc = Vec3Zero();
+                            if (PlatformKeyDown(LKEY_Z)) {
+                                braking_acc = Vec3Scale(speed_dir, -4.0f);
                             }
 
                             // Find the portions of velocity that are parallel and perp to the current vehicle heading.
@@ -3869,7 +3875,8 @@ static void SceneRacingTick(GameState* gstate) {
                             desired_change_speed_perp = 0.0f;
                             Vec3 friction_perp_acc = Vec3Scale(slip, desired_change_speed_perp / dt);
 
-                            Vec3 acc = Vec3Add(thrust_acc, Vec3Add(friction_parallel_acc, friction_perp_acc));
+                            Vec3 acc = Vec3Add(Vec3Add(thrust_acc, braking_acc),
+                                               Vec3Add(friction_parallel_acc, friction_perp_acc));
                             e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
 
                             // Top speed.
