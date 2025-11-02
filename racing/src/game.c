@@ -3850,10 +3850,12 @@ static void SceneRacingTick(GameState* gstate) {
                             Vec3 turn_f = Vec3Scale(slip, -turn_dir * 0.7f * Vec3Len(e->v));
                             // turn_f = Vec3Zero();
 
-                            f32 speed_perp = Vec3Dot(slip, e->v);
-                            f32 desired_change_speed_perp = -speed_perp * 0.02f;
-                            Vec3 friction_perp_f = Vec3Scale(slip, (desired_change_speed_perp / dt) * EntityGetMass(e));
-                            friction_perp_f = Vec3Zero();
+                            Vec3 v_lat = Vec3Sub(e->v, Vec3Scale(heading, Vec3Dot(e->v, heading)));
+                            Vec3 friction_perp_f = Vec3Scale(v_lat, -0.02f);
+                            // f32 speed_perp = Vec3Dot(slip, e->v);
+                            // f32 desired_change_speed_perp = -speed_perp * 0.02f;
+                            // Vec3 friction_perp_f = Vec3Scale(slip, (desired_change_speed_perp / dt) *
+                            // EntityGetMass(e)); friction_perp_f = Vec3Zero();
 
                             F = Vec3Add(F, Vec3Add(turn_f, friction_perp_f));
                         }
