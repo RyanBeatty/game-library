@@ -3825,6 +3825,8 @@ static void SceneRacingTick(GameState* gstate) {
                     e->ppos = e->pos;
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                        static const f32 TOP_SPEED = 5.0f;
+
                         Vec3 F = Vec3Zero();
 
                         // Turning.
@@ -3846,43 +3848,43 @@ static void SceneRacingTick(GameState* gstate) {
                             Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
                             Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
                             Vec3 turn_f = Vec3Scale(slip, -turn_dir * 0.7f * Vec3Len(e->v));
-                            turn_f = Vec3Zero();
+                            // turn_f = Vec3Zero();
 
                             f32 speed_perp = Vec3Dot(slip, e->v);
-                            f32 desired_change_speed_perp = -speed_perp * 0.05f;
+                            f32 desired_change_speed_perp = -speed_perp * 0.02f;
                             Vec3 friction_perp_f = Vec3Scale(slip, (desired_change_speed_perp / dt) * EntityGetMass(e));
-                            // friction_perp_f = Vec3Zero();
+                            friction_perp_f = Vec3Zero();
 
                             F = Vec3Add(F, Vec3Add(turn_f, friction_perp_f));
                         }
 
                         // Thrust + movement.
                         {
-                            static const f32 LONGITUDINAL_ACC = 14.0f;
+                            static const f32 LONGITUDINAL_ACC = 2.0f;
 
                             // We might not need to normalize here, but do it to be safe.
                             Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
-                            Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
+                            // Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
                             Vec3 speed_dir = Vec3Normalize(e->v);
                             // PlatformLog(LLOG_INFO, "slip %f %f %f", slip.x, slip.y, slip.z);
 
                             // Determine acceleration due to engine thrust.
-                            Vec3 thrust_f = Vec3Zero();
+                            Vec3 thrust_f = Vec3Scale(heading, LONGITUDINAL_ACC);
+                            Vec3 braking_f = Vec3Zero();
                             if (PlatformKeyDown(LKEY_SPACE)) {
-                                thrust_f = Vec3Scale(heading, LONGITUDINAL_ACC);
+                                braking_f = Vec3Scale(speed_dir, -0.5f);
+                                thrust_f = Vec3Zero();
                             }
 
-                            Vec3 braking_f = Vec3Zero();
                             if (PlatformKeyDown(LKEY_Z)) {
-                                braking_f = Vec3Scale(speed_dir, -4.0f);
                             }
 
                             // Find the portions of velocity that are parallel and perp to the current vehicle heading.
                             // Calculate friction for these two portions independently.
                             f32 speed_parallel = Vec3Dot(heading, e->v);
                             f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
-                            desired_change_speed_parallel = 0.0f;
                             Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
+                            friction_parallel_acc = Vec3Zero();
 
                             F = Vec3Add(F, Vec3Add(thrust_f, braking_f));
                         }
@@ -3892,8 +3894,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                         // Top speed.
                         f32 speed = Vec3Len(e->v);
-                        f32 top_speed = 7.0f;
-                        f32 speed_damp_factor = speed > top_speed ? top_speed / speed : 1.0f;
+                        f32 speed_damp_factor = speed > TOP_SPEED ? TOP_SPEED / speed : 1.0f;
                         e->v = Vec3Scale(e->v, speed_damp_factor);
 
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
