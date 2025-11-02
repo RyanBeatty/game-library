@@ -3837,8 +3837,8 @@ static void SceneRacingTick(GameState* gstate) {
                             // velocity faster without losing forward speed. If μ_turn ≪ μ_slip, turns will feel weak
                             // and you’ll lose speed when trying to redirect. If μ_turn ≫ μ_slip, you’ll have snappy
                             // steering and very short-lived drift (can feel “twitchy” if too high).
-                            static const f32 MU_TURN = 1.8f;
-                            static const f32 MU_SLIP = 4.0f;
+                            static const f32 MU_TURN = 1.2f;
+                            static const f32 MU_SLIP = 0.4f;
 
                             // Turning in 2d plane. assume that counter clockwise rotation is positive.
                             f32 turn_dir = 0.0f;
@@ -3877,7 +3877,7 @@ static void SceneRacingTick(GameState* gstate) {
                             Vec3 thrust_f = Vec3Scale(heading, LONGITUDINAL_ACC);
                             Vec3 braking_f = Vec3Zero();
                             if (PlatformKeyDown(LKEY_SPACE)) {
-                                braking_f = Vec3Scale(speed_dir, -0.05f);
+                                braking_f = Vec3Scale(speed_dir, -0.5f);
                                 thrust_f = Vec3Zero();
                             }
 
