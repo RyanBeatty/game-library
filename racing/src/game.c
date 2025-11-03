@@ -3723,7 +3723,7 @@ static void NewRace(GameState* gstate) {
     // TODO: Should eventually move more and more init stuff into here.
     {
         Track track = {0};
-        track.lap_count = 2;
+        track.lap_count = 4;
 
         SectorIdsInit(&track.sector_ids);
         for (SectorId i = 1; i < 5; ++i) {
