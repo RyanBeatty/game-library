@@ -3759,7 +3759,7 @@ static void NewRace(GameState* gstate) {
             e->pos = Vec3Scale(Vec3Lit(0.0f, 0.0f, 0.0f), MPP);
             e->scale = Vec3LitAll(1.0f);
             e->orient = Mat4Identity();
-            Vec3 dims = Vec3Lit(Px2Meter(1920.0f * 0.6f), Px2Meter(1080.0f * 0.05f), Px2Meter(1.0f));
+            Vec3 dims = Vec3Lit(Px2Meter(1920.0f * 0.6f), Px2Meter(1080.0f * 0.025f), Px2Meter(1.0f));
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), dims, LRED));
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
