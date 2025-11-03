@@ -3852,15 +3852,15 @@ static void SceneRacingTick(GameState* gstate) {
                             Mat4 rot = Mat4RotateZ(turn_dir * TURN_SPEED * dt);
                             e->orient = Mat4Multiply(rot, e->orient);
 
-                            Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
-                            Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
-                            Vec3 turn_f = Vec3Scale(slip, -turn_dir * MU_TURN * Vec3Len(e->v));
-                            // turn_f = Vec3Zero();
+                            // Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
+                            // Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
+                            // Vec3 turn_f = Vec3Scale(slip, -turn_dir * MU_TURN * Vec3Len(e->v));
+                            // // turn_f = Vec3Zero();
 
-                            Vec3 v_lat = Vec3Sub(e->v, Vec3Scale(heading, Vec3Dot(e->v, heading)));
-                            Vec3 friction_perp_f = Vec3Scale(v_lat, -MU_SLIP);
+                            // Vec3 v_lat = Vec3Sub(e->v, Vec3Scale(heading, Vec3Dot(e->v, heading)));
+                            // Vec3 friction_perp_f = Vec3Scale(v_lat, -MU_SLIP);
 
-                            F = Vec3Add(F, Vec3Add(turn_f, friction_perp_f));
+                            // F = Vec3Add(F, Vec3Add(turn_f, friction_perp_f));
                         }
 
                         // Thrust + movement.
@@ -3886,12 +3886,13 @@ static void SceneRacingTick(GameState* gstate) {
                             if (PlatformKeyDown(LKEY_Z)) {
                             }
 
-                            // Find the portions of velocity that are parallel and perp to the current vehicle heading.
-                            // Calculate friction for these two portions independently.
-                            f32 speed_parallel = Vec3Dot(heading, e->v);
-                            f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
-                            Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
-                            friction_parallel_acc = Vec3Zero();
+                            // // Find the portions of velocity that are parallel and perp to the current vehicle
+                            // heading.
+                            // // Calculate friction for these two portions independently.
+                            // f32 speed_parallel = Vec3Dot(heading, e->v);
+                            // f32 desired_change_speed_parallel = -speed_parallel * 0.03f;
+                            // Vec3 friction_parallel_acc = Vec3Scale(heading, desired_change_speed_parallel / dt);
+                            // friction_parallel_acc = Vec3Zero();
 
                             F = Vec3Add(F, Vec3Add(thrust_f, braking_f));
                         }
@@ -3903,6 +3904,31 @@ static void SceneRacingTick(GameState* gstate) {
                         f32 speed = Vec3Len(e->v);
                         f32 speed_damp_factor = speed > TOP_SPEED ? TOP_SPEED / speed : 1.0f;
                         e->v = Vec3Scale(e->v, speed_damp_factor);
+
+                        Vec3 forward = Vec3Normalize(Vec3Negate(e->orient.v.c));
+                        Vec3 v_forward = Vec3Normalize(e->v);
+                        breakpoint();
+
+                        f32 angle = Vec3Angle(forward, v_forward);
+                        if (angle > 0.0f) {
+                            f32 max_rot = Deg2Rad(180.0f * 0.9f) * dt;
+                            if (angle < max_rot) {
+                                v_forward = forward;
+                            } else {
+                                Vec3 axis = Vec3Cross(forward, v_forward);
+                                Mat4 rotm = Mat4Rotate(-max_rot, axis);
+                                v_forward = Vec3Transform(v_forward, rotm);
+                            }
+                        }
+
+                        // f32 rot = f32min(angle, Deg2Rad(180.0f * 0.9f) * dt);
+                        // if (angle < Deg2Rad(180.0f * 0.9f) * dt) {
+                        //     v_forward = forward;
+                        // } else {
+                        //     v_forward = Vec3RotateAxis(v_forward, Vec3Lit(0.0f, 0.0f, 1.0f), rot);
+                        // }
+                        breakpoint();
+                        e->v = Vec3Scale(v_forward, Vec3Len(e->v));
 
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
