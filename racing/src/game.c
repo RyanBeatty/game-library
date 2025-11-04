@@ -3827,22 +3827,15 @@ static void SceneRacingTick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         static const f32 TOP_SPEED = 5.0f;
                         static const f32 TURN_SPEED = Deg2Rad(180.0f);
+                        static const f32 BRAKING_SPEED_TURN_FACTOR = 0.4f;
 
                         Vec3 F = Vec3Zero();
 
                         bool braking = PlatformKeyDown(LKEY_SPACE);
-                        f32 turn_speed = TURN_SPEED;  //* (braking ? 0.7f : 1.0f);
+                        f32 turn_speed = TURN_SPEED * (braking ? 1.15f : 1.0f);
 
                         // Turning.
                         {
-                            // Higher μ_slip → faster removal of sideways motion (shorter drifts).
-                            // Higher μ_turn → stronger ability to inject sideways acceleration so you can redirect
-                            // velocity faster without losing forward speed. If μ_turn ≪ μ_slip, turns will feel weak
-                            // and you’ll lose speed when trying to redirect. If μ_turn ≫ μ_slip, you’ll have snappy
-                            // steering and very short-lived drift (can feel “twitchy” if too high).
-                            static const f32 MU_TURN = 1.6f;
-                            static const f32 MU_SLIP = 0.8f;
-
                             // Turning in 2d plane. assume that counter clockwise rotation is positive.
                             f32 turn_dir = 0.0f;
                             if (PlatformKeyDown(LKEY_LEFT)) {
@@ -3910,7 +3903,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
-                            f32 max_rot = (turn_speed * (braking ? 0.6f : 1.0f)) * dt;
+                            f32 max_rot = (turn_speed * (braking ? BRAKING_SPEED_TURN_FACTOR : 1.0f)) * dt;
                             if (angle < max_rot) {
                                 v_forward = forward;
                             } else {
