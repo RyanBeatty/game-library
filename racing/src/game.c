@@ -3886,8 +3886,6 @@ static void SceneRacingTick(GameState* gstate) {
                                 thrust_f = Vec3Zero();
                             }
 
-                            PlatformLog(LLOG_INFO, "braking: %f", Vec3Len(braking_f));
-
                             // // Find the portions of velocity that are parallel and perp to the current vehicle
                             // heading.
                             // // Calculate friction for these two portions independently.
