@@ -3826,12 +3826,15 @@ static void SceneRacingTick(GameState* gstate) {
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         static const f32 TOP_SPEED = 5.0f;
+                        static const f32 TURN_SPEED = Deg2Rad(180.0f);
 
                         Vec3 F = Vec3Zero();
 
+                        bool braking = PlatformKeyDown(LKEY_SPACE);
+                        f32 turn_speed = TURN_SPEED * (braking ? 0.7f : 1.0f);
+
                         // Turning.
                         {
-                            static const f32 TURN_SPEED = Deg2Rad(180.0f);
                             // Higher μ_slip → faster removal of sideways motion (shorter drifts).
                             // Higher μ_turn → stronger ability to inject sideways acceleration so you can redirect
                             // velocity faster without losing forward speed. If μ_turn ≪ μ_slip, turns will feel weak
@@ -3849,7 +3852,7 @@ static void SceneRacingTick(GameState* gstate) {
                                 turn_dir -= 1.0f;
                             }
 
-                            Mat4 rot = Mat4RotateZ(turn_dir * TURN_SPEED * dt);
+                            Mat4 rot = Mat4RotateZ(turn_dir * turn_speed * dt);
                             e->orient = Mat4Multiply(rot, e->orient);
 
                             // Vec3 heading = Vec3Normalize(Vec3Negate(e->orient.v.c));
@@ -3910,7 +3913,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
-                            f32 max_rot = Deg2Rad(180.0f * 0.9f) * dt;
+                            f32 max_rot = turn_speed * dt;
                             if (angle < max_rot) {
                                 v_forward = forward;
                             } else {
