@@ -3907,7 +3907,6 @@ static void SceneRacingTick(GameState* gstate) {
 
                         Vec3 forward = Vec3Normalize(Vec3Negate(e->orient.v.c));
                         Vec3 v_forward = Vec3Normalize(e->v);
-                        breakpoint();
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
@@ -3927,7 +3926,6 @@ static void SceneRacingTick(GameState* gstate) {
                         // } else {
                         //     v_forward = Vec3RotateAxis(v_forward, Vec3Lit(0.0f, 0.0f, 1.0f), rot);
                         // }
-                        breakpoint();
                         e->v = Vec3Scale(v_forward, Vec3Len(e->v));
 
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
