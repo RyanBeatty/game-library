@@ -3879,15 +3879,14 @@ static void SceneRacingTick(GameState* gstate) {
                             // Determine acceleration due to engine thrust.
                             Vec3 thrust_f = Vec3Scale(heading, LONGITUDINAL_ACC);
                             Vec3 braking_f = Vec3Zero();
-                            if (PlatformKeyDown(LKEY_SPACE)) {
+                            if (braking) {
                                 f32 speed_pct = Vec3Len(e->v) / TOP_SPEED;
-                                f32 brake_value = f32lerp(0.004f, 0.04f, speed_pct * speed_pct);
+                                f32 brake_value = f32lerp(1.0f, 1.5f, speed_pct * speed_pct);
                                 braking_f = Vec3Scale(speed_dir, -brake_value);
                                 thrust_f = Vec3Zero();
                             }
 
-                            if (PlatformKeyDown(LKEY_Z)) {
-                            }
+                            PlatformLog(LLOG_INFO, "braking: %f", Vec3Len(braking_f));
 
                             // // Find the portions of velocity that are parallel and perp to the current vehicle
                             // heading.
