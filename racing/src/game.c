@@ -3831,7 +3831,7 @@ static void SceneRacingTick(GameState* gstate) {
                         Vec3 F = Vec3Zero();
 
                         bool braking = PlatformKeyDown(LKEY_SPACE);
-                        f32 turn_speed = TURN_SPEED * (braking ? 0.7f : 1.0f);
+                        f32 turn_speed = TURN_SPEED;  //* (braking ? 0.7f : 1.0f);
 
                         // Turning.
                         {
@@ -3912,7 +3912,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
-                            f32 max_rot = turn_speed * dt;
+                            f32 max_rot = (turn_speed * (braking ? 0.6f : 1.0f)) * dt;
                             if (angle < max_rot) {
                                 v_forward = forward;
                             } else {
