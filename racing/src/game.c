@@ -3827,6 +3827,7 @@ static void SceneRacingTick(GameState* gstate) {
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         static const f32 TOP_SPEED = 5.0f;
                         static const f32 TURN_SPEED = Deg2Rad(180.0f);
+                        static const f32 BRAKING_ORIENT_TURN_SPEED_FACTOR = 1.15f;
                         static const f32 BRAKING_SPEED_TURN_FACTOR = 0.4f;
                         static bool IS_BRAKING = false;
                         static Vec3 V_PRE_BRAKING = {0};
@@ -3842,7 +3843,7 @@ static void SceneRacingTick(GameState* gstate) {
                             V_PRE_BRAKING = Vec3Zero();
                         }
 
-                        f32 turn_speed = TURN_SPEED * (braking ? 1.15f : 1.0f);
+                        f32 turn_speed = TURN_SPEED * (braking ? BRAKING_ORIENT_TURN_SPEED_FACTOR : 1.0f);
 
                         // Turning.
                         {
