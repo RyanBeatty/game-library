@@ -3828,10 +3828,20 @@ static void SceneRacingTick(GameState* gstate) {
                         static const f32 TOP_SPEED = 5.0f;
                         static const f32 TURN_SPEED = Deg2Rad(180.0f);
                         static const f32 BRAKING_SPEED_TURN_FACTOR = 0.4f;
+                        static bool IS_BRAKING = false;
+                        static Vec3 V_PRE_BRAKING = {0};
 
                         Vec3 F = Vec3Zero();
 
                         bool braking = PlatformKeyDown(LKEY_SPACE);
+                        if (braking && !IS_BRAKING) {
+                            IS_BRAKING = true;
+                            V_PRE_BRAKING = e->v;
+                        } else if (!braking) {
+                            IS_BRAKING = false;
+                            V_PRE_BRAKING = Vec3Zero();
+                        }
+
                         f32 turn_speed = TURN_SPEED * (braking ? 1.15f : 1.0f);
 
                         // Turning.
@@ -3885,13 +3895,23 @@ static void SceneRacingTick(GameState* gstate) {
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
-                            f32 max_rot = (turn_speed * (braking ? BRAKING_SPEED_TURN_FACTOR : 1.0f)) * dt;
-                            if (angle < max_rot) {
-                                v_forward = forward;
-                            } else {
-                                Vec3 axis = Vec3Cross(forward, v_forward);
-                                Mat4 rotm = Mat4Rotate(-max_rot, axis);
-                                v_forward = Vec3Transform(v_forward, rotm);
+                            bool should_turn = true;
+                            if (IS_BRAKING) {
+                                f32 angle_between_current_v_and_pre_braking_v = Vec3Angle(v_forward, V_PRE_BRAKING);
+                                if (angle_between_current_v_and_pre_braking_v >= Deg2Rad(90.0f)) {
+                                    should_turn = false;
+                                }
+                            }
+
+                            if (should_turn) {
+                                f32 max_rot = (turn_speed * (braking ? BRAKING_SPEED_TURN_FACTOR : 1.0f)) * dt;
+                                if (angle < max_rot) {
+                                    v_forward = forward;
+                                } else {
+                                    Vec3 axis = Vec3Cross(forward, v_forward);
+                                    Mat4 rotm = Mat4Rotate(-max_rot, axis);
+                                    v_forward = Vec3Transform(v_forward, rotm);
+                                }
                             }
                         }
 
