@@ -3884,6 +3884,7 @@ static void SceneRacingTick(GameState* gstate) {
                                 Vec3 lat_braking_f = Vec3Zero();
 
                                 braking_f = Vec3Add(lat_braking_f, long_braking_f);
+                                braking_f = Vec3Zero();
                                 thrust_f = Vec3Zero();
                             }
 
@@ -3894,9 +3895,19 @@ static void SceneRacingTick(GameState* gstate) {
                         e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
 
                         // Top speed.
-                        f32 speed = Vec3Len(e->v);
-                        f32 speed_damp_factor = speed > TOP_SPEED ? TOP_SPEED / speed : 1.0f;
-                        e->v = Vec3Scale(e->v, speed_damp_factor);
+                        {
+                            f32 speed = Vec3Len(e->v);
+                            f32 speed_damp_factor = speed > TOP_SPEED ? TOP_SPEED / speed : 1.0f;
+                            e->v = Vec3Scale(e->v, speed_damp_factor);
+                        }
+
+                        // Braking.
+                        if (braking) {
+                            f32 speed = Vec3Len(e->v);
+                            f32 speed_pct = speed == 0.0f ? 0.0f : speed / TOP_SPEED;
+                            speed -= f32lerp(0.5f, 2.0f, 1.0f - (speed_pct * speed_pct)) * dt;
+                            e->v = Vec3Scale(Vec3Normalize(e->v), speed);
+                        }
 
                         Vec3 forward = Vec3Normalize(Vec3Negate(e->orient.v.c));
                         Vec3 v_forward = Vec3Normalize(e->v);
