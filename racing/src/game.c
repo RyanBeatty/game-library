@@ -3831,6 +3831,7 @@ static void SceneRacingTick(GameState* gstate) {
                         static const f32 BRAKING_SPEED_TURN_FACTOR = 0.4f;
                         static bool IS_BRAKING = false;
                         static Vec3 V_PRE_BRAKING = {0};
+                        static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(90.0f);
 
                         Vec3 F = Vec3Zero();
 
@@ -3899,7 +3900,7 @@ static void SceneRacingTick(GameState* gstate) {
                             bool should_turn = true;
                             if (IS_BRAKING) {
                                 f32 angle_between_current_v_and_pre_braking_v = Vec3Angle(v_forward, V_PRE_BRAKING);
-                                if (angle_between_current_v_and_pre_braking_v >= Deg2Rad(90.0f)) {
+                                if (angle_between_current_v_and_pre_braking_v >= MAX_V_TURN_WHILE_BRAKING) {
                                     should_turn = false;
                                 }
                             }
