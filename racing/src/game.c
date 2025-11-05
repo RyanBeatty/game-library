@@ -3831,7 +3831,7 @@ static void SceneRacingTick(GameState* gstate) {
                         static const f32 BRAKING_SPEED_TURN_FACTOR = 0.4f;
                         static bool IS_BRAKING = false;
                         static Vec3 V_PRE_BRAKING = {0};
-                        static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(90.0f);
+                        static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(30.0f);
 
                         Vec3 F = Vec3Zero();
 
