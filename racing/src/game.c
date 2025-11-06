@@ -3942,10 +3942,10 @@ static void SceneRacingTick(GameState* gstate) {
                         }
 
                         if (Vec3Len(e->v) > 0.001f) {
-                            PlatformLog(LLOG_INFO, "v_forward %f", Vec3Len(e->v));
+                            // PlatformLog(LLOG_INFO, "v_forward %f", Vec3Len(e->v));
                             e->orient = Mat4PointAt(v_forward);
                         } else {
-                            PlatformLog(LLOG_INFO, "heading %f", Vec3Len(e->v));
+                            // PlatformLog(LLOG_INFO, "heading %f", Vec3Len(e->v));
                             e->orient = Mat4PointAt(HEADING);
                         }
 
