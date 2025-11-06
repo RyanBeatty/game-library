@@ -3879,22 +3879,6 @@ static void SceneRacingTick(GameState* gstate) {
                             Vec3 thrust_f = Vec3Scale(heading, LONGITUDINAL_ACC);
                             Vec3 braking_f = Vec3Zero();
                             if (braking) {
-                                // f32 speed_pct = Vec3Len(e->v) / TOP_SPEED;
-                                // // Jank smoothstep from wikipedia
-                                // f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) -
-                                //                      (15.0f * f32pow(speed_pct, 4.0f)) +
-                                //                      (10.0f * f32pow(speed_pct, 3.0f));
-                                // f32 long_brake_value = f32lerp(0.5f, 2.0f, long_brake_pct);
-
-                                // e->brake_value = long_brake_value;
-                                // // braking_f = Vec3Scale(speed_dir, -long_brake_value);
-                                // Vec3 long_braking_f = Vec3Scale(heading, -long_brake_value);
-
-                                // f32 lat_brake_value = 0.4f;
-                                // Vec3 lat_braking_f = Vec3Zero();
-
-                                // braking_f = Vec3Add(lat_braking_f, long_braking_f);
-                                // braking_f = Vec3Zero();
                                 thrust_f = Vec3Zero();
                             }
 
