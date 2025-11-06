@@ -3380,6 +3380,8 @@ typedef struct {
     // Gameplay fields.
     SectorId sector_id;    // If sector, this is your id.
     SectorIds sector_ids;  // If racer, then the sectors you've hit.
+
+    f32 brake_value;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3876,9 +3878,11 @@ static void SceneRacingTick(GameState* gstate) {
                             // Determine acceleration due to engine thrust.
                             Vec3 thrust_f = Vec3Scale(heading, LONGITUDINAL_ACC);
                             Vec3 braking_f = Vec3Zero();
+                            e->brake_value = 0.0f;
                             if (braking) {
                                 f32 speed_pct = Vec3Len(e->v) / TOP_SPEED;
                                 f32 long_brake_value = f32lerp(0.5, 1.0f, speed_pct * speed_pct);
+                                e->brake_value = long_brake_value;
                                 // braking_f = Vec3Scale(speed_dir, -long_brake_value);
                                 Vec3 long_braking_f = Vec3Scale(heading, -long_brake_value);
 
@@ -4128,15 +4132,26 @@ static void SceneRacingTick(GameState* gstate) {
                 pos.y -= padding.y;
 
                 if (player != NULL) {
-                    char txt[32] = {0};
-                    isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Speed: %.1f", Vec3Len(player->v));
-                    Vec2 dims = LFontMeasureText(font, txt, len);
+                    {
+                        char txt[32] = {0};
+                        isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Speed: %.1f", Vec3Len(player->v));
+                        Vec2 dims = LFontMeasureText(font, txt, len);
 
-                    pos.y -= dims.y;
-                    DrawLTextEx(font, txt, len, pos, LBLACK);
+                        pos.y -= dims.y;
+                        DrawLTextEx(font, txt, len, pos, LBLACK);
+                        pos.y -= padding.y;
+                    }
+
+                    {
+                        char txt[32] = {0};
+                        isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Brake: %.1f", player->brake_value);
+                        Vec2 dims = LFontMeasureText(font, txt, len);
+
+                        pos.y -= dims.y;
+                        DrawLTextEx(font, txt, len, pos, LBLACK);
+                        pos.y -= padding.y;
+                    }
                 }
-
-                pos.y -= padding.y;
             }
 
             EndShaderPass();
