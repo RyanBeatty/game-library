@@ -4348,7 +4348,7 @@ void GameInit() {
     gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
 
     u32 scale = 1;
-    PlatformInit(scale * gstate->renderw, scale * gstate->renderh, 60);
+    PlatformInit(scale * gstate->renderw, scale * gstate->renderh, gstate->target_fps);
 
     isize sound_cap = GB(2);
     byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
