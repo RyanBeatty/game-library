@@ -3833,6 +3833,8 @@ static void SceneRacingTick(GameState* gstate) {
                         static Vec3 V_PRE_BRAKING = {0};
                         static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(45.0f);
 
+                        static Vec3 HEADING = Vec3Lit(1.0f, 0.0f, 0.0f);
+
                         Vec3 F = Vec3Zero();
 
                         bool braking = PlatformKeyDown(LKEY_SPACE);
@@ -3858,7 +3860,7 @@ static void SceneRacingTick(GameState* gstate) {
                             }
 
                             Mat4 rot = Mat4RotateZ(turn_dir * turn_speed * dt);
-                            e->orient = Mat4Multiply(rot, e->orient);
+                            HEADING = Vec3Transform(HEADING, rot);
                         }
 
                         // Thrust + movement.
@@ -3909,7 +3911,7 @@ static void SceneRacingTick(GameState* gstate) {
                             e->v = Vec3Scale(Vec3Normalize(e->v), speed);
                         }
 
-                        Vec3 forward = Vec3Normalize(Vec3Negate(e->orient.v.c));
+                        Vec3 forward = Vec3Normalize(HEADING);
                         Vec3 v_forward = Vec3Normalize(e->v);
 
                         f32 angle = Vec3Angle(forward, v_forward);
@@ -3920,6 +3922,8 @@ static void SceneRacingTick(GameState* gstate) {
                             //     Vec3Add(Vec3Scale(v_forward, 1.0f - turn_pct), Vec3Scale(forward, turn_pct)));
                             v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
                         }
+
+                        e->orient = Mat4PointAt(v_forward);
 
                         // if (angle > 0.0f) {
                         //     bool should_turn = true;
