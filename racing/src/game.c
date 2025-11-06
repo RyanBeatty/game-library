@@ -3860,7 +3860,7 @@ static void SceneRacingTick(GameState* gstate) {
                             }
 
                             Mat4 rot = Mat4RotateZ(turn_dir * turn_speed * dt);
-                            HEADING = Vec3Transform(HEADING, rot);
+                            HEADING = Vec3Normalize(Vec3Transform(HEADING, rot));
                         }
 
                         // Thrust + movement.
@@ -3947,7 +3947,6 @@ static void SceneRacingTick(GameState* gstate) {
                         // }
 
                         e->v = Vec3Scale(v_forward, Vec3Len(e->v));
-
                         e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
                     }
                 }
