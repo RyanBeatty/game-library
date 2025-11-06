@@ -3878,24 +3878,23 @@ static void SceneRacingTick(GameState* gstate) {
                             // Determine acceleration due to engine thrust.
                             Vec3 thrust_f = Vec3Scale(heading, LONGITUDINAL_ACC);
                             Vec3 braking_f = Vec3Zero();
-                            e->brake_value = 0.0f;
                             if (braking) {
-                                f32 speed_pct = Vec3Len(e->v) / TOP_SPEED;
-                                // Jank smoothstep from wikipedia
-                                f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) -
-                                                     (15.0f * f32pow(speed_pct, 4.0f)) +
-                                                     (10.0f * f32pow(speed_pct, 3.0f));
-                                f32 long_brake_value = f32lerp(0.5f, 2.0f, long_brake_pct);
+                                // f32 speed_pct = Vec3Len(e->v) / TOP_SPEED;
+                                // // Jank smoothstep from wikipedia
+                                // f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) -
+                                //                      (15.0f * f32pow(speed_pct, 4.0f)) +
+                                //                      (10.0f * f32pow(speed_pct, 3.0f));
+                                // f32 long_brake_value = f32lerp(0.5f, 2.0f, long_brake_pct);
 
-                                e->brake_value = long_brake_value;
-                                // braking_f = Vec3Scale(speed_dir, -long_brake_value);
-                                Vec3 long_braking_f = Vec3Scale(heading, -long_brake_value);
+                                // e->brake_value = long_brake_value;
+                                // // braking_f = Vec3Scale(speed_dir, -long_brake_value);
+                                // Vec3 long_braking_f = Vec3Scale(heading, -long_brake_value);
 
-                                f32 lat_brake_value = 0.4f;
-                                Vec3 lat_braking_f = Vec3Zero();
+                                // f32 lat_brake_value = 0.4f;
+                                // Vec3 lat_braking_f = Vec3Zero();
 
-                                braking_f = Vec3Add(lat_braking_f, long_braking_f);
-                                braking_f = Vec3Zero();
+                                // braking_f = Vec3Add(lat_braking_f, long_braking_f);
+                                // braking_f = Vec3Zero();
                                 thrust_f = Vec3Zero();
                             }
 
@@ -3916,8 +3915,18 @@ static void SceneRacingTick(GameState* gstate) {
                         if (braking) {
                             f32 speed = Vec3Len(e->v);
                             f32 speed_pct = speed == 0.0f ? 0.0f : speed / TOP_SPEED;
-                            speed -= f32lerp(0.5f, 2.0f, 1.0f - (speed_pct * speed_pct)) * dt;
+                            // Jank smoothstep from wikipedia
+                            f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) - (15.0f * f32pow(speed_pct, 4.0f)) +
+                                                 (10.0f * f32pow(speed_pct, 3.0f));
+                            f32 long_brake_value = f32lerp(0.5f, 2.0f, long_brake_pct);
+
+                            e->brake_value = long_brake_value;
+
+                            speed -= e->brake_value * dt;
+                            speed = f32max(speed, 0.0f);
                             e->v = Vec3Scale(Vec3Normalize(e->v), speed);
+                        } else {
+                            e->brake_value = 0.0f;
                         }
 
                         Vec3 forward = Vec3Normalize(HEADING);
@@ -3932,7 +3941,13 @@ static void SceneRacingTick(GameState* gstate) {
                             v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
                         }
 
-                        e->orient = Mat4PointAt(v_forward);
+                        if (Vec3Len(e->v) > 0.001f) {
+                            PlatformLog(LLOG_INFO, "v_forward %f", Vec3Len(e->v));
+                            e->orient = Mat4PointAt(v_forward);
+                        } else {
+                            PlatformLog(LLOG_INFO, "heading %f", Vec3Len(e->v));
+                            e->orient = Mat4PointAt(HEADING);
+                        }
 
                         // if (angle > 0.0f) {
                         //     bool should_turn = true;
