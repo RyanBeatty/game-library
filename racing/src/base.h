@@ -146,6 +146,7 @@ static f32 TOL = 0.001;
 #define f32atan atan
 #define f32floor floorf
 #define f32ceil ceilf
+#define f32pow powf
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
 // Prefer this lerp forumulation as at t=0 we will have exactly start and at t=1 we will have exactly end.
 // The other formulation is subject to floating point precision issues where we might not get exactly
