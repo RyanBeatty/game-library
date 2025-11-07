@@ -758,14 +758,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
 
             // Controller input.
-            {
+            // TODO: Come back to this. consider unifying keyboard and controller input. this might be a large refactor.
+            // Refactor would look something like handmade hero input. Basically game defines a struct for input which
+            // the platform layer fills out each frame. keyboard wasd get mapped to +/-1 on left stick
+            // You pass the frame current input into GameTick(). No more platformIsKeyDown(), the game will just inspect
+            // the input state struct.
+            // https://learn.microsoft.com/en-us/windows/win32/xinput/getting-started-with-xinput
+            // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_state
+            // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
+            if (false) {
                 XINPUT_STATE xstate = {0};
                 DWORD result = XInputGetState(0, &xstate);
                 if (result == ERROR_SUCCESS) {
                     // connected.
+                    breakpoint();
                     PlatformLog(LLOG_INFO, "controller");
-                } else {
-                    PlatformLog(LLOG_INFO, "no controller");
                 }
             }
         }
