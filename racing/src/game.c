@@ -3929,6 +3929,8 @@ static void SceneRacingTick(GameState* gstate) {
                             e->orient = Mat4PointAt(HEADING);
                         }
 
+                        e->orient = Mat4PointAt(HEADING);
+
                         // if (angle > 0.0f) {
                         //     bool should_turn = true;
                         //     if (IS_BRAKING) {
