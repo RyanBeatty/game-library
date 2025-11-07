@@ -9,7 +9,7 @@ LIB_DIR := libs
 
 ifeq ($(IS_WINDOWS), Windows_NT)
 	AUDIO_FLAGS := -lole32 -lxaudio2_8
-	PLATFORM_LDFLAGS := -lopengl32 -lgdi32  $(AUDIO_FLAGS)
+	PLATFORM_LDFLAGS := -lopengl32 -lgdi32 -lXinput1_3  $(AUDIO_FLAGS)
 else
 	PLATFORM_LDFLAGS :=  -lGL -ldl -lrt -lX11
 endif

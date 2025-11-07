@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <windowsx.h>
+#include <xinput.h>
 // Include after windows.h
 
 #ifndef UNITY_BUILD
@@ -753,6 +754,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     // TranslateMessage(&msg);
                     // Calls our windows procedure to process the message.
                     DispatchMessage(&msg);
+                }
+            }
+
+            // Controller input.
+            {
+                XINPUT_STATE xstate = {0};
+                DWORD result = XInputGetState(0, &xstate);
+                if (result == ERROR_SUCCESS) {
+                    // connected.
+                    PlatformLog(LLOG_INFO, "controller");
+                } else {
+                    PlatformLog(LLOG_INFO, "no controller");
                 }
             }
         }
