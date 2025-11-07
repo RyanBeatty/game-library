@@ -3871,9 +3871,6 @@ static void SceneRacingTick(GameState* gstate) {
 
                             // We might not need to normalize here, but do it to be safe.
                             Vec3 thrust_dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
-                            // Vec3 slip = Vec3Normalize(Vec3Cross(heading, Vec3Lit(0.0f, 0.0f, 1.0f)));
-                            Vec3 speed_dir = Vec3Normalize(e->v);
-                            // PlatformLog(LLOG_INFO, "slip %f %f %f", slip.x, slip.y, slip.z);
 
                             // Determine acceleration due to engine thrust.
                             Vec3 thrust_f = Vec3Scale(thrust_dir, LONGITUDINAL_ACC);
