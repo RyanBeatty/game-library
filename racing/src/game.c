@@ -3864,6 +3864,7 @@ static void SceneRacingTick(GameState* gstate) {
                             }
 
                             Mat4 rot = Mat4RotateZ(turn_dir * turn_speed * dt);
+                            e->orient = Mat4Multiply(rot, e->orient);
                             HEADING = Vec3Normalize(Vec3Transform(HEADING, rot));
                         }
 
@@ -3911,7 +3912,8 @@ static void SceneRacingTick(GameState* gstate) {
                             e->brake_value = 0.0f;
                         }
 
-                        Vec3 forward = Vec3Normalize(HEADING);
+                        // Vec3 forward = Vec3Normalize(HEADING);
+                        Vec3 forward = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient));
                         Vec3 v_forward = Vec3Normalize(e->v);
 
                         f32 angle = Vec3Angle(forward, v_forward);
@@ -3923,15 +3925,13 @@ static void SceneRacingTick(GameState* gstate) {
                             v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
                         }
 
-                        if (Vec3Len(e->v) > 0.001f) {
-                            // PlatformLog(LLOG_INFO, "v_forward %f", Vec3Len(e->v));
-                            e->orient = Mat4PointAt(v_forward);
-                        } else {
-                            // PlatformLog(LLOG_INFO, "heading %f", Vec3Len(e->v));
-                            e->orient = Mat4PointAt(HEADING);
-                        }
-
-                        e->orient = Mat4PointAt(HEADING);
+                        // if (Vec3Len(e->v) > 0.001f) {
+                        //     // PlatformLog(LLOG_INFO, "v_forward %f", Vec3Len(e->v));
+                        //     e->orient = Mat4PointAt(v_forward);
+                        // } else {
+                        //     // PlatformLog(LLOG_INFO, "heading %f", Vec3Len(e->v));
+                        //     e->orient = Mat4PointAt(HEADING);
+                        // }
 
                         // if (angle > 0.0f) {
                         //     bool should_turn = true;
