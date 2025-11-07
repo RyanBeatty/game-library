@@ -3748,9 +3748,11 @@ static void NewRace(GameState* gstate) {
             e->scale = Vec3LitAll(1.0f);
             e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
             f32 radius = Px2Meter(25.0f);
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_PYRAMID), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
-            PolyhedronSetCircle(&e->shape, Vec2Zero(), radius);
+            Vec3 offset_from_center = Vec3Lit(0.0f, 0.0f, 0.0f);
+            GraphicsInfoSetLModel(&e->graphics,
+                                  LModelFromMesh(GetMesh(M_PYRAMID), GetTexture(TX_DEFAULT), offset_from_center,
+                                                 Mat4Identity(), Vec3Lit(radius, radius, radius), LBLUE));
+            PolyhedronSetCircle(&e->shape, Vec3ToVec2(offset_from_center), radius);
             EntitySetMass(e, 1.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
         }
