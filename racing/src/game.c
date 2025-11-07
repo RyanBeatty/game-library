@@ -3874,12 +3874,11 @@ static void SceneRacingTick(GameState* gstate) {
 
                             // Determine acceleration due to engine thrust.
                             Vec3 thrust_f = Vec3Scale(thrust_dir, LONGITUDINAL_ACC);
-                            Vec3 braking_f = Vec3Zero();
                             if (braking) {
                                 thrust_f = Vec3Zero();
                             }
 
-                            F = Vec3Add(F, Vec3Add(thrust_f, braking_f));
+                            F = Vec3Add(F, thrust_f);
                         }
 
                         Vec3 acc = Vec3Scale(F, EntityGetMassInv(e));
