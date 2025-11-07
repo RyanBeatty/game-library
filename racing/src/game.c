@@ -4071,6 +4071,8 @@ static void SceneRacingTick(GameState* gstate) {
             f32 height = gstate->renderh_world;
             pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
 
+            // TODO: This should probably be moved to update step potentially? I just noticed we set df = 0.0f for
+            // render Maybe we should not do that and instead pass in delta time.
             for (Entity* e = NULL; IncrementEntity(&e);) {
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
                     e->graphics.pos = e->pos;
