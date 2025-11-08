@@ -3930,9 +3930,14 @@ static void SceneRacingTick(GameState* gstate) {
                             if (braking) {
                                 f32 rotated_so_far = Vec3Angle(v_forward, VDIR_PRE_BRAKING);
                                 Assert(!f32isnan(rotated_so_far));
-                                if (rotated_so_far < Deg2Rad(60.0f)) {
-                                    turn_rate = 2.0f;
-                                }
+
+                                // Desmos: -2^{\left(12x-10\right)}+1
+                                // slow down turn rate as we rotate more.
+                                f32 rotated_pct = rotated_so_far / Deg2Rad(60.0f);
+                                f32 ab = (12.0f * rotated_pct) - 10.0f;
+                                f32 pw = -f32pow(2.0f, ab) + 1.0f;
+                                f32 t = f32clamp(pw, 0.0f, 1.0f);
+                                turn_rate = f32lerp(0.5f, 2.0f, t);
                             } else if (e->charge_dt) {
                                 // Boosting, so try to resolve vdir to heading quickly
                                 turn_rate = 8.0f;
