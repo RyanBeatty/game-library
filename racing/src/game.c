@@ -3934,35 +3934,6 @@ static void SceneRacingTick(GameState* gstate) {
 
                         e->vdir = v_forward;
 
-                        // if (Vec3Len(e->v) > 0.001f) {
-                        //     // PlatformLog(LLOG_INFO, "v_forward %f", Vec3Len(e->v));
-                        //     e->orient = Mat4PointAt(v_forward);
-                        // } else {
-                        //     // PlatformLog(LLOG_INFO, "heading %f", Vec3Len(e->v));
-                        //     e->orient = Mat4PointAt(HEADING);
-                        // }
-
-                        // if (angle > 0.0f) {
-                        //     bool should_turn = true;
-                        //     if (IS_BRAKING) {
-                        //         f32 angle_between_current_v_and_pre_braking_v = Vec3Angle(v_forward, V_PRE_BRAKING);
-                        //         if (angle_between_current_v_and_pre_braking_v >= MAX_V_TURN_WHILE_BRAKING) {
-                        //             should_turn = false;
-                        //         }
-                        //     }
-
-                        //     if (should_turn) {
-                        //         f32 max_rot = (turn_speed * (braking ? BRAKING_SPEED_TURN_FACTOR : 1.0f)) * dt;
-                        //         if (angle < max_rot) {
-                        //             v_forward = forward;
-                        //         } else {
-                        //             Vec3 axis = Vec3Cross(forward, v_forward);
-                        //             Mat4 rotm = Mat4Rotate(-max_rot, axis);
-                        //             v_forward = Vec3Transform(v_forward, rotm);
-                        //         }
-                        //     }
-                        // }
-
                         Vec3 v = Vec3Scale(e->vdir, e->speed);
                         e->pos = Vec3Add(e->pos, Vec3Scale(v, dt));
                     }
