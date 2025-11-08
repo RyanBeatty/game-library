@@ -3889,33 +3889,13 @@ static void SceneRacingTick(GameState* gstate) {
 
                             e->speed += (thrust - e->brake_value) * dt;
                             e->speed = f32max(e->speed, 0.0f);
+
+                            // Top speed.
+                            {
+                                f32 speed_damp_factor = e->speed > TOP_SPEED ? TOP_SPEED / e->speed : 1.0f;
+                                e->speed *= speed_damp_factor;
+                            }
                         }
-
-                        // Top speed.
-                        {
-                            f32 speed = e->speed;
-                            f32 speed_damp_factor = speed > TOP_SPEED ? TOP_SPEED / speed : 1.0f;
-                            e->speed *= speed_damp_factor;
-                        }
-
-                        // // Braking.
-                        // if (braking) {
-                        //     f32 speed = e->speed;
-                        //     f32 speed_pct = speed == 0.0f ? 0.0f : speed / TOP_SPEED;
-                        //     // Jank smoothstep from wikipedia
-                        //     f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) - (15.0f * f32pow(speed_pct, 4.0f))
-                        //     +
-                        //                          (10.0f * f32pow(speed_pct, 3.0f));
-                        //     f32 long_brake_value = f32lerp(0.5f, 2.0f, long_brake_pct);
-
-                        //     e->brake_value = long_brake_value;
-
-                        //     speed -= e->brake_value * dt;
-                        //     speed = f32max(speed, 0.0f);
-                        //     e->speed = speed;
-                        // } else {
-                        //     e->brake_value = 0.0f;
-                        // }
 
                         if (Vec3Eq(e->vdir, Vec3Zero())) {
                             e->vdir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
