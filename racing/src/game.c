@@ -3838,12 +3838,8 @@ static void SceneRacingTick(GameState* gstate) {
                         static const f32 TOP_SPEED = 5.0f;
                         static const f32 TURN_SPEED = Deg2Rad(130.0f);
                         static const f32 BRAKING_ORIENT_TURN_SPEED_FACTOR = 0.8f;
-                        static const f32 BRAKING_SPEED_TURN_FACTOR = 0.4f;
                         static bool IS_BRAKING = false;
                         static Vec3 VDIR_PRE_BRAKING = {0};
-                        static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(45.0f);
-
-                        static Vec3 HEADING = Vec3Lit(1.0f, 0.0f, 0.0f);
 
                         bool braking = PlatformKeyDown(LKEY_SPACE);
                         if (braking && !IS_BRAKING) {
@@ -3867,7 +3863,6 @@ static void SceneRacingTick(GameState* gstate) {
 
                             Mat4 rot = Mat4RotateZ(turn_dir * turn_speed * dt);
                             e->orient = Mat4Multiply(rot, e->orient);
-                            HEADING = Vec3Normalize(Vec3Transform(HEADING, rot));
                         }
 
                         // Thrust + movement.
@@ -3919,7 +3914,6 @@ static void SceneRacingTick(GameState* gstate) {
                             e->vdir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
                         }
 
-                        // Vec3 forward = Vec3Normalize(HEADING);
                         Vec3 forward = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient));
                         Vec3 v_forward = Vec3Normalize(e->vdir);
 
