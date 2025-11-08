@@ -3384,6 +3384,8 @@ typedef struct {
     SectorIds sector_ids;  // If racer, then the sectors you've hit.
 
     f32 brake_value;
+    f32 charge_dt;   // Amount of time we have charged a boost for.
+    f32 max_charge;  // Amount of time until fully charged boost.
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3757,6 +3759,7 @@ static void NewRace(GameState* gstate) {
             PolyhedronSetCircle(&e->shape, Vec3ToVec2(offset_from_center), radius);
             EntitySetMass(e, 1.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+            e->max_charge = 1.5f;
         }
 
         // Wall
@@ -3840,7 +3843,6 @@ static void SceneRacingTick(GameState* gstate) {
                         static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(45.0f);
 
                         static Vec3 HEADING = Vec3Lit(1.0f, 0.0f, 0.0f);
-                        static f32 CHARGE_DT = 0.0f;
 
                         Vec3 F = Vec3Zero();
 
@@ -3881,7 +3883,8 @@ static void SceneRacingTick(GameState* gstate) {
                             f32 boost = 0.0f;
                             e->brake_value = 0.0f;
                             if (braking) {
-                                CHARGE_DT += dt;
+                                e->charge_dt += dt;
+                                e->charge_dt = f32min(e->charge_dt, e->max_charge);
 
                                 thrust = 0.0f;
 
@@ -3897,10 +3900,10 @@ static void SceneRacingTick(GameState* gstate) {
                                     e->brake_value = long_brake_value;
                                 }
                             } else {
-                                f32 boost_pct = CHARGE_DT / 1.5f;
+                                f32 boost_pct = e->charge_dt / e->max_charge;
                                 boost = f32lerp(0.5f, 2.0f, boost_pct);
-                                CHARGE_DT -= dt * 2.0f;
-                                CHARGE_DT = f32max(CHARGE_DT, 0.0f);
+                                e->charge_dt -= dt * 2.0f;
+                                e->charge_dt = f32max(e->charge_dt, 0.0f);
                             }
 
                             e->speed += (thrust + boost - e->brake_value) * dt;
@@ -4152,6 +4155,17 @@ static void SceneRacingTick(GameState* gstate) {
                     {
                         char txt[32] = {0};
                         isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Brake: %.1f", player->brake_value);
+                        Vec2 dims = LFontMeasureText(font, txt, len);
+
+                        pos.y -= dims.y;
+                        DrawLTextEx(font, txt, len, pos, LBLACK);
+                        pos.y -= padding.y;
+                    }
+
+                    {
+                        char txt[32] = {0};
+                        isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Boost Charge: %.1f%%",
+                                             (player->charge_dt / player->max_charge) * 100.0f);
                         Vec2 dims = LFontMeasureText(font, txt, len);
 
                         pos.y -= dims.y;
