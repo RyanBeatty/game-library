@@ -3367,7 +3367,9 @@ typedef struct {
 
     // Physics related properties
     // Velocity
-    Vec3 v;
+    // Vec3 v;
+    f32 speed;
+    Vec3 vdir;
     f32 mass_inv;  // Inverse mass. 0 == infinite mass.
 
     Polyhedron shape;
@@ -3450,7 +3452,7 @@ LCORE Entity* AllocateEntity() {
 
     // Physics stuff.
     {
-        entity->v = Vec3Zero();
+        // entity->v = Vec3Zero();
         EntitySetMass(entity, 0.0f);  // Set infinite mass
     }
 
@@ -3842,13 +3844,6 @@ static void SceneRacingTick(GameState* gstate) {
                         Vec3 F = Vec3Zero();
 
                         bool braking = PlatformKeyDown(LKEY_SPACE);
-                        if (braking && !IS_BRAKING) {
-                            IS_BRAKING = true;
-                            V_PRE_BRAKING = e->v;
-                        } else if (!braking) {
-                            IS_BRAKING = false;
-                            V_PRE_BRAKING = Vec3Zero();
-                        }
 
                         f32 turn_speed = TURN_SPEED * (braking ? BRAKING_ORIENT_TURN_SPEED_FACTOR : 1.0f);
 
@@ -3873,30 +3868,27 @@ static void SceneRacingTick(GameState* gstate) {
                             static const f32 LONGITUDINAL_ACC = 2.0f;
 
                             // We might not need to normalize here, but do it to be safe.
-                            Vec3 thrust_dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
+                            // Vec3 thrust_dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
 
                             // Determine acceleration due to engine thrust.
-                            Vec3 thrust_f = Vec3Scale(thrust_dir, LONGITUDINAL_ACC);
+                            f32 thrust = LONGITUDINAL_ACC;
                             if (braking) {
-                                thrust_f = Vec3Zero();
+                                thrust = 0.0f;
                             }
 
-                            F = Vec3Add(F, thrust_f);
+                            e->speed += thrust * dt;
                         }
-
-                        Vec3 acc = Vec3Scale(F, EntityGetMassInv(e));
-                        e->v = Vec3Add(e->v, Vec3Scale(acc, dt));
 
                         // Top speed.
                         {
-                            f32 speed = Vec3Len(e->v);
+                            f32 speed = e->speed;
                             f32 speed_damp_factor = speed > TOP_SPEED ? TOP_SPEED / speed : 1.0f;
-                            e->v = Vec3Scale(e->v, speed_damp_factor);
+                            e->speed *= speed_damp_factor;
                         }
 
                         // Braking.
                         if (braking) {
-                            f32 speed = Vec3Len(e->v);
+                            f32 speed = e->speed;
                             f32 speed_pct = speed == 0.0f ? 0.0f : speed / TOP_SPEED;
                             // Jank smoothstep from wikipedia
                             f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) - (15.0f * f32pow(speed_pct, 4.0f)) +
@@ -3907,14 +3899,18 @@ static void SceneRacingTick(GameState* gstate) {
 
                             speed -= e->brake_value * dt;
                             speed = f32max(speed, 0.0f);
-                            e->v = Vec3Scale(Vec3Normalize(e->v), speed);
+                            e->speed = speed;
                         } else {
                             e->brake_value = 0.0f;
                         }
 
+                        if (Vec3Eq(e->vdir, Vec3Zero())) {
+                            e->vdir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
+                        }
+
                         // Vec3 forward = Vec3Normalize(HEADING);
                         Vec3 forward = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient));
-                        Vec3 v_forward = Vec3Normalize(e->v);
+                        Vec3 v_forward = Vec3Normalize(e->vdir);
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
@@ -3924,6 +3920,8 @@ static void SceneRacingTick(GameState* gstate) {
                             //     Vec3Add(Vec3Scale(v_forward, 1.0f - turn_pct), Vec3Scale(forward, turn_pct)));
                             v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
                         }
+
+                        e->vdir = v_forward;
 
                         // if (Vec3Len(e->v) > 0.001f) {
                         //     // PlatformLog(LLOG_INFO, "v_forward %f", Vec3Len(e->v));
@@ -3954,8 +3952,8 @@ static void SceneRacingTick(GameState* gstate) {
                         //     }
                         // }
 
-                        e->v = Vec3Scale(v_forward, Vec3Len(e->v));
-                        e->pos = Vec3Add(e->pos, Vec3Scale(e->v, dt));
+                        Vec3 v = Vec3Scale(e->vdir, e->speed);
+                        e->pos = Vec3Add(e->pos, Vec3Scale(v, dt));
                     }
                 }
 
@@ -4140,7 +4138,7 @@ static void SceneRacingTick(GameState* gstate) {
                 if (player != NULL) {
                     {
                         char txt[32] = {0};
-                        isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Speed: %.1f", Vec3Len(player->v));
+                        isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Speed: %.1f", player->speed);
                         Vec2 dims = LFontMeasureText(font, txt, len);
 
                         pos.y -= dims.y;
