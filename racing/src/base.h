@@ -138,16 +138,17 @@ static f32 TOL = 0.001;
 #define f32mod fmodf
 #define fhalf(x) ((x) * 0.5f)
 #define f32round(a) (roundf((a)))
-#define f32sin sin
-#define f32cos cos
-#define f32tan tan
-#define f32asin asin
-#define f32acos acos
-#define f32atan atan
+#define f32sin sinf
+#define f32cos cosf
+#define f32tan tanf
+#define f32asin asinf
+#define f32acos acosf
+#define f32atan atanf
 #define f32floor floorf
 #define f32ceil ceilf
 #define f32pow powf
 #define f32eq(x, y) (f32abs((x) - (y)) < (TOL))
+#define f32isnan(x) (isnan(x))
 // Prefer this lerp forumulation as at t=0 we will have exactly start and at t=1 we will have exactly end.
 // The other formulation is subject to floating point precision issues where we might not get exactly
 // end at t=1.
@@ -261,7 +262,13 @@ LCORE Vec3 Vec3Lerp(Vec3 start, Vec3 end, f32 t) {
 LCORE f32 Vec3Len(Vec3 v) { return f32sqrt((v.x * v.x) + (v.y * v.y) + (v.z * v.z)); }
 LCORE f32 Vec3Dot(Vec3 v1, Vec3 v2) { return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z); }
 // Returns the angle between a and b in radians. Assumes a and b are normalized.
-LCORE f32 Vec3Angle(Vec3 a, Vec3 b) { return f32acos(Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b))); }
+LCORE f32 Vec3Angle(Vec3 a, Vec3 b) {
+    // acos is only defined on [-1, 1], otherwise it will yield nan. Due to floating point precision,
+    // the dot between two very similar vecotrs might be slighlty over/under 1 (actually observed in game), so
+    // clamp this to be between the valid range.
+    f32 dot = Vec3Dot(a, b) / (Vec3Len(a) * Vec3Len(b));
+    return f32acos(f32clamp(dot, -1.0f, 1.0f));
+}
 LCORE bool Vec3Eq(Vec3 a, Vec3 b) {
     return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL) && (f32abs(a.z - b.z) < TOL));
 }
