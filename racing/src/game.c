@@ -3840,6 +3840,7 @@ static void SceneRacingTick(GameState* gstate) {
                         static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(45.0f);
 
                         static Vec3 HEADING = Vec3Lit(1.0f, 0.0f, 0.0f);
+                        static f32 CHARGE_DT = 0.0f;
 
                         Vec3 F = Vec3Zero();
 
@@ -3877,22 +3878,32 @@ static void SceneRacingTick(GameState* gstate) {
 
                             // Determine acceleration due to engine thrust.
                             f32 thrust = LONGITUDINAL_ACC;
+                            f32 boost = 0.0f;
                             e->brake_value = 0.0f;
                             if (braking) {
+                                CHARGE_DT += dt;
+
                                 thrust = 0.0f;
 
-                                f32 speed = e->speed;
-                                f32 speed_pct = speed == 0.0f ? 0.0f : speed / TOP_SPEED;
-                                // Jank smoothstep from wikipedia
-                                f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) -
-                                                     (15.0f * f32pow(speed_pct, 4.0f)) +
-                                                     (10.0f * f32pow(speed_pct, 3.0f));
-                                f32 long_brake_value = f32lerp(0.5f, 2.0f, long_brake_pct);
+                                {
+                                    f32 speed = e->speed;
+                                    f32 speed_pct = speed == 0.0f ? 0.0f : speed / TOP_SPEED;
+                                    // Jank smoothstep from wikipedia
+                                    f32 long_brake_pct = (6.0f * f32pow(speed_pct, 5.0f)) -
+                                                         (15.0f * f32pow(speed_pct, 4.0f)) +
+                                                         (10.0f * f32pow(speed_pct, 3.0f));
+                                    f32 long_brake_value = f32lerp(0.5f, 2.0f, long_brake_pct);
 
-                                e->brake_value = long_brake_value;
+                                    e->brake_value = long_brake_value;
+                                }
+                            } else {
+                                f32 boost_pct = CHARGE_DT / 1.5f;
+                                boost = f32lerp(0.5f, 2.0f, boost_pct);
+                                CHARGE_DT -= dt * 2.0f;
+                                CHARGE_DT = f32max(CHARGE_DT, 0.0f);
                             }
 
-                            e->speed += (thrust - e->brake_value) * dt;
+                            e->speed += (thrust + boost - e->brake_value) * dt;
                             e->speed = f32max(e->speed, 0.0f);
 
                             // Top speed.
