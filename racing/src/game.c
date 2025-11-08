@@ -2831,7 +2831,8 @@ LCORE void InitFonts() {
     FontCacheInit(fcache);
 }
 
-static LFont GetLFontByLabel(FontLabel label) {
+// TODO: Maybe remove this.
+LCORE LFont GetLFontByLabel(FontLabel label) {
     Assert(label < LFONT_COUNT);
     return FONTS[label];
 }
