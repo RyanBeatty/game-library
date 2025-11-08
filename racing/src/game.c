@@ -4061,6 +4061,21 @@ static void SceneRacingTick(GameState* gstate) {
                     GraphicsInfoTickAnimation(&e->graphics, dt);
                     DrawGraphicsInfo(&e->graphics);
                 }
+
+                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                    if (!f32eq(e->speed, 0.0f) && !Vec3Eq(e->vdir, Vec3Zero())) {
+                        Vec3 center = e->pos;
+                        center.z -= 1.0f;
+                        f32 radius = Px2Meter(30.0f);
+                        Mat4 orient = Mat4PointAt(e->vdir);
+                        Vec4 color = LRED;
+
+                        DrawCmd* cmd = AddDrawMeshCmd();
+                        cmd->meshcmd.meshid = GetMesh(M_PYRAMID);
+                        cmd->meshcmd.modelm = Mat4SVRT(Vec3Lit(radius, radius, radius), orient, center);
+                        cmd->meshcmd.color = color;
+                    }
+                }
             }
 
             EndShaderPass();
