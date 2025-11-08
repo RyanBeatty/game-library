@@ -3912,24 +3912,19 @@ static void SceneRacingTick(GameState* gstate) {
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
+                            f32 turn_pct = 0.0f;
+
                             if (braking) {
                                 f32 rotated_so_far = Vec3Angle(v_forward, VDIR_PRE_BRAKING);
                                 Assert(!f32isnan(rotated_so_far));
                                 if (rotated_so_far < Deg2Rad(60.0f)) {
-                                    f32 turn_pct = 2.0f * dt;
-
-                                    // v_forward = Vec3Normalize(
-                                    //     Vec3Add(Vec3Scale(v_forward, 1.0f - turn_pct), Vec3Scale(forward,
-                                    //     turn_pct)));
-                                    v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
+                                    turn_pct = 2.0f * dt;
                                 }
                             } else {
-                                f32 turn_pct = 4.0f * dt;
-
-                                // v_forward = Vec3Normalize(
-                                //     Vec3Add(Vec3Scale(v_forward, 1.0f - turn_pct), Vec3Scale(forward, turn_pct)));
-                                v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
+                                turn_pct = 4.0f * dt;
                             }
+
+                            v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
                         }
 
                         e->vdir = v_forward;
