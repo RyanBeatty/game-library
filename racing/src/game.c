@@ -3915,7 +3915,7 @@ static void SceneRacingTick(GameState* gstate) {
                             if (braking) {
                                 f32 rotated_so_far = Vec3Angle(v_forward, VDIR_PRE_BRAKING);
                                 Assert(!f32isnan(rotated_so_far));
-                                if (rotated_so_far < Deg2Rad(90.0f)) {
+                                if (rotated_so_far < Deg2Rad(60.0f)) {
                                     f32 turn_pct = 2.0f * dt;
 
                                     // v_forward = Vec3Normalize(
