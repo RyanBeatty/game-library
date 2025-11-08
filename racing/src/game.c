@@ -3836,7 +3836,7 @@ static void SceneRacingTick(GameState* gstate) {
                         static const f32 BRAKING_ORIENT_TURN_SPEED_FACTOR = 1.15f;
                         static const f32 BRAKING_SPEED_TURN_FACTOR = 0.4f;
                         static bool IS_BRAKING = false;
-                        static Vec3 V_PRE_BRAKING = {0};
+                        static Vec3 VDIR_PRE_BRAKING = {0};
                         static const f32 MAX_V_TURN_WHILE_BRAKING = Deg2Rad(45.0f);
 
                         static Vec3 HEADING = Vec3Lit(1.0f, 0.0f, 0.0f);
@@ -3844,6 +3844,11 @@ static void SceneRacingTick(GameState* gstate) {
                         Vec3 F = Vec3Zero();
 
                         bool braking = PlatformKeyDown(LKEY_SPACE);
+                        if (braking && !IS_BRAKING) {
+                            VDIR_PRE_BRAKING = e->vdir;
+                            IS_BRAKING = true;
+                        }
+                        IS_BRAKING = braking;
 
                         f32 turn_speed = TURN_SPEED * (braking ? BRAKING_ORIENT_TURN_SPEED_FACTOR : 1.0f);
 
@@ -3907,11 +3912,14 @@ static void SceneRacingTick(GameState* gstate) {
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
-                            f32 turn_pct = 4.0f * dt;
+                            if (braking) {
+                            } else {
+                                f32 turn_pct = 4.0f * dt;
 
-                            // v_forward = Vec3Normalize(
-                            //     Vec3Add(Vec3Scale(v_forward, 1.0f - turn_pct), Vec3Scale(forward, turn_pct)));
-                            v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
+                                // v_forward = Vec3Normalize(
+                                //     Vec3Add(Vec3Scale(v_forward, 1.0f - turn_pct), Vec3Scale(forward, turn_pct)));
+                                v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
+                            }
                         }
 
                         e->vdir = v_forward;
