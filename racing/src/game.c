@@ -3845,8 +3845,6 @@ static void SceneRacingTick(GameState* gstate) {
 
                         static Vec3 HEADING = Vec3Lit(1.0f, 0.0f, 0.0f);
 
-                        Vec3 F = Vec3Zero();
-
                         bool braking = PlatformKeyDown(LKEY_SPACE);
                         if (braking && !IS_BRAKING) {
                             VDIR_PRE_BRAKING = e->vdir;
@@ -3927,19 +3925,22 @@ static void SceneRacingTick(GameState* gstate) {
 
                         f32 angle = Vec3Angle(forward, v_forward);
                         if (angle > 0.0f) {
-                            f32 turn_pct = 0.0f;
+                            f32 turn_rate = 0.0f;
 
                             if (braking) {
                                 f32 rotated_so_far = Vec3Angle(v_forward, VDIR_PRE_BRAKING);
                                 Assert(!f32isnan(rotated_so_far));
                                 if (rotated_so_far < Deg2Rad(60.0f)) {
-                                    turn_pct = 2.0f * dt;
+                                    turn_rate = 2.0f;
                                 }
+                            } else if (e->charge_dt) {
+                                // Boosting, so try to resolve vdir to heading quickly
+                                turn_rate = 8.0f;
                             } else {
-                                turn_pct = 4.0f * dt;
+                                turn_rate = 4.0f;
                             }
 
-                            v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_pct));
+                            v_forward = Vec3Normalize(Vec3Lerp(v_forward, forward, turn_rate * dt));
                         }
 
                         e->vdir = v_forward;
