@@ -3994,7 +3994,7 @@ static void SceneRacingTick(GameState* gstate) {
                         if (!e->prize_spawned) {
                             e->prize_resawpn_dt += dt;
                             if (e->prize_resawpn_dt >= 1.5f) {
-                                e->prize_spawned;
+                                e->prize_spawned = true;
                                 e->prize_resawpn_dt = 0.0f;
                                 FlagOn(e->flags, EFLAG_DRAW);
                             }
@@ -4235,6 +4235,16 @@ static void SceneRacingTick(GameState* gstate) {
                         char txt[32] = {0};
                         isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Boost Charge: %.1f%%",
                                              (player->charge_dt / player->max_charge) * 100.0f);
+                        Vec2 dims = LFontMeasureText(font, txt, len);
+
+                        pos.y -= dims.y;
+                        DrawLTextEx(font, txt, len, pos, LBLACK);
+                        pos.y -= padding.y;
+                    }
+
+                    {
+                        char txt[32] = {0};
+                        isize len = snprintf(txt, ArraySizeOf(txt) - 1, "Item: %s", player->item ? "BOOST" : "NONE");
                         Vec2 dims = LFontMeasureText(font, txt, len);
 
                         pos.y -= dims.y;
