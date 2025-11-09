@@ -3390,6 +3390,11 @@ typedef struct {
     f32 charge_dt;         // Amount of time we have charged a boost for.
     f32 max_charge;        // Amount of time until fully charged boost.
     f32 boost_pad_thrust;  // Amount of thrust from boost pad.
+    bool item;
+
+    // prize box stuff
+    bool prize_spawned;
+    f32 prize_resawpn_dt;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3842,6 +3847,7 @@ static void NewRace(GameState* gstate) {
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
             EntitySetMass(e, 0.0f);
             FlagOn(e->flags, EFLAG_PRIZE_BOX);
+            e->prize_spawned = true;
         }
     }
 
@@ -4056,6 +4062,16 @@ static void SceneRacingTick(GameState* gstate) {
 
                             if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_BOOST_PAD)) {
                                 e0->boost_pad_thrust = 3.0f;
+                            }
+
+                            if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_PRIZE_BOX)) {
+                                if (e1->prize_spawned) {
+                                    if (!e0->item) {
+                                        e0->item = true;
+                                    }
+                                }
+                                e1->prize_spawned = false;
+                                FlagOff(e1->flags, EFLAG_DRAW);
                             }
                         }
                     }
