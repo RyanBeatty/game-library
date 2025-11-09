@@ -3878,6 +3878,12 @@ static void SceneRacingTick(GameState* gstate) {
                         static bool IS_BRAKING = false;
                         static Vec3 VDIR_PRE_BRAKING = {0};
 
+                        f32 item_boost_thrust = 0.0f;
+                        if (PlatformKeyDown(LKEY_Z) && e->item) {
+                            e->item = false;
+                            item_boost_thrust = 5.0f;
+                        }
+
                         bool braking = PlatformKeyDown(LKEY_SPACE);
                         if (braking && !IS_BRAKING) {
                             VDIR_PRE_BRAKING = e->vdir;
@@ -3940,7 +3946,7 @@ static void SceneRacingTick(GameState* gstate) {
                             f32 boost_pad_thrust = e->boost_pad_thrust;
                             e->boost_pad_thrust = 0.0f;
 
-                            e->speed += (thrust + boost + boost_pad_thrust - e->brake_value) * dt;
+                            e->speed += (thrust + boost + boost_pad_thrust + item_boost_thrust - e->brake_value) * dt;
                             e->speed = f32max(e->speed, 0.0f);
 
                             // Top speed.
