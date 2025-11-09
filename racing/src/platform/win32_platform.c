@@ -768,24 +768,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
             {
                 static bool CONNECTED = false;
-                static LARGE_INTEGER CONNECTIVITY_CHECK_TICKS_LAST = {0};
+                static LARGE_INTEGER CONNECTIVITY_CHECK_TICKS_PREV = {0};
                 static f32 CONNECTIVITY_CHECK_DT = 0.0f;
+                static XINPUT_STATE CONTROLLER_STATE_PREV = {0};
 
-                if (!CONNECTED) {
+                if (CONNECTED) {
+                    XINPUT_STATE controller_state = {0};
+                    DWORD result = XInputGetState(0, &controller_state);
+                    if (result == ERROR_SUCCESS) {
+                    } else {
+                        PlatformLog(LLOG_DEBUG, "Controller 0 Has Disconnected");
+                        CONNECTED = false;
+                    }
+                } else {
                     LARGE_INTEGER connectivity_check_ticks = {0};
                     QueryPerformanceCounter(&connectivity_check_ticks);
                     CONNECTIVITY_CHECK_DT +=
-                        (connectivity_check_ticks.QuadPart - CONNECTIVITY_CHECK_TICKS_LAST.QuadPart) * sec_per_ticks;
-                    CONNECTIVITY_CHECK_TICKS_LAST = connectivity_check_ticks;
+                        (connectivity_check_ticks.QuadPart - CONNECTIVITY_CHECK_TICKS_PREV.QuadPart) * sec_per_ticks;
+                    CONNECTIVITY_CHECK_TICKS_PREV = connectivity_check_ticks;
 
                     if (CONNECTIVITY_CHECK_DT >= 2.0f) {
                         CONNECTIVITY_CHECK_DT = 0.0f;
 
-                        XINPUT_STATE xstate = {0};
-                        DWORD result = XInputGetState(0, &xstate);
+                        XINPUT_STATE controller_state = {0};
+                        DWORD result = XInputGetState(0, &controller_state);
                         if (result == ERROR_SUCCESS) {
                             PlatformLog(LLOG_DEBUG, "Controller 0 Connected");
                             CONNECTED = true;
+                            CONTROLLER_STATE_PREV = controller_state;
                         } else {
                             PlatformLog(LLOG_DEBUG, "Controller 0 NOT Connected");
                         }
