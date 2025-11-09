@@ -3990,6 +3990,15 @@ static void SceneRacingTick(GameState* gstate) {
 
                     if (TestFlag(e->flags, EFLAG_PRIZE_BOX)) {
                         e->orient = Mat4RotateZ(gstate->timer * 2.0f);
+
+                        if (!e->prize_spawned) {
+                            e->prize_resawpn_dt += dt;
+                            if (e->prize_resawpn_dt >= 1.5f) {
+                                e->prize_spawned;
+                                e->prize_resawpn_dt = 0.0f;
+                                FlagOn(e->flags, EFLAG_DRAW);
+                            }
+                        }
                     }
                 }
 
@@ -4066,6 +4075,7 @@ static void SceneRacingTick(GameState* gstate) {
 
                             if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_PRIZE_BOX)) {
                                 if (e1->prize_spawned) {
+                                    e1->prize_resawpn_dt = 0.0f;
                                     if (!e0->item) {
                                         e0->item = true;
                                     }
