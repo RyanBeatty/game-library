@@ -3386,8 +3386,9 @@ typedef struct {
     SectorIds sector_ids;  // If racer, then the sectors you've hit.
 
     f32 brake_value;
-    f32 charge_dt;   // Amount of time we have charged a boost for.
-    f32 max_charge;  // Amount of time until fully charged boost.
+    f32 charge_dt;         // Amount of time we have charged a boost for.
+    f32 max_charge;        // Amount of time until fully charged boost.
+    f32 boost_pad_thrust;  // Amount of thrust from boost pad.
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3915,7 +3916,10 @@ static void SceneRacingTick(GameState* gstate) {
                                 e->charge_dt = f32max(e->charge_dt, 0.0f);
                             }
 
-                            e->speed += (thrust + boost - e->brake_value) * dt;
+                            f32 boost_pad_thrust = e->boost_pad_thrust;
+                            e->boost_pad_thrust = 0.0f;
+
+                            e->speed += (thrust + boost + boost_pad_thrust - e->brake_value) * dt;
                             e->speed = f32max(e->speed, 0.0f);
 
                             // Top speed.
@@ -4032,7 +4036,7 @@ static void SceneRacingTick(GameState* gstate) {
                             }
 
                             if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_BOOST_PAD)) {
-                                PlatformLog(LLOG_INFO, "boost pad hit");
+                                e0->boost_pad_thrust = 3.0f;
                             }
                         }
                     }
