@@ -776,6 +776,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     XINPUT_STATE controller_state = {0};
                     DWORD result = XInputGetState(0, &controller_state);
                     if (result == ERROR_SUCCESS) {
+                        if (controller_state.dwPacketNumber != CONTROLLER_STATE_PREV.dwPacketNumber) {
+                            PlatformLog(LLOG_DEBUG, "Controller 0 State Has Changed");
+
+                        } else {
+                            PlatformLog(LLOG_DEBUG, "Controller 0 No State Change");
+                        }
                     } else {
                         PlatformLog(LLOG_DEBUG, "Controller 0 Has Disconnected");
                         CONNECTED = false;
@@ -801,14 +807,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         }
                     }
                 }
-
-                // XINPUT_STATE xstate = {0};
-                // DWORD result = XInputGetState(0, &xstate);
-                // if (result == ERROR_SUCCESS) {
-                //     // connected.
-                //     // breakpoint();
-                //     PlatformLog(LLOG_INFO, "controller");
-                // }
             }
         }
 
