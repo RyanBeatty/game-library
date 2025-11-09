@@ -3342,6 +3342,7 @@ typedef enum EntityFlag {
     EFLAG_START_FINISH_LINE = 1 << 3,
     EFLAG_WALL = 1 << 4,
     EFLAG_SECTOR = 1 << 5,
+    EFLAG_BOOST_PAD = 1 << 6,
 } EntityFlag;
 
 typedef struct {
@@ -3812,6 +3813,20 @@ static void NewRace(GameState* gstate) {
                 }
             }
         }
+
+        // Boost pads
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Scale(Vec3Lit(40.0f, 350.0f, 0.0f), MPP);
+            e->scale = Vec3LitAll(1.0f);
+            e->orient = Mat4Identity();
+            Vec3 dims = Vec3Lit(Px2Meter(50.0f), Px2Meter(50.0f), Px2Meter(1.0f));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ISO_TRIANGLE), GetTexture(TX_DEFAULT),
+                                                               Vec3Zero(), Mat4RotateZ(Deg2Rad(90.0f)), dims, LGREEN));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec3ToVec2(dims));
+            EntitySetMass(e, 0.0f);
+            FlagOn(e->flags, EFLAG_BOOST_PAD);
+        }
     }
 
     gstate->race_state = race_state;
@@ -4014,6 +4029,10 @@ static void SceneRacingTick(GameState* gstate) {
                                     PlatformLog(LLOG_DEBUG, "Sector entered: %d", sector_id_currently_occupied);
                                     ArrPush(&e0->sector_ids.ids, sector_id_currently_occupied);
                                 }
+                            }
+
+                            if (TestFlag(e0->flags, EFLAG_PLAYER_CONTROLLED) && TestFlag(e1->flags, EFLAG_BOOST_PAD)) {
+                                PlatformLog(LLOG_INFO, "boost pad hit");
                             }
                         }
                     }
