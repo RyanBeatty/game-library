@@ -766,14 +766,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // https://learn.microsoft.com/en-us/windows/win32/xinput/getting-started-with-xinput
             // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_state
             // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
-            if (false) {
-                XINPUT_STATE xstate = {0};
-                DWORD result = XInputGetState(0, &xstate);
-                if (result == ERROR_SUCCESS) {
-                    // connected.
-                    breakpoint();
-                    PlatformLog(LLOG_INFO, "controller");
+            {
+                static bool CONNECTED = false;
+                static LARGE_INTEGER CONNECTIVITY_CHECK_TICKS_LAST = {0};
+                static f32 CONNECTIVITY_CHECK_DT = 0.0f;
+
+                if (!CONNECTED) {
+                    LARGE_INTEGER connectivity_check_ticks = {0};
+                    QueryPerformanceCounter(&connectivity_check_ticks);
+                    CONNECTIVITY_CHECK_DT +=
+                        (connectivity_check_ticks.QuadPart - CONNECTIVITY_CHECK_TICKS_LAST.QuadPart) * sec_per_ticks;
+                    CONNECTIVITY_CHECK_TICKS_LAST = connectivity_check_ticks;
+
+                    if (CONNECTIVITY_CHECK_DT >= 2.0f) {
+                        CONNECTIVITY_CHECK_DT = 0.0f;
+
+                        XINPUT_STATE xstate = {0};
+                        DWORD result = XInputGetState(0, &xstate);
+                        if (result == ERROR_SUCCESS) {
+                            PlatformLog(LLOG_DEBUG, "Controller 0 Connected");
+                            CONNECTED = true;
+                        } else {
+                            PlatformLog(LLOG_DEBUG, "Controller 0 NOT Connected");
+                        }
+                    }
                 }
+
+                // XINPUT_STATE xstate = {0};
+                // DWORD result = XInputGetState(0, &xstate);
+                // if (result == ERROR_SUCCESS) {
+                //     // connected.
+                //     // breakpoint();
+                //     PlatformLog(LLOG_INFO, "controller");
+                // }
             }
         }
 
