@@ -18,12 +18,12 @@ typedef struct {
     // limited number of actions in the game, but we can just keep filling this out (e.g. imagine the question " was the
     // Debug Menu Start button pressed").
     union {
-        GameButtonState buttons[2];
+        GameButtonState buttons[1];
         struct {
-            GameButtonState action_up;
+            // GameButtonState action_up;
             GameButtonState action_down;
-            GameButtonState action_left;
-            GameButtonState action_right;
+            // GameButtonState action_left;
+            // GameButtonState action_right;
         };
     };
 } GameControllerState;

@@ -812,6 +812,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // TODO; Translate input to GameInput
         GameInput input = {0};
+        {
+            {
+                GameControllerState* controller = &input.controllers[0];
+
+                Win32Input* keyboard = w32state->cur_input;
+                Win32Input* keyboard_prev = w32state->prev_input;
+                controller->connected = true;
+                controller->action_down.down = keyboard->down[VK_SPACE];
+                controller->action_down.pressed = !keyboard->down[VK_SPACE] && keyboard_prev->down[VK_SPACE];
+            }
+        }
 
         QueryPerformanceCounter(&ticks);
         // i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
