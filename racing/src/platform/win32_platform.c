@@ -810,6 +810,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
+        // TODO; Translate input to GameInput
+        GameInput input = {0};
+
         QueryPerformanceCounter(&ticks);
         // i64 ticks_dt = ticks.QuadPart - ticks_last.QuadPart;
         f64 dt = (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
@@ -832,7 +835,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
             // glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
             // glClear(GL_COLOR_BUFFER_BIT);
-            GameTick(dt);
+            GameTick(dt, &input);
 
             SwapBuffers(w32state->dc);
             // Sync/blocking

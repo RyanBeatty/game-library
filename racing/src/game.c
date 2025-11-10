@@ -3602,7 +3602,7 @@ typedef struct GameState {
     f32 fixed_dt;          // fixed dt we will update the simulation with for stability.
     f32 accumulated_time;  // Time we have yet to simulate.
 
-    void (*scenefuncs[MAX_SCENES])(struct GameState*);
+    void (*scenefuncs[MAX_SCENES])(struct GameState*, GameInput* input);
     u32 scenefuncssize;
     SceneId sceneid;
     SceneId nextsceneid;
@@ -3688,7 +3688,7 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
-static void SceneDefaultTick(GameState* gstate) {
+static void SceneDefaultTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
@@ -3854,7 +3854,7 @@ static void NewRace(GameState* gstate) {
     gstate->race_state = race_state;
 }
 
-static void SceneRacingTick(GameState* gstate) {
+static void SceneRacingTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     RaceState* race_state = &gstate->race_state;
@@ -4267,7 +4267,7 @@ static void SceneRacingTick(GameState* gstate) {
     }
 }
 
-static void SceneCollisionTick(GameState* gstate) {
+static void SceneCollisionTick(GameState* gstate, GameInput* input) {
     static EntityId ROTATE_ID = {0};
 
     f32 dt = gstate->dt;
@@ -4505,7 +4505,7 @@ void GameInit() {
     gstate->fts_head = 0;
 }
 
-void GameTick(f32 dt) {
+void GameTick(f32 dt, GameInput* input) {
     GameState* gstate = &GState;
     gstate->dt = dt;
     gstate->timer += dt;
@@ -4550,7 +4550,7 @@ void GameTick(f32 dt) {
             // Update simulation with fixed delta time.
             gstate->update = true;
             gstate->dt = gstate->fixed_dt;
-            gstate->scenefuncs[gstate->sceneid](gstate);
+            gstate->scenefuncs[gstate->sceneid](gstate, input);
             gstate->init = false;
             gstate->accumulated_time -= gstate->fixed_dt;
         }
@@ -4560,7 +4560,7 @@ void GameTick(f32 dt) {
         gstate->dt = 0.0f;
         gstate->update = false;
         gstate->render = true;
-        gstate->scenefuncs[gstate->sceneid](gstate);
+        gstate->scenefuncs[gstate->sceneid](gstate, input);
         gstate->init = false;
     }
 
