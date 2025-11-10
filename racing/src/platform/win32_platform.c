@@ -819,8 +819,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 Win32Input* keyboard = w32state->cur_input;
                 Win32Input* keyboard_prev = w32state->prev_input;
                 controller->connected = true;
+
+                // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
                 controller->action_down.down = keyboard->down[VK_SPACE];
                 controller->action_down.pressed = !keyboard->down[VK_SPACE] && keyboard_prev->down[VK_SPACE];
+                controller->action_left.down = keyboard->down[0x5A];
+                controller->action_left.pressed = !keyboard->down[0x5A] && keyboard_prev->down[0x5A];
             }
         }
 

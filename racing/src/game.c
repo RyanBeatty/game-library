@@ -3878,13 +3878,16 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                         static bool IS_BRAKING = false;
                         static Vec3 VDIR_PRE_BRAKING = {0};
 
+                        GameControllerState* controller = &input->controllers[0];
+                        Assert(controller->connected);
+
                         f32 item_boost_thrust = 0.0f;
-                        if (PlatformKeyDown(LKEY_Z) && e->item) {
+                        if (controller->action_left.down && e->item) {
                             e->item = false;
                             item_boost_thrust = 5.0f;
                         }
 
-                        bool braking = input->controllers[0].action_down.down;
+                        bool braking = controller->action_down.down;
                         if (braking && !IS_BRAKING) {
                             VDIR_PRE_BRAKING = e->vdir;
                             IS_BRAKING = true;
