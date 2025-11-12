@@ -889,14 +889,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         continue;
                     }
                     GameControllerState* controller = &input.controllers[i + 1];
+                    XINPUT_STATE* controller_state = &cur_input->controller_state[i];
+                    XINPUT_STATE* controller_state_prev = &prev_input->controller_state[i];
+
+                    // TODO: For pressed check or really anything using prev input, I might want to think about what
+                    // happens in the border cases where cur input is connected and prev input was not.
                     controller->connected = true;
-                    controller->action_down.down = cur_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_A;
-                    controller->action_down.pressed =
-                        !(cur_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_A) &&
-                        (prev_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_A);
-                    controller->action_left.pressed =
-                        !(cur_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_X) &&
-                        (prev_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_X);
+                    controller->action_down.down = controller_state->Gamepad.wButtons & XINPUT_GAMEPAD_A;
+                    controller->action_down.pressed = !(controller_state->Gamepad.wButtons & XINPUT_GAMEPAD_A) &&
+                                                      (controller_state_prev->Gamepad.wButtons & XINPUT_GAMEPAD_A);
+                    controller->action_left.pressed = !(controller_state->Gamepad.wButtons & XINPUT_GAMEPAD_X) &&
+                                                      (controller_state_prev->Gamepad.wButtons & XINPUT_GAMEPAD_X);
+
+                    Vec2 lpos = Vec2Lit(controller_state->Gamepad.sThumbLX, controller_state->Gamepad.sThumbLY);
+                    f32 magnitude = f32sqrt((lpos.x * lpos.x) + (lpos.y * lpos.y));
+                    if (magnitude > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+                        // clip the magnitude at its expected maximum value. microsoft docs had this, so keep this in
+                        // here.
+                        if (magnitude > 32767) {
+                            magnitude = 32767;
+                        }
+
+                        lpos.x /= magnitude;
+                        lpos.y /= magnitude;
+                    } else {
+                        lpos.x = 0.0f;
+                        lpos.y = 0.0f;
+                    }
+                    controller->left_stick = lpos;
                 }
             }
         }
