@@ -794,7 +794,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     if (cur_input->controller_connected[i]) {
                         cur_input->prev_controller_connectivity_check_tick[i] = connectivity_check_tick;
                         XINPUT_STATE* controller_state = &cur_input->controller_state[i];
-                        DWORD result = XInputGetState(0, controller_state);
+                        DWORD result = XInputGetState(i, controller_state);
                         if (result == ERROR_SUCCESS) {
                         } else {
                             PlatformLog(LLOG_DEBUG, "Controller %d Has disconnected Connected", i);
@@ -809,7 +809,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                             cur_input->prev_controller_connectivity_check_tick[i] = connectivity_check_tick;
 
                             XINPUT_STATE* controller_state = &cur_input->controller_state[i];
-                            DWORD result = XInputGetState(0, controller_state);
+                            DWORD result = XInputGetState(i, controller_state);
                             if (result == ERROR_SUCCESS) {
                                 PlatformLog(LLOG_DEBUG, "Controller %d Connected", i);
                                 cur_input->controller_connected[i] = true;
@@ -878,6 +878,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->left_stick.x += keyboard->down[VK_LEFT] ? -1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_UP] ? 1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_DOWN] ? -1.0f : 0.0f;
+            }
+
+            {
+                Win32Input* cur_input = w32state->cur_input;
+                Win32Input* prev_input = w32state->prev_input;
+
+                for (isize i = 0; i < ArraySizeOf(cur_input->controller_state); ++i) {
+                    if (!cur_input->controller_connected[i]) {
+                        continue;
+                    }
+                    GameControllerState* controller = &input.controllers[i + 1];
+                    controller->connected = true;
+                    controller->action_down.down = cur_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_A;
+                    controller->action_down.pressed =
+                        !(cur_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_A) &&
+                        (prev_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_A);
+                    controller->action_left.pressed =
+                        !(cur_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_X) &&
+                        (prev_input->controller_state[i].Gamepad.wButtons & XINPUT_GAMEPAD_X);
+                }
             }
         }
 

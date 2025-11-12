@@ -3878,8 +3878,13 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                         static bool IS_BRAKING = false;
                         static Vec3 VDIR_PRE_BRAKING = {0};
 
-                        GameControllerState* controller = &input->controllers[0];
+                        GameControllerState* controller = &input->controllers[1];
                         Assert(controller->connected);
+
+                        // TODO: Buggy, seems to last for two frames.
+                        // if (controller->action_down.pressed) {
+                        //     PlatformLog(LLOG_INFO, "fooooooooooooooooo");
+                        // }
 
                         f32 item_boost_thrust = 0.0f;
                         if (controller->action_left.down && e->item) {

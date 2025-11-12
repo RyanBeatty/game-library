@@ -18,6 +18,7 @@ typedef struct {
     // limited number of actions in the game, but we can just keep filling this out (e.g. imagine the question " was the
     // Debug Menu Start button pressed").
 
+    // This should be normalized between [-1, 1]
     Vec2 left_stick;
 
     union {
