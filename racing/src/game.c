@@ -3881,11 +3881,6 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                         GameControllerState* controller = &input->controllers[1];
                         Assert(controller->connected);
 
-                        // TODO: Buggy, seems to last for two frames.
-                        // if (controller->action_down.pressed) {
-                        //     PlatformLog(LLOG_INFO, "fooooooooooooooooo");
-                        // }
-
                         f32 item_boost_thrust = 0.0f;
                         if (controller->action_left.down && e->item) {
                             e->item = false;

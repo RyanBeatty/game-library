@@ -8,6 +8,9 @@
 typedef struct {
     bool down;
     // True if button ended up this frame and was down the last frame.
+    // TODO: I'm not sure I can rely on this or if this is a good idea. Basically since we have decoupled the game
+    // simulation updates from the renderer this will be true for multiple simulation ticks (but only for one GameTick).
+    // Luckily I don't seem to use this too much really.
     bool pressed;
 } GameButtonState;
 

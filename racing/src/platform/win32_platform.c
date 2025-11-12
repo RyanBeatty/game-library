@@ -773,20 +773,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
 
             // Controller input.
-            // TODO: Come back to this. consider unifying keyboard and controller input. this might be a large refactor.
-            // Refactor would look something like handmade hero input. Basically game defines a struct for input which
-            // the platform layer fills out each frame. keyboard wasd get mapped to +/-1 on left stick
-            // You pass the frame current input into GameTick(). No more platformIsKeyDown(), the game will just inspect
-            // the input state struct.
             // https://learn.microsoft.com/en-us/windows/win32/xinput/getting-started-with-xinput
             // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_state
             // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
             {
-                // static bool CONNECTED = false;
-                // static LARGE_INTEGER CONNECTIVITY_CHECK_TICKS_PREV = {0};
-                // static f32 CONNECTIVITY_CHECK_DT = 0.0f;
-                // static XINPUT_STATE CONTROLLER_STATE_PREV = {0};
-
                 for (isize i = 0; i < ArraySizeOf(cur_input->controller_state); ++i) {
                     LARGE_INTEGER connectivity_check_tick = {0};
                     QueryPerformanceCounter(&connectivity_check_tick);
@@ -819,42 +809,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         }
                     }
                 }
-
-                // if (CONNECTED) {
-                //     XINPUT_STATE controller_state = {0};
-                //     DWORD result = XInputGetState(0, &controller_state);
-                //     if (result == ERROR_SUCCESS) {
-                //         if (controller_state.dwPacketNumber != CONTROLLER_STATE_PREV.dwPacketNumber) {
-                //             PlatformLog(LLOG_DEBUG, "Controller 0 State Has Changed");
-
-                //         } else {
-                //             PlatformLog(LLOG_DEBUG, "Controller 0 No State Change");
-                //         }
-                //     } else {
-                //         PlatformLog(LLOG_DEBUG, "Controller 0 Has Disconnected");
-                //         CONNECTED = false;
-                //     }
-                // } else {
-                //     LARGE_INTEGER connectivity_check_ticks = {0};
-                //     QueryPerformanceCounter(&connectivity_check_ticks);
-                //     CONNECTIVITY_CHECK_DT +=
-                //         (connectivity_check_ticks.QuadPart - CONNECTIVITY_CHECK_TICKS_PREV.QuadPart) * sec_per_ticks;
-                //     CONNECTIVITY_CHECK_TICKS_PREV = connectivity_check_ticks;
-
-                //     if (CONNECTIVITY_CHECK_DT >= 2.0f) {
-                //         CONNECTIVITY_CHECK_DT = 0.0f;
-
-                //         XINPUT_STATE controller_state = {0};
-                //         DWORD result = XInputGetState(0, &controller_state);
-                //         if (result == ERROR_SUCCESS) {
-                //             PlatformLog(LLOG_DEBUG, "Controller 0 Connected");
-                //             CONNECTED = true;
-                //             CONTROLLER_STATE_PREV = controller_state;
-                //         } else {
-                //             PlatformLog(LLOG_DEBUG, "Controller 0 NOT Connected");
-                //         }
-                //     }
-                // }
             }
         }
 
@@ -898,6 +852,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     controller->action_down.down = controller_state->Gamepad.wButtons & XINPUT_GAMEPAD_A;
                     controller->action_down.pressed = !(controller_state->Gamepad.wButtons & XINPUT_GAMEPAD_A) &&
                                                       (controller_state_prev->Gamepad.wButtons & XINPUT_GAMEPAD_A);
+                    controller->action_left.down = controller_state->Gamepad.wButtons & XINPUT_GAMEPAD_X;
                     controller->action_left.pressed = !(controller_state->Gamepad.wButtons & XINPUT_GAMEPAD_X) &&
                                                       (controller_state_prev->Gamepad.wButtons & XINPUT_GAMEPAD_X);
 
