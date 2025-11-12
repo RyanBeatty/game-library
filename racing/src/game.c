@@ -3900,13 +3900,6 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                         {
                             // Turning in 2d plane. assume that counter clockwise rotation is positive.
                             f32 turn_dir = 0.0f;
-                            // if (PlatformKeyDown(LKEY_LEFT)) {
-                            //     turn_dir += 1.0f;
-                            // }
-                            // if (PlatformKeyDown(LKEY_RIGHT)) {
-                            //     turn_dir -= 1.0f;
-                            // }
-
                             f32 turn_pct = 0.0f;
 
                             Vec2 left_stick = Vec2Normalize(controller->left_stick);
