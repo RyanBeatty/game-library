@@ -22,6 +22,9 @@ typedef struct {
 
     // Origin (0, 0) is top left corner.
     Vec2 mouse_pos_screen;
+
+    bool controller_connected[1];
+    XINPUT_STATE controller_state[1];
 } Win32Input;
 
 typedef struct {
@@ -721,9 +724,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             w32state->cur_input = temp;
             Win32Input* cur_input = w32state->cur_input;
 
-            // Zero out cur input and set down state from the prev input state.
+            // Zero out cur input.
             {
                 *cur_input = zero_input;
+                // set down state from the prev input state since we may not have received a new message stating the key
+                // has been released.
                 for (i32 i = 0; i < ArraySizeOf(cur_input->down); ++i) {
                     cur_input->down[i] = w32state->prev_input->down[i];
                 }
