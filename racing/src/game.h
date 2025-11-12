@@ -17,6 +17,9 @@ typedef struct {
     // platform layer then just fills out this struct and passes it to the game. This does mean that we only support a
     // limited number of actions in the game, but we can just keep filling this out (e.g. imagine the question " was the
     // Debug Menu Start button pressed").
+
+    Vec2 left_stick;
+
     union {
         GameButtonState buttons[2];
         struct {

@@ -203,6 +203,7 @@ static Vec2 Vec2Cross(Vec2 v) { return Vec2Lit(v.y, -v.x); }
 static f32 Vec2Len(Vec2 v) { return f32sqrt((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 static bool Vec2Eq(Vec2 a, Vec2 b) { return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL)); }
+static f32 Vec2Angle(Vec2 a, Vec2 b) { return f32acos(Vec2Dot(a, b) / (Vec2Len(a) * Vec2Len(b))); }
 
 typedef struct {
     union {

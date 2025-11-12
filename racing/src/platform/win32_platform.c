@@ -825,6 +825,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->action_down.pressed = !keyboard->down[VK_SPACE] && keyboard_prev->down[VK_SPACE];
                 controller->action_left.down = keyboard->down[0x5A];
                 controller->action_left.pressed = !keyboard->down[0x5A] && keyboard_prev->down[0x5A];
+
+                controller->left_stick.x += keyboard->down[VK_RIGHT] ? 1.0f : 0.0f;
+                controller->left_stick.x += keyboard->down[VK_LEFT] ? -1.0f : 0.0f;
+                controller->left_stick.y += keyboard->down[VK_UP] ? 1.0f : 0.0f;
+                controller->left_stick.y += keyboard->down[VK_DOWN] ? -1.0f : 0.0f;
             }
         }
 
