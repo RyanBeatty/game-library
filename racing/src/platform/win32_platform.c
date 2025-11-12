@@ -11,6 +11,7 @@
 #include "platform.h"
 #endif
 
+#define MAX_CONTROLLERS 1
 #define MAX_KEYS 256
 typedef struct {
     // The polling window is the time between the calls to ProcessInput().
@@ -23,8 +24,10 @@ typedef struct {
     // Origin (0, 0) is top left corner.
     Vec2 mouse_pos_screen;
 
-    bool controller_connected[1];
-    XINPUT_STATE controller_state[1];
+    bool controller_connected[MAX_CONTROLLERS];
+    // Last tick we checked controller was connected.
+    LARGE_INTEGER prev_controller_connectivity_check_tick[MAX_CONTROLLERS];
+    XINPUT_STATE controller_state[MAX_CONTROLLERS];
 } Win32Input;
 
 typedef struct {
@@ -733,6 +736,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     cur_input->down[i] = w32state->prev_input->down[i];
                 }
                 cur_input->mouse_pos_screen = w32state->prev_input->mouse_pos_screen;
+
+                // If a controller was connected last frame, consider it still connected.
+                for (isize i = 0; i < ArraySizeOf(cur_input->controller_connected); ++i) {
+                    cur_input->controller_connected[i] = w32state->prev_input->controller_connected[i];
+                    cur_input->prev_controller_connectivity_check_tick[i] =
+                        w32state->prev_input->prev_controller_connectivity_check_tick[i];
+                }
             }
 
             while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -772,46 +782,79 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_state
             // https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad
             {
-                static bool CONNECTED = false;
-                static LARGE_INTEGER CONNECTIVITY_CHECK_TICKS_PREV = {0};
-                static f32 CONNECTIVITY_CHECK_DT = 0.0f;
-                static XINPUT_STATE CONTROLLER_STATE_PREV = {0};
+                // static bool CONNECTED = false;
+                // static LARGE_INTEGER CONNECTIVITY_CHECK_TICKS_PREV = {0};
+                // static f32 CONNECTIVITY_CHECK_DT = 0.0f;
+                // static XINPUT_STATE CONTROLLER_STATE_PREV = {0};
 
-                if (CONNECTED) {
-                    XINPUT_STATE controller_state = {0};
-                    DWORD result = XInputGetState(0, &controller_state);
-                    if (result == ERROR_SUCCESS) {
-                        if (controller_state.dwPacketNumber != CONTROLLER_STATE_PREV.dwPacketNumber) {
-                            PlatformLog(LLOG_DEBUG, "Controller 0 State Has Changed");
+                for (isize i = 0; i < ArraySizeOf(cur_input->controller_state); ++i) {
+                    LARGE_INTEGER connectivity_check_tick = {0};
+                    QueryPerformanceCounter(&connectivity_check_tick);
 
-                        } else {
-                            PlatformLog(LLOG_DEBUG, "Controller 0 No State Change");
-                        }
-                    } else {
-                        PlatformLog(LLOG_DEBUG, "Controller 0 Has Disconnected");
-                        CONNECTED = false;
-                    }
-                } else {
-                    LARGE_INTEGER connectivity_check_ticks = {0};
-                    QueryPerformanceCounter(&connectivity_check_ticks);
-                    CONNECTIVITY_CHECK_DT +=
-                        (connectivity_check_ticks.QuadPart - CONNECTIVITY_CHECK_TICKS_PREV.QuadPart) * sec_per_ticks;
-                    CONNECTIVITY_CHECK_TICKS_PREV = connectivity_check_ticks;
-
-                    if (CONNECTIVITY_CHECK_DT >= 2.0f) {
-                        CONNECTIVITY_CHECK_DT = 0.0f;
-
-                        XINPUT_STATE controller_state = {0};
-                        DWORD result = XInputGetState(0, &controller_state);
+                    if (cur_input->controller_connected[i]) {
+                        cur_input->prev_controller_connectivity_check_tick[i] = connectivity_check_tick;
+                        XINPUT_STATE* controller_state = &cur_input->controller_state[i];
+                        DWORD result = XInputGetState(0, controller_state);
                         if (result == ERROR_SUCCESS) {
-                            PlatformLog(LLOG_DEBUG, "Controller 0 Connected");
-                            CONNECTED = true;
-                            CONTROLLER_STATE_PREV = controller_state;
                         } else {
-                            PlatformLog(LLOG_DEBUG, "Controller 0 NOT Connected");
+                            PlatformLog(LLOG_DEBUG, "Controller %d Has disconnected Connected", i);
+                            cur_input->controller_connected[i] = false;
+                        }
+
+                    } else {
+                        f32 dt_since_last_check = (connectivity_check_tick.QuadPart -
+                                                   cur_input->prev_controller_connectivity_check_tick[i].QuadPart) *
+                                                  sec_per_ticks;
+                        if (dt_since_last_check >= 2.0f) {
+                            cur_input->prev_controller_connectivity_check_tick[i] = connectivity_check_tick;
+
+                            XINPUT_STATE* controller_state = &cur_input->controller_state[i];
+                            DWORD result = XInputGetState(0, controller_state);
+                            if (result == ERROR_SUCCESS) {
+                                PlatformLog(LLOG_DEBUG, "Controller %d Connected", i);
+                                cur_input->controller_connected[i] = true;
+                            } else {
+                                PlatformLog(LLOG_DEBUG, "Controller %d NOT Connected", i);
+                            }
                         }
                     }
                 }
+
+                // if (CONNECTED) {
+                //     XINPUT_STATE controller_state = {0};
+                //     DWORD result = XInputGetState(0, &controller_state);
+                //     if (result == ERROR_SUCCESS) {
+                //         if (controller_state.dwPacketNumber != CONTROLLER_STATE_PREV.dwPacketNumber) {
+                //             PlatformLog(LLOG_DEBUG, "Controller 0 State Has Changed");
+
+                //         } else {
+                //             PlatformLog(LLOG_DEBUG, "Controller 0 No State Change");
+                //         }
+                //     } else {
+                //         PlatformLog(LLOG_DEBUG, "Controller 0 Has Disconnected");
+                //         CONNECTED = false;
+                //     }
+                // } else {
+                //     LARGE_INTEGER connectivity_check_ticks = {0};
+                //     QueryPerformanceCounter(&connectivity_check_ticks);
+                //     CONNECTIVITY_CHECK_DT +=
+                //         (connectivity_check_ticks.QuadPart - CONNECTIVITY_CHECK_TICKS_PREV.QuadPart) * sec_per_ticks;
+                //     CONNECTIVITY_CHECK_TICKS_PREV = connectivity_check_ticks;
+
+                //     if (CONNECTIVITY_CHECK_DT >= 2.0f) {
+                //         CONNECTIVITY_CHECK_DT = 0.0f;
+
+                //         XINPUT_STATE controller_state = {0};
+                //         DWORD result = XInputGetState(0, &controller_state);
+                //         if (result == ERROR_SUCCESS) {
+                //             PlatformLog(LLOG_DEBUG, "Controller 0 Connected");
+                //             CONNECTED = true;
+                //             CONTROLLER_STATE_PREV = controller_state;
+                //         } else {
+                //             PlatformLog(LLOG_DEBUG, "Controller 0 NOT Connected");
+                //         }
+                //     }
+                // }
             }
         }
 
