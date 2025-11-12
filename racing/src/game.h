@@ -7,6 +7,7 @@
 
 typedef struct {
     bool down;
+    // True if button ended up this frame and was down the last frame.
     bool pressed;
 } GameButtonState;
 
