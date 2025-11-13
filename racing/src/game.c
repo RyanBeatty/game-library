@@ -4146,10 +4146,17 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
 
         // Render Entities
         {
+            Assert(player != NULL);
+
+            Mat4 view = Mat4LookAt(Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f))),
+                                   player->pos, Vec3Lit(0.0f, 0.0f, 1.0f));
+
             ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+            pass->view = view;
             f32 width = gstate->renderw_world;
             f32 height = gstate->renderh_world;
-            pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
+            pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
+            // pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
 
             // TODO: This should probably be moved to update step potentially? I just noticed we set df = 0.0f for
             // render Maybe we should not do that and instead pass in delta time.
