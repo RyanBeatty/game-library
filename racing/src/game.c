@@ -3391,6 +3391,7 @@ typedef struct {
     f32 max_charge;        // Amount of time until fully charged boost.
     f32 boost_pad_thrust;  // Amount of thrust from boost pad.
     bool item;
+    f32 item_dt;
 
     // prize box stuff
     bool prize_spawned;
@@ -3872,7 +3873,7 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                     e->ppos = e->pos;
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                        static const f32 TOP_SPEED = 5.0f;
+                        static const f32 TOP_SPEED = 10.0f;
                         static const f32 TURN_SPEED = Deg2Rad(130.0f);
                         static const f32 BRAKING_ORIENT_TURN_SPEED_FACTOR = 0.8f;
                         static bool IS_BRAKING = false;
@@ -3884,7 +3885,12 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                         f32 item_boost_thrust = 0.0f;
                         if (controller->action_left.down && e->item) {
                             e->item = false;
-                            item_boost_thrust = 5.0f;
+                            e->item_dt = 1.0f;
+                        }
+                        if (e->item_dt > 0.0f) {
+                            item_boost_thrust = 2.0f;
+                            e->item_dt -= dt;
+                            e->item_dt = f32max(e->item_dt, 0.0f);
                         }
 
                         bool braking = controller->action_down.down;
@@ -3924,7 +3930,7 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                             // Vec3 thrust_dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
 
                             // Determine acceleration due to engine thrust.
-                            f32 thrust = LONGITUDINAL_ACC;
+                            f32 thrust = e->speed <= 5.0f ? LONGITUDINAL_ACC : 0.0f;
                             f32 boost = 0.0f;
                             e->brake_value = 0.0f;
                             if (braking) {
@@ -3944,7 +3950,7 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
 
                                     e->brake_value = long_brake_value;
                                 }
-                            } else {
+                            } else if (e->charge_dt > 0.0f) {
                                 f32 boost_pct = e->charge_dt / e->max_charge;
                                 boost = f32lerp(0.5f, 2.0f, boost_pct);
                                 e->charge_dt -= dt * 2.0f;
@@ -3954,6 +3960,8 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                             f32 boost_pad_thrust = e->boost_pad_thrust;
                             e->boost_pad_thrust = 0.0f;
 
+                            // PlatformLog(LLOG_INFO, "thrust %f| boost %f | boost pad %f | item_boost %f ", thrust,
+                            // boost, boost_pad_thrust, item_boost_thrust);
                             e->speed += (thrust + boost + boost_pad_thrust + item_boost_thrust - e->brake_value) * dt;
                             e->speed = f32max(e->speed, 0.0f);
 
