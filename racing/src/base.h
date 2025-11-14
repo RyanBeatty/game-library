@@ -696,6 +696,7 @@ LCORE Vec4 Vec4Lerp(Vec4 start, Vec4 end, f32 t) {
 }
 
 // The positionless aspect is why we don't include the w component here.
+// Basically you only want to apply scale and rotation.
 static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
     return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02),  //
                    (v.x * m.mm.m10) + (v.y * m.mm.m11) + (v.z * m.mm.m12),  //
