@@ -3536,13 +3536,16 @@ typedef struct {
 ////////////////////////////////////////////////////
 
 typedef struct {
-    Vec3 eye;     // world space position of the camera.
-    Vec3 orient;  // vector containing euler angle rotation vector. for identity rotation, set to Vec3Zero
+    Vec3 eye;  // world space position of the camera.
+    Vec3 target;
+    Vec3 up;
 } LCamera;
 
 // static Mat4 LCameraGetView(LCamera c) {
 //     return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
 // }
+
+LCORE Mat4 CameraGetViewMat(LCamera camera) { return Mat4LookAt(camera.eye, camera.target, camera.up); }
 
 LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
     return Mat4Invert(Mat4Multiply(Mat4TranslateV(eye), Mat4RotateEuler(orient)));
@@ -4148,11 +4151,17 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
         {
             Assert(player != NULL);
 
-            Mat4 view = Mat4LookAt(Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f))),
-                                   player->pos, Vec3Lit(0.0f, 0.0f, 1.0f));
+            LCamera camera = {
+                .eye = Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f))),
+                .target = player->pos,
+                .up = Vec3Lit(0.0f, 0.0f, 1.0f),
+            };
+
+            // Mat4 view = Mat4LookAt(Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f))),
+            //                        player->pos, Vec3Lit(0.0f, 0.0f, 1.0f));
 
             ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-            pass->view = view;
+            pass->view = CameraGetViewMat(camera);
             f32 width = gstate->renderw_world;
             f32 height = gstate->renderh_world;
             pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
