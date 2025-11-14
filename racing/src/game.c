@@ -3734,16 +3734,16 @@ static void SceneDefaultTick(GameState* gstate, GameInput* input) {
 static LCamera IdealCameraPos(Entity* player) {
     Mat4 model = Mat4SVRT(player->scale, player->orient, player->pos);
 
-    Vec3 eye = Vec3Transform(Vec3Lit(Px2Meter(0.0f), Px2Meter(300.0f), Px2Meter(300.0f)), model);
-    Vec3 eye2 = Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f)));
-    breakpoint();
+    Vec3 eye = Vec3WTransform(Vec3Lit(Px2Meter(0.0f), Px2Meter(300.0f), Px2Meter(300.0f)), model);
+    // Vec3 eye2 = Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f)));
+    // breakpoint();
     Vec3 target = Vec3WTransform(Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(0.0f)), model);
-    // Vec3 up = Vec3Normalize(Vec3WTransform(Vec3Lit(0.0f, 1.0f, 0.0f), model));
+    Vec3 up = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), model));
 
     LCamera camera = {
-        .eye = eye2,
-        .target = player->pos,
-        .up = Vec3Lit(0.0f, 0.0f, 1.0f),
+        .eye = eye,
+        .target = target,
+        .up = up,
     };
     return camera;
 }
