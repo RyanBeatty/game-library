@@ -4149,7 +4149,12 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                     Assert(player);
                     LCamera ideal_camera = IdealCamera(player);
                     gstate->camera.up = ideal_camera.up;
+                    // TODO: Need to think about this more.
                     gstate->camera.eye = Vec3Lerp(gstate->camera.eye, ideal_camera.eye, 0.1f);
+                    // TODO: Need to lerp rotation essentially. I wonder if I should be specifying orientation in terms
+                    // of euler angles or pitch/yaw/roll. Some of the talks about screen shake mention effecting pitch
+                    // yaw and roll. However eye + target is a very natural way to thinka about things. Maybe I can
+                    // deduce what the target is from eye + orient + zoom maybe?
                     gstate->camera.target = ideal_camera.target;
                 }
 
