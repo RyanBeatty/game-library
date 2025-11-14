@@ -3611,6 +3611,8 @@ typedef struct GameState {
     SceneId sceneid;
     SceneId nextsceneid;
 
+    LCamera camera;
+
     /////////////////////////////////////////
     // Scene fields
     RaceState race_state;
@@ -3729,6 +3731,15 @@ static void SceneDefaultTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
+static LCamera IdealCameraPos(Entity* player) {
+    LCamera camera = {
+        .eye = Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f))),
+        .target = player->pos,
+        .up = Vec3Lit(0.0f, 0.0f, 1.0f),
+    };
+    return camera;
+}
+
 static void NewRace(GameState* gstate) {
     // TODO: Hacky. Should limit this to only racing entities later.
     EntitySystemInit();
@@ -3759,6 +3770,7 @@ static void NewRace(GameState* gstate) {
         Track* track = &race_state.track;
 
         // Player
+        Entity* player = NULL;
         {
             Entity* e = AllocateEntity();
             e->pos = track->start_pos;
@@ -3773,6 +3785,7 @@ static void NewRace(GameState* gstate) {
             EntitySetMass(e, 1.0f);
             FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
             e->max_charge = 1.5f;
+            player = e;
         }
 
         // Wall
@@ -3853,6 +3866,8 @@ static void NewRace(GameState* gstate) {
             FlagOn(e->flags, EFLAG_PRIZE_BOX);
             e->prize_spawned = true;
         }
+
+        gstate->camera = IdealCameraPos(player);
     }
 
     gstate->race_state = race_state;
@@ -4112,6 +4127,20 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
+                // Camera update
+                {
+                    Entity* player = NULL;
+                    for (Entity* e = NULL; IncrementEntity(&e);) {
+                        if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
+                            player = e;
+                            break;
+                        }
+                    }
+                    Assert(player);
+                    LCamera ideal_camera = IdealCameraPos(player);
+                    gstate->camera = ideal_camera;
+                }
+
                 if (race_state->lap == race_state->track.lap_count) {
                     race_state->phase = RP_FINISHED;
                 }
@@ -4151,14 +4180,8 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
         {
             Assert(player != NULL);
 
-            LCamera camera = {
-                .eye = Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f))),
-                .target = player->pos,
-                .up = Vec3Lit(0.0f, 0.0f, 1.0f),
-            };
-
             ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-            pass->view = CameraGetViewMat(camera);
+            pass->view = CameraGetViewMat(gstate->camera);
             f32 width = gstate->renderw_world;
             f32 height = gstate->renderh_world;
             pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
