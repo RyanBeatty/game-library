@@ -3783,7 +3783,8 @@ static void NewRace(GameState* gstate) {
             Entity* e = AllocateEntity();
             e->pos = track->start_pos;
             e->scale = Vec3LitAll(1.0f);
-            e->orient = Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
+            e->orient = Mat4Multiply(Mat4RotateZ(Deg2Rad(-90.0f)),
+                                     Mat4RotateY(Deg2Rad(-90.0f)));  // Mat4PointAt(Vec3Lit(1.0f, 0.0f, 0.0f));
             f32 radius = Px2Meter(25.0f);
             Vec3 offset_from_center = Vec3Lit(0.0f, 0.0f, 0.0f);
             GraphicsInfoSetLModel(&e->graphics,
