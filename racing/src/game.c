@@ -3731,7 +3731,7 @@ static void SceneDefaultTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
-static LCamera IdealCameraPos(Entity* player) {
+static LCamera IdealCamera(Entity* player) {
     Mat4 model = Mat4SVRT(player->scale, player->orient, player->pos);
 
     Vec3 eye = Vec3WTransform(Vec3Lit(Px2Meter(0.0f), Px2Meter(300.0f), Px2Meter(300.0f)), model);
@@ -3877,7 +3877,7 @@ static void NewRace(GameState* gstate) {
             e->prize_spawned = true;
         }
 
-        gstate->camera = IdealCameraPos(player);
+        gstate->camera = IdealCamera(player);
     }
 
     gstate->race_state = race_state;
@@ -4147,7 +4147,7 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                         }
                     }
                     Assert(player);
-                    LCamera ideal_camera = IdealCameraPos(player);
+                    LCamera ideal_camera = IdealCamera(player);
                     gstate->camera = ideal_camera;
                 }
 
