@@ -4148,7 +4148,9 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                     }
                     Assert(player);
                     LCamera ideal_camera = IdealCamera(player);
-                    gstate->camera = ideal_camera;
+                    gstate->camera.up = ideal_camera.up;
+                    gstate->camera.eye = Vec3Lerp(gstate->camera.eye, ideal_camera.eye, 0.1f);
+                    gstate->camera.target = ideal_camera.target;
                 }
 
                 if (race_state->lap == race_state->track.lap_count) {
