@@ -4157,9 +4157,6 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                 .up = Vec3Lit(0.0f, 0.0f, 1.0f),
             };
 
-            // Mat4 view = Mat4LookAt(Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f))),
-            //                        player->pos, Vec3Lit(0.0f, 0.0f, 1.0f));
-
             ShaderPass* pass = BeginShaderPass(GetDefaultShader());
             pass->view = CameraGetViewMat(camera);
             f32 width = gstate->renderw_world;
