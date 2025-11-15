@@ -632,13 +632,15 @@ ByteBuffer PlatformReadFileBytes(Arena* perm, const char* filename) {
 
     // Seek to the end to determine the file size
     fseek(file, 0, SEEK_END);
-    isize cap = ftell(file);
+    long cap = ftell(file);
+    errno = 0;
     rewind(file);
+    Assert(errno == 0);
 
     ByteBuffer buffer = {.cap = cap};
     buffer.data = New(perm, buffer.cap, byte);
 
-    isize nread = fread(&buffer.data, sizeof(byte), cap, file);
+    isize nread = fread(buffer.data, sizeof(byte), cap, file);
     fclose(file);
     Assert(nread == cap);
     buffer.len = buffer.cap;

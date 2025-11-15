@@ -581,6 +581,9 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
 static void MeshFromOBJ(Arena* perm, const char* filename) {
     Arena temp = *perm;
     ByteBuffer buffer = PlatformReadFileBytes(&temp, filename);
+    breakpoint();
+
+    int a = 0;
 }
 
 static void RenderDataInit(Arena* perm) {
