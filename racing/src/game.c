@@ -3902,8 +3902,8 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
 
                     if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
                         static const f32 TOP_SPEED = 10.0f;
-                        static const f32 TURN_SPEED = Deg2Rad(130.0f);
-                        static const f32 BRAKING_ORIENT_TURN_SPEED_FACTOR = 0.8f;
+                        static const f32 TURN_SPEED = Deg2Rad(75.0f);
+                        static const f32 BRAKING_TURN_SPEED = Deg2Rad(110.0f);
                         static bool IS_BRAKING = false;
                         static Vec3 VDIR_PRE_BRAKING = {0};
 
@@ -3928,7 +3928,7 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                         }
                         IS_BRAKING = braking;
 
-                        f32 turn_speed = TURN_SPEED * (braking ? BRAKING_ORIENT_TURN_SPEED_FACTOR : 1.0f);
+                        f32 turn_speed = braking ? BRAKING_TURN_SPEED : TURN_SPEED;
 
                         // Turning.
                         {
@@ -3952,7 +3952,7 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
 
                         // Thrust + movement.
                         {
-                            static const f32 LONGITUDINAL_ACC = 2.0f;
+                            static const f32 LONGITUDINAL_ACC = 1.0f;
 
                             // We might not need to normalize here, but do it to be safe.
                             // Vec3 thrust_dir = Vec3Transform(Vec3Lit(0.0f, 0.0f, -1.0f), e->orient);
