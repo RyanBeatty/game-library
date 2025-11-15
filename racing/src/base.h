@@ -39,6 +39,7 @@ typedef size_t usize;
 typedef uintptr_t uptr;
 typedef unsigned char byte;
 
+#define MB(x) ((u64)1024 * 1024 * (x))
 #define GB(x) ((u64)1024 * 1024 * 1024 * (x))
 
 #define Hz(x) (1.0f / (x))
@@ -80,6 +81,7 @@ typedef struct {
 
 void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment);
 Arena NewArena(byte* buffer, isize cap);
+Arena NewSubArena(Arena* perm, isize count);
 #define TempArena(a) ((a))
 
 // :a = arena, :count = num elems to alloc, :type = type to allocate

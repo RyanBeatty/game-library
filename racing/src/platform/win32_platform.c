@@ -625,6 +625,27 @@ void PlatformStopSound(SoundId id) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
+
+ByteBuffer PlatformReadFileBytes(Arena* perm, const char* filename) {
+    FILE* file = fopen(filename, "rb");  // Open file in binary mode
+    Assert(file);
+
+    // Seek to the end to determine the file size
+    fseek(file, 0, SEEK_END);
+    isize cap = ftell(file);
+    rewind(file);
+
+    ByteBuffer buffer = {.cap = cap};
+    buffer.data = New(perm, buffer.cap, byte);
+
+    isize nread = fread(&buffer.data, sizeof(byte), cap, file);
+    fclose(file);
+    Assert(nread == cap);
+    buffer.len = buffer.cap;
+    return buffer;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
 LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
     static char LEVELS[][16] = {
         "NONE", "DEBUG", "INFO", "WARN", "ERROR", "COUNT",

@@ -578,7 +578,12 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
     mesh->ntriangles = tsize;
 }
 
-static void RenderDataInit() {
+static void MeshFromOBJ(Arena* perm, const char* filename) {
+    Arena temp = *perm;
+    ByteBuffer buffer = PlatformReadFileBytes(&temp, filename);
+}
+
+static void RenderDataInit(Arena* perm) {
     VAO = 0;
     VBO = 0;
     VIO = 0;
@@ -1015,6 +1020,8 @@ static void RenderDataInit() {
 
         AddMesh(vs, vsize, ts, tsize);
     }
+
+    MeshFromOBJ(perm, "assets/models/hello-cube.obj");
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -4547,8 +4554,12 @@ void GameInit() {
     InitFonts();
     ParticleSystemInit();
 
-    RenderStateInit(gstate->renderw, gstate->renderh);
-    RenderDataInit();
+    {
+        Arena render_arena = NewSubArena(&gstate->perm, MB(1));
+        RenderStateInit(gstate->renderw, gstate->renderh);
+        RenderDataInit(&render_arena);
+    }
+
     LoadSounds();
 
     {

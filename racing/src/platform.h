@@ -227,3 +227,7 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit);
 
 u32 PlatformSoundCountPlaying(SoundId id);
 void PlatformStopSound(SoundId);
+
+// Read all contents of :filename: into a byte buffer allocated on :perm:. The buffer
+// will have length and capacity equal to the lenght of the file (no null terminator at end).
+ByteBuffer PlatformReadFileBytes(Arena* perm, const char* filename);
