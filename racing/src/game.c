@@ -779,14 +779,14 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                 }
             }
 
-            breakpoint();
-            i32 vtidxs[3] = {0};
-
+            Str8ParserConsumeLine(&parser);
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
                         (char*)peeks.data);
         }
     }
+
+    breakpoint();
 }
 
 static void RenderDataInit(Arena* perm) {
