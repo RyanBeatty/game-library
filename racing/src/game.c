@@ -925,6 +925,25 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                 Assert(peek == '\n');
                 ++offset;
             }
+        } else if (Str8Eq(peeks, Str8Lit("usemtl"))) {
+            PlatformLog(LLOG_DEBUG, "Ignoring usemtl line directive");
+
+            // Consume rest of line.
+            {
+                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+
+                if (offset == str.len) {
+                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+                }
+
+                char peek = str.data[offset];
+                if (peek == '\r') {
+                    peek = str.data[++offset];
+                }
+
+                Assert(peek == '\n');
+                ++offset;
+            }
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
                         (char*)peeks.data);
