@@ -98,6 +98,7 @@ typedef enum MID {
     M_2S_ISO_TRIANGLE,
     M_ICOSAHEDRON,
     M_ICOSPHERE,
+    M_HELLO_CUBE,
     M_COUNT
 } MID;
 
@@ -857,7 +858,36 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
         }
     }
 
-    breakpoint();
+    // Put loaded mesh data into vertex and index buffer + create new lmesh entry.
+    {
+        u32 ibuffer_base = ArrLen(&IBUFFER);
+
+        for (isize i = 0; i < ArrLen(&faces); ++i) {
+            OBJFace* face = ArrGetPtr(&faces, i);
+
+            u32 vbuffer_base = ArrLen(&VBUFFER);
+
+            // Add the triangle verts for the face.
+            // TODO: Technically we are a bit wasteful here since we create a new vert for each face vertex which might
+            // be sharing info.
+            for (isize j = 0; j < 3; ++j) {
+                Vertex* vertex = ArrReserve(&VBUFFER);
+                vertex->pos = ArrGet(&verts, face->face[j][0]);
+                vertex->normal = ArrGet(&norms, face->face[j][1]);
+                vertex->uv = ArrGet(&uvs, face->face[j][2]);
+            }
+
+            ArrPush(&IBUFFER, vbuffer_base + 0);
+            ArrPush(&IBUFFER, vbuffer_base + 1);
+            ArrPush(&IBUFFER, vbuffer_base + 2);
+        }
+
+        {
+            LMesh* mesh = ArrReserve(&MESHES);
+            mesh->ibufferidx = ibuffer_base;
+            mesh->ntriangles = ArrLen(&faces);
+        }
+    }
 }
 
 static void RenderDataInit(Arena* perm) {
@@ -2246,11 +2276,12 @@ LCORE void DrawLCircle(Vec3 center, f32 radius, Vec4 color) {
     cmd->meshcmd.color = color;
 }
 
-LCORE void DrawLCube(Vec3 center, Vec3 scale, Vec4 color) {
+LCORE DrawCmd* DrawLCube(Vec3 center, Vec3 scale, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshcmd.meshid = GetMesh(M_CUBE);
     cmd->meshcmd.modelm = Mat4SVRT(scale, Mat4Identity(), center);
     cmd->meshcmd.color = color;
+    return cmd;
 }
 
 LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 color) {
