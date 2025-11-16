@@ -42,6 +42,12 @@ typedef struct {
 } Vertex;
 
 typedef struct {
+    Vertex* data;
+    isize len;
+    isize cap;
+} VertexArr;
+
+typedef struct {
     union {
         u32 vs[3];
         struct {
@@ -60,8 +66,7 @@ static u32 VAO = 0;
 static u32 VBO = 0;
 static u32 VIO = 0;  // Index buffer.
 
-static Vertex VBUFFER[MAX_VERTICES] = {};  // Vertex buffer
-static u32 VBUFFER_SIZE = 0;
+static VertexArr VBUFFER = {0};
 
 #define MAX_TRIANGLES 2048
 static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
@@ -510,10 +515,9 @@ static RenderTarget CreateRenderTarget(u32 width, u32 height) {
 static LMesh GetMesh(u32 mid) { return ArrGet(&MESHES, mid); }
 
 static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
-    u32 voffset = VBUFFER_SIZE;
+    u32 voffset = ArrLen(&VBUFFER);
     u32 ioffset = IBUFFER_SIZE;
 
-    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
     Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
 
     Vec3 ns[MAX_VERTICES] = {0};
@@ -534,7 +538,10 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     }
 
     for (u32 i = 0; i < vsize; ++i) {
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = Vec2Zero()};
+        Vertex* vertex = ArrReserve(&VBUFFER);
+        vertex->pos = vs[i];
+        vertex->normal = ns[i];
+        vertex->uv = Vec2Zero();
     }
 
     LMesh* mesh = ArrReserve(&MESHES);
@@ -545,10 +552,9 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
 static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u32 tsize) {
     Assert(vsize == uvsize);
 
-    u32 voffset = VBUFFER_SIZE;
+    u32 voffset = ArrLen(&VBUFFER);
     u32 ioffset = IBUFFER_SIZE;
 
-    Assert(VBUFFER_SIZE + vsize <= MAX_VERTICES);
     Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
 
     Vec3 ns[MAX_VERTICES] = {0};
@@ -569,7 +575,10 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
     }
 
     for (u32 i = 0; i < vsize; ++i) {
-        VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = uvs[i]};
+        Vertex* vertex = ArrReserve(&VBUFFER);
+        vertex->pos = vs[i];
+        vertex->normal = ns[i];
+        vertex->uv = uvs[i];
     }
 
     LMesh* mesh = ArrReserve(&MESHES);
@@ -854,8 +863,9 @@ static void RenderDataInit(Arena* perm) {
     VAO = 0;
     VBO = 0;
     VIO = 0;
-    memset(VBUFFER, 0, sizeof(VBUFFER));
-    VBUFFER_SIZE = 0;
+
+    VBUFFER = (VertexArr){.cap = MAX_VERTICES};
+    VBUFFER.data = New(perm, VBUFFER.cap, Vertex);
     memset(IBUFFER, 0, sizeof(IBUFFER));
     IBUFFER_SIZE = 0;
 
@@ -1298,7 +1308,7 @@ static void RenderDataInit(Arena* perm) {
 
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(VBUFFER), VBUFFER, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * VBUFFER.len, VBUFFER.data, GL_STATIC_DRAW);
 
     glGenBuffers(1, &VIO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
