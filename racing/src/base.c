@@ -98,15 +98,36 @@ static i32 I32FromStr8(Str8 s, bool* ok) {
 }
 
 static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after) {
-    return false;
-    // isize i = 0;
-    // for (; i < s.len && s.data[i] != sep; ++i);
+    if (s.len == 0) {
+        *before = s;
+        after->data = NULL;
+        after->len = 0;
+        return false;
+    }
 
-    // if (i == s.len) {
-    //     *before = s;
-    //     *after = (Str8){.data = NULL, .len = 0};
-    //     return false;
-    // } else {
-    //     *befoer
-    // }
+    isize offset = 0;
+    for (; offset < s.len && s.data[offset] != sep; ++offset);
+    // sep not found
+    if (offset >= s.len) {
+        *before = s;
+        after->data = NULL;
+        after->len = 0;
+        return false;
+    }
+
+    // sep found but is last element so after is empty
+    if (offset + 1 == s.len) {
+        before->data = s.data;
+        before->len = offset;
+        after->data = NULL;
+        after->len = 0;
+        return true;
+    }
+
+    // sep found and not last element, so after is not empty
+    before->data = s.data;
+    before->len = offset;
+    after->data = &s.data[offset + 1];
+    after->len = s.len - (offset + 1);
+    return true;
 }

@@ -749,6 +749,18 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
             PlatformLog(LLOG_DEBUG, "Ignoring usemtl line directive");
             Str8ParserConsumeLine(&parser);
         } else if (Str8Eq(peeks, Str8Lit("f"))) {
+            i32 vidxs[3] = {0};
+            Str8 vtoken = Str8ParserNextToken(&parser);
+            {
+                Str8 before = {0};
+                Str8 after = {0};
+                bool found = Str8Split1(vtoken, '/', &before, &after);
+                breakpoint();
+                if (!found) {
+                    PlatformLog(LLOG_FATAL, "Did not find '/' while parsing face vertex index 0: %.*s", vtoken.len,
+                                vtoken.data);
+                }
+            }
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
                         (char*)peeks.data);
