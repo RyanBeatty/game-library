@@ -762,11 +762,11 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
             PlatformLog(LLOG_DEBUG, "Ignoring usemtl line directive");
             Str8ParserConsumeLine(&parser);
         } else if (Str8Eq(peeks, Str8Lit("f"))) {
-            i32 faceinfo[3][3] = {0};
+            i32 face[3][3] = {0};
 
-            for (isize j = 0; j < ArraySizeOf(faceinfo); ++j) {
+            for (isize j = 0; j < ArraySizeOf(face); ++j) {
                 Str8 vtoken = Str8ParserNextToken(&parser);
-                for (isize i = 0; i < ArraySizeOf(faceinfo[j]); ++i) {
+                for (isize i = 0; i < ArraySizeOf(face[j]); ++i) {
                     Str8 before = {0};
                     Str8 after = {0};
 
@@ -782,15 +782,46 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                     }
 
                     bool ok = false;
-                    faceinfo[j][i] = I32FromStr8(before, &ok);
+                    i32 idx = I32FromStr8(before, &ok);
                     if (!ok) {
                         PlatformLog(LLOG_FATAL, "Failed to parse vertex %d attribute %d: %.*s", j, i, before.len,
                                     before.data);
                     }
-                    if (faceinfo[j][i] <= 0) {
+                    if (idx <= 0) {
                         PlatformLog(LLOG_FATAL, "OBJ negative face vertex index values not supported: %.*s", before.len,
                                     before.data);
                     }
+                    // obj file indexes are 0 based.
+                    --idx;
+                    switch (i) {
+                        case 0: {
+                            if (idx >= ArrLen(&verts)) {
+                                PlatformLog(LLOG_FATAL,
+                                            "Parsed face vertex index number %d is greater than vertex array length",
+                                            idx);
+                            }
+                            break;
+                        }
+                        case 1: {
+                            if (idx >= ArrLen(&uvs)) {
+                                PlatformLog(LLOG_FATAL,
+                                            "Parsed face uv index number %d is greater than uv array length", idx);
+                            }
+                            break;
+                        }
+                        case 2: {
+                            if (idx >= ArrLen(&norms)) {
+                                PlatformLog(LLOG_FATAL,
+                                            "Parsed face normals index number %d is greater than normals array length",
+                                            idx);
+                            }
+                            break;
+                        }
+                        default: {
+                            PlatformLog(LLOG_FATAL, "Unknown iteration number %d while parsing face index", i);
+                        }
+                    }
+                    face[j][i] = idx;
 
                     vtoken = after;
                 }
