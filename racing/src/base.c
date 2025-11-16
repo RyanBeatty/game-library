@@ -47,9 +47,31 @@ static bool Str8Eq(Str8 a, Str8 b) {
     }
 
     isize i = 0;
-    isize j = 0;
-    while (i < a.len && a.data[i++] == b.data[j++]);
+    for (; i < a.len && a.data[i] == b.data[i]; ++i);
     return i == a.len;
+}
+
+static f32 F32FromStr8(Str8 s, bool* ok) {
+    char buffer[256] = {0};
+    if (s.len >= ArraySizeOf(buffer)) {
+        *ok = false;
+        return 0.0f;
+    }
+
+    memccpy(buffer, s.data, s.len, sizeof(char));
+    char* end = NULL;
+    f32 f = strtof(buffer, &end);
+
+    // 1. No conversion
+    // 2. Range errors
+    // 3. Optional: must consume entire string
+    if (end == s.data || errno == ERANGE || *end != '\0') {
+        *ok = false;
+        return 0.0f;
+    }
+
+    *ok = true;
+    return f;
 }
 
 static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after) {

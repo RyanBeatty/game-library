@@ -585,8 +585,9 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
     Str8 str = Str8FromByteBuffer(buffer);
     buffer = (ByteBuffer){0};
 
-    isize offset = 0;
+    u32 object_group_count = 0;
 
+    isize offset = 0;
     for (; offset < str.len;) {
         // Parse first string
         Str8 peeks = {.data = &str.data[offset], .len = 0};
@@ -595,11 +596,9 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
              ++offset);
         peeks.len = offset - begin;
 
-        breakpoint();
+        // breakpoint();
 
-        u32 object_group_count = 0;
-
-        if (Str8Eq(peeks, Str8("#"))) {
+        if (Str8Eq(peeks, Str8Lit("#"))) {
             for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
             if (offset == str.len) {
@@ -613,7 +612,7 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
 
             Assert(peek == '\n');
             ++offset;
-        } else if (Str8Eq(peeks, Str8("mtllib"))) {
+        } else if (Str8Eq(peeks, Str8Lit("mtllib"))) {
             PlatformLog(LLOG_DEBUG, "Ignoring material line directive %.*s", (int)peeks.len, (char*)peeks.data);
             for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
@@ -628,7 +627,7 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
 
             Assert(peek == '\n');
             ++offset;
-        } else if (Str8Eq(peeks, Str8("o"))) {
+        } else if (Str8Eq(peeks, Str8Lit("o"))) {
             if (object_group_count > 1) {
                 PlatformLog(LLOG_FATAL,
                             "Cannot support loading OBJ files with multiple object groupings. New object group: %.*s",
@@ -651,6 +650,93 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                 Assert(peek == '\n');
                 ++offset;
             }
+        } else if (Str8Eq(peeks, Str8Lit("v"))) {
+            Vec3 v = {0};
+            // Parse vert coords
+            {
+                {
+                    // Consume whitespace.
+                    {
+                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                        ++offset;
+                    }
+
+                    Str8 fs = {.data = &str.data[offset], .len = 0};
+                    isize fs_begin = offset;
+                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                           str.data[offset] != '\n';
+                         ++offset);
+                    fs.len = offset - fs_begin;
+
+                    bool ok = false;
+                    v.x = F32FromStr8(fs, &ok);
+                    if (!ok) {
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate x from string: %.*s", (int)fs.len,
+                                    (char*)fs.data);
+                    }
+                }
+                {
+                    // Consume whitespace.
+                    {
+                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                        ++offset;
+                    }
+
+                    Str8 fs = {.data = &str.data[offset], .len = 0};
+                    isize fs_begin = offset;
+                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                           str.data[offset] != '\n';
+                         ++offset);
+                    fs.len = offset - fs_begin;
+
+                    bool ok = false;
+                    v.y = F32FromStr8(fs, &ok);
+                    if (!ok) {
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate y from string: %.*s", (int)fs.len,
+                                    (char*)fs.data);
+                    }
+                }
+                {
+                    // Consume whitespace.
+                    {
+                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                        ++offset;
+                    }
+
+                    Str8 fs = {.data = &str.data[offset], .len = 0};
+                    isize fs_begin = offset;
+                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                           str.data[offset] != '\n';
+                         ++offset);
+                    fs.len = offset - fs_begin;
+
+                    bool ok = false;
+                    v.z = F32FromStr8(fs, &ok);
+                    if (!ok) {
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate z from string: %.*s", (int)fs.len,
+                                    (char*)fs.data);
+                    }
+                }
+            }
+
+            breakpoint();
+            // Consume rest of line.
+            {
+                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+
+                if (offset == str.len) {
+                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+                }
+
+                char peek = str.data[offset];
+                if (peek == '\r') {
+                    peek = str.data[++offset];
+                }
+
+                Assert(peek == '\n');
+                ++offset;
+            }
+
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
                         (char*)peeks.data);
