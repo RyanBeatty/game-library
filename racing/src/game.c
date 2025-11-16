@@ -615,7 +615,16 @@ static void Str8ParserConsumeLine(Str8Parser* parser) {
     return;
 }
 
+typedef struct {
+    Vec3* data;
+    isize len;
+    isize cap;
+} Vec3Arr;
+
 static void MeshFromOBJ(Arena* perm, const char* filename) {
+    Vec3Arr verts = {.cap = 16};
+    verts.data = New(perm, verts.cap, Vec3);
+
     Arena temp = *perm;
     ByteBuffer buffer = PlatformReadFileBytes(&temp, filename);
 
@@ -676,6 +685,8 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
             }
 
             Str8ParserConsumeLine(&parser);
+
+            ArrPush(&verts, v);
         } else if (Str8Eq(peeks, Str8Lit("vn"))) {
             Vec3 v = {0};
             // Parse vert coords
