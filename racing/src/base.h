@@ -316,6 +316,12 @@ LCORE Vec3 RandPointOnCircle(f32 r) {
         Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f), Deg2Rad(f32randab(0.0f, 360.0f))), r);
 }
 
+typedef struct {
+    Vec3* data;
+    isize len;
+    isize cap;
+} Vec3Arr;
+
 // Col major order. Reminder this means that the notation is written in col major order (basis vectors run
 // down columns), but the columns are *STORED* in row major order.
 // For matrix mult notation wise we will compose from right to left. i.e. X = CBAv.

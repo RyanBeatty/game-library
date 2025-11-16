@@ -615,12 +615,6 @@ static void Str8ParserConsumeLine(Str8Parser* parser) {
     return;
 }
 
-typedef struct {
-    Vec3* data;
-    isize len;
-    isize cap;
-} Vec3Arr;
-
 static void MeshFromOBJ(Arena* perm, const char* filename) {
     Vec3Arr verts = {.cap = 16};
     verts.data = New(perm, verts.cap, Vec3);
