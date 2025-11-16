@@ -25,6 +25,8 @@ typedef int8_t i8;
 typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
+#define I32_MIN INT32_MIN
+#define I32_MAX INT32_MAX
 
 typedef float f32;
 typedef f32 rad;
@@ -137,6 +139,7 @@ static bool Str8Eq(Str8 a, Str8 b);
 static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after);
 
 static f32 F32FromStr8(Str8 s, bool* ok);
+static i32 I32FromStr8(Str8 s, bool* ok);
 
 ////////////////////////////////////////////////////////////
 // S:Math

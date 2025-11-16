@@ -886,7 +886,45 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                 ++offset;
             }
         } else if (Str8Eq(peeks, Str8Lit("s"))) {
-            PlatformLog(LLOG_FATAL, "smoothing group not supported");
+            // Consume whitespace.
+            {
+                Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                ++offset;
+            }
+
+            Str8 is = {.data = &str.data[offset], .len = 0};
+            isize fs_begin = offset;
+            for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' && str.data[offset] != '\n';
+                 ++offset);
+            is.len = offset - fs_begin;
+
+            bool ok = false;
+            i32 smoothing_option = I32FromStr8(is, &ok);
+            if (!ok) {
+                PlatformLog(LLOG_FATAL, "Failed to parse smoothing option value from string: %.*s", (int)is.len,
+                            (char*)is.data);
+            }
+
+            if (smoothing_option != 0) {
+                PlatformLog(LLOG_FATAL, "Smoothing option with a non value 0 not supported: %d", smoothing_option);
+            }
+
+            // Consume rest of line.
+            {
+                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+
+                if (offset == str.len) {
+                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+                }
+
+                char peek = str.data[offset];
+                if (peek == '\r') {
+                    peek = str.data[++offset];
+                }
+
+                Assert(peek == '\n');
+                ++offset;
+            }
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
                         (char*)peeks.data);

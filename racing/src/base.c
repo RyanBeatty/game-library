@@ -74,6 +74,29 @@ static f32 F32FromStr8(Str8 s, bool* ok) {
     return f;
 }
 
+static i32 I32FromStr8(Str8 s, bool* ok) {
+    char buffer[256] = {0};
+    if (s.len >= ArraySizeOf(buffer)) {
+        *ok = false;
+        return 0;
+    }
+
+    memcpy(buffer, s.data, sizeof(char) * s.len);
+    char* end = NULL;
+    i64 i = strtol(buffer, &end, 10);
+
+    // 1. No conversion
+    // 2. Range errors
+    // 3. Optional: must consume entire string
+    if (end == buffer || errno == ERANGE || *end != '\0' || i > I32_MAX || i < I32_MIN) {
+        *ok = false;
+        return 0;
+    }
+
+    *ok = true;
+    return i;
+}
+
 static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after) {
     return false;
     // isize i = 0;
