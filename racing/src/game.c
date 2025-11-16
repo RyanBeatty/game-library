@@ -749,30 +749,34 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
             PlatformLog(LLOG_DEBUG, "Ignoring usemtl line directive");
             Str8ParserConsumeLine(&parser);
         } else if (Str8Eq(peeks, Str8Lit("f"))) {
-            i32 vidxs[3] = {0};
-            Str8 vtoken = Str8ParserNextToken(&parser);
-            for (isize i = 0; i < ArraySizeOf(vidxs); ++i) {
-                Str8 before = {0};
-                Str8 after = {0};
+            i32 faceinfo[3][3] = {0};
 
-                if (i < 2) {
-                    bool found = Str8Split1(vtoken, '/', &before, &after);
+            for (isize j = 0; j < ArraySizeOf(faceinfo); ++j) {
+                Str8 vtoken = Str8ParserNextToken(&parser);
+                for (isize i = 0; i < ArraySizeOf(faceinfo[j]); ++i) {
+                    Str8 before = {0};
+                    Str8 after = {0};
 
-                    if (!found) {
-                        PlatformLog(LLOG_FATAL, "Did not find '/' while parsing face vertex index %d: %.*s", i,
-                                    vtoken.len, vtoken.data);
+                    if (i < 2) {
+                        bool found = Str8Split1(vtoken, '/', &before, &after);
+
+                        if (!found) {
+                            PlatformLog(LLOG_FATAL, "Did not find '/' while parsing face vertex %d attribute %d: %.*s",
+                                        j, i, vtoken.len, vtoken.data);
+                        }
+                    } else {
+                        before = vtoken;
                     }
-                } else {
-                    before = vtoken;
-                }
 
-                bool ok = false;
-                vidxs[i] = I32FromStr8(before, &ok);
-                if (!ok) {
-                    PlatformLog(LLOG_FATAL, "Failed to parse vertex index %d: %.*s", i, before.len, before.data);
-                }
+                    bool ok = false;
+                    faceinfo[j][i] = I32FromStr8(before, &ok);
+                    if (!ok) {
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex %d attribute %d: %.*s", j, i, before.len,
+                                    before.data);
+                    }
 
-                vtoken = after;
+                    vtoken = after;
+                }
             }
 
             breakpoint();
