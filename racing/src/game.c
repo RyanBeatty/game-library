@@ -587,27 +587,73 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
 
     isize offset = 0;
 
-    for (char peek = 0; offset < str.len;) {
-        peek = str.data[offset];
+    for (; offset < str.len;) {
+        // Parse first string
+        Str8 peeks = {.data = &str.data[offset], .len = 0};
+        isize begin = offset;
+        for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' && str.data[offset] != '\n';
+             ++offset);
+        peeks.len = offset - begin;
+
         breakpoint();
 
-        if (peek == '#') {
-            // If comment, read entire rest of line.
-            for (; peek != '\r' && peek != '\n' && ++offset < str.len; peek = str.data[offset]) {
-            }
+        u32 object_group_count = 0;
+
+        if (Str8Eq(peeks, Str8("#"))) {
+            for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
             if (offset == str.len) {
                 PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
             }
 
+            char peek = str.data[offset];
             if (peek == '\r') {
                 peek = str.data[++offset];
             }
 
             Assert(peek == '\n');
             ++offset;
+        } else if (Str8Eq(peeks, Str8("mtllib"))) {
+            PlatformLog(LLOG_DEBUG, "Ignoring material line directive %.*s", (int)peeks.len, (char*)peeks.data);
+            for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+
+            if (offset == str.len) {
+                PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+            }
+
+            char peek = str.data[offset];
+            if (peek == '\r') {
+                peek = str.data[++offset];
+            }
+
+            Assert(peek == '\n');
+            ++offset;
+        } else if (Str8Eq(peeks, Str8("o"))) {
+            if (object_group_count > 1) {
+                PlatformLog(LLOG_FATAL,
+                            "Cannot support loading OBJ files with multiple object groupings. New object group: %.*s",
+                            (int)peeks.len, (char*)peeks.data);
+            }
+            ++object_group_count;
+
+            {
+                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+
+                if (offset == str.len) {
+                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+                }
+
+                char peek = str.data[offset];
+                if (peek == '\r') {
+                    peek = str.data[++offset];
+                }
+
+                Assert(peek == '\n');
+                ++offset;
+            }
         } else {
-            PlatformLog(LLOG_FATAL, "Unexpected peek character while parsing OBJ: %c", peek);
+            PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
+                        (char*)peeks.data);
         }
     }
 }

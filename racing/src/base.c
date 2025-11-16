@@ -33,7 +33,35 @@ Arena NewSubArena(Arena* perm, isize cap) {
     return arena;
 }
 
+/////////////////////////////////////////////////////////////////////////
+// section:Str8
+
 static Str8 Str8FromByteBuffer(ByteBuffer buffer) {
     Str8 str = {.data = (char*)buffer.data, .len = buffer.len};
     return str;
+}
+
+static bool Str8Eq(Str8 a, Str8 b) {
+    if (a.len != b.len) {
+        return false;
+    }
+
+    isize i = 0;
+    isize j = 0;
+    while (i < a.len && a.data[i++] == b.data[j++]);
+    return i == a.len;
+}
+
+static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after) {
+    return false;
+    // isize i = 0;
+    // for (; i < s.len && s.data[i] != sep; ++i);
+
+    // if (i == s.len) {
+    //     *before = s;
+    //     *after = (Str8){.data = NULL, .len = 0};
+    //     return false;
+    // } else {
+    //     *befoer
+    // }
 }

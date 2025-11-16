@@ -130,6 +130,12 @@ typedef struct {
 
 static Str8 Str8FromByteBuffer(ByteBuffer buffer);
 
+static bool Str8Eq(Str8 a, Str8 b);
+
+// Split s into before and after given the first occurrence of the sep character. if sep is not found,
+// before == s, after == NULL and returns false. If sep is last char, before == s, after == NULL, but return true.
+static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after);
+
 ////////////////////////////////////////////////////////////
 // S:Math
 
