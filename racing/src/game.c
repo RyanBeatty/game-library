@@ -578,6 +578,43 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
     mesh->ntriangles = tsize;
 }
 
+// Is this really a lexer? I dunno.
+typedef struct {
+    Str8 s;
+    isize offset;
+} Str8Parser;
+
+#define Str8ParserIsEmpty(p) ((p)->offset >= (p)->s.len)
+
+static void Str8ParserConsumeWhitespace(Str8Parser* parser) {
+    for (; parser->offset < parser->s.len && parser->s.data[parser->offset] == ' '; ++parser->offset);
+}
+
+// If we have reached eof, will return a str with 0 len.
+static Str8 Str8ParserNextToken(Str8Parser* parser) {
+    Str8ParserConsumeWhitespace(parser);
+
+    Str8 token = {.data = &parser->s.data[parser->offset], .len = 0};
+    isize begin = parser->offset;
+    for (; parser->offset < parser->s.len && parser->s.data[parser->offset] != ' ' &&
+           parser->s.data[parser->offset] != '\r' && parser->s.data[parser->offset] != '\n';
+         ++parser->offset);
+    token.len = parser->offset - begin;
+    return token;
+}
+
+static void Str8ParserConsumeLine(Str8Parser* parser) {
+    // Consume rest of remaining non line ending characters.
+    for (; parser->offset < parser->s.len && parser->s.data[parser->offset] != '\r' &&
+           parser->s.data[parser->offset] != '\n';
+         ++parser->offset);
+    // At this point we have either reached end of line or end of file. Try to consume line endings.
+    for (; parser->offset < parser->s.len &&
+           (parser->s.data[parser->offset] == '\r' || parser->s.data[parser->offset] == '\n');
+         ++parser->offset);
+    return;
+}
+
 static void MeshFromOBJ(Arena* perm, const char* filename) {
     Arena temp = *perm;
     ByteBuffer buffer = PlatformReadFileBytes(&temp, filename);
@@ -587,46 +624,49 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
 
     u32 object_group_count = 0;
 
-    isize offset = 0;
-    for (; offset < str.len;) {
-        // Parse first string
-        Str8 peeks = {.data = &str.data[offset], .len = 0};
-        isize begin = offset;
-        for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' && str.data[offset] != '\n';
-             ++offset);
-        peeks.len = offset - begin;
+    Str8Parser parser = {.s = str};
+    while (!Str8ParserIsEmpty(&parser)) {
+        // // Parse first string
+        // Str8 peeks = {.data = &str.data[offset], .len = 0};
+        // isize begin = offset;
+        // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' && str.data[offset] != '\n';
+        //      ++offset);
+        // peeks.len = offset - begin;
+        Str8 peeks = Str8ParserNextToken(&parser);
 
         // breakpoint();
 
         if (Str8Eq(peeks, Str8Lit("#"))) {
-            for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+            Str8ParserConsumeLine(&parser);
+            // for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
-            if (offset == str.len) {
-                PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-            }
+            // if (offset == str.len) {
+            //     PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+            // }
 
-            char peek = str.data[offset];
-            if (peek == '\r') {
-                peek = str.data[++offset];
-            }
+            // char peek = str.data[offset];
+            // if (peek == '\r') {
+            //     peek = str.data[++offset];
+            // }
 
-            Assert(peek == '\n');
-            ++offset;
+            // Assert(peek == '\n');
+            // ++offset;
         } else if (Str8Eq(peeks, Str8Lit("mtllib"))) {
             PlatformLog(LLOG_DEBUG, "Ignoring material line directive %.*s", (int)peeks.len, (char*)peeks.data);
-            for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+            Str8ParserConsumeLine(&parser);
+            // for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
-            if (offset == str.len) {
-                PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-            }
+            // if (offset == str.len) {
+            //     PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+            // }
 
-            char peek = str.data[offset];
-            if (peek == '\r') {
-                peek = str.data[++offset];
-            }
+            // char peek = str.data[offset];
+            // if (peek == '\r') {
+            //     peek = str.data[++offset];
+            // }
 
-            Assert(peek == '\n');
-            ++offset;
+            // Assert(peek == '\n');
+            // ++offset;
         } else if (Str8Eq(peeks, Str8Lit("o"))) {
             if (object_group_count > 1) {
                 PlatformLog(LLOG_FATAL,
@@ -635,315 +675,301 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
             }
             ++object_group_count;
 
-            {
-                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
-
-                if (offset == str.len) {
-                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-                }
-
-                char peek = str.data[offset];
-                if (peek == '\r') {
-                    peek = str.data[++offset];
-                }
-
-                Assert(peek == '\n');
-                ++offset;
-            }
+            Str8ParserConsumeLine(&parser);
         } else if (Str8Eq(peeks, Str8Lit("v"))) {
             Vec3 v = {0};
             // Parse vert coords
             {
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
-
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.x = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate x from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate x from string: %.*s",
+                                    (int)ftoken.len, (char*)ftoken.data);
                     }
                 }
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
 
+                    // bool ok = false;
+                    // v.y = F32FromStr8(fs, &ok);
+                    // if (!ok) {
+                    //     PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate y from string: %.*s", (int)fs.len,
+                    //                 (char*)fs.data);
+                    // }
+
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.y = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate y from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate y from string: %.*s",
+                                    (int)ftoken.len, (char*)ftoken.data);
                     }
                 }
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
 
+                    // bool ok = false;
+                    // v.z = F32FromStr8(fs, &ok);
+                    // if (!ok) {
+                    //     PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate z from string: %.*s", (int)fs.len,
+                    //                 (char*)fs.data);
+                    // }
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.z = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate z from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate z from string: %.*s",
+                                    (int)ftoken.len, (char*)ftoken.data);
                     }
                 }
             }
 
-            // Consume rest of line.
-            {
-                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+            Str8ParserConsumeLine(&parser);
+            // // Consume rest of line.
+            // {
+            //     for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
-                if (offset == str.len) {
-                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-                }
+            //     if (offset == str.len) {
+            //         PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+            //     }
 
-                char peek = str.data[offset];
-                if (peek == '\r') {
-                    peek = str.data[++offset];
-                }
+            //     char peek = str.data[offset];
+            //     if (peek == '\r') {
+            //         peek = str.data[++offset];
+            //     }
 
-                Assert(peek == '\n');
-                ++offset;
-            }
+            //     Assert(peek == '\n');
+            //     ++offset;
+            // }
 
         } else if (Str8Eq(peeks, Str8Lit("vn"))) {
             Vec3 v = {0};
             // Parse vert coords
             {
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
-
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.x = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate x from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex normal x from string: %.*s", (int)ftoken.len,
+                                    (char*)ftoken.data);
                     }
                 }
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
 
+                    // bool ok = false;
+                    // v.y = F32FromStr8(fs, &ok);
+                    // if (!ok) {
+                    //     PlatformLog(LLOG_FATAL, "Failed to parse vertex normal y from string: %.*s", (int)fs.len,
+                    //                 (char*)fs.data);
+                    // }
+
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.y = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate y from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex normal y from string: %.*s", (int)ftoken.len,
+                                    (char*)ftoken.data);
                     }
                 }
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
 
+                    // bool ok = false;
+                    // v.z = F32FromStr8(fs, &ok);
+                    // if (!ok) {
+                    //     PlatformLog(LLOG_FATAL, "Failed to parse vertex normal z from string: %.*s", (int)fs.len,
+                    //                 (char*)fs.data);
+                    // }
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.z = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate z from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse vertex normal z from string: %.*s", (int)ftoken.len,
+                                    (char*)ftoken.data);
                     }
                 }
             }
 
-            // Consume rest of line.
-            {
-                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+            Str8ParserConsumeLine(&parser);
+            // // Consume rest of line.
+            // {
+            //     for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
-                if (offset == str.len) {
-                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-                }
+            //     if (offset == str.len) {
+            //         PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+            //     }
 
-                char peek = str.data[offset];
-                if (peek == '\r') {
-                    peek = str.data[++offset];
-                }
+            //     char peek = str.data[offset];
+            //     if (peek == '\r') {
+            //         peek = str.data[++offset];
+            //     }
 
-                Assert(peek == '\n');
-                ++offset;
-            }
+            //     Assert(peek == '\n');
+            //     ++offset;
+            // }
         } else if (Str8Eq(peeks, Str8Lit("vt"))) {
             Vec2 v = {0};
             // Parse vert coords
             {
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
-
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.x = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse texture coord x from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse texture coordinate x from string: %.*s",
+                                    (int)ftoken.len, (char*)ftoken.data);
                     }
                 }
                 {
-                    // Consume whitespace.
-                    {
-                        Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                        ++offset;
-                    }
+                    // // Consume whitespace.
+                    // {
+                    //     Assert(str.data[offset] == ' ' && offset + 1 < str.len);
+                    //     ++offset;
+                    // }
 
-                    Str8 fs = {.data = &str.data[offset], .len = 0};
-                    isize fs_begin = offset;
-                    for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
-                           str.data[offset] != '\n';
-                         ++offset);
-                    fs.len = offset - fs_begin;
+                    // Str8 fs = {.data = &str.data[offset], .len = 0};
+                    // isize fs_begin = offset;
+                    // for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' &&
+                    //        str.data[offset] != '\n';
+                    //      ++offset);
+                    // fs.len = offset - fs_begin;
 
+                    // bool ok = false;
+                    // v.y = F32FromStr8(fs, &ok);
+                    // if (!ok) {
+                    //     PlatformLog(LLOG_FATAL, "Failed to parse texture coordinate y from string: %.*s",
+                    //     (int)fs.len,
+                    //                 (char*)fs.data);
+                    // }
+
+                    Str8 ftoken = Str8ParserNextToken(&parser);
                     bool ok = false;
-                    v.y = F32FromStr8(fs, &ok);
+                    v.x = F32FromStr8(ftoken, &ok);
                     if (!ok) {
-                        PlatformLog(LLOG_FATAL, "Failed to parse texture coord y from string: %.*s", (int)fs.len,
-                                    (char*)fs.data);
+                        PlatformLog(LLOG_FATAL, "Failed to parse texture coordinate y from string: %.*s",
+                                    (int)ftoken.len, (char*)ftoken.data);
                     }
                 }
             }
 
-            // Consume rest of line.
-            {
-                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
+            Str8ParserConsumeLine(&parser);
+            // // Consume rest of line.
+            // {
+            //     for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
 
-                if (offset == str.len) {
-                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-                }
+            //     if (offset == str.len) {
+            //         PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+            //     }
 
-                char peek = str.data[offset];
-                if (peek == '\r') {
-                    peek = str.data[++offset];
-                }
+            //     char peek = str.data[offset];
+            //     if (peek == '\r') {
+            //         peek = str.data[++offset];
+            //     }
 
-                Assert(peek == '\n');
-                ++offset;
-            }
+            //     Assert(peek == '\n');
+            //     ++offset;
+            // }
         } else if (Str8Eq(peeks, Str8Lit("s"))) {
-            // Consume whitespace.
-            {
-                Assert(str.data[offset] == ' ' && offset + 1 < str.len);
-                ++offset;
-            }
-
-            Str8 is = {.data = &str.data[offset], .len = 0};
-            isize fs_begin = offset;
-            for (; offset < str.len && str.data[offset] != ' ' && str.data[offset] != '\r' && str.data[offset] != '\n';
-                 ++offset);
-            is.len = offset - fs_begin;
-
+            Str8 itoken = Str8ParserNextToken(&parser);
             bool ok = false;
-            i32 smoothing_option = I32FromStr8(is, &ok);
+            i32 smoothing_option = I32FromStr8(itoken, &ok);
             if (!ok) {
-                PlatformLog(LLOG_FATAL, "Failed to parse smoothing option value from string: %.*s", (int)is.len,
-                            (char*)is.data);
+                PlatformLog(LLOG_FATAL, "Failed to parse smoothing option value from string: %.*s", (int)itoken.len,
+                            (char*)itoken.data);
             }
 
             if (smoothing_option != 0) {
                 PlatformLog(LLOG_FATAL, "Smoothing option with a non value 0 not supported: %d", smoothing_option);
             }
 
-            // Consume rest of line.
-            {
-                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
-
-                if (offset == str.len) {
-                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-                }
-
-                char peek = str.data[offset];
-                if (peek == '\r') {
-                    peek = str.data[++offset];
-                }
-
-                Assert(peek == '\n');
-                ++offset;
-            }
+            Str8ParserConsumeLine(&parser);
         } else if (Str8Eq(peeks, Str8Lit("usemtl"))) {
             PlatformLog(LLOG_DEBUG, "Ignoring usemtl line directive");
-
-            // Consume rest of line.
-            {
-                for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
-
-                if (offset == str.len) {
-                    PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
-                }
-
-                char peek = str.data[offset];
-                if (peek == '\r') {
-                    peek = str.data[++offset];
-                }
-
-                Assert(peek == '\n');
-                ++offset;
-            }
+            Str8ParserConsumeLine(&parser);
         } else if (Str8Eq(peeks, Str8Lit("f"))) {
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
