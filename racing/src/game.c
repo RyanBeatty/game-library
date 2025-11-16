@@ -615,6 +615,16 @@ static void Str8ParserConsumeLine(Str8Parser* parser) {
     return;
 }
 
+typedef struct {
+    i32 face[3][3];
+} OBJFace;
+
+typedef struct {
+    OBJFace* data;
+    isize len;
+    isize cap;
+} OBJFaceArr;
+
 static void MeshFromOBJ(Arena* perm, const char* filename) {
     Vec3Arr verts = {.cap = 16};
     verts.data = New(perm, verts.cap, Vec3);
@@ -625,6 +635,9 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
 
     Vec2Arr uvs = {.cap = 16};
     uvs.data = New(perm, uvs.cap, Vec2);
+
+    OBJFaceArr faces = {.cap = 16};
+    faces.data = New(perm, faces.cap, OBJFace);
 
     Arena temp = *perm;
     ByteBuffer buffer = PlatformReadFileBytes(&temp, filename);
@@ -762,11 +775,11 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
             PlatformLog(LLOG_DEBUG, "Ignoring usemtl line directive");
             Str8ParserConsumeLine(&parser);
         } else if (Str8Eq(peeks, Str8Lit("f"))) {
-            i32 face[3][3] = {0};
+            OBJFace face = {0};
 
-            for (isize j = 0; j < ArraySizeOf(face); ++j) {
+            for (isize j = 0; j < ArraySizeOf(face.face); ++j) {
                 Str8 vtoken = Str8ParserNextToken(&parser);
-                for (isize i = 0; i < ArraySizeOf(face[j]); ++i) {
+                for (isize i = 0; i < ArraySizeOf(face.face[j]); ++i) {
                     Str8 before = {0};
                     Str8 after = {0};
 
@@ -821,13 +834,14 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                             PlatformLog(LLOG_FATAL, "Unknown iteration number %d while parsing face index", i);
                         }
                     }
-                    face[j][i] = idx;
+                    face.face[j][i] = idx;
 
                     vtoken = after;
                 }
             }
-
             Str8ParserConsumeLine(&parser);
+
+            ArrPush(&faces, face);
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
                         (char*)peeks.data);
