@@ -774,6 +774,10 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                         PlatformLog(LLOG_FATAL, "Failed to parse vertex %d attribute %d: %.*s", j, i, before.len,
                                     before.data);
                     }
+                    if (faceinfo[j][i] <= 0) {
+                        PlatformLog(LLOG_FATAL, "OBJ negative face vertex index values not supported: %.*s", before.len,
+                                    before.data);
+                    }
 
                     vtoken = after;
                 }
