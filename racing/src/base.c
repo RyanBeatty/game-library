@@ -32,3 +32,8 @@ Arena NewSubArena(Arena* perm, isize cap) {
     arena.end = arena.beg + cap;
     return arena;
 }
+
+static Str8 Str8FromByteBuffer(ByteBuffer buffer) {
+    Str8 str = {.data = (char*)buffer.data, .len = buffer.len};
+    return str;
+}

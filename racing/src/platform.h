@@ -12,6 +12,7 @@ typedef enum {
     LLOG_WARN,
     LLOG_ERROR,
     LLOG_COUNT,
+    LLOG_FATAL,
 } LogLevel;
 
 LCORE void PlatformLog(LogLevel level, const char* fmt, ...);

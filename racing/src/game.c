@@ -581,9 +581,35 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
 static void MeshFromOBJ(Arena* perm, const char* filename) {
     Arena temp = *perm;
     ByteBuffer buffer = PlatformReadFileBytes(&temp, filename);
-    breakpoint();
 
-    int a = 0;
+    Str8 str = Str8FromByteBuffer(buffer);
+    buffer = (ByteBuffer){0};
+
+    isize offset = 0;
+
+    for (char peek = 0; offset < str.len;) {
+        peek = str.data[offset];
+        breakpoint();
+
+        if (peek == '#') {
+            // If comment, read entire rest of line.
+            for (; peek != '\r' && peek != '\n' && ++offset < str.len; peek = str.data[offset]) {
+            }
+
+            if (offset == str.len) {
+                PlatformLog(LLOG_FATAL, "Unexpected end of file when parsing OBJ comment line");
+            }
+
+            if (peek == '\r') {
+                peek = str.data[++offset];
+            }
+
+            Assert(peek == '\n');
+            ++offset;
+        } else {
+            PlatformLog(LLOG_FATAL, "Unexpected peek character while parsing OBJ: %c", peek);
+        }
+    }
 }
 
 static void RenderDataInit(Arena* perm) {

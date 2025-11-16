@@ -650,7 +650,7 @@ ByteBuffer PlatformReadFileBytes(Arena* perm, const char* filename) {
 ///////////////////////////////////////////////////////////////////////////////////////
 LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
     static char LEVELS[][16] = {
-        "NONE", "DEBUG", "INFO", "WARN", "ERROR", "COUNT",
+        "NONE", "DEBUG", "INFO", "WARN", "ERROR", "COUNT", "FATAL",
     };
     char buffer[256] = {0};
 
@@ -660,6 +660,10 @@ LCORE void PlatformLog(LogLevel level, const char* fmt, ...) {
     va_end(args);
 
     printf("%s: %s\n", LEVELS[level], buffer);
+    if (level == LLOG_FATAL) {
+        fflush(stdout);
+        Assert(0);
+    }
 }
 
 // TODO: Do we really need this? maybe can remove.

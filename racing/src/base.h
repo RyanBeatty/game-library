@@ -128,6 +128,8 @@ typedef struct {
 
 #define Str8(s) ((Str8){.data = (s), .len = (ArraySizeOf((s)) - 1)})
 
+static Str8 Str8FromByteBuffer(ByteBuffer buffer);
+
 ////////////////////////////////////////////////////////////
 // S:Math
 
