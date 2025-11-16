@@ -68,9 +68,14 @@ static u32 VIO = 0;  // Index buffer.
 
 static VertexArr VBUFFER = {0};
 
+typedef struct {
+    u32* data;
+    isize len;
+    isize cap;
+} U32Arr;
+
 #define MAX_TRIANGLES 2048
-static u32 IBUFFER[MAX_TRIANGLES] = {};  // Index buffer
-static u32 IBUFFER_SIZE = 0;
+static U32Arr IBUFFER = {0};
 
 typedef struct {
     u32 ibufferidx;  // Offset into index buffer
@@ -516,9 +521,7 @@ static LMesh GetMesh(u32 mid) { return ArrGet(&MESHES, mid); }
 
 static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = ArrLen(&VBUFFER);
-    u32 ioffset = IBUFFER_SIZE;
-
-    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
+    u32 ioffset = ArrLen(&IBUFFER);
 
     Vec3 ns[MAX_VERTICES] = {0};
     for (u32 i = 0; i < tsize; ++i) {
@@ -532,9 +535,9 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
         ns[t.vb] = n;
         ns[t.vc] = n;
 
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
+        ArrPush(&IBUFFER, voffset + t.va);
+        ArrPush(&IBUFFER, voffset + t.vb);
+        ArrPush(&IBUFFER, voffset + t.vc);
     }
 
     for (u32 i = 0; i < vsize; ++i) {
@@ -553,9 +556,7 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
     Assert(vsize == uvsize);
 
     u32 voffset = ArrLen(&VBUFFER);
-    u32 ioffset = IBUFFER_SIZE;
-
-    Assert(IBUFFER_SIZE + (tsize * 3) <= MAX_TRIANGLES);
+    u32 ioffset = ArrLen(&IBUFFER);
 
     Vec3 ns[MAX_VERTICES] = {0};
     for (u32 i = 0; i < tsize; ++i) {
@@ -569,9 +570,9 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
         ns[t.vb] = n;
         ns[t.vc] = n;
 
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.va;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vb;
-        IBUFFER[IBUFFER_SIZE++] = voffset + t.vc;
+        ArrPush(&IBUFFER, voffset + t.va);
+        ArrPush(&IBUFFER, voffset + t.vb);
+        ArrPush(&IBUFFER, voffset + t.vc);
     }
 
     for (u32 i = 0; i < vsize; ++i) {
@@ -866,8 +867,10 @@ static void RenderDataInit(Arena* perm) {
 
     VBUFFER = (VertexArr){.cap = MAX_VERTICES};
     VBUFFER.data = New(perm, VBUFFER.cap, Vertex);
-    memset(IBUFFER, 0, sizeof(IBUFFER));
-    IBUFFER_SIZE = 0;
+
+    // Note that Max_triangles is a bit misleading since 3 elements of this buffer make a tri.
+    IBUFFER = (U32Arr){.cap = MAX_TRIANGLES};
+    IBUFFER.data = New(perm, IBUFFER.cap, u32);
 
     MESHES = (LMeshArr){.cap = 64};
     MESHES.data = New(perm, MESHES.cap, LMesh);
@@ -1312,7 +1315,7 @@ static void RenderDataInit(Arena* perm) {
 
     glGenBuffers(1, &VIO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VIO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IBUFFER), IBUFFER, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * IBUFFER.len, IBUFFER.data, GL_STATIC_DRAW);
 
     // NOTE: This is very tricky to get right. Don't dynamically set these based on shader attribute
     // locations. just hardcode and make sure that the shader code specifies the corAserect layout.
