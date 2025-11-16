@@ -58,14 +58,14 @@ static f32 F32FromStr8(Str8 s, bool* ok) {
         return 0.0f;
     }
 
-    memccpy(buffer, s.data, s.len, sizeof(char));
+    memcpy(buffer, s.data, sizeof(char) * s.len);
     char* end = NULL;
     f32 f = strtof(buffer, &end);
 
     // 1. No conversion
     // 2. Range errors
     // 3. Optional: must consume entire string
-    if (end == s.data || errno == ERANGE || *end != '\0') {
+    if (end == buffer || errno == ERANGE || *end != '\0') {
         *ok = false;
         return 0.0f;
     }

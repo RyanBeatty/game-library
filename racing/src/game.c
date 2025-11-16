@@ -596,7 +596,7 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
              ++offset);
         peeks.len = offset - begin;
 
-        // breakpoint();
+        breakpoint();
 
         if (Str8Eq(peeks, Str8Lit("#"))) {
             for (; offset < str.len && str.data[offset] != '\r' && str.data[offset] != '\n'; ++offset);
