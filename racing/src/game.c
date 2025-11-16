@@ -944,6 +944,7 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                 Assert(peek == '\n');
                 ++offset;
             }
+        } else if (Str8Eq(peeks, Str8Lit("f"))) {
         } else {
             PlatformLog(LLOG_FATAL, "Unexpected peek string while parsing OBJ: %.*s", (int)peeks.len,
                         (char*)peeks.data);
