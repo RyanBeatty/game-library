@@ -619,6 +619,13 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
     Vec3Arr verts = {.cap = 16};
     verts.data = New(perm, verts.cap, Vec3);
 
+    // TODO: This is probably over allocating slightly since likely each vertex won't have a unique norm.
+    Vec3Arr norms = {.cap = 16};
+    norms.data = New(perm, norms.cap, Vec3);
+
+    Vec2Arr uvs = {.cap = 16};
+    uvs.data = New(perm, uvs.cap, Vec2);
+
     Arena temp = *perm;
     ByteBuffer buffer = PlatformReadFileBytes(&temp, filename);
 
@@ -677,7 +684,6 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                                 (char*)ftoken.data);
                 }
             }
-
             Str8ParserConsumeLine(&parser);
 
             ArrPush(&verts, v);
@@ -711,8 +717,9 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                                 (char*)ftoken.data);
                 }
             }
-
             Str8ParserConsumeLine(&parser);
+
+            ArrPush(&norms, v);
         } else if (Str8Eq(peeks, Str8Lit("vt"))) {
             Vec2 v = {0};
             // Parse vert coords
@@ -734,8 +741,9 @@ static void MeshFromOBJ(Arena* perm, const char* filename) {
                                 (char*)ftoken.data);
                 }
             }
-
             Str8ParserConsumeLine(&parser);
+
+            ArrPush(&uvs, v);
         } else if (Str8Eq(peeks, Str8Lit("s"))) {
             Str8 itoken = Str8ParserNextToken(&parser);
             bool ok = false;

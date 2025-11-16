@@ -221,6 +221,12 @@ static bool Vec2Eq(Vec2 a, Vec2 b) { return ((f32abs(a.x - b.x) < TOL) && (f32ab
 static f32 Vec2Angle(Vec2 a, Vec2 b) { return f32acos(Vec2Dot(a, b) / (Vec2Len(a) * Vec2Len(b))); }
 
 typedef struct {
+    Vec2* data;
+    isize len;
+    isize cap;
+} Vec2Arr;
+
+typedef struct {
     union {
         struct {
             f32 x;
