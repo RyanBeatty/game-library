@@ -106,12 +106,13 @@ Arena NewSubArena(Arena* perm, isize count);
 // Will crash if you try to allocate more than cap. PushS = Push Static
 #define PushS(s) (assert((s)->len < (s)->cap), (s)->data + (s)->len++)
 #define PushArrS(s, v) (assert((s)->len < (s)->cap), (s)->data[(s)->len++] = (v))
+// Add an element by getting the reference to the last item and bumping len.
+#define ArrReserve(a) (assert((a)->len < (a)->cap), &(a)->data[(a)->len++])
 #define ArrPush(s, v) (PushArrS(s, v))
 #define ArrGet(a, idx) ((a)->data[(idx)])
 // Get reference
 #define ArrGetR(a, idx) (&ArrGet(a, idx))
 #define ArrGetPtr(a, idx) (ArrGetR(a, idx))
-#define ArrReserve(a) (PushS(s))
 #define ArrPop(a) (assert((a)->len != 0), (a)->data[(a)->len--])
 #define ArrCap(a) ((a)->cap)
 #define ArrLen(a) ((a)->len)

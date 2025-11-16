@@ -72,9 +72,13 @@ typedef struct {
     u32 ntriangles;
 } LMesh;
 
-#define MAX_MESHES 256
-static LMesh MESHES[MAX_MESHES] = {0};
-static u32 MESHES_SIZE = 0;
+typedef struct {
+    LMesh* data;
+    isize len;
+    isize cap;
+} LMeshArr;
+
+static LMeshArr MESHES = {0};
 
 typedef enum MID {
     M_CUBE = 0,
@@ -503,10 +507,7 @@ static RenderTarget CreateRenderTarget(u32 width, u32 height) {
     return (RenderTarget){.fbid = fbo, .txid = txid, .width = width, .height = height};
 }
 
-static LMesh GetMesh(u32 mid) {
-    Assert(mid < MAX_MESHES);
-    return MESHES[mid];
-}
+static LMesh GetMesh(u32 mid) { return ArrGet(&MESHES, mid); }
 
 static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = VBUFFER_SIZE;
@@ -536,8 +537,7 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
         VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = Vec2Zero()};
     }
 
-    LMesh* mesh = &MESHES[MESHES_SIZE];
-    ++MESHES_SIZE;
+    LMesh* mesh = ArrReserve(&MESHES);
     mesh->ibufferidx = ioffset;
     mesh->ntriangles = tsize;
 }
@@ -572,8 +572,7 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
         VBUFFER[VBUFFER_SIZE++] = (Vertex){.pos = vs[i], .normal = ns[i], .uv = uvs[i]};
     }
 
-    LMesh* mesh = &MESHES[MESHES_SIZE];
-    ++MESHES_SIZE;
+    LMesh* mesh = ArrReserve(&MESHES);
     mesh->ibufferidx = ioffset;
     mesh->ntriangles = tsize;
 }
@@ -625,7 +624,7 @@ typedef struct {
     isize cap;
 } OBJFaceArr;
 
-static void MeshFromOBJ(Arena* perm, const char* filename) {
+static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
     Vec3Arr verts = {.cap = 16};
     verts.data = New(perm, verts.cap, Vec3);
 
@@ -859,6 +858,9 @@ static void RenderDataInit(Arena* perm) {
     VBUFFER_SIZE = 0;
     memset(IBUFFER, 0, sizeof(IBUFFER));
     IBUFFER_SIZE = 0;
+
+    MESHES = (LMeshArr){.cap = 64};
+    MESHES.data = New(perm, MESHES.cap, LMesh);
 
     // Important!!!! Init the buffer before sending to GPU or else no vertex data!!!!!
 
@@ -1289,7 +1291,7 @@ static void RenderDataInit(Arena* perm) {
         AddMesh(vs, vsize, ts, tsize);
     }
 
-    MeshFromOBJ(perm, "assets/models/hello-cube.obj");
+    LoadMeshFromOBJ(perm, "assets/models/hello-cube.obj");
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
