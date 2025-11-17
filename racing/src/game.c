@@ -3890,6 +3890,7 @@ typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_COLLISION_TICK,
     SCENE_RACING_TICK,
+    SCENE_OBJ,
     SCENE_COUNT,
 } SceneId;
 
@@ -4039,6 +4040,42 @@ static void SceneDefaultTick(GameState* gstate, GameInput* input) {
 
         LFont font = GetLFontClosest(20.0f);
         DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
+
+        EndShaderPass();
+
+        EndRender();
+    }
+}
+
+static void SceneOBJTick(GameState* gstate, GameInput* input) {
+    f32 dt = gstate->dt;
+
+    if (gstate->init) {
+    }
+
+    if (gstate->update) {
+    }
+
+    if (gstate->render) {
+        BeginRender(dt);
+
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
+        // _world sizes from gstate.
+        f32 width = gstate->renderw;
+        f32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+        // pass->view = CameraGetViewMat(gstate->camera);
+        // pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
+
+        char msg[] = "DEFAULT SCENE";
+        u32 size = strlen(msg);
+
+        LFont font = GetLFontClosest(20.0f);
+        DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
+
+        DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
 
         EndShaderPass();
 
@@ -4888,12 +4925,13 @@ void GameInit() {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
+        gstate->scenefuncs[SCENE_OBJ] = SceneOBJTick;
         gstate->scenefuncs[SCENE_COLLISION_TICK] = SceneCollisionTick;
         gstate->scenefuncs[SCENE_RACING_TICK] = SceneRacingTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_RACING_TICK);
+    GameStateLoadScene(gstate, SCENE_OBJ);
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
