@@ -99,6 +99,7 @@ typedef enum MID {
     M_ICOSPHERE,
     M_HELLO_CUBE,
     M_HELLO_MONKEY,
+    M_TRACK1,
     M_COUNT
 } MID;
 
@@ -640,7 +641,7 @@ typedef struct {
 } OBJFaceArr;
 
 static LMesh LoadMeshFromOBJ(Arena* perm, const char* filename) {
-    Vec3Arr verts = {.cap = 512};
+    Vec3Arr verts = {.cap = 1024};
     verts.data = New(perm, verts.cap, Vec3);
 
     // TODO: This is probably over allocating slightly since likely each vertex won't have a unique norm.
@@ -664,8 +665,6 @@ static LMesh LoadMeshFromOBJ(Arena* perm, const char* filename) {
     Str8Parser parser = {.s = str};
     while (!Str8ParserIsEmpty(&parser)) {
         Str8 peeks = Str8ParserNextToken(&parser);
-
-        // breakpoint();
 
         if (Str8Eq(peeks, Str8Lit("#"))) {
             Str8ParserConsumeLine(&parser);
@@ -799,7 +798,6 @@ static LMesh LoadMeshFromOBJ(Arena* perm, const char* filename) {
 
                     if (i < 2) {
                         bool found = Str8Split1(vtoken, '/', &before, &after);
-
                         if (!found) {
                             PlatformLog(LLOG_FATAL, "Did not find '/' while parsing face vertex %d attribute %d: %.*s",
                                         j, i, vtoken.len, vtoken.data);
@@ -1345,6 +1343,7 @@ static void RenderDataInit(Arena* perm) {
 
     *ArrGetPtr(&MESHES, M_HELLO_CUBE) = LoadMeshFromOBJ(perm, "assets/models/hello-cube.obj");
     *ArrGetPtr(&MESHES, M_HELLO_MONKEY) = LoadMeshFromOBJ(perm, "assets/models/hello-monkey.obj");
+    *ArrGetPtr(&MESHES, M_TRACK1) = LoadMeshFromOBJ(perm, "assets/models/track1.obj");
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
