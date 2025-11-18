@@ -3908,7 +3908,7 @@ typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_COLLISION_TICK,
     SCENE_RACING_TICK,
-    SCENE_OBJ,
+    SCENE_DEFAULT_3D,
     SCENE_COUNT,
 } SceneId;
 
@@ -4065,7 +4065,7 @@ static void SceneDefaultTick(GameState* gstate, GameInput* input) {
     }
 }
 
-static void SceneOBJTick(GameState* gstate, GameInput* input) {
+static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
@@ -4089,12 +4089,6 @@ static void SceneOBJTick(GameState* gstate, GameInput* input) {
 
         pass->view = CameraGetViewMat(gstate->camera);
         pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
-
-        char msg[] = "DEFAULT SCENE";
-        u32 size = strlen(msg);
-
-        // LFont font = GetLFontClosest(20.0f);
-        // DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
 
         // DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
 
@@ -4951,13 +4945,13 @@ void GameInit() {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
-        gstate->scenefuncs[SCENE_OBJ] = SceneOBJTick;
+        gstate->scenefuncs[SCENE_DEFAULT_3D] = SceneDefault3DTick;
         gstate->scenefuncs[SCENE_COLLISION_TICK] = SceneCollisionTick;
         gstate->scenefuncs[SCENE_RACING_TICK] = SceneRacingTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_OBJ);
+    GameStateLoadScene(gstate, SCENE_RACING_TICK);
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
