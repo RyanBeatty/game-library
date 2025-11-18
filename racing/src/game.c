@@ -520,7 +520,7 @@ static RenderTarget CreateRenderTarget(u32 width, u32 height) {
 
 static LMesh GetMesh(u32 mid) { return ArrGet(&MESHES, mid); }
 
-static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
+static LMesh AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = ArrLen(&VBUFFER);
     u32 ioffset = ArrLen(&IBUFFER);
 
@@ -549,12 +549,13 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
         vertex->uv = Vec2Zero();
     }
 
-    LMesh* mesh = ArrReserve(&MESHES);
-    mesh->ibufferidx = ioffset;
-    mesh->ntriangles = tsize;
+    LMesh mesh = {0};
+    mesh.ibufferidx = ioffset;
+    mesh.ntriangles = tsize;
+    return mesh;
 }
 
-static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u32 tsize) {
+static LMesh AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u32 tsize) {
     Assert(vsize == uvsize);
 
     u32 voffset = ArrLen(&VBUFFER);
@@ -585,9 +586,10 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
         vertex->uv = uvs[i];
     }
 
-    LMesh* mesh = ArrReserve(&MESHES);
-    mesh->ibufferidx = ioffset;
-    mesh->ntriangles = tsize;
+    LMesh mesh = {0};
+    mesh.ibufferidx = ioffset;
+    mesh.ntriangles = tsize;
+    return mesh;
 }
 
 // Is this really a lexer? I dunno.
@@ -637,7 +639,7 @@ typedef struct {
     isize cap;
 } OBJFaceArr;
 
-static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
+static LMesh LoadMeshFromOBJ(Arena* perm, const char* filename) {
     Vec3Arr verts = {.cap = 512};
     verts.data = New(perm, verts.cap, Vec3);
 
@@ -885,9 +887,10 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
         }
 
         {
-            LMesh* mesh = ArrReserve(&MESHES);
-            mesh->ibufferidx = ibuffer_base;
-            mesh->ntriangles = ArrLen(&faces);
+            LMesh mesh = {0};
+            mesh.ibufferidx = ibuffer_base;
+            mesh.ntriangles = ArrLen(&faces);
+            return mesh;
         }
     }
 }
@@ -904,8 +907,12 @@ static void RenderDataInit(Arena* perm) {
     IBUFFER = (U32Arr){.cap = MAX_TRIANGLES};
     IBUFFER.data = New(perm, IBUFFER.cap, u32);
 
-    MESHES = (LMeshArr){.cap = 64};
+    MESHES = (LMeshArr){.cap = M_COUNT};
     MESHES.data = New(perm, MESHES.cap, LMesh);
+    // Reserve all meshes so we can set them by index.
+    for (isize i = 0; i < M_COUNT; ++i) {
+        ArrReserve(&MESHES);
+    }
 
     // Important!!!! Init the buffer before sending to GPU or else no vertex data!!!!!
 
@@ -973,7 +980,7 @@ static void RenderDataInit(Arena* perm) {
             TriLit(20, 21, 22),  //
             TriLit(22, 23, 20),  //
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        *ArrGetPtr(&MESHES, M_CUBE) = AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // Quad.
@@ -996,7 +1003,7 @@ static void RenderDataInit(Arena* perm) {
             TriLit(0, 1, 2),  //
             TriLit(2, 3, 0),  //
         };
-        AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
+        *ArrGetPtr(&MESHES, M_QUAD) = AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
     // ISO TRIANGLE Mesh. triangle with all sides length 1 centered at 0, 0
@@ -1012,7 +1019,7 @@ static void RenderDataInit(Arena* perm) {
             Vec2Lit(1.0f, 0.0f),
         };
         Triangle ts[] = {TriLit(0, 1, 2)};
-        AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
+        *ArrGetPtr(&MESHES, M_ISO_TRIANGLE) = AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
     // PYRAMID Mesh. centered at 0, 0, 0. all sides 1, forward along -z
@@ -1128,7 +1135,7 @@ static void RenderDataInit(Arena* perm) {
             Vec2Lit(1.0, 1.0),
             Vec2Lit(0.0, 1.0),
         };
-        AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
+        *ArrGetPtr(&MESHES, M_PYRAMID) = AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
     // 2S ISO TRIANGLE Mesh.
@@ -1145,7 +1152,7 @@ static void RenderDataInit(Arena* perm) {
             TriLit(0, 1, 2),  //
             TriLit(3, 4, 5),  //
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        *ArrGetPtr(&MESHES, M_2S_ISO_TRIANGLE) = AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // Icosahedron Mesh.
@@ -1191,7 +1198,7 @@ static void RenderDataInit(Arena* perm) {
             TriLit(8, 6, 7),
             TriLit(9, 8, 1),
         };
-        AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        *ArrGetPtr(&MESHES, M_ICOSAHEDRON) = AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
     }
 
     // ICOSPHERE Mesh.
@@ -1333,11 +1340,11 @@ static void RenderDataInit(Arena* perm) {
             tsize = ts2size;
         }
 
-        AddMesh(vs, vsize, ts, tsize);
+        *ArrGetPtr(&MESHES, M_ICOSPHERE) = AddMesh(vs, vsize, ts, tsize);
     }
 
-    LoadMeshFromOBJ(perm, "assets/models/hello-cube.obj");
-    LoadMeshFromOBJ(perm, "assets/models/hello-monkey.obj");
+    *ArrGetPtr(&MESHES, M_HELLO_CUBE) = LoadMeshFromOBJ(perm, "assets/models/hello-cube.obj");
+    *ArrGetPtr(&MESHES, M_HELLO_MONKEY) = LoadMeshFromOBJ(perm, "assets/models/hello-monkey.obj");
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
