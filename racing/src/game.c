@@ -60,12 +60,11 @@ typedef struct {
 
 #define TriLit(n0, n1, n2) ((Triangle){.va = (n0), .vb = (n1), .vc = (n2)})
 
-#define MAX_VERTICES 512
-
 static u32 VAO = 0;
 static u32 VBO = 0;
 static u32 VIO = 0;  // Index buffer.
 
+#define MAX_VERTICES 4096
 static VertexArr VBUFFER = {0};
 
 typedef struct {
@@ -74,7 +73,7 @@ typedef struct {
     isize cap;
 } U32Arr;
 
-#define MAX_TRIANGLES 2048
+#define MAX_TRIANGLES 4096
 static U32Arr IBUFFER = {0};
 
 typedef struct {
@@ -99,6 +98,7 @@ typedef enum MID {
     M_ICOSAHEDRON,
     M_ICOSPHERE,
     M_HELLO_CUBE,
+    M_HELLO_MONKEY,
     M_COUNT
 } MID;
 
@@ -524,7 +524,8 @@ static void AddMesh(Vec3* vs, u32 vsize, Triangle* ts, u32 tsize) {
     u32 voffset = ArrLen(&VBUFFER);
     u32 ioffset = ArrLen(&IBUFFER);
 
-    Vec3 ns[MAX_VERTICES] = {0};
+    Assert(tsize * 3 < 1024);
+    Vec3 ns[1024] = {0};
     for (u32 i = 0; i < tsize; ++i) {
         Triangle t = ts[i];
         Vec3 a = vs[t.va];
@@ -559,7 +560,8 @@ static void AddMesh2(Vec3* vs, u32 vsize, Vec2* uvs, u32 uvsize, Triangle* ts, u
     u32 voffset = ArrLen(&VBUFFER);
     u32 ioffset = ArrLen(&IBUFFER);
 
-    Vec3 ns[MAX_VERTICES] = {0};
+    Assert(tsize * 3 < 1024);
+    Vec3 ns[1024] = {0};
     for (u32 i = 0; i < tsize; ++i) {
         Triangle t = ts[i];
         Vec3 a = vs[t.va];
@@ -636,17 +638,17 @@ typedef struct {
 } OBJFaceArr;
 
 static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
-    Vec3Arr verts = {.cap = 16};
+    Vec3Arr verts = {.cap = 512};
     verts.data = New(perm, verts.cap, Vec3);
 
     // TODO: This is probably over allocating slightly since likely each vertex won't have a unique norm.
-    Vec3Arr norms = {.cap = 16};
+    Vec3Arr norms = {.cap = 1024};
     norms.data = New(perm, norms.cap, Vec3);
 
-    Vec2Arr uvs = {.cap = 16};
+    Vec2Arr uvs = {.cap = 1024};
     uvs.data = New(perm, uvs.cap, Vec2);
 
-    OBJFaceArr faces = {.cap = 16};
+    OBJFaceArr faces = {.cap = 1024};
     faces.data = New(perm, faces.cap, OBJFace);
 
     Arena temp = *perm;
@@ -1198,7 +1200,7 @@ static void RenderDataInit(Arena* perm) {
         // golden ratio.
         f32 t = LPHI;
 
-        Vec3 vs[MAX_VERTICES] = {0};
+        Vec3 vs[512] = {0};
         u32 vsize = 0;
 
         Assert(vsize < ArraySizeOf(vs));
@@ -1231,7 +1233,7 @@ static void RenderDataInit(Arena* perm) {
         Assert(vsize < ArraySizeOf(vs));
         vs[vsize++] = Vec3Normalize(Vec3Lit(-t, 0.0f, 1.0f));
 
-        Triangle ts[MAX_TRIANGLES] = {0};
+        Triangle ts[2048] = {0};
         u32 tsize = 0;
 
         // 5 faces around point 0
@@ -1286,10 +1288,10 @@ static void RenderDataInit(Arena* perm) {
         // to do with max ibuffer or vbuffer size.
         u32 nsubdivides = 1;
 
-        bool found[MAX_VERTICES][MAX_VERTICES] = {0};
-        u32 midpoints[MAX_VERTICES][MAX_VERTICES] = {0};
+        bool found[512][512] = {0};
+        u32 midpoints[512][512] = {0};
         for (u32 count = 0; count < nsubdivides; ++count) {
-            Triangle ts2[MAX_TRIANGLES] = {0};
+            Triangle ts2[2048] = {0};
             u32 ts2size = 0;
             for (u32 ti = 0; ti < tsize; ++ti) {
                 Triangle tri = ts[ti];
@@ -1335,6 +1337,7 @@ static void RenderDataInit(Arena* perm) {
     }
 
     LoadMeshFromOBJ(perm, "assets/models/hello-cube.obj");
+    LoadMeshFromOBJ(perm, "assets/models/hello-monkey.obj");
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -4090,7 +4093,8 @@ static void SceneOBJTick(GameState* gstate, GameInput* input) {
 
         // DrawLSphere(Vec3Zero(), 5.0f, LBLUE);
 
-        DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
+        // DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
+        DrawMesh(GetMesh(M_HELLO_MONKEY), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
 
         EndShaderPass();
 
