@@ -875,7 +875,6 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
                 vertex->pos = ArrGet(&verts, face->face[j][0]);
                 vertex->normal = ArrGet(&norms, face->face[j][1]);
                 vertex->uv = ArrGet(&uvs, face->face[j][2]);
-                breakpoint();
             }
 
             ArrPush(&IBUFFER, vbuffer_base + 0);
@@ -4060,6 +4059,9 @@ static void SceneOBJTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
+        gstate->camera.eye = Vec3Lit(50.0f, 50.0f, 50.0f);
+        gstate->camera.target = Vec3Zero();
+        gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
     }
 
     if (gstate->update) {
@@ -4075,8 +4077,8 @@ static void SceneOBJTick(GameState* gstate, GameInput* input) {
         f32 height = gstate->renderh;
         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
 
-        // pass->view = CameraGetViewMat(gstate->camera);
-        // pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
+        pass->view = CameraGetViewMat(gstate->camera);
+        pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
 
         char msg[] = "DEFAULT SCENE";
         u32 size = strlen(msg);
@@ -4086,7 +4088,9 @@ static void SceneOBJTick(GameState* gstate, GameInput* input) {
 
         // DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
 
-        DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(100, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(50, 50, 50), LBLUE);
+        // DrawLSphere(Vec3Zero(), 5.0f, LBLUE);
+
+        DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
 
         EndShaderPass();
 
