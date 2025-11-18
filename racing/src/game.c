@@ -692,7 +692,7 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
             {
                 Str8 ftoken = Str8ParserNextToken(&parser);
                 bool ok = false;
-                v.x = F32FromStr8(ftoken, &ok);
+                v.y = F32FromStr8(ftoken, &ok);
                 if (!ok) {
                     PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate y from string: %.*s", (int)ftoken.len,
                                 (char*)ftoken.data);
@@ -701,7 +701,7 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
             {
                 Str8 ftoken = Str8ParserNextToken(&parser);
                 bool ok = false;
-                v.x = F32FromStr8(ftoken, &ok);
+                v.z = F32FromStr8(ftoken, &ok);
                 if (!ok) {
                     PlatformLog(LLOG_FATAL, "Failed to parse vertex coordinate z from string: %.*s", (int)ftoken.len,
                                 (char*)ftoken.data);
@@ -725,7 +725,7 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
             {
                 Str8 ftoken = Str8ParserNextToken(&parser);
                 bool ok = false;
-                v.x = F32FromStr8(ftoken, &ok);
+                v.y = F32FromStr8(ftoken, &ok);
                 if (!ok) {
                     PlatformLog(LLOG_FATAL, "Failed to parse vertex normal y from string: %.*s", (int)ftoken.len,
                                 (char*)ftoken.data);
@@ -734,7 +734,7 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
             {
                 Str8 ftoken = Str8ParserNextToken(&parser);
                 bool ok = false;
-                v.x = F32FromStr8(ftoken, &ok);
+                v.z = F32FromStr8(ftoken, &ok);
                 if (!ok) {
                     PlatformLog(LLOG_FATAL, "Failed to parse vertex normal z from string: %.*s", (int)ftoken.len,
                                 (char*)ftoken.data);
@@ -758,7 +758,7 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
             {
                 Str8 ftoken = Str8ParserNextToken(&parser);
                 bool ok = false;
-                v.x = F32FromStr8(ftoken, &ok);
+                v.y = F32FromStr8(ftoken, &ok);
                 if (!ok) {
                     PlatformLog(LLOG_FATAL, "Failed to parse texture coordinate y from string: %.*s", (int)ftoken.len,
                                 (char*)ftoken.data);
@@ -875,6 +875,7 @@ static void LoadMeshFromOBJ(Arena* perm, const char* filename) {
                 vertex->pos = ArrGet(&verts, face->face[j][0]);
                 vertex->normal = ArrGet(&norms, face->face[j][1]);
                 vertex->uv = ArrGet(&uvs, face->face[j][2]);
+                breakpoint();
             }
 
             ArrPush(&IBUFFER, vbuffer_base + 0);
@@ -2288,6 +2289,14 @@ LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 co
     DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshcmd.meshid = GetMesh(M_QUAD);
     cmd->meshcmd.modelm = Mat4SVRT(Vec3Lit(width, height, 1.0f), orient, center);
+    cmd->meshcmd.color = color;
+    return cmd;
+}
+
+LCORE DrawCmd* DrawMesh(LMesh mesh, Vec3 pos, Mat4 orient, Vec3 scale, Vec4 color) {
+    DrawCmd* cmd = AddDrawMeshCmd();
+    cmd->meshcmd.meshid = mesh;
+    cmd->meshcmd.modelm = Mat4SVRT(scale, orient, pos);
     cmd->meshcmd.color = color;
     return cmd;
 }
@@ -4072,10 +4081,12 @@ static void SceneOBJTick(GameState* gstate, GameInput* input) {
         char msg[] = "DEFAULT SCENE";
         u32 size = strlen(msg);
 
-        LFont font = GetLFontClosest(20.0f);
-        DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
+        // LFont font = GetLFontClosest(20.0f);
+        // DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
 
-        DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
+        // DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
+
+        DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(100, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(50, 50, 50), LBLUE);
 
         EndShaderPass();
 
