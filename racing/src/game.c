@@ -64,7 +64,7 @@ static u32 VAO = 0;
 static u32 VBO = 0;
 static u32 VIO = 0;  // Index buffer.
 
-#define MAX_VERTICES 4096
+#define MAX_VERTICES (1 << 14)
 static VertexArr VBUFFER = {0};
 
 typedef struct {
@@ -73,7 +73,7 @@ typedef struct {
     isize cap;
 } U32Arr;
 
-#define MAX_TRIANGLES 4096
+#define MAX_TRIANGLES (1 << 14)
 static U32Arr IBUFFER = {0};
 
 typedef struct {
@@ -641,7 +641,7 @@ typedef struct {
 } OBJFaceArr;
 
 static LMesh LoadMeshFromOBJ(Arena* perm, const char* filename) {
-    Vec3Arr verts = {.cap = 1024};
+    Vec3Arr verts = {.cap = 2048};
     verts.data = New(perm, verts.cap, Vec3);
 
     // TODO: This is probably over allocating slightly since likely each vertex won't have a unique norm.
@@ -651,7 +651,7 @@ static LMesh LoadMeshFromOBJ(Arena* perm, const char* filename) {
     Vec2Arr uvs = {.cap = 1024};
     uvs.data = New(perm, uvs.cap, Vec2);
 
-    OBJFaceArr faces = {.cap = 1024};
+    OBJFaceArr faces = {.cap = 4096};
     faces.data = New(perm, faces.cap, OBJFace);
 
     Arena temp = *perm;
@@ -4925,7 +4925,7 @@ void GameInit() {
     ParticleSystemInit();
 
     {
-        Arena render_arena = NewSubArena(&gstate->perm, MB(1));
+        Arena render_arena = NewSubArena(&gstate->perm, MB(10));
         RenderStateInit(gstate->renderw, gstate->renderh);
         RenderDataInit(&render_arena);
     }
