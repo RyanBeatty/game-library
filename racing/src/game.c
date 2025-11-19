@@ -4608,6 +4608,8 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
                 }
             }
 
+            DrawMesh(GetMesh(M_TRACK1), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LPURPLE);
+
             EndShaderPass();
         }
 
