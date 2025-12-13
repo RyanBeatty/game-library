@@ -1343,7 +1343,6 @@ static void RenderDataInit(Arena* perm) {
 
     *ArrGetPtr(&MESHES, M_HELLO_CUBE) = LoadMeshFromOBJ(perm, "assets/models/hello-cube.obj");
     *ArrGetPtr(&MESHES, M_HELLO_MONKEY) = LoadMeshFromOBJ(perm, "assets/models/hello-monkey.obj");
-    *ArrGetPtr(&MESHES, M_TRACK1) = LoadMeshFromOBJ(perm, "assets/models/track1.obj");
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
