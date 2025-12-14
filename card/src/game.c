@@ -3991,9 +3991,6 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
         if (ea == eb || PolyhedronIsNull(&eb->shape)) {
             continue;
         }
-        // if (ea->id.idx == 5 && eb->id.idx == 6 && gstate->nframe >= 3) {
-        //     breakpoint();
-        // }
 
         Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
 
@@ -4145,7 +4142,10 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                 }
             }
 
-            DrawMesh(GetMesh(M_TRACK1), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LPURPLE);
+            if (true) {
+                GameControllerState* controller = &input->controllers[0];
+                DrawLCircle(Vec2ToVec3Z(controller->cursor_pos, 2.0f), Px2Meter(7.0f), LBLUE);
+            }
 
             EndShaderPass();
         }

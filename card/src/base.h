@@ -249,7 +249,7 @@ typedef struct {
 #define Vec3LitAll(a) (Vec3Lit(a, a, a))
 #define Vec3ToVec2(v) (Vec2Lit((v).x, (v).y))
 #define Vec2ToVec3(v) (Vec3Lit((v).x, (v).y, 0.0f))
-#define Vec3ToRVector3(v) ((Vector3){.x = (v).x, .y = (v).y, .z = (v.z)})
+#define Vec2ToVec3Z(v, z) (Vec3Lit((v).x, (v).y, (z)))
 
 static Vec3 Vec3Zero() {
     static Vec3 v = Vec3Lit(0.0f, 0.0f, 0.0f);
