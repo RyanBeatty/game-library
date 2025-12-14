@@ -2128,6 +2128,7 @@ typedef struct {
 } RenderState;
 
 static RenderState RSTATE;
+#define GetRenderState() (&RSTATE)
 
 // #define CurShaderPass() (&RSTATE.passes[RSTATE.passidx])
 static ShaderPass* CurShaderPass() {
@@ -3915,6 +3916,35 @@ static GameState GState;
 typedef void (*SceneTickFunc)(GameState* gstate);
 
 i32 GameGetTargetFps() { return GetGameState()->target_fps; }
+
+// Converts a screen space position (assumes origin bottom left) to a 2d position in world space.
+Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
+    GameState* gstate = GetGameState();
+    RenderState* rstate = GetRenderState();
+
+    Vec2 viewport_dims = Vec2Lit(rstate->target.width, rstate->target.height);
+    Vec2 viewport_origin = Vec2Zero();
+
+    // Transform from screen space to clip space.
+    // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glViewport.xhtml
+    Vec3 pos_clip;
+    pos_clip.x = ((pos_screen.x - viewport_origin.x) * (2.0f / viewport_dims.x)) - 1.0f;
+    pos_clip.y = ((pos_screen.y - viewport_origin.y) * (2.0f / viewport_dims.y)) - 1.0f;
+    pos_clip.z = 0.0f;
+    // PlatformLog(LLOG_INFO, "Pos clip %f %f %f", pos_clip.x, pos_clip.y, pos_clip.z);
+
+    // Transform from clip to camera space and from camera to world.
+    // TODO: I should auto derive these matrices from render or game state potentially? The values hardcoded here could
+    // become out of sync if I change the setup in the game tick rendering
+    Mat4 inv_proj = Mat4Invert(Mat4Ortho(-0.5f * gstate->renderw_world, 0.5f * gstate->renderw_world,
+                                         -0.5f * gstate->renderh_world, 0.5f * gstate->renderh_world, -100.0f, 100.0f));
+    Mat4 inv_view = Mat4Invert(CameraGetViewMat(gstate->camera));
+    Mat4 inv = Mat4Multiply(inv_view, inv_proj);
+    Vec3 pos_world = Vec3WTransform(pos_clip, inv);
+
+    // PlatformLog(LLOG_INFO, "Pos world %f %f %f", pos_world.x, pos_world.y, pos_world.z);
+    return Vec3ToVec2(pos_world);
+}
 
 // Resets global state/system state that contains per scene info. Experimental approach
 // for use in scene switching as opposed to putting all this state into GameState object

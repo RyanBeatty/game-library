@@ -48,3 +48,5 @@ typedef struct {
 void GameInit();
 
 void GameTick(f32 dt, GameInput* input);
+
+Vec2 GameScreenToWorld2D(Vec2 pos_screen);

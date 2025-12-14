@@ -869,23 +869,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     // bottom left.
 
                     Vec2 pos_screen = keyboard->mouse_pos_screen;
-                    f32 viewport_width = PlatformScreenWidth();
                     f32 viewport_height =
                         PlatformScreenHeight();  // This is NOT the viewport height, but just use this for now.
                     pos_screen.y = viewport_height - pos_screen.y;
                     // PlatformLog(LLOG_INFO, "Mouse %f %f", pos_screen.x, pos_screen.y);
 
-                    Vec2 viewport_origin = Vec2Zero();
-
-                    // Transform from screen space to clip space.
-                    // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glViewport.xhtml
-                    Vec3 pos_clip;
-                    pos_clip.x = ((pos_screen.x - viewport_origin.x) * (2.0f / viewport_width)) - 1.0f;
-                    pos_clip.y = ((pos_screen.y - viewport_origin.y) * (2.0f / viewport_height)) - 1.0f;
-                    pos_clip.z = 0.0f;
-                    PlatformLog(LLOG_INFO, "mouse clip %f %f %f", pos_clip.x, pos_clip.y, pos_clip.z);
-
-                    controller->cursor_pos = keyboard->mouse_pos_screen;
+                    Vec2 cursor_world = GameScreenToWorld2D(pos_screen);
+                    controller->cursor_pos = cursor_world;
                 }
             }
 

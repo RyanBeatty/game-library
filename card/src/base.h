@@ -542,6 +542,7 @@ LCORE Mat4 Mat4Perspective(rad fov, f32 aspect, f32 near, f32 far) {
 // FoGED 6.3.4
 // gamemath.com 10.3.4
 // maps (left, bottom) -> (-1, -1)
+// left, right, bottom, top, near, far should be in game/world units. not screen units.
 LCORE Mat4 Mat4Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far) {
     f32 w_inv = 1.0f / (right - left);
     // NOTE: FoGED has bottom - top, but I think I want top - bottom so that +y = up.
