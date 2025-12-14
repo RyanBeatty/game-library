@@ -4110,9 +4110,6 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->update) {
-        // PlatformLog(LLOG_INFO, "Mouse pos: %f, %f", input->controllers[0].cursor_pos.x,
-        //             input->controllers[0].cursor_pos.y);
-
         Entity* e = NULL;
         IncrementEntity(&e);
         Assert(e != NULL);

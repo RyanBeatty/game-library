@@ -63,9 +63,9 @@ LCORE bool PlatformKeyDown(LKey key) { return GetWin32State()->cur_input->down[k
 
 LCORE Vec2 PlatformMousePositionScreen() { return GetWin32State()->cur_input->mouse_pos_screen; }
 
+// This function just exists to process and remove from the queue message types we don't handle in the message handling
+// loop below.
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    Win32State* w32state = GetWin32State();
-
     switch (uMsg) {
         case WM_DESTROY: {
             PostQuitMessage(0);
@@ -78,22 +78,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             Assert(false);
             return 0;
         }
-        // Captures when the mouse is moved while over the active window.
         case WM_MOUSEMOVE: {
-            i32 xpos = GET_X_LPARAM(lParam);
-            i32 ypos = GET_Y_LPARAM(lParam);
-            Vec2 pos_screen = Vec2Lit(xpos, ypos);
-            w32state->cur_input->mouse_pos_screen = pos_screen;
-
-            // Convert from origin top left to bottom right.
-            // Vec3 pos_screen = Vec3Lit(xpos, ypos, 0.0f);
-            // Mat4 rot =
-            //     Mat4Multiply(Mat4TranslateV(Vec3Lit(0.0f, PlatformScreenHeight(), 0.0f)),
-            //     Mat4RotateX(Deg2Rad(180.0f)));
-            // pos_screen = Vec3WTransform(pos_screen, rot);
-            // w32state->cur_input->mouse_pos_screen = Vec2Lit(pos_screen.x, pos_screen.y);
-            // PlatformLog(LLOG_DEBUG, "Win32 Screen Space Mouse Pos: %d %d. Xformed: %f %f", xpos, ypos, pos_screen.x,
-            //             pos_screen.y);
+            Assert(false);
             return 0;
         }
         default: {
@@ -792,13 +778,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     if (cur_input->down[LKEY_ESCAPE]) {
                         PostQuitMessage(0);
                     }
+                } else if (msg.message == WM_MOUSEMOVE) {
+                    // Captures when the mouse is moved while over the active window.
+                    i32 xpos = GET_X_LPARAM(msg.lParam);
+                    i32 ypos = GET_Y_LPARAM(msg.lParam);
+                    Vec2 pos_screen = Vec2Lit(xpos, ypos);
+                    w32state->cur_input->mouse_pos_screen = pos_screen;
                 } else if (msg.message == WM_LBUTTONDOWN || msg.message == WM_LBUTTONUP) {
                     Win32InputMarkKeyEvent(cur_input, LKEY_LEFT, msg.message == WM_LBUTTONDOWN);
                 } else {
                     // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
                     // msg struct and just adds more messages to the queue. do we even need this?
                     // TranslateMessage(&msg);
-                    // Calls our windows procedure to process the message.
+
+                    // Calls our windows procedure to process the message. I think we need to do this so that any
+                    // message types not processed above are removed from the queue.
                     DispatchMessage(&msg);
                 }
             }
