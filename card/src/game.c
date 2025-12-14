@@ -4110,6 +4110,8 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->update) {
+        static bool FOLLOWING = false;
+
         Entity* e = NULL;
         IncrementEntity(&e);
         Assert(e != NULL);
@@ -4123,7 +4125,14 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
         CollisionInfo info = {0};
         bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
         if (collides && controller->action_down.down) {
-            PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
+            FOLLOWING = true;
+            // PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
+        } else if (!controller->action_down.down) {
+            FOLLOWING = false;
+        }
+
+        if (FOLLOWING) {
+            e->pos = Vec2ToVec3(controller->cursor_pos);
         }
     }
 
