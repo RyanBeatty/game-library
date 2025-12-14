@@ -3628,6 +3628,13 @@ static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 
 ////////////////////////////////////////////////////////////
+
+typedef enum {
+    RANK_NONE = 0,
+    RANK_ONE = 1,
+} CardRank;
+
+////////////////////////////////////////////////////////////
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
 
 typedef enum EntityFlag {
@@ -3679,6 +3686,7 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
+    CardRank rank;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4061,6 +4069,8 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             GraphicsInfoSetLModel(&e->graphics,
                                   LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
                                                  Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f)), LGRAY));
+
+            e->rank = RANK_ONE;
         }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
@@ -4092,6 +4102,11 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                     e->graphics.scale = e->scale;
                     GraphicsInfoTickAnimation(&e->graphics, dt);
                     DrawGraphicsInfo(&e->graphics);
+
+                    if (e->rank != RANK_NONE) {
+                        DrawQuad(Vec3Add(e->pos, Vec3Lit(0.0f, 0.0f, 1.0f)), e->graphics.model.scale.x * 0.7f,
+                                 e->graphics.model.scale.y * 0.7f, e->orient, LBLACK);
+                    }
                 }
             }
 
