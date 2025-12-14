@@ -4122,7 +4122,7 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
 
         CollisionInfo info = {0};
         bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
-        if (collides) {
+        if (collides && controller->action_down.down) {
             PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
         }
     }
