@@ -7,6 +7,7 @@
 
 #ifndef UNITY_BUILD
 #include "base.h"
+#include "game.h"
 #include "glad/glad.h"
 #include "platform.h"
 #endif
@@ -785,7 +786,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     Vec2 pos_screen = Vec2Lit(xpos, ypos);
                     w32state->cur_input->mouse_pos_screen = pos_screen;
                 } else if (msg.message == WM_LBUTTONDOWN || msg.message == WM_LBUTTONUP) {
-                    Win32InputMarkKeyEvent(cur_input, LKEY_LEFT, msg.message == WM_LBUTTONDOWN);
+                    Win32InputMarkKeyEvent(cur_input, LKEY_LBUTTON, msg.message == WM_LBUTTONDOWN);
                 } else {
                     // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
                     // msg struct and just adds more messages to the queue. do we even need this?
