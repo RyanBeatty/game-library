@@ -82,12 +82,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case WM_MOUSEMOVE: {
             i32 xpos = GET_X_LPARAM(lParam);
             i32 ypos = GET_Y_LPARAM(lParam);
+            Vec2 pos_screen = Vec2Lit(xpos, ypos);
+            w32state->cur_input->mouse_pos_screen = pos_screen;
+
             // Convert from origin top left to bottom right.
-            Vec3 pos_screen = Vec3Lit(xpos, ypos, 0.0f);
-            Mat4 rot =
-                Mat4Multiply(Mat4TranslateV(Vec3Lit(0.0f, PlatformScreenHeight(), 0.0f)), Mat4RotateX(Deg2Rad(180.0f)));
-            pos_screen = Vec3WTransform(pos_screen, rot);
-            w32state->cur_input->mouse_pos_screen = Vec2Lit(pos_screen.x, pos_screen.y);
+            // Vec3 pos_screen = Vec3Lit(xpos, ypos, 0.0f);
+            // Mat4 rot =
+            //     Mat4Multiply(Mat4TranslateV(Vec3Lit(0.0f, PlatformScreenHeight(), 0.0f)),
+            //     Mat4RotateX(Deg2Rad(180.0f)));
+            // pos_screen = Vec3WTransform(pos_screen, rot);
+            // w32state->cur_input->mouse_pos_screen = Vec2Lit(pos_screen.x, pos_screen.y);
             // PlatformLog(LLOG_DEBUG, "Win32 Screen Space Mouse Pos: %d %d. Xformed: %f %f", xpos, ypos, pos_screen.x,
             //             pos_screen.y);
             return 0;
@@ -859,6 +863,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->left_stick.x += keyboard->down[VK_LEFT] ? -1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_UP] ? 1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_DOWN] ? -1.0f : 0.0f;
+
+                {
+                    // Windows gives us mouse position in screen space where origin is in top left. We need to map it to
+                    // bottom left.
+
+                    Vec2 pos_screen = keyboard->mouse_pos_screen;
+                    f32 viewport_width = PlatformScreenWidth();
+                    f32 viewport_height =
+                        PlatformScreenHeight();  // This is NOT the viewport height, but just use this for now.
+                    pos_screen.y = viewport_height - pos_screen.y;
+                    // PlatformLog(LLOG_INFO, "Mouse %f %f", pos_screen.x, pos_screen.y);
+
+                    Vec2 viewport_origin = Vec2Zero();
+
+                    // Transform from screen space to clip space.
+                    // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glViewport.xhtml
+                    Vec3 pos_clip;
+                    pos_clip.x = ((pos_screen.x - viewport_origin.x) * (2.0f / viewport_width)) - 1.0f;
+                    pos_clip.y = ((pos_screen.y - viewport_origin.y) * (2.0f / viewport_height)) - 1.0f;
+                    pos_clip.z = 0.0f;
+                    PlatformLog(LLOG_INFO, "mouse clip %f %f %f", pos_clip.x, pos_clip.y, pos_clip.z);
+
+                    controller->cursor_pos = keyboard->mouse_pos_screen;
+                }
             }
 
             {
