@@ -3849,7 +3849,7 @@ static const f32 GRID_DEPTH = 1.0f;
 
 typedef enum {
     SCENE_DEFAULT = 0,
-    SCENE_RACING_TICK,
+    SCENE_CARD_TICK,
     SCENE_DEFAULT_3D,
     SCENE_COUNT,
 } SceneId;
@@ -4050,7 +4050,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
-static void SceneRacingTick(GameState* gstate, GameInput* input) {
+static void SceneCardTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
@@ -4161,11 +4161,11 @@ void GameInit() {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_DEFAULT] = SceneDefaultTick;
         gstate->scenefuncs[SCENE_DEFAULT_3D] = SceneDefault3DTick;
-        gstate->scenefuncs[SCENE_RACING_TICK] = SceneRacingTick;
+        gstate->scenefuncs[SCENE_CARD_TICK] = SceneCardTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_RACING_TICK);
+    GameStateLoadScene(gstate, SCENE_CARD_TICK);
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
