@@ -3827,6 +3827,7 @@ typedef struct {
 //     return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
 // }
 
+// Returns the matrix that when applied will put the origin in the same position and orientation of the camera.
 LCORE Mat4 CameraGetViewMat(LCamera camera) { return Mat4LookAt(camera.eye, camera.target, camera.up); }
 
 LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
@@ -4045,7 +4046,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 }
 
 // 1 meter = N pixels scale factor.
-#define PPM (100.0f)
+#define PPM (1600.0f)
 #define MPP (1.0f / PPM)
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
@@ -4054,6 +4055,17 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
+            GraphicsInfoSetLModel(&e->graphics,
+                                  LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f)), LGRAY));
+        }
+
+        gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
+                                   .target = Vec3Zero(),
+                                   .up = Vec3Lit(0.0f, 1.0f, 0.0f)};
     }
 
     if (gstate->update) {
@@ -4066,10 +4078,10 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
         {
             ShaderPass* pass = BeginShaderPass(GetDefaultShader());
             pass->view = CameraGetViewMat(gstate->camera);
-            pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
-            // f32 width = gstate->renderw_world;
-            // f32 height = gstate->renderh_world;
-            // pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
+            // pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
+            f32 width = gstate->renderw_world;
+            f32 height = gstate->renderh_world;
+            pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -100.0f, 100.0f);
 
             // TODO: This should probably be moved to update step potentially? I just noticed we set df = 0.0f for
             // render Maybe we should not do that and instead pass in delta time.
