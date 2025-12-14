@@ -3628,47 +3628,6 @@ static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 
 ////////////////////////////////////////////////////////////
-
-typedef u8 SectorId;
-
-typedef struct {
-    SectorId* data;
-    isize len;
-    isize cap;
-} SectorIdArr;
-
-#define MAX_SECTORS 16
-
-typedef struct {
-    SectorId data[MAX_SECTORS];
-    SectorIdArr ids;
-} SectorIds;
-
-#define SectorIdsInit(sector_ids) \
-    ((sector_ids)->ids = (SectorIdArr){.data = (sector_ids)->data, .cap = ArraySizeOf((sector_ids)->data)})
-
-typedef struct {
-    u8 lap_count;
-    SectorIds sector_ids;
-    Vec3 start_pos;
-} Track;
-
-typedef enum {
-    RP_START = 0,
-    RP_RACING,
-    RP_FINISHED,
-    RP_COUNT,
-} RacePhase;
-
-typedef struct {
-    Track track;
-    u32 lap;
-    RacePhase phase;
-    f32 start_countdown_dt;  // Counts from N to 0
-    f32 racing_dt;           // Counts upward from 0 for how long since race has started.
-} RaceState;
-
-////////////////////////////////////////////////////////////
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
 
 typedef enum EntityFlag {
@@ -3720,19 +3679,6 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    SectorId sector_id;    // If sector, this is your id.
-    SectorIds sector_ids;  // If racer, then the sectors you've hit.
-
-    f32 brake_value;
-    f32 charge_dt;         // Amount of time we have charged a boost for.
-    f32 max_charge;        // Amount of time until fully charged boost.
-    f32 boost_pad_thrust;  // Amount of thrust from boost pad.
-    bool item;
-    f32 item_dt;
-
-    // prize box stuff
-    bool prize_spawned;
-    f32 prize_resawpn_dt;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3807,7 +3753,6 @@ LCORE Entity* AllocateEntity() {
 
     PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
-    SectorIdsInit(&entity->sector_ids);
     FlagOn(entity->flags, EFLAG_DRAW);
     return entity;
 }
@@ -3952,7 +3897,6 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
-    RaceState race_state;
 } GameState;
 
 static GameState GState;
@@ -4106,23 +4050,6 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
-static LCamera IdealCamera(Entity* player) {
-    Mat4 model = Mat4SVRT(player->scale, player->orient, player->pos);
-
-    Vec3 eye = Vec3WTransform(Vec3Lit(Px2Meter(0.0f), Px2Meter(170.0f), Px2Meter(200.0f)), model);
-    // Vec3 eye2 = Vec3Add(player->pos, Vec3Lit(Px2Meter(-300.0f), 0.0f, Px2Meter(300.0f)));
-    // breakpoint();
-    Vec3 target = Vec3WTransform(Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(-50.0f)), model);
-    Vec3 up = Vec3Normalize(Vec3Transform(Vec3Lit(0.0f, 1.0f, 0.0f), model));
-
-    LCamera camera = {
-        .eye = eye,
-        .target = target,
-        .up = up,
-    };
-    return camera;
-}
-
 static void SceneRacingTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -4130,26 +4057,6 @@ static void SceneRacingTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->update) {
-        // Camera update
-        {
-            Entity* player = NULL;
-            for (Entity* e = NULL; IncrementEntity(&e);) {
-                if (TestFlag(e->flags, EFLAG_PLAYER_CONTROLLED)) {
-                    player = e;
-                    break;
-                }
-            }
-            Assert(player);
-            LCamera ideal_camera = IdealCamera(player);
-            gstate->camera.up = ideal_camera.up;
-            // TODO: Need to think about this more.
-            gstate->camera.eye = Vec3Lerp(gstate->camera.eye, ideal_camera.eye, 0.1f);
-            // TODO: Need to lerp rotation essentially. I wonder if I should be specifying orientation in terms
-            // of euler angles or pitch/yaw/roll. Some of the talks about screen shake mention effecting pitch
-            // yaw and roll. However eye + target is a very natural way to thinka about things. Maybe I can
-            // deduce what the target is from eye + orient + zoom maybe?
-            gstate->camera.target = ideal_camera.target;
-        }
     }
 
     if (gstate->render) {
