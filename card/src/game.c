@@ -1,4 +1,6 @@
 #ifndef UNITY_BUILD
+#include "game.h"
+
 #include <dirent.h>
 #include <errno.h>
 #include <math.h>
@@ -4093,9 +4095,11 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
+            Vec3 model_dims = Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f));
             GraphicsInfoSetLModel(&e->graphics,
                                   LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
                                                  Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f)), LGRAY));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(model_dims.x * 1.05f, model_dims.y * 1.05f));
 
             e->rank = RANK_ONE;
         }
@@ -4109,7 +4113,20 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
         // PlatformLog(LLOG_INFO, "Mouse pos: %f, %f", input->controllers[0].cursor_pos.x,
         //             input->controllers[0].cursor_pos.y);
 
-        for (Entity* e = NULL; IncrementEntity(&e);) {
+        Entity* e = NULL;
+        IncrementEntity(&e);
+        Assert(e != NULL);
+
+        Polyhedron poly = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
+
+        GameControllerState* controller = &input->controllers[0];
+        Polyhedron cursor_shape = {0};
+        PolyhedronSetCircle(&cursor_shape, controller->cursor_pos, Px2Meter(7.0f));
+
+        CollisionInfo info = {0};
+        bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
+        if (collides) {
+            PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
         }
     }
 
