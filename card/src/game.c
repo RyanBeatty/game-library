@@ -194,7 +194,7 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_CARD_ONE, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -399,6 +399,9 @@ static void TexturesInit() {
         tcache->textures[TX_DEFAULT] = tx;
         ++tcache->txlen;
     }
+
+    tcache->textures[TX_CARD_ONE] = TextureFromFile("assets/textures/card-1.png", FILTER_NEAREST);
+    ++tcache->txlen;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -980,7 +983,44 @@ static void RenderDataInit(Arena* perm) {
             TriLit(20, 21, 22),  //
             TriLit(22, 23, 20),  //
         };
-        *ArrGetPtr(&MESHES, M_CUBE) = AddMesh(vs, ArraySizeOf(vs), ts, ArraySizeOf(ts));
+        Vec2 uvs[] = {
+            // Back.
+            Vec2Lit(1.0f, 0.0f),  // 0
+            Vec2Lit(0.0f, 0.0f),  // 1
+            Vec2Lit(0.0f, 1.0f),  // 2
+            Vec2Lit(1.0f, 1.0f),  // 3
+
+            // Front.
+            Vec2Lit(0.0f, 0.0f),  // 4
+            Vec2Lit(1.0f, 0.0f),  // 5
+            Vec2Lit(1.0f, 1.0f),  // 6
+            Vec2Lit(0.0f, 1.0f),  // 7
+
+            // Left.
+            Vec2Lit(1.0f, 1.0f),  // 8
+            Vec2Lit(0.0f, 1.0f),  // 9
+            Vec2Lit(0.0f, 0.0f),  // 10
+            Vec2Lit(1.0f, 0.0f),  // 11
+
+            // Right.
+            Vec2Lit(0.0f, 1.0f),  // 12
+            Vec2Lit(1.0f, 1.0f),  // 13
+            Vec2Lit(1.0f, 0.0f),  // 14
+            Vec2Lit(0.0f, 0.0f),  // 15
+
+            // Bottom.
+            Vec2Lit(0.0f, 1.0f),  // 16
+            Vec2Lit(1.0f, 1.0f),  // 17
+            Vec2Lit(1.0f, 0.0f),  // 18
+            Vec2Lit(0.0f, 0.0f),  // 19
+
+            // Top.
+            Vec2Lit(1.0f, 1.0f),  // 20
+            Vec2Lit(0.0f, 1.0f),  // 21
+            Vec2Lit(0.0f, 0.0f),  // 22
+            Vec2Lit(1.0f, 0.0f),  // 23
+        };
+        *ArrGetPtr(&MESHES, M_CUBE) = AddMesh2(vs, ArraySizeOf(vs), uvs, ArraySizeOf(uvs), ts, ArraySizeOf(ts));
     }
 
     // Quad.
@@ -1607,6 +1647,7 @@ static LShader GetDefaultShader() {
             // For blending to work here properly, its important that either texture is specified or texture
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
+            // FragColor = txColor;
         }
     );
     // clang-format on
@@ -3608,7 +3649,7 @@ LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
     graphics->nloops = 0;
 }
 
-LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
+LCORE DrawCmd* DrawGraphicsInfo(GraphicsInfo* graphics) {
     DrawCmd* cmd = DrawLModelEx(graphics->model, graphics->frame_idx, graphics->pos, graphics->orient, graphics->scale);
 
     // If sprite is facing left, then we shift the bottom left corner to the bottom right corner
@@ -3617,6 +3658,7 @@ LCORE void DrawGraphicsInfo(GraphicsInfo* graphics) {
         cmd->meshcmd.uvoffset.x += cmd->meshcmd.uvscale.x;
         cmd->meshcmd.uvscale.x *= -1.0f;
     }
+    return cmd;
 }
 
 // LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
@@ -4097,8 +4139,8 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             e->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
             Vec3 model_dims = Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f));
             GraphicsInfoSetLModel(&e->graphics,
-                                  LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                                 Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f)), LGRAY));
+                                  LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_CARD_ONE), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f)), LCLEAR));
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(model_dims.x * 1.05f, model_dims.y * 1.05f));
 
             e->rank = RANK_ONE;
@@ -4126,7 +4168,7 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
         bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
         if (collides && controller->action_down.down) {
             FOLLOWING = true;
-            // PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
+            PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
         } else if (!controller->action_down.down) {
             FOLLOWING = false;
         }
@@ -4157,11 +4199,6 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                     e->graphics.scale = e->scale;
                     GraphicsInfoTickAnimation(&e->graphics, dt);
                     DrawGraphicsInfo(&e->graphics);
-
-                    if (e->rank != RANK_NONE) {
-                        DrawQuad(Vec3Add(e->pos, Vec3Lit(0.0f, 0.0f, 1.0f)), e->graphics.model.scale.x * 0.7f,
-                                 e->graphics.model.scale.y * 0.7f, e->orient, LBLACK);
-                    }
                 }
             }
 
