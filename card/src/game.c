@@ -4196,29 +4196,38 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->update) {
-        static bool FOLLOWING = false;
-
-        Entity* e = NULL;
-        IncrementEntity(&e);
-        Assert(e != NULL);
-
-        Polyhedron poly = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
-
         GameControllerState* controller = &input->controllers[0];
-        Polyhedron cursor_shape = {0};
-        PolyhedronSetCircle(&cursor_shape, controller->cursor_pos, Px2Meter(7.0f));
 
-        CollisionInfo info = {0};
-        bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
-        if (collides && controller->action_down.down) {
-            FOLLOWING = true;
-            PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
-        } else if (!controller->action_down.down) {
-            FOLLOWING = false;
-        }
+        {
+            static EntityId FOLLOWER = NULLID;
 
-        if (FOLLOWING) {
-            e->pos = Vec2ToVec3(controller->cursor_pos);
+            if (!EntityIdEq(FOLLOWER, NULLID)) {
+                if (controller->action_down.down) {
+                    Entity* e = EntityFromId(FOLLOWER);
+                    Assert(e != NULL);
+                    e->pos.x = controller->cursor_pos.x;
+                    e->pos.y = controller->cursor_pos.y;
+                } else {
+                    FOLLOWER = NULLID;
+                }
+            } else {
+                Polyhedron cursor_shape = {0};
+                PolyhedronSetCircle(&cursor_shape, controller->cursor_pos, Px2Meter(7.0f));
+                for (Entity* e = NULL; IncrementEntity(&e);) {
+                    if (TestFlag(e->flags, EFLAG_IS_CURSOR)) {
+                        continue;
+                    }
+
+                    Polyhedron poly = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
+
+                    CollisionInfo info = {0};
+                    bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
+                    if (collides && controller->action_down.down) {
+                        FOLLOWER = e->id;
+                        PlatformLog(LLOG_INFO, "Cursor -- Card Collision!");
+                    }
+                }
+            }
         }
 
         for (Entity* e = NULL; IncrementEntity(&e);) {
