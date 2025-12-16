@@ -194,7 +194,7 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_CARD_ONE, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_CARD_ONE, TX_CARD_TWO, TX_CARD_THREE, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -401,6 +401,8 @@ static void TexturesInit() {
     }
 
     tcache->textures[TX_CARD_ONE] = TextureFromFile("assets/textures/card-1.png", FILTER_NEAREST);
+    tcache->textures[TX_CARD_TWO] = TextureFromFile("assets/textures/card-2.png", FILTER_NEAREST);
+    tcache->textures[TX_CARD_THREE] = TextureFromFile("assets/textures/card-3.png", FILTER_NEAREST);
     ++tcache->txlen;
 }
 
@@ -4134,9 +4136,10 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
+        Vec3 pos = Vec3Zero();
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3Lit(0.0f, 0.0f, 0.0f);
+            e->pos = pos;
             Vec3 model_dims = Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f));
             GraphicsInfoSetLModel(&e->graphics,
                                   LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_CARD_ONE), Vec3Zero(), Mat4Identity(),
@@ -4144,6 +4147,36 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(model_dims.x * 1.05f, model_dims.y * 1.05f));
 
             e->rank = RANK_ONE;
+
+            pos.x += e->shape.aabb2d.r.x * 2.0f * 1.2f;
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = pos;
+            Vec3 model_dims = Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f));
+            GraphicsInfoSetLModel(&e->graphics,
+                                  LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_CARD_TWO), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f)), LCLEAR));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(model_dims.x * 1.05f, model_dims.y * 1.05f));
+
+            e->rank = RANK_ONE;
+
+            pos.x += e->shape.aabb2d.r.x * 2.0f * 1.2f;
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = pos;
+            Vec3 model_dims = Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f));
+            GraphicsInfoSetLModel(&e->graphics,
+                                  LModelFromMesh(GetMesh(M_CUBE), GetTexture(TX_CARD_THREE), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Lit(0.0635, 0.0889, Px2Meter(1.0f)), LCLEAR));
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(model_dims.x * 1.05f, model_dims.y * 1.05f));
+
+            e->rank = RANK_ONE;
+
+            pos.x += e->shape.aabb2d.r.x * 2.0f * 1.2f;
         }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
