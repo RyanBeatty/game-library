@@ -3689,11 +3689,9 @@ typedef enum EntityFlag {
     EFLAG_ACTIVE = 1 << 0,
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
-    EFLAG_START_FINISH_LINE = 1 << 3,
-    EFLAG_WALL = 1 << 4,
-    EFLAG_SECTOR = 1 << 5,
-    EFLAG_BOOST_PAD = 1 << 6,
-    EFLAG_PRIZE_BOX = 1 << 7,
+    EFLAG_WALL = 1 << 3,
+    EFLAG_FOLLOW_CURSOR = 1 << 4,
+    EFLAG_IS_CURSOR = 1 << 4,
 } EntityFlag;
 
 typedef struct {
@@ -4179,6 +4177,19 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             pos.x += e->shape.aabb2d.r.x * 2.0f * 1.2f;
         }
 
+        {
+            GameControllerState* controller = &input->controllers[0];
+
+            Entity* e = AllocateEntity();
+            e->pos = Vec2ToVec3(controller->cursor_pos);
+            Vec3 model_dims = Vec3Lit(Px2Meter(7.0f), Px2Meter(7.0f), Px2Meter(1.0f));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_ICOSPHERE), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), model_dims, LBLUE));
+            PolyhedronSetCircle(&e->shape, Vec2Zero(), model_dims.x);
+            FlagOn(e->flags, EFLAG_FOLLOW_CURSOR);
+            FlagOn(e->flags, EFLAG_IS_CURSOR);
+        }
+
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
                                    .target = Vec3Zero(),
                                    .up = Vec3Lit(0.0f, 1.0f, 0.0f)};
@@ -4209,6 +4220,13 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
         if (FOLLOWING) {
             e->pos = Vec2ToVec3(controller->cursor_pos);
         }
+
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_FOLLOW_CURSOR)) {
+                e->pos.x = controller->cursor_pos.x;
+                e->pos.y = controller->cursor_pos.y;
+            }
+        }
     }
 
     if (gstate->render) {
@@ -4233,11 +4251,6 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                     GraphicsInfoTickAnimation(&e->graphics, dt);
                     DrawGraphicsInfo(&e->graphics);
                 }
-            }
-
-            if (true) {
-                GameControllerState* controller = &input->controllers[0];
-                DrawLCircle(Vec2ToVec3Z(controller->cursor_pos, 2.0f), Px2Meter(7.0f), LBLUE);
             }
 
             EndShaderPass();
