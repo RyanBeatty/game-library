@@ -4139,6 +4139,17 @@ typedef struct {
 
 static CardGrid CARD_GRID = {0};
 
+static Vec2 CARD_GRID_DIMS = Vec2Lit(Px2Meter(90.0f), Px2Meter(140.0f));
+static Vec3 CARD_GRID_ORIGIN = Vec3Lit(Px2Meter(-300.0f), Px2Meter(300.0f), 0.0f);
+
+// Reminder that x should be the col number and y should be the row number
+static Vec3 CardGridPosToWorld(i32 x, i32 y) {
+    Mat4 card_grid_m = Mat4Multiply(Mat4TranslateV(CARD_GRID_ORIGIN),
+                                    Mat4ScaleV(Vec3Lit(CARD_GRID_DIMS.x * 1.2f, -CARD_GRID_DIMS.y * 1.2f, 0.0f)));
+    Vec3 pos = Vec3WTransform(Vec3Lit(x, y, 0.0f), card_grid_m);
+    return pos;
+}
+
 static void SceneCardTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -4272,13 +4283,11 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             }
 
             {
-                Vec2 dims = Vec2Lit(Px2Meter(90.0f), Px2Meter(140.0f));
-                Vec3 grid_origin = Vec3Lit(Px2Meter(-300.0f), Px2Meter(300.0f), 0.0f);
                 for (u32 r = 0; r < ArraySizeOf(CARD_GRID.card_cells); ++r) {
                     for (u32 c = 0; c < ArraySizeOf(CARD_GRID.card_cells[0]); ++c) {
-                        Vec3 pos = Vec3Lit(grid_origin.x + (c * dims.x * 1.2f), grid_origin.y - (r * dims.y * 1.2f),
-                                           grid_origin.z);
-                        DrawQuad(pos, dims.x, dims.y, Mat4Identity(), LRED);
+                        // Transform from grid space to world space.
+                        Vec3 pos = CardGridPosToWorld(c, r);
+                        DrawQuad(pos, CARD_GRID_DIMS.x, CARD_GRID_DIMS.y, Mat4Identity(), LRED);
                     }
                 }
             }
