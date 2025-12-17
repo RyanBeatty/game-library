@@ -4262,6 +4262,18 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                 }
             }
 
+            {
+                Vec2 dims = Vec2Lit(Px2Meter(90.0f), Px2Meter(140.0f));
+                Vec3 grid_origin = Vec3Lit(Px2Meter(-300.0f), Px2Meter(300.0f), 0.0f);
+                for (u32 r = 0; r < 2; ++r) {
+                    for (u32 c = 0; c < 2; ++c) {
+                        Vec3 pos = Vec3Lit(grid_origin.x + (c * dims.x * 1.2f), grid_origin.y - (r * dims.y * 1.2f),
+                                           grid_origin.z);
+                        DrawQuad(pos, dims.x, dims.y, Mat4Identity(), LRED);
+                    }
+                }
+            }
+
             EndShaderPass();
         }
 
@@ -4272,7 +4284,7 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            DrawLText("hello", strlen("hello"), Vec2Zero(), LBLACK);
+            // DrawLText("hello", strlen("hello"), Vec2Zero(), LBLACK);
 
             EndShaderPass();
         }
