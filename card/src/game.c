@@ -4232,8 +4232,7 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                     e->pos.x = controller->cursor_pos.x;
                     e->pos.y = controller->cursor_pos.y;
                 } else {
-                    FOLLOWER = NULLID;
-
+                    Entity* follower = EntityFromId(FOLLOWER);
                     Polyhedron cursor_shape = {0};
                     PolyhedronSetCircle(&cursor_shape, controller->cursor_pos, Px2Meter(7.0f));
                     for (i32 r = 0; r < ArraySizeOf(CARD_GRID.cells); ++r) {
@@ -4254,9 +4253,12 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                             bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
                             if (collides) {
                                 PlatformLog(LLOG_INFO, "Card Grid Cell Collision %d %d", r, c);
+                                follower->pos = cell_pos_world;
                             }
                         }
                     }
+
+                    FOLLOWER = NULLID;
                 }
             } else {
                 Polyhedron cursor_shape = {0};
