@@ -4232,6 +4232,11 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                     e->pos.x = controller->cursor_pos.x;
                     e->pos.y = controller->cursor_pos.y;
                 } else {
+                    // There a lot of crap here, I think in general moving to integrating this into entity logic might
+                    // be for the best. Could model this as follows: There is a root entity which has the proper grid ->
+                    // world transform set. Then each cell is a sub entity which is linked from the root. These are all
+                    // in local grid space (so pos is cell pos in array). I could coalesce this into an Polyhedron vs
+                    // entity system collision check basically.
                     Entity* follower = EntityFromId(FOLLOWER);
                     Polyhedron cursor_shape = {0};
                     PolyhedronSetCircle(&cursor_shape, controller->cursor_pos, Px2Meter(7.0f));
@@ -4241,9 +4246,6 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                             // space? probably? What about how in poly transform we are apply a scale.
                             Vec3 cell_pos_world = CardGridPosToWorld(c, r);
                             Polyhedron poly = {0};
-                            if (c > 0) {
-                                breakpoint();
-                            }
                             // PolyHedronSetAABB2DFromWH(&poly, Vec2Lit(c, r), Vec2Lit(1.0f, 1.0f));
                             PolyHedronSetAABB2DFromWH(&poly, Vec2Zero(), Vec2Lit(1.0f, 1.0f));
                             poly = PolyhedronTransform(poly, Vec2ToVec3Z(CARD_GRID_DIMS, 1.0f), Mat4Identity(),
