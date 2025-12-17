@@ -4130,6 +4130,15 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
+// TODO: Maybe this should all be integrated into an Entity? idk think about that later. Get stuff in game for now.
+typedef struct {
+    struct {
+        bool free;
+    } card_cells[2][3];
+} CardGrid;
+
+static CardGrid CARD_GRID = {0};
+
 static void SceneCardTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -4265,8 +4274,8 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             {
                 Vec2 dims = Vec2Lit(Px2Meter(90.0f), Px2Meter(140.0f));
                 Vec3 grid_origin = Vec3Lit(Px2Meter(-300.0f), Px2Meter(300.0f), 0.0f);
-                for (u32 r = 0; r < 2; ++r) {
-                    for (u32 c = 0; c < 2; ++c) {
+                for (u32 r = 0; r < ArraySizeOf(CARD_GRID.card_cells); ++r) {
+                    for (u32 c = 0; c < ArraySizeOf(CARD_GRID.card_cells[0]); ++c) {
                         Vec3 pos = Vec3Lit(grid_origin.x + (c * dims.x * 1.2f), grid_origin.y - (r * dims.y * 1.2f),
                                            grid_origin.z);
                         DrawQuad(pos, dims.x, dims.y, Mat4Identity(), LRED);
