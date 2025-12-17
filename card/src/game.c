@@ -2874,7 +2874,11 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
         case PH_AABB2D: {
             // This might be a bit jank. but I transform the center with translation and then
             // drop the 3rd dimension (essentially projecting back to 2d).
+            // TODO: I think to be fully correct here I need to take into account scale.
             shape.aabb2d.c = Vec3ToVec2(Vec3Add(Vec2ToVec3(shape.aabb2d.c), t));
+            // TODO: Do I need to take scale into account here? think about this more. This might be more correct.
+            // Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
+            // shape.aabb2d.c = Vec3ToVec2(Vec3WTransform(Vec2ToVec3(shape.aabb2d.c), m));
             shape.aabb2d.r.x *= s.x;
             shape.aabb2d.r.y *= s.y;
             break;
@@ -4134,7 +4138,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 typedef struct {
     struct {
         bool free;
-    } card_cells[2][3];
+    } cells[2][3];
 } CardGrid;
 
 static CardGrid CARD_GRID = {0};
@@ -4229,6 +4233,30 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
                     e->pos.y = controller->cursor_pos.y;
                 } else {
                     FOLLOWER = NULLID;
+
+                    Polyhedron cursor_shape = {0};
+                    PolyhedronSetCircle(&cursor_shape, controller->cursor_pos, Px2Meter(7.0f));
+                    for (i32 r = 0; r < ArraySizeOf(CARD_GRID.cells); ++r) {
+                        for (i32 c = 0; c < ArraySizeOf(CARD_GRID.cells[0]); ++c) {
+                            // TODO: We are mixing a lot of things here. Should the poly be specified fully in the grid
+                            // space? probably? What about how in poly transform we are apply a scale.
+                            Vec3 cell_pos_world = CardGridPosToWorld(c, r);
+                            Polyhedron poly = {0};
+                            if (c > 0) {
+                                breakpoint();
+                            }
+                            // PolyHedronSetAABB2DFromWH(&poly, Vec2Lit(c, r), Vec2Lit(1.0f, 1.0f));
+                            PolyHedronSetAABB2DFromWH(&poly, Vec2Zero(), Vec2Lit(1.0f, 1.0f));
+                            poly = PolyhedronTransform(poly, Vec2ToVec3Z(CARD_GRID_DIMS, 1.0f), Mat4Identity(),
+                                                       cell_pos_world);
+
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&cursor_shape, &poly, &info.normal, &info.depth);
+                            if (collides) {
+                                PlatformLog(LLOG_INFO, "Card Grid Cell Collision %d %d", r, c);
+                            }
+                        }
+                    }
                 }
             } else {
                 Polyhedron cursor_shape = {0};
@@ -4283,8 +4311,8 @@ static void SceneCardTick(GameState* gstate, GameInput* input) {
             }
 
             {
-                for (u32 r = 0; r < ArraySizeOf(CARD_GRID.card_cells); ++r) {
-                    for (u32 c = 0; c < ArraySizeOf(CARD_GRID.card_cells[0]); ++c) {
+                for (u32 r = 0; r < ArraySizeOf(CARD_GRID.cells); ++r) {
+                    for (u32 c = 0; c < ArraySizeOf(CARD_GRID.cells[0]); ++c) {
                         // Transform from grid space to world space.
                         Vec3 pos = CardGridPosToWorld(c, r);
                         DrawQuad(pos, CARD_GRID_DIMS.x, CARD_GRID_DIMS.y, Mat4Identity(), LRED);
