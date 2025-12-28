@@ -872,9 +872,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->left_stick.y += keyboard->down[VK_UP] ? 1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_DOWN] ? -1.0f : 0.0f;
 
-                PlatformLog(LLOG_INFO, "Key down: %d, Prev down: %d, controller pressed: %d", keyboard->down[KEY_DOWN],
-                            keyboard_prev->down[KEY_DOWN], controller->action_down.pressed);
-
                 {
                     // Windows gives us mouse position in screen space where origin is in top left. We need to map it to
                     // bottom left.

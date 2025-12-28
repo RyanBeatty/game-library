@@ -4187,7 +4187,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = &input->controllers[0];
 
-        PlatformLog(LLOG_INFO, "Game pressed: %d", controller->action_down.pressed);
         if (controller->action_down.pressed) {
             SCORE += 1.5f;
         }
@@ -4363,6 +4362,11 @@ void GameTick(f32 dt, GameInput* input) {
             gstate->scenefuncs[gstate->sceneid](gstate, input);
             gstate->init = false;
             gstate->accumulated_time -= gstate->fixed_dt;
+
+            // HACK: Zero out input after first tick so that we only consume the input for a single simulation frame.
+            // This will likely totally break things like controller movement (e.g. we will detect moving one sim frame
+            // and then standing still the next). So I should consider a better alternative at some point.
+            *input = (GameInput){0};
         }
 
         // Render
