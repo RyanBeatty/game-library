@@ -3681,12 +3681,6 @@ static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 
 ////////////////////////////////////////////////////////////
 
-typedef enum {
-    RANK_NONE = 0,
-    RANK_ONE = 1,
-} CardRank;
-
-////////////////////////////////////////////////////////////
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
 
 typedef enum EntityFlag {
@@ -3736,7 +3730,8 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    CardRank rank;
+
+    EntityId next_hamper;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -3818,14 +3813,14 @@ LCORE Entity* AllocateEntity() {
 // Mark entity as being deactivated at the next cleanup. We do it this way so that we have
 // precise control over when entities go out of scope. Mentally its easy to program against
 // All entities that are active during a frame stay active throughout the frame until the end.
-LCORE void SoftDeactivateEntity(EntityId id) {
-    Entity* entity = EntityFromId(id);
-    if (entity) {
-        entity->inactive_to_be = true;
+LCORE void SoftDeactivateEntity(Entity* e) {
+    if (e) {
+        e->inactive_to_be = true;
     }
 }
 
-LCORE void DeactivateEntities() {
+// Sweep through the entities to be deactivated, and mark them as inactive.
+static void DeactivateEntities() {
     EntityManager* em = GetEntityManager();
     // Always have a null entity at position 0
     for (isize i = NULLID.idx + 1; i < ArrLen(&em->entities); ++i) {
@@ -4137,6 +4132,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 SCORE = 0.0f;
+    static EntityId HAMPER_ROOT = {0};
 
     f32 dt = gstate->dt;
 
@@ -4153,6 +4149,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                Mat4Identity(), hamper_dims_world, LBLACK));
+
+            HAMPER_ROOT = e->id;
         }
 
         {
@@ -4187,8 +4185,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = &input->controllers[0];
 
-        if (controller->action_down.pressed || controller->action_left.pressed || controller->action_right.pressed) {
-            SCORE += 1.5f;
+        if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
+            if (controller->action_down.pressed || controller->action_left.pressed ||
+                controller->action_right.pressed) {
+                SCORE += 1.5f;
+
+                Entity* e = EntityFromId(HAMPER_ROOT);
+                Assert(e != NULL);
+                HAMPER_ROOT = e->next_hamper;
+                SoftDeactivateEntity(e);
+            }
         }
     }
 
@@ -4372,6 +4378,7 @@ void GameTick(f32 dt, GameInput* input) {
             // potentially think about ordering here as if we do it this way where we consume input, does this mean the
             // sim sees the input "backwards" in time?
             *input = (GameInput){0};
+            DeactivateEntities();
         }
 
         // Render
