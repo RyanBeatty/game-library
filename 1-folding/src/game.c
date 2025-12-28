@@ -4143,14 +4143,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Vec3 hamper_dims_world = Vec3Lit(Px2Meter(50.0f), Px2Meter(50.0f), 0.0f);
         Mat4 hamper_to_world =
             Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), hamper_dims_world, LBLACK));
 
-            HAMPER_ROOT = e->id;
+        {
+            for (i32 i = 0; i < 5; ++i) {
+                Entity* e = AllocateEntity();
+                e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                                   Mat4Identity(), hamper_dims_world, LBLACK));
+
+                e->next_hamper = HAMPER_ROOT;
+                HAMPER_ROOT = e->id;
+            }
         }
 
         {
