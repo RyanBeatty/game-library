@@ -830,7 +830,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                                 PlatformLog(LLOG_DEBUG, "Controller %d Connected", i);
                                 cur_input->controller_connected[i] = true;
                             } else {
-                                PlatformLog(LLOG_DEBUG, "Controller %d NOT Connected", i);
+                                // TODO: Maybe only log this every nth time or something?
+                                // PlatformLog(LLOG_DEBUG, "Controller %d NOT Connected", i);
                             }
                         }
                     }
@@ -839,9 +840,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 
         // TODO; Translate input to GameInput
+        // TODO: There is a potentially huge source of bugs here with the way pressed works. If we detect a pressed
+        // action and mark it, its possible that we might not advance the simulation on the call to GameTick. In which
+        // case that pressed event will be lost.
         GameInput input = {0};
         {
             {
+                static const isize KEY_UP = VK_UP;
+                static const isize KEY_DOWN = VK_DOWN;
+                static const isize KEY_LEFT = VK_LEFT;
+                static const isize KEY_RIGHT = VK_RIGHT;
+
                 GameControllerState* controller = &input.controllers[0];
 
                 Win32Input* keyboard = w32state->cur_input;
@@ -849,15 +858,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->connected = true;
 
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-                controller->action_down.down = keyboard->down[VK_SPACE];
-                controller->action_down.pressed = !keyboard->down[VK_SPACE] && keyboard_prev->down[VK_SPACE];
-                controller->action_left.down = keyboard->down[0x5A];
-                controller->action_left.pressed = !keyboard->down[0x5A] && keyboard_prev->down[0x5A];
+                controller->action_up.down = keyboard->down[KEY_UP];
+                controller->action_up.pressed = !keyboard->down[KEY_UP] && keyboard_prev->down[KEY_UP];
+                controller->action_down.down = keyboard->down[KEY_DOWN];
+                controller->action_down.pressed = !keyboard->down[KEY_DOWN] && keyboard_prev->down[KEY_DOWN];
+                controller->action_left.down = keyboard->down[KEY_LEFT];
+                controller->action_left.pressed = !keyboard->down[KEY_LEFT] && keyboard_prev->down[KEY_LEFT];
+                controller->action_right.down = keyboard->down[KEY_RIGHT];
+                controller->action_right.pressed = !keyboard->down[KEY_RIGHT] && keyboard_prev->down[KEY_RIGHT];
 
                 controller->left_stick.x += keyboard->down[VK_RIGHT] ? 1.0f : 0.0f;
                 controller->left_stick.x += keyboard->down[VK_LEFT] ? -1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_UP] ? 1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_DOWN] ? -1.0f : 0.0f;
+
+                PlatformLog(LLOG_INFO, "Key down: %d, Prev down: %d, controller pressed: %d", keyboard->down[KEY_DOWN],
+                            keyboard_prev->down[KEY_DOWN], controller->action_down.pressed);
 
                 {
                     // Windows gives us mouse position in screen space where origin is in top left. We need to map it to
@@ -872,9 +888,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     Vec2 cursor_world = GameScreenToWorld2D(pos_screen);
                     controller->cursor_pos = cursor_world;
 
-                    controller->action_down.down |= keyboard->down[VK_LBUTTON];
-                    // TODO: I overwrite the space bar above. Should rethink If I allow both.
-                    controller->action_down.pressed = !keyboard->down[VK_LBUTTON] && keyboard_prev->down[VK_LBUTTON];
+                    // controller->action_down.down |= keyboard->down[VK_LBUTTON];
+                    // controller->action_down.pressed |= !keyboard->down[VK_LBUTTON] &&
+                    // keyboard_prev->down[VK_LBUTTON];
                 }
             }
 

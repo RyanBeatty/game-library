@@ -4186,6 +4186,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->update) {
         GameControllerState* controller = &input->controllers[0];
+
+        PlatformLog(LLOG_INFO, "Game pressed: %d", controller->action_down.pressed);
+        if (controller->action_down.pressed) {
+            SCORE += 1.5f;
+        }
     }
 
     if (gstate->render) {

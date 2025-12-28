@@ -30,12 +30,12 @@ typedef struct {
     Vec2 cursor_pos;
 
     union {
-        GameButtonState buttons[2];
+        GameButtonState buttons[4];
         struct {
-            // GameButtonState action_up;
+            GameButtonState action_up;
             GameButtonState action_down;
             GameButtonState action_left;
-            // GameButtonState action_right;
+            GameButtonState action_right;
         };
     };
 } GameControllerState;
