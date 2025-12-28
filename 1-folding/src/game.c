@@ -4187,7 +4187,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = &input->controllers[0];
 
-        if (controller->action_down.pressed) {
+        if (controller->action_down.pressed || controller->action_left.pressed || controller->action_right.pressed) {
             SCORE += 1.5f;
         }
     }
