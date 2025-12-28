@@ -1,3 +1,18 @@
+GAME
+* Goal
+    * Sort laundry into correct bins to get points. Get the highest score in 2 minutes. Avoid bombs
+* 3 bins to sort - shirts + tops, pants + skirts, socks + underwear. each maps to directional key
+* correct sorting scores points
+* successive correct scoring builds combo
+* bombs appear occasionally, must remove. if sorted, breaks combo (and potentially stuns 1s or loses health)
+* rotate cothing sprites to make unclear which bin they need to be sorted into?
+* 10 different pairs of clothes
+
+
+
+
+
+
 Conventions
 * Right hand coordinate system
 * positive rotation is right hand thumb along vector and direction hands curl
@@ -17,29 +32,6 @@ Engine Improvments/Thoughts
 * There is still aliasing issues with normal geometry when it is rotated or scaled. (This is separate from the sub pixel rendering issues I'm seeing). I believe MSAA will fix this (https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing). Probably would be a good opportunity to tackle better abstraction for frame buffer related operations.
 * If the first scene rendered is the stage scene, we fall through the world because the first value of dt is so large that our physics teleports us downward. I think this should be addressed by fixing the timestep and decoupling the renderer from update logic.
 * Issues on win32 where sprites aren't rendering during stage scene. I think this might be due to near/far clip planes being set to [-1, 1]. Not sure why this is a problem on win32 and not raylib.
-
-MEGAMAN GOALS
-* at least 1 stage + boss fight
-* ideally 1 new stage + boss fight
-* colors
-    * choose a color pallete to import into aseprite. ONLY USE THESE COLORS
-    * 3 color character sprites
-* sound
-    * make a stage track that loops
-
-
-TODO MEGAMAN
-* Issues with ladder dismount. from woodman room 0 to room 1. hard to dismount the ladder.
-* Collision system issue:
-    * when walking over two ground bboxes. player character will start bouncing rapidly. this is probably due to the fact that we are resolving collision constraints twice (one for each ground plane) but the second resolution probably isn't necessary since the resolution of the first constraint will also satisfy the second. This might be fixed by moving to iterative solver approach where we check each constraint for violation before attempting to resolve.
-* I should seriously consider integrating with something like ldtk. Making new stages is painful and error prone. For now though lets keep managing stages via code. I'm still in prototyping phase of just getting some mechanics into the game.
-* Memory
-    * unittest alignment
-    * Allocate global memory
-    * Dynamic array
-    * Convert collision infos to be list of colliders
-* scenes
-    * boss scene
 
 
 TODO

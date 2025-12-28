@@ -4126,7 +4126,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 }
 
 // 1 meter = N pixels scale factor.
-#define PPM (1600.0f)
+#define PPM (1.0f)
 #define MPP (1.0f / PPM)
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
@@ -4135,7 +4135,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
-        Vec3 pos = Vec3Zero();
+        Vec3 hamper_origin_world = Vec3Zero();
+        Vec3 hamper_dims_world = Vec3Lit(Px2Meter(50.0f), Px2Meter(50.0f), 0.0f);
+        Mat4 hamper_to_world =
+            Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), hamper_dims_world, LBLACK));
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3WTransform(Vec3Lit(-1.0f, 0.0f, 0.0f), hamper_to_world);
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), hamper_dims_world, LRED));
+        }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
                                    .target = Vec3Zero(),
@@ -4180,7 +4198,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            DrawLText("hello", strlen("hello"), Vec2Zero(), LBLACK);
+            // DrawLText("hello", strlen("hello"), Vec2Zero(), LBLACK);
 
             EndShaderPass();
         }
