@@ -3676,12 +3676,15 @@ LCORE DrawCmd* DrawGraphicsInfo(GraphicsInfo* graphics) {
 
 ////////////////////////////////////////////////////////////
 
-static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
-static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
+typedef enum { HAMPER_NONE = 0, HAMPER_LEFT, HAMPER_DOWN, HAMPER_RIGHT, HAMPER_COUNT } HamperType;
 
 ////////////////////////////////////////////////////////////
 
+static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
+static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
+
+////////////////////////////////////////////////////////////
 
 typedef enum EntityFlag {
     EFLAG_NONE = 0,
@@ -3731,6 +3734,7 @@ typedef struct {
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
 
+    HamperType hamper_type;
     EntityId next_hamper;
 } Entity;
 
@@ -4151,7 +4155,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
                 GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
                                                                    Mat4Identity(), hamper_dims_world, LBLACK));
-
+                e->hamper_type = HAMPER_DOWN;
                 e->next_hamper = HAMPER_ROOT;
                 HAMPER_ROOT = e->id;
             }
@@ -4190,12 +4194,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GameControllerState* controller = &input->controllers[0];
 
         if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
-            if (controller->action_down.pressed || controller->action_left.pressed ||
-                controller->action_right.pressed) {
+            Entity* e = EntityFromId(HAMPER_ROOT);
+            Assert(e != NULL);
+            bool sorted = (e->hamper_type == HAMPER_LEFT && controller->action_left.pressed) ||
+                          (e->hamper_type == HAMPER_DOWN && controller->action_down.pressed) ||
+                          (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
+            if (sorted) {
                 SCORE += 1.5f;
 
-                Entity* e = EntityFromId(HAMPER_ROOT);
-                Assert(e != NULL);
                 HAMPER_ROOT = e->next_hamper;
                 SoftDeactivateEntity(e);
             }
