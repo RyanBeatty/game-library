@@ -4155,6 +4155,22 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                                Mat4Identity(), hamper_dims_world, LRED));
         }
 
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3WTransform(Vec3Lit(0.0f, -1.0f, 0.0f), hamper_to_world);
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), hamper_dims_world, LBLUE));
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3WTransform(Vec3Lit(1.0f, 0.0f, 0.0f), hamper_to_world);
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
+                                                               Mat4Identity(), hamper_dims_world, LGREEN));
+        }
+
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
                                    .target = Vec3Zero(),
                                    .up = Vec3Lit(0.0f, 1.0f, 0.0f)};
