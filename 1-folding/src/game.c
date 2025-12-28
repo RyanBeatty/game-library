@@ -4366,6 +4366,11 @@ void GameTick(f32 dt, GameInput* input) {
             // HACK: Zero out input after first tick so that we only consume the input for a single simulation frame.
             // This will likely totally break things like controller movement (e.g. we will detect moving one sim frame
             // and then standing still the next). So I should consider a better alternative at some point.
+            // TODO: Lets try the following approach. Add back in half_transition count + ended down to button state.
+            // Then before (or maybe after?) each sim tick, we consume only button input. E.g. if a button was detected
+            // as being pressed it would then become unpressed (but down dependning on half transition count). Need to
+            // potentially think about ordering here as if we do it this way where we consume input, does this mean the
+            // sim sees the input "backwards" in time?
             *input = (GameInput){0};
         }
 
