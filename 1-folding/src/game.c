@@ -3318,12 +3318,16 @@ LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
     return dims;
 }
 
+LCORE Vec2 LFontMeasureStr8(LFont font, Str8 str) { return LFontMeasureText(font, str.data, str.len); }
+
 // Assumes the font texture contains the ascii printable characters on a single line.
 // Characters (note the space beginning the sequence is included):
 // !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
 LCORE void DrawLText(char* text, u32 len, Vec2 pos, Vec4 color) {
     DrawLTextEx(GetActiveFont(), text, len, Vec2Lit(pos.x, pos.y), color);
 }
+
+LCORE void DrawStr8Ex(LFont font, Vec2 pos, Vec4 color, Str8 str) { DrawLTextEx(font, str.data, str.len, pos, color); }
 
 LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
     char buffer[1024];
@@ -4132,9 +4136,13 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 #define Px2Meter(px) ((px) * MPP)
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
+    static f32 SCORE = 0.0f;
+
     f32 dt = gstate->dt;
 
     if (gstate->init) {
+        SCORE = 0.0f;
+
         Vec3 hamper_origin_world = Vec3Zero();
         Vec3 hamper_dims_world = Vec3Lit(Px2Meter(50.0f), Px2Meter(50.0f), 0.0f);
         Mat4 hamper_to_world =
@@ -4214,8 +4222,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            // DrawLText("hello", strlen("hello"), Vec2Zero(), LBLACK);
+            Vec2 pos = Vec2Lit(10.0f, height);
+            LFont font = GetLFontClosest(40.0f);
+            Vec2 spacing = Vec2Lit(0.0f, 10.0f);
 
+            {
+                pos = Vec2Sub(pos, spacing);
+
+                char buffer[256] = {0};
+                snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", SCORE);
+                Str8 txt = Str8FromC(buffer);
+                Vec2 dims = LFontMeasureStr8(font, txt);
+                pos.y -= dims.y;
+                DrawStr8Ex(font, pos, LBLACK, txt);
+            }
             EndShaderPass();
         }
 

@@ -130,6 +130,7 @@ typedef struct {
 } Str8;
 
 #define Str8Lit(s) ((Str8){.data = (s), .len = (ArraySizeOf((s)) - 1)})
+#define Str8FromC(s) ((Str8){.data = (s), .len = strlen(s)})
 
 static Str8 Str8FromByteBuffer(ByteBuffer buffer);
 
