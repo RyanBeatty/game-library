@@ -1,3 +1,6 @@
+TARGET DEV TIME BUDGET: 60 HOURS
+CURRENT DEV TIME: 5 HOURS
+
 GAME
 * Goal
     * Sort laundry into correct bins to get points. Get the highest score in 2 minutes. Avoid bombs
