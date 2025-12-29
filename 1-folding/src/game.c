@@ -4137,11 +4137,13 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 SCORE = 0.0f;
     static EntityId HAMPER_ROOT = {0};
+    static f32 TIMER_SEC = 0.0f;
 
     f32 dt = gstate->dt;
 
     if (gstate->init) {
         SCORE = 0.0f;
+        TIMER_SEC = 2.0f * 60.0f;
 
         Vec3 hamper_origin_world = Vec3Zero();
         Vec3 hamper_dims_world = Vec3Lit(Px2Meter(50.0f), Px2Meter(50.0f), 0.0f);
@@ -4199,6 +4201,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = &input->controllers[0];
 
+        TIMER_SEC -= dt;
+
         if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
             Entity* e = EntityFromId(HAMPER_ROOT);
             Assert(e != NULL);
@@ -4248,19 +4252,41 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            Vec2 pos = Vec2Lit(10.0f, height);
             LFont font = GetLFontClosest(40.0f);
-            Vec2 spacing = Vec2Lit(0.0f, 10.0f);
 
             {
-                pos = Vec2Sub(pos, spacing);
+                Vec2 spacing = Vec2Lit(0.0f, 10.0f);
+                Vec2 pos = Vec2Lit(10.0f, height);
 
-                char buffer[256] = {0};
-                snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", SCORE);
-                Str8 txt = Str8FromC(buffer);
-                Vec2 dims = LFontMeasureStr8(font, txt);
-                pos.y -= dims.y;
-                DrawStr8Ex(font, pos, LBLACK, txt);
+                {
+                    pos = Vec2Sub(pos, spacing);
+
+                    char buffer[256] = {0};
+                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", SCORE);
+                    Str8 txt = Str8FromC(buffer);
+                    Vec2 dims = LFontMeasureStr8(font, txt);
+                    pos.y -= dims.y;
+                    DrawStr8Ex(font, pos, LBLACK, txt);
+                }
+            }
+
+            {
+                Vec2 spacing = Vec2Lit(0.0f, 0.0f);
+                Vec2 pos = Vec2Lit(width * 0.5f, height * 0.75f);
+
+                {
+                    i32 minutes = TIMER_SEC / 60.0f;
+                    i32 seconds = f32mod(TIMER_SEC, 60.0f);
+
+                    pos = Vec2Sub(pos, spacing);
+
+                    char buffer[256] = {0};
+                    snprintf(buffer, ArraySizeOf(buffer) - 1, "%d:%02d", minutes, seconds);
+                    Str8 txt = Str8FromC(buffer);
+                    Vec2 dims = LFontMeasureStr8(font, txt);
+                    pos.x -= dims.x * 0.5f;
+                    DrawStr8Ex(font, pos, LBLACK, txt);
+                }
             }
             EndShaderPass();
         }
