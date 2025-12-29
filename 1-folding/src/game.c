@@ -4128,6 +4128,12 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
     }
 }
 
+typedef enum {
+    PHASE_NONE = 0,
+    PHASE_PLAYING,
+    PHASE_GAMEOVER,
+} GamePhase;
+
 // 1 meter = N pixels scale factor.
 #define PPM (1.0f)
 #define MPP (1.0f / PPM)
@@ -4138,12 +4144,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 SCORE = 0.0f;
     static EntityId HAMPER_ROOT = {0};
     static f32 TIMER_SEC = 0.0f;
+    static GamePhase GAME_PHASE = PHASE_NONE;
 
     f32 dt = gstate->dt;
 
     if (gstate->init) {
         SCORE = 0.0f;
-        TIMER_SEC = 2.0f * 60.0f;
+        // TIMER_SEC = 2.0f * 60.0f;
+        TIMER_SEC = 2.0f;
+        GAME_PHASE = PHASE_PLAYING;
 
         Vec3 hamper_origin_world = Vec3Zero();
         Vec3 hamper_dims_world = Vec3Lit(Px2Meter(50.0f), Px2Meter(50.0f), 0.0f);
@@ -4201,20 +4210,35 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = &input->controllers[0];
 
-        TIMER_SEC -= dt;
-        TIMER_SEC = f32max(0.0f, TIMER_SEC);
+        switch (GAME_PHASE) {
+            case PHASE_PLAYING: {
+                TIMER_SEC -= dt;
+                TIMER_SEC = f32max(0.0f, TIMER_SEC);
 
-        if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
-            Entity* e = EntityFromId(HAMPER_ROOT);
-            Assert(e != NULL);
-            bool sorted = (e->hamper_type == HAMPER_LEFT && controller->action_left.pressed) ||
-                          (e->hamper_type == HAMPER_DOWN && controller->action_down.pressed) ||
-                          (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
-            if (sorted) {
-                SCORE += 1.5f;
+                if (TIMER_SEC > 0.0f) {
+                    if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
+                        Entity* e = EntityFromId(HAMPER_ROOT);
+                        Assert(e != NULL);
+                        bool sorted = (e->hamper_type == HAMPER_LEFT && controller->action_left.pressed) ||
+                                      (e->hamper_type == HAMPER_DOWN && controller->action_down.pressed) ||
+                                      (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
+                        if (sorted) {
+                            SCORE += 1.5f;
 
-                HAMPER_ROOT = e->next_hamper;
-                SoftDeactivateEntity(e);
+                            HAMPER_ROOT = e->next_hamper;
+                            SoftDeactivateEntity(e);
+                        }
+                    }
+                } else {
+                    GAME_PHASE = PHASE_GAMEOVER;
+                }
+                break;
+            }
+            case PHASE_GAMEOVER: {
+                break;
+            }
+            default: {
+                Assert(0);
             }
         }
     }
@@ -4253,42 +4277,78 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            LFont font = GetLFontClosest(40.0f);
-
             {
-                Vec2 spacing = Vec2Lit(0.0f, 10.0f);
-                Vec2 pos = Vec2Lit(10.0f, height);
+                LFont font = GetLFontClosest(40.0f);
 
                 {
-                    pos = Vec2Sub(pos, spacing);
+                    Vec2 spacing = Vec2Lit(0.0f, 10.0f);
+                    Vec2 pos = Vec2Lit(10.0f, height);
 
-                    char buffer[256] = {0};
-                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", SCORE);
-                    Str8 txt = Str8FromC(buffer);
-                    Vec2 dims = LFontMeasureStr8(font, txt);
-                    pos.y -= dims.y;
-                    DrawStr8Ex(font, pos, LBLACK, txt);
+                    {
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", SCORE);
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+                        pos.y -= dims.y;
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+                }
+
+                {
+                    Vec2 spacing = Vec2Lit(0.0f, 0.0f);
+                    Vec2 pos = Vec2Lit(width * 0.5f, height * 0.75f);
+
+                    {
+                        i32 minutes = TIMER_SEC / 60.0f;
+                        i32 seconds = f32mod(TIMER_SEC, 60.0f);
+
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "%d:%02d", minutes, seconds);
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+                        pos.x -= dims.x * 0.5f;
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
                 }
             }
 
-            {
-                Vec2 spacing = Vec2Lit(0.0f, 0.0f);
-                Vec2 pos = Vec2Lit(width * 0.5f, height * 0.75f);
+            if (GAME_PHASE == PHASE_GAMEOVER) {
+                LFont font = GetLFontClosest(40.0f);
+
+                DrawQuad(Vec3Lit(width * 0.5f, height * 0.5f, 0.0f), width, height, Mat4Identity(), LGRAY);
 
                 {
-                    i32 minutes = TIMER_SEC / 60.0f;
-                    i32 seconds = f32mod(TIMER_SEC, 60.0f);
+                    Vec2 spacing = Vec2Lit(0.0f, 0.0f);
+                    Vec2 pos = Vec2Lit(width * 0.5f, height * 0.75f);
 
-                    pos = Vec2Sub(pos, spacing);
+                    {
+                        Str8 txt = Str8Lit("GAME OVER");
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+                        pos.y -= dims.y;
 
-                    char buffer[256] = {0};
-                    snprintf(buffer, ArraySizeOf(buffer) - 1, "%d:%02d", minutes, seconds);
-                    Str8 txt = Str8FromC(buffer);
-                    Vec2 dims = LFontMeasureStr8(font, txt);
-                    pos.x -= dims.x * 0.5f;
-                    DrawStr8Ex(font, pos, LBLACK, txt);
+                        Vec2 p = Vec2Sub(pos, spacing);
+                        p.x -= dims.x * 0.5f;
+                        DrawStr8Ex(font, p, LBLACK, txt);
+                    }
+
+                    {
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Final Score: %f", SCORE);
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+                        pos.y -= dims.y;
+
+                        Vec2 p = Vec2Sub(pos, spacing);
+                        p.x -= dims.x * 0.5f;
+                        DrawStr8Ex(font, p, LBLACK, txt);
+                    }
                 }
             }
+
             EndShaderPass();
         }
 
