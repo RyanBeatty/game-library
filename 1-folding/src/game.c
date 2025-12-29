@@ -4202,6 +4202,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GameControllerState* controller = &input->controllers[0];
 
         TIMER_SEC -= dt;
+        TIMER_SEC = f32max(0.0f, TIMER_SEC);
 
         if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
             Entity* e = EntityFromId(HAMPER_ROOT);
