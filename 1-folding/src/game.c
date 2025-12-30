@@ -194,7 +194,7 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_TSHIRT, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_TSHIRT, TX_PANTS, TX_SOCKS, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -402,6 +402,16 @@ static void TexturesInit() {
 
     {
         tcache->textures[TX_TSHIRT] = TextureFromFile("assets/textures/tshirt.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_PANTS] = TextureFromFile("assets/textures/pants.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_SOCKS] = TextureFromFile("assets/textures/socks.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
     ++tcache->txlen;
@@ -4164,7 +4174,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         {
             HamperType hamper_types[3] = {HAMPER_LEFT, HAMPER_DOWN, HAMPER_RIGHT};
-            LTexture textures[3] = {GetTexture(TX_TSHIRT), GetTexture(TX_TSHIRT), GetTexture(TX_TSHIRT)};
+            LTexture textures[3] = {GetTexture(TX_TSHIRT), GetTexture(TX_PANTS), GetTexture(TX_SOCKS)};
             // Vec4 hamper_colors[3] = {LRED, LBLUE, LGREEN};
 
             for (i32 i = 0; i < 5; ++i) {
