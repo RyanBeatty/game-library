@@ -194,7 +194,7 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_TSHIRT, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -400,6 +400,10 @@ static void TexturesInit() {
         ++tcache->txlen;
     }
 
+    {
+        tcache->textures[TX_TSHIRT] = TextureFromFile("assets/textures/tshirt.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
     ++tcache->txlen;
 }
 
@@ -4150,12 +4154,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         SCORE = 0.0f;
-        // TIMER_SEC = 2.0f * 60.0f;
-        TIMER_SEC = 2.0f;
+        TIMER_SEC = 2.0f * 60.0f;
         GAME_PHASE = PHASE_PLAYING;
 
         Vec3 hamper_origin_world = Vec3Zero();
-        Vec3 hamper_dims_world = Vec3Lit(Px2Meter(50.0f), Px2Meter(50.0f), 0.0f);
+        Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
         Mat4 hamper_to_world =
             Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
 
@@ -4169,9 +4172,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Entity* e = AllocateEntity();
                 e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-                GraphicsInfoSetLModel(
-                    &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                                 hamper_dims_world, hamper_colors[idx]));
+                GraphicsInfoSetLModel(&e->graphics,
+                                      LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_TSHIRT), Vec3Zero(), Mat4Identity(),
+                                                     hamper_dims_world, hamper_colors[idx]));
                 e->hamper_type = hamper_types[idx];
                 e->next_hamper = HAMPER_ROOT;
                 HAMPER_ROOT = e->id;
