@@ -194,7 +194,16 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_TSHIRT, TX_PANTS, TX_SOCKS, TX_COUNT } TextureLabel;
+typedef enum TextureLabel {
+    TX_DEFAULT = 0,
+    TX_TSHIRT,
+    TX_PANTS,
+    TX_SOCKS,
+    TX_HAMPER_RED,
+    TX_HAMPER_BLUE,
+    TX_HAMPER_GREEN,
+    TX_COUNT
+} TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -412,6 +421,21 @@ static void TexturesInit() {
 
     {
         tcache->textures[TX_SOCKS] = TextureFromFile("assets/textures/socks.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_HAMPER_RED] = TextureFromFile("assets/textures/hamper-red.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_HAMPER_BLUE] = TextureFromFile("assets/textures/hamper-blue.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_HAMPER_GREEN] = TextureFromFile("assets/textures/hamper-green.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
     ++tcache->txlen;
@@ -4195,24 +4219,27 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             Entity* e = AllocateEntity();
             e->pos = Vec3WTransform(Vec3Lit(-1.0f, 0.0f, 0.0f), hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), hamper_dims_world, LRED));
+            GraphicsInfoSetLModel(&e->graphics,
+                                  LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_HAMPER_RED), Vec3Zero(), Mat4Identity(),
+                                                 Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
         }
 
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3WTransform(Vec3Lit(0.0f, -1.0f, 0.0f), hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), hamper_dims_world, LBLUE));
+            GraphicsInfoSetLModel(
+                &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_HAMPER_BLUE), Vec3Zero(), Mat4Identity(),
+                                             Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
         }
 
         {
             Entity* e = AllocateEntity();
             e->pos = Vec3WTransform(Vec3Lit(1.0f, 0.0f, 0.0f), hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(),
-                                                               Mat4Identity(), hamper_dims_world, LGREEN));
+            GraphicsInfoSetLModel(
+                &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_HAMPER_GREEN), Vec3Zero(), Mat4Identity(),
+                                             Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
         }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
