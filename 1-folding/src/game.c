@@ -4183,6 +4183,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static EntityId HAMPER_ROOT = {0};
     static f32 TIMER_SEC = 0.0f;
     static GamePhase GAME_PHASE = PHASE_NONE;
+    // Positions of hampers in hamper space.
+    static Vec3 HAMPER_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, -1.0f, 0.0f),
+                                      Vec3Lit(1.0f, 0.0f, 0.0f)};
 
     f32 dt = gstate->dt;
 
@@ -4221,7 +4224,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(Vec3Lit(-1.0f, 0.0f, 0.0f), hamper_to_world);
+            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_LEFT], hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(&e->graphics,
                                   LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_HAMPER_RED), Vec3Zero(), Mat4Identity(),
@@ -4230,7 +4233,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(Vec3Lit(0.0f, -1.0f, 0.0f), hamper_to_world);
+            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_DOWN], hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(
                 &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_HAMPER_BLUE), Vec3Zero(), Mat4Identity(),
@@ -4239,7 +4242,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(Vec3Lit(1.0f, 0.0f, 0.0f), hamper_to_world);
+            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_RIGHT], hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(
                 &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_HAMPER_GREEN), Vec3Zero(), Mat4Identity(),
