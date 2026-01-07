@@ -4189,15 +4189,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     f32 dt = gstate->dt;
 
+    Vec3 hamper_origin_world = Vec3Zero();
+    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+    Mat4 hamper_to_world =
+        Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
+
     if (gstate->init) {
         SCORE = 0.0f;
         TIMER_SEC = 2.0f * 60.0f;
         GAME_PHASE = PHASE_PLAYING;
-
-        Vec3 hamper_origin_world = Vec3Zero();
-        Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
-        Mat4 hamper_to_world =
-            Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
 
         {
             HamperType hamper_types[3] = {HAMPER_LEFT, HAMPER_DOWN, HAMPER_RIGHT};
@@ -4272,8 +4272,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (sorted) {
                             SCORE += 1.5f;
 
+                            e->pos = Vec3WTransform(HAMPER_POSITIONS[e->hamper_type], hamper_to_world);
+                            e->pos.z += 1.0f;
+
                             HAMPER_ROOT = e->next_hamper;
-                            SoftDeactivateEntity(e);
+                            // SoftDeactivateEntity(e);
                         }
                     }
                 } else {
