@@ -4291,6 +4291,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Assert(0);
             }
         }
+
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_DRAW)) {
+                e->graphics.pos = e->pos;
+                e->graphics.orient = e->orient;
+                e->graphics.scale = e->scale;
+                GraphicsInfoTickAnimation(&e->graphics, dt);
+            }
+        }
     }
 
     if (gstate->render) {
@@ -4309,10 +4318,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             // render Maybe we should not do that and instead pass in delta time.
             for (Entity* e = NULL; IncrementEntity(&e);) {
                 if (TestFlag(e->flags, EFLAG_DRAW)) {
-                    e->graphics.pos = e->pos;
-                    e->graphics.orient = e->orient;
-                    e->graphics.scale = e->scale;
-                    GraphicsInfoTickAnimation(&e->graphics, dt);
                     DrawGraphicsInfo(&e->graphics);
                 }
             }
