@@ -4253,7 +4253,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 i32 idx = i32rand() % 3;
 
                 Entity* e = AllocateEntity();
-                e->pos = Vec3WTransform(Vec3Zero(), hamper_to_world);
+                e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
                 // Add a random offset so that it more visually looks like a pile.
                 Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f),
                                              Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
@@ -4311,6 +4311,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
                         Entity* e = EntityFromId(HAMPER_ROOT);
                         Assert(e != NULL);
+                        // Move hamper root to correct position.
+                        e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
+
                         bool sorted = (e->hamper_type == HAMPER_LEFT && controller->action_left.pressed) ||
                                       (e->hamper_type == HAMPER_UP && controller->action_up.pressed) ||
                                       (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
@@ -4322,7 +4325,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             EasingSetLerp(&e->graphics.pos_easing, 0.001);
 
                             HAMPER_ROOT = e->next_hamper;
-                            // SoftDeactivateEntity(e);
                         }
                     }
                 } else {
