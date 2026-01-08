@@ -3759,7 +3759,7 @@ LCORE DrawCmd* DrawGraphicsInfo(GraphicsInfo* graphics) {
 
 ////////////////////////////////////////////////////////////
 
-typedef enum { HAMPER_NONE = 0, HAMPER_LEFT, HAMPER_DOWN, HAMPER_RIGHT, HAMPER_COUNT } HamperType;
+typedef enum { HAMPER_NONE = 0, HAMPER_LEFT, HAMPER_UP, HAMPER_RIGHT, HAMPER_COUNT } HamperType;
 
 ////////////////////////////////////////////////////////////
 
@@ -4229,12 +4229,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 TIMER_SEC = 0.0f;
     static GamePhase GAME_PHASE = PHASE_NONE;
     // Positions of hampers in hamper space.
-    static Vec3 HAMPER_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, -1.0f, 0.0f),
+    static Vec3 HAMPER_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
                                       Vec3Lit(1.0f, 0.0f, 0.0f)};
 
     f32 dt = gstate->dt;
 
-    Vec3 hamper_origin_world = Vec3Zero();
+    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
     Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
     Mat4 hamper_to_world =
         Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
@@ -4245,7 +4245,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GAME_PHASE = PHASE_PLAYING;
 
         {
-            HamperType hamper_types[3] = {HAMPER_LEFT, HAMPER_DOWN, HAMPER_RIGHT};
+            HamperType hamper_types[3] = {HAMPER_LEFT, HAMPER_UP, HAMPER_RIGHT};
             LTexture textures[3] = {GetTexture(TX_TSHIRT), GetTexture(TX_PANTS), GetTexture(TX_SOCKS)};
             // Vec4 hamper_colors[3] = {LRED, LBLUE, LGREEN};
 
@@ -4278,7 +4278,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_DOWN], hamper_to_world);
+            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_UP], hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(
                 &e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_HAMPER_BLUE), Vec3Zero(), Mat4Identity(),
@@ -4312,7 +4312,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Entity* e = EntityFromId(HAMPER_ROOT);
                         Assert(e != NULL);
                         bool sorted = (e->hamper_type == HAMPER_LEFT && controller->action_left.pressed) ||
-                                      (e->hamper_type == HAMPER_DOWN && controller->action_down.pressed) ||
+                                      (e->hamper_type == HAMPER_UP && controller->action_up.pressed) ||
                                       (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
                         if (sorted) {
                             SCORE += 1.5f;
