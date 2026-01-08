@@ -3692,10 +3692,6 @@ typedef struct {
 
     Easing pos_easing;
 
-    Vec3 posa;
-    Vec3 posb;
-    f32 posdt;
-
     LModel model;
     isize frame_idx;
     f32 elapsed;
