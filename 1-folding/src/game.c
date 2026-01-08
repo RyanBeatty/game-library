@@ -4397,7 +4397,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 {
                     Vec2 spacing = Vec2Lit(0.0f, 0.0f);
-                    Vec2 pos = Vec2Lit(width * 0.5f, height * 0.75f);
+                    Vec2 pos = Vec2Lit(width * 0.5f, height * 0.2f);
 
                     {
                         i32 minutes = TIMER_SEC / 60.0f;
