@@ -3642,7 +3642,7 @@ LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
 
 typedef enum {
     ET_NONE = 0,  // No easing, track the target value exactly.
-    ET_LERP
+    ET_LERP       // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
 } EasingType;
 
 typedef struct {
@@ -3650,7 +3650,7 @@ typedef struct {
 
     union {
         struct {
-            f32 rate;
+            f32 rate;  // This should be between 0 and 1. Essentially after 1s how much of the error should remain?
         } lerp;
     };
 } Easing;
@@ -3661,10 +3661,21 @@ static void EasingZero(Easing* easing) {
     *easing = e;
 }
 
+static void EasingSetLerp(Easing* easing, f32 rate) {
+    easing->type = ET_LERP;
+    easing->lerp.rate = rate;
+}
+
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
     switch (easing.type) {
         case ET_NONE: {
             cur = target;
+            break;
+        }
+        case ET_LERP: {
+            f32 T = 1.0f - f32pow(easing.lerp.rate, dt);
+            breakpoint();
+            cur = Vec3Lerp(cur, target, T);
             break;
         }
         default: {
@@ -4242,7 +4253,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             LTexture textures[3] = {GetTexture(TX_TSHIRT), GetTexture(TX_PANTS), GetTexture(TX_SOCKS)};
             // Vec4 hamper_colors[3] = {LRED, LBLUE, LGREEN};
 
-            for (i32 i = 0; i < 5; ++i) {
+            for (i32 i = 0; i < 20; ++i) {
                 i32 idx = i32rand() % 3;
 
                 Entity* e = AllocateEntity();
@@ -4312,6 +4323,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             e->pos = Vec3WTransform(HAMPER_POSITIONS[e->hamper_type], hamper_to_world);
                             e->pos.z += 1.0f;
+                            EasingSetLerp(&e->graphics.pos_easing, 0.001);
 
                             HAMPER_ROOT = e->next_hamper;
                             // SoftDeactivateEntity(e);
