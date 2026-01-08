@@ -3640,10 +3640,46 @@ LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
     return DrawLModelEx(model, 0, pos, orient, scale);
 }
 
+typedef enum {
+    ET_NONE = 0,  // No easing, track the target value exactly.
+    ET_LERP
+} EasingType;
+
+typedef struct {
+    EasingType type;
+
+    union {
+        struct {
+            f32 rate;
+        } lerp;
+    };
+} Easing;
+
+static void EasingZero(Easing* easing) {
+    Easing e = {0};
+    e.type = ET_NONE;
+    *easing = e;
+}
+
+static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
+    switch (easing.type) {
+        case ET_NONE: {
+            cur = target;
+            break;
+        }
+        default: {
+            Assert(0);
+        }
+    }
+    return cur;
+}
+
 typedef struct {
     Vec3 pos;
     Vec3 scale;
     Mat4 orient;
+
+    Easing pos_easing;
 
     Vec3 posa;
     Vec3 posb;
@@ -3664,6 +3700,8 @@ static void GraphicsInfoMemset(GraphicsInfo* graphics) {
     graphics->pos = Vec3Zero();
     graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     graphics->facing_left = false;
+
+    EasingZero(&graphics->pos_easing);
 
     graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
 }
@@ -4294,7 +4332,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
-                e->graphics.pos = e->pos;
+                e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
                 e->graphics.orient = e->orient;
                 e->graphics.scale = e->scale;
                 GraphicsInfoTickAnimation(&e->graphics, dt);
