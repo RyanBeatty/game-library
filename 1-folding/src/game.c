@@ -3792,7 +3792,6 @@ typedef struct {
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
 
-    HamperType hamper_type;
     EntityId next_hamper;
 } Entity;
 
@@ -4206,6 +4205,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     // Positions of hampers in hamper space.
     static Vec3 HAMPER_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
                                       Vec3Lit(1.0f, 1.0f, 0.0f)};
+    static isize NEXT_HAMPER_IDX = 1;
 
     f32 dt = gstate->dt;
 
@@ -4220,13 +4220,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GAME_PHASE = PHASE_PLAYING;
 
         {
-            HamperType hamper_types[3] = {HAMPER_LEFT, HAMPER_UP, HAMPER_RIGHT};
-            LTexture textures[3] = {GetTexture(TX_MAIL), GetTexture(TX_MAIL), GetTexture(TX_MAIL)};
-            // Vec4 hamper_colors[3] = {LRED, LBLUE, LGREEN};
-
             for (i32 i = 0; i < 50; ++i) {
-                i32 idx = i32rand() % 3;
-
                 Entity* e = AllocateEntity();
                 e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
                 // Add a random offset so that it more visually looks like a pile.
@@ -4234,9 +4228,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                              Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
                 e->pos = Vec3Add(e->pos, offset);
                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), textures[idx], Vec3Zero(),
+                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
                                                                    Mat4Identity(), hamper_dims_world, LCLEAR));
-                e->hamper_type = hamper_types[idx];
                 e->next_hamper = HAMPER_ROOT;
                 HAMPER_ROOT = e->id;
             }
@@ -4288,7 +4281,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             SCORE += 1.5f;
 
-                            e->pos = Vec3WTransform(HAMPER_POSITIONS[e->hamper_type], hamper_to_world);
+                            e->pos = Vec3WTransform(HAMPER_POSITIONS[NEXT_HAMPER_IDX], hamper_to_world);
+                            NEXT_HAMPER_IDX = (NEXT_HAMPER_IDX % (ArraySizeOf(HAMPER_POSITIONS) - 1)) + 1;
                             e->pos.z += 1.0f;
                             EasingSetLerp(&e->graphics.pos_easing, 0.001f);
                             e->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
