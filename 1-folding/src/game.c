@@ -4242,32 +4242,32 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
         }
 
-        {
+        for (isize i = 1; i < ArraySizeOf(HAMPER_POSITIONS); ++i) {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_LEFT], hamper_to_world);
+            e->pos = Vec3WTransform(HAMPER_POSITIONS[i], hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(&e->graphics,
                                   LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
                                                  Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
         }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_UP], hamper_to_world);
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-            GraphicsInfoSetLModel(&e->graphics,
-                                  LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
-                                                 Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_UP], hamper_to_world);
+        //     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+        //     GraphicsInfoSetLModel(&e->graphics,
+        //                           LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
+        //                                          Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+        // }
 
-        {
-            Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_RIGHT], hamper_to_world);
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-            GraphicsInfoSetLModel(&e->graphics,
-                                  LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
-                                                 Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
-        }
+        // {
+        //     Entity* e = AllocateEntity();
+        //     e->pos = Vec3WTransform(HAMPER_POSITIONS[HAMPER_RIGHT], hamper_to_world);
+        //     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+        //     GraphicsInfoSetLModel(&e->graphics,
+        //                           LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
+        //                                          Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+        // }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
                                    .target = Vec3Zero(),
