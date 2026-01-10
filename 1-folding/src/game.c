@@ -4272,6 +4272,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
                                    .target = Vec3Zero(),
                                    .up = Vec3Lit(0.0f, 1.0f, 0.0f)};
+
+        // Important or the first couple frames our entities will teleport from origin to starting positions.
+        for (Entity* e = NULL; IncrementEntity(&e);) {
+            if (TestFlag(e->flags, EFLAG_DRAW)) {
+                e->graphics.pos = e->pos;
+                e->graphics.orient = e->orient;
+                e->graphics.scale = e->scale;
+                GraphicsInfoTickAnimation(&e->graphics, dt);
+            }
+        }
     }
 
     if (gstate->update) {
