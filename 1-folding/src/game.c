@@ -3384,6 +3384,7 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 typedef enum {
     SOUND_NONE = 0,
     SOUND_BEEP,
+    SOUND_SORT,
     SOUND_COUNT,
 } SoundTag;
 
@@ -3399,6 +3400,8 @@ static void LoadSounds() {
     INIT = true;
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_BEEP] = PlatformLoadSound("assets/sounds/beep.wav");
+    // https://sfxr.me/#57uBnWaP2P9Tqnb9U7C2ZWuqF7Yn8sRtHgc3tYYGh7QCv86Wu2sF1kFkPh5bvtBQ9iaPWGSLgdqsvbkvpHCN1wscN8HpzxFZ1iBxiQhoGz63dAo4uDr85wAZm
+    SOUNDS[SOUND_SORT] = PlatformLoadSound("assets/sounds/sort.wav");
 }
 
 ////////////////////////////////////////////////////////////
@@ -4319,6 +4322,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                       (e->hamper_type == HAMPER_UP && controller->action_up.pressed) ||
                                       (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
                         if (sorted) {
+                            PlatformPlaySound(GetSound(SOUND_SORT), 0);
+
                             SCORE += 1.5f;
 
                             e->pos = Vec3WTransform(HAMPER_POSITIONS[e->hamper_type], hamper_to_world);
