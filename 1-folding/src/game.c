@@ -4282,10 +4282,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
                         EasingSetLerp(&e->graphics.pos_easing, 0.01);
 
-                        bool sorted = (e->hamper_type == HAMPER_LEFT && controller->action_left.pressed) ||
-                                      (e->hamper_type == HAMPER_UP && controller->action_up.pressed) ||
-                                      (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
-                        sorted |= controller->action_down.pressed;
+                        bool sorted = controller->action_down.pressed;
                         if (sorted) {
                             PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
