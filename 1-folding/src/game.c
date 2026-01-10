@@ -4232,8 +4232,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 TIMER_SEC = 0.0f;
     static GamePhase GAME_PHASE = PHASE_NONE;
     // Positions of hampers in hamper space.
-    static Vec3 HAMPER_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
-                                      Vec3Lit(1.0f, 0.0f, 0.0f)};
+    static Vec3 HAMPER_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
+                                      Vec3Lit(1.0f, 1.0f, 0.0f)};
 
     f32 dt = gstate->dt;
 
