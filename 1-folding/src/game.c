@@ -3665,6 +3665,7 @@ typedef struct {
     Mat4 orient;
 
     Easing pos_easing;
+    Easing scale_easing;
 
     LModel model;
     isize frame_idx;
@@ -4300,7 +4301,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             e->pos = Vec3WTransform(HAMPER_POSITIONS[e->hamper_type], hamper_to_world);
                             e->pos.z += 1.0f;
-                            EasingSetLerp(&e->graphics.pos_easing, 0.001);
+                            EasingSetLerp(&e->graphics.pos_easing, 0.001f);
+                            e->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
+                            EasingSetLerp(&e->graphics.scale_easing, 0.1f);
 
                             HAMPER_ROOT = e->next_hamper;
                         }
@@ -4322,7 +4325,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
                 e->graphics.orient = e->orient;
-                e->graphics.scale = e->scale;
+                e->graphics.scale = EaseVec3(e->graphics.scale, e->scale, dt, e->graphics.scale_easing);
                 GraphicsInfoTickAnimation(&e->graphics, dt);
             }
         }
