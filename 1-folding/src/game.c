@@ -4321,6 +4321,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         bool sorted = (e->hamper_type == HAMPER_LEFT && controller->action_left.pressed) ||
                                       (e->hamper_type == HAMPER_UP && controller->action_up.pressed) ||
                                       (e->hamper_type == HAMPER_RIGHT && controller->action_right.pressed);
+                        sorted |= controller->action_down.pressed;
                         if (sorted) {
                             PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
