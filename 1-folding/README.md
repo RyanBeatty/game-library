@@ -10,6 +10,7 @@ GAME
 * bombs appear occasionally, must remove. if sorted, breaks combo (and potentially stuns 1s or loses health)
 * rotate cothing sprites to make unclear which bin they need to be sorted into?
 * 10 different pairs of clothes
+* color palette: https://lospec.com/palette-list/pacific
 
 
 
