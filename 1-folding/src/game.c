@@ -4554,6 +4554,13 @@ void GameTick(f32 dt, GameInput* input) {
         gstate->render = false;
         gstate->accumulated_time += dt;
 
+        // This is a follow up to the zeroing input hack we do in the update loop. Need to pass in original input
+        // to render frame because interactive UI component logic lives in render step for the time being.
+        // TODO: Ideally this goes away either when we back out the zeroing hack in the update step or UI component
+        // response logic is moved into update loop (requires some sort of state tracking to then be able to
+        // draw the UI components in the render step)
+        GameInput orig_input = *input;
+
         // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
         // https://gameprogrammingpatterns.com/game-loop.html#play-catch-up
         while (gstate->accumulated_time >= gstate->fixed_dt) {
@@ -4581,7 +4588,7 @@ void GameTick(f32 dt, GameInput* input) {
         gstate->dt = 0.0f;
         gstate->update = false;
         gstate->render = true;
-        gstate->scenefuncs[gstate->sceneid](gstate, input);
+        gstate->scenefuncs[gstate->sceneid](gstate, &orig_input);
         gstate->init = false;
     }
 
