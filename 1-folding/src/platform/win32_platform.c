@@ -880,10 +880,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     f32 viewport_height =
                         PlatformScreenHeight();  // This is NOT the viewport height, but just use this for now.
                     pos_screen.y = viewport_height - pos_screen.y;
+                    controller->cursor_pos = pos_screen;
                     // PlatformLog(LLOG_INFO, "Mouse %f %f", pos_screen.x, pos_screen.y);
 
                     Vec2 cursor_world = GameScreenToWorld2D(pos_screen);
-                    controller->cursor_pos = cursor_world;
+                    controller->cursor_pos_world = cursor_world;
 
                     controller->action_down.down |= keyboard->down[VK_LBUTTON];
                     controller->action_down.pressed |= !keyboard->down[VK_LBUTTON] && keyboard_prev->down[VK_LBUTTON];

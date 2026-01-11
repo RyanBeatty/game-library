@@ -4371,9 +4371,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         pos.y -= dims.y;
 
-                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
-                        Polyhedron rect;
-                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
                         // TODO: The positioning of this is not correct. this will make sure the quad is centered
                         // relative to the baseline pos (the pos we passed to measuretext) but the text likely has some
                         // chars that extend below the baseline. I think instead I need to have some function that gives
@@ -4382,6 +4379,23 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // Should it take a position representing a baseline? or a position representing the center of
                         // some rect to draw within? sort of feel like the former and the later could be a wrapper on
                         // top.
+                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                        Polyhedron rect;
+                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+
+                        GameControllerState* controller = &input->controllers[0];
+                        Polyhedron cursor;
+                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                        CollisionInfo info = {0};
+                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        // TODO: There is a potential issue here in that by the time we've checked the down action here,
+                        // we might have triggered gameplay actions as well since this logic check happens after the
+                        // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
+                        // But they are coupled for the time being.
+                        if (collides && controller->action_down.down) {
+                            PlatformLog(LLOG_INFO, "button clicked");
+                        }
+
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
