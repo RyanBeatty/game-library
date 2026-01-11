@@ -3250,6 +3250,7 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
     for (i32 i = 0; i < len; ++i) {
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+        // NOTE: Although we pass pointers to the baseline_pos, it doesn't look like GetBakedQuad actually modifies it.
         stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
                            &quad, true);
 
@@ -3283,7 +3284,7 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
         // By subtracting the height we then get the bottom left corner which is what the engine expects.
         quvoffset.y = 1.0f - quad.t0 - quvdims.y;
 
-        // if (gstate->debug) {
+        // if (true) {
         //     DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         // }
         DrawLTextureProUV(font.tx, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
@@ -4346,7 +4347,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 LFont font = GetLFontClosest(40.0f);
 
                 {
-                    Vec2 spacing = Vec2Lit(0.0f, 10.0f);
+                    Vec2 spacing = Vec2Lit(0.0f, 20.0f);
                     Vec2 pos = Vec2Lit(10.0f, height);
 
                     {
@@ -4357,6 +4358,23 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
                         pos.y -= dims.y;
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+
+                    {
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Shop");
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+
+                        pos.y -= dims.y;
+
+                        Polyhedron rect;
+                        PolyHedronSetAABB2DFromWH(&rect, pos, dims);
+                        DrawQuad(Vec2ToVec3(pos), dims.x, dims.y, Mat4Identity(), LBLUE);
+
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
                 }
