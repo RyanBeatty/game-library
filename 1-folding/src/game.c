@@ -4190,6 +4190,7 @@ typedef enum {
     PHASE_NONE = 0,
     PHASE_PLAYING,
     PHASE_GAMEOVER,
+    PHASE_SHOP_OPEN,
 } GamePhase;
 
 // 1 meter = N pixels scale factor.
@@ -4300,6 +4301,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             case PHASE_GAMEOVER: {
                 break;
             }
+            case PHASE_SHOP_OPEN: {
+                break;
+            }
             default: {
                 Assert(0);
             }
@@ -4393,7 +4397,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.down) {
-                            PlatformLog(LLOG_INFO, "button clicked");
+                            GAME_PHASE = PHASE_SHOP_OPEN;
                         }
 
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
