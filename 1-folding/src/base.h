@@ -212,6 +212,7 @@ typedef struct {
 } Vec2;
 
 #define Vec2Lit(a, b) ((Vec2){.x = (a), .y = (b)})
+#define Vec2Fmt(v) (v).x, (v).y
 
 static Vec2 Vec2Zero() {
     static Vec2 v = Vec2Lit(0.0f, 0.0f);

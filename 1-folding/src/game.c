@@ -3649,7 +3649,6 @@ static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
         }
         case ET_LERP: {
             f32 T = 1.0f - f32pow(easing.lerp.rate, dt);
-            breakpoint();
             cur = Vec3Lerp(cur, target, T);
             break;
         }
@@ -4229,7 +4228,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f),
                                              Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
                 e->pos = Vec3Add(e->pos, offset);
-                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
                 GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
                                                                    Mat4Identity(), hamper_dims_world, LCLEAR));
                 e->next_hamper = HAMPER_ROOT;
@@ -4277,7 +4276,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
                         EasingSetLerp(&e->graphics.pos_easing, 0.01);
 
-                        bool sorted = controller->action_down.pressed;
+                        Polyhedron rect = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
+                        Polyhedron cursor = {0};
+                        PolyhedronSetCircle(&cursor, controller->cursor_pos_world, 3.0f);
+                        CollisionInfo info = {0};
+                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+
+                        bool sorted = collides && controller->action_down.pressed;
                         if (sorted) {
                             PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
@@ -4597,7 +4602,14 @@ void GameTick(f32 dt, GameInput* input) {
             // as being pressed it would then become unpressed (but down dependning on half transition count). Need to
             // potentially think about ordering here as if we do it this way where we consume input, does this mean the
             // sim sees the input "backwards" in time?
-            *input = (GameInput){0};
+            // UPDATE: I've fixed the cursor handling, but we should still make this more robust by consuming
+            // crontroller button presses probably.
+            for (isize i = 0; i < ArraySizeOf(input->controllers); ++i) {
+                for (isize j = 0; j < ArraySizeOf(input->controllers[i].buttons); ++j) {
+                    GameButtonState button = {0};
+                    input->controllers[i].buttons[j] = button;
+                }
+            }
             DeactivateEntities();
         }
 
