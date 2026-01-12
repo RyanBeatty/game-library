@@ -4198,6 +4198,15 @@ typedef enum {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
+static void EntityInitMailbox(Entity* e, Vec3 pos) {
+    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+
+    e->pos = pos;
+    PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+    GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
+                                                       Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 SCORE = 0.0f;
     static EntityId MAIL_STACK_ROOT = {0};
@@ -4246,12 +4255,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         }
 
         for (isize i = 0; i < MAILBOX_POSITIONS.len; ++i) {
+            Vec3 pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, i), hamper_to_world);
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, i), hamper_to_world);
-            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-            GraphicsInfoSetLModel(&e->graphics,
-                                  LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
-                                                 Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+            EntityInitMailbox(e, pos);
         }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
@@ -4414,6 +4420,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (collides && controller->action_down.pressed) {
                             if (SCORE >= MAILBOX_PRICE) {
                                 SCORE -= MAILBOX_PRICE;
+
+                                {
+                                    Vec3 new_pos = ArrGet(&MAILBOX_POSITIONS, MAILBOX_POSITIONS.len - 1);
+                                    new_pos.x += 1;
+                                    new_pos = Vec3WTransform(new_pos, hamper_to_world);
+                                    ArrPush(&MAILBOX_POSITIONS, new_pos);
+
+                                    Entity* e = AllocateEntity();
+                                    EntityInitMailbox(e, new_pos);
+                                }
                             }
                         }
 
