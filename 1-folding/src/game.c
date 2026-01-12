@@ -4200,13 +4200,13 @@ typedef enum {
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 SCORE = 0.0f;
-    static EntityId HAMPER_ROOT = {0};
+    static EntityId MAIL_STACK_ROOT = {0};
     static f32 TIMER_SEC = 0.0f;
     static GamePhase GAME_PHASE = PHASE_NONE;
     // Positions of hampers in hamper space.
-    static Vec3 HAMPER_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
-                                      Vec3Lit(1.0f, 1.0f, 0.0f)};
-    static isize NEXT_HAMPER_IDX = 1;
+    static Vec3 MAILBOX_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
+                                       Vec3Lit(1.0f, 1.0f, 0.0f)};
+    static isize NEXT_MAILBOX_IDX = 1;
 
     f32 dt = gstate->dt;
 
@@ -4231,14 +4231,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
                 GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
                                                                    Mat4Identity(), hamper_dims_world, LCLEAR));
-                e->next_hamper = HAMPER_ROOT;
-                HAMPER_ROOT = e->id;
+                e->next_hamper = MAIL_STACK_ROOT;
+                MAIL_STACK_ROOT = e->id;
             }
         }
 
-        for (isize i = 1; i < ArraySizeOf(HAMPER_POSITIONS); ++i) {
+        for (isize i = 1; i < ArraySizeOf(MAILBOX_POSITIONS); ++i) {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(HAMPER_POSITIONS[i], hamper_to_world);
+            e->pos = Vec3WTransform(MAILBOX_POSITIONS[i], hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(&e->graphics,
                                   LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
@@ -4269,8 +4269,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 TIMER_SEC = f32max(0.0f, TIMER_SEC);
 
                 if (TIMER_SEC > 0.0f) {
-                    if (!EntityIdEq(HAMPER_ROOT, NULLID)) {
-                        Entity* e = EntityFromId(HAMPER_ROOT);
+                    if (!EntityIdEq(MAIL_STACK_ROOT, NULLID)) {
+                        Entity* e = EntityFromId(MAIL_STACK_ROOT);
                         Assert(e != NULL);
                         // Move hamper root to correct position.
                         e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
@@ -4288,14 +4288,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             SCORE += 1.5f;
 
-                            e->pos = Vec3WTransform(HAMPER_POSITIONS[NEXT_HAMPER_IDX], hamper_to_world);
-                            NEXT_HAMPER_IDX = (NEXT_HAMPER_IDX % (ArraySizeOf(HAMPER_POSITIONS) - 1)) + 1;
+                            e->pos = Vec3WTransform(MAILBOX_POSITIONS[NEXT_MAILBOX_IDX], hamper_to_world);
+                            NEXT_MAILBOX_IDX = (NEXT_MAILBOX_IDX % (ArraySizeOf(MAILBOX_POSITIONS) - 1)) + 1;
                             e->pos.z += 1.0f;
                             EasingSetLerp(&e->graphics.pos_easing, 0.001f);
                             e->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
                             EasingSetLerp(&e->graphics.scale_easing, 0.1f);
 
-                            HAMPER_ROOT = e->next_hamper;
+                            MAIL_STACK_ROOT = e->next_hamper;
                         }
                     }
                 } else {
