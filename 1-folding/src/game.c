@@ -4371,10 +4371,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
+                        static f32 const MAILBOX_PRICE = 30.0f;
                         pos = Vec2Sub(pos, spacing);
 
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Shop");
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $30.00");
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
 
@@ -4401,8 +4402,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // we might have triggered gameplay actions as well since this logic check happens after the
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
-                        if (collides && controller->action_down.down) {
-                            GAME_PHASE = PHASE_SHOP_OPEN;
+                        if (collides && controller->action_down.pressed) {
+                            if (SCORE >= MAILBOX_PRICE) {
+                                SCORE -= MAILBOX_PRICE;
+                            }
                         }
 
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
