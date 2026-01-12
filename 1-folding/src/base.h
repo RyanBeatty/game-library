@@ -97,6 +97,15 @@ Arena NewSubArena(Arena* perm, isize count);
         (s)->cap = (c);   \
     } while (0)
 
+// Init static array. :buf is the buffer variable, :arena is a pointer to arena to allocate storage on. :ElemType is the
+// type of the data field of :buf, :cap is the capacity to allocate.
+#define InitArr(buf, arena, ElemType, ccap)           \
+    do {                                              \
+        (buf)->data = New((arena), (ccap), ElemType); \
+        (buf)->len = 0;                               \
+        (buf)->cap = (ccap);                          \
+    } while (0)
+
 // Assumes that :s: is a struct with members
 // struct {
 //  T *data;
@@ -124,6 +133,13 @@ typedef struct {
     isize cap;
 } ByteBuffer;
 
+typedef struct {
+    char* data;
+    isize len;
+    isize cap;
+} Str8Buffer;
+
+// A str8 defines a view into a string. It should not own the data it points to.
 typedef struct {
     char* data;
     isize len;
