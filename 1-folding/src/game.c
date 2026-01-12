@@ -4204,9 +4204,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 TIMER_SEC = 0.0f;
     static GamePhase GAME_PHASE = PHASE_NONE;
     // Positions of hampers in hamper space.
-    static Vec3 MAILBOX_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
-                                       Vec3Lit(1.0f, 1.0f, 0.0f)};
-    static isize NEXT_MAILBOX_IDX = 1;
+    static Vec3 MAILBOX_POSITIONS_DATA[20] = {0};
+    static Vec3Arr MAILBOX_POSITIONS;
+    // static Vec3 MAILBOX_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
+    //                                    Vec3Lit(1.0f, 1.0f, 0.0f)};
+    static isize NEXT_MAILBOX_IDX = 0;
 
     f32 dt = gstate->dt;
 
@@ -4219,6 +4221,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         SCORE = 0.0f;
         TIMER_SEC = 2.0f * 60.0f;
         GAME_PHASE = PHASE_PLAYING;
+
+        memset(MAILBOX_POSITIONS_DATA, 0, sizeof(MAILBOX_POSITIONS_DATA));
+        MAILBOX_POSITIONS.data = MAILBOX_POSITIONS_DATA;
+        MAILBOX_POSITIONS.cap = ArraySizeOf(MAILBOX_POSITIONS_DATA);
+        ArrPush(&MAILBOX_POSITIONS, Vec3Lit(-1.0f, 1.0f, 0.0f));
+        ArrPush(&MAILBOX_POSITIONS, Vec3Lit(0.0f, 1.0f, 0.0f));
+        ArrPush(&MAILBOX_POSITIONS, Vec3Lit(1.0f, 1.0f, 0.0f));
 
         {
             for (i32 i = 0; i < 50; ++i) {
@@ -4236,9 +4245,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
         }
 
-        for (isize i = 1; i < ArraySizeOf(MAILBOX_POSITIONS); ++i) {
+        for (isize i = 0; i < MAILBOX_POSITIONS.len; ++i) {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(MAILBOX_POSITIONS[i], hamper_to_world);
+            e->pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, i), hamper_to_world);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
             GraphicsInfoSetLModel(&e->graphics,
                                   LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(), Mat4Identity(),
@@ -4288,8 +4297,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             SCORE += 1.5f;
 
-                            e->pos = Vec3WTransform(MAILBOX_POSITIONS[NEXT_MAILBOX_IDX], hamper_to_world);
-                            NEXT_MAILBOX_IDX = (NEXT_MAILBOX_IDX % (ArraySizeOf(MAILBOX_POSITIONS) - 1)) + 1;
+                            e->pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, NEXT_MAILBOX_IDX), hamper_to_world);
+                            NEXT_MAILBOX_IDX = (NEXT_MAILBOX_IDX + 1) % MAILBOX_POSITIONS.len;
                             e->pos.z += 1.0f;
                             EasingSetLerp(&e->graphics.pos_easing, 0.001f);
                             e->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
