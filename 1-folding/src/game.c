@@ -3957,6 +3957,15 @@ static const f32 GRID_DEPTH = 1.0f;
 
 #define World2GridEx(pos, w, h, d) (Vec3Lit((u32)((pos).x / (w)), (u32)((pos).y / (h)), (u32)((pos).z) / (d)))
 #define World2Grid(pos) (World2GridEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
+////////////////////////////////////////////////////
+
+typedef enum {
+    PHASE_NONE = 0,
+    PHASE_EOD,
+    PHASE_PLAYING,
+    PHASE_GAMEOVER,
+    PHASE_SHOP_OPEN,
+} GamePhase;
 
 ////////////////////////////////////////////////////
 
@@ -4012,6 +4021,8 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
+
+    GamePhase phase;
 } GameState;
 
 static GameState GState;
@@ -4185,14 +4196,6 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
     }
 }
 
-typedef enum {
-    PHASE_NONE = 0,
-    PHASE_EOD,
-    PHASE_PLAYING,
-    PHASE_GAMEOVER,
-    PHASE_SHOP_OPEN,
-} GamePhase;
-
 // 1 meter = N pixels scale factor.
 #define PPM (1.0f)
 #define MPP (1.0f / PPM)
@@ -4209,10 +4212,18 @@ static void EntityInitWorker(Entity* e, Vec3 pos) {
     FlagOn(e->flags, EFLAG_WORKER);
 }
 
+// static void StartNewDay(GameState* gstate) {
+//     for (Entity* e = NULL; IncrementEntity(&e);) {
+//         if (TestFlag(e->flags, EFLAG_WORKER)) {
+//             e->energy = 2.0f;
+//             e->work_cooldown_dt = 1.0f;
+//         }
+//     }
+// }
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 SCORE = 0.0f;
     static EntityId MAIL_STACK_ROOT = {0};
-    static GamePhase GAME_PHASE = PHASE_NONE;
     // Positions of hampers in hamper space.
     static Vec3 MAILBOX_POSITIONS_DATA[20] = {0};
     static Vec3Arr MAILBOX_POSITIONS;
@@ -4226,7 +4237,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         SCORE = 0.0f;
-        GAME_PHASE = PHASE_EOD;
+        gstate->phase = PHASE_EOD;
 
         memset(MAILBOX_POSITIONS_DATA, 0, sizeof(MAILBOX_POSITIONS_DATA));
         MAILBOX_POSITIONS.data = MAILBOX_POSITIONS_DATA;
@@ -4273,9 +4284,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         // GameControllerState* controller = &input->controllers[0];
 
-        switch (GAME_PHASE) {
+        switch (gstate->phase) {
             case PHASE_PLAYING: {
                 if (!EntityIdEq(MAIL_STACK_ROOT, NULLID)) {
+                    bool some_worker_has_energy_left = false;
+
                     for (Entity* e = NULL; IncrementEntity(&e);) {
                         if (TestFlag(e->flags, EFLAG_WORKER)) {
                             static f32 WORK_COOLDOWN_DT = 0.0f;
@@ -4285,6 +4298,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             WORK_COOLDOWN_DT = f32max(WORK_COOLDOWN_DT, 0.0f);
 
                             if (ENERGY > 0.0f) {
+                                some_worker_has_energy_left = true;
                                 if (WORK_COOLDOWN_DT <= 0.0f) {
                                     ENERGY -= 0.5f;
                                     ENERGY = f32max(ENERGY, 0.0f);
@@ -4307,6 +4321,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
                         }
+                    }
+
+                    if (!some_worker_has_energy_left) {
+                        gstate->phase = PHASE_EOD;
+                        break;
                     }
                 }
                 break;
@@ -4435,7 +4454,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
 
-                    if (GAME_PHASE == PHASE_EOD) {
+                    if (gstate->phase == PHASE_EOD) {
                         pos = Vec2Sub(pos, spacing);
 
                         char buffer[256] = {0};
@@ -4467,7 +4486,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            GAME_PHASE = PHASE_PLAYING;
+                            gstate->phase = PHASE_PLAYING;
                         }
 
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
@@ -4477,7 +4496,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
             }
 
-            if (GAME_PHASE == PHASE_GAMEOVER) {
+            if (gstate->phase == PHASE_GAMEOVER) {
                 LFont font = GetLFontClosest(40.0f);
 
                 DrawQuad(Vec3Lit(width * 0.5f, height * 0.5f, 0.0f), width, height, Mat4Identity(), LGRAY);
