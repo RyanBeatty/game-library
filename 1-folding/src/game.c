@@ -4027,6 +4027,8 @@ typedef struct GameState {
     GamePhase phase;
 
     i32 worker_count;
+
+    EntityId mail_root;
 } GameState;
 
 static GameState GState;
@@ -4258,8 +4260,6 @@ static void EntityInitWorker(Entity* e, Vec3 pos) {
 // }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
-    static EntityId MAIL_STACK_ROOT = {0};
-
     f32 dt = gstate->dt;
 
     Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
@@ -4283,8 +4283,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
                 GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
                                                                    Mat4Identity(), hamper_dims_world, LCLEAR));
-                e->next_hamper = MAIL_STACK_ROOT;
-                MAIL_STACK_ROOT = e->id;
+                e->next_hamper = gstate->mail_root;
+                gstate->mail_root = e->id;
             }
         }
 
@@ -4315,7 +4315,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (gstate->phase) {
             case PHASE_PLAYING: {
-                if (!EntityIdEq(MAIL_STACK_ROOT, NULLID)) {
+                if (!EntityIdEq(gstate->mail_root, NULLID)) {
                     bool some_worker_has_energy_left = false;
 
                     for (Entity* e = NULL; IncrementEntity(&e);) {
@@ -4333,7 +4333,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     ENERGY = f32max(ENERGY, 0.0f);
                                     WORK_COOLDOWN_DT = 1.0f;
 
-                                    Entity* mail = EntityFromId(MAIL_STACK_ROOT);
+                                    Entity* mail = EntityFromId(gstate->mail_root);
                                     Assert(mail != NULL);
 
                                     PlatformPlaySound(GetSound(SOUND_SORT), 0);
@@ -4346,7 +4346,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
                                     EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
 
-                                    MAIL_STACK_ROOT = mail->next_hamper;
+                                    gstate->mail_root = mail->next_hamper;
                                 }
                             }
                         }
