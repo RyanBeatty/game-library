@@ -4269,6 +4269,8 @@ static void StartNewDay(GameState* gstate) {
             GraphicsInfoTickAnimation(&e->graphics, dt);
         }
     }
+
+    gstate->phase = PHASE_PLAYING;
 }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
@@ -4489,7 +4491,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            gstate->phase = PHASE_PLAYING;
+                            StartNewDay(gstate);
                         }
 
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
