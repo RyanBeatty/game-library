@@ -4253,9 +4253,9 @@ static void StartNewDay(GameState* gstate) {
     }
 
     // Spawn workers
-    Vec3 worker_pos[] = {Vec3Lit(-1.0f, 1.0f, 0.0f)};
-    for (isize i = 0; i < ArraySizeOf(worker_pos); ++i) {
-        Vec3 pos = Vec3WTransform(worker_pos[i], hamper_to_world);
+    for (isize i = 0; i < gstate->worker_count; ++i) {
+        Vec3 worker_pos = Vec3Lit(i, 0, 0);
+        Vec3 pos = Vec3WTransform(worker_pos, hamper_to_world);
         Entity* e = AllocateEntity();
         EntityInitWorker(e, pos, 2.0f, 1.0);
     }
@@ -4406,7 +4406,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
-                        static f32 const MAILBOX_PRICE = 30.0f;
+                        static f32 const WORKER_PRICE = 4.0f;
                         pos = Vec2Sub(pos, spacing);
 
                         char buffer[256] = {0};
@@ -4438,8 +4438,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= MAILBOX_PRICE) {
-                                gstate->score -= MAILBOX_PRICE;
+                            if (gstate->score >= WORKER_PRICE) {
+                                gstate->score -= WORKER_PRICE;
+                                ++gstate->worker_count;
 
                                 // {
                                 //     Vec3 new_pos = ArrGet(&MAILBOX_POSITIONS, MAILBOX_POSITIONS.len - 1);
