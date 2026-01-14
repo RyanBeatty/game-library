@@ -4211,7 +4211,6 @@ static void EntityInitMailbox(Entity* e, Vec3 pos) {
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 SCORE = 0.0f;
     static EntityId MAIL_STACK_ROOT = {0};
-    static f32 TIMER_SEC = 0.0f;
     static GamePhase GAME_PHASE = PHASE_NONE;
     // Positions of hampers in hamper space.
     static Vec3 MAILBOX_POSITIONS_DATA[20] = {0};
@@ -4227,7 +4226,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         SCORE = 0.0f;
-        TIMER_SEC = 2.0f * 60.0f;
         GAME_PHASE = PHASE_EOD;
 
         memset(MAILBOX_POSITIONS_DATA, 0, sizeof(MAILBOX_POSITIONS_DATA));
@@ -4279,41 +4277,34 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (GAME_PHASE) {
             case PHASE_PLAYING: {
-                TIMER_SEC -= dt;
-                TIMER_SEC = f32max(0.0f, TIMER_SEC);
+                if (!EntityIdEq(MAIL_STACK_ROOT, NULLID)) {
+                    Entity* e = EntityFromId(MAIL_STACK_ROOT);
+                    Assert(e != NULL);
+                    // Move hamper root to correct position.
+                    e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
+                    EasingSetLerp(&e->graphics.pos_easing, 0.01);
 
-                if (TIMER_SEC > 0.0f) {
-                    if (!EntityIdEq(MAIL_STACK_ROOT, NULLID)) {
-                        Entity* e = EntityFromId(MAIL_STACK_ROOT);
-                        Assert(e != NULL);
-                        // Move hamper root to correct position.
-                        e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
-                        EasingSetLerp(&e->graphics.pos_easing, 0.01);
+                    Polyhedron rect = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
+                    Polyhedron cursor = {0};
+                    PolyhedronSetCircle(&cursor, controller->cursor_pos_world, 3.0f);
+                    CollisionInfo info = {0};
+                    bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
 
-                        Polyhedron rect = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
-                        Polyhedron cursor = {0};
-                        PolyhedronSetCircle(&cursor, controller->cursor_pos_world, 3.0f);
-                        CollisionInfo info = {0};
-                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                    bool sorted = collides && controller->action_down.pressed;
+                    if (sorted) {
+                        PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
-                        bool sorted = collides && controller->action_down.pressed;
-                        if (sorted) {
-                            PlatformPlaySound(GetSound(SOUND_SORT), 0);
+                        SCORE += 1.5f;
 
-                            SCORE += 1.5f;
+                        e->pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, NEXT_MAILBOX_IDX), hamper_to_world);
+                        NEXT_MAILBOX_IDX = (NEXT_MAILBOX_IDX + 1) % MAILBOX_POSITIONS.len;
+                        e->pos.z += 1.0f;
+                        EasingSetLerp(&e->graphics.pos_easing, 0.001f);
+                        e->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
+                        EasingSetLerp(&e->graphics.scale_easing, 0.1f);
 
-                            e->pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, NEXT_MAILBOX_IDX), hamper_to_world);
-                            NEXT_MAILBOX_IDX = (NEXT_MAILBOX_IDX + 1) % MAILBOX_POSITIONS.len;
-                            e->pos.z += 1.0f;
-                            EasingSetLerp(&e->graphics.pos_easing, 0.001f);
-                            e->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
-                            EasingSetLerp(&e->graphics.scale_easing, 0.1f);
-
-                            MAIL_STACK_ROOT = e->next_hamper;
-                        }
+                        MAIL_STACK_ROOT = e->next_hamper;
                     }
-                } else {
-                    GAME_PHASE = PHASE_GAMEOVER;
                 }
                 break;
             }
@@ -4478,25 +4469,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
 
-                        DrawStr8Ex(font, pos, LBLACK, txt);
-                    }
-                }
-
-                {
-                    Vec2 spacing = Vec2Lit(0.0f, 0.0f);
-                    Vec2 pos = Vec2Lit(width * 0.5f, height * 0.2f);
-
-                    {
-                        i32 minutes = TIMER_SEC / 60.0f;
-                        i32 seconds = f32mod(TIMER_SEC, 60.0f);
-
-                        pos = Vec2Sub(pos, spacing);
-
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "%d:%02d", minutes, seconds);
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
-                        pos.x -= dims.x * 0.5f;
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
                 }
