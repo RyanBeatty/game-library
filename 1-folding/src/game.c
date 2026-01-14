@@ -4441,17 +4441,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (gstate->score >= WORKER_PRICE) {
                                 gstate->score -= WORKER_PRICE;
                                 ++gstate->worker_count;
-
-                                // {
-                                //     Vec3 new_pos = ArrGet(&MAILBOX_POSITIONS, MAILBOX_POSITIONS.len - 1);
-                                //     new_pos.x += 1;
-                                //     ArrPush(&MAILBOX_POSITIONS, new_pos);
-
-                                //     new_pos = Vec3WTransform(new_pos, hamper_to_world);
-
-                                //     Entity* e = AllocateEntity();
-                                //     EntityInitWorker(e, new_pos);
-                                // }
                             }
                         }
 
