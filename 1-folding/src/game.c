@@ -4218,48 +4218,9 @@ static void EntityInitWorker(Entity* e, Vec3 pos) {
     FlagOn(e->flags, EFLAG_WORKER);
 }
 
-// static void StartNewDay(GameState* gstate) {
-//     EntitySystemInit();
+static void StartNewDay(GameState* gstate) {
+    EntitySystemInit();
 
-//     {
-//         for (i32 i = 0; i < 50; ++i) {
-//             Entity* e = AllocateEntity();
-//             e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
-//             // Add a random offset so that it more visually looks like a pile.
-//             Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f), Vec3Lit(0.0f,
-//             0.0f, 1.0f),
-//                                          f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
-//             e->pos = Vec3Add(e->pos, offset);
-//             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
-//             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
-//                                                                Mat4Identity(), hamper_dims_world, LCLEAR));
-//             e->next_hamper = MAIL_STACK_ROOT;
-//             MAIL_STACK_ROOT = e->id;
-//         }
-//     }
-
-//     for (isize i = 0; i < MAILBOX_POSITIONS.len; ++i) {
-//         Vec3 pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, i), hamper_to_world);
-//         Entity* e = AllocateEntity();
-//         EntityInitWorker(e, pos);
-//     }
-
-//     gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
-//                                .target = Vec3Zero(),
-//                                .up = Vec3Lit(0.0f, 1.0f, 0.0f)};
-
-//     // Important or the first couple frames our entities will teleport from origin to starting positions.
-//     for (Entity* e = NULL; IncrementEntity(&e);) {
-//         if (TestFlag(e->flags, EFLAG_DRAW)) {
-//             e->graphics.pos = e->pos;
-//             e->graphics.orient = e->orient;
-//             e->graphics.scale = e->scale;
-//             GraphicsInfoTickAnimation(&e->graphics, dt);
-//         }
-//     }
-// }
-
-static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
@@ -4267,47 +4228,56 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     Mat4 hamper_to_world =
         Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
 
+    // Spawn mail stack
+    {
+        for (i32 i = 0; i < 50; ++i) {
+            Entity* e = AllocateEntity();
+            e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
+            // Add a random offset so that it more visually looks like a pile.
+            Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
+                                         f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
+            e->pos = Vec3Add(e->pos, offset);
+            PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
+                                                               Mat4Identity(), hamper_dims_world, LCLEAR));
+            e->next_hamper = gstate->mail_root;
+            gstate->mail_root = e->id;
+        }
+    }
+
+    // Spawn workers
+    Vec3 worker_pos[] = {Vec3Lit(-1.0f, 1.0f, 0.0f)};
+    for (isize i = 0; i < ArraySizeOf(worker_pos); ++i) {
+        Vec3 pos = Vec3WTransform(worker_pos[i], hamper_to_world);
+        Entity* e = AllocateEntity();
+        EntityInitWorker(e, pos);
+    }
+
+    // Important or the first couple frames our entities will teleport from origin to starting positions.
+    for (Entity* e = NULL; IncrementEntity(&e);) {
+        if (TestFlag(e->flags, EFLAG_DRAW)) {
+            e->graphics.pos = e->pos;
+            e->graphics.orient = e->orient;
+            e->graphics.scale = e->scale;
+            GraphicsInfoTickAnimation(&e->graphics, dt);
+        }
+    }
+}
+
+static void SceneMainTick(GameState* gstate, GameInput* input) {
+    f32 dt = gstate->dt;
+
     if (gstate->init) {
         gstate->score = 0.0f;
         gstate->worker_count = 1;
+
+        StartNewDay(gstate);
+        // Sort of hacky but lets start with eod.
         gstate->phase = PHASE_EOD;
-
-        {
-            for (i32 i = 0; i < 50; ++i) {
-                Entity* e = AllocateEntity();
-                e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
-                // Add a random offset so that it more visually looks like a pile.
-                Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f),
-                                             Vec3Lit(0.0f, 0.0f, 1.0f), f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
-                e->pos = Vec3Add(e->pos, offset);
-                PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
-                GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
-                                                                   Mat4Identity(), hamper_dims_world, LCLEAR));
-                e->next_hamper = gstate->mail_root;
-                gstate->mail_root = e->id;
-            }
-        }
-
-        Vec3 mailbox_positions[] = {Vec3Lit(-1.0f, 1.0f, 0.0f)};
-        for (isize i = 0; i < ArraySizeOf(mailbox_positions); ++i) {
-            Vec3 pos = Vec3WTransform(mailbox_positions[i], hamper_to_world);
-            Entity* e = AllocateEntity();
-            EntityInitWorker(e, pos);
-        }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
                                    .target = Vec3Zero(),
                                    .up = Vec3Lit(0.0f, 1.0f, 0.0f)};
-
-        // Important or the first couple frames our entities will teleport from origin to starting positions.
-        for (Entity* e = NULL; IncrementEntity(&e);) {
-            if (TestFlag(e->flags, EFLAG_DRAW)) {
-                e->graphics.pos = e->pos;
-                e->graphics.orient = e->orient;
-                e->graphics.scale = e->scale;
-                GraphicsInfoTickAnimation(&e->graphics, dt);
-            }
-        }
     }
 
     if (gstate->update) {
