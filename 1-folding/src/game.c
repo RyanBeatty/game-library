@@ -3791,8 +3791,12 @@ typedef struct {
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
 
-    EntityId next_hamper;
+    EntityId next_mail;
     EntityId next_worker;
+
+    f32 energy;
+    f32 work_cooldown_dt;
+    f32 work_cooldown_sec;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4208,7 +4212,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
-static void EntityInitWorker(Entity* e, Vec3 pos) {
+static void EntityInitWorker(Entity* e, Vec3 pos, f32 energy, f32 work_cooldown_sec) {
     Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
 
     e->pos = pos;
@@ -4216,6 +4220,9 @@ static void EntityInitWorker(Entity* e, Vec3 pos) {
     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
                                                        Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
     FlagOn(e->flags, EFLAG_WORKER);
+    e->energy = energy;
+    e->work_cooldown_dt = 0.0f;
+    e->work_cooldown_sec = work_cooldown_sec;
 }
 
 static void StartNewDay(GameState* gstate) {
@@ -4240,7 +4247,7 @@ static void StartNewDay(GameState* gstate) {
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
                                                                Mat4Identity(), hamper_dims_world, LCLEAR));
-            e->next_hamper = gstate->mail_root;
+            e->next_mail = gstate->mail_root;
             gstate->mail_root = e->id;
         }
     }
@@ -4250,7 +4257,7 @@ static void StartNewDay(GameState* gstate) {
     for (isize i = 0; i < ArraySizeOf(worker_pos); ++i) {
         Vec3 pos = Vec3WTransform(worker_pos[i], hamper_to_world);
         Entity* e = AllocateEntity();
-        EntityInitWorker(e, pos);
+        EntityInitWorker(e, pos, 2.0f, 1.0);
     }
 
     // Important or the first couple frames our entities will teleport from origin to starting positions.
@@ -4290,18 +4297,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     for (Entity* e = NULL; IncrementEntity(&e);) {
                         if (TestFlag(e->flags, EFLAG_WORKER)) {
-                            static f32 WORK_COOLDOWN_DT = 0.0f;
-                            static f32 ENERGY = 2.0f;
+                            e->work_cooldown_dt -= dt;
+                            e->work_cooldown_dt = f32max(e->work_cooldown_dt, 0.0f);
 
-                            WORK_COOLDOWN_DT -= dt;
-                            WORK_COOLDOWN_DT = f32max(WORK_COOLDOWN_DT, 0.0f);
-
-                            if (ENERGY > 0.0f) {
+                            if (e->energy > 0.0f) {
                                 some_worker_has_energy_left = true;
-                                if (WORK_COOLDOWN_DT <= 0.0f) {
-                                    ENERGY -= 0.5f;
-                                    ENERGY = f32max(ENERGY, 0.0f);
-                                    WORK_COOLDOWN_DT = 1.0f;
+                                if (e->work_cooldown_dt <= 0.0f) {
+                                    e->energy -= 0.5f;
+                                    e->energy = f32max(e->energy, 0.0f);
+                                    e->work_cooldown_dt = e->work_cooldown_sec;
 
                                     Entity* mail = EntityFromId(gstate->mail_root);
                                     Assert(mail != NULL);
@@ -4316,7 +4320,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
                                     EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
 
-                                    gstate->mail_root = mail->next_hamper;
+                                    gstate->mail_root = mail->next_mail;
                                 }
                             }
                         }
