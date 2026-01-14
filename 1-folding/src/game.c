@@ -3750,8 +3750,7 @@ typedef enum EntityFlag {
     EFLAG_DRAW = 1 << 1,
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_WALL = 1 << 3,
-    EFLAG_FOLLOW_CURSOR = 1 << 4,
-    EFLAG_IS_CURSOR = 1 << 4,
+    EFLAG_WORKER = 1 << 4,
 } EntityFlag;
 
 typedef struct {
@@ -3793,6 +3792,7 @@ typedef struct {
     // Gameplay fields.
 
     EntityId next_hamper;
+    EntityId next_worker;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4199,13 +4199,14 @@ typedef enum {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
-static void EntityInitMailbox(Entity* e, Vec3 pos) {
+static void EntityInitWorker(Entity* e, Vec3 pos) {
     Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
 
     e->pos = pos;
     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
                                                        Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+    FlagOn(e->flags, EFLAG_WORKER);
 }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
@@ -4232,8 +4233,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         MAILBOX_POSITIONS.data = MAILBOX_POSITIONS_DATA;
         MAILBOX_POSITIONS.cap = ArraySizeOf(MAILBOX_POSITIONS_DATA);
         ArrPush(&MAILBOX_POSITIONS, Vec3Lit(-1.0f, 1.0f, 0.0f));
-        ArrPush(&MAILBOX_POSITIONS, Vec3Lit(0.0f, 1.0f, 0.0f));
-        ArrPush(&MAILBOX_POSITIONS, Vec3Lit(1.0f, 1.0f, 0.0f));
 
         {
             for (i32 i = 0; i < 50; ++i) {
@@ -4254,7 +4253,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         for (isize i = 0; i < MAILBOX_POSITIONS.len; ++i) {
             Vec3 pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, i), hamper_to_world);
             Entity* e = AllocateEntity();
-            EntityInitMailbox(e, pos);
+            EntityInitWorker(e, pos);
         }
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
@@ -4422,7 +4421,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 //     new_pos = Vec3WTransform(new_pos, hamper_to_world);
 
                                 //     Entity* e = AllocateEntity();
-                                //     EntityInitMailbox(e, new_pos);
+                                //     EntityInitWorker(e, new_pos);
                                 // }
                             }
                         }
