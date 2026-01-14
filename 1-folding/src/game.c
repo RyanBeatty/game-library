@@ -4025,6 +4025,8 @@ typedef struct GameState {
     f32 score;
 
     GamePhase phase;
+
+    i32 worker_count;
 } GameState;
 
 static GameState GState;
@@ -4215,19 +4217,48 @@ static void EntityInitWorker(Entity* e, Vec3 pos) {
 }
 
 // static void StartNewDay(GameState* gstate) {
+//     EntitySystemInit();
+
+//     {
+//         for (i32 i = 0; i < 50; ++i) {
+//             Entity* e = AllocateEntity();
+//             e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
+//             // Add a random offset so that it more visually looks like a pile.
+//             Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f), Vec3Lit(0.0f,
+//             0.0f, 1.0f),
+//                                          f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
+//             e->pos = Vec3Add(e->pos, offset);
+//             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
+//             GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
+//                                                                Mat4Identity(), hamper_dims_world, LCLEAR));
+//             e->next_hamper = MAIL_STACK_ROOT;
+//             MAIL_STACK_ROOT = e->id;
+//         }
+//     }
+
+//     for (isize i = 0; i < MAILBOX_POSITIONS.len; ++i) {
+//         Vec3 pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, i), hamper_to_world);
+//         Entity* e = AllocateEntity();
+//         EntityInitWorker(e, pos);
+//     }
+
+//     gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
+//                                .target = Vec3Zero(),
+//                                .up = Vec3Lit(0.0f, 1.0f, 0.0f)};
+
+//     // Important or the first couple frames our entities will teleport from origin to starting positions.
 //     for (Entity* e = NULL; IncrementEntity(&e);) {
-//         if (TestFlag(e->flags, EFLAG_WORKER)) {
-//             e->energy = 2.0f;
-//             e->work_cooldown_dt = 1.0f;
+//         if (TestFlag(e->flags, EFLAG_DRAW)) {
+//             e->graphics.pos = e->pos;
+//             e->graphics.orient = e->orient;
+//             e->graphics.scale = e->scale;
+//             GraphicsInfoTickAnimation(&e->graphics, dt);
 //         }
 //     }
 // }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static EntityId MAIL_STACK_ROOT = {0};
-    // Positions of hampers in hamper space.
-    static Vec3 MAILBOX_POSITIONS_DATA[20] = {0};
-    static Vec3Arr MAILBOX_POSITIONS;
 
     f32 dt = gstate->dt;
 
@@ -4238,12 +4269,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         gstate->score = 0.0f;
+        gstate->worker_count = 1;
         gstate->phase = PHASE_EOD;
-
-        memset(MAILBOX_POSITIONS_DATA, 0, sizeof(MAILBOX_POSITIONS_DATA));
-        MAILBOX_POSITIONS.data = MAILBOX_POSITIONS_DATA;
-        MAILBOX_POSITIONS.cap = ArraySizeOf(MAILBOX_POSITIONS_DATA);
-        ArrPush(&MAILBOX_POSITIONS, Vec3Lit(-1.0f, 1.0f, 0.0f));
 
         {
             for (i32 i = 0; i < 50; ++i) {
@@ -4261,8 +4288,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
         }
 
-        for (isize i = 0; i < MAILBOX_POSITIONS.len; ++i) {
-            Vec3 pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, i), hamper_to_world);
+        Vec3 mailbox_positions[] = {Vec3Lit(-1.0f, 1.0f, 0.0f)};
+        for (isize i = 0; i < ArraySizeOf(mailbox_positions); ++i) {
+            Vec3 pos = Vec3WTransform(mailbox_positions[i], hamper_to_world);
             Entity* e = AllocateEntity();
             EntityInitWorker(e, pos);
         }
