@@ -4187,6 +4187,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 
 typedef enum {
     PHASE_NONE = 0,
+    PHASE_EOD,
     PHASE_PLAYING,
     PHASE_GAMEOVER,
     PHASE_SHOP_OPEN,
@@ -4215,8 +4216,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     // Positions of hampers in hamper space.
     static Vec3 MAILBOX_POSITIONS_DATA[20] = {0};
     static Vec3Arr MAILBOX_POSITIONS;
-    // static Vec3 MAILBOX_POSITIONS[] = {Vec3LitAll(0.0f), Vec3Lit(-1.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f),
-    //                                    Vec3Lit(1.0f, 1.0f, 0.0f)};
     static isize NEXT_MAILBOX_IDX = 0;
 
     f32 dt = gstate->dt;
@@ -4229,7 +4228,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->init) {
         SCORE = 0.0f;
         TIMER_SEC = 2.0f * 60.0f;
-        GAME_PHASE = PHASE_PLAYING;
+        GAME_PHASE = PHASE_EOD;
 
         memset(MAILBOX_POSITIONS_DATA, 0, sizeof(MAILBOX_POSITIONS_DATA));
         MAILBOX_POSITIONS.data = MAILBOX_POSITIONS_DATA;
@@ -4322,6 +4321,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 break;
             }
             case PHASE_SHOP_OPEN: {
+                break;
+            }
+            case PHASE_EOD: {
                 break;
             }
             default: {
@@ -4421,17 +4423,57 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (SCORE >= MAILBOX_PRICE) {
                                 SCORE -= MAILBOX_PRICE;
 
-                                {
-                                    Vec3 new_pos = ArrGet(&MAILBOX_POSITIONS, MAILBOX_POSITIONS.len - 1);
-                                    new_pos.x += 1;
-                                    ArrPush(&MAILBOX_POSITIONS, new_pos);
+                                // {
+                                //     Vec3 new_pos = ArrGet(&MAILBOX_POSITIONS, MAILBOX_POSITIONS.len - 1);
+                                //     new_pos.x += 1;
+                                //     ArrPush(&MAILBOX_POSITIONS, new_pos);
 
-                                    new_pos = Vec3WTransform(new_pos, hamper_to_world);
+                                //     new_pos = Vec3WTransform(new_pos, hamper_to_world);
 
-                                    Entity* e = AllocateEntity();
-                                    EntityInitMailbox(e, new_pos);
-                                }
+                                //     Entity* e = AllocateEntity();
+                                //     EntityInitMailbox(e, new_pos);
+                                // }
                             }
+                        }
+
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+
+                    if (GAME_PHASE == PHASE_EOD) {
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Start Next Day");
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+
+                        pos.y -= dims.y;
+
+                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has some
+                        // chars that extend below the baseline. I think instead I need to have some function that gives
+                        // me the text rect relative to a baseline and then position that inside of drawn rect to make
+                        // the text centered? Not sure, sort of need to think about what API drawing text should take.
+                        // Should it take a position representing a baseline? or a position representing the center of
+                        // some rect to draw within? sort of feel like the former and the later could be a wrapper on
+                        // top.
+                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                        Polyhedron rect;
+                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+
+                        GameControllerState* controller = &input->controllers[0];
+                        Polyhedron cursor;
+                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                        CollisionInfo info = {0};
+                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        // TODO: There is a potential issue here in that by the time we've checked the down action here,
+                        // we might have triggered gameplay actions as well since this logic check happens after the
+                        // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
+                        // But they are coupled for the time being.
+                        if (collides && controller->action_down.pressed) {
+                            GAME_PHASE = PHASE_PLAYING;
                         }
 
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
