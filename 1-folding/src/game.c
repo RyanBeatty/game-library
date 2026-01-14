@@ -4216,7 +4216,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     // Positions of hampers in hamper space.
     static Vec3 MAILBOX_POSITIONS_DATA[20] = {0};
     static Vec3Arr MAILBOX_POSITIONS;
-    static isize NEXT_MAILBOX_IDX = 0;
 
     f32 dt = gstate->dt;
 
@@ -4272,37 +4271,42 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->update) {
-        GameControllerState* controller = &input->controllers[0];
+        // GameControllerState* controller = &input->controllers[0];
 
         switch (GAME_PHASE) {
             case PHASE_PLAYING: {
                 if (!EntityIdEq(MAIL_STACK_ROOT, NULLID)) {
-                    Entity* e = EntityFromId(MAIL_STACK_ROOT);
-                    Assert(e != NULL);
-                    // Move hamper root to correct position.
-                    e->pos = Vec3WTransform(Vec3Lit(0.0f, 0.0f, 0.0f), hamper_to_world);
-                    EasingSetLerp(&e->graphics.pos_easing, 0.01);
+                    for (Entity* e = NULL; IncrementEntity(&e);) {
+                        if (TestFlag(e->flags, EFLAG_WORKER)) {
+                            static f32 WORK_COOLDOWN_DT = 0.0f;
+                            static f32 ENERGY = 2.0f;
 
-                    Polyhedron rect = PolyhedronTransform(e->shape, e->scale, e->orient, e->pos);
-                    Polyhedron cursor = {0};
-                    PolyhedronSetCircle(&cursor, controller->cursor_pos_world, 3.0f);
-                    CollisionInfo info = {0};
-                    bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                            WORK_COOLDOWN_DT -= dt;
+                            WORK_COOLDOWN_DT = f32max(WORK_COOLDOWN_DT, 0.0f);
 
-                    bool sorted = collides && controller->action_down.pressed;
-                    if (sorted) {
-                        PlatformPlaySound(GetSound(SOUND_SORT), 0);
+                            if (ENERGY > 0.0f) {
+                                if (WORK_COOLDOWN_DT <= 0.0f) {
+                                    ENERGY -= 0.5f;
+                                    ENERGY = f32max(ENERGY, 0.0f);
+                                    WORK_COOLDOWN_DT = 1.0f;
 
-                        SCORE += 1.5f;
+                                    Entity* mail = EntityFromId(MAIL_STACK_ROOT);
+                                    Assert(mail != NULL);
 
-                        e->pos = Vec3WTransform(ArrGet(&MAILBOX_POSITIONS, NEXT_MAILBOX_IDX), hamper_to_world);
-                        NEXT_MAILBOX_IDX = (NEXT_MAILBOX_IDX + 1) % MAILBOX_POSITIONS.len;
-                        e->pos.z += 1.0f;
-                        EasingSetLerp(&e->graphics.pos_easing, 0.001f);
-                        e->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
-                        EasingSetLerp(&e->graphics.scale_easing, 0.1f);
+                                    PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
-                        MAIL_STACK_ROOT = e->next_hamper;
+                                    SCORE += 1.5f;
+
+                                    mail->pos = e->pos;
+                                    mail->pos.z += 1.0f;
+                                    EasingSetLerp(&mail->graphics.pos_easing, 0.001f);
+                                    mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
+                                    EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
+
+                                    MAIL_STACK_ROOT = mail->next_hamper;
+                                }
+                            }
+                        }
                     }
                 }
                 break;
