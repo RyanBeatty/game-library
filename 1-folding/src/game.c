@@ -4022,6 +4022,8 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Scene fields
 
+    f32 score;
+
     GamePhase phase;
 } GameState;
 
@@ -4222,7 +4224,6 @@ static void EntityInitWorker(Entity* e, Vec3 pos) {
 // }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
-    static f32 SCORE = 0.0f;
     static EntityId MAIL_STACK_ROOT = {0};
     // Positions of hampers in hamper space.
     static Vec3 MAILBOX_POSITIONS_DATA[20] = {0};
@@ -4236,7 +4237,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
 
     if (gstate->init) {
-        SCORE = 0.0f;
+        gstate->score = 0.0f;
         gstate->phase = PHASE_EOD;
 
         memset(MAILBOX_POSITIONS_DATA, 0, sizeof(MAILBOX_POSITIONS_DATA));
@@ -4309,7 +4310,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                     PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
-                                    SCORE += 1.5f;
+                                    gstate->score += 1.5f;
 
                                     mail->pos = e->pos;
                                     mail->pos.z += 1.0f;
@@ -4393,7 +4394,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         pos = Vec2Sub(pos, spacing);
 
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", SCORE);
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
                         pos.y -= dims.y;
@@ -4433,8 +4434,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            if (SCORE >= MAILBOX_PRICE) {
-                                SCORE -= MAILBOX_PRICE;
+                            if (gstate->score >= MAILBOX_PRICE) {
+                                gstate->score -= MAILBOX_PRICE;
 
                                 // {
                                 //     Vec3 new_pos = ArrGet(&MAILBOX_POSITIONS, MAILBOX_POSITIONS.len - 1);
@@ -4517,7 +4518,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     {
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Final Score: %f", SCORE);
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Final Score: %f", gstate->score);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
                         pos.y -= dims.y;
