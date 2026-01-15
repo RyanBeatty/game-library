@@ -4474,47 +4474,56 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
+                }
 
-                    if (gstate->phase == PHASE_EOD) {
-                        {
-                            pos = Vec2Sub(pos, spacing);
+                if (gstate->phase == PHASE_EOD) {
+                    Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
+                    Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
+                    DrawQuad(center, parent_dims.x, parent_dims.y, Mat4Identity(), LRED);
 
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Start Next Day");
-                            Str8 txt = Str8FromC(buffer);
-                            Vec2 dims = LFontMeasureStr8(font, txt);
+                    Vec2 parent_top_left = Vec2Lit(center.x - 0.5f * parent_dims.x, center.y + 0.5f * parent_dims.y);
+                    Vec2 pos = Vec2Lit(parent_top_left.x + 10.0f, parent_top_left.y + 0.0f);
+                    Vec2 spacing = Vec2Lit(0.0f, 20.0f);
 
-                            pos.y -= dims.y;
+                    {
+                        pos = Vec2Sub(pos, spacing);
+                        breakpoint();
 
-                            // TODO: The positioning of this is not correct. this will make sure the quad is centered
-                            // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
-                            // some chars that extend below the baseline. I think instead I need to have some function
-                            // that gives me the text rect relative to a baseline and then position that inside of drawn
-                            // rect to make the text centered? Not sure, sort of need to think about what API drawing
-                            // text should take. Should it take a position representing a baseline? or a position
-                            // representing the center of some rect to draw within? sort of feel like the former and the
-                            // later could be a wrapper on top.
-                            Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
-                            Polyhedron rect;
-                            PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Start Next Day");
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
 
-                            GameControllerState* controller = &input->controllers[0];
-                            Polyhedron cursor;
-                            PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-                            CollisionInfo info = {0};
-                            bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
-                            // TODO: There is a potential issue here in that by the time we've checked the down action
-                            // here, we might have triggered gameplay actions as well since this logic check happens
-                            // after the update step. Ideally we decouple the UI logic detection/gameplay state update
-                            // and the render. But they are coupled for the time being.
-                            if (collides && controller->action_down.pressed) {
-                                StartNewDay(gstate);
-                            }
+                        pos.y -= dims.y;
 
-                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
+                        // some chars that extend below the baseline. I think instead I need to have some function
+                        // that gives me the text rect relative to a baseline and then position that inside of drawn
+                        // rect to make the text centered? Not sure, sort of need to think about what API drawing
+                        // text should take. Should it take a position representing a baseline? or a position
+                        // representing the center of some rect to draw within? sort of feel like the former and the
+                        // later could be a wrapper on top.
+                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                        Polyhedron rect;
+                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
 
-                            DrawStr8Ex(font, pos, LBLACK, txt);
+                        GameControllerState* controller = &input->controllers[0];
+                        Polyhedron cursor;
+                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                        CollisionInfo info = {0};
+                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        // TODO: There is a potential issue here in that by the time we've checked the down action
+                        // here, we might have triggered gameplay actions as well since this logic check happens
+                        // after the update step. Ideally we decouple the UI logic detection/gameplay state update
+                        // and the render. But they are coupled for the time being.
+                        if (collides && controller->action_down.pressed) {
+                            StartNewDay(gstate);
                         }
+
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+
+                        DrawStr8Ex(font, pos, LBLACK, txt);
                     }
                 }
             }
