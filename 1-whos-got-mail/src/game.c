@@ -4035,6 +4035,12 @@ typedef struct GameState {
     i32 worker_count;
     f32 worker_price;
 
+    f32 worker_energy;
+    f32 worker_energy_price;
+
+    f32 worker_cooldown_sec;
+    f32 worker_cooldown_sec_price;
+
     EntityId mail_root;
 
     i32 day;
@@ -4265,7 +4271,7 @@ static void StartNewDay(GameState* gstate) {
         Vec3 worker_pos = Vec3Lit(i, 0, 0);
         Vec3 pos = Vec3WTransform(worker_pos, hamper_to_world);
         Entity* e = AllocateEntity();
-        EntityInitWorker(e, pos, 2.0f, 1.0);
+        EntityInitWorker(e, pos, gstate->worker_energy, gstate->worker_cooldown_sec);
     }
 
     // Important or the first couple frames our entities will teleport from origin to starting positions.
@@ -4289,6 +4295,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->worker_count = 1;
         gstate->worker_price = 4.0f;
         gstate->day = -1;
+        gstate->worker_energy = 2.0f;
+        gstate->worker_energy_price = 6.0f;
+        gstate->worker_cooldown_sec = 1.0f;
+        gstate->worker_cooldown_sec_price = 8.0f;
 
         StartNewDay(gstate);
         // Sort of hacky but lets start with eod.
