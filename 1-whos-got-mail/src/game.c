@@ -3760,6 +3760,8 @@ typedef struct {
 static const EntityId NULLID = {0};
 
 #define EntityIdEq(a, b) (((a).idx == (b).idx) && ((a).generation == (b).generation))
+#define EntityIdNotNull(a) (!EntityIdEq((a), NULLID))
+#define EntityIdNull(a) (EntityIdEq((a), NULLID))
 
 typedef struct {
     /////////////////////////////////////////////////////////////////
@@ -4237,7 +4239,8 @@ static void StartNewDay(GameState* gstate) {
 
     // Spawn mail stack
     {
-        for (i32 i = 0; i < 50; ++i) {
+        gstate->mail_root = NULLID;
+        for (i32 i = 0; i < 2; ++i) {
             Entity* e = AllocateEntity();
             e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
             // Add a random offset so that it more visually looks like a pile.
@@ -4294,14 +4297,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (gstate->phase) {
             case PHASE_PLAYING: {
-                if (!EntityIdEq(gstate->mail_root, NULLID)) {
-                    bool some_worker_has_energy_left = false;
+                bool some_worker_has_energy_left = false;
 
-                    for (Entity* e = NULL; IncrementEntity(&e);) {
-                        if (TestFlag(e->flags, EFLAG_WORKER)) {
-                            e->work_cooldown_dt -= dt;
-                            e->work_cooldown_dt = f32max(e->work_cooldown_dt, 0.0f);
+                for (Entity* e = NULL; IncrementEntity(&e);) {
+                    if (TestFlag(e->flags, EFLAG_WORKER)) {
+                        e->work_cooldown_dt -= dt;
+                        e->work_cooldown_dt = f32max(e->work_cooldown_dt, 0.0f);
 
+                        if (EntityIdNotNull(gstate->mail_root)) {
                             if (e->energy > 0.0f) {
                                 some_worker_has_energy_left = true;
                                 if (e->work_cooldown_dt <= 0.0f) {
@@ -4327,11 +4330,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
                     }
+                }
 
-                    if (!some_worker_has_energy_left) {
-                        gstate->phase = PHASE_EOD;
-                        break;
-                    }
+                if (EntityIdNull(gstate->mail_root)) {
+                    gstate->phase = PHASE_GAMEOVER;
+                    break;
+                }
+
+                if (!some_worker_has_energy_left) {
+                    gstate->phase = PHASE_EOD;
+                    break;
                 }
                 break;
             }
