@@ -4033,6 +4033,7 @@ typedef struct GameState {
     GamePhase phase;
 
     i32 worker_count;
+    f32 worker_price;
 
     EntityId mail_root;
 } GameState;
@@ -4240,7 +4241,7 @@ static void StartNewDay(GameState* gstate) {
     // Spawn mail stack
     {
         gstate->mail_root = NULLID;
-        for (i32 i = 0; i < 2; ++i) {
+        for (i32 i = 0; i < 50; ++i) {
             Entity* e = AllocateEntity();
             e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
             // Add a random offset so that it more visually looks like a pile.
@@ -4282,6 +4283,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->init) {
         gstate->score = 0.0f;
         gstate->worker_count = 1;
+        gstate->worker_price = 4.0f;
 
         StartNewDay(gstate);
         // Sort of hacky but lets start with eod.
@@ -4414,11 +4416,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
-                        static f32 const WORKER_PRICE = 4.0f;
                         pos = Vec2Sub(pos, spacing);
 
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $30.00");
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_price);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
 
@@ -4446,9 +4447,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= WORKER_PRICE) {
-                                gstate->score -= WORKER_PRICE;
+                            if (gstate->score >= gstate->worker_price) {
+                                gstate->score -= gstate->worker_price;
                                 ++gstate->worker_count;
+                                gstate->worker_price *= 2.0f;
                             }
                         }
 
