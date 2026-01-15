@@ -4036,6 +4036,8 @@ typedef struct GameState {
     f32 worker_price;
 
     EntityId mail_root;
+
+    i32 day;
 } GameState;
 
 static GameState GState;
@@ -4231,6 +4233,8 @@ static void EntityInitWorker(Entity* e, Vec3 pos, f32 energy, f32 work_cooldown_
 static void StartNewDay(GameState* gstate) {
     EntitySystemInit();
 
+    ++gstate->day;
+
     f32 dt = gstate->dt;
 
     Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
@@ -4284,6 +4288,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->score = 0.0f;
         gstate->worker_count = 1;
         gstate->worker_price = 4.0f;
+        gstate->day = -1;
 
         StartNewDay(gstate);
         // Sort of hacky but lets start with eod.
@@ -4408,6 +4413,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         pos = Vec2Sub(pos, spacing);
 
                         char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Day: %d", gstate->day);
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+                        pos.y -= dims.y;
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+
+                    {
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
@@ -4522,7 +4538,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     {
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Final Score: %f", gstate->score);
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Reach The End In %d Days!", gstate->day);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
                         pos.y -= dims.y;
