@@ -4044,6 +4044,8 @@ typedef struct GameState {
     i32 target_score;
 
     EntityId worker_root;
+
+    bool shop_open;
 } GameState;
 
 static GameState GState;
@@ -4245,6 +4247,7 @@ static void SpawnWorker(GameState* gstate, Vec3 pos) {
 static void StartNewDay(GameState* gstate) {
     EntitySystemInit();
 
+    gstate->shop_open = false;
     ++gstate->day;
     gstate->num_sorted = 0;
 
@@ -4309,7 +4312,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         StartNewDay(gstate);
         // Sort of hacky but lets start with eod.
-        gstate->phase = PHASE_EOD;
+        // gstate->phase = PHASE_EOD;
 
         gstate->camera = (LCamera){.eye = Vec3Lit(Px2Meter(0.0f), Px2Meter(0.0f), Px2Meter(20.0f)),
                                    .target = Vec3Zero(),
@@ -4500,7 +4503,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // after the update step. Ideally we decouple the UI logic detection/gameplay state update
                         // and the render. But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            gstate->phase = gstate->phase == PHASE_PLAYING ? PHASE_EOD : PHASE_PLAYING;
+                            gstate->shop_open = !gstate->shop_open;
                         }
 
                         DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
@@ -4509,7 +4512,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                if (gstate->phase == PHASE_EOD) {
+                if (gstate->shop_open) {
                     Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
                     Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
                     DrawQuad(center, parent_dims.x, parent_dims.y, Mat4Identity(), LRED);
