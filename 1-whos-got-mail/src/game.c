@@ -4709,7 +4709,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (collides && controller->action_down.pressed) {
                             if (gstate->score >= gstate->worker_cooldown_sec_cost) {
                                 gstate->score -= gstate->worker_cooldown_sec_cost;
-                                gstate->worker_cooldown_sec_cost *= 0.8f;
+                                gstate->worker_cooldown_sec *= 0.8f;
                                 gstate->worker_cooldown_sec_cost *= 2.0f;
                             }
                         }
