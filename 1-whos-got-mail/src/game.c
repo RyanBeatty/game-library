@@ -3796,7 +3796,6 @@ typedef struct {
     EntityId next_mail;
     EntityId next_worker;
 
-    f32 energy;
     f32 work_cooldown_dt;
     f32 work_cooldown_sec;
 } Entity;
@@ -4035,9 +4034,6 @@ typedef struct GameState {
     i32 worker_count;
     f32 worker_cost;
 
-    f32 worker_energy;
-    f32 worker_energy_cost;
-
     f32 worker_cooldown_sec;
     f32 worker_cooldown_sec_cost;
 
@@ -4227,7 +4223,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
-static void EntityInitWorker(Entity* e, Vec3 pos, f32 energy, f32 work_cooldown_sec, EntityId next_worker) {
+static void EntityInitWorker(Entity* e, Vec3 pos, f32 work_cooldown_sec, EntityId next_worker) {
     Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
 
     e->pos = pos;
@@ -4235,7 +4231,6 @@ static void EntityInitWorker(Entity* e, Vec3 pos, f32 energy, f32 work_cooldown_
     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
                                                        Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
     FlagOn(e->flags, EFLAG_WORKER);
-    e->energy = energy;
     e->work_cooldown_dt = 0.0f;
     e->work_cooldown_sec = work_cooldown_sec;
     e->next_worker = next_worker;
@@ -4243,7 +4238,7 @@ static void EntityInitWorker(Entity* e, Vec3 pos, f32 energy, f32 work_cooldown_
 
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
     Entity* e = AllocateEntity();
-    EntityInitWorker(e, pos, gstate->worker_energy, gstate->worker_cooldown_sec, gstate->worker_root);
+    EntityInitWorker(e, pos, gstate->worker_cooldown_sec, gstate->worker_root);
     gstate->worker_root = e->id;
 }
 
@@ -4308,8 +4303,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->worker_count = 1;
         gstate->worker_cost = 4.0f;
         gstate->day = -1;
-        gstate->worker_energy = 4.0f;
-        gstate->worker_energy_cost = 6.0f;
         gstate->worker_cooldown_sec = 1.0f;
         gstate->worker_cooldown_sec_cost = 8.0f;
         gstate->num_sorted = 0;
@@ -4328,8 +4321,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (gstate->phase) {
             case PHASE_PLAYING: {
-                bool some_worker_has_energy_left = false;
-
                 // Relayout workers
                 {
                     Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
@@ -4355,29 +4346,24 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->work_cooldown_dt = f32max(e->work_cooldown_dt, 0.0f);
 
                         if (EntityIdNotNull(gstate->mail_root)) {
-                            if (e->energy > 0.0f) {
-                                some_worker_has_energy_left = true;
-                                if (e->work_cooldown_dt <= 0.0f) {
-                                    // e->energy -= 1.0f;
-                                    e->energy = f32max(e->energy, 0.0f);
-                                    e->work_cooldown_dt = e->work_cooldown_sec;
+                            if (e->work_cooldown_dt <= 0.0f) {
+                                e->work_cooldown_dt = e->work_cooldown_sec;
 
-                                    Entity* mail = EntityFromId(gstate->mail_root);
-                                    Assert(mail != NULL);
+                                Entity* mail = EntityFromId(gstate->mail_root);
+                                Assert(mail != NULL);
 
-                                    PlatformPlaySound(GetSound(SOUND_SORT), 0);
+                                PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
-                                    gstate->score += 1.0f;
-                                    ++gstate->num_sorted;
+                                gstate->score += 1.0f;
+                                ++gstate->num_sorted;
 
-                                    mail->pos = e->pos;
-                                    mail->pos.z += 1.0f;
-                                    EasingSetLerp(&mail->graphics.pos_easing, 0.001f);
-                                    mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
-                                    EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
+                                mail->pos = e->pos;
+                                mail->pos.z += 1.0f;
+                                EasingSetLerp(&mail->graphics.pos_easing, 0.001f);
+                                mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
+                                EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
 
-                                    gstate->mail_root = mail->next_mail;
-                                }
+                                gstate->mail_root = mail->next_mail;
                             }
                         }
                     }
@@ -4388,10 +4374,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     break;
                 }
 
-                if (!some_worker_has_energy_left) {
-                    gstate->phase = PHASE_EOD;
-                    break;
-                }
                 break;
             }
             case PHASE_GAMEOVER: {
