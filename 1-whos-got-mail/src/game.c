@@ -4298,6 +4298,12 @@ static void StartNewDay(GameState* gstate) {
     gstate->phase = PHASE_PLAYING;
 }
 
+static void RefrshWorkerAttributes(GameState* gstate) {
+    for (Entity* ee = EntityFromId(gstate->worker_root); e; e = EntityFromId(e->next_worker)) {
+        e->work_cooldown_sec = gstate->worker_cooldown_sec;
+    }
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -4341,6 +4347,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->pos = Vec3WTransform(worker_pos, hamper_to_world);
                         EasingSetLerp(&e->graphics.pos_easing, 0.1f);
                     }
+
+                    RefrshWorkerAttributes(gstate);
                 }
 
                 for (Entity* e = NULL; IncrementEntity(&e);) {
@@ -4603,10 +4611,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 gstate->score -= gstate->worker_cooldown_sec_cost;
                                 gstate->worker_cooldown_sec *= 0.8f;
                                 gstate->worker_cooldown_sec_cost *= 2.0f;
-                                for (Entity* e = EntityFromId(gstate->worker_root); e;
-                                     e = EntityFromId(e->next_worker)) {
-                                    e->work_cooldown_sec = gstate->worker_cooldown_sec;
-                                }
                             }
                         }
 
