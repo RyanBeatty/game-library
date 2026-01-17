@@ -4711,6 +4711,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 gstate->score -= gstate->worker_cooldown_sec_cost;
                                 gstate->worker_cooldown_sec *= 0.8f;
                                 gstate->worker_cooldown_sec_cost *= 2.0f;
+                                for (Entity* e = EntityFromId(gstate->worker_root); e;
+                                     e = EntityFromId(e->next_worker)) {
+                                    e->work_cooldown_sec = gstate->worker_cooldown_sec;
+                                }
                             }
                         }
 
