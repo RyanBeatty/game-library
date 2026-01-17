@@ -4315,6 +4315,9 @@ static void StartNewDay(GameState* gstate) {
 static void RefrshWorkerAttributes(GameState* gstate) {
     for (Entity* e = EntityFromId(gstate->worker_root); e; e = EntityFromId(e->next_worker)) {
         e->work_cooldown_sec = gstate->worker_cooldown_sec;
+        if (e->pickup_count == 2) {
+            e->graphics.model.tint = LBLACK;
+        }
     }
 }
 
