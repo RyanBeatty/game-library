@@ -3798,6 +3798,8 @@ typedef struct {
 
     f32 work_cooldown_dt;
     f32 work_cooldown_sec;
+
+    i32 pickup_count;
 } Entity;
 
 #define ENTITY_CAP 1024
@@ -4225,7 +4227,22 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
 
-static void EntityInitWorker(Entity* e, Vec3 pos, f32 work_cooldown_sec, EntityId next_worker) {
+// static void EntityInitWorker(Entity* e, Vec3 pos, f32 work_cooldown_sec, EntityId next_worker) {
+//     Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+
+//     e->pos = pos;
+//     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+//     GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
+//                                                        Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+//     FlagOn(e->flags, EFLAG_WORKER);
+//     e->work_cooldown_dt = 0.0f;
+//     e->work_cooldown_sec = work_cooldown_sec;
+//     e->next_worker = next_worker;
+// }
+
+static void SpawnWorker(GameState* gstate, Vec3 pos) {
+    Entity* e = AllocateEntity();
+
     Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
 
     e->pos = pos;
@@ -4234,13 +4251,10 @@ static void EntityInitWorker(Entity* e, Vec3 pos, f32 work_cooldown_sec, EntityI
                                                        Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
     FlagOn(e->flags, EFLAG_WORKER);
     e->work_cooldown_dt = 0.0f;
-    e->work_cooldown_sec = work_cooldown_sec;
-    e->next_worker = next_worker;
-}
+    e->work_cooldown_sec = gstate->worker_cooldown_sec;
+    e->pickup_count = 1;
+    e->next_worker = gstate->worker_root;
 
-static void SpawnWorker(GameState* gstate, Vec3 pos) {
-    Entity* e = AllocateEntity();
-    EntityInitWorker(e, pos, gstate->worker_cooldown_sec, gstate->worker_root);
     gstate->worker_root = e->id;
 }
 
@@ -4299,7 +4313,7 @@ static void StartNewDay(GameState* gstate) {
 }
 
 static void RefrshWorkerAttributes(GameState* gstate) {
-    for (Entity* ee = EntityFromId(gstate->worker_root); e; e = EntityFromId(e->next_worker)) {
+    for (Entity* e = EntityFromId(gstate->worker_root); e; e = EntityFromId(e->next_worker)) {
         e->work_cooldown_sec = gstate->worker_cooldown_sec;
     }
 }
@@ -4360,21 +4374,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (e->work_cooldown_dt <= 0.0f) {
                                 e->work_cooldown_dt = e->work_cooldown_sec;
 
-                                Entity* mail = EntityFromId(gstate->mail_root);
-                                Assert(mail != NULL);
+                                for (i32 i = 0; i < e->pickup_count; ++i) {
+                                    Entity* mail = EntityFromId(gstate->mail_root);
+                                    if (mail == NULL) {
+                                        break;
+                                    }
 
-                                PlatformPlaySound(GetSound(SOUND_SORT), 0);
+                                    PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
-                                gstate->score += 1.0f;
-                                ++gstate->num_sorted;
+                                    gstate->score += 1.0f;
+                                    ++gstate->num_sorted;
 
-                                mail->pos = e->pos;
-                                mail->pos.z += 1.0f;
-                                EasingSetLerp(&mail->graphics.pos_easing, 0.001f);
-                                mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
-                                EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
+                                    mail->pos = e->pos;
+                                    mail->pos.z += 1.0f;
+                                    EasingSetLerp(&mail->graphics.pos_easing, 0.001f);
+                                    mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
+                                    EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
 
-                                gstate->mail_root = mail->next_mail;
+                                    gstate->mail_root = mail->next_mail;
+                                }
                             }
                         }
                     }
@@ -4620,48 +4638,58 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     if (gstate->worker_count >= 6) {
-                        f32 cost = 200.0f;
-
-                        pos = Vec2Sub(pos, spacing);
-
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Increase Worker Speed: $%.2f", cost);
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
-
-                        pos.y -= dims.y;
-
-                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
-                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has some
-                        // chars that extend below the baseline. I think instead I need to have some function that gives
-                        // me the text rect relative to a baseline and then position that inside of drawn rect to make
-                        // the text centered? Not sure, sort of need to think about what API drawing text should take.
-                        // Should it take a position representing a baseline? or a position representing the center of
-                        // some rect to draw within? sort of feel like the former and the later could be a wrapper on
-                        // top.
-                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
-                        Polyhedron rect;
-                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
-
-                        GameControllerState* controller = &input->controllers[0];
-                        Polyhedron cursor;
-                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-                        CollisionInfo info = {0};
-                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
-                        // TODO: There is a potential issue here in that by the time we've checked the down action here,
-                        // we might have triggered gameplay actions as well since this logic check happens after the
-                        // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
-                        // But they are coupled for the time being.
-                        if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= cost) {
-                                gstate->score -= cost;
-                                cost *= 2.0f;
+                        Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                        for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                            if (e_to_upgrade->pickup_count == 1) {
+                                break;
                             }
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        if (e_to_upgrade != NULL) {
+                            f32 cost = 200.0f;
 
-                        DrawStr8Ex(font, pos, LBLACK, txt);
+                            pos = Vec2Sub(pos, spacing);
+
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: $%.2f", cost);
+                            Str8 txt = Str8FromC(buffer);
+                            Vec2 dims = LFontMeasureStr8(font, txt);
+
+                            pos.y -= dims.y;
+
+                            // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                            // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
+                            // some chars that extend below the baseline. I think instead I need to have some function
+                            // that gives me the text rect relative to a baseline and then position that inside of drawn
+                            // rect to make the text centered? Not sure, sort of need to think about what API drawing
+                            // text should take. Should it take a position representing a baseline? or a position
+                            // representing the center of some rect to draw within? sort of feel like the former and the
+                            // later could be a wrapper on top.
+                            Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                            Polyhedron rect;
+                            PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+
+                            GameControllerState* controller = &input->controllers[0];
+                            Polyhedron cursor;
+                            PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                            // TODO: There is a potential issue here in that by the time we've checked the down action
+                            // here, we might have triggered gameplay actions as well since this logic check happens
+                            // after the update step. Ideally we decouple the UI logic detection/gameplay state update
+                            // and the render. But they are coupled for the time being.
+                            if (collides && controller->action_down.pressed) {
+                                if (gstate->score >= cost) {
+                                    gstate->score -= cost;
+                                    cost *= 2.0f;
+                                    e_to_upgrade->pickup_count = 2;
+                                }
+                            }
+
+                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+
+                            DrawStr8Ex(font, pos, LBLACK, txt);
+                        }
                     }
                 }
             }
