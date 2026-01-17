@@ -4297,7 +4297,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->worker_count = 1;
         gstate->worker_cost = 4.0f;
         gstate->day = -1;
-        gstate->worker_energy = 2.0f;
+        gstate->worker_energy = 4.0f;
         gstate->worker_energy_cost = 6.0f;
         gstate->worker_cooldown_sec = 1.0f;
         gstate->worker_cooldown_sec_cost = 8.0f;
@@ -4328,7 +4328,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (e->energy > 0.0f) {
                                 some_worker_has_energy_left = true;
                                 if (e->work_cooldown_dt <= 0.0f) {
-                                    e->energy -= 0.5f;
+                                    e->energy -= 1.0f;
                                     e->energy = f32max(e->energy, 0.0f);
                                     e->work_cooldown_dt = e->work_cooldown_sec;
 
@@ -4586,7 +4586,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (collides && controller->action_down.pressed) {
                             if (gstate->score >= gstate->worker_energy_cost) {
                                 gstate->score -= gstate->worker_energy_cost;
-                                gstate->worker_energy *= 1.5f;
+                                gstate->worker_energy += f32max(1.0f, gstate->worker_energy * 0.15f);
                                 gstate->worker_energy_cost *= 2.0f;
                             }
                         }
