@@ -4253,7 +4253,7 @@ static void StartNewDay(GameState* gstate) {
     ++gstate->day;
     gstate->num_sorted = 0;
 
-    gstate->target_score = 100;
+    gstate->target_score = 1000;
 
     f32 dt = gstate->dt;
 
@@ -4333,13 +4333,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // Relayout workers
                 {
                     Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
-                    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+                    Vec3 hamper_step_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
                     Mat4 hamper_to_world = Mat4Multiply(Mat4TranslateV(hamper_origin_world),
-                                                        Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
+                                                        Mat4ScaleV(Vec3Scale(hamper_step_world, 2.0f)));
+
+                    i32 NUM_COLS = 3;
                     i32 i = 0;
                     for (Entity* e = EntityFromId(gstate->worker_root); e != NULL;
                          e = EntityFromId(e->next_worker), ++i) {
-                        Vec3 worker_pos = Vec3Lit(i, 0, 0);
+                        i32 row = i / NUM_COLS;
+                        i32 col = i % NUM_COLS;
+                        Vec3 worker_pos = Vec3Lit(col, row, 0);
                         e->pos = Vec3WTransform(worker_pos, hamper_to_world);
                         EasingSetLerp(&e->graphics.pos_easing, 0.1f);
                     }
@@ -4484,7 +4488,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     {
                         pos = Vec2Sub(pos, spacing);
-                        breakpoint();
 
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade");
