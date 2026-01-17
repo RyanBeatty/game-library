@@ -4330,6 +4330,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             case PHASE_PLAYING: {
                 bool some_worker_has_energy_left = false;
 
+                // Relayout workers
+                {
+                    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
+                    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+                    Mat4 hamper_to_world = Mat4Multiply(Mat4TranslateV(hamper_origin_world),
+                                                        Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
+                    i32 i = 0;
+                    for (Entity* e = EntityFromId(gstate->worker_root); e != NULL;
+                         e = EntityFromId(e->next_worker), ++i) {
+                        Vec3 worker_pos = Vec3Lit(i, 0, 0);
+                        e->pos = Vec3WTransform(worker_pos, hamper_to_world);
+                        EasingSetLerp(&e->graphics.pos_easing, 0.1f);
+                    }
+                }
+
                 for (Entity* e = NULL; IncrementEntity(&e);) {
                     if (TestFlag(e->flags, EFLAG_WORKER)) {
                         e->work_cooldown_dt -= dt;
@@ -4518,46 +4533,46 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 pos = Vec2Lit(parent_top_left.x + 10.0f, parent_top_left.y + 0.0f);
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
 
-                    {
-                        pos = Vec2Sub(pos, spacing);
-                        breakpoint();
+                    // {
+                    //     pos = Vec2Sub(pos, spacing);
+                    //     breakpoint();
 
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Start Next Day");
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
+                    //     char buffer[256] = {0};
+                    //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Start Next Day");
+                    //     Str8 txt = Str8FromC(buffer);
+                    //     Vec2 dims = LFontMeasureStr8(font, txt);
 
-                        pos.y -= dims.y;
+                    //     pos.y -= dims.y;
 
-                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
-                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
-                        // some chars that extend below the baseline. I think instead I need to have some function
-                        // that gives me the text rect relative to a baseline and then position that inside of drawn
-                        // rect to make the text centered? Not sure, sort of need to think about what API drawing
-                        // text should take. Should it take a position representing a baseline? or a position
-                        // representing the center of some rect to draw within? sort of feel like the former and the
-                        // later could be a wrapper on top.
-                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
-                        Polyhedron rect;
-                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+                    //     // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                    //     // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
+                    //     // some chars that extend below the baseline. I think instead I need to have some function
+                    //     // that gives me the text rect relative to a baseline and then position that inside of drawn
+                    //     // rect to make the text centered? Not sure, sort of need to think about what API drawing
+                    //     // text should take. Should it take a position representing a baseline? or a position
+                    //     // representing the center of some rect to draw within? sort of feel like the former and the
+                    //     // later could be a wrapper on top.
+                    //     Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                    //     Polyhedron rect;
+                    //     PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
 
-                        GameControllerState* controller = &input->controllers[0];
-                        Polyhedron cursor;
-                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-                        CollisionInfo info = {0};
-                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
-                        // TODO: There is a potential issue here in that by the time we've checked the down action
-                        // here, we might have triggered gameplay actions as well since this logic check happens
-                        // after the update step. Ideally we decouple the UI logic detection/gameplay state update
-                        // and the render. But they are coupled for the time being.
-                        if (collides && controller->action_down.pressed) {
-                            StartNewDay(gstate);
-                        }
+                    //     GameControllerState* controller = &input->controllers[0];
+                    //     Polyhedron cursor;
+                    //     PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                    //     CollisionInfo info = {0};
+                    //     bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                    //     // TODO: There is a potential issue here in that by the time we've checked the down action
+                    //     // here, we might have triggered gameplay actions as well since this logic check happens
+                    //     // after the update step. Ideally we decouple the UI logic detection/gameplay state update
+                    //     // and the render. But they are coupled for the time being.
+                    //     if (collides && controller->action_down.pressed) {
+                    //         StartNewDay(gstate);
+                    //     }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                    //     DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
 
-                        DrawStr8Ex(font, pos, LBLACK, txt);
-                    }
+                    //     DrawStr8Ex(font, pos, LBLACK, txt);
+                    // }
 
                     {
                         pos = Vec2Sub(pos, spacing);
@@ -4594,6 +4609,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (gstate->score >= gstate->worker_cost) {
                                 gstate->score -= gstate->worker_cost;
                                 ++gstate->worker_count;
+                                SpawnWorker(gstate, Vec3Zero());
                                 gstate->worker_cost *= 2.0f;
                             }
                         }
