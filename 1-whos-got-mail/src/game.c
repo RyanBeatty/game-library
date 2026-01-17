@@ -4033,13 +4033,13 @@ typedef struct GameState {
     GamePhase phase;
 
     i32 worker_count;
-    f32 worker_price;
+    f32 worker_cost;
 
     f32 worker_energy;
-    f32 worker_energy_price;
+    f32 worker_energy_cost;
 
     f32 worker_cooldown_sec;
-    f32 worker_cooldown_sec_price;
+    f32 worker_cooldown_sec_cost;
 
     EntityId mail_root;
 
@@ -4295,12 +4295,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->init) {
         gstate->score = 0.0f;
         gstate->worker_count = 1;
-        gstate->worker_price = 4.0f;
+        gstate->worker_cost = 4.0f;
         gstate->day = -1;
         gstate->worker_energy = 2.0f;
-        gstate->worker_energy_price = 6.0f;
+        gstate->worker_energy_cost = 6.0f;
         gstate->worker_cooldown_sec = 1.0f;
-        gstate->worker_cooldown_sec_price = 8.0f;
+        gstate->worker_cooldown_sec_cost = 8.0f;
         gstate->num_sorted = 0;
 
         StartNewDay(gstate);
@@ -4337,7 +4337,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                     PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
-                                    gstate->score += 1.5f;
+                                    gstate->score += 1.0f;
                                     ++gstate->num_sorted;
 
                                     mail->pos = e->pos;
@@ -4511,7 +4511,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         pos = Vec2Sub(pos, spacing);
 
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_price);
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
 
@@ -4539,10 +4539,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= gstate->worker_price) {
-                                gstate->score -= gstate->worker_price;
+                            if (gstate->score >= gstate->worker_cost) {
+                                gstate->score -= gstate->worker_cost;
                                 ++gstate->worker_count;
-                                gstate->worker_price *= 2.0f;
+                                gstate->worker_cost *= 2.0f;
                             }
                         }
 
@@ -4556,7 +4556,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Increase Worker Energy: $%.2f",
-                                 gstate->worker_energy_price);
+                                 gstate->worker_energy_cost);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
 
@@ -4584,10 +4584,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= gstate->worker_energy_price) {
-                                gstate->score -= gstate->worker_energy_price;
+                            if (gstate->score >= gstate->worker_energy_cost) {
+                                gstate->score -= gstate->worker_energy_cost;
                                 gstate->worker_energy *= 1.5f;
-                                gstate->worker_energy_price *= 2.0f;
+                                gstate->worker_energy_cost *= 2.0f;
                             }
                         }
 
@@ -4601,7 +4601,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Increase Worker Speed: $%.2f",
-                                 gstate->worker_cooldown_sec_price);
+                                 gstate->worker_cooldown_sec_cost);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
 
@@ -4629,10 +4629,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= gstate->worker_cooldown_sec_price) {
-                                gstate->score -= gstate->worker_cooldown_sec_price;
-                                gstate->worker_cooldown_sec_price *= 0.8f;
-                                gstate->worker_cooldown_sec_price *= 2.0f;
+                            if (gstate->score >= gstate->worker_cooldown_sec_cost) {
+                                gstate->score -= gstate->worker_cooldown_sec_cost;
+                                gstate->worker_cooldown_sec_cost *= 0.8f;
+                                gstate->worker_cooldown_sec_cost *= 2.0f;
                             }
                         }
 
