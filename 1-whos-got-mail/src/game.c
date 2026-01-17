@@ -4044,6 +4044,7 @@ typedef struct GameState {
     EntityId mail_root;
 
     i32 day;
+    i32 num_sorted;
 } GameState;
 
 static GameState GState;
@@ -4240,6 +4241,7 @@ static void StartNewDay(GameState* gstate) {
     EntitySystemInit();
 
     ++gstate->day;
+    gstate->num_sorted = 0;
 
     f32 dt = gstate->dt;
 
@@ -4299,6 +4301,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->worker_energy_price = 6.0f;
         gstate->worker_cooldown_sec = 1.0f;
         gstate->worker_cooldown_sec_price = 8.0f;
+        gstate->num_sorted = 0;
 
         StartNewDay(gstate);
         // Sort of hacky but lets start with eod.
@@ -4335,6 +4338,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
                                     gstate->score += 1.5f;
+                                    ++gstate->num_sorted;
 
                                     mail->pos = e->pos;
                                     mail->pos.z += 1.0f;
@@ -4435,6 +4439,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+                        pos.y -= dims.y;
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+
+                    {
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
                         pos.y -= dims.y;
@@ -4649,7 +4664,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     {
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Reach The End In %d Days!", gstate->day);
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Reached The End In %d Days!", gstate->day);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
                         pos.y -= dims.y;
