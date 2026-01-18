@@ -4460,6 +4460,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
+            bool debug = false;
+            if (debug) {
+                gstate->score = 1000000.0f;
+            }
+
             {
                 LFont font = GetLFontClosest(40.0f);
 
