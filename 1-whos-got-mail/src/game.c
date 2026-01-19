@@ -4040,6 +4040,7 @@ typedef struct GameState {
     f32 worker_cost;
 
     i32 upgraded_worker_count;
+    i32 upgraded_worker_count2;
 
     f32 worker_cooldown_sec;
     f32 worker_cooldown_sec_cost;
@@ -4768,50 +4769,116 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     if (gstate->upgraded_worker_count >= 4.0f) {
-                        f32 pay = 100.0f;
-                        f32* cost = &pay;
+                        {
+                            f32 pay = 100.0f;
+                            f32* cost = &pay;
 
-                        pos = Vec2Sub(pos, spacing);
+                            pos = Vec2Sub(pos, spacing);
 
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
+                            Str8 txt = Str8FromC(buffer);
+                            Vec2 dims = LFontMeasureStr8(font, txt);
 
-                        pos.y -= dims.y;
+                            pos.y -= dims.y;
 
-                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
-                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has some
-                        // chars that extend below the baseline. I think instead I need to have some function that gives
-                        // me the text rect relative to a baseline and then position that inside of drawn rect to make
-                        // the text centered? Not sure, sort of need to think about what API drawing text should take.
-                        // Should it take a position representing a baseline? or a position representing the center of
-                        // some rect to draw within? sort of feel like the former and the later could be a wrapper on
-                        // top.
-                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
-                        Polyhedron rect;
-                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+                            // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                            // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
+                            // some chars that extend below the baseline. I think instead I need to have some function
+                            // that gives me the text rect relative to a baseline and then position that inside of drawn
+                            // rect to make the text centered? Not sure, sort of need to think about what API drawing
+                            // text should take. Should it take a position representing a baseline? or a position
+                            // representing the center of some rect to draw within? sort of feel like the former and the
+                            // later could be a wrapper on top.
+                            Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                            Polyhedron rect;
+                            PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
 
-                        GameControllerState* controller = &input->controllers[0];
-                        Polyhedron cursor;
-                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-                        CollisionInfo info = {0};
-                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
-                        // TODO: There is a potential issue here in that by the time we've checked the down action here,
-                        // we might have triggered gameplay actions as well since this logic check happens after the
-                        // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
-                        // But they are coupled for the time being.
-                        if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= *cost) {
-                                gstate->score -= *cost;
-                                *cost *= 2.0f;
-                                SpawnResearcher(gstate, Vec3Zero());
+                            GameControllerState* controller = &input->controllers[0];
+                            Polyhedron cursor;
+                            PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                            // TODO: There is a potential issue here in that by the time we've checked the down action
+                            // here, we might have triggered gameplay actions as well since this logic check happens
+                            // after the update step. Ideally we decouple the UI logic detection/gameplay state update
+                            // and the render. But they are coupled for the time being.
+                            if (collides && controller->action_down.pressed) {
+                                if (gstate->score >= *cost) {
+                                    gstate->score -= *cost;
+                                    *cost *= 2.0f;
+                                    SpawnResearcher(gstate, Vec3Zero());
+                                }
                             }
+
+                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+
+                            DrawStr8Ex(font, pos, LBLACK, txt);
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        {
+                            Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                            for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                                if (e_to_upgrade->pickup_count == 2) {
+                                    break;
+                                }
+                            }
 
-                        DrawStr8Ex(font, pos, LBLACK, txt);
+                            f32 pay = 100.0f;
+                            f32* cost = &pay;
+                            f32 pay2 = 10.0f;
+                            f32* cost2 = &pay2;
+
+                            pos = Vec2Sub(pos, spacing);
+
+                            char buffer[256] = {0};
+                            if (e_to_upgrade) {
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: $%.2f, #%f", *cost,
+                                         *cost2);
+                            } else {
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: MAXED OUT");
+                            }
+                            Str8 txt = Str8FromC(buffer);
+                            Vec2 dims = LFontMeasureStr8(font, txt);
+
+                            pos.y -= dims.y;
+
+                            // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                            // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
+                            // some chars that extend below the baseline. I think instead I need to have some function
+                            // that gives me the text rect relative to a baseline and then position that inside of drawn
+                            // rect to make the text centered? Not sure, sort of need to think about what API drawing
+                            // text should take. Should it take a position representing a baseline? or a position
+                            // representing the center of some rect to draw within? sort of feel like the former and the
+                            // later could be a wrapper on top.
+                            Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                            Polyhedron rect;
+                            PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+
+                            GameControllerState* controller = &input->controllers[0];
+                            Polyhedron cursor;
+                            PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                            CollisionInfo info = {0};
+                            bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                            // TODO: There is a potential issue here in that by the time we've checked the down action
+                            // here, we might have triggered gameplay actions as well since this logic check happens
+                            // after the update step. Ideally we decouple the UI logic detection/gameplay state update
+                            // and the render. But they are coupled for the time being.
+                            if (collides && controller->action_down.pressed && e_to_upgrade != NULL) {
+                                if (gstate->score >= *cost && gstate->score2 >= *cost2) {
+                                    gstate->score -= *cost;
+                                    *cost *= 2.0f;
+                                    gstate->score2 -= *cost2;
+                                    *cost2 *= 2.0f;
+                                    e_to_upgrade->pickup_count = 3;
+                                    ++gstate->upgraded_worker_count2;
+                                }
+                            }
+
+                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+
+                            DrawStr8Ex(font, pos, LBLACK, txt);
+                        }
                     }
 
                     if (gstate->researcher_count >= 1.0f) {
