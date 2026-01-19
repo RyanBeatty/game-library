@@ -3804,15 +3804,22 @@ typedef struct {
     i32 pickup_count;
 } Entity;
 
+typedef struct {
+    Entity* data;
+    isize len;
+    isize cap;
+} EntityArr;
+
 #define ENTITY_CAP 1024
 #define ENTITY_INACTIVE_TO_BE_CAP 20
 
 typedef struct {
-    struct {
-        Entity data[ENTITY_CAP];
-        isize len;
-        isize cap;
-    } entities;
+    // struct {
+    //     Entity data[ENTITY_CAP];
+    //     isize len;
+    //     isize cap;
+    // } entities;
+    EntityArr entities;
 } EntityManager;
 
 static EntityManager EntityM = {0};
@@ -3836,14 +3843,17 @@ static void EntityManagerReset(EntityManager* em) {
     }
 }
 
-static void EntitySystemInit() {
+static void EntitySystemInit(Arena* perm) {
     EntityManager* em = &EntityM;
-    memset(em, 0, sizeof(*em));
-    em->entities.cap = ArraySizeOf(em->entities.data);
+
+    InitArr(&em->entities, perm, Entity, 20000);
+    // Fully reserve the array since we never push new entities after this.
     em->entities.len = em->entities.cap;
 
     EntityManagerReset(em);
 }
+
+static void EntitySystemReset() { EntityManagerReset(GetEntityManager()); }
 
 static Entity* EntityFromId(EntityId id) {
     EntityManager* em = GetEntityManager();
@@ -4110,9 +4120,7 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
 static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
     Assert(sceneid < MAX_SCENES);
 
-    // TODO: Big todo here. Need to come up with a more elegant way to load/unload scene data.
-    // Luckily for megaman I don't think there will be entities that persist across scenes.
-    EntitySystemInit();
+    EntitySystemInit(&gstate->perm);
 
     // Signal to scene update func to run init.
     gstate->init = true;
@@ -4316,7 +4324,7 @@ static void SpawnResearcher(GameState* gstate, Vec3 pos) {
 }
 
 static void StartNewDay(GameState* gstate) {
-    EntitySystemInit();
+    EntitySystemReset();
 
     gstate->shop_open = false;
     ++gstate->day;
