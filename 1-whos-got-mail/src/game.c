@@ -4340,12 +4340,20 @@ static void StartNewDay(GameState* gstate) {
     gstate->phase = PHASE_PLAYING;
 }
 
-static void RefrshWorkerAttributes(GameState* gstate) {
+static void RefreshWorkerAttributes(GameState* gstate) {
     for (Entity* e = EntityFromId(gstate->worker_root); e; e = EntityFromId(e->next_worker)) {
+        Assert(TestFlag(e->flags, EFLAG_WORKER));
         e->work_cooldown_sec = gstate->worker_cooldown_sec;
         if (e->pickup_count == 2) {
             e->graphics.model.tint = LBLACK;
         }
+    }
+}
+
+static void RefreshResearcherAttributes(GameState* gstate) {
+    for (Entity* e = EntityFromId(gstate->researcher_root); e; e = EntityFromId(e->next_researcher)) {
+        Assert(TestFlag(e->flags, EFLAG_RESEARCHER));
+        e->work_cooldown_sec = gstate->researcher_cooldown_sec;
     }
 }
 
@@ -4397,7 +4405,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         EasingSetLerp(&e->graphics.pos_easing, 0.1f);
                     }
 
-                    RefrshWorkerAttributes(gstate);
+                    RefreshWorkerAttributes(gstate);
+                }
+
+                {
+                    RefreshResearcherAttributes(gstate);
                 }
 
                 for (Entity* e = NULL; IncrementEntity(&e);) {
@@ -4840,7 +4852,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (gstate->score >= *cost) {
                                 gstate->score -= *cost;
                                 *cost *= 2.0f;
-                                SpawnResearcher(gstate, Vec3Zero());
+                                gstate->researcher_cooldown_sec *= 0.8f;
                             }
                         }
 
