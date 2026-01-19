@@ -4499,6 +4499,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
 
+                    if (gstate->upgraded_worker_count >= 4.0f) {
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+                        pos.y -= dims.y;
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+
                     {
                         pos = Vec2Sub(pos, spacing);
 
