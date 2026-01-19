@@ -3751,6 +3751,7 @@ typedef enum EntityFlag {
     EFLAG_PLAYER_CONTROLLED = 1 << 2,
     EFLAG_WALL = 1 << 3,
     EFLAG_WORKER = 1 << 4,
+    EFLAG_RESEARCHER = 1 << 5,
 } EntityFlag;
 
 typedef struct {
@@ -3795,6 +3796,7 @@ typedef struct {
 
     EntityId next_mail;
     EntityId next_worker;
+    EntityId next_researcher;
 
     f32 work_cooldown_dt;
     f32 work_cooldown_sec;
@@ -4049,6 +4051,7 @@ typedef struct GameState {
     i32 target_score;
 
     EntityId worker_root;
+    EntityId researcher_root;
 
     bool shop_open;
 } GameState;
@@ -4261,6 +4264,24 @@ static void SpawnWorker(GameState* gstate, Vec3 pos) {
     gstate->worker_root = e->id;
 }
 
+static void SpawnResearcher(GameState* gstate, Vec3 pos) {
+    PlatformLog(LLOG_INFO, "Spawn Researcher");
+    Entity* e = AllocateEntity();
+
+    // Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+
+    e->pos = pos;
+    // PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
+    // GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
+    //                                                    Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+    FlagOn(e->flags, EFLAG_RESEARCHER);
+    e->work_cooldown_dt = 0.0f;
+    e->work_cooldown_sec = gstate->worker_cooldown_sec;
+    e->next_researcher = gstate->researcher_root;
+
+    gstate->researcher_root = e->id;
+}
+
 static void StartNewDay(GameState* gstate) {
     EntitySystemInit();
 
@@ -4374,10 +4395,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 for (Entity* e = NULL; IncrementEntity(&e);) {
-                    if (TestFlag(e->flags, EFLAG_WORKER)) {
-                        e->work_cooldown_dt -= dt;
-                        e->work_cooldown_dt = f32max(e->work_cooldown_dt, 0.0f);
+                    e->work_cooldown_dt -= dt;
+                    e->work_cooldown_dt = f32max(e->work_cooldown_dt, 0.0f);
 
+                    if (TestFlag(e->flags, EFLAG_WORKER)) {
                         if (EntityIdNotNull(gstate->mail_root)) {
                             if (e->work_cooldown_dt <= 0.0f) {
                                 e->work_cooldown_dt = e->work_cooldown_sec;
@@ -4402,6 +4423,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     gstate->mail_root = mail->next_mail;
                                 }
                             }
+                        }
+                    }
+
+                    if (TestFlag(e->flags, EFLAG_RESEARCHER)) {
+                        if (e->work_cooldown_dt <= 0.0f) {
+                            e->work_cooldown_dt = e->work_cooldown_sec;
+
+                            PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+                            gstate->score2 += 1.0f;
                         }
                     }
                 }
@@ -4754,9 +4784,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
                         // But they are coupled for the time being.
                         if (collides && controller->action_down.pressed) {
-                            if (gstate->score2 >= *cost) {
-                                gstate->score2 -= *cost;
+                            if (gstate->score >= *cost) {
+                                gstate->score -= *cost;
                                 *cost *= 2.0f;
+                                SpawnResearcher(gstate, Vec3Zero());
                             }
                         }
 
