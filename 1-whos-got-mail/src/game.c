@@ -4268,6 +4268,25 @@ static void SpawnWorker(GameState* gstate, Vec3 pos) {
     gstate->worker_root = e->id;
 }
 
+static void UpgradeWorker(GameState* gstate, Entity* e) {
+    i32 prev_pickup = e->pickup_count;
+    ++e->pickup_count;
+    switch (prev_pickup) {
+        case 1: {
+            ++gstate->upgraded_worker_count;
+            break;
+        }
+        case 2: {
+            ++gstate->upgraded_worker_count2;
+            break;
+        }
+        default: {
+            Assert(0);
+        }
+    }
+    PlatformLog(LLOG_INFO, "Upgraded Worker: %d -> %d", prev_pickup, e->pickup_count);
+}
+
 static void SpawnResearcher(GameState* gstate, Vec3 pos) {
     PlatformLog(LLOG_INFO, "Spawn Researcher");
     ++gstate->researcher_count;
@@ -4517,6 +4536,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             bool debug = true;
             if (debug) {
                 gstate->score = 1000000.0f;
+                gstate->score2 = 1000000.0f;
             }
 
             {
@@ -4758,8 +4778,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (gstate->score >= cost) {
                                 gstate->score -= cost;
                                 cost *= 2.0f;
-                                e_to_upgrade->pickup_count = 2;
-                                ++gstate->upgraded_worker_count;
+                                UpgradeWorker(gstate, e_to_upgrade);
                             }
                         }
 
@@ -4870,8 +4889,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     *cost *= 2.0f;
                                     gstate->score2 -= *cost2;
                                     *cost2 *= 2.0f;
-                                    e_to_upgrade->pickup_count = 3;
-                                    ++gstate->upgraded_worker_count2;
+                                    UpgradeWorker(gstate, e_to_upgrade);
                                 }
                             }
 
