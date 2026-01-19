@@ -5016,8 +5016,7 @@ void GameInit() {
     // Initialize dyanmic memory pool.
     isize cap = GB(4);
     byte* buffer = PlatformAllocate(cap);
-    Arena perm = NewArena(buffer, cap);
-    gstate->perm = perm;
+    gstate->perm = NewArena(buffer, cap);
     byte* temp_buffer = New(&gstate->perm, GB(1), byte);
     gstate->temp = NewArena(temp_buffer, GB(1));
 
