@@ -4722,6 +4722,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 gstate->score -= gstate->worker_cooldown_sec_cost;
                                 gstate->worker_cooldown_sec *= 0.8f;
                                 gstate->worker_cooldown_sec_cost *= 2.0f;
+
+                                static i32 PRESSED = 0;
+                                ++PRESSED;
+                                PlatformLog(LLOG_INFO, "Worker Speed Pressed: %d", PRESSED);
                             }
                         }
 
