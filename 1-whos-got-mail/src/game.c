@@ -4030,11 +4030,14 @@ typedef struct GameState {
     // Scene fields
 
     f32 score;
+    f32 score2;
 
     GamePhase phase;
 
     i32 worker_count;
     f32 worker_cost;
+
+    i32 upgraded_worker_count;
 
     f32 worker_cooldown_sec;
     f32 worker_cooldown_sec_cost;
@@ -4326,8 +4329,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         gstate->score = 0.0f;
+        gstate->score2 = 0.0f;
         gstate->worker_count = 1;
         gstate->worker_cost = 4.0f;
+        gstate->upgraded_worker_count = 0;
         gstate->day = -1;
         gstate->worker_cooldown_sec = 1.0f;
         gstate->worker_cooldown_sec_cost = 8.0f;
@@ -4694,6 +4699,53 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 gstate->score -= cost;
                                 cost *= 2.0f;
                                 e_to_upgrade->pickup_count = 2;
+                                ++gstate->upgraded_worker_count;
+                            }
+                        }
+
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+
+                    if (gstate->upgraded_worker_count >= 4.0f) {
+                        f32 pay = 100.0f;
+                        f32* cost = &pay;
+
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+
+                        pos.y -= dims.y;
+
+                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has some
+                        // chars that extend below the baseline. I think instead I need to have some function that gives
+                        // me the text rect relative to a baseline and then position that inside of drawn rect to make
+                        // the text centered? Not sure, sort of need to think about what API drawing text should take.
+                        // Should it take a position representing a baseline? or a position representing the center of
+                        // some rect to draw within? sort of feel like the former and the later could be a wrapper on
+                        // top.
+                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                        Polyhedron rect;
+                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+
+                        GameControllerState* controller = &input->controllers[0];
+                        Polyhedron cursor;
+                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                        CollisionInfo info = {0};
+                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        // TODO: There is a potential issue here in that by the time we've checked the down action here,
+                        // we might have triggered gameplay actions as well since this logic check happens after the
+                        // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
+                        // But they are coupled for the time being.
+                        if (collides && controller->action_down.pressed) {
+                            if (gstate->score2 >= *cost) {
+                                gstate->score2 -= *cost;
+                                *cost *= 2.0f;
                             }
                         }
 
