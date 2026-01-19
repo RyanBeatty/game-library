@@ -4266,6 +4266,9 @@ static void SpawnWorker(GameState* gstate, Vec3 pos) {
     e->next_worker = gstate->worker_root;
 
     gstate->worker_root = e->id;
+
+    ++gstate->worker_count;
+    PlatformLog(LLOG_INFO, "Increase Worker Count %d -> %d", gstate->worker_count - 1, gstate->worker_count);
 }
 
 static void UpgradeWorker(GameState* gstate, Entity* e) {
@@ -4341,7 +4344,7 @@ static void StartNewDay(GameState* gstate) {
     }
 
     // Spawn workers
-    for (isize i = 0; i < gstate->worker_count; ++i) {
+    for (isize i = 0; i < 1; ++i) {
         Vec3 worker_pos = Vec3Lit(i, 0, 0);
         Vec3 pos = Vec3WTransform(worker_pos, hamper_to_world);
         SpawnWorker(gstate, pos);
@@ -4383,7 +4386,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->init) {
         gstate->score = 0.0f;
         gstate->score2 = 0.0f;
-        gstate->worker_count = 1;
+        gstate->worker_count = 0;
         gstate->worker_cost = 4.0f;
         gstate->upgraded_worker_count = 0;
         gstate->day = -1;
@@ -4674,7 +4677,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (collides && controller->action_down.pressed) {
                             if (gstate->score >= gstate->worker_cost) {
                                 gstate->score -= gstate->worker_cost;
-                                ++gstate->worker_count;
                                 SpawnWorker(gstate, Vec3Zero());
                                 gstate->worker_cost *= 2.0f;
                             }
