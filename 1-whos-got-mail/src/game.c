@@ -3826,12 +3826,7 @@ static EntityManager EntityM = {0};
 #define EntityGetMass(e) ((e)->mass_inv != 0.0f ? 1.0f / (e)->mass_inv : 0.0f)
 #define EntityGetMassInv(e) ((e)->mass_inv)
 
-static void EntitySystemInit() {
-    EntityManager* em = &EntityM;
-    memset(em, 0, sizeof(*em));
-    em->entities.cap = ArraySizeOf(em->entities.data);
-    em->entities.len = em->entities.cap;
-
+static void EntityManagerReset(EntityManager* em) {
     for (isize i = 0; i < ArrLen(&em->entities); ++i) {
         Entity* entity = ArrGetPtr(&em->entities, i);
         entity->id.idx = i;
@@ -3839,6 +3834,15 @@ static void EntitySystemInit() {
         // with default value of 0.
         entity->id.generation = 1;
     }
+}
+
+static void EntitySystemInit() {
+    EntityManager* em = &EntityM;
+    memset(em, 0, sizeof(*em));
+    em->entities.cap = ArraySizeOf(em->entities.data);
+    em->entities.len = em->entities.cap;
+
+    EntityManagerReset(em);
 }
 
 static Entity* EntityFromId(EntityId id) {
