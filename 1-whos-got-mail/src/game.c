@@ -4031,6 +4031,8 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Scene fields
 
+    f32 timer_sec;
+
     f32 score;
     f32 score2;
 
@@ -4317,6 +4319,7 @@ static void StartNewDay(GameState* gstate) {
     gstate->num_sorted = 0;
 
     gstate->target_score = 1000;
+    gstate->timer_sec = 0.0f;
 
     f32 dt = gstate->dt;
 
@@ -4410,6 +4413,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (gstate->phase) {
             case PHASE_PLAYING: {
+                gstate->timer_sec += dt;
+
                 // Relayout workers
                 {
                     Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
@@ -4552,8 +4557,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     {
                         pos = Vec2Sub(pos, spacing);
 
+                        i32 time_sec_int = (i32)gstate->timer_sec;
+                        i32 minutes = time_sec_int / 60;
+                        i32 seconds = time_sec_int - (minutes * 60);
+
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Day: %d", gstate->day);
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
                         Str8 txt = Str8FromC(buffer);
                         Vec2 dims = LFontMeasureStr8(font, txt);
                         pos.y -= dims.y;
