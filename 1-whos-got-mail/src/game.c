@@ -4044,6 +4044,8 @@ typedef struct GameState {
     f32 worker_cooldown_sec;
     f32 worker_cooldown_sec_cost;
 
+    f32 researcher_cooldown_sec;
+
     EntityId mail_root;
 
     i32 day;
@@ -4276,7 +4278,7 @@ static void SpawnResearcher(GameState* gstate, Vec3 pos) {
     //                                                    Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
     FlagOn(e->flags, EFLAG_RESEARCHER);
     e->work_cooldown_dt = 0.0f;
-    e->work_cooldown_sec = gstate->worker_cooldown_sec;
+    e->work_cooldown_sec = gstate->researcher_cooldown_sec;
     e->next_researcher = gstate->researcher_root;
 
     gstate->researcher_root = e->id;
@@ -4358,6 +4360,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->worker_cooldown_sec = 1.0f;
         gstate->worker_cooldown_sec_cost = 8.0f;
         gstate->num_sorted = 0;
+
+        gstate->researcher_cooldown_sec = 3.0f;
 
         StartNewDay(gstate);
         // Sort of hacky but lets start with eod.
