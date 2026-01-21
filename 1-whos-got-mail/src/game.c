@@ -3752,6 +3752,7 @@ typedef enum EntityFlag {
     EFLAG_WALL = 1 << 3,
     EFLAG_WORKER = 1 << 4,
     EFLAG_RESEARCHER = 1 << 5,
+    EFLAG_MAIL = 1 << 6,
 } EntityFlag;
 
 typedef struct {
@@ -4355,6 +4356,7 @@ static void StartNewDay(GameState* gstate) {
                                                                Mat4Identity(), hamper_dims_world, LCLEAR));
             e->next_mail = gstate->mail_root;
             gstate->mail_root = e->id;
+            FlagOn(e->flags, EFLAG_MAIL);
         }
     }
 
@@ -4518,7 +4520,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
-                e->graphics.orient = e->orient;
+                if (TestFlag(e->flags, EFLAG_WORKER)) {
+                    // TODO: Rework this.
+                    static f32 ROT = 0.0f;
+
+                    ROT = f32lerp(Deg2Rad(-1.5f), Deg2Rad(1.5f), f32sin(1.3f * gstate->timer));
+
+                    e->graphics.orient = Mat4RotateZ(ROT);
+                } else {
+                    e->graphics.orient = e->orient;
+                }
                 e->graphics.scale = EaseVec3(e->graphics.scale, e->scale, dt, e->graphics.scale_easing);
                 GraphicsInfoTickAnimation(&e->graphics, dt);
             }
