@@ -4058,6 +4058,7 @@ typedef struct GameState {
 
     i32 upgraded_worker_count;
     i32 upgraded_worker_count2;
+    i32 upgraded_worker_count3;
 
     f32 worker_cooldown_sec;
     f32 worker_cooldown_sec_cost;
@@ -4296,6 +4297,10 @@ static void UpgradeWorker(GameState* gstate, Entity* e) {
         }
         case 2: {
             ++gstate->upgraded_worker_count2;
+            break;
+        }
+        case 3: {
+            ++gstate->upgraded_worker_count3;
             break;
         }
         default: {
@@ -4976,6 +4981,68 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 gstate->score -= *cost;
                                 *cost *= 2.0f;
                                 gstate->researcher_cooldown_sec *= 0.8f;
+                            }
+                        }
+
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+
+                        DrawStr8Ex(font, pos, LBLACK, txt);
+                    }
+
+                    if (gstate->upgraded_worker_count2 >= 4) {
+                        Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                        for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                            if (e_to_upgrade->pickup_count == 3) {
+                                break;
+                            }
+                        }
+
+                        f32 pay = 0.0f;
+                        f32* cost = &pay;
+                        f32 pay2 = 100.0f;
+                        f32* cost2 = &pay2;
+
+                        pos = Vec2Sub(pos, spacing);
+
+                        char buffer[256] = {0};
+                        if (e_to_upgrade) {
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: $%.2f, #%f", *cost, *cost2);
+                        } else {
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: MAXED OUT");
+                        }
+                        Str8 txt = Str8FromC(buffer);
+                        Vec2 dims = LFontMeasureStr8(font, txt);
+
+                        pos.y -= dims.y;
+
+                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
+                        // some chars that extend below the baseline. I think instead I need to have some function
+                        // that gives me the text rect relative to a baseline and then position that inside of drawn
+                        // rect to make the text centered? Not sure, sort of need to think about what API drawing
+                        // text should take. Should it take a position representing a baseline? or a position
+                        // representing the center of some rect to draw within? sort of feel like the former and the
+                        // later could be a wrapper on top.
+                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                        Polyhedron rect;
+                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+
+                        GameControllerState* controller = &input->controllers[0];
+                        Polyhedron cursor;
+                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                        CollisionInfo info = {0};
+                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        // TODO: There is a potential issue here in that by the time we've checked the down action
+                        // here, we might have triggered gameplay actions as well since this logic check happens
+                        // after the update step. Ideally we decouple the UI logic detection/gameplay state update
+                        // and the render. But they are coupled for the time being.
+                        if (collides && controller->action_down.pressed && e_to_upgrade != NULL) {
+                            if (gstate->score >= *cost && gstate->score2 >= *cost2) {
+                                gstate->score -= *cost;
+                                *cost *= 2.0f;
+                                gstate->score2 -= *cost2;
+                                *cost2 *= 2.0f;
+                                UpgradeWorker(gstate, e_to_upgrade);
                             }
                         }
 
