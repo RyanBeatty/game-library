@@ -4278,12 +4278,10 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
     Entity* e = AllocateEntity();
 
-    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
-
     e->pos = pos;
     PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-    GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
-                                                       Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+    GraphicsInfoSetLModel(&e->graphics, LModelFromSprite(SpriteFromLTexture(GetTexture(TX_MAILBOX), SBB_FULL),
+                                                         Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR));
     FlagOn(e->flags, EFLAG_WORKER);
     e->work_cooldown_dt = 0.0f;
     e->work_cooldown_sec = gstate->worker_cooldown_sec;
