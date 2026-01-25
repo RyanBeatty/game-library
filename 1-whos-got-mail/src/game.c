@@ -4322,7 +4322,8 @@ static void UpgradeWorker(GameState* gstate, Entity* e) {
         }
         case 2: {
             ++gstate->upgraded_worker_count2;
-
+            GraphicsInfoSetLModel(&e->graphics, LModelFromSprite(SpriteFromLTexture(GetTexture(TX_MAILBOX3), SBB_FULL),
+                                                                 Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR));
             break;
         }
         case 3: {
