@@ -194,7 +194,7 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_MAIL, TX_MAILBOX, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_MAIL, TX_MAILBOX, TX_MAILBOX2, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -407,6 +407,11 @@ static void TexturesInit() {
 
     {
         tcache->textures[TX_MAILBOX] = TextureFromFile("assets/textures/mailbox.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_MAILBOX2] = TextureFromFile("assets/textures/mailbox2.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
     ++tcache->txlen;
@@ -3573,7 +3578,8 @@ LCORE LModel LModelFromAnimation(Animation animation, Vec3 pos, Mat4 orient, Vec
 }
 
 LCORE LModel LModelFromSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale, Vec4 tint) {
-    return LModelFromAnimation(AnimationFromSprite(sprite), pos, orient, scale, tint);
+    return LModelFromAnimation(AnimationFromSprite(sprite), pos, orient,
+                               Vec3Lit(sprite.dims.x * scale.x, sprite.dims.y * scale.y, scale.z), tint);
 }
 
 LCORE LModel LModelFromMesh(LMesh mesh, LTexture texture, Vec3 pos, Mat4 orient, Vec3 scale, Vec4 tint) {
@@ -3593,6 +3599,9 @@ LCORE DrawCmd* DrawLModelEx(LModel model, isize frame_idx, Vec3 pos, Mat4 orient
     Assert(model.animation.sprites.len > frame_idx);
     // Draw the model at its base scale multiplied by the passed in scale.
     Sprite* sprite = ArrGetR(&model.animation.sprites, frame_idx);
+    // We don't want to derive size from the texture itself. We want to be explicit about the scaling/dimensions of the
+    // mesh we are drawing. if we want to match the sprite/texture, then that should be controlled by a high level
+    // wrapper
     f32 scalex = scale.x * model.scale.x;  // * sprite->dims.x;
     f32 scaley = scale.y * model.scale.y;  // * sprite->dims.y;
     f32 scalez = scale.z * model.scale.z;  // * sprite->dims.z;
@@ -4288,11 +4297,11 @@ static void SpawnWorker(GameState* gstate, Vec3 pos) {
 }
 
 static void UpgradeWorker(GameState* gstate, Entity* e) {
-    i32 prev_pickup = e->pickup_count;
-    ++e->pickup_count;
-    switch (prev_pickup) {
+    switch (e->pickup_count) {
         case 1: {
             ++gstate->upgraded_worker_count;
+            GraphicsInfoSetLModel(&e->graphics, LModelFromSprite(SpriteFromLTexture(GetTexture(TX_MAILBOX2), SBB_FULL),
+                                                                 Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR));
             break;
         }
         case 2: {
@@ -4307,7 +4316,9 @@ static void UpgradeWorker(GameState* gstate, Entity* e) {
             Assert(0);
         }
     }
-    PlatformLog(LLOG_INFO, "Upgraded Worker: %d -> %d", prev_pickup, e->pickup_count);
+
+    ++e->pickup_count;
+    PlatformLog(LLOG_INFO, "Upgraded Worker: %d -> %d", e->pickup_count - 1, e->pickup_count);
 }
 
 static void SpawnResearcher(GameState* gstate, Vec3 pos) {
@@ -4389,9 +4400,6 @@ static void RefreshWorkerAttributes(GameState* gstate) {
     for (Entity* e = EntityFromId(gstate->worker_root); e; e = EntityFromId(e->next_worker)) {
         Assert(TestFlag(e->flags, EFLAG_WORKER));
         e->work_cooldown_sec = gstate->worker_cooldown_sec;
-        if (e->pickup_count == 2) {
-            e->graphics.model.tint = LBLACK;
-        }
     }
 }
 
