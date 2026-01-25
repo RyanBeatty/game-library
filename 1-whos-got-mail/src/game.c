@@ -194,7 +194,15 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_MAIL, TX_MAILBOX, TX_MAILBOX2, TX_MAILBOX3, TX_COUNT } TextureLabel;
+typedef enum TextureLabel {
+    TX_DEFAULT = 0,
+    TX_MAIL,
+    TX_MAILBOX,
+    TX_MAILBOX2,
+    TX_MAILBOX3,
+    TX_RESEARCHER,
+    TX_COUNT
+} TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -417,6 +425,11 @@ static void TexturesInit() {
 
     {
         tcache->textures[TX_MAILBOX3] = TextureFromFile("assets/textures/mailbox3.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_RESEARCHER] = TextureFromFile("assets/textures/researcher.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
     ++tcache->txlen;
@@ -4309,8 +4322,7 @@ static void UpgradeWorker(GameState* gstate, Entity* e) {
         }
         case 2: {
             ++gstate->upgraded_worker_count2;
-            GraphicsInfoSetLModel(&e->graphics, LModelFromSprite(SpriteFromLTexture(GetTexture(TX_MAILBOX3), SBB_FULL),
-                                                                 Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR));
+
             break;
         }
         case 3: {
@@ -4335,8 +4347,8 @@ static void SpawnResearcher(GameState* gstate, Vec3 pos) {
 
     e->pos = pos;
     // PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)));
-    // GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAILBOX), Vec3Zero(),
-    //                                                    Mat4Identity(), Vec3Scale(hamper_dims_world, 2.0f), LCLEAR));
+    GraphicsInfoSetLModel(&e->graphics, LModelFromSprite(SpriteFromLTexture(GetTexture(TX_RESEARCHER), SBB_FULL),
+                                                         Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR));
     FlagOn(e->flags, EFLAG_RESEARCHER);
     e->work_cooldown_dt = 0.0f;
     e->work_cooldown_sec = gstate->researcher_cooldown_sec;
