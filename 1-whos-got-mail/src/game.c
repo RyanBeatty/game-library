@@ -194,7 +194,7 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_MAIL, TX_MAILBOX, TX_MAILBOX2, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_MAIL, TX_MAILBOX, TX_MAILBOX2, TX_MAILBOX3, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -412,6 +412,11 @@ static void TexturesInit() {
 
     {
         tcache->textures[TX_MAILBOX2] = TextureFromFile("assets/textures/mailbox2.png", FILTER_NEAREST);
+        ++tcache->txlen;
+    }
+
+    {
+        tcache->textures[TX_MAILBOX3] = TextureFromFile("assets/textures/mailbox3.png", FILTER_NEAREST);
         ++tcache->txlen;
     }
     ++tcache->txlen;
@@ -4304,6 +4309,8 @@ static void UpgradeWorker(GameState* gstate, Entity* e) {
         }
         case 2: {
             ++gstate->upgraded_worker_count2;
+            GraphicsInfoSetLModel(&e->graphics, LModelFromSprite(SpriteFromLTexture(GetTexture(TX_MAILBOX3), SBB_FULL),
+                                                                 Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR));
             break;
         }
         case 3: {
