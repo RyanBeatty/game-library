@@ -4481,6 +4481,22 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 {
+                    Vec3 researcher_origin_world = Vec3Lit(Px2Meter(-500.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
+                    Vec3 researcher_step_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+                    Mat4 research_to_world = Mat4Multiply(Mat4TranslateV(researcher_origin_world),
+                                                          Mat4ScaleV(Vec3Scale(researcher_step_world, 1.0f)));
+
+                    i32 NUM_COLS = 3;
+                    i32 i = 0;
+                    for (Entity* e = EntityFromId(gstate->researcher_root); e != NULL;
+                         e = EntityFromId(e->next_researcher), ++i) {
+                        i32 row = i / NUM_COLS;
+                        i32 col = i % NUM_COLS;
+                        Vec3 researcher_pos = Vec3Lit(col, row, 0);
+                        e->pos = Vec3WTransform(researcher_pos, research_to_world);
+                        EasingSetLerp(&e->graphics.pos_easing, 0.1f);
+                    }
+
                     RefreshResearcherAttributes(gstate);
                 }
 
@@ -4550,7 +4566,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
-                if (TestFlag(e->flags, EFLAG_WORKER)) {
+                if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
                     // TODO: Rework this.
                     static f32 ROT = 0.0f;
 
