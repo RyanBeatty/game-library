@@ -4487,7 +4487,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Mat4 research_to_world = Mat4Multiply(Mat4TranslateV(researcher_origin_world),
                                                           Mat4ScaleV(Vec3Scale(researcher_step_world, 1.0f)));
 
-                    i32 NUM_COLS = 3;
+                    i32 NUM_COLS = 2;
                     i32 i = 0;
                     for (Entity* e = EntityFromId(gstate->researcher_root); e != NULL;
                          e = EntityFromId(e->next_researcher), ++i) {
