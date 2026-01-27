@@ -4617,11 +4617,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 gstate->score2 = 1000000.0f;
             }
 
-            AABB2D aabb = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
-            DrawQuad(Vec2ToVec3(aabb.c), aabb.r.x * 2.0f, aabb.r.y * 2.0f, Mat4Identity(), LGRAY);
+            AABB2D parent = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
+            DrawQuad(Vec2ToVec3(parent.c), parent.r.x * 2.0f, parent.r.y * 2.0f, Mat4Identity(), LGRAY);
 
             {
                 LFont font = GetLFontClosest(40.0f);
+
+                AABB2D parent2 = AABB2DFromMinMax(Vec2Lit(0.0f, height * 0.8f), Vec2Lit(width * 0.25f, height));
+                DrawQuad(Vec2ToVec3(parent2.c), parent2.r.x * 2.0f, parent2.r.y * 2.0f, Mat4Identity(), LRED);
 
                 {
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
@@ -4717,11 +4720,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (gstate->shop_open) {
-                    Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
-                    Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
-                    DrawQuad(center, parent_dims.x, parent_dims.y, Mat4Identity(), LRED);
+                    AABB2D parent3 = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height * 0.8f));
+                    DrawQuad(Vec2ToVec3(parent3.c), parent3.r.x * 2.0f, parent3.r.y * 2.0f, Mat4Identity(), LGREEN);
+                    Vec2 parent_top_left = Vec2Lit(parent3.c.x - parent3.r.x, parent3.c.y + parent3.r.y);
 
-                    Vec2 parent_top_left = Vec2Lit(center.x - 0.5f * parent_dims.x, center.y + 0.5f * parent_dims.y);
+                    // Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
+                    // Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
+                    // DrawQuad(center, parent_dims.x, parent_dims.y, Mat4Identity(), LRED);
+
+                    // Vec2 parent_top_left = Vec2Lit(center.x - 0.5f * parent_dims.x, center.y + 0.5f * parent_dims.y);
                     Vec2 pos = Vec2Lit(parent_top_left.x + 10.0f, parent_top_left.y + 0.0f);
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
 
