@@ -4617,6 +4617,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 gstate->score2 = 1000000.0f;
             }
 
+            AABB2D aabb = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
+            DrawQuad(Vec2ToVec3(aabb.c), aabb.r.x * 2.0f, aabb.r.y * 2.0f, Mat4Identity(), LGRAY);
+
             {
                 LFont font = GetLFontClosest(40.0f);
 
