@@ -3329,8 +3329,8 @@ LCORE void DrawLTextExF(LFont font, Vec2 pos, Vec4 color, const char* format, ..
 // This will return the dimensions of the quad that would be necessary to span the entire text (i.e. if somehow
 // the text was baked into a texture, what quad dims would be needed to draw the texture).
 LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
-    // TODO/BUG: I should probably initialize this with flt min and max. See LFontMeasureStr8Quad.
-    Vec2 br = Vec2Zero();
+    Vec2 br = Vec2Lit(FLT_MIN, FLT_MIN);
+    Vec2 tl = Vec2Lit(FLT_MAX, FLT_MAX);
 
     Vec2 baseline_pos = Vec2Zero();
 
