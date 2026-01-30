@@ -3326,32 +3326,30 @@ LCORE void DrawLTextExF(LFont font, Vec2 pos, Vec4 color, const char* format, ..
     DrawLTextEx(font, buffer, strlen(buffer), pos, color);
 }
 
-// This will return the dimensions of the quad that would be necessary to span the entire text (i.e. if somehow
-// the text was baked into a texture, what quad dims would be needed to draw the texture).
-LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
-    Vec2 br = Vec2Lit(FLT_MIN, FLT_MIN);
-    Vec2 tl = Vec2Lit(FLT_MAX, FLT_MAX);
+// // This will return the dimensions of the quad that would be necessary to span the entire text (i.e. if somehow
+// // the text was baked into a texture, what quad dims would be needed to draw the texture).
+// LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
+//     Vec2 br = Vec2Lit(FLT_MIN, FLT_MIN);
+//     Vec2 tl = Vec2Lit(FLT_MAX, FLT_MAX);
 
-    Vec2 baseline_pos = Vec2Zero();
+//     Vec2 baseline_pos = Vec2Zero();
 
-    for (i32 i = 0; i < len; ++i) {
-        stbtt_aligned_quad quad = {0};
-        // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
-                           &quad, true);
+//     for (i32 i = 0; i < len; ++i) {
+//         stbtt_aligned_quad quad = {0};
+//         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+//         stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
+//                            &quad, true);
 
-        tl.x = f32min(tl.x, quad.x0);
-        tl.y = f32min(tl.y, quad.y0);
+//         tl.x = f32min(tl.x, quad.x0);
+//         tl.y = f32min(tl.y, quad.y0);
 
-        br.x = f32max(br.x, quad.x1);
-        br.y = f32max(br.y, quad.y1);
-    }
+//         br.x = f32max(br.x, quad.x1);
+//         br.y = f32max(br.y, quad.y1);
+//     }
 
-    Vec2 dims = Vec2Sub(br, tl);
-    return dims;
-}
-
-LCORE Vec2 LFontMeasureStr8(LFont font, Str8 str) { return LFontMeasureText(font, str.data, str.len); }
+//     Vec2 dims = Vec2Sub(br, tl);
+//     return dims;
+// }
 
 // Returns a positioned quad that is centered and sized such that if the center is drawn at baseline_pos + quad_center,
 // the quad should span the text.
@@ -3399,6 +3397,11 @@ LCORE AABB2D LFontMeasureStr8Quad(LFont font, Str8 str) {
 
     AABB2D aabb = AABB2DFromMinMax(bl, tr);
     return aabb;
+}
+
+LCORE Vec2 LFontMeasureStr8(LFont font, Str8 str) {
+    AABB2D aabb = LFontMeasureStr8Quad(font, str);
+    return Vec2Lit(2.0f * aabb.r.x, 2.0f * aabb.r.y);
 }
 
 // Assumes the font texture contains the ascii printable characters on a single line.
