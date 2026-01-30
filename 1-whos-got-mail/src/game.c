@@ -4293,6 +4293,13 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
 //     e->next_worker = next_worker;
 // }
 
+static Vec4 COLORS[] = {
+    RGBLit(50.0f, 50.0f, 50.0f),
+    RGBLit(123.0f, 123.0f, 123.0f),
+    RGBLit(54.0f, 173.0f, 105.0f),
+    RGBLit(226.0f, 214.0f, 181.0f),
+};
+
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
     Entity* e = AllocateEntity();
 
@@ -4618,13 +4625,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
 
             AABB2D parent = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
-            DrawQuad(Vec2ToVec3(parent.c), parent.r.x * 2.0f, parent.r.y * 2.0f, Mat4Identity(), LGRAY);
+            DrawQuad(Vec2ToVec3(parent.c), parent.r.x * 2.0f, parent.r.y * 2.0f, Mat4Identity(), COLORS[1]);
+
+            Vec2 hmargin = Vec2Scale(Vec2Lit(10.0f, 10.0f), 0.5f);
 
             {
                 LFont font = GetLFontClosest(40.0f);
 
-                AABB2D parent2 = AABB2DFromMinMax(Vec2Lit(0.0f, height * 0.7f), Vec2Lit(width * 0.25f, height));
-                DrawQuad(Vec2ToVec3(parent2.c), parent2.r.x * 2.0f, parent2.r.y * 2.0f, Mat4Identity(), LRED);
+                AABB2D parent2 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, height * 0.7f), hmargin),
+                                                  Vec2Sub(Vec2Lit(width * 0.25f, height), hmargin));
+                DrawQuad(Vec2ToVec3(parent2.c), parent2.r.x * 2.0f, parent2.r.y * 2.0f, Mat4Identity(), COLORS[0]);
 
                 {
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
@@ -4720,8 +4730,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (true) {
-                    AABB2D parent3 = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height * 0.7f));
-                    DrawQuad(Vec2ToVec3(parent3.c), parent3.r.x * 2.0f, parent3.r.y * 2.0f, Mat4Identity(), LGREEN);
+                    AABB2D parent3 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, 0.0f), hmargin),
+                                                      Vec2Sub(Vec2Lit(width * 0.25f, height * 0.7f), hmargin));
+                    DrawQuad(Vec2ToVec3(parent3.c), parent3.r.x * 2.0f, parent3.r.y * 2.0f, Mat4Identity(), COLORS[0]);
                     Vec2 parent_top_left = Vec2Lit(parent3.c.x - parent3.r.x, parent3.c.y + parent3.r.y);
 
                     // Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
