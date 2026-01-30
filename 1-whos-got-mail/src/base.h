@@ -33,6 +33,7 @@ typedef f32 rad;
 typedef f32 deg;
 typedef double f64;
 #define F32_MAX FLT_MAX
+#define F32_MIN FLT_MIN
 // Min value a float can differ by.
 #define F32_EPSILON FLT_EPSILON
 

@@ -3329,7 +3329,7 @@ LCORE void DrawLTextExF(LFont font, Vec2 pos, Vec4 color, const char* format, ..
 // This will return the dimensions of the quad that would be necessary to span the entire text (i.e. if somehow
 // the text was baked into a texture, what quad dims would be needed to draw the texture).
 LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
-    Vec2 tl = Vec2Zero();
+    // TODO/BUG: I should probably initialize this with flt min and max. See LFontMeasureStr8Quad.
     Vec2 br = Vec2Zero();
 
     Vec2 baseline_pos = Vec2Zero();
@@ -3352,6 +3352,54 @@ LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
 }
 
 LCORE Vec2 LFontMeasureStr8(LFont font, Str8 str) { return LFontMeasureText(font, str.data, str.len); }
+
+// Returns a positioned quad that is centered and sized such that if the center is drawn at baseline_pos + quad_center,
+// the quad should span the text.
+LCORE AABB2D LFontMeasureStr8Quad(LFont font, Str8 str) {
+    i32 len = str.len;
+    char* text = str.data;
+
+    Vec2 bl = Vec2Lit(F32_MAX, F32_MAX);
+    Vec2 tr = Vec2Lit(F32_MIN, F32_MIN);
+
+    Vec2 baseline_pos = Vec2Zero();
+
+    for (i32 i = 0; i < len; ++i) {
+        stbtt_aligned_quad quad = {0};
+        // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
+                           &quad, true);
+
+        /*
+        Remember. the key to understanding all of these transformations is to visualize them from the perspective
+        of the originating coordinate system (stb_truetype's coordinate system). If you try to visualize
+        them from the perspective of the final coordinate system, it will be hard to do.
+        */
+
+        Vec2 qdims = Vec2Sub(Vec2Lit(quad.x1, quad.y1), Vec2Lit(quad.x0, quad.y0));
+        // Note we don't need to flip anything about the quads world space positions even though stb_truetype assumes
+        // origin top left and +Y is down. The rendering position data will work.
+        Vec2 qorigin = {0};
+        qorigin.x = quad.x0 + (0.5f * qdims.x);
+        // We need to flip the y position coords since stb_truetype assumes that positioning is relative to a
+        // baseline where the origin is top left and +y is down. Our pos.y is our baseline, so to reflect
+        // we take the height relative to the baseline and subtract that from the baseline. Think of this as if
+        // we were in the coordinate space of stb_truetype. we have a baseline pos.y and some position quad.y1
+        // which is the highest y position of the glyph. We need to subtract the height delta from the baseline
+        // to reflect in stb_truetype coordinate system which will result in upright positions in lcore engine.
+        f32 height_relative_to_baseline = quad.y1 - baseline_pos.y;
+        qorigin.y = (baseline_pos.y - height_relative_to_baseline) + (0.5f * qdims.y);
+
+        bl.x = f32min(bl.x, qorigin.x - (0.5f * qdims.x));
+        bl.y = f32min(bl.y, qorigin.y - (0.5f * qdims.y));
+
+        tr.x = f32max(tr.x, qorigin.x + (0.5f * qdims.x));
+        tr.y = f32max(tr.y, qorigin.y + (0.5f * qdims.y));
+    }
+
+    AABB2D aabb = AABB2DFromMinMax(bl, tr);
+    return aabb;
+}
 
 // Assumes the font texture contains the ascii printable characters on a single line.
 // Characters (note the space beginning the sequence is included):
@@ -4724,7 +4772,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             gstate->shop_open = !gstate->shop_open;
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        AABB2D textaabb = LFontMeasureStr8Quad(font, txt);
+
+                        DrawQuad(Vec2ToVec3(Vec2Add(pos, textaabb.c)), 2.0f * textaabb.r.x, 2.0f * textaabb.r.y,
+                                 Mat4Identity(), LBLUE);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
