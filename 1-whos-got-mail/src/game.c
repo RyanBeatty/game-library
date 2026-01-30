@@ -4623,7 +4623,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             {
                 LFont font = GetLFontClosest(40.0f);
 
-                AABB2D parent2 = AABB2DFromMinMax(Vec2Lit(0.0f, height * 0.8f), Vec2Lit(width * 0.25f, height));
+                AABB2D parent2 = AABB2DFromMinMax(Vec2Lit(0.0f, height * 0.7f), Vec2Lit(width * 0.25f, height));
                 DrawQuad(Vec2ToVec3(parent2.c), parent2.r.x * 2.0f, parent2.r.y * 2.0f, Mat4Identity(), LRED);
 
                 {
@@ -4720,7 +4720,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (gstate->shop_open) {
-                    AABB2D parent3 = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height * 0.8f));
+                    AABB2D parent3 = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height * 0.7f));
                     DrawQuad(Vec2ToVec3(parent3.c), parent3.r.x * 2.0f, parent3.r.y * 2.0f, Mat4Identity(), LGREEN);
                     Vec2 parent_top_left = Vec2Lit(parent3.c.x - parent3.r.x, parent3.c.y + parent3.r.y);
 
