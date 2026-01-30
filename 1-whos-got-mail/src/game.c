@@ -4628,6 +4628,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             DrawQuad(Vec2ToVec3(parent.c), parent.r.x * 2.0f, parent.r.y * 2.0f, Mat4Identity(), COLORS[1]);
 
             Vec2 hmargin = Vec2Scale(Vec2Lit(10.0f, 10.0f), 0.5f);
+            Vec4 text_bg_color = COLORS[3];
 
             {
                 LFont font = GetLFontClosest(40.0f);
@@ -4782,7 +4783,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
@@ -4831,7 +4832,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
@@ -4888,7 +4889,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
@@ -4936,7 +4937,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
 
                             DrawStr8Ex(font, pos, LBLACK, txt);
                         }
@@ -4999,7 +5000,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                            DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
 
                             DrawStr8Ex(font, pos, LBLACK, txt);
                         }
@@ -5047,7 +5048,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
@@ -5109,7 +5110,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
