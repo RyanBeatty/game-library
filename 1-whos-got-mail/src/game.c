@@ -4425,6 +4425,39 @@ static Vec4 COLORS[] = {
     RGBLit(226.0f, 214.0f, 181.0f),
 };
 
+typedef struct {
+    bool clicked;
+} UIAction;
+
+static UIAction UIButton(Vec2* topleft, LFont font, Str8 text, bool clickable, GameControllerState* controller) {
+    TextBox dims = LFontMeasureStr8Quad2(font, text);
+    Vec2 quadpos = Vec2Lit(topleft->x + dims.aabb.c.x, topleft->y - dims.aabb.c.y);
+
+    Polyhedron rect;
+    PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
+
+    Polyhedron cursor;
+    PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+
+    CollisionInfo info = {0};
+    bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+
+    UIAction action = {0};
+    // TODO: There is a potential issue here in that by the time we've checked the down action here,
+    // we might have triggered gameplay actions as well since this logic check happens after the
+    // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
+    // But they are coupled for the time being.
+    if (collides && controller->action_down.pressed && clickable) {
+        action.clicked = true;
+    }
+
+    DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
+    DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
+
+    topleft->y -= AABB2DHeight(dims.aabb);
+    return action;
+}
+
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
     Entity* e = AllocateEntity();
 
@@ -4879,35 +4912,44 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
 
-                        TextBox dims = LFontMeasureStr8Quad2(font, txt);
-                        Vec2 quadpos = Vec2Lit(pos.x + dims.aabb.c.x, pos.y - dims.aabb.c.y);
-
-                        Polyhedron rect;
-                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
-
                         GameControllerState* controller = &input->controllers[0];
-                        Polyhedron cursor;
-                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-
-                        CollisionInfo info = {0};
-                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
-                        // TODO: There is a potential issue here in that by the time we've checked the down action here,
-                        // we might have triggered gameplay actions as well since this logic check happens after the
-                        // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
-                        // But they are coupled for the time being.
-                        if (collides && controller->action_down.pressed) {
-                            if (gstate->score >= gstate->worker_cost) {
-                                gstate->score -= gstate->worker_cost;
-                                SpawnWorker(gstate, Vec3Zero());
-                                gstate->worker_cost *= 2.0f;
-                            }
+                        if (UIButton(&pos, font, txt, gstate->score >= gstate->worker_cost, controller).clicked) {
+                            gstate->score -= gstate->worker_cost;
+                            SpawnWorker(gstate, Vec3Zero());
+                            gstate->worker_cost *= 2.0f;
                         }
 
-                        DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(),
-                                   text_bg_color);
-                        DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, txt);
+                        // TextBox dims = LFontMeasureStr8Quad2(font, txt);
+                        // Vec2 quadpos = Vec2Lit(pos.x + dims.aabb.c.x, pos.y - dims.aabb.c.y);
 
-                        pos.y -= AABB2DHeight(dims.aabb);
+                        // Polyhedron rect;
+                        // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
+
+                        // GameControllerState* controller = &input->controllers[0];
+                        // Polyhedron cursor;
+                        // PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+
+                        // CollisionInfo info = {0};
+                        // bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        // // TODO: There is a potential issue here in that by the time we've checked the down action
+                        // here,
+                        // // we might have triggered gameplay actions as well since this logic check happens after the
+                        // // update step. Ideally we decouple the UI logic detection/gameplay state update and the
+                        // render.
+                        // // But they are coupled for the time being.
+                        // if (collides && controller->action_down.pressed) {
+                        //     if (gstate->score >= gstate->worker_cost) {
+                        //         gstate->score -= gstate->worker_cost;
+                        //         SpawnWorker(gstate, Vec3Zero());
+                        //         gstate->worker_cost *= 2.0f;
+                        //     }
+                        // }
+
+                        // DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(),
+                        //            text_bg_color);
+                        // DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, txt);
+
+                        // pos.y -= AABB2DHeight(dims.aabb);
                     }
 
                     if (false) {
