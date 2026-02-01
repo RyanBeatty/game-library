@@ -2545,6 +2545,7 @@ typedef struct {
 
 #define AABB2DWidth(aabb) (2.0f * (aabb).r.x)
 #define AABB2DHeight(aabb) (2.0f * (aabb).r.y)
+#define AABB2DDims(aabb) (Vec2Lit(AABB2DWidth(aabb), AABB2DHeight(aabb)))
 
 // Returns a aabb2d from a bottom left and top right
 LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
@@ -4816,40 +4817,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
-                        // Vec2 dims = LFontMeasureStr8(font, txt);
+
                         AABB2D dims = LFontMeasureStr8Quad(font, txt);
-                        AABB2D aabb = dims;
-                        aabb.c = Vec2Lit(pos.x + aabb.c.x, pos.y - aabb.c.y);
-                        breakpoint();
+                        Vec2 quadpos = Vec2Lit(pos.x + dims.c.x, pos.y - dims.c.y);
+
+                        Polyhedron rect;
+                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims));
 
                         GameControllerState* controller = &input->controllers[0];
-                        Circle cursor = CircleLit(controller->cursor_pos, 3.0f);
+                        Polyhedron cursor;
+                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
 
                         CollisionInfo info = {0};
-                        Vec2 normal = {0};
-                        bool collides = TestCircleVsAABB2D(cursor, aabb, &normal, &info.depth);
-
-                        // // TODO: The positioning of this is not correct. this will make sure the quad is centered
-                        // // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
-                        // some
-                        // // chars that extend below the baseline. I think instead I need to have some function that
-                        // gives
-                        // // me the text rect relative to a baseline and then position that inside of drawn rect to
-                        // make
-                        // // the text centered? Not sure, sort of need to think about what API drawing text should
-                        // take.
-                        // // Should it take a position representing a baseline? or a position representing the center
-                        // of
-                        // // some rect to draw within? sort of feel like the former and the later could be a wrapper on
-                        // // top.
-                        // Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
-                        // Polyhedron rect;
-                        // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
-
-                        // Polyhedron cursor;
-                        // PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-                        // CollisionInfo info = {0};
-                        // bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
                         // TODO: There is a potential issue here in that by the time we've checked the down action here,
                         // we might have triggered gameplay actions as well since this logic check happens after the
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
@@ -4862,11 +4842,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        DrawQuad2D(aabb.c, AABB2DWidth(aabb), AABB2DHeight(aabb), Mat4Identity(), text_bg_color);
+                        DrawQuad2D(quadpos, AABB2DWidth(dims), AABB2DHeight(dims), Mat4Identity(), text_bg_color);
+                        DrawStr8Ex(font, Vec2Sub(quadpos, dims.c), LBLACK, txt);
 
-                        DrawStr8Ex(font, Vec2Sub(aabb.c, dims.c), LBLACK, txt);
-
-                        pos.y -= AABB2DHeight(aabb);
+                        pos.y -= AABB2DHeight(dims);
                     }
 
                     {
