@@ -2541,6 +2541,7 @@ typedef struct {
     Vec2 r;  // half width extents along each axis.
 } AABB2D;
 
+#define AABB2DWidth(aabb) (2.0f * (aabb).r.x)
 #define AABB2DHeight(aabb) (2.0f * (aabb).r.y)
 
 // Returns a aabb2d from a bottom left and top right
