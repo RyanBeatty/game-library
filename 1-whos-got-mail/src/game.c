@@ -2375,6 +2375,9 @@ LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 co
     return cmd;
 }
 
+#define DrawQuad2D(center2d, width, height, orient, color) \
+    (DrawQuad(Vec2ToVec3(center2d), (width), (height), (orient), (color)))
+
 LCORE DrawCmd* DrawMesh(LMesh mesh, Vec3 pos, Mat4 orient, Vec3 scale, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshcmd.meshid = mesh;
@@ -2537,6 +2540,9 @@ typedef struct {
     Vec2 c;  // center.
     Vec2 r;  // half width extents along each axis.
 } AABB2D;
+
+#define AABB2DWidth(aabb) (2.0f * (aabb).r.x)
+#define AABB2DHeight(aabb) (2.0f * (aabb).r.y)
 
 // Returns a aabb2d from a bottom left and top right
 LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
@@ -4777,8 +4783,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         AABB2D textaabb = LFontMeasureStr8Quad(font, txt);
 
-                        DrawQuad(Vec2ToVec3(Vec2Add(pos, textaabb.c)), 2.0f * textaabb.r.x, 2.0f * textaabb.r.y,
-                                 Mat4Identity(), LBLUE);
+                        DrawQuad2D(Vec2Add(pos, textaabb.c), AABB2DWidth(textaabb), AABB2DHeight(textaabb),
+                                   Mat4Identity(), LBLUE);
 
                         DrawStr8Ex(font, pos, LBLACK, txt);
                     }
