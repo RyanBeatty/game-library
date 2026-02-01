@@ -2541,7 +2541,6 @@ typedef struct {
     Vec2 r;  // half width extents along each axis.
 } AABB2D;
 
-#define AABB2DWidth(aabb) (2.0f * (aabb).r.x)
 #define AABB2DHeight(aabb) (2.0f * (aabb).r.y)
 
 // Returns a aabb2d from a bottom left and top right
@@ -4782,7 +4781,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         AABB2D textaabb = LFontMeasureStr8Quad(font, txt);
-
                         DrawQuad2D(Vec2Add(pos, textaabb.c), AABB2DWidth(textaabb), AABB2DHeight(textaabb),
                                    Mat4Identity(), LBLUE);
 
