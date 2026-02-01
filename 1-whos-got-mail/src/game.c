@@ -4444,41 +4444,10 @@ typedef struct {
     bool clicked;
 } UIAction;
 
-static UIState* GetUIState() { return NULL; }
-
 #define UIGetFont(ui) (ArrTail(&(ui)->fonts))
 #define UIPushFont(ui, ffont) (ArrPush(&(ui)->fonts, ffont))
 #define UIPushSpacing(ui, sspacing) (ArrPush(&(ui)->spacings, sspacing))
 #define UISetTopLeft(ui, tl) ((ui)->top_left = (tl))
-
-static UIAction UIButton(Vec2* topleft, LFont font, Str8 text, bool clickable, GameControllerState* controller) {
-    TextBox dims = LFontMeasureStr8Quad2(font, text);
-    Vec2 quadpos = Vec2Lit(topleft->x + dims.aabb.c.x, topleft->y - dims.aabb.c.y);
-
-    Polyhedron rect;
-    PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
-
-    Polyhedron cursor;
-    PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-
-    CollisionInfo info = {0};
-    bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
-
-    UIAction action = {0};
-    // TODO: There is a potential issue here in that by the time we've checked the down action here,
-    // we might have triggered gameplay actions as well since this logic check happens after the
-    // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
-    // But they are coupled for the time being.
-    if (collides && controller->action_down.pressed && clickable) {
-        action.clicked = true;
-    }
-
-    DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
-    DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
-
-    topleft->y -= AABB2DHeight(dims.aabb);
-    return action;
-}
 
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->fonts, perm, LFont, 1);
@@ -4487,7 +4456,7 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     ui->input = input;
 }
 
-static UIAction UIButton2(UIState* ui, Str8 text, bool clickable) {
+static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     // Get ui state fields.
     Vec2 topleft = ui->top_left;
     LFont font = UIGetFont(ui);
@@ -4980,7 +4949,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         bool clickable = gstate->score >= gstate->worker_cost;
 
-                        if (UIButton2(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= gstate->worker_cost;
                             SpawnWorker(gstate, Vec3Zero());
                             gstate->worker_cost *= 2.0f;
@@ -4994,7 +4963,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         bool clickable = gstate->score >= gstate->worker_cooldown_sec_cost;
 
-                        if (UIButton2(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= gstate->worker_cooldown_sec_cost;
                             gstate->worker_cooldown_sec *= 0.8f;
                             gstate->worker_cooldown_sec_cost *= 2.0f;
@@ -5024,7 +4993,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         bool clickable = e_to_upgrade != NULL && gstate->score >= cost;
 
-                        if (UIButton2(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= cost;
                             cost *= 2.0f;
                             UpgradeWorker(gstate, e_to_upgrade);
@@ -5041,7 +5010,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Str8 txt = Str8FromC(buffer);
                             bool clickable = gstate->score >= *cost;
 
-                            if (UIButton2(&ui, txt, clickable).clicked) {
+                            if (UIButton(&ui, txt, clickable).clicked) {
                                 gstate->score -= *cost;
                                 *cost *= 2.0f;
                                 SpawnResearcher(gstate, Vec3Zero());
@@ -5071,7 +5040,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Str8 txt = Str8FromC(buffer);
                             bool clickable = e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2;
 
-                            if (UIButton2(&ui, txt, clickable).clicked) {
+                            if (UIButton(&ui, txt, clickable).clicked) {
                                 gstate->score -= *cost;
                                 *cost *= 2.0f;
                                 gstate->score2 -= *cost2;
@@ -5090,7 +5059,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         bool clickable = gstate->score >= *cost;
 
-                        if (UIButton2(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= *cost;
                             *cost *= 2.0f;
                             gstate->researcher_cooldown_sec *= 0.8f;
@@ -5119,7 +5088,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         bool clickable = e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2;
 
-                        if (UIButton2(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= *cost;
                             *cost *= 2.0f;
                             gstate->score2 -= *cost2;
