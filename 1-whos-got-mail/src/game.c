@@ -4966,7 +4966,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     // DrawQuad(center, parent_dims.x, parent_dims.y, Mat4Identity(), LRED);
 
                     // Vec2 parent_top_left = Vec2Lit(center.x - 0.5f * parent_dims.x, center.y + 0.5f * parent_dims.y);
-                    Vec2 pos = Vec2Lit(parent_top_left.x + 0.0f, parent_top_left.y + 0.0f);
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
                     spacing = Vec2Lit(0.0f, 0.0f);
 
@@ -4977,14 +4976,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushSpacing(&ui, spacing);
 
                     {
-                        pos = Vec2Sub(pos, spacing);
-
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
 
-                        // GameControllerState* controller = &input->controllers[0];
-                        // if (UIButton(&pos, font, txt, gstate->score >= gstate->worker_cost, controller).clicked) {
                         if (UIButton2(&ui, txt, gstate->score >= gstate->worker_cost).clicked) {
                             gstate->score -= gstate->worker_cost;
                             SpawnWorker(gstate, Vec3Zero());
