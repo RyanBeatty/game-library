@@ -2513,6 +2513,8 @@ typedef struct {
     f32 r;
 } Circle;
 
+#define CircleLit(cc, rr) ((Circle){.c = (cc), .r = (rr)})
+
 // Returns normal pointing from b to a if there is a collision. Assumes both
 // circles are in same coordinate space.
 static bool TestCircleCircle(Circle a, Circle b, Vec2* normal, f32* depth) {
@@ -3358,7 +3360,8 @@ LCORE void DrawLTextExF(LFont font, Vec2 pos, Vec4 color, const char* format, ..
 // }
 
 // Returns a positioned quad that is centered and sized such that if the center is drawn at baseline_pos + quad_center,
-// the quad should span the text.
+// the quad should span the text. Importantly we will move the quad such that the bottom left corner is positioned at
+// (0, 0) so that this quad can be used for UI layout calculations.
 LCORE AABB2D LFontMeasureStr8Quad(LFont font, Str8 str) {
     i32 len = str.len;
     char* text = str.data;
@@ -3401,6 +3404,9 @@ LCORE AABB2D LFontMeasureStr8Quad(LFont font, Str8 str) {
         tr.y = f32max(tr.y, qorigin.y + (0.5f * qdims.y));
     }
 
+    // Position bottom left of quad at the origin (0, 0)
+    tr = Vec2Sub(tr, bl);
+    bl = Vec2Zero();
     AABB2D aabb = AABB2DFromMinMax(bl, tr);
     return aabb;
 }
@@ -4800,8 +4806,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     // DrawQuad(center, parent_dims.x, parent_dims.y, Mat4Identity(), LRED);
 
                     // Vec2 parent_top_left = Vec2Lit(center.x - 0.5f * parent_dims.x, center.y + 0.5f * parent_dims.y);
-                    Vec2 pos = Vec2Lit(parent_top_left.x + 10.0f, parent_top_left.y + 0.0f);
+                    Vec2 pos = Vec2Lit(parent_top_left.x + 0.0f, parent_top_left.y + 0.0f);
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
+                    spacing = Vec2Lit(0.0f, 0.0f);
 
                     {
                         pos = Vec2Sub(pos, spacing);
@@ -4809,27 +4816,40 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
-
-                        pos.y -= dims.y;
-
-                        // TODO: The positioning of this is not correct. this will make sure the quad is centered
-                        // relative to the baseline pos (the pos we passed to measuretext) but the text likely has some
-                        // chars that extend below the baseline. I think instead I need to have some function that gives
-                        // me the text rect relative to a baseline and then position that inside of drawn rect to make
-                        // the text centered? Not sure, sort of need to think about what API drawing text should take.
-                        // Should it take a position representing a baseline? or a position representing the center of
-                        // some rect to draw within? sort of feel like the former and the later could be a wrapper on
-                        // top.
-                        Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
-                        Polyhedron rect;
-                        PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+                        // Vec2 dims = LFontMeasureStr8(font, txt);
+                        AABB2D dims = LFontMeasureStr8Quad(font, txt);
+                        AABB2D aabb = dims;
+                        aabb.c = Vec2Lit(pos.x + aabb.c.x, pos.y - aabb.c.y);
+                        breakpoint();
 
                         GameControllerState* controller = &input->controllers[0];
-                        Polyhedron cursor;
-                        PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                        Circle cursor = CircleLit(controller->cursor_pos, 3.0f);
+
                         CollisionInfo info = {0};
-                        bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+                        Vec2 normal = {0};
+                        bool collides = TestCircleVsAABB2D(cursor, aabb, &normal, &info.depth);
+
+                        // // TODO: The positioning of this is not correct. this will make sure the quad is centered
+                        // // relative to the baseline pos (the pos we passed to measuretext) but the text likely has
+                        // some
+                        // // chars that extend below the baseline. I think instead I need to have some function that
+                        // gives
+                        // // me the text rect relative to a baseline and then position that inside of drawn rect to
+                        // make
+                        // // the text centered? Not sure, sort of need to think about what API drawing text should
+                        // take.
+                        // // Should it take a position representing a baseline? or a position representing the center
+                        // of
+                        // // some rect to draw within? sort of feel like the former and the later could be a wrapper on
+                        // // top.
+                        // Vec3 quadpos = Vec3Lit(pos.x + 0.5f * dims.x, pos.y + 0.5f * dims.y, 0.0f);
+                        // Polyhedron rect;
+                        // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), dims);
+
+                        // Polyhedron cursor;
+                        // PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+                        // CollisionInfo info = {0};
+                        // bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
                         // TODO: There is a potential issue here in that by the time we've checked the down action here,
                         // we might have triggered gameplay actions as well since this logic check happens after the
                         // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
@@ -4842,9 +4862,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        DrawQuad(quadpos, dims.x, dims.y, Mat4Identity(), text_bg_color);
+                        DrawQuad2D(aabb.c, AABB2DWidth(aabb), AABB2DHeight(aabb), Mat4Identity(), text_bg_color);
 
-                        DrawStr8Ex(font, pos, LBLACK, txt);
+                        DrawStr8Ex(font, Vec2Sub(aabb.c, dims.c), LBLACK, txt);
+
+                        pos.y -= AABB2DHeight(aabb);
                     }
 
                     {
