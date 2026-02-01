@@ -4426,8 +4426,30 @@ static Vec4 COLORS[] = {
 };
 
 typedef struct {
+    LFont* data;
+    isize len;
+    isize cap;
+} LFontArr;
+
+typedef struct {
+    LFontArr fonts;
+    Vec2Arr spacings;
+
+    Vec2 top_left;
+
+    GameInput* input;  // Reset each frame.
+} UIState;
+
+typedef struct {
     bool clicked;
 } UIAction;
+
+static UIState* GetUIState() { return NULL; }
+
+#define UIGetFont(ui) (ArrTail(&(ui)->fonts))
+#define UIPushFont(ui, ffont) (ArrPush(&(ui)->fonts, ffont))
+#define UIPushSpacing(ui, sspacing) (ArrPush(&(ui)->spacings, sspacing))
+#define UISetTopLeft(ui, tl) ((ui)->top_left = (tl))
 
 static UIAction UIButton(Vec2* topleft, LFont font, Str8 text, bool clickable, GameControllerState* controller) {
     TextBox dims = LFontMeasureStr8Quad2(font, text);
@@ -4455,6 +4477,49 @@ static UIAction UIButton(Vec2* topleft, LFont font, Str8 text, bool clickable, G
     DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
 
     topleft->y -= AABB2DHeight(dims.aabb);
+    return action;
+}
+
+static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
+    InitArr(&ui->fonts, perm, LFont, 1);
+    InitArr(&ui->spacings, perm, Vec2, 1);
+    ui->top_left = Vec2Lit(0.0f, height);
+    ui->input = input;
+}
+
+static UIAction UIButton2(UIState* ui, Str8 text, bool clickable) {
+    // Get ui state fields.
+    Vec2 topleft = ui->top_left;
+    LFont font = UIGetFont(ui);
+    GameControllerState* controller = GetController(ui->input, 0);
+
+    TextBox dims = LFontMeasureStr8Quad2(font, text);
+    Vec2 quadpos = Vec2Lit(topleft.x + dims.aabb.c.x, topleft.y - dims.aabb.c.y);
+
+    Polyhedron rect;
+    PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
+
+    Polyhedron cursor;
+    PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
+
+    CollisionInfo info = {0};
+    bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+
+    UIAction action = {0};
+    // TODO: There is a potential issue here in that by the time we've checked the down action here,
+    // we might have triggered gameplay actions as well since this logic check happens after the
+    // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
+    // But they are coupled for the time being.
+    if (collides && controller->action_down.pressed && clickable) {
+        action.clicked = true;
+    }
+
+    DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
+    DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
+
+    topleft.y -= AABB2DHeight(dims.aabb);
+
+    ui->top_left = topleft;
     return action;
 }
 
@@ -4905,6 +4970,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
                     spacing = Vec2Lit(0.0f, 0.0f);
 
+                    UIState ui = {0};
+                    UIStateBegin(&ui, &gstate->temp, AABB2DWidth(parent3), AABB2DHeight(parent3), input);
+                    UISetTopLeft(&ui, parent_top_left);
+                    UIPushFont(&ui, font);
+                    UIPushSpacing(&ui, spacing);
+
                     {
                         pos = Vec2Sub(pos, spacing);
 
@@ -4912,44 +4983,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
 
-                        GameControllerState* controller = &input->controllers[0];
-                        if (UIButton(&pos, font, txt, gstate->score >= gstate->worker_cost, controller).clicked) {
+                        // GameControllerState* controller = &input->controllers[0];
+                        // if (UIButton(&pos, font, txt, gstate->score >= gstate->worker_cost, controller).clicked) {
+                        if (UIButton2(&ui, txt, gstate->score >= gstate->worker_cost).clicked) {
                             gstate->score -= gstate->worker_cost;
                             SpawnWorker(gstate, Vec3Zero());
                             gstate->worker_cost *= 2.0f;
                         }
-
-                        // TextBox dims = LFontMeasureStr8Quad2(font, txt);
-                        // Vec2 quadpos = Vec2Lit(pos.x + dims.aabb.c.x, pos.y - dims.aabb.c.y);
-
-                        // Polyhedron rect;
-                        // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
-
-                        // GameControllerState* controller = &input->controllers[0];
-                        // Polyhedron cursor;
-                        // PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-
-                        // CollisionInfo info = {0};
-                        // bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
-                        // // TODO: There is a potential issue here in that by the time we've checked the down action
-                        // here,
-                        // // we might have triggered gameplay actions as well since this logic check happens after the
-                        // // update step. Ideally we decouple the UI logic detection/gameplay state update and the
-                        // render.
-                        // // But they are coupled for the time being.
-                        // if (collides && controller->action_down.pressed) {
-                        //     if (gstate->score >= gstate->worker_cost) {
-                        //         gstate->score -= gstate->worker_cost;
-                        //         SpawnWorker(gstate, Vec3Zero());
-                        //         gstate->worker_cost *= 2.0f;
-                        //     }
-                        // }
-
-                        // DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(),
-                        //            text_bg_color);
-                        // DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, txt);
-
-                        // pos.y -= AABB2DHeight(dims.aabb);
                     }
 
                     if (false) {

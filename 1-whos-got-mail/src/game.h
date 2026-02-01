@@ -47,6 +47,8 @@ typedef struct {
     GameControllerState controllers[5];
 } GameInput;
 
+#define GetController(input, idx) (&(input)->controllers[(idx)])
+
 void GameInit();
 
 void GameTick(f32 dt, GameInput* input);

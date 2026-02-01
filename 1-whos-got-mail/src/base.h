@@ -127,6 +127,7 @@ Arena NewSubArena(Arena* perm, isize count);
 #define ArrCap(a) ((a)->cap)
 #define ArrLen(a) ((a)->len)
 #define ArrClear(a) ((a)->len = 0)
+#define ArrTail(a) (assert((a)->len >= 0), ArrGet(a, ArrLen(a) - 1))
 
 typedef struct {
     byte* data;
@@ -212,6 +213,12 @@ typedef struct {
     };
 } Vec2;
 
+typedef struct {
+    Vec2* data;
+    isize len;
+    isize cap;
+} Vec2Arr;
+
 #define Vec2Lit(a, b) ((Vec2){.x = (a), .y = (b)})
 #define Vec2Fmt(v) (v).x, (v).y
 
@@ -241,12 +248,6 @@ static f32 Vec2Len(Vec2 v) { return f32sqrt((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 static bool Vec2Eq(Vec2 a, Vec2 b) { return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL)); }
 LCORE f32 Vec2Angle(Vec2 a, Vec2 b) { return f32acos(Vec2Dot(a, b) / (Vec2Len(a) * Vec2Len(b))); }
-
-typedef struct {
-    Vec2* data;
-    isize len;
-    isize cap;
-} Vec2Arr;
 
 typedef struct {
     union {
