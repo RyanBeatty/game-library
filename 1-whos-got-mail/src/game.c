@@ -4584,7 +4584,7 @@ static void StartNewDay(GameState* gstate) {
         gstate->mail_root = NULLID;
         for (i32 i = 0; i < gstate->target_score; ++i) {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), mail_to_world);
+            e->pos = Vec3WTransform(Vec3Lit(0.0f, -1.0f, 0.0f), mail_to_world);
             // Add a random offset so that it more visually looks like a pile.
             Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
                                          f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
