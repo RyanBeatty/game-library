@@ -4585,8 +4585,8 @@ static void StartNewDay(GameState* gstate) {
                                          f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
             e->pos = Vec3Add(e->pos, offset);
             PolyHedronSetAABB2DFromWH(&e->shape, Vec2Zero(), Vec2Lit(Px2Meter(134), Px2Meter(90)));
-            GraphicsInfoSetLModel(&e->graphics, LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_MAIL), Vec3Zero(),
-                                                               Mat4Identity(), hamper_dims_world, LCLEAR));
+            GraphicsInfoSetLModel(&e->graphics, LModelFromSprite(SpriteFromLTexture(GetTexture(TX_MAIL), SBB_FULL),
+                                                                 Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR));
             e->next_mail = gstate->mail_root;
             gstate->mail_root = e->id;
             FlagOn(e->flags, EFLAG_MAIL);
