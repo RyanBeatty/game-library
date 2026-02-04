@@ -4557,6 +4557,14 @@ static void SpawnResearcher(GameState* gstate, Vec3 pos) {
     gstate->researcher_root = e->id;
 }
 
+static Mat4 GetMailToWorld() {
+    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
+    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
+    Mat4 hamper_to_world =
+        Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
+    return hamper_to_world;
+}
+
 static void StartNewDay(GameState* gstate) {
     EntitySystemReset();
 
@@ -4569,17 +4577,14 @@ static void StartNewDay(GameState* gstate) {
 
     f32 dt = gstate->dt;
 
-    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
-    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
-    Mat4 hamper_to_world =
-        Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
+    Mat4 mail_to_world = GetMailToWorld();
 
     // Spawn mail stack
     {
         gstate->mail_root = NULLID;
         for (i32 i = 0; i < gstate->target_score; ++i) {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), hamper_to_world);
+            e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.7f, 0.0f), mail_to_world);
             // Add a random offset so that it more visually looks like a pile.
             Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
                                          f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
@@ -4596,7 +4601,7 @@ static void StartNewDay(GameState* gstate) {
     // Spawn workers
     for (isize i = 0; i < 1; ++i) {
         Vec3 worker_pos = Vec3Lit(i, 0, 0);
-        Vec3 pos = Vec3WTransform(worker_pos, hamper_to_world);
+        Vec3 pos = Vec3WTransform(worker_pos, mail_to_world);
         SpawnWorker(gstate, pos);
     }
 
@@ -4661,10 +4666,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 // Relayout workers
                 {
-                    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
-                    Vec3 hamper_step_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
-                    Mat4 hamper_to_world = Mat4Multiply(Mat4TranslateV(hamper_origin_world),
-                                                        Mat4ScaleV(Vec3Scale(hamper_step_world, 2.0f)));
+                    Mat4 mail_to_world = GetMailToWorld();
 
                     i32 NUM_COLS = 3;
                     i32 i = 0;
@@ -4673,7 +4675,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         i32 row = i / NUM_COLS;
                         i32 col = i % NUM_COLS;
                         Vec3 worker_pos = Vec3Lit(col, row, 0);
-                        e->pos = Vec3WTransform(worker_pos, hamper_to_world);
+                        e->pos = Vec3WTransform(worker_pos, mail_to_world);
                         EasingSetLerp(&e->graphics.pos_easing, 0.1f);
                     }
 
