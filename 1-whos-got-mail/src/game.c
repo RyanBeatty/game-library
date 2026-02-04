@@ -4565,6 +4565,15 @@ static Mat4 GetMailToWorld() {
     return hamper_to_world;
 }
 
+static Mat4 GetResearchToWorld() {
+    Vec3 researcher_origin_world = Vec3Lit(Px2Meter(460.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
+
+    LTexture tx = GetTexture(TX_RESEARCHER);
+    Vec3 researcher_step_world = Vec3Lit(Px2Meter(tx.width), Px2Meter(tx.height), 0.0f);
+    Mat4 research_to_world = Mat4Multiply(Mat4TranslateV(researcher_origin_world), Mat4ScaleV(researcher_step_world));
+    return research_to_world;
+}
+
 static void StartNewDay(GameState* gstate) {
     EntitySystemReset();
 
@@ -4683,10 +4692,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 {
-                    Vec3 researcher_origin_world = Vec3Lit(Px2Meter(-500.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
-                    Vec3 researcher_step_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
-                    Mat4 research_to_world = Mat4Multiply(Mat4TranslateV(researcher_origin_world),
-                                                          Mat4ScaleV(Vec3Scale(researcher_step_world, 1.0f)));
+                    Mat4 research_to_world = GetResearchToWorld();
 
                     i32 NUM_COLS = 2;
                     i32 i = 0;
