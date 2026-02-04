@@ -4569,9 +4569,11 @@ static void SpawnResearcher(GameState* gstate, Vec3 pos) {
 }
 
 static Mat4 GetMailToWorld() {
-    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(-80.0f), Px2Meter(-80.0f), Px2Meter(0.0f));
+    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(-80.0f), Px2Meter(-240.0f), Px2Meter(0.0f));
     LTexture tx = GetTexture(TX_MAILBOX);
     Vec3 hamper_dims_world = Vec3Lit(Px2Meter(tx.width), Px2Meter(tx.height), 0.0f);
+    hamper_dims_world.x *= 1.4f;
+    hamper_dims_world.y *= 1.4f;
     Mat4 hamper_to_world = Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(hamper_dims_world));
     return hamper_to_world;
 }
@@ -4604,7 +4606,7 @@ static void StartNewDay(GameState* gstate) {
         gstate->mail_root = NULLID;
         for (i32 i = 0; i < gstate->target_score; ++i) {
             Entity* e = AllocateEntity();
-            e->pos = Vec3WTransform(Vec3Lit(0.0f, -1.0f, 0.0f), mail_to_world);
+            e->pos = Vec3WTransform(Vec3Lit(0.0f, -0.8f, 0.0f), mail_to_world);
             // Add a random offset so that it more visually looks like a pile.
             Vec3 offset = Vec3RotateAxis(Vec3Lit(Px2Meter(10.0f) * f32rand01(), 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
                                          f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f)));
