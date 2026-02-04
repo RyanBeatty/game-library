@@ -4558,10 +4558,10 @@ static void SpawnResearcher(GameState* gstate, Vec3 pos) {
 }
 
 static Mat4 GetMailToWorld() {
-    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(0.0f), Px2Meter(-150.0f), Px2Meter(0.0f));
-    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(216.0f), Px2Meter(216.0f), 0.0f);
-    Mat4 hamper_to_world =
-        Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(Vec3Scale(hamper_dims_world, 2.0f)));
+    Vec3 hamper_origin_world = Vec3Lit(Px2Meter(-80.0f), Px2Meter(-80.0f), Px2Meter(0.0f));
+    LTexture tx = GetTexture(TX_MAILBOX);
+    Vec3 hamper_dims_world = Vec3Lit(Px2Meter(tx.width), Px2Meter(tx.height), 0.0f);
+    Mat4 hamper_to_world = Mat4Multiply(Mat4TranslateV(hamper_origin_world), Mat4ScaleV(hamper_dims_world));
     return hamper_to_world;
 }
 
