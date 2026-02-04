@@ -4503,9 +4503,20 @@ static void SpawnWorker(GameState* gstate, Vec3 pos) {
     e->work_cooldown_dt = 0.0f;
     e->work_cooldown_sec = gstate->worker_cooldown_sec;
     e->pickup_count = 1;
-    e->next_worker = gstate->worker_root;
+    e->next_worker = NULLID;
 
-    gstate->worker_root = e->id;
+    if (EntityIdEq(gstate->worker_root, NULLID)) {
+        PlatformLog(LLOG_INFO, "set worker root");
+        gstate->worker_root = e->id;
+    } else {
+        breakpoint();
+        Entity* parent = EntityFromId(gstate->worker_root);
+        Assert(parent);
+        while (!EntityIdEq(parent->next_worker, NULLID)) {
+            parent = EntityFromId(parent->next_worker);
+        }
+        parent->next_worker = e->id;
+    }
 
     ++gstate->worker_count;
     PlatformLog(LLOG_INFO, "Increase Worker Count %d -> %d", gstate->worker_count - 1, gstate->worker_count);
@@ -4677,12 +4688,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 {
                     Mat4 mail_to_world = GetMailToWorld();
 
-                    i32 NUM_COLS = 3;
+                    f32 col_offsets[] = {
+                        0.0f,
+                        1.0f,
+                        -1.0f,
+                    };
+
+                    i32 NUM_COLS = ArraySizeOf(col_offsets);
                     i32 i = 0;
                     for (Entity* e = EntityFromId(gstate->worker_root); e != NULL;
                          e = EntityFromId(e->next_worker), ++i) {
                         i32 row = i / NUM_COLS;
-                        i32 col = i % NUM_COLS;
+                        i32 col = col_offsets[i % NUM_COLS];
                         Vec3 worker_pos = Vec3Lit(col, row, 0);
                         e->pos = Vec3WTransform(worker_pos, mail_to_world);
                         EasingSetLerp(&e->graphics.pos_easing, 0.1f);
