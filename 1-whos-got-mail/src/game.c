@@ -3769,7 +3769,8 @@ LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
 
 typedef enum {
     ET_NONE = 0,  // No easing, track the target value exactly.
-    ET_LERP       // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
+    ET_LERP,      // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
+    ET_LERP2,
 } EasingType;
 
 typedef struct {
@@ -3793,6 +3794,11 @@ static void EasingSetLerp(Easing* easing, f32 rate) {
     easing->lerp.rate = rate;
 }
 
+static void EasingSetLerp2(Easing* easing, f32 rate) {
+    easing->type = ET_LERP2;
+    easing->lerp.rate = rate;
+}
+
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
     switch (easing.type) {
         case ET_NONE: {
@@ -3801,6 +3807,11 @@ static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
         }
         case ET_LERP: {
             f32 T = 1.0f - f32pow(easing.lerp.rate, dt);
+            cur = Vec3Lerp(cur, target, T);
+            break;
+        }
+        case ET_LERP2: {
+            f32 T = easing.lerp.rate;
             cur = Vec3Lerp(cur, target, T);
             break;
         }
@@ -3816,6 +3827,8 @@ typedef struct {
     Vec3 scale;
     Mat4 orient;
 
+    Vec3 pos_start;
+    Vec3 pos_end;
     Easing pos_easing;
     Easing scale_easing;
 
@@ -3886,10 +3899,6 @@ LCORE DrawCmd* DrawGraphicsInfo(GraphicsInfo* graphics) {
 
 ////////////////////////////////////////////////////////////
 
-typedef enum { HAMPER_NONE = 0, HAMPER_LEFT, HAMPER_UP, HAMPER_RIGHT, HAMPER_COUNT } HamperType;
-
-////////////////////////////////////////////////////////////
-
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
 static const Vec2 ORIGIN2D = Vec2Lit(0.0f, 0.0f);
 static const Vec3 FORWARD = Vec3Lit(0.0f, 0.0f, -1.0f);
@@ -3916,6 +3925,23 @@ static const EntityId NULLID = {0};
 #define EntityIdEq(a, b) (((a).idx == (b).idx) && ((a).generation == (b).generation))
 #define EntityIdNotNull(a) (!EntityIdEq((a), NULLID))
 #define EntityIdNull(a) (EntityIdEq((a), NULLID))
+
+////////////////////////////////////////////////////////////
+// s:gameplay fields.
+
+typedef struct {
+    EntityId mail_id;
+    f32 cooldown_sec;
+    f32 cooldown_dt;
+} QueuedMail;
+
+typedef struct {
+    QueuedMail data[10];
+    isize cap;
+    isize len;
+} QueuedMailArr;
+
+////////////////////////////////////////////////////////////
 
 typedef struct {
     /////////////////////////////////////////////////////////////////
@@ -3955,6 +3981,8 @@ typedef struct {
     f32 work_cooldown_sec;
 
     i32 pickup_count;
+
+    QueuedMailArr mail;
 } Entity;
 
 typedef struct {
@@ -4026,6 +4054,11 @@ static Entity* NextFreeEntity() {
     return NULL;
 }
 
+static void EntityInitGameplayFields(Entity* entity) {
+    entity->mail.cap = ArraySizeOf(entity->mail.data);
+    entity->mail.len = 0;
+}
+
 LCORE Entity* AllocateEntity() {
     Entity* entity = NextFreeEntity();
     Assert(entity != NULL);
@@ -4044,6 +4077,8 @@ LCORE Entity* AllocateEntity() {
     PolyhedronInit(&entity->shape);
     GraphicsInfoMemset(&entity->graphics);
     FlagOn(entity->flags, EFLAG_DRAW);
+
+    EntityInitGameplayFields(entity);
     return entity;
 }
 
@@ -4733,7 +4768,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     if (TestFlag(e->flags, EFLAG_WORKER)) {
                         if (EntityIdNotNull(gstate->mail_root)) {
-                            if (e->work_cooldown_dt <= 0.0f) {
+                            static bool ONCE = false;
+                            if (e->work_cooldown_dt <= 0.0f && !ONCE) {
+                                ONCE = true;
                                 e->work_cooldown_dt = e->work_cooldown_sec;
 
                                 for (i32 i = 0; i < e->pickup_count; ++i) {
@@ -4741,20 +4778,50 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     if (mail == NULL) {
                                         break;
                                     }
-
-                                    PlatformPlaySound(GetSound(SOUND_SORT), 0);
-
-                                    gstate->score += 1.0f;
-                                    ++gstate->num_sorted;
-
                                     mail->pos = e->pos;
                                     mail->pos.z += 1.0f;
-                                    EasingSetLerp(&mail->graphics.pos_easing, 0.001f);
-                                    mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
-                                    EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
+                                    EasingSetLerp2(&mail->graphics.pos_easing, 0.0f);
+
+                                    QueuedMail qmail = {.mail_id = mail->id, .cooldown_sec = 1.0f};
+                                    ArrPush(&e->mail, qmail);
+
+                                    // PlatformPlaySound(GetSound(SOUND_SORT), 0);
+
+                                    // gstate->score += 1.0f;
+                                    // ++gstate->num_sorted;
+
+                                    // mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
+                                    // EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
 
                                     gstate->mail_root = mail->next_mail;
                                 }
+                            }
+                        }
+
+                        for (isize i = 0; i < ArrLen(&e->mail); ++i) {
+                            QueuedMail* qmail = ArrGetPtr(&e->mail, i);
+                            Assert(qmail);
+                            Entity* mail = EntityFromId(qmail->mail_id);
+                            Assert(mail);
+                            qmail->cooldown_dt += dt;
+                            f32 T = qmail->cooldown_dt / qmail->cooldown_sec;
+                            EasingSetLerp2(&mail->graphics.pos_easing, T);
+                        }
+
+                        for (isize i = ArrLen(&e->mail) - 1; i >= 0; --i) {
+                            QueuedMail* qmail = ArrGetPtr(&e->mail, i);
+                            Assert(qmail);
+                            Entity* mail = EntityFromId(qmail->mail_id);
+                            Assert(mail);
+
+                            f32 T = qmail->cooldown_dt / qmail->cooldown_sec;
+
+                            if (qmail->cooldown_dt >= qmail->cooldown_sec) {
+                                PlatformPlaySound(GetSound(SOUND_SORT), 0);
+
+                                gstate->score += 1.0f;
+                                ++gstate->num_sorted;
+                                ArrPop(&e->mail);
                             }
                         }
                     }
