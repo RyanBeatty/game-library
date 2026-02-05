@@ -3822,14 +3822,27 @@ static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
     return cur;
 }
 
+typedef enum {
+    AF_MOVE_TOWARDS = 0,
+    AF_ANIMATE_TOWARDS = 1,
+} AnimationFlag;
+
 typedef struct {
+    // Visual attributes.
     Vec3 pos;
     Vec3 scale;
     Mat4 orient;
 
+    // Game attributes.
+    Vec3 pos_game;
+    Vec3 scale_game;
+    Mat4 orient_game;
+
     Vec3 pos_start;
     Vec3 pos_end;
     Easing pos_easing;
+    AnimationFlag pos_flags;
+
     Easing scale_easing;
 
     LModel model;
@@ -3870,6 +3883,47 @@ LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) 
     // minus 1 is important for case where elapsed == duration.
     graphics->frame_idx = (isize)((graphics->elapsed / graphics->model.animation.duration) *
                                   ((f32)(graphics->model.animation.sprites.len - 1)));
+}
+
+static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3 scale_game, Mat4 orient_game) {
+    graphics->pos_game = pos_game;
+    graphics->scale_game = scale_game;
+    graphics->orient_game = orient_game;
+
+    switch (graphics->pos_flags) {
+        // case AF_NONE: {
+        //     graphics->pos_start = graphics->pos;
+        //     graphics->pos_end = graphics->pos_game;
+        //     // graphics->pos = graphics->pos_game;
+        //     break;
+        // }
+        case AF_ANIMATE_TOWARDS: {
+            // graphics->pos = Vec3Lerp(graphics->pos_start, graphics->pos_end, graphics->pos_easing);
+            break;
+        }
+        case AF_MOVE_TOWARDS: {
+            graphics->pos_start = graphics->pos;
+            graphics->pos_end = graphics->pos_game;
+            // graphics->pos = Vec3Lerp(graphics->pos, graphics->pos_game, graphics->pos_easing);
+            break;
+        }
+    }
+
+    graphics->pos = EaseVec3(graphics->pos_start, graphics->pos_end, dt, graphics->pos_easing);
+
+    // e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
+    // if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
+    //     // TODO: Rework this.
+    //     static f32 ROT = 0.0f;
+
+    //     ROT = f32lerp(Deg2Rad(-1.5f), Deg2Rad(1.5f), f32sin(1.3f * gstate->timer));
+
+    //     e->graphics.orient = Mat4RotateZ(ROT);
+    // } else {
+    //     e->graphics.orient = e->orient;
+    // }
+    graphics->scale = EaseVec3(graphics->scale, scale_game, dt, graphics->scale_easing);
+    GraphicsInfoTickAnimation(graphics, dt);
 }
 
 LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
@@ -4778,9 +4832,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     if (mail == NULL) {
                                         break;
                                     }
-                                    mail->pos = e->pos;
-                                    mail->pos.z += 1.0f;
+                                    Vec3 new_pos = e->pos;
+                                    new_pos.z += 1.0f;
                                     EasingSetLerp2(&mail->graphics.pos_easing, 0.0f);
+                                    mail->graphics.pos_flags = AF_ANIMATE_TOWARDS;
+                                    mail->graphics.pos_start = mail->pos;
+                                    mail->graphics.pos_end = new_pos;
+                                    mail->pos = new_pos;
 
                                     QueuedMail qmail = {.mail_id = mail->id, .cooldown_sec = 1.0f};
                                     ArrPush(&e->mail, qmail);
@@ -4813,8 +4871,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Assert(qmail);
                             Entity* mail = EntityFromId(qmail->mail_id);
                             Assert(mail);
-
-                            f32 T = qmail->cooldown_dt / qmail->cooldown_sec;
 
                             if (qmail->cooldown_dt >= qmail->cooldown_sec) {
                                 PlatformPlaySound(GetSound(SOUND_SORT), 0);
@@ -4859,19 +4915,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
-                e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
-                if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
-                    // TODO: Rework this.
-                    static f32 ROT = 0.0f;
+                GraphicsInfoTick(&e->graphics, dt, e->pos, e->scale, e->orient);
+                // e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
+                // if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
+                //     // TODO: Rework this.
+                //     static f32 ROT = 0.0f;
 
-                    ROT = f32lerp(Deg2Rad(-1.5f), Deg2Rad(1.5f), f32sin(1.3f * gstate->timer));
+                //     ROT = f32lerp(Deg2Rad(-1.5f), Deg2Rad(1.5f), f32sin(1.3f * gstate->timer));
 
-                    e->graphics.orient = Mat4RotateZ(ROT);
-                } else {
-                    e->graphics.orient = e->orient;
-                }
-                e->graphics.scale = EaseVec3(e->graphics.scale, e->scale, dt, e->graphics.scale_easing);
-                GraphicsInfoTickAnimation(&e->graphics, dt);
+                //     e->graphics.orient = Mat4RotateZ(ROT);
+                // } else {
+                //     e->graphics.orient = e->orient;
+                // }
+                // e->graphics.scale = EaseVec3(e->graphics.scale, e->scale, dt, e->graphics.scale_easing);
+                // GraphicsInfoTickAnimation(&e->graphics, dt);
             }
         }
     }
