@@ -3768,9 +3768,9 @@ LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
 }
 
 typedef enum {
-    ET_NONE = 0,  // No easing, track the target value exactly.
-    ET_LERP,      // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
-    ET_LERP2,
+    ET_NONE = 0,     // No easing, error!
+    ET_SMOOTH_LERP,  // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
+    ET_IN_EXPO,
 } EasingType;
 
 typedef struct {
@@ -3791,28 +3791,18 @@ static void EasingZero(Easing* easing) {
     *easing = e;
 }
 
-static Easing EaseInExpo() { return (Easing){.type = ET_LERP2}; }
-static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_LERP, .lerp = {.rate = rate}}; }
-
-static void EasingSetLerp(Easing* easing, f32 rate) {
-    easing->type = ET_LERP;
-    easing->lerp.rate = rate;
-}
-
-static void EasingSetLerp2(Easing* easing, f32 rate) {
-    easing->type = ET_LERP2;
-    easing->lerp.rate = rate;
-}
+static Easing EaseInExpo() { return (Easing){.type = ET_IN_EXPO}; }
+static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
 
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
     f32 T = easing.T;
 
     switch (easing.type) {
-        case ET_LERP: {
+        case ET_SMOOTH_LERP: {
             T = 1.0f - f32pow(easing.lerp.rate, dt);
             break;
         }
-        case ET_LERP2: {
+        case ET_IN_EXPO: {
             T = T == 0.0f ? 0.0f : f32pow(2.0f, 10.0f * T - 10.0f);
             break;
         }
@@ -3919,7 +3909,7 @@ static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3
 
 LCORE void GraphicsInfoPositionMoveTo(GraphicsInfo* graphics, f32 rate) {
     graphics->pos_type = VA_MOVE_TO;
-    EasingSetLerp(&graphics->pos_easing, rate);
+    graphics->pos_easing = EaseSmoothLerp(rate);
 }
 
 LCORE void GraphicsInfoPositionAnimateTo(GraphicsInfo* graphics, Vec3 start, Vec3 end, Easing easing) {
