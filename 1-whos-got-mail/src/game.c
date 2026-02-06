@@ -3776,6 +3776,8 @@ typedef enum {
 typedef struct {
     EasingType type;
 
+    f32 T;
+
     union {
         struct {
             f32 rate;  // This should be between 0 and 1. Essentially after 1s how much of the error should remain?
@@ -3789,6 +3791,9 @@ static void EasingZero(Easing* easing) {
     *easing = e;
 }
 
+static Easing EaseInExpo() { return (Easing){.type = ET_LERP2}; }
+static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_LERP, .lerp = {.rate = rate}}; }
+
 static void EasingSetLerp(Easing* easing, f32 rate) {
     easing->type = ET_LERP;
     easing->lerp.rate = rate;
@@ -3799,35 +3804,32 @@ static void EasingSetLerp2(Easing* easing, f32 rate) {
     easing->lerp.rate = rate;
 }
 
-static Easing EaseInExpo() { return (Easing){.type = ET_LERP2}; }
-
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
+    f32 T = easing.T;
+
     switch (easing.type) {
-        case ET_NONE: {
-            cur = target;
-            break;
-        }
         case ET_LERP: {
-            f32 T = 1.0f - f32pow(easing.lerp.rate, dt);
-            cur = Vec3Lerp(cur, target, T);
+            T = 1.0f - f32pow(easing.lerp.rate, dt);
             break;
         }
         case ET_LERP2: {
-            f32 T = easing.lerp.rate;
             T = T == 0.0f ? 0.0f : f32pow(2.0f, 10.0f * T - 10.0f);
-            cur = Vec3Lerp(cur, target, T);
             break;
         }
+        case ET_NONE:
         default: {
             Assert(0);
         }
     }
+
+    cur = Vec3Lerp(cur, target, T);
     return cur;
 }
 
 typedef enum {
-    VA_MOVE_TO = 0,
-    VA_ANIMATE_TO = 1,
+    VA_SNAP_TO = 0,
+    VA_MOVE_TO = 1,
+    VA_ANIMATE_TO = 2,
 } VisualAnimationType;
 
 typedef struct {
@@ -3885,25 +3887,19 @@ LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) 
 
 static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3 scale_game, Mat4 orient_game) {
     switch (graphics->pos_type) {
-        // case AF_NONE: {
-        //     graphics->pos_start = graphics->pos;
-        //     graphics->pos_end = graphics->pos_game;
-        //     // graphics->pos = graphics->pos_game;
-        //     break;
-        // }
+        case VA_SNAP_TO: {
+            graphics->pos = pos_game;
+            break;
+        }
         case VA_ANIMATE_TO: {
-            // graphics->pos = Vec3Lerp(graphics->pos_start, graphics->pos_end, graphics->pos_easing);
+            graphics->pos = EaseVec3(graphics->pos_start, graphics->pos_end, dt, graphics->pos_easing);
             break;
         }
         case VA_MOVE_TO: {
-            graphics->pos_start = graphics->pos;
-            graphics->pos_end = pos_game;
-            // graphics->pos = Vec3Lerp(graphics->pos, graphics->pos_game, graphics->pos_easing);
+            graphics->pos = EaseVec3(graphics->pos, pos_game, dt, graphics->pos_easing);
             break;
         }
     }
-
-    graphics->pos = EaseVec3(graphics->pos_start, graphics->pos_end, dt, graphics->pos_easing);
 
     // e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
     // if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
@@ -3916,7 +3912,8 @@ static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3
     // } else {
     //     e->graphics.orient = e->orient;
     // }
-    graphics->scale = EaseVec3(graphics->scale, scale_game, dt, graphics->scale_easing);
+    graphics->orient = orient_game;
+    graphics->scale = scale_game;  // EaseVec3(graphics->scale, scale_game, dt, graphics->scale_easing);
     GraphicsInfoTickAnimation(graphics, dt);
 }
 
@@ -4864,8 +4861,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Entity* mail = EntityFromId(qmail->mail_id);
                             Assert(mail);
                             qmail->cooldown_dt += dt;
-                            f32 T = qmail->cooldown_dt / qmail->cooldown_sec;
-                            EasingSetLerp2(&mail->graphics.pos_easing, T);
+                            mail->graphics.pos_easing.T = f32min(qmail->cooldown_dt / qmail->cooldown_sec, 1.0f);
+                            // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
                         }
 
                         for (isize i = ArrLen(&e->mail) - 1; i >= 0; --i) {
