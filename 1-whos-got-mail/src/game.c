@@ -3824,9 +3824,9 @@ static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
 }
 
 typedef enum {
-    AF_MOVE_TOWARDS = 0,
-    AF_ANIMATE_TOWARDS = 1,
-} AnimationFlag;
+    VA_MOVE_TO = 0,
+    VA_ANIMATE_TO = 1,
+} VisualAnimationType;
 
 typedef struct {
     // Visual attributes.
@@ -3834,15 +3834,10 @@ typedef struct {
     Vec3 scale;
     Mat4 orient;
 
-    // Game attributes.
-    Vec3 pos_game;
-    Vec3 scale_game;
-    Mat4 orient_game;
-
     Vec3 pos_start;
     Vec3 pos_end;
     Easing pos_easing;
-    AnimationFlag pos_flags;
+    VisualAnimationType pos_type;
 
     Easing scale_easing;
 
@@ -3887,24 +3882,20 @@ LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) 
 }
 
 static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3 scale_game, Mat4 orient_game) {
-    graphics->pos_game = pos_game;
-    graphics->scale_game = scale_game;
-    graphics->orient_game = orient_game;
-
-    switch (graphics->pos_flags) {
+    switch (graphics->pos_type) {
         // case AF_NONE: {
         //     graphics->pos_start = graphics->pos;
         //     graphics->pos_end = graphics->pos_game;
         //     // graphics->pos = graphics->pos_game;
         //     break;
         // }
-        case AF_ANIMATE_TOWARDS: {
+        case VA_ANIMATE_TO: {
             // graphics->pos = Vec3Lerp(graphics->pos_start, graphics->pos_end, graphics->pos_easing);
             break;
         }
-        case AF_MOVE_TOWARDS: {
+        case VA_MOVE_TO: {
             graphics->pos_start = graphics->pos;
-            graphics->pos_end = graphics->pos_game;
+            graphics->pos_end = pos_game;
             // graphics->pos = Vec3Lerp(graphics->pos, graphics->pos_game, graphics->pos_easing);
             break;
         }
@@ -4836,7 +4827,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec3 new_pos = e->pos;
                                     new_pos.z += 1.0f;
                                     EasingSetLerp2(&mail->graphics.pos_easing, 0.0f);
-                                    mail->graphics.pos_flags = AF_ANIMATE_TOWARDS;
+                                    mail->graphics.pos_type = VA_ANIMATE_TO;
                                     mail->graphics.pos_start = mail->pos;
                                     mail->graphics.pos_end = new_pos;
                                     mail->pos = new_pos;
