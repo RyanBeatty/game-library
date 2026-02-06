@@ -4873,15 +4873,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     // gstate->score += 1.0f;
                                     // ++gstate->num_sorted;
 
-                                    // mail->scale = Vec3Lit(0.1f, 0.1f, 0.1f);
-                                    // EasingSetLerp(&mail->graphics.scale_easing, 0.1f);
-
                                     gstate->mail_root = mail->next_mail;
                                 }
                             }
                         }
 
-                        for (isize i = 0; i < ArrLen(&e->mail); ++i) {
+                        for (isize i = ArrLen(&e->mail) - 1; i >= 0; --i) {
                             QueuedMail* qmail = ArrGetPtr(&e->mail, i);
                             Assert(qmail);
                             Entity* mail = EntityFromId(qmail->mail_id);
@@ -4890,22 +4887,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             f32 T = f32min(qmail->cooldown_dt / qmail->cooldown_sec, 1.0f);
                             mail->graphics.pos_easing.T = T;
                             mail->graphics.scale_easing.T = T;
-                            // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
-                        }
 
-                        for (isize i = ArrLen(&e->mail) - 1; i >= 0; --i) {
-                            QueuedMail* qmail = ArrGetPtr(&e->mail, i);
-                            Assert(qmail);
-                            Entity* mail = EntityFromId(qmail->mail_id);
-                            Assert(mail);
-
-                            if (qmail->cooldown_dt >= qmail->cooldown_sec) {
+                            if (T >= 1.0f) {
                                 PlatformPlaySound(GetSound(SOUND_SORT), 0);
 
                                 gstate->score += 1.0f;
                                 ++gstate->num_sorted;
+                                SoftDeactivateEntity(mail);
                                 ArrPop(&e->mail);
                             }
+                            // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
                         }
                     }
 
