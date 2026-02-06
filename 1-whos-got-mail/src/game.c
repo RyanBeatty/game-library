@@ -3918,6 +3918,11 @@ static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3
     GraphicsInfoTickAnimation(graphics, dt);
 }
 
+LCORE void GraphicsInfoPositionMoveTo(GraphicsInfo* graphics, f32 rate) {
+    graphics->pos_type = VA_MOVE_TO;
+    EasingSetLerp(&graphics->pos_easing, rate);
+}
+
 LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
     graphics->model = model;
     graphics->elapsed = 0.0f;
@@ -4785,7 +4790,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         i32 col = col_offsets[i % NUM_COLS];
                         Vec3 worker_pos = Vec3Lit(col, row, 0);
                         e->pos = Vec3WTransform(worker_pos, mail_to_world);
-                        EasingSetLerp(&e->graphics.pos_easing, 0.1f);
+                        GraphicsInfoPositionMoveTo(&e->graphics, 0.1f);
                     }
 
                     RefreshWorkerAttributes(gstate);
@@ -4802,7 +4807,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         i32 col = i % NUM_COLS;
                         Vec3 researcher_pos = Vec3Lit(col, row, 0);
                         e->pos = Vec3WTransform(researcher_pos, research_to_world);
-                        EasingSetLerp(&e->graphics.pos_easing, 0.1f);
+                        GraphicsInfoPositionMoveTo(&e->graphics, 0.1f);
                     }
 
                     RefreshResearcherAttributes(gstate);
