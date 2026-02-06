@@ -3812,6 +3812,7 @@ static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
         }
         case ET_LERP2: {
             f32 T = easing.lerp.rate;
+            T = T == 0.0f ? 0.0f : f32pow(2.0f, 10.0f * T - 10.0f);
             cur = Vec3Lerp(cur, target, T);
             break;
         }
@@ -4824,7 +4825,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (EntityIdNotNull(gstate->mail_root)) {
                             static bool ONCE = false;
                             if (e->work_cooldown_dt <= 0.0f && !ONCE) {
-                                ONCE = true;
+                                ONCE = false;
                                 e->work_cooldown_dt = e->work_cooldown_sec;
 
                                 for (i32 i = 0; i < e->pickup_count; ++i) {
