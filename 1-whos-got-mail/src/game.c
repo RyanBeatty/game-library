@@ -3799,6 +3799,8 @@ static void EasingSetLerp2(Easing* easing, f32 rate) {
     easing->lerp.rate = rate;
 }
 
+static Easing EaseInExpo() { return (Easing){.type = ET_LERP2}; }
+
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
     switch (easing.type) {
         case ET_NONE: {
@@ -3921,6 +3923,13 @@ static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3
 LCORE void GraphicsInfoPositionMoveTo(GraphicsInfo* graphics, f32 rate) {
     graphics->pos_type = VA_MOVE_TO;
     EasingSetLerp(&graphics->pos_easing, rate);
+}
+
+LCORE void GraphicsInfoPositionAnimateTo(GraphicsInfo* graphics, Vec3 start, Vec3 end, Easing easing) {
+    graphics->pos_type = VA_ANIMATE_TO;
+    graphics->pos_start = start;
+    graphics->pos_end = end;
+    graphics->pos_easing = easing;
 }
 
 LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
@@ -4831,11 +4840,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     }
                                     Vec3 new_pos = e->pos;
                                     new_pos.z += 1.0f;
-                                    EasingSetLerp2(&mail->graphics.pos_easing, 0.0f);
-                                    mail->graphics.pos_type = VA_ANIMATE_TO;
-                                    mail->graphics.pos_start = mail->pos;
-                                    mail->graphics.pos_end = new_pos;
-                                    mail->pos = new_pos;
+                                    GraphicsInfoPositionAnimateTo(&mail->graphics, mail->pos, new_pos, EaseInExpo());
 
                                     QueuedMail qmail = {.mail_id = mail->id, .cooldown_sec = 1.0f};
                                     ArrPush(&e->mail, qmail);
