@@ -3833,7 +3833,10 @@ typedef struct {
     Easing pos_easing;
     VisualAnimationType pos_type;
 
+    Vec3 scale_start;
+    Vec3 scale_end;
     Easing scale_easing;
+    VisualAnimationType scale_type;
 
     LModel model;
     isize frame_idx;
@@ -3903,9 +3906,26 @@ static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3
     //     e->graphics.orient = e->orient;
     // }
     graphics->orient = orient_game;
-    graphics->scale = scale_game;  // EaseVec3(graphics->scale, scale_game, dt, graphics->scale_easing);
+
+    switch (graphics->scale_type) {
+        case VA_SNAP_TO: {
+            graphics->scale = scale_game;
+            break;
+        }
+        case VA_ANIMATE_TO: {
+            graphics->scale = EaseVec3(graphics->scale_start, graphics->scale_end, dt, graphics->scale_easing);
+            break;
+        }
+        case VA_MOVE_TO: {
+            graphics->scale = EaseVec3(graphics->scale, scale_game, dt, graphics->scale_easing);
+            break;
+        }
+    }
+
     GraphicsInfoTickAnimation(graphics, dt);
 }
+
+#define GraphicsInfoPositionSnapTo(gg) ((gg)->pos_type = VA_SNAP_TO)
 
 LCORE void GraphicsInfoPositionMoveTo(GraphicsInfo* graphics, f32 rate) {
     graphics->pos_type = VA_MOVE_TO;
@@ -3917,6 +3937,20 @@ LCORE void GraphicsInfoPositionAnimateTo(GraphicsInfo* graphics, Vec3 start, Vec
     graphics->pos_start = start;
     graphics->pos_end = end;
     graphics->pos_easing = easing;
+}
+
+#define GraphicsInfoScaleSnapTo(gg) ((gg)->scale_type = VA_SNAP_TO)
+
+LCORE void GraphicsInfoScaleMoveTo(GraphicsInfo* graphics, f32 rate) {
+    graphics->scale_type = VA_MOVE_TO;
+    graphics->scale_easing = EaseSmoothLerp(rate);
+}
+
+LCORE void GraphicsInfoScaleAnimateTo(GraphicsInfo* graphics, Vec3 start, Vec3 end, Easing easing) {
+    graphics->scale_type = VA_ANIMATE_TO;
+    graphics->scale_start = start;
+    graphics->scale_end = end;
+    graphics->scale_easing = easing;
 }
 
 LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
@@ -4828,6 +4862,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec3 new_pos = e->pos;
                                     new_pos.z += 1.0f;
                                     GraphicsInfoPositionAnimateTo(&mail->graphics, mail->pos, new_pos, EaseInExpo());
+                                    GraphicsInfoScaleAnimateTo(&mail->graphics, mail->scale, Vec3Lit(0.1f, 0.1f, 0.1f),
+                                                               EaseInExpo());
 
                                     QueuedMail qmail = {.mail_id = mail->id, .cooldown_sec = 1.0f};
                                     ArrPush(&e->mail, qmail);
@@ -4851,7 +4887,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Entity* mail = EntityFromId(qmail->mail_id);
                             Assert(mail);
                             qmail->cooldown_dt += dt;
-                            mail->graphics.pos_easing.T = f32min(qmail->cooldown_dt / qmail->cooldown_sec, 1.0f);
+                            f32 T = f32min(qmail->cooldown_dt / qmail->cooldown_sec, 1.0f);
+                            mail->graphics.pos_easing.T = T;
+                            mail->graphics.scale_easing.T = T;
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
                         }
 
