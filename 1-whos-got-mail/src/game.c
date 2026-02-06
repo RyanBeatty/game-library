@@ -4865,7 +4865,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     GraphicsInfoScaleAnimateTo(&mail->graphics, mail->scale, Vec3Lit(0.1f, 0.1f, 0.1f),
                                                                EaseInExpo());
 
-                                    QueuedMail qmail = {.mail_id = mail->id, .cooldown_sec = 1.0f};
+                                    QueuedMail qmail = {.mail_id = mail->id,
+                                                        .cooldown_sec = 0.8f * e->work_cooldown_sec};
                                     ArrPush(&e->mail, qmail);
 
                                     // PlatformPlaySound(GetSound(SOUND_SORT), 0);
