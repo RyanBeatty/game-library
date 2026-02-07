@@ -4897,20 +4897,26 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     LTexture tx = GetTexture(TX_MAILBOX);
                                     Vec2 txhdims = Vec2Lit(Px2Meter(tx.width) * 0.5f, Px2Meter(tx.height) * 0.5f);
                                     f32 radius = f32sqrt((txhdims.x * txhdims.x) + (txhdims.y * txhdims.y));
-                                    Vec2 dims = Vec2Lit(Px2Meter(tx.width), Px2Meter(tx.height));
 
-                                    i32 spawn_count = f32randab(10, 13);
+                                    i32 spawn_count = f32randab(5, 8);
 
                                     f32 angle_offset = Deg2Rad(360.0f) / spawn_count;
                                     f32 speed = f32randab(Px2Meter(20.0f), Px2Meter(60.0f));
                                     for (i32 j = 0; j < spawn_count; ++j) {
-                                        f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
-                                        Particle* particle =
-                                            SpawnParticle(e->pos, Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)),
-                                                          Mat4RotateZ(angle), 0.5f, LRED);
-
                                         Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
                                                                    angle_offset * j);
+
+                                        f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
+
+                                        Vec3 pos = e->pos;
+                                        pos.z -= Px2Meter(1.0f);   // Draw behind sprite. looks better.
+                                        pos.y += Px2Meter(30.0f);  // Move circle center a little above sprite origin as
+                                                                   // it looks better.
+                                        pos = Vec3Add(pos, Vec3Scale(vdir, 0.5f * radius));
+                                        Particle* particle =
+                                            SpawnParticle(pos, Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)),
+                                                          Mat4RotateZ(angle), 0.5f, COLORS[2]);
+
                                         particle->v = Vec3Scale(vdir, speed);
                                         // f32 vangle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
                                         // particle->v = Vec3RotateAxis(
