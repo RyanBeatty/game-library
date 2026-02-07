@@ -4940,7 +4940,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 if (!ONCE) {
                                     ONCE = false;
                                     GraphicsInfoScaleAnimateTo(&e->graphics, Vec3Lit(1.0f, 1.0f, 1.0f),
-                                                               Vec3Lit(0.7f, 0.8f, 1.0f), EaseOutBack());
+                                                               Vec3Lit(1.2f, 0.8f, 1.0f), EaseOutBack());
                                 }
                             }
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
