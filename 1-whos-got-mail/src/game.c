@@ -4076,11 +4076,6 @@ typedef struct {
 #define ENTITY_INACTIVE_TO_BE_CAP 20
 
 typedef struct {
-    // struct {
-    //     Entity data[ENTITY_CAP];
-    //     isize len;
-    //     isize cap;
-    // } entities;
     EntityArr entities;
 } EntityManager;
 
@@ -4935,19 +4930,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         for (Entity* e = NULL; IncrementEntity(&e);) {
             if (TestFlag(e->flags, EFLAG_DRAW)) {
                 GraphicsInfoTick(&e->graphics, dt, e->pos, e->scale, e->orient);
-                // e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
-                // if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
-                //     // TODO: Rework this.
-                //     static f32 ROT = 0.0f;
 
-                //     ROT = f32lerp(Deg2Rad(-1.5f), Deg2Rad(1.5f), f32sin(1.3f * gstate->timer));
+                // TODO: Need to probably rework this to use quaternions because those should be able to be eased.
+                if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
+                    // TODO: Rework this.
+                    static f32 ROT = 0.0f;
 
-                //     e->graphics.orient = Mat4RotateZ(ROT);
-                // } else {
-                //     e->graphics.orient = e->orient;
-                // }
-                // e->graphics.scale = EaseVec3(e->graphics.scale, e->scale, dt, e->graphics.scale_easing);
-                // GraphicsInfoTickAnimation(&e->graphics, dt);
+                    ROT = f32lerp(Deg2Rad(-1.5f), Deg2Rad(1.5f), f32sin(1.3f * gstate->timer));
+
+                    e->graphics.orient = Mat4RotateZ(ROT);
+                } else {
+                    e->graphics.orient = e->orient;
+                }
             }
         }
     }
