@@ -3778,6 +3778,7 @@ typedef enum {
     ET_NONE = 0,     // No easing, error!
     ET_SMOOTH_LERP,  // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
     ET_IN_EXPO,
+    ET_OUT_BACK,
 } EasingType;
 
 typedef struct {
@@ -3799,6 +3800,7 @@ static void EasingZero(Easing* easing) {
 }
 
 static Easing EaseInExpo() { return (Easing){.type = ET_IN_EXPO}; }
+static Easing EaseOutBack() { return (Easing){.type = ET_OUT_BACK}; }
 static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
 
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
@@ -3811,6 +3813,14 @@ static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
         }
         case ET_IN_EXPO: {
             T = T == 0.0f ? 0.0f : f32pow(2.0f, 10.0f * T - 10.0f);
+            break;
+        }
+        case ET_OUT_BACK: {
+            static f32 c1 = 1.70158;
+            f32 c3 = c1 + 1;
+
+            T = 1.0f + c3 * f32pow(T - 1.0f, 3.0f) + c1 * f32pow(T - 1.0f, 2.0f);
+            T = f32sin(T * LPI);
             break;
         }
         case ET_NONE:
@@ -4925,9 +4935,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         particle->v = Vec3Scale(vdir, speed);
                                     }
                                 }
+
+                                static bool ONCE = false;
+                                if (!ONCE) {
+                                    ONCE = false;
+                                    GraphicsInfoScaleAnimateTo(&e->graphics, Vec3Lit(1.0f, 1.0f, 1.0f),
+                                                               Vec3Lit(0.7f, 0.8f, 1.0f), EaseOutBack());
+                                }
                             }
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
                         }
+
+                        e->graphics.scale_easing.T += dt;
+                        e->graphics.scale_easing.T = f32min(e->graphics.scale_easing.T, 1.0f);
                     }
 
                     if (TestFlag(e->flags, EFLAG_RESEARCHER)) {
