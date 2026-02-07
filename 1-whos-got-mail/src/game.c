@@ -4893,12 +4893,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 SoftDeactivateEntity(mail);
                                 ArrPop(&e->mail);
 
-                                {
+                                i32 spawn_count = f32randab(10, 13);
+                                for (i32 j = 0; j < spawn_count; ++j) {
                                     f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
                                     Particle* particle =
-                                        SpawnParticle(e->pos, Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f)),
+                                        SpawnParticle(e->pos, Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)),
                                                       Mat4RotateZ(angle), 0.5f, LRED);
-                                    particle->v = Vec3Lit(Px2Meter(0.0f), Px2Meter(f32randab(20.0f, 60.0f)), 0.0f);
+
+                                    f32 vangle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
+                                    particle->v =
+                                        Vec3RotateAxis(Vec3Lit(Px2Meter(0.0f), Px2Meter(f32randab(20.0f, 60.0f)), 0.0f),
+                                                       Vec3Lit(0.0f, 0.0f, 1.0f), vangle);
                                 }
                             }
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
