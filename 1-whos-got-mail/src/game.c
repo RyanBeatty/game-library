@@ -3627,7 +3627,13 @@ LCORE void ParticleSystemTick(f32 dt) {
             particle->v = Vec3Add(particle->v, Vec3Scale(G, dt));
         }
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
-        // particle->color.a = f32lerp(1.0f, 0.1f, particle->lifedt / particle->lifetime);
+    }
+}
+
+LCORE void ParticleSystemDraw() {
+    ParticleSystem* particles = GetParticleSystem();
+    for (u32 i = 0; i < particles->pcap; ++i) {
+        Particle* particle = &particles->particles[i];
 
         // Find % along lifetime we are.
         f32 lifedt_pct = f32lerp_pct(0.0f, particle->lifetime, particle->lifedt);
@@ -4885,6 +4891,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 ++gstate->num_sorted;
                                 SoftDeactivateEntity(mail);
                                 ArrPop(&e->mail);
+
+                                {
+                                    Particle* particle =
+                                        SpawnParticle(e->pos, Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f)), 1.0f, LRED);
+                                    particle->v = Vec3Lit(Px2Meter(0.0f), Px2Meter(20.0f), 0.0f);
+                                }
                             }
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
                         }
@@ -4938,6 +4950,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
             }
         }
+
+        ParticleSystemTick(dt);
     }
 
     if (gstate->render) {
@@ -4957,6 +4971,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     DrawGraphicsInfo(&e->graphics);
                 }
             }
+
+            ParticleSystemDraw();
 
             EndShaderPass();
         }
