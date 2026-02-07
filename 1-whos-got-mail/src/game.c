@@ -4918,10 +4918,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                           Mat4RotateZ(angle), 0.5f, COLORS[2]);
 
                                         particle->v = Vec3Scale(vdir, speed);
-                                        // f32 vangle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
-                                        // particle->v = Vec3RotateAxis(
-                                        //     Vec3Lit(Px2Meter(0.0f), Px2Meter(f32randab(20.0f, 60.0f)), 0.0f),
-                                        //     Vec3Lit(0.0f, 0.0f, 1.0f), vangle);
                                     }
                                 }
                             }
