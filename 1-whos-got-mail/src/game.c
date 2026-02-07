@@ -4893,17 +4893,30 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 SoftDeactivateEntity(mail);
                                 ArrPop(&e->mail);
 
-                                i32 spawn_count = f32randab(10, 13);
-                                for (i32 j = 0; j < spawn_count; ++j) {
-                                    f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
-                                    Particle* particle =
-                                        SpawnParticle(e->pos, Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)),
-                                                      Mat4RotateZ(angle), 0.5f, LRED);
+                                {
+                                    LTexture tx = GetTexture(TX_MAILBOX);
+                                    Vec2 txhdims = Vec2Lit(Px2Meter(tx.width) * 0.5f, Px2Meter(tx.height) * 0.5f);
+                                    f32 radius = f32sqrt((txhdims.x * txhdims.x) + (txhdims.y * txhdims.y));
+                                    Vec2 dims = Vec2Lit(Px2Meter(tx.width), Px2Meter(tx.height));
 
-                                    f32 vangle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
-                                    particle->v =
-                                        Vec3RotateAxis(Vec3Lit(Px2Meter(0.0f), Px2Meter(f32randab(20.0f, 60.0f)), 0.0f),
-                                                       Vec3Lit(0.0f, 0.0f, 1.0f), vangle);
+                                    i32 spawn_count = f32randab(10, 13);
+
+                                    f32 angle_offset = Deg2Rad(360.0f) / spawn_count;
+
+                                    for (i32 j = 0; j < spawn_count; ++j) {
+                                        f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
+                                        Particle* particle =
+                                            SpawnParticle(e->pos, Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f)),
+                                                          Mat4RotateZ(angle), 0.5f, LRED);
+
+                                        Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
+                                                                   angle_offset * j);
+                                        particle->v = Vec3Scale(vdir, f32randab(Px2Meter(20.0f), Px2Meter(60.0f)));
+                                        // f32 vangle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
+                                        // particle->v = Vec3RotateAxis(
+                                        //     Vec3Lit(Px2Meter(0.0f), Px2Meter(f32randab(20.0f, 60.0f)), 0.0f),
+                                        //     Vec3Lit(0.0f, 0.0f, 1.0f), vangle);
+                                    }
                                 }
                             }
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
