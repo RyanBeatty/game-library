@@ -4863,12 +4863,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     QueuedMail qmail = {.mail_id = mail->id,
                                                         .cooldown_sec = 0.8f * e->work_cooldown_sec};
                                     ArrPush(&e->mail, qmail);
-
-                                    // PlatformPlaySound(GetSound(SOUND_SORT), 0);
-
-                                    // gstate->score += 1.0f;
-                                    // ++gstate->num_sorted;
-
                                     gstate->mail_root = mail->next_mail;
                                 }
                             }
