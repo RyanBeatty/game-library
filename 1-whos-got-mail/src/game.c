@@ -3602,11 +3602,12 @@ LCORE Particle* AllocateParticle() {
     return particle;
 }
 
-LCORE Particle* SpawnParticle(Vec3 p, Vec2 dims, f32 lifetime, RGBA color) {
+LCORE Particle* SpawnParticle(Vec3 p, Vec2 dims, Mat4 orient, f32 lifetime, RGBA color) {
     Assert(lifetime > 0.0f);
     Particle* particle = AllocateParticle();
     particle->p = p;
     particle->scale = Vec3Lit(dims.x, dims.y, 1.0f);
+    particle->orient = orient;
     particle->lifetime = lifetime;
     particle->color = color;
     return particle;
@@ -4893,9 +4894,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 ArrPop(&e->mail);
 
                                 {
+                                    f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
                                     Particle* particle =
-                                        SpawnParticle(e->pos, Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f)), 1.0f, LRED);
-                                    particle->v = Vec3Lit(Px2Meter(0.0f), Px2Meter(20.0f), 0.0f);
+                                        SpawnParticle(e->pos, Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f)),
+                                                      Mat4RotateZ(angle), 0.5f, LRED);
+                                    particle->v = Vec3Lit(Px2Meter(0.0f), Px2Meter(f32randab(20.0f, 60.0f)), 0.0f);
                                 }
                             }
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
