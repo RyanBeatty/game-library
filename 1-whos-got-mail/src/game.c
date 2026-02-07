@@ -4898,13 +4898,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec2 txhdims = Vec2Lit(Px2Meter(tx.width) * 0.5f, Px2Meter(tx.height) * 0.5f);
                                     f32 radius = f32sqrt((txhdims.x * txhdims.x) + (txhdims.y * txhdims.y));
 
-                                    i32 spawn_count = f32randab(5, 8);
+                                    i32 spawn_count = f32randab(4, 4);
 
-                                    f32 angle_offset = Deg2Rad(360.0f) / spawn_count;
+                                    f32 arc_start = Deg2Rad(30.0f);
+                                    f32 arc_end = Deg2Rad(150.0f);
+                                    f32 arc_len = arc_end - arc_start;
+                                    // Need count - 1 or else we will not spawn a particle at arc_end and it'll look
+                                    // lopsided.
+                                    f32 angle_offset = arc_len / (spawn_count - 1);
                                     f32 speed = f32randab(Px2Meter(20.0f), Px2Meter(60.0f));
                                     for (i32 j = 0; j < spawn_count; ++j) {
                                         Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
-                                                                   angle_offset * j);
+                                                                   arc_start + (angle_offset * j));
 
                                         f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
 
