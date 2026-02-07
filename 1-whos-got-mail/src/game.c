@@ -4902,7 +4902,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     i32 spawn_count = f32randab(10, 13);
 
                                     f32 angle_offset = Deg2Rad(360.0f) / spawn_count;
-
+                                    f32 speed = f32randab(Px2Meter(20.0f), Px2Meter(60.0f));
                                     for (i32 j = 0; j < spawn_count; ++j) {
                                         f32 angle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
                                         Particle* particle =
@@ -4911,7 +4911,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                         Vec3 vdir = Vec3RotateAxis(Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f),
                                                                    angle_offset * j);
-                                        particle->v = Vec3Scale(vdir, f32randab(Px2Meter(20.0f), Px2Meter(60.0f)));
+                                        particle->v = Vec3Scale(vdir, speed);
                                         // f32 vangle = f32randab(Deg2Rad(0.0f), Deg2Rad(360.0f));
                                         // particle->v = Vec3RotateAxis(
                                         //     Vec3Lit(Px2Meter(0.0f), Px2Meter(f32randab(20.0f, 60.0f)), 0.0f),
