@@ -4655,7 +4655,8 @@ static Vec2 UIAdvancePos(UIState* ui, Vec2 pos, Vec2 dims) {
 static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     // Get ui state fields.
     UIBox* parent = UIGetParent(ui);
-    Vec2 topleft = UIBoxGetCursor(parent);
+    Vec2 topleft = UIBoxGetCursor(parent);  // I don't think we can just calc an offset to the top left since we need to
+                                            // do collision detection in UI space.
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
@@ -4683,7 +4684,6 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
     DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
 
-    breakpoint();
     parent->top_left = UIAdvancePos(ui, parent->top_left, AABB2DDims(dims.aabb));
 
     return action;
