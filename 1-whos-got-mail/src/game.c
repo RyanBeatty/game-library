@@ -4579,10 +4579,10 @@ typedef struct {
 typedef struct {
     AABB2D box;
 
-    Vec2 top_left_offset;  // Where the next point to layout a ui element inside of the box is.
+    Vec2 cursor_top_left_offset;  // Where the next point to layout a ui element inside of the box is.
 } UIBox;
 
-#define UIBoxGetCursor(bbox) (Vec2Add(AABB2DTopLeft((bbox)->box), (bbox)->top_left_offset))
+#define UIBoxGetCursor(bbox) (Vec2Add(AABB2DTopLeft((bbox)->box), (bbox)->cursor_top_left_offset))
 
 typedef struct {
     UIBox* data;
@@ -4627,7 +4627,7 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
 
     InitArr(&ui->parents, perm, UIBox, 10);
     AABB2D parent_box = AABB2DFromMinMax(Vec2Lit(0, 0), Vec2Lit(width, height));
-    UIBox root_parent = {.box = parent_box, .top_left_offset = Vec2Zero()};
+    UIBox root_parent = {.box = parent_box, .cursor_top_left_offset = Vec2Zero()};
     UIPushParent(ui, root_parent);
 
     ui->input = input;
@@ -4684,7 +4684,7 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
     DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
 
-    parent->top_left_offset = UIAdvancePos(ui, parent->top_left_offset, AABB2DDims(dims.aabb));
+    parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, AABB2DDims(dims.aabb));
 
     return action;
 }
@@ -5272,7 +5272,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     AABB2D parent3 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, 0.0f), hmargin),
                                                       Vec2Sub(Vec2Lit(width * 0.25f, height * 0.7f), hmargin));
                     Vec2 parent3_dims = AABB2DDims(parent3);
-                    UIBox parent3_box = {.box = parent3, .top_left_offset = Vec2Zero()};
+                    UIBox parent3_box = {.box = parent3, .cursor_top_left_offset = Vec2Zero()};
                     DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
 
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
