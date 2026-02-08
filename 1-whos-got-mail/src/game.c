@@ -5272,15 +5272,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     AABB2D parent3 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, 0.0f), hmargin),
                                                       Vec2Sub(Vec2Lit(width * 0.25f, height * 0.7f), hmargin));
                     Vec2 parent3_dims = AABB2DDims(parent3);
-                    DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
-                    Vec2 parent_top_left = AABB2DTopLeft(parent3);
                     UIBox parent3_box = {.box = parent3, .top_left = Vec2Zero()};
+                    DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
 
-                    // Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
-                    // Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
-                    // DrawQuad(center, parent_dims.x, parent_dims.y, Mat4Identity(), LRED);
-
-                    // Vec2 parent_top_left = Vec2Lit(center.x - 0.5f * parent_dims.x, center.y + 0.5f * parent_dims.y);
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
                     spacing = Vec2Lit(0.0f, 0.0f);
 
