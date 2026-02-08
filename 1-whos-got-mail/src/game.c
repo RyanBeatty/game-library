@@ -4594,8 +4594,6 @@ typedef struct {
     UILayoutDirectionArr layout_dirs;
     UIBoxArr parents;
 
-    Vec2 top_left;
-
     GameInput* input;  // Reset each frame.
 } UIState;
 
@@ -4618,8 +4616,6 @@ typedef struct {
 #define UIPopParent(ui) (ArrPop(&(ui)->parents))
 #define UIParent(ui, pparent) Scoped(UIPushParent(ui, pparent), UIPopParent(ui))
 
-#define UISetTopLeft(ui, tl) ((ui)->top_left = (tl))
-
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->fonts, perm, LFont, 1);
     InitArr(&ui->spacings, perm, Vec2, 1);
@@ -4632,7 +4628,6 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     UIBox root_parent = {.box = parent_box, .top_left = AABB2DTopLeft(parent_box)};
     UIPushParent(ui, root_parent);
 
-    ui->top_left = Vec2Lit(0.0f, height);
     ui->input = input;
 }
 
@@ -5288,7 +5283,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     UIState ui = {0};
                     UIStateBegin(&ui, &gstate->temp, AABB2DWidth(parent3), AABB2DHeight(parent3), input);
-                    // UISetTopLeft(&ui, parent_top_left);
                     UIPushParent(&ui, parent3_box);
                     UIPushFont(&ui, font);
                     UIPushSpacing(&ui, spacing);
