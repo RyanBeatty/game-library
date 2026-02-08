@@ -4566,6 +4566,7 @@ typedef struct {
 
 typedef enum {
     UI_LAYOUT_DOWN = 0,
+    UI_LAYOUT_RIGHT,
 } UILayoutDirection;
 
 typedef struct {
@@ -4595,6 +4596,8 @@ typedef struct {
 
 #define UIGetLayoutDirection(ui) (ArrTail(&(ui)->layout_dirs))
 #define UIPushLayoutDirection(ui, llayout) (ArrPush(&(ui)->layout_dirs, (llayout)))
+#define UIPopLayoutDirection(ui) (ArrPop(&(ui)->layout_dirs))
+#define UILayoutDirection(ui, llayout) Scoped(UIPushLayoutDirection(ui, llayout), UIPopLayoutDirection(ui))
 
 #define UISetTopLeft(ui, tl) ((ui)->top_left = (tl))
 
@@ -4612,6 +4615,10 @@ static Vec2 UIAdvancePos(UIState* ui, Vec2 pos, Vec2 dims) {
     switch (dir) {
         case UI_LAYOUT_DOWN: {
             pos.y -= dims.y;
+            break;
+        }
+        case UI_LAYOUT_RIGHT: {
+            pos.x += dims.x;
             break;
         }
         default: {
@@ -5257,15 +5264,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushSpacing(&ui, spacing);
 
                     {
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Mailbox: $%.2f", gstate->worker_cost);
-                        Str8 txt = Str8FromC(buffer);
-                        bool clickable = gstate->score >= gstate->worker_cost;
+                        UILayoutDirection(&ui, UI_LAYOUT_RIGHT) {
+                            UIButton(&ui, Str8FromC("Mailbox"), false);
 
-                        if (UIButton(&ui, txt, clickable).clicked) {
-                            gstate->score -= gstate->worker_cost;
-                            SpawnWorker(gstate, Vec3Zero());
-                            gstate->worker_cost *= 2.0f;
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "$%.2f", gstate->worker_cost);
+                            Str8 txt = Str8FromC(buffer);
+                            bool clickable = gstate->score >= gstate->worker_cost;
+
+                            if (UIButton(&ui, txt, clickable).clicked) {
+                                gstate->score -= gstate->worker_cost;
+                                SpawnWorker(gstate, Vec3Zero());
+                                gstate->worker_cost *= 2.0f;
+                            }
                         }
                     }
 

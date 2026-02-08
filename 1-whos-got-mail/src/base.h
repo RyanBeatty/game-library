@@ -161,6 +161,12 @@ static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after);
 static f32 F32FromStr8(Str8 s, bool* ok);
 static i32 I32FromStr8(Str8 s, bool* ok);
 
+// scoped(start, end) { ...code.. } ensures we run start() before the scope, then run end() after the scope.
+// NOTE: You cannot wrap this or a higher level macro that composes with Scoped with parenthesis. Otherwise
+// you will get compilation errors due to compiler thinking the wrapped for loop is a self contained expression that
+// then has no scope ({}) nor a trailing code expression that would count as the scope.
+#define Scoped(start, end) for (int _once_ = ((start), 0); !_once_; (_once_ = 1, (end)))
+
 ////////////////////////////////////////////////////////////
 // S:Math
 
