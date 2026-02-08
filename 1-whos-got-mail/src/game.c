@@ -5273,8 +5273,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 if (true) {
                     AABB2D parent3 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, 0.0f), hmargin),
                                                       Vec2Sub(Vec2Lit(width * 0.25f, height * 0.7f), hmargin));
-                    DrawQuad(Vec2ToVec3(parent3.c), parent3.r.x * 2.0f, parent3.r.y * 2.0f, Mat4Identity(), COLORS[0]);
-                    Vec2 parent_top_left = Vec2Lit(parent3.c.x - parent3.r.x, parent3.c.y + parent3.r.y);
+                    Vec2 parent3_dims = AABB2DDims(parent3);
+                    DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
+                    Vec2 parent_top_left = AABB2DTopLeft(parent3);
 
                     // Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
                     // Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
