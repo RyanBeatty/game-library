@@ -2546,6 +2546,7 @@ typedef struct {
 #define AABB2DWidth(aabb) (2.0f * (aabb).r.x)
 #define AABB2DHeight(aabb) (2.0f * (aabb).r.y)
 #define AABB2DDims(aabb) (Vec2Lit(AABB2DWidth(aabb), AABB2DHeight(aabb)))
+#define AABB2DTopLeft(aabb) (Vec2Lit((aabb).c.x - (aabb).r.x, (aabb).c.y + (aabb).r.y))
 
 // Returns a aabb2d from a bottom left and top right
 LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
@@ -4576,9 +4577,22 @@ typedef struct {
 } UILayoutDirectionArr;
 
 typedef struct {
+    AABB2D box;
+
+    Vec2 top_left;  // Where the next point to layout a ui element inside of the box is.
+} UIBox;
+
+typedef struct {
+    UIBox* data;
+    isize len;
+    isize cap;
+} UIBoxArr;
+
+typedef struct {
     LFontArr fonts;
     Vec2Arr spacings;
     UILayoutDirectionArr layout_dirs;
+    UIBoxArr parents;
 
     Vec2 top_left;
 
@@ -4599,13 +4613,25 @@ typedef struct {
 #define UIPopLayoutDirection(ui) (ArrPop(&(ui)->layout_dirs))
 #define UILayoutDirection(ui, llayout) Scoped(UIPushLayoutDirection(ui, llayout), UIPopLayoutDirection(ui))
 
+#define UIGetParent(ui) (ArrTailR(&(ui)->parents))
+#define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
+#define UIPopParent(ui) (ArrPop(&(ui)->parents))
+#define UIParent(ui, pparent) Scoped(UIPushParent(ui, pparent), UIPopParent(ui))
+
 #define UISetTopLeft(ui, tl) ((ui)->top_left = (tl))
 
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->fonts, perm, LFont, 1);
     InitArr(&ui->spacings, perm, Vec2, 1);
+
     InitArr(&ui->layout_dirs, perm, UILayoutDirection, 2);
     UIPushLayoutDirection(ui, UI_LAYOUT_DOWN);
+
+    InitArr(&ui->parents, perm, UIBox, 10);
+    AABB2D parent_box = AABB2DFromMinMax(Vec2Lit(0, 0), Vec2Lit(width, height));
+    UIBox root_parent = {.box = parent_box, .top_left = AABB2DTopLeft(parent_box)};
+    UIPushParent(ui, root_parent);
+
     ui->top_left = Vec2Lit(0.0f, height);
     ui->input = input;
 }
@@ -4631,7 +4657,8 @@ static Vec2 UIAdvancePos(UIState* ui, Vec2 pos, Vec2 dims) {
 
 static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     // Get ui state fields.
-    Vec2 topleft = ui->top_left;
+    UIBox* parent = UIGetParent(ui);
+    Vec2 topleft = parent->top_left;
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
@@ -4659,7 +4686,7 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
     DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
 
-    ui->top_left = UIAdvancePos(ui, ui->top_left, AABB2DDims(dims.aabb));
+    parent->top_left = UIAdvancePos(ui, parent->top_left, AABB2DDims(dims.aabb));
 
     return action;
 }

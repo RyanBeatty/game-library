@@ -128,6 +128,7 @@ Arena NewSubArena(Arena* perm, isize count);
 #define ArrLen(a) ((a)->len)
 #define ArrClear(a) ((a)->len = 0)
 #define ArrTail(a) (assert((a)->len >= 0), ArrGet(a, ArrLen(a) - 1))
+#define ArrTailR(a) (assert((a)->len >= 0), ArrGetR(a, ArrLen(a) - 1))
 
 typedef struct {
     byte* data;
