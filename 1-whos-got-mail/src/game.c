@@ -5276,6 +5276,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 parent3_dims = AABB2DDims(parent3);
                     DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
                     Vec2 parent_top_left = AABB2DTopLeft(parent3);
+                    UIBox parent3_box = {.box = parent3, .top_left = parent_top_left};
 
                     // Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
                     // Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
@@ -5287,7 +5288,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     UIState ui = {0};
                     UIStateBegin(&ui, &gstate->temp, AABB2DWidth(parent3), AABB2DHeight(parent3), input);
-                    UISetTopLeft(&ui, parent_top_left);
+                    // UISetTopLeft(&ui, parent_top_left);
+                    UIPushParent(&ui, parent3_box);
                     UIPushFont(&ui, font);
                     UIPushSpacing(&ui, spacing);
 
