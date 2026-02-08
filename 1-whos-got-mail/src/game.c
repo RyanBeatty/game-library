@@ -4582,6 +4582,8 @@ typedef struct {
     Vec2 top_left;  // Where the next point to layout a ui element inside of the box is.
 } UIBox;
 
+#define UIBoxGetCursor(bbox) (Vec2Add(AABB2DTopLeft((bbox)->box), (bbox)->top_left))
+
 typedef struct {
     UIBox* data;
     isize len;
@@ -4625,7 +4627,7 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
 
     InitArr(&ui->parents, perm, UIBox, 10);
     AABB2D parent_box = AABB2DFromMinMax(Vec2Lit(0, 0), Vec2Lit(width, height));
-    UIBox root_parent = {.box = parent_box, .top_left = AABB2DTopLeft(parent_box)};
+    UIBox root_parent = {.box = parent_box, .top_left = Vec2Zero()};
     UIPushParent(ui, root_parent);
 
     ui->input = input;
@@ -4653,7 +4655,7 @@ static Vec2 UIAdvancePos(UIState* ui, Vec2 pos, Vec2 dims) {
 static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     // Get ui state fields.
     UIBox* parent = UIGetParent(ui);
-    Vec2 topleft = parent->top_left;
+    Vec2 topleft = UIBoxGetCursor(parent);
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
@@ -4681,6 +4683,7 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
     DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
 
+    breakpoint();
     parent->top_left = UIAdvancePos(ui, parent->top_left, AABB2DDims(dims.aabb));
 
     return action;
@@ -5271,7 +5274,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 parent3_dims = AABB2DDims(parent3);
                     DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
                     Vec2 parent_top_left = AABB2DTopLeft(parent3);
-                    UIBox parent3_box = {.box = parent3, .top_left = parent_top_left};
+                    UIBox parent3_box = {.box = parent3, .top_left = Vec2Zero()};
 
                     // Vec3 center = Vec3Lit(0.5f * width, 0.5f * height, 0.0f);
                     // Vec2 parent_dims = Vec2Lit(width * 0.7f, height * 0.7f);
