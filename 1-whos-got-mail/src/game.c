@@ -4564,9 +4564,20 @@ typedef struct {
     isize cap;
 } LFontArr;
 
+typedef enum {
+    UI_LAYOUT_DOWN = 0,
+} UILayoutDirection;
+
+typedef struct {
+    UILayoutDirection* data;
+    isize len;
+    isize cap;
+} UILayoutDirectionArr;
+
 typedef struct {
     LFontArr fonts;
     Vec2Arr spacings;
+    UILayoutDirectionArr layout_dirs;
 
     Vec2 top_left;
 
@@ -4579,14 +4590,36 @@ typedef struct {
 
 #define UIGetFont(ui) (ArrTail(&(ui)->fonts))
 #define UIPushFont(ui, ffont) (ArrPush(&(ui)->fonts, ffont))
+
 #define UIPushSpacing(ui, sspacing) (ArrPush(&(ui)->spacings, sspacing))
+
+#define UIGetLayoutDirection(ui) (ArrTail(&(ui)->layout_dirs))
+#define UIPushLayoutDirection(ui, llayout) (ArrPush(&(ui)->layout_dirs, (llayout)))
+
 #define UISetTopLeft(ui, tl) ((ui)->top_left = (tl))
 
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->fonts, perm, LFont, 1);
     InitArr(&ui->spacings, perm, Vec2, 1);
+    InitArr(&ui->layout_dirs, perm, UILayoutDirection, 2);
+    UIPushLayoutDirection(ui, UI_LAYOUT_DOWN);
     ui->top_left = Vec2Lit(0.0f, height);
     ui->input = input;
+}
+
+static Vec2 UIAdvancePos(UIState* ui, Vec2 pos, Vec2 dims) {
+    UILayoutDirection dir = UIGetLayoutDirection(ui);
+    switch (dir) {
+        case UI_LAYOUT_DOWN: {
+            pos.y -= dims.y;
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown Layout Direction: %d", dir);
+            Assert(0);
+        }
+    }
+    return pos;
 }
 
 static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
@@ -4619,9 +4652,8 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
     DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
 
-    topleft.y -= AABB2DHeight(dims.aabb);
+    ui->top_left = UIAdvancePos(ui, ui->top_left, AABB2DDims(dims.aabb));
 
-    ui->top_left = topleft;
     return action;
 }
 
