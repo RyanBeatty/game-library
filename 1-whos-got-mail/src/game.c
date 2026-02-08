@@ -5239,7 +5239,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     {
                         char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Increase Worker Speed: $%.2f",
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Worker Speed: $%.2f",
                                  gstate->worker_cooldown_sec_cost);
                         Str8 txt = Str8FromC(buffer);
                         bool clickable = gstate->score >= gstate->worker_cooldown_sec_cost;
