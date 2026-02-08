@@ -4080,6 +4080,8 @@ typedef struct {
 
     i32 pickup_count;
 
+    f32 jiggle_cooldown_sec;
+
     QueuedMailArr mail;
 } Entity;
 
@@ -4648,6 +4650,8 @@ static void SpawnWorker(GameState* gstate, Vec3 pos) {
 
     ++gstate->worker_count;
     PlatformLog(LLOG_INFO, "Increase Worker Count %d -> %d", gstate->worker_count - 1, gstate->worker_count);
+
+    e->jiggle_cooldown_sec = 1.0f;
 }
 
 static void UpgradeWorker(GameState* gstate, Entity* e) {
@@ -4885,6 +4889,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
+                        e->jiggle_cooldown_sec += dt;
+                        e->jiggle_cooldown_sec = f32min(e->jiggle_cooldown_sec, 1.0f);
+                        if (e->jiggle_cooldown_sec >= 1.0f) {
+                            GraphicsInfoScaleSnapTo(&e->graphics);
+
+                        } else {
+                            e->graphics.scale_easing.T = e->jiggle_cooldown_sec;
+                        }
+
                         for (isize i = ArrLen(&e->mail) - 1; i >= 0; --i) {
                             QueuedMail* qmail = ArrGetPtr(&e->mail, i);
                             Assert(qmail);
@@ -4936,14 +4949,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     }
                                 }
 
-                                GraphicsInfoScaleAnimateTo(&e->graphics, Vec3Lit(1.0f, 1.0f, 1.0f),
-                                                           Vec3Lit(1.2f, 0.8f, 1.0f), EaseOutBack());
+                                if (e->jiggle_cooldown_sec >= 1.0f) {
+                                    e->jiggle_cooldown_sec = 0.0f;
+                                    GraphicsInfoScaleAnimateTo(&e->graphics, Vec3Lit(1.0f, 1.0f, 1.0f),
+                                                               Vec3Lit(1.2f, 0.8f, 1.0f), EaseOutBack());
+                                }
                             }
                             // PlatformLog(LLOG_INFO, "T: %f", mail->graphics.pos_easing.T);
                         }
-
-                        e->graphics.scale_easing.T += dt;
-                        e->graphics.scale_easing.T = f32min(e->graphics.scale_easing.T, 1.0f);
                     }
 
                     if (TestFlag(e->flags, EFLAG_RESEARCHER)) {
