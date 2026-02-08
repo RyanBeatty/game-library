@@ -4960,6 +4960,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     if (TestFlag(e->flags, EFLAG_RESEARCHER)) {
+                        e->jiggle_cooldown_sec += dt;
+                        e->jiggle_cooldown_sec = f32min(e->jiggle_cooldown_sec, 1.0f);
+                        if (e->jiggle_cooldown_sec >= 1.0f) {
+                            GraphicsInfoScaleSnapTo(&e->graphics);
+
+                        } else {
+                            e->graphics.scale_easing.T = e->jiggle_cooldown_sec;
+                        }
+
                         if (e->work_cooldown_dt <= 0.0f) {
                             e->work_cooldown_dt = e->work_cooldown_sec;
 
@@ -4996,6 +5005,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                     particle->v = Vec3Scale(vdir, speed);
                                 }
+                            }
+
+                            if (e->jiggle_cooldown_sec >= 1.0f) {
+                                e->jiggle_cooldown_sec = 0.0f;
+                                GraphicsInfoScaleAnimateTo(&e->graphics, Vec3Lit(1.0f, 1.0f, 1.0f),
+                                                           Vec3Lit(1.2f, 0.8f, 1.0f), EaseOutBack());
                             }
                         }
                     }
