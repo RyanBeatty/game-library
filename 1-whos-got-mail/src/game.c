@@ -4620,7 +4620,7 @@ typedef struct {
 #define UIGetParent(ui) (ArrTailR(&(ui)->parents))
 #define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
 #define UIPopParent(ui) (ArrPop(&(ui)->parents))
-#define UIParent(ui, pparent) Scoped(UIPushParent(ui, pparent), UIPopParent(ui))
+#define UIParent(ui, pparent) Scoped(UIPushParent((ui), (pparent)), UIPopParent((ui)))
 
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->fonts, perm, LFont, 1);
@@ -4666,6 +4666,12 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, dims);
     return box;
 }
+
+// Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
+// incorrect parent in MakeUIContainer for sizing and positioning.
+#define UIContainer(ui, dims)                                       \
+    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
+    UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     // Get ui state fields.
@@ -5300,8 +5306,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushSpacing(&ui, spacing);
 
                     {
-                        UIBox new_parent = MakeUIContainer(&ui, Vec2Lit(100.0f, 100.0f));
-                        UIParent(&ui, new_parent) {
+                        UIContainer(&ui, Vec2Lit(100.0f, 100.0f)) {
                             UILayoutDirection(&ui, UI_LAYOUT_RIGHT) {
                                 UIButton(&ui, Str8FromC("Mailbox"), false);
 
