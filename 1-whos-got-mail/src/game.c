@@ -5306,6 +5306,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushSpacing(&ui, spacing);
 
                     {
+                        // TODO: Need to figure out some way to ensure that the text is smaller than this container
+                        // size.
                         UIContainer(&ui, Vec2Lit(100.0f, 100.0f)) {
                             UILayoutDirection(&ui, UI_LAYOUT_RIGHT) {
                                 UIButton(&ui, Str8FromC("Mailbox"), false);
