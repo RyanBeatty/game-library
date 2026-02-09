@@ -115,6 +115,8 @@ Arena NewSubArena(Arena* perm, isize count);
 // }
 // Will crash if you try to allocate more than cap. PushS = Push Static
 #define PushS(s) (assert((s)->len < (s)->cap), (s)->data + (s)->len++)
+// NOTE: Because of macro expansion, we are not guaranteed that v is evaluated before len++
+// This means that if v is some value or function call that depends on reading len you can have unspecified errors
 #define PushArrS(s, v) (assert((s)->len < (s)->cap), (s)->data[(s)->len++] = (v))
 // Add an element by getting the reference to the last item and bumping len.
 #define ArrReserve(a) (assert((a)->len < (a)->cap), &(a)->data[(a)->len++])
