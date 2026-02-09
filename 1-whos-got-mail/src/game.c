@@ -4577,6 +4577,10 @@ typedef struct {
 } UILayoutDirectionArr;
 
 typedef struct {
+    // The box's center should be in world position.
+    // TODO: Longer term I should probably think about just storing an offset to parent and a dimension
+    // Then you recalculate the world position each frame from the parent (root of tree will get actual screen top left
+    // as position coordinate).
     AABB2D box;
 
     Vec2 cursor_top_left_offset;  // Where the next point to layout a ui element inside of the box is.
