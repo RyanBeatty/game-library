@@ -162,11 +162,17 @@ static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after);
 static f32 F32FromStr8(Str8 s, bool* ok);
 static i32 I32FromStr8(Str8 s, bool* ok);
 
+#define CONCAT2(a, b) a##b
+#define CONCAT(a, b) CONCAT2(a, b)
+
 // scoped(start, end) { ...code.. } ensures we run start() before the scope, then run end() after the scope.
 // NOTE: You cannot wrap this or a higher level macro that composes with Scoped with parenthesis. Otherwise
 // you will get compilation errors due to compiler thinking the wrapped for loop is a self contained expression that
 // then has no scope ({}) nor a trailing code expression that would count as the scope.
-#define Scoped(start, end) for (int _once_ = ((start), 0); !_once_; (_once_ = 1, (end)))
+// Need to use __LINE__ so that you can have multiple Scoped() nested within each other. Otherwise will get variable
+// name shadowing issues. Full transparency, AI wrote this macro.
+#define Scoped(start, end) \
+    for (int CONCAT(_once_, __LINE__) = ((start), 0); !CONCAT(_once_, __LINE__); (CONCAT(_once_, __LINE__) = 1, (end)))
 
 ////////////////////////////////////////////////////////////
 // S:Math
