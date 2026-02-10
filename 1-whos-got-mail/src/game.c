@@ -4570,6 +4570,7 @@ typedef enum {
 } UISizeKind;
 
 #define UISizeText() ((UISize){.kind = UI_SIZE_TEXT})
+#define UISizePctParent(vv) ((UISize){.kind = UI_SIZE_PCT_OF_PARENT, .value = (vv)})
 
 typedef struct {
     UISizeKind kind;
@@ -4680,6 +4681,8 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     Vec2 top_left = UIBoxGetCursor(parent);
     LFont font = UIGetFont(ui);
 
+    Vec2 parent_dims = AABB2DDims(parent->box);
+
     TextBox textbox = LFontMeasureStr8Quad2(font, text);
     Vec2 textbox_dims = AABB2DDims(textbox.aabb);
 
@@ -4689,6 +4692,10 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
         switch (semantic_sizes[i].kind) {
             case UI_SIZE_TEXT: {
                 resolved_dims.f[i] = textbox_dims.f[i];
+                break;
+            }
+            case UI_SIZE_PCT_OF_PARENT: {
+                resolved_dims.f[i] = semantic_sizes[i].value * parent_dims.f[i];
                 break;
             }
             default: {
@@ -4731,7 +4738,7 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
-    UIBox box = MakeUIBox(ui, UISizeText(), UISizeText(), text);
+    UIBox box = MakeUIBox(ui, UISizePctParent(1.0f), UISizeText(), text);
 
     TextBox dims = LFontMeasureStr8Quad2(font, text);
     Vec2 quadpos = Vec2Lit(topleft.x + dims.aabb.c.x, topleft.y - dims.aabb.c.y);
