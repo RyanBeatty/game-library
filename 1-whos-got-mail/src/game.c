@@ -4559,6 +4559,16 @@ static Vec4 COLORS[] = {
     RGBLit(226.0f, 214.0f, 181.0f),
 };
 
+typedef enum {
+    UI_SIZE_TEXT = 0,
+    UI_SIZE_PCT_OF_PARENT,
+} UISizeKind;
+
+typedef struct {
+    UISizeKind kind;
+    f32 value;
+} UISize;
+
 typedef struct {
     LFont* data;
     isize len;
@@ -4584,6 +4594,8 @@ typedef struct {
     AABB2D box;
 
     Vec2 cursor_top_left_offset;  // Where the next point to layout a ui element inside of the box is.
+
+    Str8 text;
 } UIBox;
 
 #define UIBoxGetCursor(bbox) (Vec2Add(AABB2DTopLeft((bbox)->box), (bbox)->cursor_top_left_offset))
