@@ -5310,14 +5310,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // size.
                         UIContainer(&ui, Vec2Lit(100.0f, 100.0f)) {
                             UILayoutDirection(&ui, UI_LAYOUT_RIGHT) {
-                                UIButton(&ui, Str8FromC("Mailbox"), false);
+                                // UIButton(&ui, Str8FromC("Mailbox"), false);
 
                                 char buffer[256] = {0};
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "$%.2f", gstate->worker_cost);
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
                                 Str8 txt = Str8FromC(buffer);
+                                UIButton(&ui, txt, false);
+
                                 bool clickable = gstate->score >= gstate->worker_cost;
 
-                                if (UIButton(&ui, txt, clickable).clicked) {
+                                if (UIButton(&ui, Str8FromC("BUY"), clickable).clicked) {
                                     gstate->score -= gstate->worker_cost;
                                     SpawnWorker(gstate, Vec3Zero());
                                     gstate->worker_cost *= 2.0f;
