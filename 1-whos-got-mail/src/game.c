@@ -2878,6 +2878,11 @@ LCORE void PolyHedronSetAABB2DFromWH(Polyhedron* shape, Vec2 c, Vec2 dims) {
     shape->aabb2d.r = Vec2Lit(0.5f * dims.x, 0.5f * dims.y);
 }
 
+LCORE void PolyHedronSetAABB2D(Polyhedron* shape, AABB2D aabb) {
+    shape->type = PH_AABB2D;
+    shape->aabb2d = aabb;
+}
+
 LCORE void PolyhedronSetCircle(Polyhedron* shape, Vec2 c, f32 r) {
     shape->type = PH_CIRCLE;
     shape->circle.c = c;
@@ -4564,6 +4569,8 @@ typedef enum {
     UI_SIZE_PCT_OF_PARENT,
 } UISizeKind;
 
+#define UISizeText() ((UISize){.kind = UI_SIZE_TEXT})
+
 typedef struct {
     UISizeKind kind;
     f32 value;
@@ -4668,6 +4675,37 @@ static Vec2 UIAdvancePos(UIState* ui, Vec2 pos, Vec2 dims) {
     return pos;
 }
 
+static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
+    UIBox* parent = UIGetParent(ui);
+    Vec2 top_left = UIBoxGetCursor(parent);
+    LFont font = UIGetFont(ui);
+
+    TextBox textbox = LFontMeasureStr8Quad2(font, text);
+    Vec2 textbox_dims = AABB2DDims(textbox.aabb);
+
+    UISize semantic_sizes[] = {width, height};
+    Vec2 resolved_dims = {0};
+    for (isize i = 0; i < ArraySizeOf(semantic_sizes); ++i) {
+        switch (semantic_sizes[i].kind) {
+            case UI_SIZE_TEXT: {
+                resolved_dims.f[i] = textbox_dims.f[i];
+                break;
+            }
+            default: {
+                PlatformLog(LLOG_ERROR, "UNKNOWN UI Size Kind: %d", semantic_sizes[i].kind);
+                Assert(0);
+            }
+        }
+    }
+
+    Vec2 box_min = Vec2Lit(top_left.x, top_left.y - resolved_dims.y);
+    Vec2 box_max = Vec2Lit(top_left.x + resolved_dims.x, top_left.y);
+
+    AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
+    UIBox box = {.box = aabb, .text = text};
+    return box;
+}
+
 static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     UIBox* parent = UIGetParent(ui);
     Vec2 top_left = UIBoxGetCursor(parent);
@@ -4693,11 +4731,14 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
+    UIBox box = MakeUIBox(ui, UISizeText(), UISizeText(), text);
+
     TextBox dims = LFontMeasureStr8Quad2(font, text);
     Vec2 quadpos = Vec2Lit(topleft.x + dims.aabb.c.x, topleft.y - dims.aabb.c.y);
 
     Polyhedron rect;
-    PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
+    PolyHedronSetAABB2D(&rect, box.box);
+    // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
 
     Polyhedron cursor;
     PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
@@ -4714,7 +4755,7 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
         action.clicked = true;
     }
 
-    DrawQuad2D(quadpos, AABB2DWidth(dims.aabb), AABB2DHeight(dims.aabb), Mat4Identity(), COLORS[3]);
+    DrawQuad2D(box.box.c, AABB2DWidth(box.box), AABB2DHeight(box.box), Mat4Identity(), COLORS[3]);
     DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
 
     parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, AABB2DDims(dims.aabb));
