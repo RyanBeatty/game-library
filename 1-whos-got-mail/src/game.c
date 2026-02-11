@@ -2547,6 +2547,7 @@ typedef struct {
 #define AABB2DHeight(aabb) (2.0f * (aabb).r.y)
 #define AABB2DDims(aabb) (Vec2Lit(AABB2DWidth(aabb), AABB2DHeight(aabb)))
 #define AABB2DTopLeft(aabb) (Vec2Lit((aabb).c.x - (aabb).r.x, (aabb).c.y + (aabb).r.y))
+#define AABB2DBottomLeft(aabb) (Vec2Lit((aabb).c.x - (aabb).r.x, (aabb).c.y - (aabb).r.y))
 
 // Returns a aabb2d from a bottom left and top right
 LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
@@ -4760,8 +4761,8 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlign alignment) {
 
     DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), COLORS[3]);
 
-    Vec2 topleft = AABB2DTopLeft(box->box);
-    Vec2 quadpos = Vec2Lit(topleft.x + box->textbox.aabb.c.x, topleft.y - box->textbox.aabb.c.y);
+    Vec2 bottom_left = AABB2DBottomLeft(box->box);
+    Vec2 quadpos = Vec2Add(bottom_left, box->textbox.aabb.c);
     DrawStr8Ex(font, Vec2Add(quadpos, box->textbox.baseline_offset), LBLACK, box->text);
 }
 
