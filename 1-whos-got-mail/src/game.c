@@ -4577,6 +4577,8 @@ typedef struct {
     f32 value;
 } UISize;
 
+typedef enum { UI_TEXT_ALIGN_LEFT = 0 } UITextAlign;
+
 typedef struct {
     LFont* data;
     isize len;
@@ -4753,9 +4755,18 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
     UIParent((ui), _ui_container_##__LINE__)
 
+static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlign alignment) {
+    LFont font = UIGetFont(ui);
+
+    DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), COLORS[3]);
+
+    Vec2 topleft = AABB2DTopLeft(box->box);
+    Vec2 quadpos = Vec2Lit(topleft.x + box->textbox.aabb.c.x, topleft.y - box->textbox.aabb.c.y);
+    DrawStr8Ex(font, Vec2Add(quadpos, box->textbox.baseline_offset), LBLACK, box->text);
+}
+
 static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semantic_width, UISize semantic_height) {
     // Get ui state fields.
-    LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
@@ -4779,12 +4790,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
         action.clicked = true;
     }
 
-    DrawQuad2D(box.box.c, AABB2DWidth(box.box), AABB2DHeight(box.box), Mat4Identity(), COLORS[3]);
-
-    // TODO: Potentially this should just be hidden in the draw text box func.
-    Vec2 topleft = AABB2DTopLeft(box.box);
-    Vec2 quadpos = Vec2Lit(topleft.x + box.textbox.aabb.c.x, topleft.y - box.textbox.aabb.c.y);
-    DrawStr8Ex(font, Vec2Add(quadpos, box.textbox.baseline_offset), LBLACK, text);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_LEFT);
 
     return action;
 }
