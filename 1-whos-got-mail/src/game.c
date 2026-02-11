@@ -5389,11 +5389,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushSpacing(&ui, spacing);
 
                     {
-                        // TODO: Need to figure out some way to ensure that the text is smaller than this container
-                        // size.
-                        // UIContainer(&ui, Vec2Lit(100.0f, 100.0f)) {
-                        // UIButton(&ui, Str8FromC("Mailbox"), false);
-
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
@@ -5403,7 +5398,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             SpawnWorker(gstate, Vec3Zero());
                             gstate->worker_cost *= 2.0f;
                         }
-                        // }
                     }
 
                     {
