@@ -4718,10 +4718,13 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     switch (dir) {
         case UI_LAYOUT_DOWN: {
             parent->cursor_top_left_offset.y -= box_dims.y;
+            // Because its a negative offset, check with parent negative.
+            parent->cursor_top_left_offset.y = f32max(parent->cursor_top_left_offset.y, -parent_dims.y);
             break;
         }
         case UI_LAYOUT_RIGHT: {
             parent->cursor_top_left_offset.x += box_dims.x;
+            parent->cursor_top_left_offset.x = f32min(parent->cursor_top_left_offset.x, parent_dims.x);
             break;
         }
         default: {
@@ -4729,7 +4732,6 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
             Assert(0);
         }
     }
-    parent->cursor_top_left_offset = Vec2Clamp(parent->cursor_top_left_offset, Vec2Zero(), parent_dims);
 
     return box;
 }
@@ -5389,23 +5391,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     {
                         // TODO: Need to figure out some way to ensure that the text is smaller than this container
                         // size.
-                        UIContainer(&ui, Vec2Lit(100.0f, 100.0f)) {
-                            UILayoutDirection(&ui, UI_LAYOUT_RIGHT) {
-                                // UIButton(&ui, Str8FromC("Mailbox"), false);
+                        // UIContainer(&ui, Vec2Lit(100.0f, 100.0f)) {
+                        // UIButton(&ui, Str8FromC("Mailbox"), false);
 
-                                char buffer[256] = {0};
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
-                                Str8 txt = Str8FromC(buffer);
-                                UIButton(&ui, txt, false);
-
-                                bool clickable = gstate->score >= gstate->worker_cost;
-                                if (UIButton(&ui, Str8FromC("BUY"), clickable).clicked) {
-                                    gstate->score -= gstate->worker_cost;
-                                    SpawnWorker(gstate, Vec3Zero());
-                                    gstate->worker_cost *= 2.0f;
-                                }
-                            }
+                        char buffer[256] = {0};
+                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
+                        Str8 txt = Str8FromC(buffer);
+                        bool clickable = gstate->score >= gstate->worker_cost;
+                        if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
+                            gstate->score -= gstate->worker_cost;
+                            SpawnWorker(gstate, Vec3Zero());
+                            gstate->worker_cost *= 2.0f;
                         }
+                        // }
                     }
 
                     {
