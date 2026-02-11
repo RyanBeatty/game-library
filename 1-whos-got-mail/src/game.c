@@ -4751,12 +4751,12 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
     UIParent((ui), _ui_container_##__LINE__)
 
-static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
+static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semantic_width, UISize semantic_height) {
     // Get ui state fields.
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
-    UIBox box = MakeUIBox(ui, UISizeText(), UISizeText(), text);
+    UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
 
     Polyhedron rect;
     PolyHedronSetAABB2D(&rect, box.box);
@@ -4784,9 +4784,11 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     Vec2 quadpos = Vec2Lit(topleft.x + box.textbox.aabb.c.x, topleft.y - box.textbox.aabb.c.y);
     DrawStr8Ex(font, Vec2Add(quadpos, box.textbox.baseline_offset), LBLACK, text);
 
-    // parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, AABB2DDims(box.textbox.aabb));
-
     return action;
+}
+
+static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
+    return UIButtonEx(ui, text, clickable, UISizeText(), UISizeText());
 }
 
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
