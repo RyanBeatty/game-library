@@ -4604,6 +4604,7 @@ typedef struct {
     Vec2 cursor_top_left_offset;  // Where the next point to layout a ui element inside of the box is.
 
     Str8 text;
+    TextBox textbox;  // Not positioned. i.e. the center here holds no meaning other than an offset.
 } UIBox;
 
 #define UIBoxGetCursor(bbox) (Vec2Add(AABB2DTopLeft((bbox)->box), (bbox)->cursor_top_left_offset))
@@ -4709,7 +4710,7 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     Vec2 box_max = Vec2Lit(top_left.x + resolved_dims.x, top_left.y);
 
     AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
-    UIBox box = {.box = aabb, .text = text};
+    UIBox box = {.box = aabb, .text = text, .textbox = textbox};
     return box;
 }
 
@@ -4740,12 +4741,11 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
 
     UIBox box = MakeUIBox(ui, UISizePctParent(1.0f), UISizeText(), text);
 
-    TextBox dims = LFontMeasureStr8Quad2(font, text);
-    Vec2 quadpos = Vec2Lit(topleft.x + dims.aabb.c.x, topleft.y - dims.aabb.c.y);
+    Vec2 quadpos = Vec2Lit(topleft.x + box.textbox.aabb.c.x, topleft.y - box.textbox.aabb.c.y);
 
     Polyhedron rect;
     PolyHedronSetAABB2D(&rect, box.box);
-    // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(dims.aabb));
+    // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(box.textbox.aabb));
 
     Polyhedron cursor;
     PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
@@ -4763,9 +4763,9 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     }
 
     DrawQuad2D(box.box.c, AABB2DWidth(box.box), AABB2DHeight(box.box), Mat4Identity(), COLORS[3]);
-    DrawStr8Ex(font, Vec2Add(quadpos, dims.baseline_offset), LBLACK, text);
+    DrawStr8Ex(font, Vec2Add(quadpos, box.textbox.baseline_offset), LBLACK, text);
 
-    parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, AABB2DDims(dims.aabb));
+    parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, AABB2DDims(box.textbox.aabb));
 
     return action;
 }
