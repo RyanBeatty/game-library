@@ -4578,7 +4578,8 @@ typedef struct {
     f32 value;
 } UISize;
 
-typedef enum { UI_TEXT_ALIGN_LEFT = 0 } UITextAlign;
+typedef enum { UI_TEXT_ALIGN_LEFT = 0 } UITextAlignX;
+typedef enum { UI_TEXT_ALIGN_BOTTOM = 0 } UITextAlignY;
 
 typedef struct {
     LFont* data;
@@ -4756,7 +4757,7 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
     UIParent((ui), _ui_container_##__LINE__)
 
-static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlign alignment) {
+static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y) {
     LFont font = UIGetFont(ui);
 
     DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), COLORS[3]);
