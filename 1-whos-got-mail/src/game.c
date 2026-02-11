@@ -4756,7 +4756,7 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
-    UIBox box = MakeUIBox(ui, UISizePctParent(1.0f), UISizeText(), text);
+    UIBox box = MakeUIBox(ui, UISizeText(), UISizeText(), text);
 
     Polyhedron rect;
     PolyHedronSetAABB2D(&rect, box.box);
