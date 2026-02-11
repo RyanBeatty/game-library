@@ -4751,16 +4751,10 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
 
 static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     // Get ui state fields.
-    UIBox* parent = UIGetParent(ui);
-    Vec2 topleft = UIBoxGetCursor(parent);  // I don't think we can just calc an offset to the top left since we need to
-                                            // do collision detection in UI space.
-
     LFont font = UIGetFont(ui);
     GameControllerState* controller = GetController(ui->input, 0);
 
     UIBox box = MakeUIBox(ui, UISizePctParent(1.0f), UISizeText(), text);
-
-    Vec2 quadpos = Vec2Lit(topleft.x + box.textbox.aabb.c.x, topleft.y - box.textbox.aabb.c.y);
 
     Polyhedron rect;
     PolyHedronSetAABB2D(&rect, box.box);
@@ -4782,6 +4776,10 @@ static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
     }
 
     DrawQuad2D(box.box.c, AABB2DWidth(box.box), AABB2DHeight(box.box), Mat4Identity(), COLORS[3]);
+
+    // TODO: Potentially this should just be hidden in the draw text box func.
+    Vec2 topleft = AABB2DTopLeft(box.box);
+    Vec2 quadpos = Vec2Lit(topleft.x + box.textbox.aabb.c.x, topleft.y - box.textbox.aabb.c.y);
     DrawStr8Ex(font, Vec2Add(quadpos, box.textbox.baseline_offset), LBLACK, text);
 
     // parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, AABB2DDims(box.textbox.aabb));
