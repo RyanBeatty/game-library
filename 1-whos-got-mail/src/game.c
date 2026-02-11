@@ -4712,6 +4712,7 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
     UIBox box = {.box = aabb, .text = text, .textbox = textbox};
 
+    // Update parent pos.
     Vec2 box_dims = AABB2DDims(box.box);
     UILayoutDirection dir = UIGetLayoutDirection(ui);
     switch (dir) {
@@ -4728,6 +4729,7 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
             Assert(0);
         }
     }
+    parent->cursor_top_left_offset = Vec2Clamp(parent->cursor_top_left_offset, Vec2Zero(), parent_dims);
 
     return box;
 }
@@ -5395,7 +5397,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 UIButton(&ui, txt, false);
 
                                 bool clickable = gstate->score >= gstate->worker_cost;
-
                                 if (UIButton(&ui, Str8FromC("BUY"), clickable).clicked) {
                                     gstate->score -= gstate->worker_cost;
                                     SpawnWorker(gstate, Vec3Zero());
