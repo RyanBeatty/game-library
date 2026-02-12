@@ -4762,9 +4762,32 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
 
     DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), COLORS[3]);
 
-    Vec2 bottom_left = AABB2DBottomLeft(box->box);
-    Vec2 textbox_center_offset = box->textbox.aabb.c;
+    Vec2 box_dims = AABB2DDims(box->box);
 
+    Vec2 bottom_left = AABB2DBottomLeft(box->box);
+    Vec2 textbox_center_offset = Vec2Zero();
+
+    switch (align_x) {
+        case UI_TEXT_ALIGN_LEFT: {
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown text align x: %d", align_x);
+            Assert(0);
+        }
+    }
+
+    switch (align_y) {
+        case UI_TEXT_ALIGN_BOTTOM: {
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown text align y: %d", align_y);
+            Assert(0);
+        }
+    }
+
+    textbox_center_offset = Vec2Add(textbox_center_offset, box->textbox.aabb.c);
     Vec2 baseline_offset = Vec2Add(textbox_center_offset, box->textbox.baseline_offset);
     Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
     DrawStr8Ex(font, text_pos, LBLACK, box->text);
