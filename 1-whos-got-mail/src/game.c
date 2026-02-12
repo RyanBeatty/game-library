@@ -4763,8 +4763,9 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), COLORS[3]);
 
     Vec2 bottom_left = AABB2DBottomLeft(box->box);
-    Vec2 quadpos = Vec2Add(bottom_left, box->textbox.aabb.c);
-    DrawStr8Ex(font, Vec2Add(quadpos, box->textbox.baseline_offset), LBLACK, box->text);
+    Vec2 textbox_center = Vec2Add(bottom_left, box->textbox.aabb.c);
+    Vec2 textbox_pos = Vec2Add(textbox_center, box->textbox.baseline_offset);
+    DrawStr8Ex(font, textbox_pos, LBLACK, box->text);
 }
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semantic_width, UISize semantic_height) {
@@ -4775,7 +4776,6 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
 
     Polyhedron rect;
     PolyHedronSetAABB2D(&rect, box.box);
-    // PolyHedronSetAABB2DFromWH(&rect, Vec3ToVec2(quadpos), AABB2DDims(box.textbox.aabb));
 
     Polyhedron cursor;
     PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
@@ -4792,7 +4792,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
         action.clicked = true;
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_LEFT);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_LEFT, UI_TEXT_ALIGN_BOTTOM);
 
     return action;
 }
