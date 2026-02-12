@@ -5456,7 +5456,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         bool clickable = gstate->score >= gstate->worker_cooldown_sec_cost;
 
-                        if (UIButton(&ui, txt, clickable).clicked) {
+                        if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
                             gstate->score -= gstate->worker_cooldown_sec_cost;
                             gstate->worker_cooldown_sec *= 0.8f;
                             gstate->worker_cooldown_sec_cost *= 2.0f;
