@@ -4810,10 +4810,9 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
 }
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semantic_width, UISize semantic_height) {
-    // Get ui state fields.
-    GameControllerState* controller = GetController(ui->input, 0);
-
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
+
+    GameControllerState* controller = GetController(ui->input, 0);
 
     Polyhedron rect;
     PolyHedronSetAABB2D(&rect, box.box);
