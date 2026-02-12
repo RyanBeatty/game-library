@@ -4582,7 +4582,10 @@ typedef enum {
     UI_TEXT_ALIGN_X_CENTER = 0,
     UI_TEXT_ALIGN_X_LEFT,
 } UITextAlignX;
-typedef enum { UI_TEXT_ALIGN_BOTTOM = 0 } UITextAlignY;
+typedef enum {
+    UI_TEXT_ALIGN_Y_MIDDLE = 0,
+    UI_TEXT_ALIGN_Y_BOTTOM,
+} UITextAlignY;
 
 typedef struct {
     LFont* data;
@@ -4785,7 +4788,13 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     }
 
     switch (align_y) {
-        case UI_TEXT_ALIGN_BOTTOM: {
+        case UI_TEXT_ALIGN_Y_BOTTOM: {
+            break;
+        }
+        case UI_TEXT_ALIGN_Y_MIDDLE: {
+            // TODO: this might not actually be vertically centered like how most engines do it? It seems like there is
+            // some concept of font height which I don't want to focus on at the moment.
+            textbox_center_offset.y = (0.5f * box_dims.y) - box->textbox.aabb.c.y;
             break;
         }
         default: {
@@ -4824,7 +4833,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
         action.clicked = true;
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_BOTTOM);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE);
 
     return action;
 }
