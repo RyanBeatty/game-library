@@ -4839,7 +4839,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
 }
 
 static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
-    return UIButtonEx(ui, text, clickable, UISizeText(), UISizeText());
+    return UIButtonEx(ui, text, clickable, UISizePctParent(1.0f), UISizeText());
 }
 
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
