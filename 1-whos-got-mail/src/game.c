@@ -4774,6 +4774,10 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         case UI_TEXT_ALIGN_X_LEFT: {
             break;
         }
+        case UI_TEXT_ALIGN_X_CENTER: {
+            textbox_center_offset.x = (0.5f * box_dims.x) - box->textbox.aabb.c.x;
+            break;
+        }
         default: {
             PlatformLog(LLOG_ERROR, "Unknown text align x: %d", align_x);
             Assert(0);
@@ -4820,7 +4824,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
         action.clicked = true;
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_BOTTOM);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_BOTTOM);
 
     return action;
 }
