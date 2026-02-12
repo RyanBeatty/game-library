@@ -4578,7 +4578,10 @@ typedef struct {
     f32 value;
 } UISize;
 
-typedef enum { UI_TEXT_ALIGN_LEFT = 0 } UITextAlignX;
+typedef enum {
+    UI_TEXT_ALIGN_X_CENTER = 0,
+    UI_TEXT_ALIGN_X_LEFT,
+} UITextAlignX;
 typedef enum { UI_TEXT_ALIGN_BOTTOM = 0 } UITextAlignY;
 
 typedef struct {
@@ -4768,7 +4771,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     Vec2 textbox_center_offset = Vec2Zero();
 
     switch (align_x) {
-        case UI_TEXT_ALIGN_LEFT: {
+        case UI_TEXT_ALIGN_X_LEFT: {
             break;
         }
         default: {
@@ -4817,7 +4820,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
         action.clicked = true;
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_LEFT, UI_TEXT_ALIGN_BOTTOM);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_BOTTOM);
 
     return action;
 }
