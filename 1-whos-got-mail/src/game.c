@@ -4579,6 +4579,14 @@ typedef struct {
 } UISize;
 
 typedef enum {
+    UI_FLAG_NONE = 0,
+    UI_FLAG_CLICKABLE = 1 << 0,
+    UI_FLAG_DRAW = 1 << 1,
+} UIFlag;
+
+#define UITestFlag(flags, flag) ((flags) & (flag))
+
+typedef enum {
     UI_TEXT_ALIGN_X_CENTER = 0,
     UI_TEXT_ALIGN_X_LEFT,
 } UITextAlignX;
@@ -4809,7 +4817,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     DrawStr8Ex(font, text_pos, LBLACK, box->text);
 }
 
-static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semantic_width, UISize semantic_height) {
+static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
 
     GameControllerState* controller = GetController(ui->input, 0);
@@ -4828,7 +4836,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
     // we might have triggered gameplay actions as well since this logic check happens after the
     // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
     // But they are coupled for the time being.
-    if (collides && controller->action_down.pressed && clickable) {
+    if (collides && controller->action_down.pressed && UITestFlag(flags, UI_FLAG_CLICKABLE)) {
         action.clicked = true;
     }
 
@@ -4837,8 +4845,8 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, bool clickable, UISize semant
     return action;
 }
 
-static UIAction UIButton(UIState* ui, Str8 text, bool clickable) {
-    return UIButtonEx(ui, text, clickable, UISizePctParent(1.0f), UISizeText());
+static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
+    return UIButtonEx(ui, text, flags, UISizePctParent(1.0f), UISizeText());
 }
 
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
@@ -5440,7 +5448,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
                         Str8 txt = Str8FromC(buffer);
-                        bool clickable = gstate->score >= gstate->worker_cost;
+                        UIFlag clickable = gstate->score >= gstate->worker_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
                         if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
                             gstate->score -= gstate->worker_cost;
                             SpawnWorker(gstate, Vec3Zero());
@@ -5453,7 +5461,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Worker Speed: $%.2f",
                                  gstate->worker_cooldown_sec_cost);
                         Str8 txt = Str8FromC(buffer);
-                        bool clickable = gstate->score >= gstate->worker_cooldown_sec_cost;
+                        UIFlag clickable =
+                            gstate->score >= gstate->worker_cooldown_sec_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
 
                         if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
                             gstate->score -= gstate->worker_cooldown_sec_cost;
@@ -5483,7 +5492,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: MAXED OUT");
                         }
                         Str8 txt = Str8FromC(buffer);
-                        bool clickable = e_to_upgrade != NULL && gstate->score >= cost;
+                        UIFlag clickable =
+                            e_to_upgrade != NULL && gstate->score >= cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
 
                         if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= cost;
@@ -5500,7 +5510,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
                             Str8 txt = Str8FromC(buffer);
-                            bool clickable = gstate->score >= *cost;
+                            UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
 
                             if (UIButton(&ui, txt, clickable).clicked) {
                                 gstate->score -= *cost;
@@ -5530,7 +5540,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: MAXED OUT");
                             }
                             Str8 txt = Str8FromC(buffer);
-                            bool clickable = e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2;
+                            UIFlag clickable =
+                                (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
+                                    ? UI_FLAG_CLICKABLE
+                                    : UI_FLAG_NONE;
 
                             if (UIButton(&ui, txt, clickable).clicked) {
                                 gstate->score -= *cost;
@@ -5549,7 +5562,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         char buffer[256] = {0};
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Researchers: $%.2f", *cost);
                         Str8 txt = Str8FromC(buffer);
-                        bool clickable = gstate->score >= *cost;
+                        UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
 
                         if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= *cost;
@@ -5578,7 +5591,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: MAXED OUT");
                         }
                         Str8 txt = Str8FromC(buffer);
-                        bool clickable = e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2;
+                        UIFlag clickable = (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
+                                               ? UI_FLAG_CLICKABLE
+                                               : UI_FLAG_NONE;
 
                         if (UIButton(&ui, txt, clickable).clicked) {
                             gstate->score -= *cost;
