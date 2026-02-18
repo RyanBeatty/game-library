@@ -5015,7 +5015,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->worker_cost = 4.0f;
         gstate->upgraded_worker_count = 0;
         gstate->day = -1;
-        gstate->worker_cooldown_sec = 1.0f;
+        gstate->worker_cooldown_sec = 3.0f;
         gstate->worker_cooldown_sec_cost = 8.0f;
         gstate->num_sorted = 0;
 
@@ -5307,7 +5307,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            bool debug = true;
+            bool debug = false;
             if (debug) {
                 gstate->score = 1000000.0f;
                 gstate->score2 = 1000000.0f;
