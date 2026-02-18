@@ -4581,7 +4581,7 @@ typedef struct {
 typedef enum {
     UI_FLAG_NONE = 0,
     UI_FLAG_CLICKABLE = 1 << 0,
-    UI_FLAG_DRAW = 1 << 1,
+    UI_FLAG_HIDE = 1 << 1,  // Note that by default we draw boxes.
 } UIFlag;
 
 #define UITestFlag(flags, flag) ((flags) & (flag))
@@ -4771,7 +4771,11 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
     UIParent((ui), _ui_container_##__LINE__)
 
-static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y) {
+static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags) {
+    if (UITestFlag(flags, UI_FLAG_HIDE)) {
+        return;
+    }
+
     LFont font = UIGetFont(ui);
 
     DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), COLORS[3]);
@@ -4840,7 +4844,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
         action.clicked = true;
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE, flags);
 
     return action;
 }
@@ -5475,7 +5479,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    if (gstate->worker_count >= 6) {
+                    {
                         Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
                         for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
                             if (e_to_upgrade->pickup_count == 1) {
@@ -5494,8 +5498,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Str8 txt = Str8FromC(buffer);
                         UIFlag clickable =
                             e_to_upgrade != NULL && gstate->score >= cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                        UIFlag hide = (gstate->worker_count < 6) ? UI_FLAG_HIDE : UI_FLAG_NONE;
 
-                        if (UIButton(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable | hide).clicked) {
                             gstate->score -= cost;
                             cost *= 2.0f;
                             UpgradeWorker(gstate, e_to_upgrade);
