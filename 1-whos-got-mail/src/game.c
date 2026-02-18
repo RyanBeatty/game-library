@@ -5507,7 +5507,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    if (gstate->upgraded_worker_count >= 4.0f) {
+                    {
+                        UIFlag hide = (gstate->upgraded_worker_count < 4.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
                         {
                             f32 pay = 100.0f;
                             f32* cost = &pay;
@@ -5517,7 +5519,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Str8 txt = Str8FromC(buffer);
                             UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
 
-                            if (UIButton(&ui, txt, clickable).clicked) {
+                            if (UIButton(&ui, txt, clickable | hide).clicked) {
                                 gstate->score -= *cost;
                                 *cost *= 2.0f;
                                 SpawnResearcher(gstate, Vec3Zero());
@@ -5550,7 +5552,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     ? UI_FLAG_CLICKABLE
                                     : UI_FLAG_NONE;
 
-                            if (UIButton(&ui, txt, clickable).clicked) {
+                            if (UIButton(&ui, txt, clickable | hide).clicked) {
                                 gstate->score -= *cost;
                                 *cost *= 2.0f;
                                 gstate->score2 -= *cost2;
@@ -5560,7 +5562,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    if (gstate->researcher_count >= 1.0f) {
+                    {
                         f32 pay = 100.0f;
                         f32* cost = &pay;
 
@@ -5568,15 +5570,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Researchers: $%.2f", *cost);
                         Str8 txt = Str8FromC(buffer);
                         UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                        UIFlag hide = (gstate->researcher_count < 1.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
 
-                        if (UIButton(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable | hide).clicked) {
                             gstate->score -= *cost;
                             *cost *= 2.0f;
                             gstate->researcher_cooldown_sec *= 0.8f;
                         }
                     }
 
-                    if (gstate->upgraded_worker_count2 >= 4) {
+                    {
                         Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
                         for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
                             if (e_to_upgrade->pickup_count == 3) {
@@ -5599,8 +5602,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UIFlag clickable = (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
                                                ? UI_FLAG_CLICKABLE
                                                : UI_FLAG_NONE;
+                        UIFlag hide = (gstate->upgraded_worker_count2 < 4) ? UI_FLAG_HIDE : UI_FLAG_NONE;
 
-                        if (UIButton(&ui, txt, clickable).clicked) {
+                        if (UIButton(&ui, txt, clickable | hide).clicked) {
                             gstate->score -= *cost;
                             *cost *= 2.0f;
                             gstate->score2 -= *cost2;
