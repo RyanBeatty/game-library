@@ -4663,6 +4663,7 @@ typedef struct {
 
 typedef struct {
     bool clicked;
+    bool down;
     bool hover;
 } UIAction;
 
@@ -4792,6 +4793,7 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     UIParent((ui), _ui_container_##__LINE__)
 
 #define ColorHover(color) (Lighten((color), 0.15f))
+#define ColorDown(color) (Darken((color), 0.12f))
 
 static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags,
                         UIAction action) {
@@ -4839,7 +4841,9 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     // Draw backing box.
     {
         Vec4 box_color = COLORS[3];
-        if (UITestFlag(flags, UI_FLAG_CLICKABLE) && action.hover) {
+        if (action.down) {
+            box_color = ColorDown(box_color);
+        } else if (action.hover) {
             box_color = ColorHover(box_color);
         }
 
@@ -4871,11 +4875,10 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
     // we might have triggered gameplay actions as well since this logic check happens after the
     // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
     // But they are coupled for the time being.
-    if (collides) {
+    if (collides && UITestFlag(flags, UI_FLAG_CLICKABLE)) {
         action.hover = true;
-        if (controller->action_down.pressed && UITestFlag(flags, UI_FLAG_CLICKABLE)) {
-            action.clicked = true;
-        }
+        action.clicked = controller->action_down.pressed;
+        action.down = controller->action_down.down;
     }
 
     DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE, flags, action);
