@@ -34,6 +34,25 @@ static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255
 static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 static const Vec4 LWHITE = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
 
+// Lerp towards white.
+static Vec4 Lighten(Vec4 color, f32 t) {
+    return (Vec4){
+        .r = (1.0f - t) * color.r + t,
+        .g = (1.0f - t) * color.g + t,
+        .b = (1.0f - t) * color.b + t,
+        .a = (1.0f - t) * color.a + t,
+    };
+}
+
+static Vec4 Darken(Vec4 color, f32 t) {
+    return (Vec4){
+        .r = (1.0f - t) * color.r,
+        .g = (1.0f - t) * color.g,
+        .b = (1.0f - t) * color.b,
+        .a = (1.0f - t) * color.a,
+    };
+}
+
 ////////////////////////////////////////////////////////////
 // S:Render Data
 
@@ -4644,6 +4663,7 @@ typedef struct {
 
 typedef struct {
     bool clicked;
+    bool hover;
 } UIAction;
 
 #define UIGetFont(ui) (ArrTail(&(ui)->fonts))
@@ -4771,14 +4791,15 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
     UIParent((ui), _ui_container_##__LINE__)
 
-static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags) {
+#define ColorHover(color) (Lighten((color), 0.15f))
+
+static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags,
+                        UIAction action) {
     if (UITestFlag(flags, UI_FLAG_HIDE)) {
         return;
     }
 
     LFont font = UIGetFont(ui);
-
-    DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), COLORS[3]);
 
     Vec2 box_dims = AABB2DDims(box->box);
 
@@ -4815,6 +4836,16 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         }
     }
 
+    // Draw backing box.
+    {
+        Vec4 box_color = COLORS[3];
+        if (UITestFlag(flags, UI_FLAG_CLICKABLE) && action.hover) {
+            box_color = ColorHover(box_color);
+        }
+
+        DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), box_color);
+    }
+
     textbox_center_offset = Vec2Add(textbox_center_offset, box->textbox.aabb.c);
     Vec2 baseline_offset = Vec2Add(textbox_center_offset, box->textbox.baseline_offset);
     Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
@@ -4840,11 +4871,14 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
     // we might have triggered gameplay actions as well since this logic check happens after the
     // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
     // But they are coupled for the time being.
-    if (collides && controller->action_down.pressed && UITestFlag(flags, UI_FLAG_CLICKABLE)) {
-        action.clicked = true;
+    if (collides) {
+        action.hover = true;
+        if (controller->action_down.pressed && UITestFlag(flags, UI_FLAG_CLICKABLE)) {
+            action.clicked = true;
+        }
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE, flags);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE, flags, action);
 
     return action;
 }
@@ -5319,7 +5353,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            bool debug = false;
+            bool debug = true;
             if (debug) {
                 gstate->score = 1000000.0f;
                 gstate->score2 = 1000000.0f;
