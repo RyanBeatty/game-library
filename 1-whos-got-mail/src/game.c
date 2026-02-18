@@ -5016,7 +5016,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->upgraded_worker_count = 0;
         gstate->day = -1;
         gstate->worker_cooldown_sec = 3.0f;
-        gstate->worker_cooldown_sec_cost = 8.0f;
+        gstate->worker_cooldown_sec_cost = 16.0f;
         gstate->num_sorted = 0;
 
         gstate->researcher_cooldown_sec = 3.0f;
@@ -5458,7 +5458,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
                             gstate->score -= gstate->worker_cooldown_sec_cost;
                             gstate->worker_cooldown_sec *= 0.8f;
-                            gstate->worker_cooldown_sec_cost *= 2.0f;
+                            gstate->worker_cooldown_sec_cost *= 3.0f;
 
                             static i32 PRESSED = 0;
                             ++PRESSED;
