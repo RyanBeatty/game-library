@@ -4971,12 +4971,12 @@ static void StartNewDay(GameState* gstate) {
         }
     }
 
-    // Spawn workers
-    for (isize i = 0; i < 1; ++i) {
-        Vec3 worker_pos = Vec3Lit(i, 0, 0);
-        Vec3 pos = Vec3WTransform(worker_pos, mail_to_world);
-        SpawnWorker(gstate, pos);
-    }
+    // // Spawn workers
+    // for (isize i = 0; i < 1; ++i) {
+    //     Vec3 worker_pos = Vec3Lit(i, 0, 0);
+    //     Vec3 pos = Vec3WTransform(worker_pos, mail_to_world);
+    //     SpawnWorker(gstate, pos);
+    // }
 
     // Important or the first couple frames our entities will teleport from origin to starting positions.
     for (Entity* e = NULL; IncrementEntity(&e);) {
@@ -5009,10 +5009,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
-        gstate->score = 0.0f;
+        gstate->score = 2.0f;
         gstate->score2 = 0.0f;
         gstate->worker_count = 0;
-        gstate->worker_cost = 4.0f;
+        gstate->worker_cost = 2.0f;
         gstate->upgraded_worker_count = 0;
         gstate->day = -1;
         gstate->worker_cooldown_sec = 3.0f;
