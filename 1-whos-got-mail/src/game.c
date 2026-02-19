@@ -4750,7 +4750,6 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     Vec2 box_max = Vec2Lit(top_left.x + resolved_dims.x, top_left.y);
 
     AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
-    breakpoint();
     UIBox box = {.box = aabb, .text = text, .textbox = textbox};
 
     // Update parent pos.
@@ -4852,7 +4851,6 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
 }
 
 static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
-    breakpoint();
     UIBox container = MakeUIBox(ui, width, height, Str8Zero());
     UIAction action = {0};
     DrawUIBoxEx(ui, &container, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
@@ -4865,7 +4863,8 @@ static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
     UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (width), (height)); \
     UIParent((ui), _ui_container_##__LINE__)
 
-static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
+static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
+                        UISize semantic_width, UISize semantic_height) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
 
     GameControllerState* controller = GetController(ui->input, 0);
@@ -4890,13 +4889,23 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
         action.down = controller->action_down.down;
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE, flags | UI_FLAG_ABLE_TO_BE_CLICKED, action);
+    DrawUIBoxEx(ui, &box, align_x, align_y, flags, action);
 
     return action;
 }
 
+static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
+    return UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE,
+                   semantic_width, semantic_height);
+}
+
 static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
     return UIButtonEx(ui, text, flags, UISizePctParent(1.0f), UISizeText());
+}
+
+static UIAction UIText(UIState* ui, Str8 text, UIFlag flags) {
+    return UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_Y_MIDDLE,
+                   UISizePctParent(1.0f), UISizeText());
 }
 
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
@@ -5391,57 +5400,58 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 top_left_offset = AABB2DTopLeft(parent2);
                     top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
                     UISetCursor(&ui, top_left_offset);
-                    UIContainer(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)){};
+                    UIContainer(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)) {
+                        Vec2 spacing = Vec2Lit(0.0f, 20.0f);
+                        Vec2 pos = Vec2Lit(10.0f, height);
 
-                    Vec2 spacing = Vec2Lit(0.0f, 20.0f);
-                    Vec2 pos = Vec2Lit(10.0f, height);
+                        {
+                            pos = Vec2Sub(pos, spacing);
 
-                    {
-                        pos = Vec2Sub(pos, spacing);
+                            i32 time_sec_int = (i32)gstate->timer_sec;
+                            i32 minutes = time_sec_int / 60;
+                            i32 seconds = time_sec_int - (minutes * 60);
 
-                        i32 time_sec_int = (i32)gstate->timer_sec;
-                        i32 minutes = time_sec_int / 60;
-                        i32 seconds = time_sec_int - (minutes * 60);
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
+                            Str8 txt = Str8FromC(buffer);
+                            Vec2 dims = LFontMeasureStr8(font, txt);
+                            pos.y -= dims.y;
+                            // DrawStr8Ex(font, pos, LBLACK, txt);
+                            UIText(&ui, txt, UI_FLAG_NONE);
+                        }
 
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
-                        pos.y -= dims.y;
-                        DrawStr8Ex(font, pos, LBLACK, txt);
-                    }
+                        // {
+                        //     pos = Vec2Sub(pos, spacing);
 
-                    {
-                        pos = Vec2Sub(pos, spacing);
+                        //     char buffer[256] = {0};
+                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
+                        //     Str8 txt = Str8FromC(buffer);
+                        //     Vec2 dims = LFontMeasureStr8(font, txt);
+                        //     pos.y -= dims.y;
+                        //     DrawStr8Ex(font, pos, LBLACK, txt);
+                        // }
 
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
-                        pos.y -= dims.y;
-                        DrawStr8Ex(font, pos, LBLACK, txt);
-                    }
+                        // if (gstate->upgraded_worker_count >= 4.0f) {
+                        //     pos = Vec2Sub(pos, spacing);
 
-                    if (gstate->upgraded_worker_count >= 4.0f) {
-                        pos = Vec2Sub(pos, spacing);
+                        //     char buffer[256] = {0};
+                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
+                        //     Str8 txt = Str8FromC(buffer);
+                        //     Vec2 dims = LFontMeasureStr8(font, txt);
+                        //     pos.y -= dims.y;
+                        //     DrawStr8Ex(font, pos, LBLACK, txt);
+                        // }
 
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
-                        pos.y -= dims.y;
-                        DrawStr8Ex(font, pos, LBLACK, txt);
-                    }
+                        // {
+                        //     pos = Vec2Sub(pos, spacing);
 
-                    {
-                        pos = Vec2Sub(pos, spacing);
-
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
-                        Str8 txt = Str8FromC(buffer);
-                        Vec2 dims = LFontMeasureStr8(font, txt);
-                        pos.y -= dims.y;
-                        DrawStr8Ex(font, pos, LBLACK, txt);
+                        //     char buffer[256] = {0};
+                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
+                        //     Str8 txt = Str8FromC(buffer);
+                        //     Vec2 dims = LFontMeasureStr8(font, txt);
+                        //     pos.y -= dims.y;
+                        //     DrawStr8Ex(font, pos, LBLACK, txt);
+                        // }
                     }
                 }
 
