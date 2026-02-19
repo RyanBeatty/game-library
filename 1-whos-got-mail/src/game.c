@@ -4683,6 +4683,13 @@ typedef struct {
 #define UIPopParent(ui) (ArrPop(&(ui)->parents))
 #define UIParent(ui, pparent) Scoped(UIPushParent((ui), (pparent)), UIPopParent((ui)))
 
+// Set the current parent's cursor offset to pos.
+static void UISetCursor(UIState* ui, Vec2 pos) {
+    UIBox* root = UIGetParent(ui);
+    // TODO: We should potentially add some checks or clamping around setting a cursor outside of the parent's window.
+    root->cursor_top_left_offset = pos;
+}
+
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->spacings, perm, Vec2, 1);
 
@@ -5486,7 +5493,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     spacing = Vec2Lit(0.0f, 0.0f);
 
                     UIState ui = {0};
-                    UIStateBegin(&ui, &gstate->temp, AABB2DWidth(parent3), AABB2DHeight(parent3), input);
+                    UIStateBegin(&ui, &gstate->temp, width, height, input);
                     UIPushFont(&ui, font);
                     UIPushSpacing(&ui, spacing);
 
