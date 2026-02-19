@@ -4635,7 +4635,8 @@ typedef struct {
     // The box's center should be in world position.
     // TODO: Longer term I should probably think about just storing an offset to parent and a dimension
     // Then you recalculate the world position each frame from the parent (root of tree will get actual screen top left
-    // as position coordinate).
+    // as position coordinate). But because we recreate all boxes for the UI each frame, might not be necessary to do
+    // this at the moment.
     AABB2D box;
 
     Vec2 cursor_top_left_offset;  // Where the next point to layout a ui element inside of the box is.
@@ -4683,9 +4684,9 @@ typedef struct {
 #define UIParent(ui, pparent) Scoped(UIPushParent((ui), (pparent)), UIPopParent((ui)))
 
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
-    InitArr(&ui->fonts, perm, LFont, 1);
     InitArr(&ui->spacings, perm, Vec2, 1);
 
+    InitArr(&ui->fonts, perm, LFont, 1);
     InitArr(&ui->layout_dirs, perm, UILayoutDirection, 2);
     UIPushLayoutDirection(ui, UI_LAYOUT_DOWN);
 
@@ -5486,9 +5487,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     UIState ui = {0};
                     UIStateBegin(&ui, &gstate->temp, AABB2DWidth(parent3), AABB2DHeight(parent3), input);
-                    UIPushParent(&ui, parent3_box);
                     UIPushFont(&ui, font);
                     UIPushSpacing(&ui, spacing);
+
+                    UIPushParent(&ui, parent3_box);
 
                     {
                         char buffer[256] = {0};
