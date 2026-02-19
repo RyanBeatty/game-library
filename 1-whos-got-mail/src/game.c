@@ -5379,11 +5379,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             {
                 LFont font = GetLFontClosest(40.0f);
 
-                AABB2D parent2 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, height * 0.7f), hmargin),
-                                                  Vec2Sub(Vec2Lit(width * 0.25f, height), hmargin));
-                DrawQuad(Vec2ToVec3(parent2.c), parent2.r.x * 2.0f, parent2.r.y * 2.0f, Mat4Identity(), COLORS[0]);
-
                 {
+                    AABB2D parent2 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, height * 0.7f), hmargin),
+                                                      Vec2Sub(Vec2Lit(width * 0.25f, height), hmargin));
+                    Vec2 parent2_dims = AABB2DDims(parent2);
+
+                    UIState ui = {0};
+                    UIStateBegin(&ui, &gstate->temp, width, height, input);
+                    UIPushFont(&ui, font);
+
+                    Vec2 top_left_offset = AABB2DTopLeft(parent2);
+                    top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
+                    UISetCursor(&ui, top_left_offset);
+                    UIContainer(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)){};
+
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
                     Vec2 pos = Vec2Lit(10.0f, height);
 
