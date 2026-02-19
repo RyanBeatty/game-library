@@ -4793,43 +4793,6 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         return;
     }
 
-    LFont font = UIGetFont(ui);
-
-    Vec2 box_dims = AABB2DDims(box->box);
-
-    Vec2 bottom_left = AABB2DBottomLeft(box->box);
-    Vec2 textbox_center_offset = Vec2Zero();
-
-    switch (align_x) {
-        case UI_TEXT_ALIGN_X_LEFT: {
-            break;
-        }
-        case UI_TEXT_ALIGN_X_CENTER: {
-            textbox_center_offset.x = (0.5f * box_dims.x) - box->textbox.aabb.c.x;
-            break;
-        }
-        default: {
-            PlatformLog(LLOG_ERROR, "Unknown text align x: %d", align_x);
-            Assert(0);
-        }
-    }
-
-    switch (align_y) {
-        case UI_TEXT_ALIGN_Y_BOTTOM: {
-            break;
-        }
-        case UI_TEXT_ALIGN_Y_MIDDLE: {
-            // TODO: this might not actually be vertically centered like how most engines do it? It seems like there is
-            // some concept of font height which I don't want to focus on at the moment.
-            textbox_center_offset.y = (0.5f * box_dims.y) - box->textbox.aabb.c.y;
-            break;
-        }
-        default: {
-            PlatformLog(LLOG_ERROR, "Unknown text align y: %d", align_y);
-            Assert(0);
-        }
-    }
-
     // Draw backing box.
     {
         Vec4 box_color = COLORS[3];
@@ -4846,10 +4809,49 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), box_color);
     }
 
-    textbox_center_offset = Vec2Add(textbox_center_offset, box->textbox.aabb.c);
-    Vec2 baseline_offset = Vec2Add(textbox_center_offset, box->textbox.baseline_offset);
-    Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
-    DrawStr8Ex(font, text_pos, LBLACK, box->text);
+    if (Str8Len(box->text)) {
+        LFont font = UIGetFont(ui);
+
+        Vec2 box_dims = AABB2DDims(box->box);
+
+        Vec2 bottom_left = AABB2DBottomLeft(box->box);
+        Vec2 textbox_center_offset = Vec2Zero();
+
+        switch (align_x) {
+            case UI_TEXT_ALIGN_X_LEFT: {
+                break;
+            }
+            case UI_TEXT_ALIGN_X_CENTER: {
+                textbox_center_offset.x = (0.5f * box_dims.x) - box->textbox.aabb.c.x;
+                break;
+            }
+            default: {
+                PlatformLog(LLOG_ERROR, "Unknown text align x: %d", align_x);
+                Assert(0);
+            }
+        }
+
+        switch (align_y) {
+            case UI_TEXT_ALIGN_Y_BOTTOM: {
+                break;
+            }
+            case UI_TEXT_ALIGN_Y_MIDDLE: {
+                // TODO: this might not actually be vertically centered like how most engines do it? It seems like there
+                // is some concept of font height which I don't want to focus on at the moment.
+                textbox_center_offset.y = (0.5f * box_dims.y) - box->textbox.aabb.c.y;
+                break;
+            }
+            default: {
+                PlatformLog(LLOG_ERROR, "Unknown text align y: %d", align_y);
+                Assert(0);
+            }
+        }
+
+        textbox_center_offset = Vec2Add(textbox_center_offset, box->textbox.aabb.c);
+        Vec2 baseline_offset = Vec2Add(textbox_center_offset, box->textbox.baseline_offset);
+        Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
+        DrawStr8Ex(font, text_pos, LBLACK, box->text);
+    }
 }
 
 static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {

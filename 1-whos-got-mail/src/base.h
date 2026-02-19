@@ -153,6 +153,7 @@ typedef struct {
 #define Str8Lit(s) ((Str8){.data = (s), .len = (ArraySizeOf((s)) - 1)})
 #define Str8FromC(s) ((Str8){.data = (s), .len = strlen(s)})
 #define Str8Zero() ((Str8){.data = NULL, .len = 0})
+#define Str8Len(s) ((s).len)
 
 static Str8 Str8FromByteBuffer(ByteBuffer buffer);
 
