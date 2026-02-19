@@ -4587,10 +4587,12 @@ static Vec4 COLORS[] = {
 typedef enum {
     UI_SIZE_TEXT = 0,
     UI_SIZE_PCT_OF_PARENT,
+    UI_SIZE_PIXEL,
 } UISizeKind;
 
 #define UISizeText() ((UISize){.kind = UI_SIZE_TEXT})
 #define UISizePctParent(vv) ((UISize){.kind = UI_SIZE_PCT_OF_PARENT, .value = (vv)})
+#define UISizePx(px) ((UISize){.kind = UI_SIZE_PIXEL, .value = (px)})
 
 typedef struct {
     UISizeKind kind;
@@ -4601,6 +4603,8 @@ typedef enum {
     UI_FLAG_NONE = 0,
     UI_FLAG_CLICKABLE = 1 << 0,
     UI_FLAG_HIDE = 1 << 1,  // Note that by default we draw boxes.
+    // i.e. a button.
+    UI_FLAG_ABLE_TO_BE_CLICKED = 1 << 2,
 } UIFlag;
 
 #define UITestFlag(flags, flag) ((flags) & (flag))
@@ -4639,6 +4643,9 @@ typedef struct {
     // this at the moment.
     AABB2D box;
 
+    // Note that this should be a *negative* offset from the top left. i.e. top left + this = next layout position.
+    // TODO: I should potentially change to make everything based off of the bottom left as I think the math will be
+    // less confusing.
     Vec2 cursor_top_left_offset;  // Where the next point to layout a ui element inside of the box is.
 
     Str8 text;
@@ -4746,6 +4753,11 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
                 resolved_dims.f[i] = semantic_sizes[i].value * parent_dims.f[i];
                 break;
             }
+            case UI_SIZE_PIXEL: {
+                // Do I need to clamp this to parent dims?
+                resolved_dims.f[i] = semantic_sizes[i].value;
+                break;
+            }
             default: {
                 PlatformLog(LLOG_ERROR, "UNKNOWN UI Size Kind: %d", semantic_sizes[i].kind);
                 Assert(0);
@@ -4757,6 +4769,7 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     Vec2 box_max = Vec2Lit(top_left.x + resolved_dims.x, top_left.y);
 
     AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
+    breakpoint();
     UIBox box = {.box = aabb, .text = text, .textbox = textbox};
 
     // Update parent pos.
@@ -4795,15 +4808,18 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
 
     // Draw backing box.
     {
-        Vec4 box_color = COLORS[3];
-        if (UITestFlag(flags, UI_FLAG_CLICKABLE)) {
-            if (action.down) {
-                box_color = ColorDown(box_color);
-            } else if (action.hover) {
-                box_color = ColorHover(box_color);
+        Vec4 box_color = COLORS[0];
+        if (UITestFlag(flags, UI_FLAG_ABLE_TO_BE_CLICKED)) {
+            box_color = COLORS[3];
+            if (UITestFlag(flags, UI_FLAG_CLICKABLE)) {
+                if (action.down) {
+                    box_color = ColorDown(box_color);
+                } else if (action.hover) {
+                    box_color = ColorHover(box_color);
+                }
+            } else {
+                box_color = ColorUnclickable(box_color);
             }
-        } else {
-            box_color = ColorUnclickable(box_color);
         }
 
         DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), box_color);
@@ -4865,10 +4881,18 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
     return box;
 }
 
+static UIBox MakeUIContainer2(UIState* ui, UISize width, UISize height) {
+    breakpoint();
+    UIBox container = MakeUIBox(ui, width, height, Str8Zero());
+    UIAction action = {0};
+    DrawUIBoxEx(ui, &container, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
+    return container;
+}
+
 // Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
 // incorrect parent in MakeUIContainer for sizing and positioning.
-#define UIContainer(ui, dims)                                       \
-    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
+#define UIContainer(ui, width, height)                                          \
+    UIBox _ui_container_##__LINE__ = MakeUIContainer2((ui), (width), (height)); \
     UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
@@ -4896,7 +4920,7 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
         action.down = controller->action_down.down;
     }
 
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE, flags, action);
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE, flags | UI_FLAG_ABLE_TO_BE_CLICKED, action);
 
     return action;
 }
@@ -5489,7 +5513,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                       Vec2Sub(Vec2Lit(width * 0.25f, height * 0.7f), hmargin));
                     Vec2 parent3_dims = AABB2DDims(parent3);
                     UIBox parent3_box = {.box = parent3, .cursor_top_left_offset = Vec2Zero()};
-                    DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
+                    // DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
 
                     Vec2 spacing = Vec2Lit(0.0f, 20.0f);
                     spacing = Vec2Lit(0.0f, 0.0f);
@@ -5499,111 +5523,169 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushFont(&ui, font);
                     UIPushSpacing(&ui, spacing);
 
-                    UIPushParent(&ui, parent3_box);
+                    Vec2 temp_top_left = AABB2DTopLeft(parent3_box.box);
+                    temp_top_left = Vec2Sub(temp_top_left, Vec2Lit(0.0f, height));
+                    UISetCursor(&ui, temp_top_left);
+                    UIContainer(&ui, UISizePx(parent3_dims.x), UISizePx(parent3_dims.y)) {
+                        // UIPushParent(&ui, parent3_box);
 
-                    {
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
-                        Str8 txt = Str8FromC(buffer);
-                        UIFlag clickable = gstate->score >= gstate->worker_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-                        if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
-                            gstate->score -= gstate->worker_cost;
-                            SpawnWorker(gstate, Vec3Zero());
-                            gstate->worker_cost *= 2.0f;
-                        }
-                    }
-
-                    {
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Worker Speed: $%.2f",
-                                 gstate->worker_cooldown_sec_cost);
-                        Str8 txt = Str8FromC(buffer);
-                        UIFlag clickable =
-                            gstate->score >= gstate->worker_cooldown_sec_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-
-                        if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
-                            gstate->score -= gstate->worker_cooldown_sec_cost;
-                            gstate->worker_cooldown_sec *= 0.8f;
-                            gstate->worker_cooldown_sec_cost *= 3.0f;
-
-                            static i32 PRESSED = 0;
-                            ++PRESSED;
-                            PlatformLog(LLOG_INFO, "Worker Speed Pressed: %d", PRESSED);
-                        }
-                    }
-
-                    {
-                        Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
-                        for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
-                            if (e_to_upgrade->pickup_count == 1) {
-                                break;
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
+                            Str8 txt = Str8FromC(buffer);
+                            UIFlag clickable = gstate->score >= gstate->worker_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                            if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
+                                gstate->score -= gstate->worker_cost;
+                                SpawnWorker(gstate, Vec3Zero());
+                                gstate->worker_cost *= 2.0f;
                             }
                         }
 
-                        f32 cost = 200.0f;
-
-                        char buffer[256] = {0};
-                        if (e_to_upgrade) {
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: $%.2f", cost);
-                        } else {
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: MAXED OUT");
-                        }
-                        Str8 txt = Str8FromC(buffer);
-                        UIFlag clickable =
-                            e_to_upgrade != NULL && gstate->score >= cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-                        UIFlag hide = (gstate->worker_count < 6) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
-                        if (UIButton(&ui, txt, clickable | hide).clicked) {
-                            gstate->score -= cost;
-                            cost *= 2.0f;
-                            UpgradeWorker(gstate, e_to_upgrade);
-                        }
-                    }
-
-                    {
-                        UIFlag hide = (gstate->upgraded_worker_count < 4.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
                         {
-                            f32 pay = 100.0f;
-                            f32* cost = &pay;
-
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Worker Speed: $%.2f",
+                                     gstate->worker_cooldown_sec_cost);
                             Str8 txt = Str8FromC(buffer);
-                            UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                            UIFlag clickable =
+                                gstate->score >= gstate->worker_cooldown_sec_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
 
-                            if (UIButton(&ui, txt, clickable | hide).clicked) {
-                                gstate->score -= *cost;
-                                *cost *= 2.0f;
-                                SpawnResearcher(gstate, Vec3Zero());
+                            if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
+                                gstate->score -= gstate->worker_cooldown_sec_cost;
+                                gstate->worker_cooldown_sec *= 0.8f;
+                                gstate->worker_cooldown_sec_cost *= 3.0f;
+
+                                static i32 PRESSED = 0;
+                                ++PRESSED;
+                                PlatformLog(LLOG_INFO, "Worker Speed Pressed: %d", PRESSED);
                             }
                         }
 
                         {
                             Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
                             for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
-                                if (e_to_upgrade->pickup_count == 2) {
+                                if (e_to_upgrade->pickup_count == 1) {
                                     break;
                                 }
                             }
 
+                            f32 cost = 200.0f;
+
+                            char buffer[256] = {0};
+                            if (e_to_upgrade) {
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: $%.2f", cost);
+                            } else {
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: MAXED OUT");
+                            }
+                            Str8 txt = Str8FromC(buffer);
+                            UIFlag clickable =
+                                e_to_upgrade != NULL && gstate->score >= cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                            UIFlag hide = (gstate->worker_count < 6) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
+                            if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                gstate->score -= cost;
+                                cost *= 2.0f;
+                                UpgradeWorker(gstate, e_to_upgrade);
+                            }
+                        }
+
+                        {
+                            UIFlag hide = (gstate->upgraded_worker_count < 4.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
+                            {
+                                f32 pay = 100.0f;
+                                f32* cost = &pay;
+
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
+                                Str8 txt = Str8FromC(buffer);
+                                UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+
+                                if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                    gstate->score -= *cost;
+                                    *cost *= 2.0f;
+                                    SpawnResearcher(gstate, Vec3Zero());
+                                }
+                            }
+
+                            {
+                                Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                                for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                                    if (e_to_upgrade->pickup_count == 2) {
+                                        break;
+                                    }
+                                }
+
+                                f32 pay = 100.0f;
+                                f32* cost = &pay;
+                                f32 pay2 = 10.0f;
+                                f32* cost2 = &pay2;
+
+                                char buffer[256] = {0};
+                                if (e_to_upgrade) {
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: $%.2f, #%f", *cost,
+                                             *cost2);
+                                } else {
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: MAXED OUT");
+                                }
+                                Str8 txt = Str8FromC(buffer);
+                                UIFlag clickable =
+                                    (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
+                                        ? UI_FLAG_CLICKABLE
+                                        : UI_FLAG_NONE;
+
+                                if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                    gstate->score -= *cost;
+                                    *cost *= 2.0f;
+                                    gstate->score2 -= *cost2;
+                                    *cost2 *= 2.0f;
+                                    UpgradeWorker(gstate, e_to_upgrade);
+                                }
+                            }
+                        }
+
+                        {
                             f32 pay = 100.0f;
                             f32* cost = &pay;
-                            f32 pay2 = 10.0f;
+
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Researchers: $%.2f", *cost);
+                            Str8 txt = Str8FromC(buffer);
+                            UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                            UIFlag hide = (gstate->researcher_count < 1.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
+                            if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                gstate->score -= *cost;
+                                *cost *= 2.0f;
+                                gstate->researcher_cooldown_sec *= 0.8f;
+                            }
+                        }
+
+                        {
+                            Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                            for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                                if (e_to_upgrade->pickup_count == 3) {
+                                    break;
+                                }
+                            }
+
+                            f32 pay = 0.0f;
+                            f32* cost = &pay;
+                            f32 pay2 = 100.0f;
                             f32* cost2 = &pay2;
 
                             char buffer[256] = {0};
                             if (e_to_upgrade) {
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: $%.2f, #%f", *cost,
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: $%.2f, #%f", *cost,
                                          *cost2);
                             } else {
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: MAXED OUT");
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: MAXED OUT");
                             }
                             Str8 txt = Str8FromC(buffer);
                             UIFlag clickable =
                                 (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
                                     ? UI_FLAG_CLICKABLE
                                     : UI_FLAG_NONE;
+                            UIFlag hide = (gstate->upgraded_worker_count2 < 4) ? UI_FLAG_HIDE : UI_FLAG_NONE;
 
                             if (UIButton(&ui, txt, clickable | hide).clicked) {
                                 gstate->score -= *cost;
@@ -5612,57 +5694,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 *cost2 *= 2.0f;
                                 UpgradeWorker(gstate, e_to_upgrade);
                             }
-                        }
-                    }
-
-                    {
-                        f32 pay = 100.0f;
-                        f32* cost = &pay;
-
-                        char buffer[256] = {0};
-                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Researchers: $%.2f", *cost);
-                        Str8 txt = Str8FromC(buffer);
-                        UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-                        UIFlag hide = (gstate->researcher_count < 1.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
-                        if (UIButton(&ui, txt, clickable | hide).clicked) {
-                            gstate->score -= *cost;
-                            *cost *= 2.0f;
-                            gstate->researcher_cooldown_sec *= 0.8f;
-                        }
-                    }
-
-                    {
-                        Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
-                        for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
-                            if (e_to_upgrade->pickup_count == 3) {
-                                break;
-                            }
-                        }
-
-                        f32 pay = 0.0f;
-                        f32* cost = &pay;
-                        f32 pay2 = 100.0f;
-                        f32* cost2 = &pay2;
-
-                        char buffer[256] = {0};
-                        if (e_to_upgrade) {
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: $%.2f, #%f", *cost, *cost2);
-                        } else {
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: MAXED OUT");
-                        }
-                        Str8 txt = Str8FromC(buffer);
-                        UIFlag clickable = (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
-                                               ? UI_FLAG_CLICKABLE
-                                               : UI_FLAG_NONE;
-                        UIFlag hide = (gstate->upgraded_worker_count2 < 4) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
-                        if (UIButton(&ui, txt, clickable | hide).clicked) {
-                            gstate->score -= *cost;
-                            *cost *= 2.0f;
-                            gstate->score2 -= *cost2;
-                            *cost2 *= 2.0f;
-                            UpgradeWorker(gstate, e_to_upgrade);
                         }
                     }
                 }
