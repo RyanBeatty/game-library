@@ -4712,25 +4712,6 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     ui->input = input;
 }
 
-static Vec2 UIAdvancePos(UIState* ui, Vec2 pos, Vec2 dims) {
-    UILayoutDirection dir = UIGetLayoutDirection(ui);
-    switch (dir) {
-        case UI_LAYOUT_DOWN: {
-            pos.y -= dims.y;
-            break;
-        }
-        case UI_LAYOUT_RIGHT: {
-            pos.x += dims.x;
-            break;
-        }
-        default: {
-            PlatformLog(LLOG_ERROR, "Unknown Layout Direction: %d", dir);
-            Assert(0);
-        }
-    }
-    return pos;
-}
-
 static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     UIBox* parent = UIGetParent(ui);
     Vec2 top_left = UIBoxGetCursor(parent);
@@ -4870,18 +4851,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     }
 }
 
-static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
-    UIBox* parent = UIGetParent(ui);
-    Vec2 top_left = UIBoxGetCursor(parent);
-
-    AABB2D aabb = AABB2DFromMinMax(Vec2Lit(top_left.x, top_left.y - dims.y), Vec2Lit(top_left.x + dims.x, top_left.y));
-    UIBox box = {.box = aabb};
-
-    parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, dims);
-    return box;
-}
-
-static UIBox MakeUIContainer2(UIState* ui, UISize width, UISize height) {
+static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
     breakpoint();
     UIBox container = MakeUIBox(ui, width, height, Str8Zero());
     UIAction action = {0};
@@ -4891,8 +4861,8 @@ static UIBox MakeUIContainer2(UIState* ui, UISize width, UISize height) {
 
 // Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
 // incorrect parent in MakeUIContainer for sizing and positioning.
-#define UIContainer(ui, width, height)                                          \
-    UIBox _ui_container_##__LINE__ = MakeUIContainer2((ui), (width), (height)); \
+#define UIContainer(ui, width, height)                                         \
+    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (width), (height)); \
     UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
