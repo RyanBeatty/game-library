@@ -5482,23 +5482,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     AABB2D parent3 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, 0.0f), hmargin),
                                                       Vec2Sub(Vec2Lit(width * 0.25f, height * 0.7f), hmargin));
                     Vec2 parent3_dims = AABB2DDims(parent3);
-                    UIBox parent3_box = {.box = parent3, .cursor_top_left_offset = Vec2Zero()};
-                    // DrawQuad2D(parent3.c, parent3_dims.x, parent3_dims.y, Mat4Identity(), COLORS[0]);
-
-                    Vec2 spacing = Vec2Lit(0.0f, 20.0f);
-                    spacing = Vec2Lit(0.0f, 0.0f);
 
                     UIState ui = {0};
                     UIStateBegin(&ui, &gstate->temp, width, height, input);
                     UIPushFont(&ui, font);
-                    UIPushSpacing(&ui, spacing);
+                    UIPushSpacing(&ui, Vec2Lit(0.0f, 20.0f));
 
-                    Vec2 temp_top_left = AABB2DTopLeft(parent3_box.box);
+                    Vec2 temp_top_left = AABB2DTopLeft(parent3);
                     temp_top_left = Vec2Sub(temp_top_left, Vec2Lit(0.0f, height));
                     UISetCursor(&ui, temp_top_left);
                     UIContainer(&ui, UISizePx(parent3_dims.x), UISizePx(parent3_dims.y)) {
-                        // UIPushParent(&ui, parent3_box);
-
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
