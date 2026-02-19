@@ -5402,11 +5402,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UISetCursor(&ui, top_left_offset);
                     UIContainer(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)) {
                         Vec2 spacing = Vec2Lit(0.0f, 20.0f);
-                        Vec2 pos = Vec2Lit(10.0f, height);
 
                         {
-                            pos = Vec2Sub(pos, spacing);
-
                             i32 time_sec_int = (i32)gstate->timer_sec;
                             i32 minutes = time_sec_int / 60;
                             i32 seconds = time_sec_int - (minutes * 60);
@@ -5414,45 +5411,27 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
                             Str8 txt = Str8FromC(buffer);
-                            Vec2 dims = LFontMeasureStr8(font, txt);
-                            pos.y -= dims.y;
-                            // DrawStr8Ex(font, pos, LBLACK, txt);
                             UIText(&ui, txt, UI_FLAG_NONE);
                         }
 
                         {
-                            pos = Vec2Sub(pos, spacing);
-
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
                             Str8 txt = Str8FromC(buffer);
-                            Vec2 dims = LFontMeasureStr8(font, txt);
-                            pos.y -= dims.y;
-                            // DrawStr8Ex(font, pos, LBLACK, txt);
                             UIText(&ui, txt, UI_FLAG_NONE);
                         }
 
                         if (gstate->upgraded_worker_count >= 4.0f) {
-                            pos = Vec2Sub(pos, spacing);
-
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
                             Str8 txt = Str8FromC(buffer);
-                            Vec2 dims = LFontMeasureStr8(font, txt);
-                            pos.y -= dims.y;
-                            // DrawStr8Ex(font, pos, LBLACK, txt);
                             UIText(&ui, txt, UI_FLAG_NONE);
                         }
 
                         {
-                            pos = Vec2Sub(pos, spacing);
-
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
                             Str8 txt = Str8FromC(buffer);
-                            Vec2 dims = LFontMeasureStr8(font, txt);
-                            pos.y -= dims.y;
-                            // DrawStr8Ex(font, pos, LBLACK, txt);
                             UIText(&ui, txt, UI_FLAG_NONE);
                         }
                     }
