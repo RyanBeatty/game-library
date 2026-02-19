@@ -4794,6 +4794,7 @@ static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
 
 #define ColorHover(color) (Lighten((color), 0.15f))
 #define ColorDown(color) (Darken((color), 0.12f))
+#define ColorUnclickable(color) (Darken((color), 0.12f))
 
 static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags,
                         UIAction action) {
@@ -4841,10 +4842,14 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     // Draw backing box.
     {
         Vec4 box_color = COLORS[3];
-        if (action.down) {
-            box_color = ColorDown(box_color);
-        } else if (action.hover) {
-            box_color = ColorHover(box_color);
+        if (UITestFlag(flags, UI_FLAG_CLICKABLE)) {
+            if (action.down) {
+                box_color = ColorDown(box_color);
+            } else if (action.hover) {
+                box_color = ColorHover(box_color);
+            }
+        } else {
+            box_color = ColorUnclickable(box_color);
         }
 
         DrawQuad2D(box->box.c, AABB2DWidth(box->box), AABB2DHeight(box->box), Mat4Identity(), box_color);
@@ -5356,7 +5361,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             f32 height = gstate->renderh;
             pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-            bool debug = true;
+            bool debug = false;
             if (debug) {
                 gstate->score = 1000000.0f;
                 gstate->score2 = 1000000.0f;
