@@ -4783,23 +4783,6 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
     return box;
 }
 
-static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
-    UIBox* parent = UIGetParent(ui);
-    Vec2 top_left = UIBoxGetCursor(parent);
-
-    AABB2D aabb = AABB2DFromMinMax(Vec2Lit(top_left.x, top_left.y - dims.y), Vec2Lit(top_left.x + dims.x, top_left.y));
-    UIBox box = {.box = aabb};
-
-    parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, dims);
-    return box;
-}
-
-// Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
-// incorrect parent in MakeUIContainer for sizing and positioning.
-#define UIContainer(ui, dims)                                       \
-    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
-    UIParent((ui), _ui_container_##__LINE__)
-
 #define ColorHover(color) (Lighten((color), 0.15f))
 #define ColorDown(color) (Darken((color), 0.12f))
 #define ColorUnclickable(color) (Darken((color), 0.12f))
@@ -4868,6 +4851,23 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
     DrawStr8Ex(font, text_pos, LBLACK, box->text);
 }
+
+static UIBox MakeUIContainer(UIState* ui, Vec2 dims) {
+    UIBox* parent = UIGetParent(ui);
+    Vec2 top_left = UIBoxGetCursor(parent);
+
+    AABB2D aabb = AABB2DFromMinMax(Vec2Lit(top_left.x, top_left.y - dims.y), Vec2Lit(top_left.x + dims.x, top_left.y));
+    UIBox box = {.box = aabb};
+
+    parent->cursor_top_left_offset = UIAdvancePos(ui, parent->cursor_top_left_offset, dims);
+    return box;
+}
+
+// Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
+// incorrect parent in MakeUIContainer for sizing and positioning.
+#define UIContainer(ui, dims)                                       \
+    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (dims)); \
+    UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
