@@ -4797,26 +4797,26 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         return;
     }
 
-    UIBoxStyle style = {
-        .color_bg = COLORS[3],
-        .color_bg_hover = ColorHover(COLORS[3]),
-        .color_bg_down = ColorDown(COLORS[3]),
-        .color_bg_unclickable = ColorUnclickable(COLORS[3]),
-        .color_text = LBLACK,
-    };
+    // UIBoxStyle style = {
+    //     .color_bg = COLORS[3],
+    //     .color_bg_hover = ColorHover(COLORS[3]),
+    //     .color_bg_down = ColorDown(COLORS[3]),
+    //     .color_bg_unclickable = ColorUnclickable(COLORS[3]),
+    //     .color_text = LBLACK,
+    // };
 
     // Draw backing box.
     {
-        Vec4 box_color = style.color_bg;
+        Vec4 box_color = box->style.color_bg;
         if (UITestFlag(flags, UI_FLAG_ABLE_TO_BE_CLICKED)) {
             if (UITestFlag(flags, UI_FLAG_CLICKABLE)) {
                 if (action.down) {
-                    box_color = style.color_bg_down;
+                    box_color = box->style.color_bg_down;
                 } else if (action.hover) {
-                    box_color = style.color_bg_hover;
+                    box_color = box->style.color_bg_hover;
                 }
             } else {
-                box_color = style.color_bg_unclickable;
+                box_color = box->style.color_bg_unclickable;
             }
         }
 
@@ -4864,15 +4864,19 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         textbox_center_offset = Vec2Add(textbox_center_offset, box->textbox.aabb.c);
         Vec2 baseline_offset = Vec2Add(textbox_center_offset, box->textbox.baseline_offset);
         Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
-        DrawStr8Ex(font, text_pos, style.color_text, box->text);
+        DrawStr8Ex(font, text_pos, box->style.color_text, box->text);
     }
 }
 
 static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
-    UIBox container = MakeUIBox(ui, width, height, Str8Zero());
+    UIBox box = MakeUIBox(ui, width, height, Str8Zero());
+    UIBoxStyle style = {
+        .color_bg = COLORS[0],
+    };
+    box.style = style;
     UIAction action = {0};
-    DrawUIBoxEx(ui, &container, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
-    return container;
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
+    return box;
 }
 
 // Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
@@ -4884,6 +4888,14 @@ static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
 static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
                         UISize semantic_width, UISize semantic_height) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
+    UIBoxStyle style = {
+        .color_bg = COLORS[3],
+        .color_bg_hover = ColorHover(COLORS[3]),
+        .color_bg_down = ColorDown(COLORS[3]),
+        .color_bg_unclickable = ColorUnclickable(COLORS[3]),
+        .color_text = LBLACK,
+    };
+    box.style = style;
 
     GameControllerState* controller = GetController(ui->input, 0);
 
