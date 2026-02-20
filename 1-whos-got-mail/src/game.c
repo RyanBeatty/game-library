@@ -4723,7 +4723,7 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     ui->input = input;
 }
 
-static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
+static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBoxStyle style) {
     UIBox* parent = UIGetParent(ui);
     Vec2 top_left = UIBoxGetCursor(parent);
     LFont font = UIGetFont(ui);
@@ -4784,6 +4784,8 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text) {
         }
     }
 
+    box.style = style;
+
     return box;
 }
 
@@ -4796,14 +4798,6 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     if (UITestFlag(flags, UI_FLAG_HIDE)) {
         return;
     }
-
-    // UIBoxStyle style = {
-    //     .color_bg = COLORS[3],
-    //     .color_bg_hover = ColorHover(COLORS[3]),
-    //     .color_bg_down = ColorDown(COLORS[3]),
-    //     .color_bg_unclickable = ColorUnclickable(COLORS[3]),
-    //     .color_text = LBLACK,
-    // };
 
     // Draw backing box.
     {
@@ -4869,11 +4863,10 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
 }
 
 static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
-    UIBox box = MakeUIBox(ui, width, height, Str8Zero());
     UIBoxStyle style = {
         .color_bg = COLORS[0],
     };
-    box.style = style;
+    UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
     UIAction action = {0};
     DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
     return box;
@@ -4887,7 +4880,6 @@ static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
 
 static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
                         UISize semantic_width, UISize semantic_height) {
-    UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text);
     UIBoxStyle style = {
         .color_bg = COLORS[3],
         .color_bg_hover = ColorHover(COLORS[3]),
@@ -4895,7 +4887,7 @@ static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align
         .color_bg_unclickable = ColorUnclickable(COLORS[3]),
         .color_text = LBLACK,
     };
-    box.style = style;
+    UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text, style);
 
     GameControllerState* controller = GetController(ui->input, 0);
 
