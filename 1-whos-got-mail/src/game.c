@@ -5391,7 +5391,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
                 UISetCursor(&ui, top_left_offset);
                 UIContainer(&ui, UISizePx(parent_dims.x), UISizePx(parent_dims.y)) {}
-                // DrawQuad(Vec2ToVec3(parent.c), parent.r.x * 2.0f, parent.r.y * 2.0f, Mat4Identity(), COLORS[1]);
             }
 
             Vec2 hmargin = Vec2Scale(Vec2Lit(10.0f, 10.0f), 0.5f);
