@@ -4700,7 +4700,8 @@ static void UISetCursor(UIState* ui, Vec2 pos) {
 static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->spacings, perm, Vec2, 1);
 
-    InitArr(&ui->fonts, perm, LFont, 1);
+    InitArr(&ui->fonts, perm, LFont, 3);
+    UIPushFont(ui, GetLFontClosest(10.0f));
     InitArr(&ui->layout_dirs, perm, UILayoutDirection, 2);
     UIPushLayoutDirection(ui, UI_LAYOUT_DOWN);
 
@@ -5380,8 +5381,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 gstate->score2 = 1000000.0f;
             }
 
-            AABB2D parent = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
-            DrawQuad(Vec2ToVec3(parent.c), parent.r.x * 2.0f, parent.r.y * 2.0f, Mat4Identity(), COLORS[1]);
+            {
+                UIState ui = {0};
+                UIStateBegin(&ui, &gstate->temp, width, height, input);
+
+                AABB2D parent = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
+                Vec2 parent_dims = AABB2DDims(parent);
+                Vec2 top_left_offset = AABB2DTopLeft(parent);
+                top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
+                UISetCursor(&ui, top_left_offset);
+                UIContainer(&ui, UISizePx(parent_dims.x), UISizePx(parent_dims.y)) {}
+                // DrawQuad(Vec2ToVec3(parent.c), parent.r.x * 2.0f, parent.r.y * 2.0f, Mat4Identity(), COLORS[1]);
+            }
 
             Vec2 hmargin = Vec2Scale(Vec2Lit(10.0f, 10.0f), 0.5f);
 
