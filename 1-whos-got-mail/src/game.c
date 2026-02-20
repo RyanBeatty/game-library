@@ -4671,10 +4671,32 @@ typedef struct {
 } UIBoxArr;
 
 typedef struct {
+    Vec4 window_bg_color;
+
+    Vec4 button_color_bg;
+    Vec4 button_color_bg_hover;
+    Vec4 button_color_bg_down;
+    Vec4 button_color_bg_unclickable;
+    Vec4 button_color_text;
+} UITheme;
+
+#define ColorHover(color) (Lighten((color), 0.15f))
+#define ColorDown(color) (Darken((color), 0.12f))
+#define ColorUnclickable(color) (Darken((color), 0.12f))
+
+typedef struct {
+    UITheme* data;
+    isize len;
+    isize cap;
+} UIThemeArr;
+
+typedef struct {
     LFontArr fonts;
     Vec2Arr spacings;
     UILayoutDirectionArr layout_dirs;
     UIBoxArr parents;
+
+    UIThemeArr themes;
 
     GameInput* input;  // Reset each frame.
 } UIState;
@@ -4694,6 +4716,9 @@ typedef struct {
 #define UIPushLayoutDirection(ui, llayout) (ArrPush(&(ui)->layout_dirs, (llayout)))
 #define UIPopLayoutDirection(ui) (ArrPop(&(ui)->layout_dirs))
 #define UILayoutDirection(ui, llayout) Scoped(UIPushLayoutDirection(ui, llayout), UIPopLayoutDirection(ui))
+
+#define UIGetTheme(ui) (ArrTailR(&(ui)->themes))
+#define UIPushTheme(ui, ttheme) (ArrPush(&(ui)->themes, ttheme))
 
 #define UIGetParent(ui) (ArrTailR(&(ui)->parents))
 #define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
@@ -4719,6 +4744,18 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     AABB2D parent_box = AABB2DFromMinMax(Vec2Lit(0, 0), Vec2Lit(width, height));
     UIBox root_parent = {.box = parent_box, .cursor_top_left_offset = Vec2Zero()};
     UIPushParent(ui, root_parent);
+
+    InitArr(&ui->themes, perm, UITheme, 3);
+    UITheme theme_default = {
+        .window_bg_color = COLORS[0],
+
+        .button_color_bg = COLORS[3],
+        .button_color_bg_hover = ColorHover(COLORS[3]),
+        .button_color_bg_down = ColorDown(COLORS[3]),
+        .button_color_bg_unclickable = ColorUnclickable(COLORS[3]),
+        .button_color_text = LBLACK,
+    };
+    UIPushTheme(ui, theme_default);
 
     ui->input = input;
 }
@@ -4788,10 +4825,6 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBo
 
     return box;
 }
-
-#define ColorHover(color) (Lighten((color), 0.15f))
-#define ColorDown(color) (Darken((color), 0.12f))
-#define ColorUnclickable(color) (Darken((color), 0.12f))
 
 static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags,
                         UIAction action) {
