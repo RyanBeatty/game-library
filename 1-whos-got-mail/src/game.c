@@ -4636,6 +4636,14 @@ typedef struct {
 } UILayoutDirectionArr;
 
 typedef struct {
+    Vec4 color_bg;
+    Vec4 color_bg_hover;
+    Vec4 color_bg_down;
+    Vec4 color_bg_unclickable;
+    Vec4 color_text;
+} UIBoxStyle;
+
+typedef struct {
     // The box's center should be in world position.
     // TODO: Longer term I should probably think about just storing an offset to parent and a dimension
     // Then you recalculate the world position each frame from the parent (root of tree will get actual screen top left
@@ -4650,6 +4658,8 @@ typedef struct {
 
     Str8 text;
     TextBox textbox;  // Not positioned. i.e. the center here holds no meaning other than an offset.
+
+    UIBoxStyle style;  // Contains color info to be used when rendering the box.
 } UIBox;
 
 #define UIBoxGetCursor(bbox) (Vec2Add(AABB2DTopLeft((bbox)->box), (bbox)->cursor_top_left_offset))
@@ -4787,19 +4797,26 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         return;
     }
 
+    UIBoxStyle style = {
+        .color_bg = COLORS[3],
+        .color_bg_hover = ColorHover(COLORS[3]),
+        .color_bg_down = ColorDown(COLORS[3]),
+        .color_bg_unclickable = ColorUnclickable(COLORS[3]),
+        .color_text = LBLACK,
+    };
+
     // Draw backing box.
     {
-        Vec4 box_color = COLORS[0];
+        Vec4 box_color = style.color_bg;
         if (UITestFlag(flags, UI_FLAG_ABLE_TO_BE_CLICKED)) {
-            box_color = COLORS[3];
             if (UITestFlag(flags, UI_FLAG_CLICKABLE)) {
                 if (action.down) {
-                    box_color = ColorDown(box_color);
+                    box_color = style.color_bg_down;
                 } else if (action.hover) {
-                    box_color = ColorHover(box_color);
+                    box_color = style.color_bg_hover;
                 }
             } else {
-                box_color = ColorUnclickable(box_color);
+                box_color = style.color_bg_unclickable;
             }
         }
 
@@ -4847,7 +4864,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         textbox_center_offset = Vec2Add(textbox_center_offset, box->textbox.aabb.c);
         Vec2 baseline_offset = Vec2Add(textbox_center_offset, box->textbox.baseline_offset);
         Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
-        DrawStr8Ex(font, text_pos, LBLACK, box->text);
+        DrawStr8Ex(font, text_pos, style.color_text, box->text);
     }
 }
 
