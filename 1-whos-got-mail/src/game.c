@@ -4963,7 +4963,7 @@ static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align
     return action;
 }
 
-static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
+static UIBox MakeUIWindow(UIState* ui, UISize width, UISize height) {
     // TODO: Refactor this to call UIBoxEx. Have UIBoxEx take an out parameter for the action but return the box.
     UIBoxStyle style = {
         .color_bg = UIGetThemeColor(ui, UI_THEME_WINDOW_BG_COLOR),
@@ -4975,9 +4975,9 @@ static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
 }
 
 // Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
-// incorrect parent in MakeUIContainer for sizing and positioning.
-#define UIContainer(ui, width, height)                                         \
-    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (width), (height)); \
+// incorrect parent in MakeUIWindow for sizing and positioning.
+#define UIWindow(ui, width, height)                                         \
+    UIBox _ui_container_##__LINE__ = MakeUIWindow((ui), (width), (height)); \
     UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
@@ -5489,7 +5489,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
                 UISetCursor(&ui, top_left_offset);
                 UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, COLORS[1]) {
-                    UIContainer(&ui, UISizePx(parent_dims.x), UISizePx(parent_dims.y)) {}
+                    UIWindow(&ui, UISizePx(parent_dims.x), UISizePx(parent_dims.y)) {}
                 }
             }
 
@@ -5510,7 +5510,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 top_left_offset = AABB2DTopLeft(parent2);
                     top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
                     UISetCursor(&ui, top_left_offset);
-                    UIContainer(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)) {
+                    UIWindow(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)) {
                         Vec2 spacing = Vec2Lit(0.0f, 20.0f);
 
                         {
@@ -5560,7 +5560,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 temp_top_left = AABB2DTopLeft(parent3);
                     temp_top_left = Vec2Sub(temp_top_left, Vec2Lit(0.0f, height));
                     UISetCursor(&ui, temp_top_left);
-                    UIContainer(&ui, UISizePx(parent3_dims.x), UISizePx(parent3_dims.y)) {
+                    UIWindow(&ui, UISizePx(parent3_dims.x), UISizePx(parent3_dims.y)) {
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
