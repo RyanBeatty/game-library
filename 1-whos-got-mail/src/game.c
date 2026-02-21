@@ -4764,6 +4764,8 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
 
     {
         UITheme theme_default = {0};
+        InitArr(&theme_default.overrides, perm, UIThemeOverride, 10);
+
         for (isize i = 0; i < ArraySizeOf(theme_default.colors); ++i) {
             theme_default.colors[i] = LBLACK;
         }
