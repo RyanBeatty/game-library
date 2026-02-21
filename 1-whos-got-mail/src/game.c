@@ -4745,6 +4745,7 @@ static void UIPopThemeColor(UIState* ui) {
     UIThemeOverride override = ArrPop(&ui->theme.overrides);
     ui->theme.colors[override.idx] = override.color_prev;
 }
+#define UIThemeColor(ui, uikind, color) Scoped(UIPushThemeColor((ui), (uikind), (color)), UIPopThemeColor((ui)))
 
 #define UIGetParent(ui) (ArrTailR(&(ui)->parents))
 #define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
