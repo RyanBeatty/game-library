@@ -4759,7 +4759,7 @@ static void UISetCursor(UIState* ui, Vec2 pos) {
     root->cursor_top_left_offset = pos;
 }
 
-static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
+static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
     InitArr(&ui->spacings, perm, Vec2, 1);
 
     InitArr(&ui->fonts, perm, LFont, 3);
@@ -5486,7 +5486,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
             {
                 UIState ui = {0};
-                UIStateBegin(&ui, &gstate->temp, width, height, input);
+                UIStateInit(&ui, &gstate->temp, width, height, input);
 
                 AABB2D parent = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
                 Vec2 parent_dims = AABB2DDims(parent);
@@ -5509,7 +5509,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 parent2_dims = AABB2DDims(parent2);
 
                     UIState ui = {0};
-                    UIStateBegin(&ui, &gstate->temp, width, height, input);
+                    UIStateInit(&ui, &gstate->temp, width, height, input);
                     UIPushFont(&ui, font);
 
                     Vec2 top_left_offset = AABB2DTopLeft(parent2);
@@ -5558,7 +5558,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 parent3_dims = AABB2DDims(parent3);
 
                     UIState ui = {0};
-                    UIStateBegin(&ui, &gstate->temp, width, height, input);
+                    UIStateInit(&ui, &gstate->temp, width, height, input);
                     UIPushFont(&ui, font);
                     UIPushSpacing(&ui, Vec2Lit(0.0f, 20.0f));
 
