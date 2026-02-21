@@ -4619,6 +4619,17 @@ typedef enum {
 } UITextAlignY;
 
 typedef struct {
+    UITextAlignX x;
+    UITextAlignY y;
+} UITextAlign;
+
+typedef struct {
+    UITextAlign* data;
+    isize len;
+    isize cap;
+} UITextAlignArr;
+
+typedef struct {
     LFont* data;
     isize len;
     isize cap;
@@ -4690,18 +4701,18 @@ typedef enum {
 typedef struct {
     UIThemeKind idx;
     Vec4 color_prev;
-} UIThemeOverride;
+} UIThemeColorOverride;
 
 typedef struct {
-    UIThemeOverride* data;
+    UIThemeColorOverride* data;
     isize len;
     isize cap;
-} UIThemeOverrideArr;
+} UIThemeColorOverrideArr;
 
 typedef struct {
     Vec4 colors[UI_THEME_COUNT];
 
-    UIThemeOverrideArr overrides;
+    UIThemeColorOverrideArr color_overrides;
 } UITheme;
 
 #define ColorHover(color) (Lighten((color), 0.15f))
@@ -4737,12 +4748,12 @@ typedef struct {
 
 #define UIGetThemeColor(ui, uikind) ((ui)->theme.colors[(uikind)])
 static void UIPushThemeColor(UIState* ui, UIThemeKind kind, Vec4 color) {
-    UIThemeOverride override = {.idx = kind, .color_prev = ui->theme.colors[kind]};
-    ArrPush(&ui->theme.overrides, override);
+    UIThemeColorOverride override = {.idx = kind, .color_prev = ui->theme.colors[kind]};
+    ArrPush(&ui->theme.color_overrides, override);
     ui->theme.colors[kind] = color;
 }
 static void UIPopThemeColor(UIState* ui) {
-    UIThemeOverride override = ArrPop(&ui->theme.overrides);
+    UIThemeColorOverride override = ArrPop(&ui->theme.color_overrides);
     ui->theme.colors[override.idx] = override.color_prev;
 }
 #define UIThemeColor(ui, uikind, color) Scoped(UIPushThemeColor((ui), (uikind), (color)), UIPopThemeColor((ui)))
@@ -4774,7 +4785,7 @@ static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInp
 
     {
         UITheme theme_default = {0};
-        InitArr(&theme_default.overrides, perm, UIThemeOverride, 10);
+        InitArr(&theme_default.color_overrides, perm, UIThemeColorOverride, 10);
 
         for (isize i = 0; i < ArraySizeOf(theme_default.colors); ++i) {
             theme_default.colors[i] = LBLACK;
