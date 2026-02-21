@@ -4797,72 +4797,6 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     ui->input = input;
 }
 
-static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBoxStyle style) {
-    UIBox* parent = UIGetParent(ui);
-    Vec2 top_left = UIBoxGetCursor(parent);
-    LFont font = UIGetFont(ui);
-
-    Vec2 parent_dims = AABB2DDims(parent->box);
-
-    TextBox textbox = LFontMeasureStr8Quad2(font, text);
-    Vec2 textbox_dims = AABB2DDims(textbox.aabb);
-
-    UISize semantic_sizes[] = {width, height};
-    Vec2 resolved_dims = {0};
-    for (isize i = 0; i < ArraySizeOf(semantic_sizes); ++i) {
-        switch (semantic_sizes[i].kind) {
-            case UI_SIZE_TEXT: {
-                resolved_dims.f[i] = textbox_dims.f[i];
-                break;
-            }
-            case UI_SIZE_PCT_OF_PARENT: {
-                resolved_dims.f[i] = semantic_sizes[i].value * parent_dims.f[i];
-                break;
-            }
-            case UI_SIZE_PIXEL: {
-                // Do I need to clamp this to parent dims?
-                resolved_dims.f[i] = semantic_sizes[i].value;
-                break;
-            }
-            default: {
-                PlatformLog(LLOG_ERROR, "UNKNOWN UI Size Kind: %d", semantic_sizes[i].kind);
-                Assert(0);
-            }
-        }
-    }
-
-    Vec2 box_min = Vec2Lit(top_left.x, top_left.y - resolved_dims.y);
-    Vec2 box_max = Vec2Lit(top_left.x + resolved_dims.x, top_left.y);
-
-    AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
-    UIBox box = {.box = aabb, .text = text, .textbox = textbox};
-
-    // Update parent pos.
-    Vec2 box_dims = AABB2DDims(box.box);
-    UILayoutDirection dir = UIGetLayoutDirection(ui);
-    switch (dir) {
-        case UI_LAYOUT_DOWN: {
-            parent->cursor_top_left_offset.y -= box_dims.y;
-            // Because its a negative offset, check with parent negative.
-            parent->cursor_top_left_offset.y = f32max(parent->cursor_top_left_offset.y, -parent_dims.y);
-            break;
-        }
-        case UI_LAYOUT_RIGHT: {
-            parent->cursor_top_left_offset.x += box_dims.x;
-            parent->cursor_top_left_offset.x = f32min(parent->cursor_top_left_offset.x, parent_dims.x);
-            break;
-        }
-        default: {
-            PlatformLog(LLOG_ERROR, "Unknown Layout Direction: %d", dir);
-            Assert(0);
-        }
-    }
-
-    box.style = style;
-
-    return box;
-}
-
 static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags,
                         UIAction action) {
     if (UITestFlag(flags, UI_FLAG_HIDE)) {
@@ -4930,6 +4864,72 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
         DrawStr8Ex(font, text_pos, box->style.color_text, box->text);
     }
+}
+
+static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBoxStyle style) {
+    UIBox* parent = UIGetParent(ui);
+    Vec2 top_left = UIBoxGetCursor(parent);
+    LFont font = UIGetFont(ui);
+
+    Vec2 parent_dims = AABB2DDims(parent->box);
+
+    TextBox textbox = LFontMeasureStr8Quad2(font, text);
+    Vec2 textbox_dims = AABB2DDims(textbox.aabb);
+
+    UISize semantic_sizes[] = {width, height};
+    Vec2 resolved_dims = {0};
+    for (isize i = 0; i < ArraySizeOf(semantic_sizes); ++i) {
+        switch (semantic_sizes[i].kind) {
+            case UI_SIZE_TEXT: {
+                resolved_dims.f[i] = textbox_dims.f[i];
+                break;
+            }
+            case UI_SIZE_PCT_OF_PARENT: {
+                resolved_dims.f[i] = semantic_sizes[i].value * parent_dims.f[i];
+                break;
+            }
+            case UI_SIZE_PIXEL: {
+                // Do I need to clamp this to parent dims?
+                resolved_dims.f[i] = semantic_sizes[i].value;
+                break;
+            }
+            default: {
+                PlatformLog(LLOG_ERROR, "UNKNOWN UI Size Kind: %d", semantic_sizes[i].kind);
+                Assert(0);
+            }
+        }
+    }
+
+    Vec2 box_min = Vec2Lit(top_left.x, top_left.y - resolved_dims.y);
+    Vec2 box_max = Vec2Lit(top_left.x + resolved_dims.x, top_left.y);
+
+    AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
+    UIBox box = {.box = aabb, .text = text, .textbox = textbox};
+
+    // Update parent pos.
+    Vec2 box_dims = AABB2DDims(box.box);
+    UILayoutDirection dir = UIGetLayoutDirection(ui);
+    switch (dir) {
+        case UI_LAYOUT_DOWN: {
+            parent->cursor_top_left_offset.y -= box_dims.y;
+            // Because its a negative offset, check with parent negative.
+            parent->cursor_top_left_offset.y = f32max(parent->cursor_top_left_offset.y, -parent_dims.y);
+            break;
+        }
+        case UI_LAYOUT_RIGHT: {
+            parent->cursor_top_left_offset.x += box_dims.x;
+            parent->cursor_top_left_offset.x = f32min(parent->cursor_top_left_offset.x, parent_dims.x);
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown Layout Direction: %d", dir);
+            Assert(0);
+        }
+    }
+
+    box.style = style;
+
+    return box;
 }
 
 static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
