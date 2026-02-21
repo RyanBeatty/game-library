@@ -4880,13 +4880,10 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBo
     return box;
 }
 
-static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAlignY align_y, UIFlag flags,
-                        UIAction action) {
+static void DrawUIBoxEx(UIState* ui, UIBox* box, UIFlag flags, UIAction action) {
     if (UITestFlag(flags, UI_FLAG_HIDE)) {
         return;
     }
-
-    box->style.align = (UITextAlign){.x = align_x, .y = align_y};
 
     // Draw backing box.
     {
@@ -4952,8 +4949,8 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
 }
 
 // TODO: I think text alignment should come from the style potentially
-static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
-                     UISize semantic_width, UISize semantic_height, UIBoxStyle style, UIAction* action_out) {
+static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height,
+                     UIBoxStyle style, UIAction* action_out) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text, style);
 
     GameControllerState* controller = GetController(ui->input, 0);
@@ -4978,7 +4975,7 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x,
         action.down = controller->action_down.down;
     }
 
-    DrawUIBoxEx(ui, &box, align_x, align_y, flags, action);
+    DrawUIBoxEx(ui, &box, flags, action);
 
     *action_out = action;
     return box;
@@ -4987,10 +4984,14 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x,
 static UIBox MakeUIWindow(UIState* ui, UISize width, UISize height) {
     UIBoxStyle style = {
         .color_bg = UIGetThemeColor(ui, UI_THEME_WINDOW_BG_COLOR),
+        .align =
+            {
+                .x = UI_TEXT_ALIGN_X_CENTER,
+                .y = UI_TEXT_ALIGN_Y_BOTTOM,
+            },
     };
     UIAction action = {0};
-    UIBox box = UIBoxEx(ui, Str8Zero(), UI_FLAG_NONE, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_BOTTOM, width, height,
-                        style, &action);
+    UIBox box = UIBoxEx(ui, Str8Zero(), UI_FLAG_NONE, width, height, style, &action);
     return box;
 }
 
@@ -5007,11 +5008,15 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
         .color_bg_down = UIGetThemeColor(ui, UI_THEME_BUTTON_BG_DOWN_COLOR),
         .color_bg_unclickable = UIGetThemeColor(ui, UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR),
         .color_text = UIGetThemeColor(ui, UI_THEME_BUTTON_TEXT_COLOR),
+        .align =
+            {
+                .x = UI_TEXT_ALIGN_X_CENTER,
+                .y = UI_TEXT_ALIGN_Y_MIDDLE,
+            },
     };
 
     UIAction action = {0};
-    UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE,
-            semantic_width, semantic_height, style, &action);
+    UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, semantic_width, semantic_height, style, &action);
     return action;
 }
 
@@ -5023,11 +5028,15 @@ static UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
     UIBoxStyle style = {
         .color_bg = UIGetThemeColor(ui, UI_THEME_LABEL_BG_COLOR),
         .color_text = UIGetThemeColor(ui, UI_THEME_LABEL_TEXT_COLOR),
+        .align =
+            {
+                .x = UI_TEXT_ALIGN_X_LEFT,
+                .y = UI_TEXT_ALIGN_Y_MIDDLE,
+            },
     };
 
     UIAction action = {0};
-    UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_Y_MIDDLE,
-            UISizePctParent(1.0f), UISizeText(), style, &action);
+    UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UISizePctParent(1.0f), UISizeText(), style, &action);
     return action;
 }
 
