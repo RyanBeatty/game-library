@@ -4965,14 +4965,9 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x,
 }
 
 static UIBox MakeUIWindow(UIState* ui, UISize width, UISize height) {
-    // TODO: Refactor this to call UIBoxEx. Have UIBoxEx take an out parameter for the action but return the box.
     UIBoxStyle style = {
         .color_bg = UIGetThemeColor(ui, UI_THEME_WINDOW_BG_COLOR),
     };
-    // UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
-    // UIAction action = {0};
-
-    // DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
     UIAction action = {0};
     UIBox box = UIBoxEx(ui, Str8Zero(), UI_FLAG_NONE, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_BOTTOM, width, height,
                         style, &action);
