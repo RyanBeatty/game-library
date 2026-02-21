@@ -4713,6 +4713,8 @@ typedef struct {
     Vec4 colors[UI_THEME_COUNT];
 
     UIThemeColorOverrideArr color_overrides;
+
+    UITextAlign align;
 } UITheme;
 
 #define ColorHover(color) (Lighten((color), 0.15f))
@@ -4757,6 +4759,8 @@ static void UIPopThemeColor(UIState* ui) {
     ui->theme.colors[override.idx] = override.color_prev;
 }
 #define UIThemeColor(ui, uikind, color) Scoped(UIPushThemeColor((ui), (uikind), (color)), UIPopThemeColor((ui)))
+
+#define UIGetThemeTextAlign(ui) ((ui)->theme.align)
 
 #define UIGetParent(ui) (ArrTailR(&(ui)->parents))
 #define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
