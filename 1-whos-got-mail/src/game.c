@@ -4938,8 +4938,9 @@ static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align
 
 static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
     // TODO: Refactor this to call UIBoxEx. Have UIBoxEx take an out parameter for the action but return the box.
+    UITheme* theme = UIGetTheme(ui);
     UIBoxStyle style = {
-        .color_bg = COLORS[0],
+        .color_bg = theme->colors[UI_THEME_WINDOW_BG_COLOR],
     };
     UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
     UIAction action = {0};
@@ -4954,7 +4955,6 @@ static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
     UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
-    // TOOD: Move this to a parameter.
     UITheme* theme = UIGetTheme(ui);
 
     UIBoxStyle style = {
