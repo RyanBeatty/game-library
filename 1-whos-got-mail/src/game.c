@@ -4736,6 +4736,15 @@ typedef struct {
 #define UILayoutDirection(ui, llayout) Scoped(UIPushLayoutDirection(ui, llayout), UIPopLayoutDirection(ui))
 
 #define UIThemeColor(ui, uikind) ((ui)->theme.colors[(uikind)])
+static void UIPushThemeColor(UIState* ui, UIThemeKind kind, Vec4 color) {
+    UIThemeOverride override = {.idx = kind, .color_prev = ui->theme.colors[kind]};
+    ArrPush(&ui->theme.overrides, override);
+    ui->theme.colors[kind] = color;
+}
+static void UIPopThemeColor(UIState* ui) {
+    UIThemeOverride override = ArrPop(&ui->theme.overrides);
+    ui->theme.colors[override.idx] = override.color_prev;
+}
 
 #define UIGetParent(ui) (ArrTailR(&(ui)->parents))
 #define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
