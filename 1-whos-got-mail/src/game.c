@@ -4932,8 +4932,8 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     }
 }
 
-static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
-                        UISize semantic_width, UISize semantic_height, UIBoxStyle style) {
+static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
+                     UISize semantic_width, UISize semantic_height, UIBoxStyle style, UIAction* action_out) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text, style);
 
     GameControllerState* controller = GetController(ui->input, 0);
@@ -4960,7 +4960,8 @@ static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align
 
     DrawUIBoxEx(ui, &box, align_x, align_y, flags, action);
 
-    return action;
+    *action_out = action;
+    return box;
 }
 
 static UIBox MakeUIWindow(UIState* ui, UISize width, UISize height) {
@@ -4968,9 +4969,13 @@ static UIBox MakeUIWindow(UIState* ui, UISize width, UISize height) {
     UIBoxStyle style = {
         .color_bg = UIGetThemeColor(ui, UI_THEME_WINDOW_BG_COLOR),
     };
-    UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
+    // UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
+    // UIAction action = {0};
+
+    // DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
     UIAction action = {0};
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
+    UIBox box = UIBoxEx(ui, Str8Zero(), UI_FLAG_NONE, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_BOTTOM, width, height,
+                        style, &action);
     return box;
 }
 
@@ -4989,8 +4994,10 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
         .color_text = UIGetThemeColor(ui, UI_THEME_BUTTON_TEXT_COLOR),
     };
 
-    return UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE,
-                   semantic_width, semantic_height, style);
+    UIAction action = {0};
+    UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE,
+            semantic_width, semantic_height, style, &action);
+    return action;
 }
 
 static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
@@ -5003,8 +5010,10 @@ static UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
         .color_text = UIGetThemeColor(ui, UI_THEME_LABEL_TEXT_COLOR),
     };
 
-    return UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_Y_MIDDLE,
-                   UISizePctParent(1.0f), UISizeText(), style);
+    UIAction action = {0};
+    UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_Y_MIDDLE,
+            UISizePctParent(1.0f), UISizeText(), style, &action);
+    return action;
 }
 
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
