@@ -4652,6 +4652,8 @@ typedef struct {
     Vec4 color_bg_down;
     Vec4 color_bg_unclickable;
     Vec4 color_text;
+
+    UITextAlign align;
 } UIBoxStyle;
 
 typedef struct {
@@ -4884,6 +4886,8 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         return;
     }
 
+    box->style.align = (UITextAlign){.x = align_x, .y = align_y};
+
     // Draw backing box.
     {
         Vec4 box_color = box->style.color_bg;
@@ -4910,7 +4914,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
         Vec2 bottom_left = AABB2DBottomLeft(box->box);
         Vec2 textbox_center_offset = Vec2Zero();
 
-        switch (align_x) {
+        switch (box->style.align.x) {
             case UI_TEXT_ALIGN_X_LEFT: {
                 break;
             }
@@ -4919,12 +4923,12 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
                 break;
             }
             default: {
-                PlatformLog(LLOG_ERROR, "Unknown text align x: %d", align_x);
+                PlatformLog(LLOG_ERROR, "Unknown text align x: %d", box->style.align.x);
                 Assert(0);
             }
         }
 
-        switch (align_y) {
+        switch (box->style.align.y) {
             case UI_TEXT_ALIGN_Y_BOTTOM: {
                 break;
             }
@@ -4935,7 +4939,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
                 break;
             }
             default: {
-                PlatformLog(LLOG_ERROR, "Unknown text align y: %d", align_y);
+                PlatformLog(LLOG_ERROR, "Unknown text align y: %d", box->style.align.y);
                 Assert(0);
             }
         }
