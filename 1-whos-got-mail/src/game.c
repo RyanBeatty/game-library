@@ -4709,18 +4709,12 @@ typedef struct {
 #define ColorUnclickable(color) (Darken((color), 0.12f))
 
 typedef struct {
-    UITheme* data;
-    isize len;
-    isize cap;
-} UIThemeArr;
-
-typedef struct {
     LFontArr fonts;
     Vec2Arr spacings;
     UILayoutDirectionArr layout_dirs;
     UIBoxArr parents;
 
-    UIThemeArr themes;
+    UITheme theme;
 
     GameInput* input;  // Reset each frame.
 } UIState;
@@ -4741,9 +4735,7 @@ typedef struct {
 #define UIPopLayoutDirection(ui) (ArrPop(&(ui)->layout_dirs))
 #define UILayoutDirection(ui, llayout) Scoped(UIPushLayoutDirection(ui, llayout), UIPopLayoutDirection(ui))
 
-#define UIGetTheme(ui) (ArrTailR(&(ui)->themes))
-#define UIPushTheme(ui, ttheme) (ArrPush(&(ui)->themes, ttheme))
-#define UIThemeColor(ui, uikind) (UIGetTheme(ui)->colors[(uikind)])
+#define UIThemeColor(ui, uikind) ((ui)->theme.colors[(uikind)])
 
 #define UIGetParent(ui) (ArrTailR(&(ui)->parents))
 #define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
@@ -4771,7 +4763,6 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     UIPushParent(ui, root_parent);
 
     {
-        InitArr(&ui->themes, perm, UITheme, 3);
         UITheme theme_default = {0};
         for (isize i = 0; i < ArraySizeOf(theme_default.colors); ++i) {
             theme_default.colors[i] = LBLACK;
@@ -4788,7 +4779,7 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
         theme_default.colors[UI_THEME_LABEL_BG_COLOR] = Vec4Lit(0.0f, 0.0f, 0.0f, 0.0f);
         theme_default.colors[UI_THEME_LABEL_TEXT_COLOR] = LBLACK;
 
-        UIPushTheme(ui, theme_default);
+        ui->theme = theme_default;
     }
 
     ui->input = input;
