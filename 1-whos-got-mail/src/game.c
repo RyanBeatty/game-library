@@ -5488,7 +5488,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Vec2 top_left_offset = AABB2DTopLeft(parent);
                 top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
                 UISetCursor(&ui, top_left_offset);
-                UIContainer(&ui, UISizePx(parent_dims.x), UISizePx(parent_dims.y)) {}
+                UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, COLORS[1]) {
+                    UIContainer(&ui, UISizePx(parent_dims.x), UISizePx(parent_dims.y)) {}
+                }
             }
 
             Vec2 hmargin = Vec2Scale(Vec2Lit(10.0f, 10.0f), 0.5f);
