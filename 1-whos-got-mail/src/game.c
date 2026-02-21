@@ -4932,6 +4932,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     }
 }
 
+// TODO: I think text alignment should come from the style potentially
 static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
                      UISize semantic_width, UISize semantic_height, UIBoxStyle style, UIAction* action_out) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text, style);
