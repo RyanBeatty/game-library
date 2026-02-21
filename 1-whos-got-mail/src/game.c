@@ -4906,15 +4906,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
 }
 
 static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
-                        UISize semantic_width, UISize semantic_height) {
-    // TOOD: Move this to a parameter.
-    UIBoxStyle style = {
-        .color_bg = COLORS[3],
-        .color_bg_hover = ColorHover(COLORS[3]),
-        .color_bg_down = ColorDown(COLORS[3]),
-        .color_bg_unclickable = ColorUnclickable(COLORS[3]),
-        .color_text = LBLACK,
-    };
+                        UISize semantic_width, UISize semantic_height, UIBoxStyle style) {
     UIBox box = MakeUIBox(ui, semantic_width, semantic_height, text, style);
 
     GameControllerState* controller = GetController(ui->input, 0);
@@ -4962,8 +4954,19 @@ static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
     UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
+    // TOOD: Move this to a parameter.
+    UITheme* theme = UIGetTheme(ui);
+
+    UIBoxStyle style = {
+        .color_bg = theme->colors[UI_THEME_BUTTON_BG_COLOR],
+        .color_bg_hover = theme->colors[UI_THEME_BUTTON_BG_HOVER_COLOR],
+        .color_bg_down = theme->colors[UI_THEME_BUTTON_BG_DOWN_COLOR],
+        .color_bg_unclickable = theme->colors[UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR],
+        .color_text = theme->colors[UI_THEME_BUTTON_TEXT_COLOR],
+    };
+
     return UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE,
-                   semantic_width, semantic_height);
+                   semantic_width, semantic_height, style);
 }
 
 static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
@@ -4971,8 +4974,12 @@ static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
 }
 
 static UIAction UIText(UIState* ui, Str8 text, UIFlag flags) {
+    UIBoxStyle style = {
+        .color_text = LBLACK,
+    };
+
     return UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_Y_MIDDLE,
-                   UISizePctParent(1.0f), UISizeText());
+                   UISizePctParent(1.0f), UISizeText(), style);
 }
 
 static void SpawnWorker(GameState* gstate, Vec3 pos) {
