@@ -4610,11 +4610,13 @@ typedef enum {
 #define UITestFlag(flags, flag) ((flags) & (flag))
 
 typedef enum {
-    UI_TEXT_ALIGN_X_CENTER = 0,
+    UI_TEXT_ALIGN_X_NONE = 0,
+    UI_TEXT_ALIGN_X_CENTER,
     UI_TEXT_ALIGN_X_LEFT,
 } UITextAlignX;
 typedef enum {
-    UI_TEXT_ALIGN_Y_MIDDLE = 0,
+    UI_TEXT_ALIGN_Y_NONE = 0,
+    UI_TEXT_ALIGN_Y_MIDDLE,
     UI_TEXT_ALIGN_Y_BOTTOM,
 } UITextAlignY;
 
@@ -4919,6 +4921,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UIFlag flags, UIAction action) 
                 textbox_center_offset.x = (0.5f * box_dims.x) - box->textbox.aabb.c.x;
                 break;
             }
+            case UI_TEXT_ALIGN_X_NONE:
             default: {
                 PlatformLog(LLOG_ERROR, "Unknown text align x: %d", box->style.align.x);
                 Assert(0);
@@ -4935,6 +4938,7 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UIFlag flags, UIAction action) 
                 textbox_center_offset.y = (0.5f * box_dims.y) - box->textbox.aabb.c.y;
                 break;
             }
+            case UI_TEXT_ALIGN_Y_NONE:
             default: {
                 PlatformLog(LLOG_ERROR, "Unknown text align y: %d", box->style.align.y);
                 Assert(0);
@@ -4984,11 +4988,6 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width
 static UIBox MakeUIWindow(UIState* ui, UISize width, UISize height) {
     UIBoxStyle style = {
         .color_bg = UIGetThemeColor(ui, UI_THEME_WINDOW_BG_COLOR),
-        .align =
-            {
-                .x = UI_TEXT_ALIGN_X_CENTER,
-                .y = UI_TEXT_ALIGN_Y_BOTTOM,
-            },
     };
     UIAction action = {0};
     UIBox box = UIBoxEx(ui, Str8Zero(), UI_FLAG_NONE, width, height, style, &action);
