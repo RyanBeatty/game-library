@@ -4895,24 +4895,9 @@ static void DrawUIBoxEx(UIState* ui, UIBox* box, UITextAlignX align_x, UITextAli
     }
 }
 
-static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
-    UIBoxStyle style = {
-        .color_bg = COLORS[0],
-    };
-    UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
-    UIAction action = {0};
-    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
-    return box;
-}
-
-// Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
-// incorrect parent in MakeUIContainer for sizing and positioning.
-#define UIContainer(ui, width, height)                                         \
-    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (width), (height)); \
-    UIParent((ui), _ui_container_##__LINE__)
-
 static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align_x, UITextAlignY align_y,
                         UISize semantic_width, UISize semantic_height) {
+    // TOOD: Move this to a parameter.
     UIBoxStyle style = {
         .color_bg = COLORS[3],
         .color_bg_hover = ColorHover(COLORS[3]),
@@ -4948,6 +4933,23 @@ static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align
 
     return action;
 }
+
+static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
+    // TODO: Refactor this to call UIBoxEx. Have UIBoxEx take an out parameter for the action but return the box.
+    UIBoxStyle style = {
+        .color_bg = COLORS[0],
+    };
+    UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
+    UIAction action = {0};
+    DrawUIBoxEx(ui, &box, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_X_CENTER, UI_FLAG_NONE, action);
+    return box;
+}
+
+// Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
+// incorrect parent in MakeUIContainer for sizing and positioning.
+#define UIContainer(ui, width, height)                                         \
+    UIBox _ui_container_##__LINE__ = MakeUIContainer((ui), (width), (height)); \
+    UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
     return UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE,
