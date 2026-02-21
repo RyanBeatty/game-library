@@ -4670,14 +4670,22 @@ typedef struct {
     isize cap;
 } UIBoxArr;
 
-typedef struct {
-    Vec4 window_bg_color;
+typedef enum {
+    UI_THEME_NONE = 0,
 
-    Vec4 button_color_bg;
-    Vec4 button_color_bg_hover;
-    Vec4 button_color_bg_down;
-    Vec4 button_color_bg_unclickable;
-    Vec4 button_color_text;
+    UI_THEME_WINDOW_BG_COLOR,
+
+    UI_THEME_BUTTON_BG_COLOR,
+    UI_THEME_BUTTON_BG_HOVER_COLOR,
+    UI_THEME_BUTTON_BG_DOWN_COLOR,
+    UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR,
+    UI_THEME_BUTTON_TEXT_COLOR,
+
+    UI_THEME_COUNT,
+} UIThemeKind;
+
+typedef struct {
+    Vec4 colors[UI_THEME_COUNT];
 } UITheme;
 
 #define ColorHover(color) (Lighten((color), 0.15f))
@@ -4745,17 +4753,19 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     UIBox root_parent = {.box = parent_box, .cursor_top_left_offset = Vec2Zero()};
     UIPushParent(ui, root_parent);
 
-    InitArr(&ui->themes, perm, UITheme, 3);
-    UITheme theme_default = {
-        .window_bg_color = COLORS[0],
+    {
+        InitArr(&ui->themes, perm, UITheme, 3);
+        UITheme theme_default = {0};
+        theme_default.colors[UI_THEME_WINDOW_BG_COLOR] = COLORS[0];
 
-        .button_color_bg = COLORS[3],
-        .button_color_bg_hover = ColorHover(COLORS[3]),
-        .button_color_bg_down = ColorDown(COLORS[3]),
-        .button_color_bg_unclickable = ColorUnclickable(COLORS[3]),
-        .button_color_text = LBLACK,
-    };
-    UIPushTheme(ui, theme_default);
+        theme_default.colors[UI_THEME_BUTTON_BG_COLOR] = COLORS[3];
+        theme_default.colors[UI_THEME_BUTTON_BG_HOVER_COLOR] = ColorHover(COLORS[3]);
+        theme_default.colors[UI_THEME_BUTTON_BG_DOWN_COLOR] = ColorDown(COLORS[3]);
+        theme_default.colors[UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR] = ColorUnclickable(COLORS[3]);
+        theme_default.colors[UI_THEME_BUTTON_TEXT_COLOR] = LBLACK;
+
+        UIPushTheme(ui, theme_default);
+    }
 
     ui->input = input;
 }
