@@ -4688,7 +4688,20 @@ typedef enum {
 } UIThemeKind;
 
 typedef struct {
+    UIThemeKind idx;
+    Vec4 color_prev;
+} UIThemeOverride;
+
+typedef struct {
+    UIThemeOverride* data;
+    isize len;
+    isize cap;
+} UIThemeOverrideArr;
+
+typedef struct {
     Vec4 colors[UI_THEME_COUNT];
+
+    UIThemeOverrideArr overrides;
 } UITheme;
 
 #define ColorHover(color) (Lighten((color), 0.15f))
@@ -4730,6 +4743,7 @@ typedef struct {
 
 #define UIGetTheme(ui) (ArrTailR(&(ui)->themes))
 #define UIPushTheme(ui, ttheme) (ArrPush(&(ui)->themes, ttheme))
+#define UIThemeColor(ui, uikind) (UIGetTheme(ui)->colors[(uikind)])
 
 #define UIGetParent(ui) (ArrTailR(&(ui)->parents))
 #define UIPushParent(ui, pparent) (ArrPush(&(ui)->parents, (pparent)))
@@ -4948,9 +4962,8 @@ static UIAction UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UITextAlignX align
 
 static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
     // TODO: Refactor this to call UIBoxEx. Have UIBoxEx take an out parameter for the action but return the box.
-    UITheme* theme = UIGetTheme(ui);
     UIBoxStyle style = {
-        .color_bg = theme->colors[UI_THEME_WINDOW_BG_COLOR],
+        .color_bg = UIThemeColor(ui, UI_THEME_WINDOW_BG_COLOR),
     };
     UIBox box = MakeUIBox(ui, width, height, Str8Zero(), style);
     UIAction action = {0};
@@ -4965,14 +4978,12 @@ static UIBox MakeUIContainer(UIState* ui, UISize width, UISize height) {
     UIParent((ui), _ui_container_##__LINE__)
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
-    UITheme* theme = UIGetTheme(ui);
-
     UIBoxStyle style = {
-        .color_bg = theme->colors[UI_THEME_BUTTON_BG_COLOR],
-        .color_bg_hover = theme->colors[UI_THEME_BUTTON_BG_HOVER_COLOR],
-        .color_bg_down = theme->colors[UI_THEME_BUTTON_BG_DOWN_COLOR],
-        .color_bg_unclickable = theme->colors[UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR],
-        .color_text = theme->colors[UI_THEME_BUTTON_TEXT_COLOR],
+        .color_bg = UIThemeColor(ui, UI_THEME_BUTTON_BG_COLOR),
+        .color_bg_hover = UIThemeColor(ui, UI_THEME_BUTTON_BG_HOVER_COLOR),
+        .color_bg_down = UIThemeColor(ui, UI_THEME_BUTTON_BG_DOWN_COLOR),
+        .color_bg_unclickable = UIThemeColor(ui, UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR),
+        .color_text = UIThemeColor(ui, UI_THEME_BUTTON_TEXT_COLOR),
     };
 
     return UIBoxEx(ui, text, flags | UI_FLAG_ABLE_TO_BE_CLICKED, UI_TEXT_ALIGN_X_CENTER, UI_TEXT_ALIGN_Y_MIDDLE,
@@ -4984,10 +4995,9 @@ static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
 }
 
 static UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
-    UITheme* theme = UIGetTheme(ui);
     UIBoxStyle style = {
-        .color_bg = theme->colors[UI_THEME_LABEL_BG_COLOR],
-        .color_text = theme->colors[UI_THEME_LABEL_TEXT_COLOR],
+        .color_bg = UIThemeColor(ui, UI_THEME_LABEL_BG_COLOR),
+        .color_text = UIThemeColor(ui, UI_THEME_LABEL_TEXT_COLOR),
     };
 
     return UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_Y_MIDDLE,
