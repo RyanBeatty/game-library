@@ -4681,6 +4681,9 @@ typedef enum {
     UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR,
     UI_THEME_BUTTON_TEXT_COLOR,
 
+    UI_THEME_LABEL_BG_COLOR,
+    UI_THEME_LABEL_TEXT_COLOR,
+
     UI_THEME_COUNT,
 } UIThemeKind;
 
@@ -4756,6 +4759,10 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
     {
         InitArr(&ui->themes, perm, UITheme, 3);
         UITheme theme_default = {0};
+        for (isize i = 0; i < ArraySizeOf(theme_default.colors); ++i) {
+            theme_default.colors[i] = LBLACK;
+        }
+
         theme_default.colors[UI_THEME_WINDOW_BG_COLOR] = COLORS[0];
 
         theme_default.colors[UI_THEME_BUTTON_BG_COLOR] = COLORS[3];
@@ -4763,6 +4770,9 @@ static void UIStateBegin(UIState* ui, Arena* perm, f32 width, f32 height, GameIn
         theme_default.colors[UI_THEME_BUTTON_BG_DOWN_COLOR] = ColorDown(COLORS[3]);
         theme_default.colors[UI_THEME_BUTTON_BG_UNCLICKABLE_COLOR] = ColorUnclickable(COLORS[3]);
         theme_default.colors[UI_THEME_BUTTON_TEXT_COLOR] = LBLACK;
+
+        theme_default.colors[UI_THEME_LABEL_BG_COLOR] = Vec4Lit(0.0f, 0.0f, 0.0f, 0.0f);
+        theme_default.colors[UI_THEME_LABEL_TEXT_COLOR] = LBLACK;
 
         UIPushTheme(ui, theme_default);
     }
@@ -4973,9 +4983,11 @@ static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
     return UIButtonEx(ui, text, flags, UISizePctParent(1.0f), UISizeText());
 }
 
-static UIAction UIText(UIState* ui, Str8 text, UIFlag flags) {
+static UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
+    UITheme* theme = UIGetTheme(ui);
     UIBoxStyle style = {
-        .color_text = LBLACK,
+        .color_bg = theme->colors[UI_THEME_LABEL_BG_COLOR],
+        .color_text = theme->colors[UI_THEME_LABEL_TEXT_COLOR],
     };
 
     return UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UI_TEXT_ALIGN_X_LEFT, UI_TEXT_ALIGN_Y_MIDDLE,
@@ -5494,28 +5506,28 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
                             Str8 txt = Str8FromC(buffer);
-                            UIText(&ui, txt, UI_FLAG_NONE);
+                            UILabel(&ui, txt, UI_FLAG_NONE);
                         }
 
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
                             Str8 txt = Str8FromC(buffer);
-                            UIText(&ui, txt, UI_FLAG_NONE);
+                            UILabel(&ui, txt, UI_FLAG_NONE);
                         }
 
                         if (gstate->upgraded_worker_count >= 4.0f) {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
                             Str8 txt = Str8FromC(buffer);
-                            UIText(&ui, txt, UI_FLAG_NONE);
+                            UILabel(&ui, txt, UI_FLAG_NONE);
                         }
 
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
                             Str8 txt = Str8FromC(buffer);
-                            UIText(&ui, txt, UI_FLAG_NONE);
+                            UILabel(&ui, txt, UI_FLAG_NONE);
                         }
                     }
                 }
