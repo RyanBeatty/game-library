@@ -5515,13 +5515,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 UIState ui = {0};
                 UIStateInit(&ui, &gstate->temp, width, height, input);
 
-                AABB2D parent = AABB2DFromMinMax(Vec2Lit(0.0f, 0.0f), Vec2Lit(width * 0.25f, height));
-                Vec2 parent_dims = AABB2DDims(parent);
-                Vec2 top_left_offset = AABB2DTopLeft(parent);
-                top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
-                UISetCursor(&ui, top_left_offset);
                 UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, COLORS[1]) {
-                    UIWindow(&ui, UISizePx(parent_dims.x), UISizePx(parent_dims.y)) {}
+                    UIWindow(&ui, UISizePctParent(0.25f), UISizePctParent(1.0f)) {}
                 }
             }
 
