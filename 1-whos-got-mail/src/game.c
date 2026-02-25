@@ -4996,9 +4996,10 @@ static UIBox MakeUIWindow(UIState* ui, UISize width, UISize height) {
 
 // Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
 // incorrect parent in MakeUIWindow for sizing and positioning.
-#define UIWindow(ui, width, height)                                         \
-    UIBox _ui_container_##__LINE__ = MakeUIWindow((ui), (width), (height)); \
-    UIParent((ui), _ui_container_##__LINE__)
+// CONCAT is needed because ##__LINE__ doesn't actually expand LINE
+#define UIWindow(ui, width, height)                                                 \
+    UIBox CONCAT(_ui_container_, __LINE__) = MakeUIWindow((ui), (width), (height)); \
+    UIParent((ui), CONCAT(_ui_container_, __LINE__))
 
 static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
     UIBoxStyle style = {
@@ -5515,8 +5516,48 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 UIState ui = {0};
                 UIStateInit(&ui, &gstate->temp, width, height, input);
 
+                LFont font = GetLFontClosest(40.0f);
+                UIPushFont(&ui, font);
+
                 UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, COLORS[1]) {
-                    UIWindow(&ui, UISizePctParent(0.25f), UISizePctParent(1.0f)) {}
+                    UIWindow(&ui, UISizePctParent(0.25f), UISizePctParent(1.0f)) {
+                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
+                            Vec2 parent1_size = Vec2Lit(1.0f, 0.3f);
+                            UIWindow(&ui, UISizePctParent(parent1_size.x), UISizePctParent(parent1_size.y)) {
+                                {
+                                    i32 time_sec_int = (i32)gstate->timer_sec;
+                                    i32 minutes = time_sec_int / 60;
+                                    i32 seconds = time_sec_int - (minutes * 60);
+
+                                    char buffer[256] = {0};
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
+                                    Str8 txt = Str8FromC(buffer);
+                                    UILabel(&ui, txt, UI_FLAG_NONE);
+                                }
+
+                                {
+                                    char buffer[256] = {0};
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
+                                    Str8 txt = Str8FromC(buffer);
+                                    UILabel(&ui, txt, UI_FLAG_NONE);
+                                }
+
+                                if (gstate->upgraded_worker_count >= 4.0f) {
+                                    char buffer[256] = {0};
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
+                                    Str8 txt = Str8FromC(buffer);
+                                    UILabel(&ui, txt, UI_FLAG_NONE);
+                                }
+
+                                {
+                                    char buffer[256] = {0};
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
+                                    Str8 txt = Str8FromC(buffer);
+                                    UILabel(&ui, txt, UI_FLAG_NONE);
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -5525,54 +5566,54 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             {
                 LFont font = GetLFontClosest(40.0f);
 
-                {
-                    AABB2D parent2 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, height * 0.7f), hmargin),
-                                                      Vec2Sub(Vec2Lit(width * 0.25f, height), hmargin));
-                    Vec2 parent2_dims = AABB2DDims(parent2);
+                // {
+                //     AABB2D parent2 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, height * 0.7f), hmargin),
+                //                                       Vec2Sub(Vec2Lit(width * 0.25f, height), hmargin));
+                //     Vec2 parent2_dims = AABB2DDims(parent2);
 
-                    UIState ui = {0};
-                    UIStateInit(&ui, &gstate->temp, width, height, input);
-                    UIPushFont(&ui, font);
+                //     UIState ui = {0};
+                //     UIStateInit(&ui, &gstate->temp, width, height, input);
+                //     UIPushFont(&ui, font);
 
-                    Vec2 top_left_offset = AABB2DTopLeft(parent2);
-                    top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
-                    UISetCursor(&ui, top_left_offset);
-                    UIWindow(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)) {
-                        Vec2 spacing = Vec2Lit(0.0f, 20.0f);
+                //     Vec2 top_left_offset = AABB2DTopLeft(parent2);
+                //     top_left_offset = Vec2Sub(top_left_offset, Vec2Lit(0.0f, height));
+                //     UISetCursor(&ui, top_left_offset);
+                //     UIWindow(&ui, UISizePx(parent2_dims.x), UISizePx(parent2_dims.y)) {
+                //         Vec2 spacing = Vec2Lit(0.0f, 20.0f);
 
-                        {
-                            i32 time_sec_int = (i32)gstate->timer_sec;
-                            i32 minutes = time_sec_int / 60;
-                            i32 seconds = time_sec_int - (minutes * 60);
+                //         {
+                //             i32 time_sec_int = (i32)gstate->timer_sec;
+                //             i32 minutes = time_sec_int / 60;
+                //             i32 seconds = time_sec_int - (minutes * 60);
 
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
-                            Str8 txt = Str8FromC(buffer);
-                            UILabel(&ui, txt, UI_FLAG_NONE);
-                        }
+                //             char buffer[256] = {0};
+                //             snprintf(buffer, ArraySizeOf(buffer) - 1, "Time: %.2d:%.2d", minutes, seconds);
+                //             Str8 txt = Str8FromC(buffer);
+                //             UILabel(&ui, txt, UI_FLAG_NONE);
+                //         }
 
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
-                            Str8 txt = Str8FromC(buffer);
-                            UILabel(&ui, txt, UI_FLAG_NONE);
-                        }
+                //         {
+                //             char buffer[256] = {0};
+                //             snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %.2f", gstate->score);
+                //             Str8 txt = Str8FromC(buffer);
+                //             UILabel(&ui, txt, UI_FLAG_NONE);
+                //         }
 
-                        if (gstate->upgraded_worker_count >= 4.0f) {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
-                            Str8 txt = Str8FromC(buffer);
-                            UILabel(&ui, txt, UI_FLAG_NONE);
-                        }
+                //         if (gstate->upgraded_worker_count >= 4.0f) {
+                //             char buffer[256] = {0};
+                //             snprintf(buffer, ArraySizeOf(buffer) - 1, "Score 2: %.2f", gstate->score2);
+                //             Str8 txt = Str8FromC(buffer);
+                //             UILabel(&ui, txt, UI_FLAG_NONE);
+                //         }
 
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
-                            Str8 txt = Str8FromC(buffer);
-                            UILabel(&ui, txt, UI_FLAG_NONE);
-                        }
-                    }
-                }
+                //         {
+                //             char buffer[256] = {0};
+                //             snprintf(buffer, ArraySizeOf(buffer) - 1, "No. Sorted: %d", gstate->num_sorted);
+                //             Str8 txt = Str8FromC(buffer);
+                //             UILabel(&ui, txt, UI_FLAG_NONE);
+                //         }
+                //     }
+                // }
 
                 {
                     AABB2D parent3 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, 0.0f), hmargin),
