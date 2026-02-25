@@ -5521,8 +5521,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, COLORS[1]) {
                     UIWindow(&ui, UISizePctParent(0.25f), UISizePctParent(1.0f)) {
+                        Vec2 parent1_size = Vec2Lit(1.0f, 0.3f);
+                        Vec2 parent2_size = Vec2Lit(1.0f, 1.0f - parent1_size.y);
+
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
-                            Vec2 parent1_size = Vec2Lit(1.0f, 0.3f);
                             UIWindow(&ui, UISizePctParent(parent1_size.x), UISizePctParent(parent1_size.y)) {
                                 {
                                     i32 time_sec_int = (i32)gstate->timer_sec;
@@ -5557,198 +5559,184 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
                         }
+
+                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LBLUE) {
+                            UIWindow(&ui, UISizePctParent(parent2_size.x), UISizePctParent(parent2_size.y)) {
+                                {
+                                    char buffer[256] = {0};
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
+                                    Str8 txt = Str8FromC(buffer);
+                                    UIFlag clickable =
+                                        gstate->score >= gstate->worker_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                                    if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
+                                        gstate->score -= gstate->worker_cost;
+                                        SpawnWorker(gstate, Vec3Zero());
+                                        gstate->worker_cost *= 2.0f;
+                                    }
+                                }
+
+                                {
+                                    char buffer[256] = {0};
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Worker Speed: $%.2f",
+                                             gstate->worker_cooldown_sec_cost);
+                                    Str8 txt = Str8FromC(buffer);
+                                    UIFlag clickable = gstate->score >= gstate->worker_cooldown_sec_cost
+                                                           ? UI_FLAG_CLICKABLE
+                                                           : UI_FLAG_NONE;
+
+                                    if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
+                                        gstate->score -= gstate->worker_cooldown_sec_cost;
+                                        gstate->worker_cooldown_sec *= 0.8f;
+                                        gstate->worker_cooldown_sec_cost *= 3.0f;
+
+                                        static i32 PRESSED = 0;
+                                        ++PRESSED;
+                                        PlatformLog(LLOG_INFO, "Worker Speed Pressed: %d", PRESSED);
+                                    }
+                                }
+
+                                {
+                                    Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                                    for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                                        if (e_to_upgrade->pickup_count == 1) {
+                                            break;
+                                        }
+                                    }
+
+                                    f32 cost = 200.0f;
+
+                                    char buffer[256] = {0};
+                                    if (e_to_upgrade) {
+                                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: $%.2f", cost);
+                                    } else {
+                                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: MAXED OUT");
+                                    }
+                                    Str8 txt = Str8FromC(buffer);
+                                    UIFlag clickable = e_to_upgrade != NULL && gstate->score >= cost ? UI_FLAG_CLICKABLE
+                                                                                                     : UI_FLAG_NONE;
+                                    UIFlag hide = (gstate->worker_count < 6) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
+                                    if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                        gstate->score -= cost;
+                                        cost *= 2.0f;
+                                        UpgradeWorker(gstate, e_to_upgrade);
+                                    }
+                                }
+
+                                {
+                                    UIFlag hide = (gstate->upgraded_worker_count < 4.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
+                                    {
+                                        f32 pay = 100.0f;
+                                        f32* cost = &pay;
+
+                                        char buffer[256] = {0};
+                                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
+                                        Str8 txt = Str8FromC(buffer);
+                                        UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+
+                                        if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                            gstate->score -= *cost;
+                                            *cost *= 2.0f;
+                                            SpawnResearcher(gstate, Vec3Zero());
+                                        }
+                                    }
+
+                                    {
+                                        Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                                        for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                                            if (e_to_upgrade->pickup_count == 2) {
+                                                break;
+                                            }
+                                        }
+
+                                        f32 pay = 100.0f;
+                                        f32* cost = &pay;
+                                        f32 pay2 = 10.0f;
+                                        f32* cost2 = &pay2;
+
+                                        char buffer[256] = {0};
+                                        if (e_to_upgrade) {
+                                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: $%.2f, #%f",
+                                                     *cost, *cost2);
+                                        } else {
+                                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: MAXED OUT");
+                                        }
+                                        Str8 txt = Str8FromC(buffer);
+                                        UIFlag clickable =
+                                            (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
+                                                ? UI_FLAG_CLICKABLE
+                                                : UI_FLAG_NONE;
+
+                                        if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                            gstate->score -= *cost;
+                                            *cost *= 2.0f;
+                                            gstate->score2 -= *cost2;
+                                            *cost2 *= 2.0f;
+                                            UpgradeWorker(gstate, e_to_upgrade);
+                                        }
+                                    }
+                                }
+
+                                {
+                                    f32 pay = 100.0f;
+                                    f32* cost = &pay;
+
+                                    char buffer[256] = {0};
+                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Researchers: $%.2f", *cost);
+                                    Str8 txt = Str8FromC(buffer);
+                                    UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                                    UIFlag hide = (gstate->researcher_count < 1.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
+                                    if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                        gstate->score -= *cost;
+                                        *cost *= 2.0f;
+                                        gstate->researcher_cooldown_sec *= 0.8f;
+                                    }
+                                }
+
+                                {
+                                    Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
+                                    for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
+                                        if (e_to_upgrade->pickup_count == 3) {
+                                            break;
+                                        }
+                                    }
+
+                                    f32 pay = 0.0f;
+                                    f32* cost = &pay;
+                                    f32 pay2 = 100.0f;
+                                    f32* cost2 = &pay2;
+
+                                    char buffer[256] = {0};
+                                    if (e_to_upgrade) {
+                                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: $%.2f, #%f",
+                                                 *cost, *cost2);
+                                    } else {
+                                        snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: MAXED OUT");
+                                    }
+                                    Str8 txt = Str8FromC(buffer);
+                                    UIFlag clickable =
+                                        (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
+                                            ? UI_FLAG_CLICKABLE
+                                            : UI_FLAG_NONE;
+                                    UIFlag hide = (gstate->upgraded_worker_count2 < 4) ? UI_FLAG_HIDE : UI_FLAG_NONE;
+
+                                    if (UIButton(&ui, txt, clickable | hide).clicked) {
+                                        gstate->score -= *cost;
+                                        *cost *= 2.0f;
+                                        gstate->score2 -= *cost2;
+                                        *cost2 *= 2.0f;
+                                        UpgradeWorker(gstate, e_to_upgrade);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
 
             Vec2 hmargin = Vec2Scale(Vec2Lit(10.0f, 10.0f), 0.5f);
-
-            {
-                LFont font = GetLFontClosest(40.0f);
-
-                {
-                    AABB2D parent3 = AABB2DFromMinMax(Vec2Add(Vec2Lit(0.0f, 0.0f), hmargin),
-                                                      Vec2Sub(Vec2Lit(width * 0.25f, height * 0.7f), hmargin));
-                    Vec2 parent3_dims = AABB2DDims(parent3);
-
-                    UIState ui = {0};
-                    UIStateInit(&ui, &gstate->temp, width, height, input);
-                    UIPushFont(&ui, font);
-                    UIPushSpacing(&ui, Vec2Lit(0.0f, 20.0f));
-
-                    Vec2 temp_top_left = AABB2DTopLeft(parent3);
-                    temp_top_left = Vec2Sub(temp_top_left, Vec2Lit(0.0f, height));
-                    UISetCursor(&ui, temp_top_left);
-                    UIWindow(&ui, UISizePx(parent3_dims.x), UISizePx(parent3_dims.y)) {
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Mailbox ($%.2f)", gstate->worker_cost);
-                            Str8 txt = Str8FromC(buffer);
-                            UIFlag clickable = gstate->score >= gstate->worker_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-                            if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
-                                gstate->score -= gstate->worker_cost;
-                                SpawnWorker(gstate, Vec3Zero());
-                                gstate->worker_cost *= 2.0f;
-                            }
-                        }
-
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Worker Speed: $%.2f",
-                                     gstate->worker_cooldown_sec_cost);
-                            Str8 txt = Str8FromC(buffer);
-                            UIFlag clickable =
-                                gstate->score >= gstate->worker_cooldown_sec_cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-
-                            if (UIButtonEx(&ui, txt, clickable, UISizePctParent(1.0f), UISizeText()).clicked) {
-                                gstate->score -= gstate->worker_cooldown_sec_cost;
-                                gstate->worker_cooldown_sec *= 0.8f;
-                                gstate->worker_cooldown_sec_cost *= 3.0f;
-
-                                static i32 PRESSED = 0;
-                                ++PRESSED;
-                                PlatformLog(LLOG_INFO, "Worker Speed Pressed: %d", PRESSED);
-                            }
-                        }
-
-                        {
-                            Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
-                            for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
-                                if (e_to_upgrade->pickup_count == 1) {
-                                    break;
-                                }
-                            }
-
-                            f32 cost = 200.0f;
-
-                            char buffer[256] = {0};
-                            if (e_to_upgrade) {
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: $%.2f", cost);
-                            } else {
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox: MAXED OUT");
-                            }
-                            Str8 txt = Str8FromC(buffer);
-                            UIFlag clickable =
-                                e_to_upgrade != NULL && gstate->score >= cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-                            UIFlag hide = (gstate->worker_count < 6) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
-                            if (UIButton(&ui, txt, clickable | hide).clicked) {
-                                gstate->score -= cost;
-                                cost *= 2.0f;
-                                UpgradeWorker(gstate, e_to_upgrade);
-                            }
-                        }
-
-                        {
-                            UIFlag hide = (gstate->upgraded_worker_count < 4.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
-                            {
-                                f32 pay = 100.0f;
-                                f32* cost = &pay;
-
-                                char buffer[256] = {0};
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Buy Researcher: $%.2f", *cost);
-                                Str8 txt = Str8FromC(buffer);
-                                UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-
-                                if (UIButton(&ui, txt, clickable | hide).clicked) {
-                                    gstate->score -= *cost;
-                                    *cost *= 2.0f;
-                                    SpawnResearcher(gstate, Vec3Zero());
-                                }
-                            }
-
-                            {
-                                Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
-                                for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
-                                    if (e_to_upgrade->pickup_count == 2) {
-                                        break;
-                                    }
-                                }
-
-                                f32 pay = 100.0f;
-                                f32* cost = &pay;
-                                f32 pay2 = 10.0f;
-                                f32* cost2 = &pay2;
-
-                                char buffer[256] = {0};
-                                if (e_to_upgrade) {
-                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: $%.2f, #%f", *cost,
-                                             *cost2);
-                                } else {
-                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 2: MAXED OUT");
-                                }
-                                Str8 txt = Str8FromC(buffer);
-                                UIFlag clickable =
-                                    (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
-                                        ? UI_FLAG_CLICKABLE
-                                        : UI_FLAG_NONE;
-
-                                if (UIButton(&ui, txt, clickable | hide).clicked) {
-                                    gstate->score -= *cost;
-                                    *cost *= 2.0f;
-                                    gstate->score2 -= *cost2;
-                                    *cost2 *= 2.0f;
-                                    UpgradeWorker(gstate, e_to_upgrade);
-                                }
-                            }
-                        }
-
-                        {
-                            f32 pay = 100.0f;
-                            f32* cost = &pay;
-
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Researchers: $%.2f", *cost);
-                            Str8 txt = Str8FromC(buffer);
-                            UIFlag clickable = gstate->score >= *cost ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
-                            UIFlag hide = (gstate->researcher_count < 1.0f) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
-                            if (UIButton(&ui, txt, clickable | hide).clicked) {
-                                gstate->score -= *cost;
-                                *cost *= 2.0f;
-                                gstate->researcher_cooldown_sec *= 0.8f;
-                            }
-                        }
-
-                        {
-                            Entity* e_to_upgrade = EntityFromId(gstate->worker_root);
-                            for (; e_to_upgrade; e_to_upgrade = EntityFromId(e_to_upgrade->next_worker)) {
-                                if (e_to_upgrade->pickup_count == 3) {
-                                    break;
-                                }
-                            }
-
-                            f32 pay = 0.0f;
-                            f32* cost = &pay;
-                            f32 pay2 = 100.0f;
-                            f32* cost2 = &pay2;
-
-                            char buffer[256] = {0};
-                            if (e_to_upgrade) {
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: $%.2f, #%f", *cost,
-                                         *cost2);
-                            } else {
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Upgrade Mailbox 3: MAXED OUT");
-                            }
-                            Str8 txt = Str8FromC(buffer);
-                            UIFlag clickable =
-                                (e_to_upgrade != NULL && gstate->score >= *cost && gstate->score2 >= *cost2)
-                                    ? UI_FLAG_CLICKABLE
-                                    : UI_FLAG_NONE;
-                            UIFlag hide = (gstate->upgraded_worker_count2 < 4) ? UI_FLAG_HIDE : UI_FLAG_NONE;
-
-                            if (UIButton(&ui, txt, clickable | hide).clicked) {
-                                gstate->score -= *cost;
-                                *cost *= 2.0f;
-                                gstate->score2 -= *cost2;
-                                *cost2 *= 2.0f;
-                                UpgradeWorker(gstate, e_to_upgrade);
-                            }
-                        }
-                    }
-                }
-            }
 
             if (gstate->phase == PHASE_GAMEOVER) {
                 LFont font = GetLFontClosest(40.0f);
