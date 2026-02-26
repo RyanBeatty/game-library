@@ -2343,6 +2343,8 @@ static void EndRender() {
     }
 }
 
+#define Render(dt) Scoped(BeginRender(dt), EndRender())
+
 static DrawCmd* AddCmd() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen != 0);
