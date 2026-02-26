@@ -213,15 +213,7 @@ typedef struct {
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel {
-    TX_DEFAULT = 0,
-    TX_MAIL,
-    TX_MAILBOX,
-    TX_MAILBOX2,
-    TX_MAILBOX3,
-    TX_RESEARCHER,
-    TX_COUNT
-} TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
@@ -427,30 +419,6 @@ static void TexturesInit() {
         ++tcache->txlen;
     }
 
-    {
-        tcache->textures[TX_MAIL] = TextureFromFile("assets/textures/mail.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        tcache->textures[TX_MAILBOX] = TextureFromFile("assets/textures/mailbox.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        tcache->textures[TX_MAILBOX2] = TextureFromFile("assets/textures/mailbox2.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        tcache->textures[TX_MAILBOX3] = TextureFromFile("assets/textures/mailbox3.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
-
-    {
-        tcache->textures[TX_RESEARCHER] = TextureFromFile("assets/textures/researcher.png", FILTER_NEAREST);
-        ++tcache->txlen;
-    }
     ++tcache->txlen;
 }
 
