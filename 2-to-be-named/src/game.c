@@ -4229,304 +4229,7 @@ typedef struct {
 } CollisionArr;
 
 ////////////////////////////////////////////////////
-
-typedef struct {
-    Vec3 eye;  // world space position of the camera.
-    Vec3 target;
-    Vec3 up;
-} LCamera;
-
-// static Mat4 LCameraGetView(LCamera c) {
-//     return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
-// }
-
-// Returns the matrix that when applied will put the origin in the same position and orientation of the camera.
-LCORE Mat4 CameraGetViewMat(LCamera camera) { return Mat4LookAt(camera.eye, camera.target, camera.up); }
-
-LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
-    return Mat4Invert(Mat4Multiply(Mat4TranslateV(eye), Mat4RotateEuler(orient)));
-}
-
-#define Grid2WorldEx(pos, w, h, d) (Vec3Lit((pos).x * (w), (pos).y * (h), (pos).z * (d)))
-
-static const f32 GRID_WIDTH = 16.0f;
-static const f32 GRID_HEIGHT = 16.0f;
-static const f32 GRID_DEPTH = 1.0f;
-#define Grid2World(pos) (Grid2WorldEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
-
-#define World2GridEx(pos, w, h, d) (Vec3Lit((u32)((pos).x / (w)), (u32)((pos).y / (h)), (u32)((pos).z) / (d)))
-#define World2Grid(pos) (World2GridEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
-////////////////////////////////////////////////////
-
-typedef enum {
-    PHASE_NONE = 0,
-    PHASE_EOD,
-    PHASE_PLAYING,
-    PHASE_GAMEOVER,
-    PHASE_SHOP_OPEN,
-} GamePhase;
-
-////////////////////////////////////////////////////
-
-#define MAX_SCENES 10
-
-typedef enum {
-    SCENE_DEFAULT = 0,
-    SCENE_MAIN,
-    SCENE_DEFAULT_3D,
-    SCENE_COUNT,
-} SceneId;
-
-typedef struct GameState {
-    /////////////////////////////////////////
-    // Core fields
-    Arena perm;
-    Arena temp;
-
-    bool debug;
-    bool update;
-    bool render;
-    bool game_over;
-    bool init;  // True on first frame of scene, tells scene to run any init code.
-
-    // TODO: Move this to RenderState and move a reference to RSTATE here. Or just get rid of this and have a
-    // GetScreen/RenderWidth() function that reads RSTATE.
-    u32 renderw;
-    u32 renderh;
-    f32 renderw_world;  // in meters
-    f32 renderh_world;  // in meters
-    u32 screenw;
-    u32 screenh;
-
-    bool debug_ever;
-
-    f32 dt;  // frame delta time.
-    f32 timer;
-    u32 nframe;            // num frame we are on.
-    f32 frame_times[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
-    i32 fts_tail;
-    i32 fts_head;
-    u32 fps;
-    i32 target_fps;        // render fps we are targetting.
-    f32 fixed_dt;          // fixed dt we will update the simulation with for stability.
-    f32 accumulated_time;  // Time we have yet to simulate.
-
-    void (*scenefuncs[MAX_SCENES])(struct GameState*, GameInput* input);
-    u32 scenefuncssize;
-    SceneId sceneid;
-    SceneId nextsceneid;
-
-    LCamera camera;
-
-    /////////////////////////////////////////
-    // Scene fields
-
-    f32 timer_sec;
-
-    f32 score;
-    f32 score2;
-
-    GamePhase phase;
-
-    i32 worker_count;
-    f32 worker_cost;
-
-    i32 upgraded_worker_count;
-    i32 upgraded_worker_count2;
-    i32 upgraded_worker_count3;
-
-    f32 worker_cooldown_sec;
-    f32 worker_cooldown_sec_cost;
-
-    f32 researcher_cooldown_sec;
-    i32 researcher_count;
-
-    EntityId mail_root;
-
-    i32 day;
-    i32 num_sorted;
-    i32 target_score;
-
-    EntityId worker_root;
-    EntityId researcher_root;
-
-    bool shop_open;
-} GameState;
-
-static GameState GState;
-
-#define GetGameState() (&GState)
-
-typedef void (*SceneTickFunc)(GameState* gstate);
-
-i32 GameGetTargetFps() { return GetGameState()->target_fps; }
-
-// Converts a screen space position (assumes origin bottom left) to a 2d position in world space.
-Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
-    GameState* gstate = GetGameState();
-    RenderState* rstate = GetRenderState();
-
-    Vec2 viewport_dims = Vec2Lit(rstate->target.width, rstate->target.height);
-    Vec2 viewport_origin = Vec2Zero();
-
-    // Transform from screen space to clip space.
-    // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glViewport.xhtml
-    Vec3 pos_clip;
-    pos_clip.x = ((pos_screen.x - viewport_origin.x) * (2.0f / viewport_dims.x)) - 1.0f;
-    pos_clip.y = ((pos_screen.y - viewport_origin.y) * (2.0f / viewport_dims.y)) - 1.0f;
-    pos_clip.z = 0.0f;
-    // PlatformLog(LLOG_INFO, "Pos clip %f %f %f", pos_clip.x, pos_clip.y, pos_clip.z);
-
-    // Transform from clip to camera space and from camera to world.
-    // TODO: I should auto derive these matrices from render or game state potentially? The values hardcoded here could
-    // become out of sync if I change the setup in the game tick rendering
-    Mat4 inv_proj = Mat4Invert(Mat4Ortho(-0.5f * gstate->renderw_world, 0.5f * gstate->renderw_world,
-                                         -0.5f * gstate->renderh_world, 0.5f * gstate->renderh_world, -100.0f, 100.0f));
-    Mat4 inv_view = Mat4Invert(CameraGetViewMat(gstate->camera));
-    Mat4 inv = Mat4Multiply(inv_view, inv_proj);
-    Vec3 pos_world = Vec3WTransform(pos_clip, inv);
-
-    // PlatformLog(LLOG_INFO, "Pos world %f %f %f", pos_world.x, pos_world.y, pos_world.z);
-    return Vec3ToVec2(pos_world);
-}
-
-// Resets global state/system state that contains per scene info. Experimental approach
-// for use in scene switching as opposed to putting all this state into GameState object
-// and passing that around. The globalness of these systems is kind of convenient at the
-// moment.
-static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
-    Assert(sceneid < MAX_SCENES);
-
-    EntitySystemInit(&gstate->perm);
-
-    // Signal to scene update func to run init.
-    gstate->init = true;
-    gstate->update = true;
-    gstate->debug = false;
-    gstate->debug_ever = false;
-    gstate->timer = 0.0f;
-    gstate->nframe = 0;
-
-    gstate->sceneid = sceneid;
-    gstate->nextsceneid = gstate->sceneid;
-}
-
-typedef enum {
-    SS_NONE = 0,
-    SS_COUNT,
-} SceneState;
-
-static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
-
-typedef enum {
-    PS_NONE = 0,
-    PS_COUNT,
-} PlayerState;
-
-LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
-    if (PolyhedronIsNull(&ea->shape)) {
-        return;
-    }
-    Polyhedron pa = PolyhedronTransform(ea->shape, ea->scale, ea->orient, ea->pos);
-
-    for (Entity* eb = ea; IncrementEntity(&eb);) {
-        if (ea == eb || PolyhedronIsNull(&eb->shape)) {
-            continue;
-        }
-
-        Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
-
-        CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
-        bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
-        if (collides) {
-            // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-            //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
-            // }
-            // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-            //     breakpoint();
-            // }
-            // TODO: Should I just continue on here? At the moment we detect all collisions, but need to
-            // verify that works if for say we collide with a wall that has multiple geometry entities
-            // inside of it
-            ArrPush(collisions, info);
-        }
-    }
-}
-
-static void SceneDefaultTick(GameState* gstate, GameInput* input) {
-    f32 dt = gstate->dt;
-
-    if (gstate->init) {
-    }
-
-    if (gstate->update) {
-    }
-
-    if (gstate->render) {
-        BeginRender(dt);
-
-        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
-        // _world sizes from gstate.
-        f32 width = gstate->renderw;
-        f32 height = gstate->renderh;
-        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
-
-        char msg[] = "DEFAULT SCENE";
-        u32 size = strlen(msg);
-
-        LFont font = GetLFontClosest(20.0f);
-        DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
-
-        EndShaderPass();
-
-        EndRender();
-    }
-}
-
-static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
-    f32 dt = gstate->dt;
-
-    if (gstate->init) {
-        gstate->camera.eye = Vec3Lit(50.0f, 50.0f, 50.0f);
-        gstate->camera.target = Vec3Zero();
-        gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
-    }
-
-    if (gstate->update) {
-    }
-
-    if (gstate->render) {
-        BeginRender(dt);
-
-        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
-        // _world sizes from gstate.
-        f32 width = gstate->renderw;
-        f32 height = gstate->renderh;
-        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
-
-        pass->view = CameraGetViewMat(gstate->camera);
-        pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
-
-        // DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
-
-        // DrawLSphere(Vec3Zero(), 5.0f, LBLUE);
-
-        // DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
-        DrawMesh(GetMesh(M_HELLO_MONKEY), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
-
-        EndShaderPass();
-
-        EndRender();
-    }
-}
-
-// 1 meter = N pixels scale factor.
-#define PPM (1.0f)
-#define MPP (1.0f / PPM)
-#define Meter2Px(m) ((m) * PPM)
-#define Px2Meter(px) ((px) * MPP)
+// S:UI
 
 static Vec4 COLORS[] = {
     RGBLit(50.0f, 50.0f, 50.0f),
@@ -5001,6 +4704,306 @@ static UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
     UIBoxEx(ui, text, flags & (~UI_FLAG_ABLE_TO_BE_CLICKED), UISizePctParent(1.0f), UISizeText(), style, &action);
     return action;
 }
+
+////////////////////////////////////////////////////
+
+typedef struct {
+    Vec3 eye;  // world space position of the camera.
+    Vec3 target;
+    Vec3 up;
+} LCamera;
+
+// static Mat4 LCameraGetView(LCamera c) {
+//     return Mat4Invert(Mat4Multiply(Mat4TranslateV(c.eye), Mat4RotateEuler(c.orient)));
+// }
+
+// Returns the matrix that when applied will put the origin in the same position and orientation of the camera.
+LCORE Mat4 CameraGetViewMat(LCamera camera) { return Mat4LookAt(camera.eye, camera.target, camera.up); }
+
+LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
+    return Mat4Invert(Mat4Multiply(Mat4TranslateV(eye), Mat4RotateEuler(orient)));
+}
+
+#define Grid2WorldEx(pos, w, h, d) (Vec3Lit((pos).x * (w), (pos).y * (h), (pos).z * (d)))
+
+static const f32 GRID_WIDTH = 16.0f;
+static const f32 GRID_HEIGHT = 16.0f;
+static const f32 GRID_DEPTH = 1.0f;
+#define Grid2World(pos) (Grid2WorldEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
+
+#define World2GridEx(pos, w, h, d) (Vec3Lit((u32)((pos).x / (w)), (u32)((pos).y / (h)), (u32)((pos).z) / (d)))
+#define World2Grid(pos) (World2GridEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
+////////////////////////////////////////////////////
+
+typedef enum {
+    PHASE_NONE = 0,
+    PHASE_EOD,
+    PHASE_PLAYING,
+    PHASE_GAMEOVER,
+    PHASE_SHOP_OPEN,
+} GamePhase;
+
+////////////////////////////////////////////////////
+
+#define MAX_SCENES 10
+
+typedef enum {
+    SCENE_DEFAULT = 0,
+    SCENE_MAIN,
+    SCENE_DEFAULT_3D,
+    SCENE_COUNT,
+} SceneId;
+
+typedef struct GameState {
+    /////////////////////////////////////////
+    // Core fields
+    Arena perm;
+    Arena temp;
+
+    bool debug;
+    bool update;
+    bool render;
+    bool game_over;
+    bool init;  // True on first frame of scene, tells scene to run any init code.
+
+    // TODO: Move this to RenderState and move a reference to RSTATE here. Or just get rid of this and have a
+    // GetScreen/RenderWidth() function that reads RSTATE.
+    u32 renderw;
+    u32 renderh;
+    f32 renderw_world;  // in meters
+    f32 renderh_world;  // in meters
+    u32 screenw;
+    u32 screenh;
+
+    bool debug_ever;
+
+    f32 dt;  // frame delta time.
+    f32 timer;
+    u32 nframe;            // num frame we are on.
+    f32 frame_times[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
+    i32 fts_tail;
+    i32 fts_head;
+    u32 fps;
+    i32 target_fps;        // render fps we are targetting.
+    f32 fixed_dt;          // fixed dt we will update the simulation with for stability.
+    f32 accumulated_time;  // Time we have yet to simulate.
+
+    void (*scenefuncs[MAX_SCENES])(struct GameState*, GameInput* input);
+    u32 scenefuncssize;
+    SceneId sceneid;
+    SceneId nextsceneid;
+
+    LCamera camera;
+
+    /////////////////////////////////////////
+    // Scene fields
+
+    f32 timer_sec;
+
+    f32 score;
+    f32 score2;
+
+    GamePhase phase;
+
+    i32 worker_count;
+    f32 worker_cost;
+
+    i32 upgraded_worker_count;
+    i32 upgraded_worker_count2;
+    i32 upgraded_worker_count3;
+
+    f32 worker_cooldown_sec;
+    f32 worker_cooldown_sec_cost;
+
+    f32 researcher_cooldown_sec;
+    i32 researcher_count;
+
+    EntityId mail_root;
+
+    i32 day;
+    i32 num_sorted;
+    i32 target_score;
+
+    EntityId worker_root;
+    EntityId researcher_root;
+
+    bool shop_open;
+} GameState;
+
+static GameState GState;
+
+#define GetGameState() (&GState)
+
+typedef void (*SceneTickFunc)(GameState* gstate);
+
+i32 GameGetTargetFps() { return GetGameState()->target_fps; }
+
+// Converts a screen space position (assumes origin bottom left) to a 2d position in world space.
+Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
+    GameState* gstate = GetGameState();
+    RenderState* rstate = GetRenderState();
+
+    Vec2 viewport_dims = Vec2Lit(rstate->target.width, rstate->target.height);
+    Vec2 viewport_origin = Vec2Zero();
+
+    // Transform from screen space to clip space.
+    // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glViewport.xhtml
+    Vec3 pos_clip;
+    pos_clip.x = ((pos_screen.x - viewport_origin.x) * (2.0f / viewport_dims.x)) - 1.0f;
+    pos_clip.y = ((pos_screen.y - viewport_origin.y) * (2.0f / viewport_dims.y)) - 1.0f;
+    pos_clip.z = 0.0f;
+    // PlatformLog(LLOG_INFO, "Pos clip %f %f %f", pos_clip.x, pos_clip.y, pos_clip.z);
+
+    // Transform from clip to camera space and from camera to world.
+    // TODO: I should auto derive these matrices from render or game state potentially? The values hardcoded here could
+    // become out of sync if I change the setup in the game tick rendering
+    Mat4 inv_proj = Mat4Invert(Mat4Ortho(-0.5f * gstate->renderw_world, 0.5f * gstate->renderw_world,
+                                         -0.5f * gstate->renderh_world, 0.5f * gstate->renderh_world, -100.0f, 100.0f));
+    Mat4 inv_view = Mat4Invert(CameraGetViewMat(gstate->camera));
+    Mat4 inv = Mat4Multiply(inv_view, inv_proj);
+    Vec3 pos_world = Vec3WTransform(pos_clip, inv);
+
+    // PlatformLog(LLOG_INFO, "Pos world %f %f %f", pos_world.x, pos_world.y, pos_world.z);
+    return Vec3ToVec2(pos_world);
+}
+
+// Resets global state/system state that contains per scene info. Experimental approach
+// for use in scene switching as opposed to putting all this state into GameState object
+// and passing that around. The globalness of these systems is kind of convenient at the
+// moment.
+static void GameStateLoadScene(GameState* gstate, SceneId sceneid) {
+    Assert(sceneid < MAX_SCENES);
+
+    EntitySystemInit(&gstate->perm);
+
+    // Signal to scene update func to run init.
+    gstate->init = true;
+    gstate->update = true;
+    gstate->debug = false;
+    gstate->debug_ever = false;
+    gstate->timer = 0.0f;
+    gstate->nframe = 0;
+
+    gstate->sceneid = sceneid;
+    gstate->nextsceneid = gstate->sceneid;
+}
+
+typedef enum {
+    SS_NONE = 0,
+    SS_COUNT,
+} SceneState;
+
+static const Vec2 GRIDR = {.x = GRID_WIDTH, .y = GRID_HEIGHT};
+
+typedef enum {
+    PS_NONE = 0,
+    PS_COUNT,
+} PlayerState;
+
+LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
+    if (PolyhedronIsNull(&ea->shape)) {
+        return;
+    }
+    Polyhedron pa = PolyhedronTransform(ea->shape, ea->scale, ea->orient, ea->pos);
+
+    for (Entity* eb = ea; IncrementEntity(&eb);) {
+        if (ea == eb || PolyhedronIsNull(&eb->shape)) {
+            continue;
+        }
+
+        Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
+
+        CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
+        bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
+        if (collides) {
+            // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+            //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+            // }
+            // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+            //     breakpoint();
+            // }
+            // TODO: Should I just continue on here? At the moment we detect all collisions, but need to
+            // verify that works if for say we collide with a wall that has multiple geometry entities
+            // inside of it
+            ArrPush(collisions, info);
+        }
+    }
+}
+
+static void SceneDefaultTick(GameState* gstate, GameInput* input) {
+    f32 dt = gstate->dt;
+
+    if (gstate->init) {
+    }
+
+    if (gstate->update) {
+    }
+
+    if (gstate->render) {
+        BeginRender(dt);
+
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
+        // _world sizes from gstate.
+        f32 width = gstate->renderw;
+        f32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+        char msg[] = "DEFAULT SCENE";
+        u32 size = strlen(msg);
+
+        LFont font = GetLFontClosest(20.0f);
+        DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
+
+        EndShaderPass();
+
+        EndRender();
+    }
+}
+
+static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
+    f32 dt = gstate->dt;
+
+    if (gstate->init) {
+        gstate->camera.eye = Vec3Lit(50.0f, 50.0f, 50.0f);
+        gstate->camera.target = Vec3Zero();
+        gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
+    }
+
+    if (gstate->update) {
+    }
+
+    if (gstate->render) {
+        BeginRender(dt);
+
+        ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+        // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
+        // _world sizes from gstate.
+        f32 width = gstate->renderw;
+        f32 height = gstate->renderh;
+        pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
+
+        pass->view = CameraGetViewMat(gstate->camera);
+        pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
+
+        // DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
+
+        // DrawLSphere(Vec3Zero(), 5.0f, LBLUE);
+
+        // DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
+        DrawMesh(GetMesh(M_HELLO_MONKEY), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
+
+        EndShaderPass();
+
+        EndRender();
+    }
+}
+
+// 1 meter = N pixels scale factor.
+#define PPM (1.0f)
+#define MPP (1.0f / PPM)
+#define Meter2Px(m) ((m) * PPM)
+#define Px2Meter(px) ((px) * MPP)
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
