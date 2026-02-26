@@ -4063,19 +4063,6 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-
-    EntityId next_mail;
-    EntityId next_worker;
-    EntityId next_researcher;
-
-    f32 work_cooldown_dt;
-    f32 work_cooldown_sec;
-
-    i32 pickup_count;
-
-    f32 jiggle_cooldown_sec;
-
-    QueuedMailArr mail;
 } Entity;
 
 typedef struct {
