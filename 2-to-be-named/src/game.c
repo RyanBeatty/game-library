@@ -3500,8 +3500,6 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 typedef enum {
     SOUND_NONE = 0,
     SOUND_BEEP,
-    SOUND_SORT,
-    SOUND_RESEARCHED,
     SOUND_COUNT,
 } SoundTag;
 
@@ -3517,10 +3515,6 @@ static void LoadSounds() {
     INIT = true;
     SOUNDS[SOUND_NONE] = 0;
     SOUNDS[SOUND_BEEP] = PlatformLoadSound("assets/sounds/beep.wav");
-    // https://sfxr.me/#57uBnWaP2P9Tqnb9U7C2ZWuqF7Yn8sRtHgc3tYYGh7QCv86Wu2sF1kFkPh5bvtBQ9iaPWGSLgdqsvbkvpHCN1wscN8HpzxFZ1iBxiQhoGz63dAo4uDr85wAZm
-    SOUNDS[SOUND_SORT] = PlatformLoadSound("assets/sounds/sort.wav");
-    // https://sfxr.me/#11111EfHDkB1AYUt1C6Hv6ASaE7aQKgvheekiQPKKUpuJBGXdrcyTpY1yFNDUVEPmr4VJJAkLk55JGji9fnV6N8XpxEY4wUA1mD4R57MAcBFNbbdsfReHhEX
-    SOUNDS[SOUND_RESEARCHED] = PlatformLoadSound("assets/sounds/researched.wav");
 }
 
 ////////////////////////////////////////////////////////////
