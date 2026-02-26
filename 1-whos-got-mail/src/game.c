@@ -4816,6 +4816,17 @@ static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInp
     ui->input = input;
 }
 
+static void UIBegin(UIState* ui, Arena* perm, GameInput* input, f32 width, f32 height, LShader shader) {
+    ShaderPass* pass = BeginShaderPass(shader);
+    pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
+    UIStateInit(ui, perm, width, height, input);
+}
+
+static void UIEnd(UIState* ui) { EndShaderPass(); }
+
+#define UI2D(ui, perm, input, width, height, shader) \
+    Scoped(UIBegin((ui), (perm), (input), (width), (height), (shader)), UIEnd((ui)))
+
 static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBoxStyle style) {
     UIBox* parent = UIGetParent(ui);
     Vec2 top_left = UIBoxGetCursor(parent);
@@ -5501,10 +5512,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         // 2D HUD
         {
-            ShaderPass* pass = BeginShaderPass(GetDefaultShader());
             f32 width = gstate->renderw;
             f32 height = gstate->renderh;
-            pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
             bool debug = false;
             if (debug) {
@@ -5512,10 +5521,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 gstate->score2 = 1000000.0f;
             }
 
-            {
-                UIState ui = {0};
-                UIStateInit(&ui, &gstate->temp, width, height, input);
+            UIState ui = {0};
 
+            UI2D(&ui, &gstate->temp, input, width, height, GetDefaultShader()) {
                 LFont font = GetLFontClosest(40.0f);
                 UIPushFont(&ui, font);
 
@@ -5770,8 +5778,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
             }
-
-            EndShaderPass();
         }
 
         EndRender();
