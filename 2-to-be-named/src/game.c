@@ -4999,7 +4999,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->render) {
-        Render(dt) {}
+        Render(dt) {
+            UIState ui = {0};
+            f32 screen_width = gstate->renderw;
+            f32 screen_height = gstate->renderh;
+            UI2D(&ui, &gstate->temp, input, screen_width, screen_height, GetDefaultShader()) {
+                UIPushFont(&ui, GetLFontClosest(40.0f));
+                UILabel(&ui, Str8FromC("hello, world"), UI_FLAG_NONE);
+            }
+        }
     }
 }
 
