@@ -4129,10 +4129,7 @@ static Entity* NextFreeEntity() {
     return NULL;
 }
 
-static void EntityInitGameplayFields(Entity* entity) {
-    entity->mail.cap = ArraySizeOf(entity->mail.data);
-    entity->mail.len = 0;
-}
+static void EntityInitGameplayFields(Entity* entity) {}
 
 LCORE Entity* AllocateEntity() {
     Entity* entity = NextFreeEntity();
@@ -5002,6 +4999,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->render) {
+        Render(dt) {}
     }
 }
 
