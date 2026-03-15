@@ -1513,7 +1513,7 @@ typedef struct {
 
             /////////////////////////////////
             // Pipeline
-            // LShader shader;
+            LShader shader;
             Mat4 view;
             Mat4 proj;
 
