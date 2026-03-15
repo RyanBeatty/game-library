@@ -1427,6 +1427,48 @@ static void RenderDataInit(Arena* perm) {
     TexturesInit();
 }
 
+#define GLSL(src) "#version 330 core\n" #src
+
+typedef u32 ShaderId;
+
+typedef struct {
+    // Slot 0 data
+    Mat4 view;
+    Mat4 proj;
+    ///////
+    // Slot 1 data.
+
+    Vec2 resolution;
+    f32 dt;
+    f32 timer;
+    i32 nframe;
+} EnableShaderParams;
+
+typedef struct {
+    Mat4 modelm;  // converts from model space to world space.
+    Vec4 color;
+    Vec2 uvoffset;  // offset of the bottom left corner/origin in texture space (0, 0)
+    Vec2 uvscale;   // width/height in texture space of the Aserect to sample inside the texture [0, 1]
+    LTexture tx;
+} UniformShaderParams;
+
+// Forward decls to be able to define enable shader func. This is somewhat akward, maybe consider
+// trying to do what the File Pilot guy does and auto gen header files. That might be work tho.
+struct LShader;
+typedef struct LShader LShader;
+
+typedef void (*EnableShaderFunc)(LShader*, EnableShaderParams*);
+typedef void (*SetUniformsFunc)(LShader*, UniformShaderParams*);
+
+struct LShader {
+    ShaderId pid;  // program id.
+    u32 vid;
+    u32 fid;
+
+    EnableShaderFunc enable_func;
+    SetUniformsFunc set_uniforms_func;
+};
+
 typedef enum {
     CMD_NONE = 0,
     CMD_DRAW_MESH,
@@ -1493,48 +1535,6 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
     cmd->meshcmd.uvscale = Vec2Lit(1.0f, 1.0f);
     cmd->meshcmd.tx = GetTexture(TX_DEFAULT);
 }
-
-#define GLSL(src) "#version 330 core\n" #src
-
-typedef u32 ShaderId;
-
-typedef struct {
-    // Slot 0 data
-    Mat4 view;
-    Mat4 proj;
-    ///////
-    // Slot 1 data.
-
-    Vec2 resolution;
-    f32 dt;
-    f32 timer;
-    i32 nframe;
-} EnableShaderParams;
-
-typedef struct {
-    Mat4 modelm;  // converts from model space to world space.
-    Vec4 color;
-    Vec2 uvoffset;  // offset of the bottom left corner/origin in texture space (0, 0)
-    Vec2 uvscale;   // width/height in texture space of the Aserect to sample inside the texture [0, 1]
-    LTexture tx;
-} UniformShaderParams;
-
-// Forward decls to be able to define enable shader func. This is somewhat akward, maybe consider
-// trying to do what the File Pilot guy does and auto gen header files. That might be work tho.
-struct LShader;
-typedef struct LShader LShader;
-
-typedef void (*EnableShaderFunc)(LShader*, EnableShaderParams*);
-typedef void (*SetUniformsFunc)(LShader*, UniformShaderParams*);
-
-struct LShader {
-    ShaderId pid;  // program id.
-    u32 vid;
-    u32 fid;
-
-    EnableShaderFunc enable_func;
-    SetUniformsFunc set_uniforms_func;
-};
 
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
     char error[1024] = {0};
