@@ -1497,6 +1497,19 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
 
 typedef u32 ShaderId;
 
+typedef struct {
+    // Slot 0 data
+    Mat4 view;
+    Mat4 proj;
+    ///////
+    // Slot 1 data.
+
+    Vec2 resolution;
+    f32 dt;
+    f32 timer;
+    i32 nframe;
+} EnableShaderParams;
+
 // Forward decls to be able to define enable shader func. This is somewhat akward, maybe consider
 // trying to do what the File Pilot guy does and auto gen header files. That might be work tho.
 struct ShaderPass;
@@ -1504,7 +1517,7 @@ typedef struct ShaderPass ShaderPass;
 struct LShader;
 typedef struct LShader LShader;
 
-typedef void (*EnableShaderFunc)(LShader*, ShaderPass*);
+typedef void (*EnableShaderFunc)(LShader*, EnableShaderParams*);
 typedef void (*SetUniformsFunc)(LShader*, DrawCmd*);
 
 struct LShader {
@@ -1584,7 +1597,7 @@ struct ShaderPass {
     DrawCmd cmds[MAX_CMDS];
 };
 
-LCORE void EnableDefaultShader(LShader* shader, ShaderPass* pass) {
+LCORE void EnableDefaultShader(LShader* shader, EnableShaderParams* params) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
     static i32 V_PROJ = 0;
@@ -1606,13 +1619,13 @@ LCORE void EnableDefaultShader(LShader* shader, ShaderPass* pass) {
         glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
     }
 
-    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
-    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
 
-    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
-    glUniform1f(F_TIMER, pass->timer);
+    glUniform2fv(F_RESOLUTION, 1, (const f32*)&params->resolution.f);
+    glUniform1f(F_TIMER, params->timer);
 
-    glUniform1i(F_NFRAME, pass->nframe);
+    glUniform1i(F_NFRAME, params->nframe);
 }
 
 LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
@@ -1708,7 +1721,7 @@ static LShader GetDefaultShader() {
     return SHADER;
 }
 
-LCORE void EnableLineShader(LShader* shader, ShaderPass* pass) {
+LCORE void EnableLineShader(LShader* shader, EnableShaderParams* params) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
     static i32 V_PROJ = 0;
@@ -1730,13 +1743,13 @@ LCORE void EnableLineShader(LShader* shader, ShaderPass* pass) {
         glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
     }
 
-    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
-    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
 
-    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
-    glUniform1f(F_TIMER, pass->timer);
+    glUniform2fv(F_RESOLUTION, 1, (const f32*)&params->resolution.f);
+    glUniform1f(F_TIMER, params->timer);
 
-    glUniform1i(F_NFRAME, pass->nframe);
+    glUniform1i(F_NFRAME, params->nframe);
 }
 
 LCORE void LineShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
@@ -1870,7 +1883,7 @@ LCORE LShader GetLineShader() {
     return SHADER;
 }
 
-LCORE void EnableNoiseShader(LShader* shader, ShaderPass* pass) {
+LCORE void EnableNoiseShader(LShader* shader, EnableShaderParams* params) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
     static i32 V_PROJ = 0;
@@ -1892,13 +1905,13 @@ LCORE void EnableNoiseShader(LShader* shader, ShaderPass* pass) {
         glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
     }
 
-    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
-    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
 
-    glUniform2fv(F_RESOLUTION, 1, (const f32*)&pass->resolution.f);
-    glUniform1f(F_TIMER, pass->timer);
+    glUniform2fv(F_RESOLUTION, 1, (const f32*)&params->resolution.f);
+    glUniform1f(F_TIMER, params->timer);
 
-    glUniform1i(F_NFRAME, pass->nframe);
+    glUniform1i(F_NFRAME, params->nframe);
 }
 
 LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
@@ -2029,7 +2042,7 @@ LCORE LShader GetNoiseShader() {
     return SHADER;
 }
 
-LCORE void EnableEffectsShader(LShader* shader, ShaderPass* pass) {
+LCORE void EnableEffectsShader(LShader* shader, EnableShaderParams* params) {
     static bool INIT = false;
     static i32 V_VIEW = 0;
     static i32 V_PROJ = 0;
@@ -2045,8 +2058,8 @@ LCORE void EnableEffectsShader(LShader* shader, ShaderPass* pass) {
         glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
     }
 
-    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&pass->view.m);
-    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&pass->proj.m);
+    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
+    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
 }
 
 LCORE void EffectsShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
@@ -2169,7 +2182,15 @@ static void ShaderPassExecute(ShaderPass* pass) {
     Assert(shader.enable_func != NULL);
     Assert(shader.set_uniforms_func != NULL);
 
-    shader.enable_func(&shader, pass);
+    EnableShaderParams enable_params = {
+        .view = pass->view,
+        .proj = pass->proj,
+        .dt = pass->dt,
+        .nframe = pass->nframe,
+        .resolution = pass->resolution,
+        .timer = pass->timer,
+    };
+    shader.enable_func(&shader, &enable_params);
 
     for (u32 i = 0; i < pass->clen; ++i) {
         DrawCmd* cmd = &pass->cmds[i];
