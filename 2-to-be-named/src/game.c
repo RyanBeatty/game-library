@@ -1442,6 +1442,7 @@ typedef struct {
         // Draws a mesh.
         struct {
             LMesh meshid;
+            // TODO: Remove all of the below when I figure out how to split into a push uniforms cmd.
             Mat4 modelm;  // converts from model space to world space.
             Vec4 color;
             Vec2 uvoffset;  // offset of the bottom left corner/origin in texture space (0, 0)
@@ -1510,13 +1511,21 @@ typedef struct {
     i32 nframe;
 } EnableShaderParams;
 
+typedef struct {
+    Mat4 modelm;  // converts from model space to world space.
+    Vec4 color;
+    Vec2 uvoffset;  // offset of the bottom left corner/origin in texture space (0, 0)
+    Vec2 uvscale;   // width/height in texture space of the Aserect to sample inside the texture [0, 1]
+    LTexture tx;
+} UniformShaderParams;
+
 // Forward decls to be able to define enable shader func. This is somewhat akward, maybe consider
 // trying to do what the File Pilot guy does and auto gen header files. That might be work tho.
 struct LShader;
 typedef struct LShader LShader;
 
 typedef void (*EnableShaderFunc)(LShader*, EnableShaderParams*);
-typedef void (*SetUniformsFunc)(LShader*, DrawCmd*);
+typedef void (*SetUniformsFunc)(LShader*, UniformShaderParams*);
 
 struct LShader {
     ShaderId pid;  // program id.
@@ -1624,7 +1633,7 @@ LCORE void EnableDefaultShader(LShader* shader, EnableShaderParams* params) {
     glUniform1i(F_NFRAME, params->nframe);
 }
 
-LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+LCORE void DefaultShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
     static i32 V_UVCOLOR = 0;
@@ -1632,7 +1641,6 @@ LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
 
-    Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
         INIT = true;
 
@@ -1643,14 +1651,14 @@ LCORE void DefaultShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
     }
 
-    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
-    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
-    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+    glBindTexture(GL_TEXTURE_2D, params->tx.id);
+    glUniform2f(F_TEXTURE0_RESOLUTION, params->tx.width, params->tx.height);
 }
 
 static LShader GetDefaultShader() {
@@ -1748,7 +1756,7 @@ LCORE void EnableLineShader(LShader* shader, EnableShaderParams* params) {
     glUniform1i(F_NFRAME, params->nframe);
 }
 
-LCORE void LineShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+LCORE void LineShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
     static i32 V_UVCOLOR = 0;
@@ -1756,7 +1764,6 @@ LCORE void LineShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
 
-    Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
         INIT = true;
 
@@ -1767,14 +1774,14 @@ LCORE void LineShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
     }
 
-    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
-    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
-    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+    glBindTexture(GL_TEXTURE_2D, params->tx.id);
+    glUniform2f(F_TEXTURE0_RESOLUTION, params->tx.width, params->tx.height);
 }
 
 LCORE LShader GetLineShader() {
@@ -1910,7 +1917,7 @@ LCORE void EnableNoiseShader(LShader* shader, EnableShaderParams* params) {
     glUniform1i(F_NFRAME, params->nframe);
 }
 
-LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+LCORE void NoiseShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
     static i32 V_UVCOLOR = 0;
@@ -1918,7 +1925,6 @@ LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
     static i32 V_UVOFFSET = 0;
     static i32 F_TEXTURE0_RESOLUTION = 0;
 
-    Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
         INIT = true;
 
@@ -1929,14 +1935,14 @@ LCORE void NoiseShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
     }
 
-    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
-    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
-    glUniform2f(F_TEXTURE0_RESOLUTION, cmd->meshcmd.tx.width, cmd->meshcmd.tx.height);
+    glBindTexture(GL_TEXTURE_2D, params->tx.id);
+    glUniform2f(F_TEXTURE0_RESOLUTION, params->tx.width, params->tx.height);
 }
 
 LCORE LShader GetNoiseShader() {
@@ -2058,14 +2064,13 @@ LCORE void EnableEffectsShader(LShader* shader, EnableShaderParams* params) {
     glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
 }
 
-LCORE void EffectsShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
+LCORE void EffectsShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
     static bool INIT = false;
     static i32 V_MODEL = 0;
     static i32 V_UVCOLOR = 0;
     static i32 V_UVSCALE = 0;
     static i32 V_UVOFFSET = 0;
 
-    Assert(cmd->type == CMD_DRAW_MESH);
     if (!INIT) {
         INIT = true;
 
@@ -2075,13 +2080,13 @@ LCORE void EffectsShaderSetUniforms(LShader* shader, DrawCmd* cmd) {
         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
     }
 
-    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&cmd->meshcmd.modelm.m);
-    glUniform4fv(V_UVCOLOR, 1, (const f32*)&cmd->meshcmd.color.f);
-    glUniform2fv(V_UVOFFSET, 1, (const f32*)&cmd->meshcmd.uvoffset.f);
-    glUniform2fv(V_UVSCALE, 1, (const f32*)&cmd->meshcmd.uvscale.f);
+    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
+    glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
+    glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
+    glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cmd->meshcmd.tx.id);
+    glBindTexture(GL_TEXTURE_2D, params->tx.id);
 }
 
 static LShader GetEffectsShader() {
@@ -2192,7 +2197,14 @@ static void ShaderPassExecute(ShaderPass* pass) {
         DrawCmd* cmd = &pass->cmds[i];
         switch (cmd->type) {
             case CMD_DRAW_MESH: {
-                shader.set_uniforms_func(&shader, cmd);
+                UniformShaderParams uniform_params = {
+                    .modelm = cmd->meshcmd.modelm,
+                    .color = cmd->meshcmd.color,
+                    .uvoffset = cmd->meshcmd.uvoffset,
+                    .uvscale = cmd->meshcmd.uvscale,
+                    .tx = cmd->meshcmd.tx,
+                };
+                shader.set_uniforms_func(&shader, &uniform_params);
 
                 glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
                                (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
