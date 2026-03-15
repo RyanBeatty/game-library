@@ -1512,8 +1512,6 @@ typedef struct {
 
 // Forward decls to be able to define enable shader func. This is somewhat akward, maybe consider
 // trying to do what the File Pilot guy does and auto gen header files. That might be work tho.
-struct ShaderPass;
-typedef struct ShaderPass ShaderPass;
 struct LShader;
 typedef struct LShader LShader;
 
@@ -1575,9 +1573,7 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
 
 #define MAX_CMDS 4092
 
-// No typedef because it is forward declared above.
-// A ShaderPass is basically a shader program + a list of draw commands to execute under the shader.
-struct ShaderPass {
+typedef struct {
     ShaderId _sid;
     LShader shader;
 
@@ -1595,7 +1591,7 @@ struct ShaderPass {
     u32 clen;
     u32 ccap;
     DrawCmd cmds[MAX_CMDS];
-};
+} ShaderPass;
 
 LCORE void EnableDefaultShader(LShader* shader, EnableShaderParams* params) {
     static bool INIT = false;
