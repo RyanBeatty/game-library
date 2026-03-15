@@ -5003,6 +5003,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             // Entities/Game World
             {
                 ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+                // Reminder that using the _world variables here ensures we convert from world units back to pixel units
+                // correctly.
                 Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
                 pass->proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
                                        -1.0f, 1.0f);
@@ -5054,6 +5056,8 @@ void GameInit() {
 
     gstate->renderw = 320.0f;
     gstate->renderh = 180.0f;
+    // Reminder, the way we convert from world units back to screen units for rendering is by using these for the
+    // projection matrix.
     gstate->renderw_world = Px2Meter(gstate->renderw);
     gstate->renderh_world = Px2Meter(gstate->renderh);
 
