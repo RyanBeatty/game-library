@@ -4983,7 +4983,7 @@ static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
     }
 }
 
-// 1 meter = N pixels scale factor.
+// 1 meter = N pixels scale factor. i.e. how many pixels are in 1 meter.
 #define PPM (1.0f)
 #define MPP (1.0f / PPM)
 #define Meter2Px(m) ((m) * PPM)
