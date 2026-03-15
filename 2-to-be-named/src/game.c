@@ -5000,12 +5000,36 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->render) {
         Render(dt) {
-            UIState ui = {0};
-            f32 screen_width = gstate->renderw;
-            f32 screen_height = gstate->renderh;
-            UI2D(&ui, &gstate->temp, input, screen_width, screen_height, GetDefaultShader()) {
-                UIPushFont(&ui, GetLFontClosest(40.0f));
-                UILabel(&ui, Str8FromC("hello, world"), UI_FLAG_NONE);
+            // Entities/Game World
+            {
+                ShaderPass* pass = BeginShaderPass(GetDefaultShader());
+                Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
+                pass->proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
+                                       -1.0f, 1.0f);
+
+                Vec3 grid_origin = Vec3Zero();
+                Vec2 grid_tile_dims = Vec2Lit(16.0f, 16.0f);
+                for (i32 r = 0; r < 9; ++r) {
+                    for (i32 c = 0; c < 12; ++c) {
+                        Vec3 pos = grid_origin;
+                        pos.x += c * grid_tile_dims.x;
+                        pos.y += r * grid_tile_dims.y;
+                        DrawAABB(Vec2ToVec3(pos), Vec2ToVec3(grid_tile_dims), LBLACK);
+                    }
+                }
+
+                EndShaderPass();
+            }
+
+            // UI.
+            {
+                UIState ui = {0};
+                f32 screen_width = gstate->renderw;
+                f32 screen_height = gstate->renderh;
+                UI2D(&ui, &gstate->temp, input, screen_width, screen_height, GetDefaultShader()) {
+                    UIPushFont(&ui, GetLFontClosest(40.0f));
+                    UILabel(&ui, Str8FromC("hello, world"), UI_FLAG_NONE);
+                }
             }
         }
     }
@@ -5028,8 +5052,8 @@ void GameInit() {
     byte* temp_buffer = New(&gstate->perm, GB(1), byte);
     gstate->temp = NewArena(temp_buffer, GB(1));
 
-    gstate->renderw = 1920.0f;
-    gstate->renderh = 1080.0f;
+    gstate->renderw = 320.0f;
+    gstate->renderh = 180.0f;
     gstate->renderw_world = Px2Meter(gstate->renderw);
     gstate->renderh_world = Px2Meter(gstate->renderh);
 
