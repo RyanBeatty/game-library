@@ -1431,6 +1431,7 @@ typedef enum {
     CMD_NONE = 0,
     CMD_DRAW_MESH,
     CMD_CLEAR,
+    CMD_BEGIN_PASS,
     CMD_COUNT,
 } DrawCmdType;
 
@@ -1452,6 +1453,29 @@ typedef struct {
         struct {
             Vec4 color;
         } clearcmd;
+
+        struct {
+            // TODO: We are duplicating the RenderPass fields here due to circular dep issues. Change this to just store
+            // a RenderPass value Once we've moved DrawCmd to be defined after both RenderPass (easy) and
+            // ShaderPass(hard).
+            /////////////////////////////////
+            // Pipeline/load actions.
+            bool depth_test;
+
+            Vec4 clear_color;
+            bool clear_color_flag;
+            /////////////////////////////////
+            // Attachments
+            RenderTarget target;
+
+            /////////////////////////////////
+            // Pipeline
+            // LShader shader;
+            Mat4 view;
+            Mat4 proj;
+
+            /////////////////////////////////
+        } beginpass;
     };
 
     // Pass arbitrary shader data (ex. like new uniforms to set) via this member.
@@ -1539,6 +1563,7 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
 #define MAX_CMDS 4092
 
 // No typedef because it is forward declared above.
+// A ShaderPass is basically a shader program + a list of draw commands to execute under the shader.
 struct ShaderPass {
     ShaderId _sid;
     LShader shader;
@@ -2171,6 +2196,104 @@ static void ShaderPassExecute(ShaderPass* pass) {
         }
     }
 }
+
+LCORE void DrawCmdExecute(DrawCmd* cmd) {
+    switch (cmd->type) {
+        case CMD_DRAW_MESH: {
+            // TODO: This is missing uniform application.
+            glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
+            break;
+        };
+
+        case CMD_CLEAR: {
+            Vec4 color = cmd->clearcmd.color;
+            glClearColor(color.r, color.g, color.b, color.a);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            break;
+        }
+
+        case CMD_BEGIN_PASS: {
+            // // Begin.
+            // {
+            //     // Render draw commands to render target.
+            //     glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
+            //     // IMPORTANT.
+            //     glViewport(0, 0, rstate->target.width, rstate->target.height);
+            //     // I forget exactly why we want depth testing. I think maybe has to do with not drawing portions of
+            //     // sprites that are blank? maybe thats just alpha blending.
+            //     glEnable(GL_DEPTH_TEST);
+            //     // Pass depth test if incomming_depth <= stored_depth. This is necessary to ensure we still draw
+            //     // sprites which have the same z value which so far seems like a desirable thing.
+            //     glDepthFunc(GL_LEQUAL);
+
+            //     // TODO: turn this into a draw command using unions.
+            //     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            //     // TODO: move this to shader pass data.
+            //     glBindVertexArray(VAO);
+            // }
+            break;
+        }
+
+        default: {
+            Assert(false);
+            break;
+        };
+    }
+}
+
+// A RenderPass contains the target,
+// TODO: Think about transitioning to a single command buffer. begin/end passes are then just commands which have
+// references to a RenderPass struct.
+// context: https://chatgpt.com/c/69b71662-5bdc-832e-8986-444cf2da1b05
+/*
+Printer Analogy	  Sokol Equivalent	Explanation
+Printer settings
+    * Pipeline
+    * The “rules” for rendering: shaders, blending, culling, primitive type. You configure it once for how you want to
+render geometry. Document to print
+    * Bindings
+    * The actual data: vertex buffers, index buffers, textures. Pipelines define how to render; bindings define what to
+render.
+Paper / tray
+    * Pass attachments
+    * Where you are rendering to: screen framebuffer, offscreen texture, depth buffer.
+“Print this sheet now” command
+    * Draw call (sg_draw)
+    * Tells the GPU to actually render a set of vertices with the current pipeline + bindings.
+Instructions like “clear paper first”
+    * Pass action (sg_pass_action)
+    * Defines load/clear behavior for the render target: clear, load existing content, or don’t care.
+Start printing a batch
+    * Begin pass (sg_begin_pass)
+    * Marks the start of rendering to a specific render target with specific actions.
+Finish printing a batch
+    * End pass (sg_end_pass)
+    * Marks the end of the pass. Nothing is executed yet; just recorded.
+Flush printer queue and actually print
+    * Commit (sg_commit)
+    * Sends all the recorded commands to the GPU and executes them.
+*/
+typedef struct {
+    /////////////////////////////////
+    // Pipeline/load actions.
+    bool depth_test;
+
+    Vec4 clear_color;
+    bool clear_color_flag;
+    /////////////////////////////////
+    // Attachments
+    RenderTarget target;
+
+    /////////////////////////////////
+    // Pipeline
+    LShader shader;
+    Mat4 view;
+    Mat4 proj;
+
+    /////////////////////////////////
+} RenderPass;
 
 #define MAX_SHADER_PASSES 10
 static const u32 PASSNULL = MAX_SHADER_PASSES;
