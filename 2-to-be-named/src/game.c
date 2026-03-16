@@ -1586,6 +1586,13 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
 #define MAX_CMDS 4092
 
 typedef struct {
+    bool depth_test;
+
+    Vec4 clear_color;
+    bool clear_color_flag;
+} RenderPassLoadAction;
+
+typedef struct {
     ///////////////////////
 
     u32 clen;
@@ -1594,10 +1601,8 @@ typedef struct {
 
     /////////////////////////////////
     // Pipeline/load actions.
-    bool depth_test;
+    RenderPassLoadAction load_action;
 
-    Vec4 clear_color;
-    bool clear_color_flag;
     /////////////////////////////////
     // Attachments
     RenderTarget target;
@@ -1740,324 +1745,327 @@ static LShader GetDefaultShader() {
     return SHADER;
 }
 
-LCORE void EnableLineShader(LShader* shader, EnableShaderParams* params) {
-    static bool INIT = false;
-    static i32 V_VIEW = 0;
-    static i32 V_PROJ = 0;
-    static i32 F_RESOLUTION = 0;
-    static i32 F_TIMER = 0;
-    static i32 F_NFRAME = 0;
+// LCORE void EnableLineShader(LShader* shader, EnableShaderParams* params) {
+//     static bool INIT = false;
+//     static i32 V_VIEW = 0;
+//     static i32 V_PROJ = 0;
+//     static i32 F_RESOLUTION = 0;
+//     static i32 F_TIMER = 0;
+//     static i32 F_NFRAME = 0;
 
-    glUseProgram(shader->pid);
+//     glUseProgram(shader->pid);
 
-    if (!INIT) {
-        INIT = true;
-        V_VIEW = glGetUniformLocation(shader->pid, "vView");
-        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
-        F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
-        F_TIMER = glGetUniformLocation(shader->pid, "timer");
-        F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
+//     if (!INIT) {
+//         INIT = true;
+//         V_VIEW = glGetUniformLocation(shader->pid, "vView");
+//         V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+//         F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
+//         F_TIMER = glGetUniformLocation(shader->pid, "timer");
+//         F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
 
-        // IMPORTANT! Set texture uniform loc.
-        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
-    }
+//         // IMPORTANT! Set texture uniform loc.
+//         glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
+//     }
 
-    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
-    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
+//     glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
+//     glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
 
-    glUniform2fv(F_RESOLUTION, 1, (const f32*)&params->resolution.f);
-    glUniform1f(F_TIMER, params->timer);
+//     glUniform2fv(F_RESOLUTION, 1, (const f32*)&params->resolution.f);
+//     glUniform1f(F_TIMER, params->timer);
 
-    glUniform1i(F_NFRAME, params->nframe);
-}
+//     glUniform1i(F_NFRAME, params->nframe);
+// }
 
-LCORE void LineShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
-    static bool INIT = false;
-    static i32 V_MODEL = 0;
-    static i32 V_UVCOLOR = 0;
-    static i32 V_UVSCALE = 0;
-    static i32 V_UVOFFSET = 0;
-    static i32 F_TEXTURE0_RESOLUTION = 0;
+// LCORE void LineShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
+//     static bool INIT = false;
+//     static i32 V_MODEL = 0;
+//     static i32 V_UVCOLOR = 0;
+//     static i32 V_UVSCALE = 0;
+//     static i32 V_UVOFFSET = 0;
+//     static i32 F_TEXTURE0_RESOLUTION = 0;
 
-    if (!INIT) {
-        INIT = true;
+//     if (!INIT) {
+//         INIT = true;
 
-        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
-        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
-        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
-        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
-        F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
-    }
+//         V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+//         V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
+//         V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+//         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+//         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+//     }
 
-    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
-    glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
-    glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
-    glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
+//     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
+//     glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
+//     glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
+//     glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, params->tx.id);
-    glUniform2f(F_TEXTURE0_RESOLUTION, params->tx.width, params->tx.height);
-}
+//     glActiveTexture(GL_TEXTURE0);
+//     glBindTexture(GL_TEXTURE_2D, params->tx.id);
+//     glUniform2f(F_TEXTURE0_RESOLUTION, params->tx.width, params->tx.height);
+// }
 
-LCORE LShader GetLineShader() {
-    // clang-format off
-    static const char* VSRC = GLSL(
-        layout (location = 0) in vec3 vPos;
-        layout (location = 2) in vec2 vTextCoords;
-        
-        uniform mat4 vModel;
-        uniform mat4 vView;
-        uniform mat4 vProj;
-        uniform vec4 vUColor;
-        uniform vec2 vUVOffset;
-        uniform vec2 vUVScale;
-        
-        out vec4 fColor;
-        out vec2 fTextCoords;
-        out vec2 fPosLocal;
+// LCORE LShader GetLineShader() {
+//     // clang-format off
+//     static const char* VSRC = GLSL(
+//         layout (location = 0) in vec3 vPos;
+//         layout (location = 2) in vec2 vTextCoords;
 
-        void main() {
-           fTextCoords = vUVOffset + (vUVScale * vTextCoords);
-           gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
-           fColor = vUColor;
-           fPosLocal = vPos.xy;
-        }
-    );
-    // clang-format on
+//         uniform mat4 vModel;
+//         uniform mat4 vView;
+//         uniform mat4 vProj;
+//         uniform vec4 vUColor;
+//         uniform vec2 vUVOffset;
+//         uniform vec2 vUVScale;
 
-    // clang-format off
-    static const char* FSRC = GLSL(
-        in vec4 fColor;
-        in vec2 fTextCoords;
-        in vec2 fPosLocal;
+//         out vec4 fColor;
+//         out vec2 fTextCoords;
+//         out vec2 fPosLocal;
 
-        uniform sampler2D texture0;
-        uniform vec2 Texture0Resolution;
-        uniform vec2 resolution;
-        uniform float timer;
-        uniform int NFrame;
+//         void main() {
+//            fTextCoords = vUVOffset + (vUVScale * vTextCoords);
+//            gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
+//            fColor = vUColor;
+//            fPosLocal = vPos.xy;
+//         }
+//     );
+//     // clang-format on
 
-        out vec4 FragColor;
+//     // clang-format off
+//     static const char* FSRC = GLSL(
+//         in vec4 fColor;
+//         in vec2 fTextCoords;
+//         in vec2 fPosLocal;
 
-        void main() {
-            vec4 txColor = texture(texture0, fTextCoords);
-            // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
-            // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-            if (txColor.a < 0.01) {
-                discard;
-            }
-            // For blending to work here properly, its important that either texture is specified or texture
-            // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
-            FragColor = txColor * fColor;
+//         uniform sampler2D texture0;
+//         uniform vec2 Texture0Resolution;
+//         uniform vec2 resolution;
+//         uniform float timer;
+//         uniform int NFrame;
 
-            float alpha_mask = 1.0;
+//         out vec4 FragColor;
 
-            // {
-            //     float u = fTextCoords.x;
-            //     // aa radius. This represents the radius of a circle that determines how much alpha falloff
-            //     // the line pixels experience as our u coordinate goes from inside the line to outside the line.
-            //     // we are fully within the line in the range [r, 1-r] and outside the line outside of that range.
-            //     // Note that this assumes that the drawn line quad is oriented such that the u coordinate of each
-            //     // fragment lies along the width axis of the quad.
-            //     float r = 0.3;
-            //     // Construct a piecewise smoothing function that transitions smoothly from [0, 1] between the
-            //     // domain of [0, r], stays at 1 from [r, 1-r] and transitions smoothly decreasing from [1, 0]
-            //     // in the domain [1-r, r].
-            //     alpha_mask = smoothstep(0.0, 1.0, u / r) - 
-            //                     smoothstep(0.0, 1.0, (max(u - 1 + r, 0.0)) / r);
-            // }
+//         void main() {
+//             vec4 txColor = texture(texture0, fTextCoords);
+//             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some
+//             tansparent
+//             // parts. We want to discard those transparent parts else those values will get written to the depth
+//             buffer. if (txColor.a < 0.01) {
+//                 discard;
+//             }
+//             // For blending to work here properly, its important that either texture is specified or texture
+//             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+//             FragColor = txColor * fColor;
 
-            {
-                // Calculates AA in local space of the quad model. Assumes the quad has width of 0.5 in local space
-                // and that we are using an orthographic projection (I think due to perspective correct interpolation of 
-                // vertex attribute concerns.)
-                float x = abs(fPosLocal.x);  // pass in our vertex position in local space.
-                float edge = 0.5;            // Assume the quad model has edge vertex of 0.5
-                float w = 2.0 * fwidth(x);         // Get size of 1 pixel in screen space
-                alpha_mask *= 1.0 - smoothstep(edge - w, edge, x);  // Apply alpha blending of 1 pixel width at edge.
-            
-                // Do the same for AA the end edges of the line. Note that we use y for fwidth
-                // which I'm not 100% sure is correct.
-                float y = abs(fPosLocal.y);
-                float h = fwidth(y);  // Get ~size of 1 pixel in screen space in the y direction.
-                alpha_mask *= 1.0 - smoothstep(edge - h, edge, y);
-            }
+//             float alpha_mask = 1.0;
 
-            FragColor.a *= alpha_mask;
-        }
-    );
-    // clang-format on
+//             // {
+//             //     float u = fTextCoords.x;
+//             //     // aa radius. This represents the radius of a circle that determines how much alpha falloff
+//             //     // the line pixels experience as our u coordinate goes from inside the line to outside the line.
+//             //     // we are fully within the line in the range [r, 1-r] and outside the line outside of that range.
+//             //     // Note that this assumes that the drawn line quad is oriented such that the u coordinate of each
+//             //     // fragment lies along the width axis of the quad.
+//             //     float r = 0.3;
+//             //     // Construct a piecewise smoothing function that transitions smoothly from [0, 1] between the
+//             //     // domain of [0, r], stays at 1 from [r, 1-r] and transitions smoothly decreasing from [1, 0]
+//             //     // in the domain [1-r, r].
+//             //     alpha_mask = smoothstep(0.0, 1.0, u / r) -
+//             //                     smoothstep(0.0, 1.0, (max(u - 1 + r, 0.0)) / r);
+//             // }
 
-    static bool INIT = false;
-    static LShader SHADER = {0};
+//             {
+//                 // Calculates AA in local space of the quad model. Assumes the quad has width of 0.5 in local space
+//                 // and that we are using an orthographic projection (I think due to perspective correct interpolation
+//                 of
+//                 // vertex attribute concerns.)
+//                 float x = abs(fPosLocal.x);  // pass in our vertex position in local space.
+//                 float edge = 0.5;            // Assume the quad model has edge vertex of 0.5
+//                 float w = 2.0 * fwidth(x);         // Get size of 1 pixel in screen space
+//                 alpha_mask *= 1.0 - smoothstep(edge - w, edge, x);  // Apply alpha blending of 1 pixel width at edge.
 
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-        SHADER.enable_func = EnableLineShader;
-        SHADER.set_uniforms_func = LineShaderSetUniforms;
-    }
+//                 // Do the same for AA the end edges of the line. Note that we use y for fwidth
+//                 // which I'm not 100% sure is correct.
+//                 float y = abs(fPosLocal.y);
+//                 float h = fwidth(y);  // Get ~size of 1 pixel in screen space in the y direction.
+//                 alpha_mask *= 1.0 - smoothstep(edge - h, edge, y);
+//             }
 
-    return SHADER;
-}
+//             FragColor.a *= alpha_mask;
+//         }
+//     );
+//     // clang-format on
 
-LCORE void EnableNoiseShader(LShader* shader, EnableShaderParams* params) {
-    static bool INIT = false;
-    static i32 V_VIEW = 0;
-    static i32 V_PROJ = 0;
-    static i32 F_RESOLUTION = 0;
-    static i32 F_TIMER = 0;
-    static i32 F_NFRAME = 0;
+//     static bool INIT = false;
+//     static LShader SHADER = {0};
 
-    glUseProgram(shader->pid);
+//     if (!INIT) {
+//         INIT = true;
+//         LShaderInit(&SHADER, VSRC, FSRC);
+//         SHADER.enable_func = EnableLineShader;
+//         SHADER.set_uniforms_func = LineShaderSetUniforms;
+//     }
 
-    if (!INIT) {
-        INIT = true;
-        V_VIEW = glGetUniformLocation(shader->pid, "vView");
-        V_PROJ = glGetUniformLocation(shader->pid, "vProj");
-        F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
-        F_TIMER = glGetUniformLocation(shader->pid, "timer");
-        F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
+//     return SHADER;
+// }
 
-        // IMPORTANT! Set texture uniform loc.
-        glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
-    }
+// LCORE void EnableNoiseShader(LShader* shader, EnableShaderParams* params) {
+//     static bool INIT = false;
+//     static i32 V_VIEW = 0;
+//     static i32 V_PROJ = 0;
+//     static i32 F_RESOLUTION = 0;
+//     static i32 F_TIMER = 0;
+//     static i32 F_NFRAME = 0;
 
-    glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
-    glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
+//     glUseProgram(shader->pid);
 
-    glUniform2fv(F_RESOLUTION, 1, (const f32*)&params->resolution.f);
-    glUniform1f(F_TIMER, params->timer);
+//     if (!INIT) {
+//         INIT = true;
+//         V_VIEW = glGetUniformLocation(shader->pid, "vView");
+//         V_PROJ = glGetUniformLocation(shader->pid, "vProj");
+//         F_RESOLUTION = glGetUniformLocation(shader->pid, "resolution");
+//         F_TIMER = glGetUniformLocation(shader->pid, "timer");
+//         F_NFRAME = glGetUniformLocation(shader->pid, "NFrame");
 
-    glUniform1i(F_NFRAME, params->nframe);
-}
+//         // IMPORTANT! Set texture uniform loc.
+//         glUniform1i(glGetUniformLocation(shader->pid, "texture0"), 0);
+//     }
 
-LCORE void NoiseShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
-    static bool INIT = false;
-    static i32 V_MODEL = 0;
-    static i32 V_UVCOLOR = 0;
-    static i32 V_UVSCALE = 0;
-    static i32 V_UVOFFSET = 0;
-    static i32 F_TEXTURE0_RESOLUTION = 0;
+//     glUniformMatrix4fv(V_VIEW, 1, GL_FALSE, (const f32*)&params->view.m);
+//     glUniformMatrix4fv(V_PROJ, 1, GL_FALSE, (const f32*)&params->proj.m);
 
-    if (!INIT) {
-        INIT = true;
+//     glUniform2fv(F_RESOLUTION, 1, (const f32*)&params->resolution.f);
+//     glUniform1f(F_TIMER, params->timer);
 
-        V_MODEL = glGetUniformLocation(shader->pid, "vModel");
-        V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
-        V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
-        V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
-        F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
-    }
+//     glUniform1i(F_NFRAME, params->nframe);
+// }
 
-    glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
-    glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
-    glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
-    glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
+// LCORE void NoiseShaderSetUniforms(LShader* shader, UniformShaderParams* params) {
+//     static bool INIT = false;
+//     static i32 V_MODEL = 0;
+//     static i32 V_UVCOLOR = 0;
+//     static i32 V_UVSCALE = 0;
+//     static i32 V_UVOFFSET = 0;
+//     static i32 F_TEXTURE0_RESOLUTION = 0;
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, params->tx.id);
-    glUniform2f(F_TEXTURE0_RESOLUTION, params->tx.width, params->tx.height);
-}
+//     if (!INIT) {
+//         INIT = true;
 
-LCORE LShader GetNoiseShader() {
-    // clang-format off
-    static const char* VSRC = GLSL(
-        layout (location = 0) in vec3 vPos;
-        layout (location = 2) in vec2 vTextCoords;
-        
-        uniform mat4 vModel;
-        uniform mat4 vView;
-        uniform mat4 vProj;
-        uniform vec4 vUColor;
-        uniform vec2 vUVOffset;
-        uniform vec2 vUVScale;
-        
-        out vec4 fColor;
-        out vec2 fTextCoords;
-        out vec3 fWorldPos;
+//         V_MODEL = glGetUniformLocation(shader->pid, "vModel");
+//         V_UVCOLOR = glGetUniformLocation(shader->pid, "vUColor");
+//         V_UVOFFSET = glGetUniformLocation(shader->pid, "vUVOffset");
+//         V_UVSCALE = glGetUniformLocation(shader->pid, "vUVScale");
+//         F_TEXTURE0_RESOLUTION = glGetUniformLocation(shader->pid, "Texture0Resolution");
+//     }
 
-        void main() {
-           fTextCoords = vUVOffset + (vUVScale * vTextCoords);
-           gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
-           fColor = vUColor;
-           fWorldPos = (vModel * vec4(fWorldPos, 1.0)).xyz;
-        }
-    );
-    // clang-format on
+//     glUniformMatrix4fv(V_MODEL, 1, GL_FALSE, (const f32*)&params->modelm.m);
+//     glUniform4fv(V_UVCOLOR, 1, (const f32*)&params->color.f);
+//     glUniform2fv(V_UVOFFSET, 1, (const f32*)&params->uvoffset.f);
+//     glUniform2fv(V_UVSCALE, 1, (const f32*)&params->uvscale.f);
 
-    // clang-format off
-    static const char* FSRC = GLSL(
-        in vec4 fColor; 
-        in vec2 fTextCoords;
-        in vec3 fWorldPos;
+//     glActiveTexture(GL_TEXTURE0);
+//     glBindTexture(GL_TEXTURE_2D, params->tx.id);
+//     glUniform2f(F_TEXTURE0_RESOLUTION, params->tx.width, params->tx.height);
+// }
 
-        uniform sampler2D texture0;
-        uniform vec2 Texture0Resolution;
-        uniform vec2 resolution;
-        uniform float timer;
-        uniform int NFrame;
+// LCORE LShader GetNoiseShader() {
+//     // clang-format off
+//     static const char* VSRC = GLSL(
+//         layout (location = 0) in vec3 vPos;
+//         layout (location = 2) in vec2 vTextCoords;
 
-        out vec4 FragColor;
+//         uniform mat4 vModel;
+//         uniform mat4 vView;
+//         uniform mat4 vProj;
+//         uniform vec4 vUColor;
+//         uniform vec2 vUVOffset;
+//         uniform vec2 vUVScale;
 
-        // https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
-        uint pcg_hash(uint x) {
-            uint state = x * 747796405u + 2891336453u;
-            uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
-            return (word >> 22u) ^ word;
-        }
+//         out vec4 fColor;
+//         out vec2 fTextCoords;
+//         out vec3 fWorldPos;
 
-        float uv2whitenoise(vec2 uv, ivec2 dims) {
-            ivec2 texel = ivec2(floor(uv * dims));
-            uint seed = uint((texel.x * dims.y) + texel.y);
-            return float(pcg_hash(seed)) * (1.0 / 4294967295.0);
-        }
+//         void main() {
+//            fTextCoords = vUVOffset + (vUVScale * vTextCoords);
+//            gl_Position = vProj * vView * vModel * vec4(vPos.x, vPos.y, vPos.z, 1.0);
+//            fColor = vUColor;
+//            fWorldPos = (vModel * vec4(fWorldPos, 1.0)).xyz;
+//         }
+//     );
+//     // clang-format on
 
-        float whitenoise(vec3 value) {
-            // Produce a random value by dotting it with a random direction vector.
-            // The resulting random value will be how close our input vector is to the direciton vector
-            // multiplied by magnitudes.
-            float random = dot(value, vec3(2.971, 49.149, 0));
-            // Random could be a large number since our vectors are assumed to be unit vectors
-            // clamp to -1 to 1 range with sin function. This also gives our random value a wave like
-            // property. then to avoid tiling, multiply with a very large random number to essentially
-            // convert our small number to range [0, large number] which should eliminate tiling.
-            return fract(sin(random) * 143758.5453);
-        }
+//     // clang-format off
+//     static const char* FSRC = GLSL(
+//         in vec4 fColor;
+//         in vec2 fTextCoords;
+//         in vec3 fWorldPos;
 
-        void main() {
-            vec4 txColor = texture(texture0, fTextCoords);
-            // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
-            // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-            if (txColor.a < 0.01) {
-                discard;
-            }
-            // For blending to work here properly, its important that either texture is specified or texture
-            // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
-            FragColor = txColor * fColor;
-            float noise = whitenoise(vec3(fTextCoords, 1.0));
-            // Remember cant use texture dims as some textures are 1 pixel.
-            float noisehash = uv2whitenoise(fTextCoords, ivec2(10000, 10000));
-            FragColor = vec4(vec3(noisehash), 1.0);
-            if (noisehash == 0.0) {
-                FragColor = vec4(1, 0, 0, 1);
-            }
-        }
-    );
-    // clang-format on
+//         uniform sampler2D texture0;
+//         uniform vec2 Texture0Resolution;
+//         uniform vec2 resolution;
+//         uniform float timer;
+//         uniform int NFrame;
 
-    static bool INIT = false;
-    static LShader SHADER = {0};
+//         out vec4 FragColor;
 
-    if (!INIT) {
-        INIT = true;
-        LShaderInit(&SHADER, VSRC, FSRC);
-        SHADER.enable_func = EnableNoiseShader;
-        SHADER.set_uniforms_func = NoiseShaderSetUniforms;
-    }
+//         // https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+//         uint pcg_hash(uint x) {
+//             uint state = x * 747796405u + 2891336453u;
+//             uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+//             return (word >> 22u) ^ word;
+//         }
 
-    return SHADER;
-}
+//         float uv2whitenoise(vec2 uv, ivec2 dims) {
+//             ivec2 texel = ivec2(floor(uv * dims));
+//             uint seed = uint((texel.x * dims.y) + texel.y);
+//             return float(pcg_hash(seed)) * (1.0 / 4294967295.0);
+//         }
+
+//         float whitenoise(vec3 value) {
+//             // Produce a random value by dotting it with a random direction vector.
+//             // The resulting random value will be how close our input vector is to the direciton vector
+//             // multiplied by magnitudes.
+//             float random = dot(value, vec3(2.971, 49.149, 0));
+//             // Random could be a large number since our vectors are assumed to be unit vectors
+//             // clamp to -1 to 1 range with sin function. This also gives our random value a wave like
+//             // property. then to avoid tiling, multiply with a very large random number to essentially
+//             // convert our small number to range [0, large number] which should eliminate tiling.
+//             return fract(sin(random) * 143758.5453);
+//         }
+
+//         void main() {
+//             vec4 txColor = texture(texture0, fTextCoords);
+//             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some
+//             tansparent
+//             // parts. We want to discard those transparent parts else those values will get written to the depth
+//             buffer. if (txColor.a < 0.01) {
+//                 discard;
+//             }
+//             // For blending to work here properly, its important that either texture is specified or texture
+//             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
+//             FragColor = txColor * fColor;
+//             float noise = whitenoise(vec3(fTextCoords, 1.0));
+//             // Remember cant use texture dims as some textures are 1 pixel.
+//             float noisehash = uv2whitenoise(fTextCoords, ivec2(10000, 10000));
+//             FragColor = vec4(vec3(noisehash), 1.0);
+//             if (noisehash == 0.0) {
+//                 FragColor = vec4(1, 0, 0, 1);
+//             }
+//         }
+//     );
+//     // clang-format on
+
+//     static bool INIT = false;
+//     static LShader SHADER = {0};
+
+//     if (!INIT) {
+//         INIT = true;
+//         LShaderInit(&SHADER, VSRC, FSRC);
+//         SHADER.enable_func = EnableNoiseShader;
+//         SHADER.set_uniforms_func = NoiseShaderSetUniforms;
+//     }
+
+//     return SHADER;
+// }
 
 LCORE void EnableEffectsShader(LShader* shader, EnableShaderParams* params) {
     static bool INIT = false;
@@ -2109,15 +2117,15 @@ static LShader GetEffectsShader() {
     static const char* VSRC = GLSL(
         layout (location = 0) in vec3 vPos;
         layout (location = 2) in vec2 vTextCoords;
-        
+
         uniform mat4 vModel;
         uniform mat4 vView;
         uniform mat4 vProj;
-        
+
         uniform vec4 vUColor;
         uniform vec2 vUVOffset;
         uniform vec2 vUVScale;
-        
+
         out vec4 fColor;
         out vec2 fTextCoords;
 
@@ -2135,9 +2143,9 @@ static LShader GetEffectsShader() {
         in vec2 fTextCoords;
 
         uniform sampler2D texture0;
-        
+
         out vec4 FragColor;
-        
+
         vec2 uvremap(vec2 uv) {
             // as we near the edge of our screen apply greater distortion using a cubic function
             vec2 curvature = vec2(7.0, 7.0);
@@ -2147,14 +2155,14 @@ static LShader GetEffectsShader() {
             uv = uv * 0.5 + 0.5;
             return uv;
         }
-        
+
         vec4 scanLineIntensity(float uv, float resolution, float opacity) {
             float PI = 3.1415926535;
             float intensity = sin(uv * resolution * PI * 2.0);
             intensity = ((0.5 * intensity) + 0.5) * 0.9 + 0.1;
             return vec4(vec3(pow(intensity, opacity)), 1.0);
         }
-        
+
         void main() {
            vec2 uv = fTextCoords;
            vec4 txcolor = texture(texture0, uv);
