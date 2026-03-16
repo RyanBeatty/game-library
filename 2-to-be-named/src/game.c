@@ -2356,7 +2356,7 @@ static void ShaderPassExecute(ShaderPass* pass) {
     Assert(shader.enable_func != NULL);
     Assert(shader.set_uniforms_func != NULL);
 
-    if (false) {
+    {
         DrawCmd begin_pass_cmd = {.type = CMD_BEGIN_PASS,
                                   .beginpass = {
                                       .depth_test = pass->load_action.depth_test,
@@ -2379,46 +2379,9 @@ static void ShaderPassExecute(ShaderPass* pass) {
         DrawCmdExecute(&begin_pass_cmd);
     }
 
-    EnableShaderParams enable_params = {
-        .view = pass->view,
-        .proj = pass->proj,
-        .dt = pass->dt,
-        .nframe = pass->nframe,
-        .resolution = pass->resolution,
-        .timer = pass->timer,
-    };
-    shader.enable_func(&shader, &enable_params);
-
     for (u32 i = 0; i < pass->clen; ++i) {
         DrawCmd* cmd = &pass->cmds[i];
-        switch (cmd->type) {
-            case CMD_DRAW_MESH: {
-                UniformShaderParams uniform_params = {
-                    .modelm = cmd->meshcmd.modelm,
-                    .color = cmd->meshcmd.color,
-                    .uvoffset = cmd->meshcmd.uvoffset,
-                    .uvscale = cmd->meshcmd.uvscale,
-                    .tx = cmd->meshcmd.tx,
-                };
-                shader.set_uniforms_func(&shader, &uniform_params);
-
-                glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                               (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
-                break;
-            };
-
-            case CMD_CLEAR: {
-                Vec4 color = cmd->clearcmd.color;
-                glClearColor(color.r, color.g, color.b, color.a);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                break;
-            }
-
-            default: {
-                Assert(false);
-                break;
-            };
-        }
+        DrawCmdExecute(cmd);
     }
 }
 
