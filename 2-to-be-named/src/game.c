@@ -2243,25 +2243,33 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
         }
 
         case CMD_BEGIN_PASS: {
-            // // Begin.
-            // {
-            //     // Render draw commands to render target.
-            //     glBindFramebuffer(GL_FRAMEBUFFER, rstate->target.fbid);
-            //     // IMPORTANT.
-            //     glViewport(0, 0, rstate->target.width, rstate->target.height);
-            //     // I forget exactly why we want depth testing. I think maybe has to do with not drawing portions of
-            //     // sprites that are blank? maybe thats just alpha blending.
-            //     glEnable(GL_DEPTH_TEST);
-            //     // Pass depth test if incomming_depth <= stored_depth. This is necessary to ensure we still draw
-            //     // sprites which have the same z value which so far seems like a desirable thing.
-            //     glDepthFunc(GL_LEQUAL);
+            // Render draw commands to render target.
+            glBindFramebuffer(GL_FRAMEBUFFER, cmd->beginpass.target.fbid);
+            // IMPORTANT.
+            glViewport(0, 0, cmd->beginpass.target.width, cmd->beginpass.target.height);
+            // I forget exactly why we want depth testing. I think maybe has to do with not drawing portions of
+            // sprites that are blank? maybe thats just alpha blending.
+            if (cmd->beginpass.depth_test) {
+                glEnable(GL_DEPTH_TEST);
+            } else {
+                glDisable(GL_DEPTH_TEST);
+            }
 
-            //     // TODO: turn this into a draw command using unions.
-            //     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-            //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            //     // TODO: move this to shader pass data.
-            //     glBindVertexArray(VAO);
-            // }
+            // Pass depth test if incomming_depth <= stored_depth. This is necessary to ensure we still draw
+            // sprites which have the same z value which so far seems like a desirable thing.
+            glDepthFunc(GL_LEQUAL);
+
+            // TODO: turn this into a draw command using unions.
+            i32 clear_mask = 0;
+            if (cmd->beginpass.clear_color_flag) {
+                glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+                clear_mask |= GL_COLOR_BUFFER_BIT;
+            }
+            clear_mask |= GL_DEPTH_BUFFER_BIT;
+            glClear(clear_mask);
+
+            // TODO: move this to render pass data.
+            glBindVertexArray(VAO);
             break;
         }
 
