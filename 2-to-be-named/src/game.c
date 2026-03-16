@@ -1586,23 +1586,35 @@ static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
 #define MAX_CMDS 4092
 
 typedef struct {
-    ShaderId _sid;
-    LShader shader;
-
     ///////////////////////
+
+    u32 clen;
+    u32 ccap;
+    DrawCmd cmds[MAX_CMDS];
+
+    /////////////////////////////////
+    // Pipeline/load actions.
+    bool depth_test;
+
+    Vec4 clear_color;
+    bool clear_color_flag;
+    /////////////////////////////////
+    // Attachments
+    RenderTarget target;
+
+    /////////////////////////////////
+    // Pipeline
+    LShader shader;
     // Uniform data that should be set once for a pass here.
+    // TODO: All of the below needs to switch to draw cmd that gets bound via UBO bind slot.
     Mat4 view;
     Mat4 proj;
-    ///////////////////////
-
     Vec2 resolution;
     f32 dt;
     f32 timer;
     i32 nframe;
 
-    u32 clen;
-    u32 ccap;
-    DrawCmd cmds[MAX_CMDS];
+    /////////////////////////////////
 } ShaderPass;
 
 LCORE void EnableDefaultShader(LShader* shader, EnableShaderParams* params) {
