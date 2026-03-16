@@ -1518,8 +1518,7 @@ typedef struct {
             /////////////////////////////////
             // Pipeline
             LShader shader;
-            Mat4 view;
-            Mat4 proj;
+            EnableShaderParams enable_params;
 
             /////////////////////////////////
         } beginpass;
@@ -2274,6 +2273,10 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
 
             // TODO: move this to render pass data.
             glBindVertexArray(cmd->beginpass.vao);
+
+            LShader* shader = &cmd->beginpass.shader;
+            shader->enable_func(shader, &cmd->beginpass.enable_params);
+
             break;
         }
 
