@@ -2230,9 +2230,21 @@ static void ShaderPassExecute(ShaderPass* pass) {
 }
 
 LCORE void DrawCmdExecute(DrawCmd* cmd) {
+    // TODO: SO HACKY. WTF. I SHOULD'VE RESEARCHED PROPER DRAW CMD SETUP IN SOKOL BEFORE WRITING THIS.
+    static LShader SHADER = {0};
+
     switch (cmd->type) {
         case CMD_DRAW_MESH: {
-            // TODO: This is missing uniform application.
+            // TODO: SO HACKY. Uniforms should be pushed in a separate command. A DrawCmd should just draw geometry.
+            UniformShaderParams uniform_params = {
+                .modelm = cmd->meshcmd.modelm,
+                .color = cmd->meshcmd.color,
+                .uvoffset = cmd->meshcmd.uvoffset,
+                .uvscale = cmd->meshcmd.uvscale,
+                .tx = cmd->meshcmd.tx,
+            };
+            SHADER.set_uniforms_func(&SHADER, &uniform_params);
+
             glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
                            (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
             break;
@@ -2277,6 +2289,7 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
             LShader* shader = &cmd->beginpass.shader;
             shader->enable_func(shader, &cmd->beginpass.enable_params);
 
+            SHADER = *shader;
             break;
         }
 
