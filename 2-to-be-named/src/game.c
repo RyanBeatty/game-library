@@ -1512,6 +1512,10 @@ typedef struct {
             RenderTarget target;
 
             /////////////////////////////////
+            // Bindings
+
+            i32 vao;
+            /////////////////////////////////
             // Pipeline
             LShader shader;
             Mat4 view;
@@ -2269,7 +2273,7 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
             glClear(clear_mask);
 
             // TODO: move this to render pass data.
-            glBindVertexArray(VAO);
+            glBindVertexArray(cmd->beginpass.vao);
             break;
         }
 
