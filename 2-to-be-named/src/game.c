@@ -1592,6 +1592,37 @@ typedef struct {
     bool clear_color_flag;
 } RenderPassLoadAction;
 
+// TODO: Think about transitioning to a single command buffer. begin/end passes are then just commands which have
+// references to a RenderPass struct.
+// context: https://chatgpt.com/c/69b71662-5bdc-832e-8986-444cf2da1b05
+/*
+Printer Analogy	  Sokol Equivalent	Explanation
+Printer settings
+    * Pipeline
+    * The “rules” for rendering: shaders, blending, culling, primitive type. You configure it once for how you want to
+render geometry. Document to print
+    * Bindings
+    * The actual data: vertex buffers, index buffers, textures. Pipelines define how to render; bindings define what to
+render.
+Paper / tray
+    * Pass attachments
+    * Where you are rendering to: screen framebuffer, offscreen texture, depth buffer.
+“Print this sheet now” command
+    * Draw call (sg_draw)
+    * Tells the GPU to actually render a set of vertices with the current pipeline + bindings.
+Instructions like “clear paper first”
+    * Pass action (sg_pass_action)
+    * Defines load/clear behavior for the render target: clear, load existing content, or don’t care.
+Start printing a batch
+    * Begin pass (sg_begin_pass)
+    * Marks the start of rendering to a specific render target with specific actions.
+Finish printing a batch
+    * End pass (sg_end_pass)
+    * Marks the end of the pass. Nothing is executed yet; just recorded.
+Flush printer queue and actually print
+    * Commit (sg_commit)
+    * Sends all the recorded commands to the GPU and executes them.
+*/
 typedef struct {
     ///////////////////////
 
@@ -2201,6 +2232,54 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
     return cmd;
 }
 
+static void ShaderPassExecute2(ShaderPass* pass) {
+    LShader shader = pass->shader;
+    Assert(shader.enable_func != NULL);
+    Assert(shader.set_uniforms_func != NULL);
+
+    EnableShaderParams enable_params = {
+        .view = pass->view,
+        .proj = pass->proj,
+        .dt = pass->dt,
+        .nframe = pass->nframe,
+        .resolution = pass->resolution,
+        .timer = pass->timer,
+    };
+    shader.enable_func(&shader, &enable_params);
+
+    for (u32 i = 0; i < pass->clen; ++i) {
+        DrawCmd* cmd = &pass->cmds[i];
+        switch (cmd->type) {
+            case CMD_DRAW_MESH: {
+                UniformShaderParams uniform_params = {
+                    .modelm = cmd->meshcmd.modelm,
+                    .color = cmd->meshcmd.color,
+                    .uvoffset = cmd->meshcmd.uvoffset,
+                    .uvscale = cmd->meshcmd.uvscale,
+                    .tx = cmd->meshcmd.tx,
+                };
+                shader.set_uniforms_func(&shader, &uniform_params);
+
+                glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                               (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
+                break;
+            };
+
+            case CMD_CLEAR: {
+                Vec4 color = cmd->clearcmd.color;
+                glClearColor(color.r, color.g, color.b, color.a);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                break;
+            }
+
+            default: {
+                Assert(false);
+                break;
+            };
+        }
+    }
+}
+
 static void ShaderPassExecute(ShaderPass* pass) {
     LShader shader = pass->shader;
     Assert(shader.enable_func != NULL);
@@ -2507,7 +2586,7 @@ static void EndRender() {
         cmd->meshcmd.tx.id = rstate->target.txid;
         cmd->meshcmd.tx.width = rstate->target.width;
         cmd->meshcmd.tx.height = rstate->target.height;
-        ShaderPassExecute(&pass);
+        ShaderPassExecute2(&pass);
     }
 }
 
