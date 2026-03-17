@@ -2334,14 +2334,13 @@ static RenderPassLoadAction DefaultLoadAction() {
     return load_action;
 }
 
-static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_action, Mat4 view, Mat4 proj,
-                                   RenderTarget target) {
+static void BeginShaderPass(LShader shader, RenderPassLoadAction load_action, Mat4 view, Mat4 proj,
+                            RenderTarget target) {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen < rstate->passcap);
     Assert(rstate->passidx == PASSNULL);
 
     rstate->passidx = rstate->passlen++;
-    ShaderPass* pass = &rstate->passes[rstate->passidx];
 
     {
         DrawCmd* cmd = AddCmd();
@@ -2366,8 +2365,6 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
                                  },
                          }};
     }
-
-    return pass;
 }
 
 static void EndShaderPass() {
