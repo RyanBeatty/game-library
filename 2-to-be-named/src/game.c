@@ -2397,8 +2397,6 @@ static DrawCmd* AddDrawMeshCmd() {
 static void EndRender() {
     RenderState* rstate = &RSTATE;
 
-    Assert(rstate->passidx == PASSNULL);
-
     // Draw the texture framebuffer to screen quad.
     {
         Mat4 view = Mat4Identity();
@@ -2428,6 +2426,8 @@ static void EndRender() {
 
         EndShaderPass();
     }
+
+    Assert(rstate->passidx == PASSNULL);
 
     // // Enable/Disable culling.
     // // TODO: Make this nicer at some point. Useful for debugging.
