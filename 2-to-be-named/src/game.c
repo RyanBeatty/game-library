@@ -1629,28 +1629,6 @@ typedef struct {
     u32 clen;
     u32 ccap;
     DrawCmd cmds[MAX_CMDS];
-
-    /////////////////////////////////
-    // Pipeline/load actions.
-    RenderPassLoadAction load_action;
-
-    /////////////////////////////////
-    // Attachments
-    RenderTarget target;
-
-    /////////////////////////////////
-    // Pipeline
-    LShader shader;
-    // Uniform data that should be set once for a pass here.
-    // TODO: All of the below needs to switch to draw cmd that gets bound via UBO bind slot.
-    Mat4 view;
-    Mat4 proj;
-    Vec2 resolution;
-    f32 dt;
-    f32 timer;
-    i32 nframe;
-
-    /////////////////////////////////
 } ShaderPass;
 
 LCORE void EnableDefaultShader(LShader* shader, EnableShaderParams* params) {
@@ -2217,9 +2195,6 @@ static LShader GetEffectsShader() {
 
 static void ShaderPassInit(ShaderPass* pass, LShader shader) {
     memset(pass, 0, sizeof(ShaderPass));
-    pass->shader = shader;
-    pass->view = Mat4Identity();
-    pass->proj = Mat4Identity();
 
     pass->clen = 0;
     pass->ccap = MAX_CMDS;
@@ -2304,10 +2279,6 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
 }
 
 static void ShaderPassExecute(ShaderPass* pass) {
-    LShader shader = pass->shader;
-    Assert(shader.enable_func != NULL);
-    Assert(shader.set_uniforms_func != NULL);
-
     for (u32 i = 0; i < pass->clen; ++i) {
         DrawCmd* cmd = &pass->cmds[i];
         DrawCmdExecute(cmd);
