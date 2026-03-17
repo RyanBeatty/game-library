@@ -25,6 +25,17 @@ Conventions
 * 2d/screenspace drawing maps (0, 0) to bottom left corner. +y goes up
 
 
+Refactors
+* Renderer
+    * Goals, make it more like sokol. EVERYTHING GETS TRANSLATED TO A DRAW COMMAND IN A SINGLE BUFFER NO BUFFER PER PASS
+    * Next steps:
+        * Make BeginShaderPass add a BeginPass DrawCommand and remove the one in ShaderPassExecute
+        * Get Rid of returning shader pass from BeginShaderPass
+        * Move to single global buffer of draw commands
+        * Start to work on the upscaling thing
+    * Stretch goal: move to using UBOs for the uniform bindings as it looks wayyyyy more scalable than my enable and uniform setting functions.
+
+
 Engine Improvments/Thoughts
 * On asset loading (e.g. sprites, animations, etc). It feels like I want 2 style of functions
     * one that deals with immediate loading of "raw" assets (e.g. LoadTextureFromFile). these will be used to actually load data from disk and upload to gpu
