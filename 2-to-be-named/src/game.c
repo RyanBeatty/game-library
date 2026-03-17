@@ -2439,6 +2439,8 @@ static ShaderPass* CurShaderPass() {
     return &RSTATE.passes[RSTATE.passidx];
 }
 
+static RenderTarget GetDefaultRenderTarget() { return GetRenderState()->target; }
+
 static void RenderStateInit(u32 width, u32 height) {
     RenderState* rstate = &RSTATE;
 
@@ -2466,7 +2468,8 @@ static RenderPassLoadAction DefaultLoadAction() {
     return load_action;
 }
 
-static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_action, Mat4 view, Mat4 proj) {
+static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_action, Mat4 view, Mat4 proj,
+                                   RenderTarget target) {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen < rstate->passcap);
     Assert(rstate->passidx == PASSNULL);
@@ -2484,7 +2487,7 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
 
                              .clear_color = load_action.clear_color,
                              .clear_color_flag = load_action.clear_color_flag,
-                             .target = rstate->target,
+                             .target = target,
                              .vao = VAO,
                              .shader = shader,
                              .enable_params =
@@ -2537,6 +2540,15 @@ static void EndRender() {
     // But this would require some duplication in code. If I have two shaders that process draw commands
     // I'd need to duplicate ClearBuffer() draw command logic.
     {
+        Mat4 view = Mat4Identity();
+        Mat4 proj = Mat4Identity();
+        RenderPassLoadAction load_action = {
+            .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
+            .clear_color_flag = true,
+            .depth_test = false,
+        };
+        // BeginShaderPass(GetEffectsShader(), )
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // IMPORTANT.
         glViewport(0, 0, PlatformScreenWidth(), PlatformScreenHeight());
@@ -4711,7 +4723,7 @@ static void UIBegin(UIState* ui, Arena* perm, GameInput* input, f32 width, f32 h
     Mat4 view = Mat4Identity();
     Mat4 proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-    BeginShaderPass(shader, load_action, view, proj);
+    BeginShaderPass(shader, load_action, view, proj, GetDefaultRenderTarget());
     UIStateInit(ui, perm, width, height, input);
 }
 
@@ -5263,7 +5275,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
                 Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
                                       -1.0f, 1.0f);
-                BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj);
+                BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
                 Vec3 grid_origin = Vec3Zero();
                 Vec2 grid_tile_dims = Vec2Lit(16.0f, 16.0f);
