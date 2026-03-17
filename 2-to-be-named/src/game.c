@@ -1630,9 +1630,6 @@ Flush printer queue and actually print
     * Sends all the recorded commands to the GPU and executes them.
 */
 typedef struct {
-    u32 clen;
-    u32 ccap;
-    DrawCmd cmds[MAX_CMDS];
 } ShaderPass;
 
 LCORE void EnableDefaultShader(LShader* shader, EnableShaderParams* params) {
@@ -2195,13 +2192,6 @@ static LShader GetEffectsShader() {
     }
 
     return SHADER;
-}
-
-static void ShaderPassInit(ShaderPass* pass, LShader shader) {
-    memset(pass, 0, sizeof(ShaderPass));
-
-    pass->clen = 0;
-    pass->ccap = MAX_CMDS;
 }
 
 LCORE void DrawCmdExecute(DrawCmd* cmd) {
