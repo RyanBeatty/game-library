@@ -1529,6 +1529,12 @@ typedef struct {
     void* extra;
 } DrawCmd;
 
+typedef struct {
+    DrawCmd* data;
+    isize len;
+    isize cap;
+} DrawCmdArr;
+
 // Assumes the struct has been memset already.
 LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
     cmd->type = CMD_DRAW_MESH;
@@ -2297,6 +2303,8 @@ typedef struct {
     i32 nframe;
 
     RenderTarget target;
+
+    DrawCmdArr cmds;
 } RenderState;
 
 static RenderState RSTATE;
@@ -2310,11 +2318,13 @@ static ShaderPass* CurShaderPass() {
 
 static RenderTarget GetDefaultRenderTarget() { return GetRenderState()->target; }
 
-static void RenderStateInit(u32 width, u32 height) {
+static void RenderStateInit(u32 width, u32 height, Arena* perm) {
     RenderState* rstate = &RSTATE;
 
     memset(rstate, 0, sizeof(RenderTarget));
     rstate->target = CreateRenderTarget(width, height);
+
+    InitArr(&rstate->cmds, perm, DrawCmd, 100);
 }
 
 // Reset render state and allow accumulation of shader passes.
@@ -5205,9 +5215,10 @@ void GameInit() {
     ParticleSystemInit();
 
     {
-        Arena render_arena = NewSubArena(&gstate->perm, MB(10));
-        RenderStateInit(gstate->renderw, gstate->renderh);
-        RenderDataInit(&render_arena);
+        Arena render_state_arena = NewSubArena(&gstate->perm, MB(1));
+        RenderStateInit(gstate->renderw, gstate->renderh, &render_state_arena);
+        Arena render_data_arena = NewSubArena(&gstate->perm, MB(10));
+        RenderDataInit(&render_data_arena);
     }
 
     LoadSounds();
