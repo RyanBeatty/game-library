@@ -2356,29 +2356,6 @@ static void ShaderPassExecute(ShaderPass* pass) {
     Assert(shader.enable_func != NULL);
     Assert(shader.set_uniforms_func != NULL);
 
-    // {
-    //     DrawCmd begin_pass_cmd = {.type = CMD_BEGIN_PASS,
-    //                               .beginpass = {
-    //                                   .depth_test = pass->load_action.depth_test,
-
-    //                                   .clear_color = pass->load_action.clear_color,
-    //                                   .clear_color_flag = pass->load_action.clear_color_flag,
-    //                                   .target = pass->target,
-    //                                   .vao = VAO,
-    //                                   .shader = pass->shader,
-    //                                   .enable_params =
-    //                                       {
-    //                                           .view = pass->view,
-    //                                           .proj = pass->proj,
-    //                                           .dt = pass->dt,
-    //                                           .nframe = pass->nframe,
-    //                                           .resolution = pass->resolution,
-    //                                           .timer = pass->timer,
-    //                                       },
-    //                               }};
-    //     DrawCmdExecute(&begin_pass_cmd);
-    // }
-
     for (u32 i = 0; i < pass->clen; ++i) {
         DrawCmd* cmd = &pass->cmds[i];
         DrawCmdExecute(cmd);
