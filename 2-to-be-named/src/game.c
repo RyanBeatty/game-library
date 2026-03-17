@@ -2530,28 +2530,7 @@ static void EndRender() {
 
     Assert(rstate->passidx == PASSNULL);
 
-    // // Enable/Disable culling.
-    // // TODO: Make this nicer at some point. Useful for debugging.
-    // {
-    //     if (gstate->debug) {
-    //         glDisable(GL_CULL_FACE);
-    //     } else {
-    //         glEnable(GL_CULL_FACE);
-    //         glCullFace(GL_BACK);
-    //         glFrontFace(GL_CCW);
-    //     }
-    // }
-
-    for (u32 i = 0; i < rstate->passlen; ++i) {
-        ShaderPassExecute(&rstate->passes[i]);
-    }
-
-    // Draw the render target texture to screen as a quad.
-    // TODO: This is very messy. I should be able to do this using draw commands to change framebuffers.
-    // This would require an inversion of how framebuffers work though. They would need to also contain shader
-    // pass commands. Or maybe I should just have every shader pass store what framebuffer they are drawing to
-    // But this would require some duplication in code. If I have two shaders that process draw commands
-    // I'd need to duplicate ClearBuffer() draw command logic.
+    // Draw the texture framebuffer to screen quad.
     {
         Mat4 view = Mat4Identity();
         Mat4 proj = Mat4Identity();
@@ -2579,9 +2558,60 @@ static void EndRender() {
         cmd->meshcmd.tx.height = rstate->target.height;
 
         EndShaderPass();
-
-        ShaderPassExecute(pass);
     }
+
+    // // Enable/Disable culling.
+    // // TODO: Make this nicer at some point. Useful for debugging.
+    // {
+    //     if (gstate->debug) {
+    //         glDisable(GL_CULL_FACE);
+    //     } else {
+    //         glEnable(GL_CULL_FACE);
+    //         glCullFace(GL_BACK);
+    //         glFrontFace(GL_CCW);
+    //     }
+    // }
+
+    for (u32 i = 0; i < rstate->passlen; ++i) {
+        ShaderPassExecute(&rstate->passes[i]);
+    }
+
+    // Draw the render target texture to screen as a quad.
+    // TODO: This is very messy. I should be able to do this using draw commands to change framebuffers.
+    // This would require an inversion of how framebuffers work though. They would need to also contain shader
+    // pass commands. Or maybe I should just have every shader pass store what framebuffer they are drawing to
+    // But this would require some duplication in code. If I have two shaders that process draw commands
+    // I'd need to duplicate ClearBuffer() draw command logic.
+    // {
+    //     Mat4 view = Mat4Identity();
+    //     Mat4 proj = Mat4Identity();
+    //     RenderPassLoadAction load_action = {
+    //         .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
+    //         .clear_color_flag = true,
+    //         .depth_test = false,
+    //     };
+    //     RenderTarget screen_taret = {
+    //         .fbid = 0,
+    //         .width = PlatformScreenWidth(),
+    //         .height = PlatformScreenHeight(),
+    //     };
+    //     ShaderPass* pass = BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
+
+    //     DrawCmd* cmd = AddDrawMeshCmd();
+    //     // DrawMeshCmdInit(cmd);
+    //     cmd->meshcmd.meshid = GetMesh(M_QUAD);
+    //     // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the quad
+    //     // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+    //     cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+    //     // cmd->meshcmd.color = LRED;  // For debug.
+    //     cmd->meshcmd.tx.id = rstate->target.txid;
+    //     cmd->meshcmd.tx.width = rstate->target.width;
+    //     cmd->meshcmd.tx.height = rstate->target.height;
+
+    //     EndShaderPass();
+
+    //     ShaderPassExecute(pass);
+    // }
 }
 
 #define Render(dt) Scoped(BeginRender(dt), EndRender())
