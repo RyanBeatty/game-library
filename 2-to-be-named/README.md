@@ -33,6 +33,7 @@ Refactors
             * Consider making a ShaderPassSpec 
             * Make Begin Pass reference ShaderPass struct now?
             * should the upscaling be magic that happens automatically or should it be precise. Magic might be easier, but precise might be more maintainable long term. Regardless I'll need a render target that is _world resolution and then a screen target which upscales.
+                * DECISION: It should be precise or else I won't be able to draw UI not upscaled. Need to have precise control over when the upscaling happens
     * Stretch goal: move to using UBOs for the uniform bindings as it looks wayyyyy more scalable than my enable and uniform setting functions.
 
 
