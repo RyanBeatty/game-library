@@ -2496,7 +2496,7 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
                                      .proj = proj,
                                      .dt = rstate->dt,
                                      .nframe = rstate->nframe,
-                                     .resolution = Vec2Lit(rstate->target.width, rstate->target.height),
+                                     .resolution = Vec2Lit(target.width, target.height),
                                      .timer = rstate->timer,
                                  },
                          }};
@@ -2509,6 +2509,19 @@ static void EndShaderPass() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passidx != PASSNULL);
     rstate->passidx = PASSNULL;
+}
+
+static DrawCmd* AddCmd() {
+    RenderState* rstate = &RSTATE;
+    Assert(rstate->passlen != 0);
+    DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
+    return cmd;
+}
+
+static DrawCmd* AddDrawMeshCmd() {
+    DrawCmd* cmd = AddCmd();
+    DrawMeshCmdInit(cmd);
+    return cmd;
 }
 
 // Execute shader passes and produce render to screen.
@@ -2547,22 +2560,15 @@ static void EndRender() {
             .clear_color_flag = true,
             .depth_test = false,
         };
-        // BeginShaderPass(GetEffectsShader(), )
+        RenderTarget screen_taret = {
+            .fbid = 0,
+            .width = PlatformScreenWidth(),
+            .height = PlatformScreenHeight(),
+        };
+        ShaderPass* pass = BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // IMPORTANT.
-        glViewport(0, 0, PlatformScreenWidth(), PlatformScreenHeight());
-        glDisable(GL_DEPTH_TEST);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        ShaderPass pass;
-        ShaderPassInit(&pass, GetEffectsShader());
-        pass.dt = rstate->dt;
-        pass.timer = rstate->timer;
-        pass.resolution = Vec2Lit(PlatformScreenWidth(), PlatformScreenHeight());
-        DrawCmd* cmd = ShaderPassAddCmd(&pass);
-        DrawMeshCmdInit(cmd);
+        DrawCmd* cmd = AddDrawMeshCmd();
+        // DrawMeshCmdInit(cmd);
         cmd->meshcmd.meshid = GetMesh(M_QUAD);
         // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the quad
         // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
@@ -2571,24 +2577,14 @@ static void EndRender() {
         cmd->meshcmd.tx.id = rstate->target.txid;
         cmd->meshcmd.tx.width = rstate->target.width;
         cmd->meshcmd.tx.height = rstate->target.height;
-        ShaderPassExecute2(&pass);
+
+        EndShaderPass();
+
+        ShaderPassExecute(pass);
     }
 }
 
 #define Render(dt) Scoped(BeginRender(dt), EndRender())
-
-static DrawCmd* AddCmd() {
-    RenderState* rstate = &RSTATE;
-    Assert(rstate->passlen != 0);
-    DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
-    return cmd;
-}
-
-static DrawCmd* AddDrawMeshCmd() {
-    DrawCmd* cmd = AddCmd();
-    DrawMeshCmdInit(cmd);
-    return cmd;
-}
 
 LCORE DrawCmd* ClearBuffer(Vec4 color) {
     DrawCmd* cmd = AddCmd();
