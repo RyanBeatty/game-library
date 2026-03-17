@@ -2396,8 +2396,8 @@ static DrawCmd* AddCmd() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen != 0);
 
-    // DrawCmd* cmd = ArrReserve(&rstate->cmds);
-    // *cmd = ZERO;
+    DrawCmd* cmd2 = ArrReserve(&rstate->cmds);
+    *cmd2 = ZERO;
     DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
     return cmd;
 }
@@ -2456,10 +2456,10 @@ static void EndRender() {
     //     }
     // }
 
-    // for (isize i = 0; i < ArrLen(&rstate->cmds); ++i) {
-    //     DrawCmd* cmd = ArrGetPtr(&rstate->cmds, i);
-    //     DrawCmdExecute(cmd);
-    // }
+    for (isize i = 0; i < ArrLen(&rstate->cmds); ++i) {
+        DrawCmd* cmd = ArrGetPtr(&rstate->cmds, i);
+        // DrawCmdExecute(cmd);
+    }
 
     for (u32 i = 0; i < rstate->passlen; ++i) {
         ShaderPassExecute(&rstate->passes[i]);
