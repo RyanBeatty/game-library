@@ -2359,7 +2359,6 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
 
     rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
-    ShaderPassInit(pass, shader);
 
     {
         DrawCmd* cmd = AddCmd();
