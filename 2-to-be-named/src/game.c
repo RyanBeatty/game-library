@@ -2324,7 +2324,7 @@ static void RenderStateInit(u32 width, u32 height, Arena* perm) {
     memset(rstate, 0, sizeof(RenderTarget));
     rstate->target = CreateRenderTarget(width, height);
 
-    InitArr(&rstate->cmds, perm, DrawCmd, 100);
+    InitArr(&rstate->cmds, perm, DrawCmd, 1000);
 }
 
 // Reset render state and allow accumulation of shader passes.
@@ -2391,8 +2391,13 @@ static void EndShaderPass() {
 }
 
 static DrawCmd* AddCmd() {
+    static DrawCmd ZERO = {0};
+
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen != 0);
+
+    // DrawCmd* cmd = ArrReserve(&rstate->cmds);
+    // *cmd = ZERO;
     DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
     return cmd;
 }
@@ -2449,6 +2454,11 @@ static void EndRender() {
     //         glCullFace(GL_BACK);
     //         glFrontFace(GL_CCW);
     //     }
+    // }
+
+    // for (isize i = 0; i < ArrLen(&rstate->cmds); ++i) {
+    //     DrawCmd* cmd = ArrGetPtr(&rstate->cmds, i);
+    //     DrawCmdExecute(cmd);
     // }
 
     for (u32 i = 0; i < rstate->passlen; ++i) {
