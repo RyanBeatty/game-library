@@ -2310,6 +2310,24 @@ typedef struct {
 static RenderState RSTATE;
 #define GetRenderState() (&RSTATE)
 
+static DrawCmd* AddCmd() {
+    static DrawCmd ZERO = {0};
+
+    RenderState* rstate = &RSTATE;
+    Assert(rstate->passlen != 0);
+
+    DrawCmd* cmd2 = ArrReserve(&rstate->cmds);
+    *cmd2 = ZERO;
+    // DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
+    return cmd2;
+}
+
+static DrawCmd* AddDrawMeshCmd() {
+    DrawCmd* cmd = AddCmd();
+    DrawMeshCmdInit(cmd);
+    return cmd;
+}
+
 // #define CurShaderPass() (&RSTATE.passes[RSTATE.passidx])
 static ShaderPass* CurShaderPass() {
     Assert(RSTATE.passidx != PASSNULL);
@@ -2345,18 +2363,6 @@ static RenderPassLoadAction DefaultLoadAction() {
         .depth_test = true,
     };
     return load_action;
-}
-
-static DrawCmd* AddCmd() {
-    static DrawCmd ZERO = {0};
-
-    RenderState* rstate = &RSTATE;
-    Assert(rstate->passlen != 0);
-
-    DrawCmd* cmd2 = ArrReserve(&rstate->cmds);
-    *cmd2 = ZERO;
-    // DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
-    return cmd2;
 }
 
 static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_action, Mat4 view, Mat4 proj,
@@ -2400,12 +2406,6 @@ static void EndShaderPass() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passidx != PASSNULL);
     rstate->passidx = PASSNULL;
-}
-
-static DrawCmd* AddDrawMeshCmd() {
-    DrawCmd* cmd = AddCmd();
-    DrawMeshCmdInit(cmd);
-    return cmd;
 }
 
 // Execute shader passes and produce render to screen.
