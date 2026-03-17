@@ -5168,7 +5168,7 @@ void GameInit() {
 
     {
         Arena render_state_arena = NewSubArena(&gstate->perm, MB(1));
-        RenderStateInit(gstate->renderw, gstate->renderh, &render_state_arena);
+        RenderStateInit(gstate->renderw_world, gstate->renderh_world, &render_state_arena);
         Arena render_data_arena = NewSubArena(&gstate->perm, MB(10));
         RenderDataInit(&render_data_arena);
     }
