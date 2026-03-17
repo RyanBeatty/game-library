@@ -2503,6 +2503,32 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
     pass->dt = rstate->dt;
     pass->timer = rstate->timer;
     pass->nframe = rstate->nframe;
+
+    // TODO: Enable this once view and projection matrices passed in.
+    // {
+    //     DrawCmd* cmd = ShaderPassAddCmd(pass);
+
+    //     *cmd = (DrawCmd){.type = CMD_BEGIN_PASS,
+    //                      .beginpass = {
+    //                          .depth_test = pass->load_action.depth_test,
+
+    //                          .clear_color = pass->load_action.clear_color,
+    //                          .clear_color_flag = pass->load_action.clear_color_flag,
+    //                          .target = pass->target,
+    //                          .vao = VAO,
+    //                          .shader = pass->shader,
+    //                          .enable_params =
+    //                              {
+    //                                  .view = pass->view,
+    //                                  .proj = pass->proj,
+    //                                  .dt = pass->dt,
+    //                                  .nframe = pass->nframe,
+    //                                  .resolution = pass->resolution,
+    //                                  .timer = pass->timer,
+    //                              },
+    //                      }};
+    // }
+
     return pass;
 }
 
