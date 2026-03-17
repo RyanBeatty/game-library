@@ -2474,35 +2474,27 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
     rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
     ShaderPassInit(pass, shader);
-    pass->view = view;
-    pass->proj = proj;
-    pass->target = rstate->target;
-    pass->load_action = load_action;
-    pass->resolution = Vec2Lit(rstate->target.width, rstate->target.height);
-    pass->dt = rstate->dt;
-    pass->timer = rstate->timer;
-    pass->nframe = rstate->nframe;
 
     {
         DrawCmd* cmd = ShaderPassAddCmd(pass);
 
         *cmd = (DrawCmd){.type = CMD_BEGIN_PASS,
                          .beginpass = {
-                             .depth_test = pass->load_action.depth_test,
+                             .depth_test = load_action.depth_test,
 
-                             .clear_color = pass->load_action.clear_color,
-                             .clear_color_flag = pass->load_action.clear_color_flag,
-                             .target = pass->target,
+                             .clear_color = load_action.clear_color,
+                             .clear_color_flag = load_action.clear_color_flag,
+                             .target = rstate->target,
                              .vao = VAO,
-                             .shader = pass->shader,
+                             .shader = shader,
                              .enable_params =
                                  {
-                                     .view = pass->view,
-                                     .proj = pass->proj,
-                                     .dt = pass->dt,
-                                     .nframe = pass->nframe,
-                                     .resolution = pass->resolution,
-                                     .timer = pass->timer,
+                                     .view = view,
+                                     .proj = proj,
+                                     .dt = rstate->dt,
+                                     .nframe = rstate->nframe,
+                                     .resolution = Vec2Lit(rstate->target.width, rstate->target.height),
+                                     .timer = rstate->timer,
                                  },
                          }};
     }
