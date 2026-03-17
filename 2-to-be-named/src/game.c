@@ -1545,6 +1545,77 @@ LCORE void DrawMeshCmdInit(DrawCmd* cmd) {
     cmd->meshcmd.tx = GetTexture(TX_DEFAULT);
 }
 
+LCORE void DrawCmdExecute(DrawCmd* cmd) {
+    // TODO: SO HACKY. WTF. I SHOULD'VE RESEARCHED PROPER DRAW CMD SETUP IN SOKOL BEFORE WRITING THIS.
+    static LShader SHADER = {0};
+
+    switch (cmd->type) {
+        case CMD_DRAW_MESH: {
+            // TODO: SO HACKY. Uniforms should be pushed in a separate command. A DrawCmd should just draw geometry.
+            UniformShaderParams uniform_params = {
+                .modelm = cmd->meshcmd.modelm,
+                .color = cmd->meshcmd.color,
+                .uvoffset = cmd->meshcmd.uvoffset,
+                .uvscale = cmd->meshcmd.uvscale,
+                .tx = cmd->meshcmd.tx,
+            };
+            SHADER.set_uniforms_func(&SHADER, &uniform_params);
+
+            glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
+                           (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
+            break;
+        };
+
+        case CMD_CLEAR: {
+            Vec4 color = cmd->clearcmd.color;
+            glClearColor(color.r, color.g, color.b, color.a);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            break;
+        }
+
+        case CMD_BEGIN_PASS: {
+            // Render draw commands to render target.
+            glBindFramebuffer(GL_FRAMEBUFFER, cmd->beginpass.target.fbid);
+            // IMPORTANT.
+            glViewport(0, 0, cmd->beginpass.target.width, cmd->beginpass.target.height);
+            // I forget exactly why we want depth testing. I think maybe has to do with not drawing portions of
+            // sprites that are blank? maybe thats just alpha blending.
+            if (cmd->beginpass.depth_test) {
+                glEnable(GL_DEPTH_TEST);
+            } else {
+                glDisable(GL_DEPTH_TEST);
+            }
+
+            // Pass depth test if incomming_depth <= stored_depth. This is necessary to ensure we still draw
+            // sprites which have the same z value which so far seems like a desirable thing.
+            glDepthFunc(GL_LEQUAL);
+
+            // TODO: turn this into a draw command using unions.
+            i32 clear_mask = 0;
+            if (cmd->beginpass.clear_color_flag) {
+                glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+                clear_mask |= GL_COLOR_BUFFER_BIT;
+            }
+            clear_mask |= GL_DEPTH_BUFFER_BIT;
+            glClear(clear_mask);
+
+            // TODO: move this to render pass data.
+            glBindVertexArray(cmd->beginpass.vao);
+
+            LShader* shader = &cmd->beginpass.shader;
+            shader->enable_func(shader, &cmd->beginpass.enable_params);
+
+            SHADER = *shader;
+            break;
+        }
+
+        default: {
+            Assert(false);
+            break;
+        };
+    }
+}
+
 static void LShaderInit(LShader* shader, const char* vsrc, const char* fsrc) {
     char error[1024] = {0};
     u32 size = ArraySizeOf(error);
@@ -2192,77 +2263,6 @@ static LShader GetEffectsShader() {
     }
 
     return SHADER;
-}
-
-LCORE void DrawCmdExecute(DrawCmd* cmd) {
-    // TODO: SO HACKY. WTF. I SHOULD'VE RESEARCHED PROPER DRAW CMD SETUP IN SOKOL BEFORE WRITING THIS.
-    static LShader SHADER = {0};
-
-    switch (cmd->type) {
-        case CMD_DRAW_MESH: {
-            // TODO: SO HACKY. Uniforms should be pushed in a separate command. A DrawCmd should just draw geometry.
-            UniformShaderParams uniform_params = {
-                .modelm = cmd->meshcmd.modelm,
-                .color = cmd->meshcmd.color,
-                .uvoffset = cmd->meshcmd.uvoffset,
-                .uvscale = cmd->meshcmd.uvscale,
-                .tx = cmd->meshcmd.tx,
-            };
-            SHADER.set_uniforms_func(&SHADER, &uniform_params);
-
-            glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                           (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
-            break;
-        };
-
-        case CMD_CLEAR: {
-            Vec4 color = cmd->clearcmd.color;
-            glClearColor(color.r, color.g, color.b, color.a);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            break;
-        }
-
-        case CMD_BEGIN_PASS: {
-            // Render draw commands to render target.
-            glBindFramebuffer(GL_FRAMEBUFFER, cmd->beginpass.target.fbid);
-            // IMPORTANT.
-            glViewport(0, 0, cmd->beginpass.target.width, cmd->beginpass.target.height);
-            // I forget exactly why we want depth testing. I think maybe has to do with not drawing portions of
-            // sprites that are blank? maybe thats just alpha blending.
-            if (cmd->beginpass.depth_test) {
-                glEnable(GL_DEPTH_TEST);
-            } else {
-                glDisable(GL_DEPTH_TEST);
-            }
-
-            // Pass depth test if incomming_depth <= stored_depth. This is necessary to ensure we still draw
-            // sprites which have the same z value which so far seems like a desirable thing.
-            glDepthFunc(GL_LEQUAL);
-
-            // TODO: turn this into a draw command using unions.
-            i32 clear_mask = 0;
-            if (cmd->beginpass.clear_color_flag) {
-                glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-                clear_mask |= GL_COLOR_BUFFER_BIT;
-            }
-            clear_mask |= GL_DEPTH_BUFFER_BIT;
-            glClear(clear_mask);
-
-            // TODO: move this to render pass data.
-            glBindVertexArray(cmd->beginpass.vao);
-
-            LShader* shader = &cmd->beginpass.shader;
-            shader->enable_func(shader, &cmd->beginpass.enable_params);
-
-            SHADER = *shader;
-            break;
-        }
-
-        default: {
-            Assert(false);
-            break;
-        };
-    }
 }
 
 #define MAX_SHADER_PASSES 10
