@@ -2489,7 +2489,7 @@ static RenderPassLoadAction DefaultLoadAction() {
     return load_action;
 }
 
-static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_action) {
+static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_action, Mat4 view, Mat4 proj) {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen < rstate->passcap);
     Assert(rstate->passidx == PASSNULL);
@@ -2497,6 +2497,8 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
     rstate->passidx = rstate->passlen++;
     ShaderPass* pass = &rstate->passes[rstate->passidx];
     ShaderPassInit(pass, shader);
+    pass->view = view;
+    pass->proj = proj;
     pass->target = rstate->target;
     pass->load_action = load_action;
     pass->resolution = Vec2Lit(rstate->target.width, rstate->target.height);
@@ -4738,8 +4740,10 @@ static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInp
 
 static void UIBegin(UIState* ui, Arena* perm, GameInput* input, f32 width, f32 height, LShader shader,
                     RenderPassLoadAction load_action) {
-    ShaderPass* pass = BeginShaderPass(shader, load_action);
-    pass->proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
+    Mat4 view = Mat4Identity();
+    Mat4 proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
+
+    BeginShaderPass(shader, load_action, view, proj);
     UIStateInit(ui, perm, width, height, input);
 }
 
@@ -5285,12 +5289,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Render(dt) {
             // Entities/Game World
             {
-                ShaderPass* pass = BeginShaderPass(GetDefaultShader(), DefaultLoadAction());
                 // Reminder that using the _world variables here ensures we convert from world units back to pixel units
                 // correctly.
+                Mat4 view = Mat4Identity();
                 Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
-                pass->proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
-                                       -1.0f, 1.0f);
+                Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
+                                      -1.0f, 1.0f);
+                BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj);
 
                 Vec3 grid_origin = Vec3Zero();
                 Vec2 grid_tile_dims = Vec2Lit(16.0f, 16.0f);
