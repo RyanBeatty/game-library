@@ -1492,11 +1492,6 @@ typedef struct {
             LTexture tx;
         } meshcmd;
 
-        // Clears buffer with color.
-        struct {
-            Vec4 color;
-        } clearcmd;
-
         struct {
             // TODO: We are duplicating the RenderPass fields here due to circular dep issues. Change this to just store
             // a RenderPass value Once we've moved DrawCmd to be defined after both RenderPass (easy) and
@@ -1565,13 +1560,6 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
                            (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
             break;
         };
-
-        case CMD_CLEAR: {
-            Vec4 color = cmd->clearcmd.color;
-            glClearColor(color.r, color.g, color.b, color.a);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            break;
-        }
 
         case CMD_BEGIN_PASS: {
             // Render draw commands to render target.
@@ -2430,13 +2418,6 @@ static void EndRender() {
 }
 
 #define Render(dt) Scoped(BeginRender(dt), EndRender())
-
-LCORE DrawCmd* ClearBuffer(Vec4 color) {
-    DrawCmd* cmd = AddCmd();
-    cmd->type = CMD_CLEAR;
-    cmd->clearcmd.color = color;
-    return cmd;
-}
 
 LCORE void DrawLSphere(Vec3 center, f32 radius, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
