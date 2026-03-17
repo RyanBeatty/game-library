@@ -2282,13 +2282,6 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
     }
 }
 
-static void ShaderPassExecute(ShaderPass* pass) {
-    for (u32 i = 0; i < pass->clen; ++i) {
-        DrawCmd* cmd = &pass->cmds[i];
-        DrawCmdExecute(cmd);
-    }
-}
-
 #define MAX_SHADER_PASSES 10
 static const u32 PASSNULL = MAX_SHADER_PASSES;
 
@@ -2456,16 +2449,10 @@ static void EndRender() {
     //     }
     // }
 
-    breakpoint();
     for (isize i = 0; i < ArrLen(&rstate->cmds); ++i) {
         DrawCmd* cmd = ArrGetPtr(&rstate->cmds, i);
         DrawCmdExecute(cmd);
     }
-    breakpoint();
-
-    // for (u32 i = 0; i < rstate->passlen; ++i) {
-    //     ShaderPassExecute(&rstate->passes[i]);
-    // }
 
     ArrClear(&rstate->cmds);
 }
