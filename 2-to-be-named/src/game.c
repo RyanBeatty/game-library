@@ -1624,8 +1624,6 @@ Flush printer queue and actually print
     * Sends all the recorded commands to the GPU and executes them.
 */
 typedef struct {
-    ///////////////////////
-
     u32 clen;
     u32 ccap;
     DrawCmd cmds[MAX_CMDS];
