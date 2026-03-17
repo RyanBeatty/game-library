@@ -2232,54 +2232,6 @@ static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
     return cmd;
 }
 
-static void ShaderPassExecute2(ShaderPass* pass) {
-    LShader shader = pass->shader;
-    Assert(shader.enable_func != NULL);
-    Assert(shader.set_uniforms_func != NULL);
-
-    EnableShaderParams enable_params = {
-        .view = pass->view,
-        .proj = pass->proj,
-        .dt = pass->dt,
-        .nframe = pass->nframe,
-        .resolution = pass->resolution,
-        .timer = pass->timer,
-    };
-    shader.enable_func(&shader, &enable_params);
-
-    for (u32 i = 0; i < pass->clen; ++i) {
-        DrawCmd* cmd = &pass->cmds[i];
-        switch (cmd->type) {
-            case CMD_DRAW_MESH: {
-                UniformShaderParams uniform_params = {
-                    .modelm = cmd->meshcmd.modelm,
-                    .color = cmd->meshcmd.color,
-                    .uvoffset = cmd->meshcmd.uvoffset,
-                    .uvscale = cmd->meshcmd.uvscale,
-                    .tx = cmd->meshcmd.tx,
-                };
-                shader.set_uniforms_func(&shader, &uniform_params);
-
-                glDrawElements(GL_TRIANGLES, cmd->meshcmd.meshid.ntriangles * 3, GL_UNSIGNED_INT,
-                               (void*)(cmd->meshcmd.meshid.ibufferidx * sizeof(GLuint)));
-                break;
-            };
-
-            case CMD_CLEAR: {
-                Vec4 color = cmd->clearcmd.color;
-                glClearColor(color.r, color.g, color.b, color.a);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                break;
-            }
-
-            default: {
-                Assert(false);
-                break;
-            };
-        }
-    }
-}
-
 LCORE void DrawCmdExecute(DrawCmd* cmd) {
     // TODO: SO HACKY. WTF. I SHOULD'VE RESEARCHED PROPER DRAW CMD SETUP IN SOKOL BEFORE WRITING THIS.
     static LShader SHADER = {0};
@@ -2544,7 +2496,7 @@ static void EndRender() {
             .width = PlatformScreenWidth(),
             .height = PlatformScreenHeight(),
         };
-        ShaderPass* pass = BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
+        BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
 
         DrawCmd* cmd = AddDrawMeshCmd();
         // DrawMeshCmdInit(cmd);
@@ -2575,43 +2527,6 @@ static void EndRender() {
     for (u32 i = 0; i < rstate->passlen; ++i) {
         ShaderPassExecute(&rstate->passes[i]);
     }
-
-    // Draw the render target texture to screen as a quad.
-    // TODO: This is very messy. I should be able to do this using draw commands to change framebuffers.
-    // This would require an inversion of how framebuffers work though. They would need to also contain shader
-    // pass commands. Or maybe I should just have every shader pass store what framebuffer they are drawing to
-    // But this would require some duplication in code. If I have two shaders that process draw commands
-    // I'd need to duplicate ClearBuffer() draw command logic.
-    // {
-    //     Mat4 view = Mat4Identity();
-    //     Mat4 proj = Mat4Identity();
-    //     RenderPassLoadAction load_action = {
-    //         .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
-    //         .clear_color_flag = true,
-    //         .depth_test = false,
-    //     };
-    //     RenderTarget screen_taret = {
-    //         .fbid = 0,
-    //         .width = PlatformScreenWidth(),
-    //         .height = PlatformScreenHeight(),
-    //     };
-    //     ShaderPass* pass = BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
-
-    //     DrawCmd* cmd = AddDrawMeshCmd();
-    //     // DrawMeshCmdInit(cmd);
-    //     cmd->meshcmd.meshid = GetMesh(M_QUAD);
-    //     // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the quad
-    //     // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
-    //     cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
-    //     // cmd->meshcmd.color = LRED;  // For debug.
-    //     cmd->meshcmd.tx.id = rstate->target.txid;
-    //     cmd->meshcmd.tx.width = rstate->target.width;
-    //     cmd->meshcmd.tx.height = rstate->target.height;
-
-    //     EndShaderPass();
-
-    //     ShaderPassExecute(pass);
-    // }
 }
 
 #define Render(dt) Scoped(BeginRender(dt), EndRender())
