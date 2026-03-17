@@ -2292,22 +2292,15 @@ static DrawCmd* AddCmd() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passlen != 0);
 
-    DrawCmd* cmd2 = ArrReserve(&rstate->cmds);
-    *cmd2 = ZERO;
-    // DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
-    return cmd2;
+    DrawCmd* cmd = ArrReserve(&rstate->cmds);
+    *cmd = ZERO;
+    return cmd;
 }
 
 static DrawCmd* AddDrawMeshCmd() {
     DrawCmd* cmd = AddCmd();
     DrawMeshCmdInit(cmd);
     return cmd;
-}
-
-// #define CurShaderPass() (&RSTATE.passes[RSTATE.passidx])
-static ShaderPass* CurShaderPass() {
-    Assert(RSTATE.passidx != PASSNULL);
-    return &RSTATE.passes[RSTATE.passidx];
 }
 
 static RenderTarget GetDefaultRenderTarget() { return GetRenderState()->target; }
