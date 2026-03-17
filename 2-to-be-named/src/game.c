@@ -2204,13 +2204,6 @@ static void ShaderPassInit(ShaderPass* pass, LShader shader) {
     pass->ccap = MAX_CMDS;
 }
 
-static DrawCmd* ShaderPassAddCmd(ShaderPass* pass) {
-    Assert(pass->clen < pass->ccap);
-    DrawCmd* cmd = &pass->cmds[pass->clen++];
-    memset(cmd, 0, sizeof(DrawCmd));
-    return cmd;
-}
-
 LCORE void DrawCmdExecute(DrawCmd* cmd) {
     // TODO: SO HACKY. WTF. I SHOULD'VE RESEARCHED PROPER DRAW CMD SETUP IN SOKOL BEFORE WRITING THIS.
     static LShader SHADER = {0};
