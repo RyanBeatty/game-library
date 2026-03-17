@@ -2347,6 +2347,18 @@ static RenderPassLoadAction DefaultLoadAction() {
     return load_action;
 }
 
+static DrawCmd* AddCmd() {
+    static DrawCmd ZERO = {0};
+
+    RenderState* rstate = &RSTATE;
+    Assert(rstate->passlen != 0);
+
+    DrawCmd* cmd2 = ArrReserve(&rstate->cmds);
+    *cmd2 = ZERO;
+    // DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
+    return cmd2;
+}
+
 static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_action, Mat4 view, Mat4 proj,
                                    RenderTarget target) {
     RenderState* rstate = &RSTATE;
@@ -2358,7 +2370,7 @@ static ShaderPass* BeginShaderPass(LShader shader, RenderPassLoadAction load_act
     ShaderPassInit(pass, shader);
 
     {
-        DrawCmd* cmd = ShaderPassAddCmd(pass);
+        DrawCmd* cmd = AddCmd();
 
         *cmd = (DrawCmd){.type = CMD_BEGIN_PASS,
                          .beginpass = {
@@ -2388,18 +2400,6 @@ static void EndShaderPass() {
     RenderState* rstate = &RSTATE;
     Assert(rstate->passidx != PASSNULL);
     rstate->passidx = PASSNULL;
-}
-
-static DrawCmd* AddCmd() {
-    static DrawCmd ZERO = {0};
-
-    RenderState* rstate = &RSTATE;
-    Assert(rstate->passlen != 0);
-
-    DrawCmd* cmd2 = ArrReserve(&rstate->cmds);
-    *cmd2 = ZERO;
-    DrawCmd* cmd = ShaderPassAddCmd(CurShaderPass());
-    return cmd;
 }
 
 static DrawCmd* AddDrawMeshCmd() {
@@ -2456,14 +2456,16 @@ static void EndRender() {
     //     }
     // }
 
+    breakpoint();
     for (isize i = 0; i < ArrLen(&rstate->cmds); ++i) {
         DrawCmd* cmd = ArrGetPtr(&rstate->cmds, i);
-        // DrawCmdExecute(cmd);
+        DrawCmdExecute(cmd);
     }
+    breakpoint();
 
-    for (u32 i = 0; i < rstate->passlen; ++i) {
-        ShaderPassExecute(&rstate->passes[i]);
-    }
+    // for (u32 i = 0; i < rstate->passlen; ++i) {
+    //     ShaderPassExecute(&rstate->passes[i]);
+    // }
 
     ArrClear(&rstate->cmds);
 }
