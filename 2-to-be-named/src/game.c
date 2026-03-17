@@ -1578,7 +1578,6 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
             // sprites which have the same z value which so far seems like a desirable thing.
             glDepthFunc(GL_LEQUAL);
 
-            // TODO: turn this into a draw command using unions.
             i32 clear_mask = 0;
             if (cmd->beginpass.clear_color_flag) {
                 glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1587,7 +1586,6 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
             clear_mask |= GL_DEPTH_BUFFER_BIT;
             glClear(clear_mask);
 
-            // TODO: move this to render pass data.
             glBindVertexArray(cmd->beginpass.vao);
 
             LShader* shader = &cmd->beginpass.shader;
