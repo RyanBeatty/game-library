@@ -2454,6 +2454,8 @@ static void EndRender() {
     for (u32 i = 0; i < rstate->passlen; ++i) {
         ShaderPassExecute(&rstate->passes[i]);
     }
+
+    ArrClear(&rstate->cmds);
 }
 
 #define Render(dt) Scoped(BeginRender(dt), EndRender())
