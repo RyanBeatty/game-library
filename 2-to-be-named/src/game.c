@@ -5078,11 +5078,29 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
+    static Vec3 POS = {.z = 1};
 
     if (gstate->init) {
     }
 
     if (gstate->update) {
+        GameControllerState* controller = GetController(input, 0);
+        Vec3 vdir = {0};
+        if (controller->action_right.down) {
+            vdir.x += 1.0f;
+        }
+        if (controller->action_left.down) {
+            vdir.x -= 1.0f;
+        }
+        if (controller->action_up.down) {
+            vdir.y += 1.0f;
+        }
+        if (controller->action_down.down) {
+            vdir.y -= 1.0f;
+        }
+
+        vdir = Vec3Normalize(vdir);
+        POS = Vec3Add(POS, Vec3Scale(vdir, 100.0f * dt));
     }
 
     if (gstate->render) {
@@ -5094,7 +5112,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Mat4 view = Mat4Identity();
                 Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
                 Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
-                                      -1.0f, 1.0f);
+                                      -3.0f, 3.0f);
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
                 Vec3 grid_origin = Vec3Zero();
@@ -5107,6 +5125,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         DrawAABB(Vec2ToVec3(pos), Vec2ToVec3(grid_tile_dims), LBLACK);
                     }
                 }
+
+                DrawLModel(LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE),
+                           POS, Mat4Identity(), Vec3LitAll(1.0f));
 
                 EndShaderPass();
             }
@@ -5156,7 +5178,7 @@ void GameInit() {
     gstate->target_fps = 60;
     gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
 
-    u32 scale = 1;
+    u32 scale = 6;
     PlatformInit(scale * gstate->renderw, scale * gstate->renderh, gstate->target_fps);
 
     isize sound_cap = GB(2);
