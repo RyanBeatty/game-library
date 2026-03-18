@@ -2264,7 +2264,7 @@ typedef struct {
     f32 timer;
     i32 nframe;
 
-    RenderTarget target;
+    RenderTarget game_target;
 
     DrawCmdArr cmds;
 } RenderState;
@@ -2289,13 +2289,13 @@ static DrawCmd* AddDrawMeshCmd() {
     return cmd;
 }
 
-static RenderTarget GetDefaultRenderTarget() { return GetRenderState()->target; }
+static RenderTarget GetDefaultRenderTarget() { return GetRenderState()->game_target; }
 
 static void RenderStateInit(u32 width, u32 height, Arena* perm) {
     RenderState* rstate = &RSTATE;
 
     memset(rstate, 0, sizeof(RenderTarget));
-    rstate->target = CreateRenderTarget(width, height);
+    rstate->game_target = CreateRenderTarget(width, height);
 
     InitArr(&rstate->cmds, perm, DrawCmd, 1000);
 }
@@ -2386,9 +2386,9 @@ static void EndRender() {
         // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
         cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
         // cmd->meshcmd.color = LRED;  // For debug.
-        cmd->meshcmd.tx.id = rstate->target.txid;
-        cmd->meshcmd.tx.width = rstate->target.width;
-        cmd->meshcmd.tx.height = rstate->target.height;
+        cmd->meshcmd.tx.id = rstate->game_target.txid;
+        cmd->meshcmd.tx.width = rstate->game_target.width;
+        cmd->meshcmd.tx.height = rstate->game_target.height;
 
         EndShaderPass();
     }
@@ -4914,7 +4914,7 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
     GameState* gstate = GetGameState();
     RenderState* rstate = GetRenderState();
 
-    Vec2 viewport_dims = Vec2Lit(rstate->target.width, rstate->target.height);
+    Vec2 viewport_dims = Vec2Lit(rstate->game_target.width, rstate->game_target.height);
     Vec2 viewport_origin = Vec2Zero();
 
     // Transform from screen space to clip space.
