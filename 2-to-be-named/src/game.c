@@ -5127,17 +5127,26 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 };
                 BeginShaderPass(GetEffectsShader(), load_action, view, proj, GetScreenRenderTarget());
 
-                DrawCmd* cmd = AddDrawMeshCmd();
-                // DrawMeshCmdInit(cmd);
-                cmd->meshcmd.meshid = GetMesh(M_QUAD);
+                // DrawCmd* cmd = AddDrawMeshCmd();
+                // // DrawMeshCmdInit(cmd);
+                // cmd->meshcmd.meshid = GetMesh(M_QUAD);
+                // // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
+                // // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+                // cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+                // // cmd->meshcmd.color = LRED;  // For debug.
+                // RenderTarget game_target = GetDefaultRenderTarget();
+                // cmd->meshcmd.tx.id = game_target.txid;
+                // cmd->meshcmd.tx.width = game_target.width;
+                // cmd->meshcmd.tx.height = game_target.height;
+
+                RenderTarget game_target = GetDefaultRenderTarget();
+                LTexture game_texture = {
+                    .id = game_target.txid, .width = game_texture.width, .height = game_target.height};
                 // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
                 // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
-                cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
-                // cmd->meshcmd.color = LRED;  // For debug.
-                RenderTarget game_target = GetDefaultRenderTarget();
-                cmd->meshcmd.tx.id = game_target.txid;
-                cmd->meshcmd.tx.width = game_target.width;
-                cmd->meshcmd.tx.height = game_target.height;
+                // iirc this is specific to how this effects shader works.
+                DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(), Vec2Lit(2.0f, 2.0f), 0.0f,
+                                  LCLEAR);
 
                 EndShaderPass();
             }
