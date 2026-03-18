@@ -2264,7 +2264,10 @@ typedef struct {
     f32 timer;
     i32 nframe;
 
+    // What the game world renders to.
     RenderTarget game_target;
+    // What we render to screen.
+    RenderTarget screen_target;
 
     DrawCmdArr cmds;
 } RenderState;
@@ -2290,12 +2293,20 @@ static DrawCmd* AddDrawMeshCmd() {
 }
 
 static RenderTarget GetDefaultRenderTarget() { return GetRenderState()->game_target; }
+static RenderTarget GetScreenRenderTarget() { return GetRenderState()->screen_target; }
 
-static void RenderStateInit(u32 width, u32 height, Arena* perm) {
+static void RenderStateInit(u32 game_width, u32 game_height, Arena* perm) {
     RenderState* rstate = &RSTATE;
 
     memset(rstate, 0, sizeof(RenderTarget));
-    rstate->game_target = CreateRenderTarget(width, height);
+    rstate->game_target = CreateRenderTarget(game_width, game_height);
+
+    // A little hacky since we don't specify the texture, but good enough for now.
+    rstate->screen_target = (RenderTarget){
+        .fbid = 0,
+        .width = PlatformScreenWidth(),
+        .height = PlatformScreenHeight(),
+    };
 
     InitArr(&rstate->cmds, perm, DrawCmd, 1000);
 }
@@ -2309,6 +2320,9 @@ static void BeginRender(f32 dt) {
     rstate->dt = dt;
     rstate->timer += dt;
     ++rstate->nframe;
+
+    rstate->screen_target.width = PlatformScreenWidth();
+    rstate->screen_target.height = PlatformScreenHeight();
 }
 
 static RenderPassLoadAction DefaultLoadAction() {
@@ -2363,35 +2377,35 @@ static void EndShaderPass() {
 static void EndRender() {
     RenderState* rstate = &RSTATE;
 
-    // Draw the texture framebuffer to screen quad.
-    {
-        Mat4 view = Mat4Identity();
-        Mat4 proj = Mat4Identity();
-        RenderPassLoadAction load_action = {
-            .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
-            .clear_color_flag = true,
-            .depth_test = false,
-        };
-        RenderTarget screen_taret = {
-            .fbid = 0,
-            .width = PlatformScreenWidth(),
-            .height = PlatformScreenHeight(),
-        };
-        BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
+    // // Draw the texture framebuffer to screen quad.
+    // {
+    //     Mat4 view = Mat4Identity();
+    //     Mat4 proj = Mat4Identity();
+    //     RenderPassLoadAction load_action = {
+    //         .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
+    //         .clear_color_flag = true,
+    //         .depth_test = false,
+    //     };
+    //     RenderTarget screen_taret = {
+    //         .fbid = 0,
+    //         .width = PlatformScreenWidth(),
+    //         .height = PlatformScreenHeight(),
+    //     };
+    //     BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
 
-        DrawCmd* cmd = AddDrawMeshCmd();
-        // DrawMeshCmdInit(cmd);
-        cmd->meshcmd.meshid = GetMesh(M_QUAD);
-        // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the quad
-        // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
-        cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
-        // cmd->meshcmd.color = LRED;  // For debug.
-        cmd->meshcmd.tx.id = rstate->game_target.txid;
-        cmd->meshcmd.tx.width = rstate->game_target.width;
-        cmd->meshcmd.tx.height = rstate->game_target.height;
+    //     DrawCmd* cmd = AddDrawMeshCmd();
+    //     // DrawMeshCmdInit(cmd);
+    //     cmd->meshcmd.meshid = GetMesh(M_QUAD);
+    //     // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the quad
+    //     // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+    //     cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+    //     // cmd->meshcmd.color = LRED;  // For debug.
+    //     cmd->meshcmd.tx.id = rstate->game_target.txid;
+    //     cmd->meshcmd.tx.width = rstate->game_target.width;
+    //     cmd->meshcmd.tx.height = rstate->game_target.height;
 
-        EndShaderPass();
-    }
+    //     EndShaderPass();
+    // }
 
     Assert(rstate->passidx == PASSNULL);
 
@@ -4539,18 +4553,18 @@ static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInp
 }
 
 static void UIBegin(UIState* ui, Arena* perm, GameInput* input, f32 width, f32 height, LShader shader,
-                    RenderPassLoadAction load_action) {
+                    RenderPassLoadAction load_action, RenderTarget target) {
     Mat4 view = Mat4Identity();
     Mat4 proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
-    BeginShaderPass(shader, load_action, view, proj, GetDefaultRenderTarget());
+    BeginShaderPass(shader, load_action, view, proj, target);
     UIStateInit(ui, perm, width, height, input);
 }
 
 static void UIEnd(UIState* ui) { EndShaderPass(); }
 
-#define UI2D(ui, perm, input, width, height, shader, load_action) \
-    Scoped(UIBegin((ui), (perm), (input), (width), (height), (shader), (load_action)), UIEnd((ui)))
+#define UI2D(ui, perm, input, width, height, shader, load_action, target) \
+    Scoped(UIBegin((ui), (perm), (input), (width), (height), (shader), (load_action), (target)), UIEnd((ui)))
 
 static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBoxStyle style) {
     UIBox* parent = UIGetParent(ui);
@@ -5133,16 +5147,41 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 EndShaderPass();
             }
 
+            // Draw the texture framebuffer to screen quad.
+            {
+                Mat4 view = Mat4Identity();
+                Mat4 proj = Mat4Identity();
+                RenderPassLoadAction load_action = {
+                    .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
+                    .clear_color_flag = true,
+                    .depth_test = false,
+                };
+                BeginShaderPass(GetEffectsShader(), load_action, view, proj, GetScreenRenderTarget());
+
+                DrawCmd* cmd = AddDrawMeshCmd();
+                // DrawMeshCmdInit(cmd);
+                cmd->meshcmd.meshid = GetMesh(M_QUAD);
+                // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
+                // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+                cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+                // cmd->meshcmd.color = LRED;  // For debug.
+                RenderTarget game_target = GetDefaultRenderTarget();
+                cmd->meshcmd.tx.id = game_target.txid;
+                cmd->meshcmd.tx.width = game_target.width;
+                cmd->meshcmd.tx.height = game_target.height;
+
+                EndShaderPass();
+            }
+
             // UI.
             {
                 UIState ui = {0};
-                f32 screen_width = gstate->renderw;
-                f32 screen_height = gstate->renderh;
                 RenderPassLoadAction load_action = {
                     .clear_color_flag = false,
                     .depth_test = true,
                 };
-                UI2D(&ui, &gstate->temp, input, screen_width, screen_height, GetDefaultShader(), load_action) {
+                UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
+                     load_action, GetScreenRenderTarget()) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
                     UILabel(&ui, Str8FromC("hello, world"), UI_FLAG_NONE);
                 }
