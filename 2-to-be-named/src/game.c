@@ -5281,9 +5281,13 @@ void GameTick(f32 dt, GameInput* input) {
         // draw the UI components in the render step)
         GameInput orig_input = *input;
 
+        i32 update_tick_count = 0;
+
         // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
         // https://gameprogrammingpatterns.com/game-loop.html#play-catch-up
         while (gstate->accumulated_time >= gstate->fixed_dt) {
+            ++update_tick_count;
+
             // Update simulation with fixed delta time.
             gstate->update = true;
             gstate->dt = gstate->fixed_dt;
@@ -5317,6 +5321,10 @@ void GameTick(f32 dt, GameInput* input) {
         gstate->render = true;
         gstate->scenefuncs[gstate->sceneid](gstate, &orig_input);
         gstate->init = false;
+
+        if (false) {
+            PlatformLog(LLOG_WARN, "Simulated %d times for frame %d", update_tick_count, gstate->nframe);
+        }
     }
 
     ++gstate->nframe;
