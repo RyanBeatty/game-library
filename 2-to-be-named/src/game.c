@@ -2373,40 +2373,9 @@ static void EndShaderPass() {
     rstate->passidx = PASSNULL;
 }
 
-// Execute shader passes and produce render to screen.
+// Execute the draw commands and send to gpu.
 static void EndRender() {
     RenderState* rstate = &RSTATE;
-
-    // // Draw the texture framebuffer to screen quad.
-    // {
-    //     Mat4 view = Mat4Identity();
-    //     Mat4 proj = Mat4Identity();
-    //     RenderPassLoadAction load_action = {
-    //         .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
-    //         .clear_color_flag = true,
-    //         .depth_test = false,
-    //     };
-    //     RenderTarget screen_taret = {
-    //         .fbid = 0,
-    //         .width = PlatformScreenWidth(),
-    //         .height = PlatformScreenHeight(),
-    //     };
-    //     BeginShaderPass(GetEffectsShader(), load_action, view, proj, screen_taret);
-
-    //     DrawCmd* cmd = AddDrawMeshCmd();
-    //     // DrawMeshCmdInit(cmd);
-    //     cmd->meshcmd.meshid = GetMesh(M_QUAD);
-    //     // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the quad
-    //     // is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
-    //     cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
-    //     // cmd->meshcmd.color = LRED;  // For debug.
-    //     cmd->meshcmd.tx.id = rstate->game_target.txid;
-    //     cmd->meshcmd.tx.width = rstate->game_target.width;
-    //     cmd->meshcmd.tx.height = rstate->game_target.height;
-
-    //     EndShaderPass();
-    // }
-
     Assert(rstate->passidx == PASSNULL);
 
     // // Enable/Disable culling.
