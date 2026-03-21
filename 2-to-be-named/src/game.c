@@ -5109,7 +5109,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     i32 grid_rows = 9;
                     i32 grid_height = grid_tile_dims.y * grid_rows;
-                    i32 grid_origin_y = (0.5f * gstate->renderh_world) - grid_height;
+                    i32 grid_origin_y = (0.5f * gstate->renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
 
                     Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
 
