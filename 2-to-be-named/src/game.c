@@ -4858,8 +4858,8 @@ typedef enum {
     PHASE_SHOP_OPEN,
 } GamePhase;
 
-static const u32 GRID_NUM_ROWS = 1;  // 9;
-static const u32 GRID_NUM_COLS = 1;  // 12;
+static const u32 GRID_NUM_ROWS = 9;
+static const u32 GRID_NUM_COLS = 12;
 
 typedef struct {
     Vec3 pos;
