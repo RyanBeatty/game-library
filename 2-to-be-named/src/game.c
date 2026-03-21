@@ -2473,10 +2473,11 @@ LCORE DrawCmd* DrawLLine(Vec3 start, Vec3 end, f32 width, Vec4 color) {
     return DrawQuad(pos, width + AA_BUFFER_X, height, rot, color);
 }
 
-LCORE void DrawAABB(Vec3 center, Vec3 radius, Vec4 color) {
+// Dims is full width and height.
+LCORE void DrawAABB(Vec3 center, Vec3 dims, Vec4 color) {
     DrawCmd* cmd = AddDrawMeshCmd();
     cmd->meshcmd.meshid = GetMesh(M_CUBE);
-    cmd->meshcmd.modelm = Mat4SVRT(Vec3Scale(radius, 2.0f), Mat4Identity(), center);
+    cmd->meshcmd.modelm = Mat4SVRT(dims, Mat4Identity(), center);
     cmd->meshcmd.color = color;
 }
 
@@ -5098,23 +5099,32 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                       -3.0f, 3.0f);
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
-                Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
+                // Grid.
+                {
+                    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
 
-                i32 grid_cols = 12;
-                i32 grid_width = grid_tile_dims.x * grid_cols;
-                i32 grid_origin_x = -0.5f * grid_width;
+                    i32 grid_cols = 12;
+                    i32 grid_width = grid_tile_dims.x * grid_cols;
+                    i32 grid_origin_x = -0.5f * grid_width;
 
-                i32 grid_rows = 9;
-                i32 grid_height = grid_tile_dims.y * grid_rows;
-                i32 grid_origin_y = (0.5f * gstate->renderh_world) - grid_height;
+                    i32 grid_rows = 9;
+                    i32 grid_height = grid_tile_dims.y * grid_rows;
+                    i32 grid_origin_y = (0.5f * gstate->renderh_world) - grid_height;
 
-                Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
-                for (i32 r = 0; r < grid_rows; ++r) {
-                    for (i32 c = 0; c < grid_cols; ++c) {
-                        Vec3 pos = grid_origin;
-                        pos.x += c * grid_tile_dims.x;
-                        pos.y += r * grid_tile_dims.y;
-                        DrawAABB(Vec2ToVec3(pos), Vec2ToVec3(grid_tile_dims), LBLACK);
+                    Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+
+                    i32 color_idx = 0;
+                    for (i32 r = 0; r < grid_rows; ++r) {
+                        for (i32 c = 0; c < grid_cols; ++c, ++color_idx) {
+                            Vec3 pos = grid_origin;
+                            pos.x += c * grid_tile_dims.x;
+                            pos.y += r * grid_tile_dims.y;
+                            Vec4 color = color_idx % 2 == 0 ? LBLACK : LRED;
+                            DrawAABB(Vec2ToVec3(pos), Vec2ToVec3(grid_tile_dims), color);
+                        }
+
+                        // If even cols, offset color index for start of next row by 1 to get checkerboard pattern.
+                        color_idx += grid_cols % 2 == 0;
                     }
                 }
 
