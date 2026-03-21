@@ -3830,6 +3830,25 @@ LCORE DrawCmd* DrawLModelEx(LModel model, isize frame_idx, Vec3 pos, Mat4 orient
     return cmd;
 }
 
+LCORE DrawCmd* DrawLModelEx2(LModel model, isize frame_idx, Mat4 world_mat) {
+    Assert(model.animation.sprites.len > frame_idx);
+    // Draw the model at its base scale multiplied by the passed in scale.
+    Sprite* sprite = ArrGetR(&model.animation.sprites, frame_idx);
+
+    Mat4 local_mat = Mat4SVRT(model.scale, model.orient, model.pos);
+
+    DrawCmd* cmd = AddDrawMeshCmd();
+    cmd->meshcmd.meshid = model.mesh;
+    cmd->meshcmd.modelm = Mat4Multiply(world_mat, local_mat);
+    cmd->meshcmd.color = model.tint;
+
+    // Draw first frame of animation (if its an animation, else same as Drawsprite).
+    cmd->meshcmd.tx = sprite->tx;
+    cmd->meshcmd.uvoffset = sprite->minuv;
+    cmd->meshcmd.uvscale = sprite->dimsuv;
+    return cmd;
+}
+
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
 LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
     return DrawLModelEx(model, 0, pos, orient, scale);
@@ -3905,6 +3924,8 @@ typedef struct {
     Vec3 pos;
     Vec3 scale;
     Mat4 orient;
+
+    Mat4 transform;
 
     Vec3 pos_start;
     Vec3 pos_end;
@@ -4050,6 +4071,18 @@ LCORE DrawCmd* DrawGraphicsInfo(GraphicsInfo* graphics) {
     return cmd;
 }
 
+LCORE DrawCmd* DrawGraphicsInfo2(GraphicsInfo* graphics) {
+    DrawCmd* cmd = DrawLModelEx2(graphics->model, graphics->frame_idx, graphics->transform);
+
+    // If sprite is facing left, then we shift the bottom left corner to the bottom right corner
+    // and set a negative u dimension. This will cause us to interpolate from bottom right to top left.
+    if (graphics->facing_left) {
+        cmd->meshcmd.uvoffset.x += cmd->meshcmd.uvscale.x;
+        cmd->meshcmd.uvscale.x *= -1.0f;
+    }
+    return cmd;
+}
+
 // LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
 //     graphics->mid = mesh;
 //     graphics->scale = scale;
@@ -4129,6 +4162,10 @@ typedef struct {
 
     f32 active_dt;
 
+    EntityId down_id;   // Child
+    EntityId right_id;  // Neighbor/sibling
+    EntityId up_id;     // Parent
+
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
 } Entity;
@@ -4200,26 +4237,32 @@ static Entity* NextFreeEntity() {
 static void EntityInitGameplayFields(Entity* entity) {}
 
 LCORE Entity* AllocateEntity() {
-    Entity* entity = NextFreeEntity();
-    Assert(entity != NULL);
-    Entity zero = {.id = entity->id};
-    *entity = zero;
-    entity->flags = EFLAG_ACTIVE;
-    entity->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-    entity->orient = Mat4Identity();
+    Entity* e = NextFreeEntity();
+    Assert(e != NULL);
+    Entity zero = {.id = e->id};
+    *e = zero;
+    e->flags = EFLAG_ACTIVE;
+    e->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+    e->orient = Mat4Identity();
 
     // Physics stuff.
     {
         // entity->v = Vec3Zero();
-        EntitySetMass(entity, 0.0f);  // Set infinite mass
+        EntitySetMass(e, 0.0f);  // Set infinite mass
     }
 
-    PolyhedronInit(&entity->shape);
-    GraphicsInfoMemset(&entity->graphics);
-    FlagOn(entity->flags, EFLAG_DRAW);
+    PolyhedronInit(&e->shape);
+    GraphicsInfoMemset(&e->graphics);
+    FlagOn(e->flags, EFLAG_DRAW);
 
-    EntityInitGameplayFields(entity);
-    return entity;
+    {
+        e->down_id = NULLID;
+        e->right_id = NULLID;
+        e->up_id = NULLID;
+    }
+
+    EntityInitGameplayFields(e);
+    return e;
 }
 
 // Mark entity as being deactivated at the next cleanup. We do it this way so that we have
@@ -4262,6 +4305,23 @@ LCORE bool IncrementEntity(Entity** entity_ptr) {
     }
 
     return false;
+}
+
+static Mat4 EntityGetParentMat(Entity* e) {
+    Mat4 parent_mat = Mat4Identity();
+    while (!EntityIdEq(e->up_id, NULLID)) {
+        Entity* parent = EntityFromId(e->up_id);
+        parent_mat = Mat4Multiply(Mat4SVRT(parent->scale, parent->orient, parent->pos), parent_mat);
+        e = parent;
+    }
+
+    return parent_mat;
+}
+
+static Mat4 EntityGetMat(Entity* e) {
+    Mat4 parent_mat = EntityGetParentMat(e);
+    Mat4 local_mat = Mat4SVRT(e->scale, e->orient, e->pos);
+    return Mat4Multiply(parent_mat, local_mat);
 }
 
 ////////////////////////////////////////////////////
@@ -4798,6 +4858,74 @@ typedef enum {
     PHASE_SHOP_OPEN,
 } GamePhase;
 
+static const u32 GRID_NUM_ROWS = 1;  // 9;
+static const u32 GRID_NUM_COLS = 1;  // 12;
+
+typedef struct {
+    Vec3 pos;
+    Vec3 scale;
+    Mat4 rot;
+
+    isize nrows;
+    isize ncols;
+    // I suspect this will change a lot. There is a decision to be made about if you make some dedicated Tile struct or
+    // just have all cells be Entities. You would have a root transform entity that stores the grid world transform
+    // info. Then all of its children would be the Entity cells. This could make it simpler to add things like terrain
+    // effects later. Would potentially need some hashmap structure on top for fast coordinate position -> Entity
+    // lookup.
+    EntityId root;
+    // EntityId cells[GRID_NUM_ROWS][GRID_NUM_COLS];
+} Grid;
+
+static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
+    static Grid ZERO = {0};
+
+    *grid = ZERO;
+
+    // Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
+    Vec2 grid_tile_dims = Vec2Lit(16.0f, 16.0f);
+
+    grid->ncols = GRID_NUM_COLS;
+    i32 grid_width = grid_tile_dims.x * grid->ncols;
+    i32 grid_origin_x = -0.5f * grid_width;
+
+    grid->nrows = GRID_NUM_ROWS;
+    i32 grid_height = grid_tile_dims.y * grid->nrows;
+    i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
+
+    Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+
+    Entity* root = AllocateEntity();
+    FlagOff(root->flags, EFLAG_DRAW);
+    grid->root = root->id;
+    root->pos = grid_origin;
+    root->scale = Vec2ToVec3(grid_tile_dims);
+
+    LModel red_model =
+        LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LRED);
+    LModel black_model =
+        LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LBLACK);
+
+    i32 color_idx = 0;
+    for (i32 r = 0; r < grid->nrows; ++r) {
+        for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
+            Entity* cell = AllocateEntity();
+            cell->pos = Vec3Lit(c, r, 0);
+
+            // Tree stuff.
+            cell->up_id = root->id;
+            cell->right_id = root->down_id;
+            root->down_id = cell->right_id;
+
+            LModel model = color_idx % 2 == 0 ? black_model : red_model;
+            GraphicsInfoSetLModel(&cell->graphics, model);
+        }
+
+        // If even cols, offset color index for start of next row by 1 to get checkerboard pattern.
+        color_idx += grid->ncols % 2 == 0;
+    }
+}
+
 ////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
@@ -4852,6 +4980,8 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
+
+    Grid grid;
 } GameState;
 
 static GameState GState;
@@ -4965,6 +5095,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static Vec3 POS = {.z = 1};
 
     if (gstate->init) {
+        GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world);
     }
 
     if (gstate->update) {
@@ -4999,8 +5130,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                       -3.0f, 3.0f);
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
+                for (Entity* e = NULL; IncrementEntity(&e);) {
+                    if (TestFlag(e->flags, EFLAG_DRAW)) {
+                        Mat4 e_mat = EntityGetMat(e);
+                        e->graphics.transform = e_mat;
+                        DrawGraphicsInfo2(&e->graphics);
+                    }
+                }
                 // Grid.
-                {
+                if (false) {
                     Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
 
                     i32 grid_cols = 12;
