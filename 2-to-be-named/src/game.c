@@ -4848,6 +4848,12 @@ static const f32 GRID_DEPTH = 1.0f;
 
 #define World2GridEx(pos, w, h, d) (Vec3Lit((u32)((pos).x / (w)), (u32)((pos).y / (h)), (u32)((pos).z) / (d)))
 #define World2Grid(pos) (World2GridEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
+
+// 1 meter = N pixels scale factor. i.e. how many pixels are in 1 meter.
+#define PPM (1.0f)
+#define MPP (1.0f / PPM)
+#define Meter2Px(m) ((m) * PPM)
+#define Px2Meter(px) ((px) * MPP)
 ////////////////////////////////////////////////////
 
 typedef enum {
@@ -4894,8 +4900,7 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     *grid = ZERO;
 
-    // Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
-    Vec2 grid_tile_dims = Vec2Lit(16.0f, 16.0f);
+    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
 
     i32 ncols = GRID_NUM_COLS;
     i32 grid_width = grid_tile_dims.x * ncols;
@@ -5106,12 +5111,6 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
         }
     }
 }
-
-// 1 meter = N pixels scale factor. i.e. how many pixels are in 1 meter.
-#define PPM (1.0f)
-#define MPP (1.0f / PPM)
-#define Meter2Px(m) ((m) * PPM)
-#define Px2Meter(px) ((px) * MPP)
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
