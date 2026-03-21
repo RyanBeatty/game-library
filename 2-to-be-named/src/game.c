@@ -4858,8 +4858,14 @@ typedef enum {
     PHASE_SHOP_OPEN,
 } GamePhase;
 
-static const u32 GRID_NUM_ROWS = 9;
-static const u32 GRID_NUM_COLS = 12;
+#define GRID_NUM_ROWS 9
+#define GRID_NUM_COLS 12
+
+typedef struct {
+    EntityId occupied_by;
+
+    GraphicsInfo graphics;
+} Tile;
 
 typedef struct {
     Vec3 pos;
@@ -4873,9 +4879,15 @@ typedef struct {
     // info. Then all of its children would be the Entity cells. This could make it simpler to add things like terrain
     // effects later. Would potentially need some hashmap structure on top for fast coordinate position -> Entity
     // lookup.
-    EntityId root;
-    // EntityId cells[GRID_NUM_ROWS][GRID_NUM_COLS];
+    // EntityId root;
+    Tile tiles[GRID_NUM_ROWS][GRID_NUM_COLS];
 } Grid;
+
+static Tile* GridGetTile(Grid* grid, isize r, isize c) {
+    Assert(r < grid->nrows);
+    Assert(c < grid->ncols);
+    return &grid->tiles[r][c];
+}
 
 static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     static Grid ZERO = {0};
@@ -4885,21 +4897,21 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     // Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
     Vec2 grid_tile_dims = Vec2Lit(16.0f, 16.0f);
 
-    grid->ncols = GRID_NUM_COLS;
-    i32 grid_width = grid_tile_dims.x * grid->ncols;
+    i32 ncols = GRID_NUM_COLS;
+    i32 grid_width = grid_tile_dims.x * ncols;
     i32 grid_origin_x = -0.5f * grid_width;
 
-    grid->nrows = GRID_NUM_ROWS;
-    i32 grid_height = grid_tile_dims.y * grid->nrows;
+    i32 nrows = GRID_NUM_ROWS;
+    i32 grid_height = grid_tile_dims.y * nrows;
     i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
 
     Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
 
-    Entity* root = AllocateEntity();
-    FlagOff(root->flags, EFLAG_DRAW);
-    grid->root = root->id;
-    root->pos = grid_origin;
-    root->scale = Vec2ToVec3(grid_tile_dims);
+    // Entity* root = AllocateEntity();
+    // FlagOff(root->flags, EFLAG_DRAW);
+    // grid->root = root->id;
+    // root->pos = grid_origin;
+    // root->scale = Vec2ToVec3(grid_tile_dims);
 
     LModel red_model =
         LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LRED);
@@ -4907,23 +4919,34 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
         LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LBLACK);
 
     i32 color_idx = 0;
-    for (i32 r = 0; r < grid->nrows; ++r) {
-        for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
-            Entity* cell = AllocateEntity();
-            cell->pos = Vec3Lit(c, r, 0);
-
-            // Tree stuff.
-            cell->up_id = root->id;
-            cell->right_id = root->down_id;
-            root->down_id = cell->right_id;
-
+    for (i32 r = 0; r < nrows; ++r) {
+        for (i32 c = 0; c < ncols; ++c, ++color_idx) {
+            Tile* tile = &grid->tiles[r][c];
+            tile->occupied_by = NULLID;
             LModel model = color_idx % 2 == 0 ? black_model : red_model;
-            GraphicsInfoSetLModel(&cell->graphics, model);
+            GraphicsInfoSetLModel(&tile->graphics, model);
+
+            // Entity* cell = AllocateEntity();
+            // cell->pos = Vec3Lit(c, r, 0);
+
+            // // Tree stuff.
+            // cell->up_id = root->id;
+            // cell->right_id = root->down_id;
+            // root->down_id = cell->right_id;
+
+            // LModel model = color_idx % 2 == 0 ? black_model : red_model;
+            // GraphicsInfoSetLModel(&cell->graphics, model);
         }
 
         // If even cols, offset color index for start of next row by 1 to get checkerboard pattern.
         color_idx += grid->ncols % 2 == 0;
     }
+
+    grid->ncols = ncols;
+    grid->nrows = nrows;
+    grid->pos = grid_origin;
+    grid->scale = Vec2ToVec3(grid_tile_dims);
+    grid->rot = Mat4Identity();
 }
 
 ////////////////////////////////////////////////////
@@ -5130,11 +5153,28 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                       -3.0f, 3.0f);
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
-                for (Entity* e = NULL; IncrementEntity(&e);) {
-                    if (TestFlag(e->flags, EFLAG_DRAW)) {
-                        Mat4 e_mat = EntityGetMat(e);
-                        e->graphics.transform = e_mat;
-                        DrawGraphicsInfo2(&e->graphics);
+                {
+                    Grid* grid = &gstate->grid;
+                    Mat4 grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
+                    for (isize r = 0; r < grid->nrows; ++r) {
+                        for (isize c = 0; c < grid->ncols; ++c) {
+                            Tile* tile = GridGetTile(grid, r, c);
+                            Vec3 tile_pos = Vec3Lit(c, r, 0);
+                            tile->graphics.transform =
+                                Mat4Multiply(grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
+                            DrawGraphicsInfo2(&tile->graphics);
+                        }
+                    }
+                }
+
+                // Entity based grid
+                if (false) {
+                    for (Entity* e = NULL; IncrementEntity(&e);) {
+                        if (TestFlag(e->flags, EFLAG_DRAW)) {
+                            Mat4 e_mat = EntityGetMat(e);
+                            e->graphics.transform = e_mat;
+                            DrawGraphicsInfo2(&e->graphics);
+                        }
                     }
                 }
                 // Grid.
