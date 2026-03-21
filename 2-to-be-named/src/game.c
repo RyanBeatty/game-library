@@ -5098,10 +5098,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                       -3.0f, 3.0f);
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
-                Vec3 grid_origin = Vec3Zero();
-                Vec2 grid_tile_dims = Vec2Lit(16.0f, 16.0f);
-                for (i32 r = 0; r < 9; ++r) {
-                    for (i32 c = 0; c < 12; ++c) {
+                Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
+
+                i32 grid_cols = 12;
+                i32 grid_width = grid_tile_dims.x * grid_cols;
+                i32 grid_origin_x = -0.5f * grid_width;
+
+                i32 grid_rows = 9;
+                i32 grid_height = grid_tile_dims.y * grid_rows;
+                i32 grid_origin_y = (0.5f * gstate->renderh_world) - grid_height;
+
+                Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+                for (i32 r = 0; r < grid_rows; ++r) {
+                    for (i32 c = 0; c < grid_cols; ++c) {
                         Vec3 pos = grid_origin;
                         pos.x += c * grid_tile_dims.x;
                         pos.y += r * grid_tile_dims.y;
