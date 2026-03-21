@@ -4852,37 +4852,6 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
-
-    f32 timer_sec;
-
-    f32 score;
-    f32 score2;
-
-    GamePhase phase;
-
-    i32 worker_count;
-    f32 worker_cost;
-
-    i32 upgraded_worker_count;
-    i32 upgraded_worker_count2;
-    i32 upgraded_worker_count3;
-
-    f32 worker_cooldown_sec;
-    f32 worker_cooldown_sec_cost;
-
-    f32 researcher_cooldown_sec;
-    i32 researcher_count;
-
-    EntityId mail_root;
-
-    i32 day;
-    i32 num_sorted;
-    i32 target_score;
-
-    EntityId worker_root;
-    EntityId researcher_root;
-
-    bool shop_open;
 } GameState;
 
 static GameState GState;
@@ -4984,75 +4953,6 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
         }
     }
 }
-
-// static void SceneDefaultTick(GameState* gstate, GameInput* input) {
-//     f32 dt = gstate->dt;
-
-//     if (gstate->init) {
-//     }
-
-//     if (gstate->update) {
-//     }
-
-//     if (gstate->render) {
-//         BeginRender(dt);
-
-//         ShaderPass* pass = BeginShaderPass(GetDefaultShader(), DefaultLoadAction());
-//         // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
-//         // _world sizes from gstate.
-//         f32 width = gstate->renderw;
-//         f32 height = gstate->renderh;
-//         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
-
-//         char msg[] = "DEFAULT SCENE";
-//         u32 size = strlen(msg);
-
-//         LFont font = GetLFontClosest(20.0f);
-//         DrawLTextEx(font, msg, size, Vec2Zero(), LBLACK);
-
-//         EndShaderPass();
-
-//         EndRender();
-//     }
-// }
-
-// static void SceneDefault3DTick(GameState* gstate, GameInput* input) {
-//     f32 dt = gstate->dt;
-
-//     if (gstate->init) {
-//         gstate->camera.eye = Vec3Lit(50.0f, 50.0f, 50.0f);
-//         gstate->camera.target = Vec3Zero();
-//         gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
-//     }
-
-//     if (gstate->update) {
-//     }
-
-//     if (gstate->render) {
-//         BeginRender(dt);
-
-//         ShaderPass* pass = BeginShaderPass(GetDefaultShader());
-//         // Reminder. this will draw stuff in screen space. if you want to draw with pixel scaling using PPM, then use
-//         // _world sizes from gstate.
-//         f32 width = gstate->renderw;
-//         f32 height = gstate->renderh;
-//         pass->proj = Mat4Ortho(-0.5f * width, 0.5f * width, -0.5f * height, 0.5f * height, -1.0f, 1.0f);
-
-//         pass->view = CameraGetViewMat(gstate->camera);
-//         pass->proj = Mat4Perspective(Deg2Rad(60.0f), (f32)gstate->renderw / (f32)gstate->renderh, 0.1f, 100.0f);
-
-//         // DrawQuad(Vec3Zero(), 50, 50, Mat4Identity(), LRED);
-
-//         // DrawLSphere(Vec3Zero(), 5.0f, LBLUE);
-
-//         // DrawMesh(GetMesh(M_HELLO_CUBE), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
-//         DrawMesh(GetMesh(M_HELLO_MONKEY), Vec3Lit(0.0f, 0.0f, 0.0f), Mat4Identity(), Vec3Lit(5, 5, 5), LBLUE);
-
-//         EndShaderPass();
-
-//         EndRender();
-//     }
-// }
 
 // 1 meter = N pixels scale factor. i.e. how many pixels are in 1 meter.
 #define PPM (1.0f)
