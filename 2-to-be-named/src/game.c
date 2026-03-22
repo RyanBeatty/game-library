@@ -4868,8 +4868,6 @@ typedef enum {
 #define GRID_NUM_COLS 12
 
 typedef struct {
-    EntityId occupied_by;
-
     GraphicsInfo graphics;
 } Tile;
 
