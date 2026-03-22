@@ -4927,8 +4927,8 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     // root->pos = grid_origin;
     // root->scale = Vec2ToVec3(grid_tile_dims);
 
-    LModel red_model =
-        LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LRED);
+    LModel grey_model =
+        LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LGRAY);
     LModel black_model =
         LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LBLACK);
 
@@ -4937,7 +4937,7 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
         for (i32 c = 0; c < ncols; ++c, ++color_idx) {
             Tile* tile = &grid->tiles[r][c];
             tile->pos = Vec2Lit(c, r);
-            LModel model = color_idx % 2 == 0 ? black_model : red_model;
+            LModel model = color_idx % 2 == 0 ? black_model : grey_model;
             GraphicsInfoSetLModel(&tile->graphics, model);
 
             // Entity* cell = AllocateEntity();
