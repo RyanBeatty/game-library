@@ -5144,14 +5144,15 @@ static Tile* CheckCursorTileSelect(Grid* grid, GameControllerState* controller) 
     cursor_pos_grid.y = f32round(cursor_pos_grid.y);
     cursor_pos_grid.z = f32round(cursor_pos_grid.z);
 
-    if (cursor_pos_grid.x < 0 || cursor_pos_grid.x >= grid->nrows || cursor_pos_grid.y < 0 ||
-        cursor_pos_grid.y >= grid->ncols) {
-        PlatformLog(LLOG_INFO, "Cursor <%f, %f> outside of grid, no tile selected", cursor_pos_grid.x,
-                    cursor_pos_grid.y);
+    if (cursor_pos_grid.x < 0 || cursor_pos_grid.x >= grid->ncols || cursor_pos_grid.y < 0 ||
+        cursor_pos_grid.y >= grid->nrows) {
+        // PlatformLog(LLOG_INFO, "Cursor <%f, %f> outside of grid, no tile selected", cursor_pos_grid.x,
+        // cursor_pos_grid.y);
         return NULL;
     }
 
-    return NULL;
+    // PlatformLog(LLOG_INFO, "Tile r=%f, c=%f selected", cursor_pos_grid.y, cursor_pos_grid.x);
+    return GridGetTile(grid, cursor_pos_grid.y, cursor_pos_grid.x);
 }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
@@ -5164,7 +5165,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = GetController(input, 0);
 
-        CheckCursorTileSelect(&gstate->grid, controller);
+        Tile* selected_tile = CheckCursorTileSelect(&gstate->grid, controller);
 
         // Update transforms.
         {
