@@ -5297,43 +5297,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             BattleStateNewRound(battle);
         }
 
-        // if (battle->turn) {
-        //     Entity* member = NULL;
-        //     for (; GridIncrementEntity(grid, &member);) {
-        //         if (member->team == TEAM_PLAYER) {
-        //             break;
-        //         }
-        //     }
-        //     if (controller->action_down.pressed) {
-        //         if (hovered_entity) {
-        //             if (!EntityIdEq(member->id, hovered_entity->id)) {
-        //                 battle->turn = false;
-        //                 hovered_entity->hp -= 1;
-        //                 if (hovered_entity->hp <= 0) {
-        //                     FlagOff(hovered_entity->flags, EFLAG_DRAW);
-        //                 }
-        //             }
-        //         } else if (hovered_tile) {
-        //             battle->turn = false;
-        //             member->pos = hovered_tile->pos;
-        //         }
-        //     }
-        // } else {
-        //     Entity* enemy = NULL;
-        //     for (; GridIncrementEntity(grid, &enemy);) {
-        //         if (enemy->team == TEAM_ENEMY) {
-        //             break;
-        //         }
-        //     }
-
-        //     if (enemy) {
-        //         enemy->pos.x += 1;
-        //         battle->turn = true;
-        //     } else {
-        //         battle->turn = true;
-        //     }
-        // }
-
         // Update transforms.
         {
             for (isize r = 0; r < grid->nrows; ++r) {
