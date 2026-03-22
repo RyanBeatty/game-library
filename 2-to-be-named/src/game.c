@@ -5000,6 +5000,45 @@ static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     grid->entities_root_id = e->id;
 }
 
+typedef struct {
+    Grid grid;
+
+    bool turn;
+} BattleState;
+
+static void BattleStateInit(BattleState* bstate, f32 renderw_world, f32 renderh_world) {
+    static BattleState ZERO = {0};
+    *bstate = ZERO;
+
+    GridInit(&bstate->grid, renderw_world, renderh_world);
+
+    {
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            e->hp = 1;
+            e->team = TEAM_PLAYER;
+
+            GridAddEntity(&bstate->grid, e, 0, 0);
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            e->hp = 1;
+            e->team = TEAM_ENEMY;
+
+            GridAddEntity(&bstate->grid, e, 5, 5);
+        }
+    }
+}
+
 ////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
@@ -5055,7 +5094,7 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Scene fields
 
-    Grid grid;
+    BattleState battle;
 
     // TODO: Remove.
     EntityId party_root_id;
@@ -5064,6 +5103,8 @@ typedef struct GameState {
 static GameState GState;
 
 #define GetGameState() (&GState)
+
+#define GameStateGetGrid(gstate) (&(gstate)->battle.grid)
 
 typedef void (*SceneTickFunc)(GameState* gstate);
 
@@ -5162,54 +5203,30 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
-static void FloorInit(GameState* gstate) {
-    GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world);
-    {
-        {
-            Entity* e = AllocateEntity();
-            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
-            GraphicsInfoSetLModel(&e->graphics, model);
-
-            e->hp = 1;
-            e->team = TEAM_PLAYER;
-
-            GridAddEntity(&gstate->grid, e, 0, 0);
-            gstate->party_root_id = e->id;
-        }
-
-        {
-            Entity* e = AllocateEntity();
-            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
-            GraphicsInfoSetLModel(&e->graphics, model);
-
-            e->hp = 1;
-            e->team = TEAM_ENEMY;
-
-            GridAddEntity(&gstate->grid, e, 5, 5);
-        }
-    }
-}
-
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static bool TURN = true;
 
     f32 dt = gstate->dt;
 
+    Grid* grid = GameStateGetGrid(gstate);
+
     if (gstate->init) {
-        FloorInit(gstate);
+        BattleStateInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
     }
 
     if (gstate->update) {
         GameControllerState* controller = GetController(input, 0);
 
-        Tile* hovered_tile = GridGetCursorHoverTile(&gstate->grid, controller);
-        Entity* hovered_entity = GridGetEntityAtTile(&gstate->grid, hovered_tile);
+        Tile* hovered_tile = GridGetCursorHoverTile(grid, controller);
+        Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
 
         if (TURN) {
-            Entity* member = EntityFromId(gstate->party_root_id);
-
+            Entity* member = NULL;
+            for (; GridIncrementEntity(grid, &member);) {
+                if (member->team == TEAM_PLAYER) {
+                    break;
+                }
+            }
             if (controller->action_down.pressed) {
                 if (hovered_entity) {
                     if (!EntityIdEq(member->id, hovered_entity->id)) {
@@ -5226,7 +5243,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
         } else {
             Entity* enemy = NULL;
-            for (; GridIncrementEntity(&gstate->grid, &enemy);) {
+            for (; GridIncrementEntity(grid, &enemy);) {
                 if (enemy->team == TEAM_ENEMY) {
                     break;
                 }
@@ -5245,7 +5262,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         // Update transforms.
         {
-            Grid* grid = &gstate->grid;
             for (isize r = 0; r < grid->nrows; ++r) {
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
@@ -5279,7 +5295,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
                 {
-                    Grid* grid = &gstate->grid;
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
                             Tile* tile = GridGetTile(grid, r, c);
