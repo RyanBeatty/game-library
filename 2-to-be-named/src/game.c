@@ -5135,32 +5135,22 @@ static void FloorInit(GameState* gstate) {
 static Tile* CheckCursorTileSelect(Grid* grid, GameControllerState* controller) {
     Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
     // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
-    PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
+    // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
 
-    // Polyhedron cursor = {0};
-    // PolyhedronSetCircle(&cursor, controller->cursor_pos_world, 3.0f);
+    // In grid space, the integer coordinate like [0, 1] is the center of a grid position with the remaining space in
+    // that tile spanning +/- 0.5 along each axis. So to get the actual tile coordinate of the tile the cursor is over
+    // (if it is over one), we round each axis coordinate to nearest integer.
+    cursor_pos_grid.x = f32round(cursor_pos_grid.x);
+    cursor_pos_grid.y = f32round(cursor_pos_grid.y);
+    cursor_pos_grid.z = f32round(cursor_pos_grid.z);
 
-    // for (isize r = 0; r < grid->nrows; ++r) {
-    //     for (isize c = 0; i < grid->ncols; ++c) {
-    //         Polyhedron tile_box = {0};
-    //         Polyhedron tile_box = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
+    if (cursor_pos_grid.x < 0 || cursor_pos_grid.x >= grid->nrows || cursor_pos_grid.y < 0 ||
+        cursor_pos_grid.y >= grid->ncols) {
+        PlatformLog(LLOG_INFO, "Cursor <%f, %f> outside of grid, no tile selected", cursor_pos_grid.x,
+                    cursor_pos_grid.y);
+        return NULL;
+    }
 
-    //         CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
-    //         bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
-    //         if (collides) {
-    //             // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-    //             //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
-    //             // }
-    //             // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
-    //             //     breakpoint();
-    //             // }
-    //             // TODO: Should I just continue on here? At the moment we detect all collisions, but need to
-    //             // verify that works if for say we collide with a wall that has multiple geometry entities
-    //             // inside of it
-    //             ArrPush(collisions, info);
-    //         }
-    //     }
-    // }
     return NULL;
 }
 
