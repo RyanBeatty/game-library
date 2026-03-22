@@ -4168,6 +4168,11 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
+
+    i32 hp;
+
+    // LL for all entities currently on grid.
+    EntityId grid_right_id;
 } Entity;
 
 typedef struct {
@@ -4889,6 +4894,8 @@ typedef struct {
     // lookup.
     // EntityId root;
     Tile tiles[GRID_NUM_ROWS][GRID_NUM_COLS];
+
+    EntityId entities_root_id;
 } Grid;
 
 static Tile* GridGetTile(Grid* grid, isize r, isize c) {
@@ -4956,6 +4963,13 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->rot = Mat4Identity();
     grid->grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
     grid->world_to_grid = Mat4Invert(grid->grid_to_world);
+}
+
+static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
+    e->pos = Vec3Lit(c, r, 0);
+
+    e->grid_right_id = grid->entities_root_id;
+    grid->entities_root_id = e->id;
 }
 
 ////////////////////////////////////////////////////
@@ -5129,6 +5143,9 @@ static void FloorInit(GameState* gstate) {
                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
             GraphicsInfoSetLModel(&e->graphics, model);
 
+            e->hp = 1;
+
+            GridAddEntity(&gstate->grid, e, 0, 0);
             gstate->party_root_id = e->id;
         }
     }
