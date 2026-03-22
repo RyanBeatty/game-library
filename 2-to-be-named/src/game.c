@@ -5137,6 +5137,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         vdir = Vec3Normalize(vdir);
         POS = Vec3Add(POS, Vec3Scale(vdir, 100.0f * dt));
+
+        Grid* grid = &gstate->grid;
+        Mat4 grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
+        for (isize r = 0; r < grid->nrows; ++r) {
+            for (isize c = 0; c < grid->ncols; ++c) {
+                Tile* tile = GridGetTile(grid, r, c);
+                Vec3 tile_pos = Vec3Lit(c, r, 0);
+                tile->graphics.transform =
+                    Mat4Multiply(grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
+            }
+        }
     }
 
     if (gstate->render) {
@@ -5153,13 +5164,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 {
                     Grid* grid = &gstate->grid;
-                    Mat4 grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
                             Tile* tile = GridGetTile(grid, r, c);
-                            Vec3 tile_pos = Vec3Lit(c, r, 0);
-                            tile->graphics.transform =
-                                Mat4Multiply(grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
                             DrawGraphicsInfo2(&tile->graphics);
                         }
                     }
