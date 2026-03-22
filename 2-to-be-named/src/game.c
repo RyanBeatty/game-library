@@ -5258,9 +5258,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
         }
 
-        {
-        }
-
         // Update transforms.
         {
             for (isize r = 0; r < grid->nrows; ++r) {
