@@ -4869,7 +4869,7 @@ typedef enum {
 #define GRID_NUM_COLS 12
 
 typedef struct {
-    Vec2 pos;
+    Vec3 pos;
     GraphicsInfo graphics;
 } Tile;
 
@@ -4893,6 +4893,11 @@ typedef struct {
 
     EntityId entities_root_id;
 } Grid;
+
+static bool GridIncrementEntity(Grid* grid, Entity** e) {
+    *e = *e == NULL ? EntityFromId(grid->entities_root_id) : EntityFromId((*e)->grid_right_id);
+    return *e != NULL;
+}
 
 static Tile* GridGetTile(Grid* grid, isize r, isize c) {
     Assert(r < grid->nrows);
@@ -4926,7 +4931,7 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     for (i32 r = 0; r < nrows; ++r) {
         for (i32 c = 0; c < ncols; ++c, ++color_idx) {
             Tile* tile = &grid->tiles[r][c];
-            tile->pos = Vec2Lit(c, r);
+            tile->pos = Vec3Lit(c, r, 0);
             LModel model = color_idx % 2 == 0 ? black_model : grey_model;
             GraphicsInfoSetLModel(&tile->graphics, model);
         }
@@ -4968,16 +4973,25 @@ static Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller)
     return GridGetTile(grid, cursor_pos_grid.y, cursor_pos_grid.x);
 }
 
+static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
+    if (tile == NULL) {
+        return NULL;
+    }
+
+    for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
+        if (Vec3Eq(e->pos, tile->pos)) {
+            return e;
+        }
+    }
+
+    return NULL;
+}
+
 static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     e->pos = Vec3Lit(c, r, 0);
 
     e->grid_right_id = grid->entities_root_id;
     grid->entities_root_id = e->id;
-}
-
-static bool GridIncrementEntity(Grid* grid, Entity** e) {
-    *e = *e == NULL ? EntityFromId(grid->entities_root_id) : EntityFromId((*e)->grid_right_id);
-    return *e != NULL;
 }
 
 ////////////////////////////////////////////////////
@@ -5183,11 +5197,22 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GameControllerState* controller = GetController(input, 0);
 
         Tile* hovered_tile = GridGetCursorHoverTile(&gstate->grid, controller);
+        Entity* hovered_entity = GridGetEntityAtTile(&gstate->grid, hovered_tile);
 
         {
-            if (hovered_tile && controller->action_down.pressed) {
-                Entity* member = EntityFromId(gstate->party_root_id);
-                member->pos = Vec2ToVec3(hovered_tile->pos);
+            Entity* member = EntityFromId(gstate->party_root_id);
+
+            if (controller->action_down.pressed) {
+                if (hovered_entity) {
+                    if (!EntityIdEq(member->id, hovered_entity->id)) {
+                        hovered_entity->hp -= 1;
+                        if (hovered_entity->hp <= 0) {
+                            FlagOff(hovered_entity->flags, EFLAG_DRAW);
+                        }
+                    }
+                } else if (hovered_tile) {
+                    member->pos = hovered_tile->pos;
+                }
             }
         }
 
