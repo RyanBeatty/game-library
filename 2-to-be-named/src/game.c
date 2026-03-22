@@ -4925,7 +4925,6 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     for (i32 r = 0; r < nrows; ++r) {
         for (i32 c = 0; c < ncols; ++c, ++color_idx) {
             Tile* tile = &grid->tiles[r][c];
-            tile->occupied_by = NULLID;
             LModel model = color_idx % 2 == 0 ? black_model : red_model;
             GraphicsInfoSetLModel(&tile->graphics, model);
 
