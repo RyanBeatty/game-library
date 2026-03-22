@@ -5006,11 +5006,11 @@ typedef struct {
     bool turn;
 } BattleState;
 
-static void BattleStateInit(BattleState* bstate, f32 renderw_world, f32 renderh_world) {
+static void BattleStateInit(BattleState* battle, f32 renderw_world, f32 renderh_world) {
     static BattleState ZERO = {0};
-    *bstate = ZERO;
+    *battle = ZERO;
 
-    GridInit(&bstate->grid, renderw_world, renderh_world);
+    GridInit(&battle->grid, renderw_world, renderh_world);
 
     {
         {
@@ -5022,7 +5022,7 @@ static void BattleStateInit(BattleState* bstate, f32 renderw_world, f32 renderh_
             e->hp = 1;
             e->team = TEAM_PLAYER;
 
-            GridAddEntity(&bstate->grid, e, 0, 0);
+            GridAddEntity(&battle->grid, e, 0, 0);
         }
 
         {
@@ -5034,9 +5034,11 @@ static void BattleStateInit(BattleState* bstate, f32 renderw_world, f32 renderh_
             e->hp = 1;
             e->team = TEAM_ENEMY;
 
-            GridAddEntity(&bstate->grid, e, 5, 5);
+            GridAddEntity(&battle->grid, e, 5, 5);
         }
     }
+
+    battle->turn = true;
 }
 
 ////////////////////////////////////////////////////
@@ -5204,11 +5206,10 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
 }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
-    static bool TURN = true;
-
     f32 dt = gstate->dt;
 
     Grid* grid = GameStateGetGrid(gstate);
+    BattleState* battle = &gstate->battle;
 
     if (gstate->init) {
         BattleStateInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
@@ -5220,7 +5221,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Tile* hovered_tile = GridGetCursorHoverTile(grid, controller);
         Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
 
-        if (TURN) {
+        if (battle->turn) {
             Entity* member = NULL;
             for (; GridIncrementEntity(grid, &member);) {
                 if (member->team == TEAM_PLAYER) {
@@ -5230,14 +5231,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             if (controller->action_down.pressed) {
                 if (hovered_entity) {
                     if (!EntityIdEq(member->id, hovered_entity->id)) {
-                        TURN = false;
+                        battle->turn = false;
                         hovered_entity->hp -= 1;
                         if (hovered_entity->hp <= 0) {
                             FlagOff(hovered_entity->flags, EFLAG_DRAW);
                         }
                     }
                 } else if (hovered_tile) {
-                    TURN = false;
+                    battle->turn = false;
                     member->pos = hovered_tile->pos;
                 }
             }
@@ -5251,9 +5252,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
             if (enemy) {
                 enemy->pos.x += 1;
-                TURN = true;
+                battle->turn = true;
             } else {
-                TURN = true;
+                battle->turn = true;
             }
         }
 
