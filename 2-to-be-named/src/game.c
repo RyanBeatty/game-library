@@ -5179,13 +5179,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         // Update transforms.
         {
             Grid* grid = &gstate->grid;
-            Mat4 grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
             for (isize r = 0; r < grid->nrows; ++r) {
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
                     Vec3 tile_pos = Vec3Lit(c, r, 0);
                     tile->graphics.transform =
-                        Mat4Multiply(grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
+                        Mat4Multiply(grid->grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
                 }
             }
 
@@ -5194,7 +5193,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // We only transform pos as we want don't want to overly scale the texture (since we specify the texture
                 // in 16x16 pixels).
                 member->graphics.transform =
-                    Mat4SVRT(member->scale, member->orient, Vec3WTransform(member->pos, grid_to_world));
+                    Mat4SVRT(member->scale, member->orient, Vec3WTransform(member->pos, grid->grid_to_world));
             }
         }
     }
