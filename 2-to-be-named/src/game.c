@@ -4921,12 +4921,6 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
 
-    // Entity* root = AllocateEntity();
-    // FlagOff(root->flags, EFLAG_DRAW);
-    // grid->root = root->id;
-    // root->pos = grid_origin;
-    // root->scale = Vec2ToVec3(grid_tile_dims);
-
     LModel grey_model =
         LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LGRAY);
     LModel black_model =
@@ -4939,17 +4933,6 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
             tile->pos = Vec2Lit(c, r);
             LModel model = color_idx % 2 == 0 ? black_model : grey_model;
             GraphicsInfoSetLModel(&tile->graphics, model);
-
-            // Entity* cell = AllocateEntity();
-            // cell->pos = Vec3Lit(c, r, 0);
-
-            // // Tree stuff.
-            // cell->up_id = root->id;
-            // cell->right_id = root->down_id;
-            // root->down_id = cell->right_id;
-
-            // LModel model = color_idx % 2 == 0 ? black_model : red_model;
-            // GraphicsInfoSetLModel(&cell->graphics, model);
         }
 
         // If even cols, offset color index for start of next row by 1 to get checkerboard pattern.
