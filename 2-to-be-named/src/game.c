@@ -4975,6 +4975,11 @@ static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     grid->entities_root_id = e->id;
 }
 
+static bool GridIncrementEntity(Grid* grid, Entity** e) {
+    *e = *e == NULL ? EntityFromId(grid->entities_root_id) : EntityFromId((*e)->grid_right_id);
+    return *e != NULL;
+}
+
 ////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
@@ -5032,8 +5037,8 @@ typedef struct GameState {
 
     Grid grid;
 
+    // TODO: Remove.
     EntityId party_root_id;
-
 } GameState;
 
 static GameState GState;
@@ -5152,6 +5157,18 @@ static void FloorInit(GameState* gstate) {
             GridAddEntity(&gstate->grid, e, 0, 0);
             gstate->party_root_id = e->id;
         }
+
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            e->hp = 1;
+            e->team = TEAM_ENEMY;
+
+            GridAddEntity(&gstate->grid, e, 5, 5);
+        }
     }
 }
 
@@ -5187,11 +5204,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
 
             {
-                Entity* member = EntityFromId(gstate->party_root_id);
-                // We only transform pos as we want don't want to overly scale the texture (since we specify the texture
-                // in 16x16 pixels).
-                member->graphics.transform =
-                    Mat4SVRT(member->scale, member->orient, Vec3WTransform(member->pos, grid->grid_to_world));
+                for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
+                    // We only transform pos as we want don't want to overly scale the texture (since we specify the
+                    // texture
+                    // in 16x16 pixels).
+                    e->graphics.transform = Mat4SVRT(e->scale, e->orient, Vec3WTransform(e->pos, grid->grid_to_world));
+                }
             }
         }
     }
@@ -5217,48 +5235,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    {
-                        Entity* member = EntityFromId(gstate->party_root_id);
-                        DrawGraphicsInfo2(&member->graphics);
-                    }
-                }
-
-                // Entity based grid
-                if (false) {
-                    for (Entity* e = NULL; IncrementEntity(&e);) {
+                    for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
                         if (TestFlag(e->flags, EFLAG_DRAW)) {
-                            Mat4 e_mat = EntityGetMat(e);
-                            e->graphics.transform = e_mat;
                             DrawGraphicsInfo2(&e->graphics);
                         }
-                    }
-                }
-                // Grid.
-                if (false) {
-                    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
-
-                    i32 grid_cols = 12;
-                    i32 grid_width = grid_tile_dims.x * grid_cols;
-                    i32 grid_origin_x = -0.5f * grid_width;
-
-                    i32 grid_rows = 9;
-                    i32 grid_height = grid_tile_dims.y * grid_rows;
-                    i32 grid_origin_y = (0.5f * gstate->renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
-
-                    Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
-
-                    i32 color_idx = 0;
-                    for (i32 r = 0; r < grid_rows; ++r) {
-                        for (i32 c = 0; c < grid_cols; ++c, ++color_idx) {
-                            Vec3 pos = grid_origin;
-                            pos.x += c * grid_tile_dims.x;
-                            pos.y += r * grid_tile_dims.y;
-                            Vec4 color = color_idx % 2 == 0 ? LBLACK : LRED;
-                            DrawAABB(Vec2ToVec3(pos), Vec2ToVec3(grid_tile_dims), color);
-                        }
-
-                        // If even cols, offset color index for start of next row by 1 to get checkerboard pattern.
-                        color_idx += grid_cols % 2 == 0;
                     }
                 }
 
