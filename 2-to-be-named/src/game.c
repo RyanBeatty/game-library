@@ -4118,6 +4118,12 @@ static const EntityId NULLID = {0};
 #define EntityIdNotNull(a) (!EntityIdEq((a), NULLID))
 #define EntityIdNull(a) (EntityIdEq((a), NULLID))
 
+typedef struct {
+    EntityId* data;
+    isize len;
+    isize cap;
+} EntityIdArr;
+
 ////////////////////////////////////////////////////////////
 // s:gameplay fields.
 
@@ -5187,6 +5193,8 @@ static void FloorInit(GameState* gstate) {
 }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
+    static bool TURN = true;
+
     f32 dt = gstate->dt;
 
     if (gstate->init) {
@@ -5199,21 +5207,40 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Tile* hovered_tile = GridGetCursorHoverTile(&gstate->grid, controller);
         Entity* hovered_entity = GridGetEntityAtTile(&gstate->grid, hovered_tile);
 
-        {
+        if (TURN) {
             Entity* member = EntityFromId(gstate->party_root_id);
 
             if (controller->action_down.pressed) {
                 if (hovered_entity) {
                     if (!EntityIdEq(member->id, hovered_entity->id)) {
+                        TURN = false;
                         hovered_entity->hp -= 1;
                         if (hovered_entity->hp <= 0) {
                             FlagOff(hovered_entity->flags, EFLAG_DRAW);
                         }
                     }
                 } else if (hovered_tile) {
+                    TURN = false;
                     member->pos = hovered_tile->pos;
                 }
             }
+        } else {
+            Entity* enemy = NULL;
+            for (; GridIncrementEntity(&gstate->grid, &enemy);) {
+                if (enemy->team == TEAM_ENEMY) {
+                    break;
+                }
+            }
+
+            if (enemy) {
+                enemy->pos.x += 1;
+                TURN = true;
+            } else {
+                TURN = true;
+            }
+        }
+
+        {
         }
 
         // Update transforms.
