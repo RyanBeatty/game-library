@@ -5109,12 +5109,14 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
+static void InitFloor(GameState* gstate) { GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world); }
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
     static Vec3 POS = {.z = 1};
 
     if (gstate->init) {
-        GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world);
+        InitFloor(gstate);
     }
 
     if (gstate->update) {
