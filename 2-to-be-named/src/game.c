@@ -4868,6 +4868,7 @@ typedef enum {
 #define GRID_NUM_COLS 12
 
 typedef struct {
+    Vec2 pos;
     GraphicsInfo graphics;
 } Tile;
 
@@ -4928,6 +4929,7 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     for (i32 r = 0; r < nrows; ++r) {
         for (i32 c = 0; c < ncols; ++c, ++color_idx) {
             Tile* tile = &grid->tiles[r][c];
+            tile->pos = Vec2Lit(c, r);
             LModel model = color_idx % 2 == 0 ? black_model : red_model;
             GraphicsInfoSetLModel(&tile->graphics, model);
 
@@ -5132,7 +5134,8 @@ static void FloorInit(GameState* gstate) {
     }
 }
 
-static Tile* CheckCursorTileSelect(Grid* grid, GameControllerState* controller) {
+// Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
+static Tile* CheckCursorOverTile(Grid* grid, GameControllerState* controller) {
     Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
     // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
     // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
@@ -5165,7 +5168,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = GetController(input, 0);
 
-        Tile* selected_tile = CheckCursorTileSelect(&gstate->grid, controller);
+        Tile* hovered_tile = CheckCursorOverTile(&gstate->grid, controller);
+
+        {
+            if (hovered_tile && controller->action_down.pressed) {
+                Entity* member = EntityFromId(gstate->party_root_id);
+                member->pos = Vec2ToVec3(hovered_tile->pos);
+            }
+        }
 
         // Update transforms.
         {
