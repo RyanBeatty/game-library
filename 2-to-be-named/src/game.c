@@ -5004,6 +5004,10 @@ typedef struct {
     Grid grid;
 
     bool turn;
+
+    EntityId turns_buffer[10];
+    EntityIdArr turns;
+    isize turns_idx;
 } BattleState;
 
 static void BattleStateInit(BattleState* battle, f32 renderw_world, f32 renderh_world) {
@@ -5039,6 +5043,35 @@ static void BattleStateInit(BattleState* battle, f32 renderw_world, f32 renderh_
     }
 
     battle->turn = true;
+    InitArrS(&battle->turns, battle->turns_buffer, ArraySizeOf(battle->turns_buffer));
+}
+
+static void BattleStateNewRound(BattleState* battle) {
+    ArrClear(&battle->turns);
+    battle->turns_idx = 0;
+
+    for (Entity* e = NULL; GridIncrementEntity(&battle->grid, &e);) {
+        if (e->team == TEAM_PLAYER) {
+            ArrPush(&battle->turns, e->id);
+        }
+    }
+
+    for (Entity* e = NULL; GridIncrementEntity(&battle->grid, &e);) {
+        if (e->team == TEAM_ENEMY) {
+            ArrPush(&battle->turns, e->id);
+        }
+    }
+}
+
+static void BattleStateEndTurn(BattleState* battle) { ++battle->turns_idx; }
+
+static Entity* BattleStateGetTurnEntity(BattleState* battle) {
+    if (battle->turns_idx >= ArrLen(&battle->turns)) {
+        return NULL;
+    }
+
+    Entity* e = EntityFromId(ArrGet(&battle->turns, battle->turns_idx));
+    return e;
 }
 
 ////////////////////////////////////////////////////
@@ -5221,42 +5254,85 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Tile* hovered_tile = GridGetCursorHoverTile(grid, controller);
         Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
 
-        if (battle->turn) {
-            Entity* member = NULL;
-            for (; GridIncrementEntity(grid, &member);) {
-                if (member->team == TEAM_PLAYER) {
-                    break;
-                }
-            }
-            if (controller->action_down.pressed) {
-                if (hovered_entity) {
-                    if (!EntityIdEq(member->id, hovered_entity->id)) {
-                        battle->turn = false;
-                        hovered_entity->hp -= 1;
-                        if (hovered_entity->hp <= 0) {
-                            FlagOff(hovered_entity->flags, EFLAG_DRAW);
+        Entity* turn_entity = BattleStateGetTurnEntity(battle);
+        if (turn_entity) {
+            bool end_turn = false;
+
+            switch (turn_entity->team) {
+                case TEAM_PLAYER: {
+                    if (controller->action_down.pressed) {
+                        if (hovered_entity) {
+                            if (!EntityIdEq(turn_entity->id, hovered_entity->id)) {
+                                end_turn = true;
+                                hovered_entity->hp -= 1;
+                                if (hovered_entity->hp <= 0) {
+                                    FlagOff(hovered_entity->flags, EFLAG_DRAW);
+                                }
+                            }
+                        } else if (hovered_tile) {
+                            end_turn = true;
+                            turn_entity->pos = hovered_tile->pos;
                         }
                     }
-                } else if (hovered_tile) {
-                    battle->turn = false;
-                    member->pos = hovered_tile->pos;
-                }
-            }
-        } else {
-            Entity* enemy = NULL;
-            for (; GridIncrementEntity(grid, &enemy);) {
-                if (enemy->team == TEAM_ENEMY) {
                     break;
+                }
+                case TEAM_ENEMY: {
+                    if (turn_entity) {
+                        turn_entity->pos.x += 1;
+                        end_turn = true;
+                    } else {
+                        end_turn = true;
+                    }
+                    break;
+                }
+                default: {
+                    Assert(0);
                 }
             }
 
-            if (enemy) {
-                enemy->pos.x += 1;
-                battle->turn = true;
-            } else {
-                battle->turn = true;
+            if (end_turn) {
+                BattleStateEndTurn(battle);
             }
+        } else {
+            BattleStateNewRound(battle);
         }
+
+        // if (battle->turn) {
+        //     Entity* member = NULL;
+        //     for (; GridIncrementEntity(grid, &member);) {
+        //         if (member->team == TEAM_PLAYER) {
+        //             break;
+        //         }
+        //     }
+        //     if (controller->action_down.pressed) {
+        //         if (hovered_entity) {
+        //             if (!EntityIdEq(member->id, hovered_entity->id)) {
+        //                 battle->turn = false;
+        //                 hovered_entity->hp -= 1;
+        //                 if (hovered_entity->hp <= 0) {
+        //                     FlagOff(hovered_entity->flags, EFLAG_DRAW);
+        //                 }
+        //             }
+        //         } else if (hovered_tile) {
+        //             battle->turn = false;
+        //             member->pos = hovered_tile->pos;
+        //         }
+        //     }
+        // } else {
+        //     Entity* enemy = NULL;
+        //     for (; GridIncrementEntity(grid, &enemy);) {
+        //         if (enemy->team == TEAM_ENEMY) {
+        //             break;
+        //         }
+        //     }
+
+        //     if (enemy) {
+        //         enemy->pos.x += 1;
+        //         battle->turn = true;
+        //     } else {
+        //         battle->turn = true;
+        //     }
+        // }
 
         // Update transforms.
         {
