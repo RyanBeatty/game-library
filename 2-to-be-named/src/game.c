@@ -5052,7 +5052,6 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
     Mat4 inv = Mat4Multiply(inv_view, inv_proj);
     Vec3 pos_world = Vec3WTransform(pos_clip, inv);
 
-    PlatformLog(LLOG_INFO, "Pos world %f %f %f", pos_world.x, pos_world.y, pos_world.z);
     return Vec3ToVec2(pos_world);
 }
 
@@ -5206,7 +5205,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             {
                 // Reminder that using the _world variables here ensures we convert from world units back to pixel units
                 // correctly.
-                Mat4 view = Mat4Identity();
+                Mat4 view = CameraGetViewMat(gstate->camera);
                 Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
                 Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
                                       -100.0f, 100.0f);
@@ -5386,6 +5385,9 @@ void GameInit() {
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
+
+    gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
+    gstate->camera.eye = Vec3Lit(0.0f, 0.0f, 10.0f);
 }
 
 void GameTick(f32 dt, GameInput* input) {
