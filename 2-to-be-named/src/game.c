@@ -4950,7 +4950,7 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->ncols = ncols;
     grid->nrows = nrows;
     grid->pos = grid_origin;
-    grid->scale = Vec2ToVec3(grid_tile_dims);
+    grid->scale = Vec3Lit(grid_tile_dims.x, grid_tile_dims.y, grid_tile_dims.x);  // Important to make uniform scale.
     grid->rot = Mat4Identity();
     grid->grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
     grid->world_to_grid = Mat4Invert(grid->grid_to_world);
@@ -5118,7 +5118,7 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
-static void InitFloor(GameState* gstate) {
+static void FloorInit(GameState* gstate) {
     GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world);
     {
         {
@@ -5135,7 +5135,7 @@ static void InitFloor(GameState* gstate) {
 static Tile* CheckCursorTileSelect(Grid* grid, GameControllerState* controller) {
     Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
     // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
-    // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
+    PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
 
     // Polyhedron cursor = {0};
     // PolyhedronSetCircle(&cursor, controller->cursor_pos_world, 3.0f);
@@ -5168,7 +5168,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
     if (gstate->init) {
-        InitFloor(gstate);
+        FloorInit(gstate);
     }
 
     if (gstate->update) {
