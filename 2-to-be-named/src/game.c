@@ -4876,6 +4876,9 @@ typedef struct {
     Vec3 scale;
     Mat4 rot;
 
+    Mat4 grid_to_world;
+    Mat4 world_to_grid;
+
     isize nrows;
     isize ncols;
     // I suspect this will change a lot. There is a decision to be made about if you make some dedicated Tile struct or
@@ -4949,6 +4952,8 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->pos = grid_origin;
     grid->scale = Vec2ToVec3(grid_tile_dims);
     grid->rot = Mat4Identity();
+    grid->grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
+    grid->world_to_grid = Mat4Invert(grid->grid_to_world);
 }
 
 ////////////////////////////////////////////////////
@@ -5025,7 +5030,9 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
     GameState* gstate = GetGameState();
     RenderState* rstate = GetRenderState();
 
-    Vec2 viewport_dims = Vec2Lit(rstate->game_target.width, rstate->game_target.height);
+    // PlatformLog(LLOG_INFO, "Pos Screen %f %f", pos_screen.x, pos_screen.y);
+
+    Vec2 viewport_dims = Vec2Lit(rstate->screen_target.width, rstate->screen_target.height);
     Vec2 viewport_origin = Vec2Zero();
 
     // Transform from screen space to clip space.
@@ -5045,7 +5052,7 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
     Mat4 inv = Mat4Multiply(inv_view, inv_proj);
     Vec3 pos_world = Vec3WTransform(pos_clip, inv);
 
-    // PlatformLog(LLOG_INFO, "Pos world %f %f %f", pos_world.x, pos_world.y, pos_world.z);
+    PlatformLog(LLOG_INFO, "Pos world %f %f %f", pos_world.x, pos_world.y, pos_world.z);
     return Vec3ToVec2(pos_world);
 }
 
@@ -5126,6 +5133,38 @@ static void InitFloor(GameState* gstate) {
     }
 }
 
+static Tile* CheckCursorTileSelect(Grid* grid, GameControllerState* controller) {
+    Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
+    // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
+    // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
+
+    // Polyhedron cursor = {0};
+    // PolyhedronSetCircle(&cursor, controller->cursor_pos_world, 3.0f);
+
+    // for (isize r = 0; r < grid->nrows; ++r) {
+    //     for (isize c = 0; i < grid->ncols; ++c) {
+    //         Polyhedron tile_box = {0};
+    //         Polyhedron tile_box = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
+
+    //         CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
+    //         bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
+    //         if (collides) {
+    //             // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+    //             //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
+    //             // }
+    //             // if (TestFlag(ea->flags, EFLAG_PROJECTILE) && TestFlag(eb->flags, EFLAG_PROJECTILE)) {
+    //             //     breakpoint();
+    //             // }
+    //             // TODO: Should I just continue on here? At the moment we detect all collisions, but need to
+    //             // verify that works if for say we collide with a wall that has multiple geometry entities
+    //             // inside of it
+    //             ArrPush(collisions, info);
+    //         }
+    //     }
+    // }
+    return NULL;
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -5135,6 +5174,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->update) {
         GameControllerState* controller = GetController(input, 0);
+
+        CheckCursorTileSelect(&gstate->grid, controller);
 
         // Update transforms.
         {
@@ -5168,7 +5209,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Mat4 view = Mat4Identity();
                 Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
                 Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
-                                      -3.0f, 3.0f);
+                                      -100.0f, 100.0f);
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
                 {
