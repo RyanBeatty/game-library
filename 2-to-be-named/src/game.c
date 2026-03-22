@@ -4121,17 +4121,11 @@ static const EntityId NULLID = {0};
 ////////////////////////////////////////////////////////////
 // s:gameplay fields.
 
-typedef struct {
-    EntityId mail_id;
-    f32 cooldown_sec;
-    f32 cooldown_dt;
-} QueuedMail;
-
-typedef struct {
-    QueuedMail data[10];
-    isize cap;
-    isize len;
-} QueuedMailArr;
+typedef enum {
+    TEAM_PLAYER = 0,
+    TEAM_ENEMY,
+    TEAM_COUNT,
+} TeamType;
 
 ////////////////////////////////////////////////////////////
 
@@ -4168,6 +4162,8 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
+
+    TeamType team;
 
     i32 hp;
 
@@ -4948,6 +4944,30 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->world_to_grid = Mat4Invert(grid->grid_to_world);
 }
 
+// Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
+static Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) {
+    Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
+    // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
+    // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
+
+    // In grid space, the integer coordinate like [0, 1] is the center of a grid position with the remaining space in
+    // that tile spanning +/- 0.5 along each axis. So to get the actual tile coordinate of the tile the cursor is over
+    // (if it is over one), we round each axis coordinate to nearest integer.
+    cursor_pos_grid.x = f32round(cursor_pos_grid.x);
+    cursor_pos_grid.y = f32round(cursor_pos_grid.y);
+    cursor_pos_grid.z = f32round(cursor_pos_grid.z);
+
+    if (cursor_pos_grid.x < 0 || cursor_pos_grid.x >= grid->ncols || cursor_pos_grid.y < 0 ||
+        cursor_pos_grid.y >= grid->nrows) {
+        // PlatformLog(LLOG_INFO, "Cursor <%f, %f> outside of grid, no tile selected", cursor_pos_grid.x,
+        // cursor_pos_grid.y);
+        return NULL;
+    }
+
+    // PlatformLog(LLOG_INFO, "Tile r=%f, c=%f selected", cursor_pos_grid.y, cursor_pos_grid.x);
+    return GridGetTile(grid, cursor_pos_grid.y, cursor_pos_grid.x);
+}
+
 static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     e->pos = Vec3Lit(c, r, 0);
 
@@ -5127,35 +5147,12 @@ static void FloorInit(GameState* gstate) {
             GraphicsInfoSetLModel(&e->graphics, model);
 
             e->hp = 1;
+            e->team = TEAM_PLAYER;
 
             GridAddEntity(&gstate->grid, e, 0, 0);
             gstate->party_root_id = e->id;
         }
     }
-}
-
-// Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
-static Tile* CheckCursorOverTile(Grid* grid, GameControllerState* controller) {
-    Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
-    // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
-    // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
-
-    // In grid space, the integer coordinate like [0, 1] is the center of a grid position with the remaining space in
-    // that tile spanning +/- 0.5 along each axis. So to get the actual tile coordinate of the tile the cursor is over
-    // (if it is over one), we round each axis coordinate to nearest integer.
-    cursor_pos_grid.x = f32round(cursor_pos_grid.x);
-    cursor_pos_grid.y = f32round(cursor_pos_grid.y);
-    cursor_pos_grid.z = f32round(cursor_pos_grid.z);
-
-    if (cursor_pos_grid.x < 0 || cursor_pos_grid.x >= grid->ncols || cursor_pos_grid.y < 0 ||
-        cursor_pos_grid.y >= grid->nrows) {
-        // PlatformLog(LLOG_INFO, "Cursor <%f, %f> outside of grid, no tile selected", cursor_pos_grid.x,
-        // cursor_pos_grid.y);
-        return NULL;
-    }
-
-    // PlatformLog(LLOG_INFO, "Tile r=%f, c=%f selected", cursor_pos_grid.y, cursor_pos_grid.x);
-    return GridGetTile(grid, cursor_pos_grid.y, cursor_pos_grid.x);
 }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
@@ -5168,7 +5165,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         GameControllerState* controller = GetController(input, 0);
 
-        Tile* hovered_tile = CheckCursorOverTile(&gstate->grid, controller);
+        Tile* hovered_tile = GridGetCursorHoverTile(&gstate->grid, controller);
 
         {
             if (hovered_tile && controller->action_down.pressed) {
