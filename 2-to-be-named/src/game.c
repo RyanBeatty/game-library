@@ -5007,6 +5007,9 @@ typedef struct GameState {
     // Scene fields
 
     Grid grid;
+
+    EntityId party_root_id;
+
 } GameState;
 
 static GameState GState;
@@ -5109,11 +5112,22 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
-static void InitFloor(GameState* gstate) { GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world); }
+static void InitFloor(GameState* gstate) {
+    GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world);
+    {
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            gstate->party_root_id = e->id;
+        }
+    }
+}
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
-    static Vec3 POS = {.z = 1};
 
     if (gstate->init) {
         InitFloor(gstate);
@@ -5121,31 +5135,26 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->update) {
         GameControllerState* controller = GetController(input, 0);
-        Vec3 vdir = {0};
-        if (controller->action_right.down) {
-            vdir.x += 1.0f;
-        }
-        if (controller->action_left.down) {
-            vdir.x -= 1.0f;
-        }
-        if (controller->action_up.down) {
-            vdir.y += 1.0f;
-        }
-        if (controller->action_down.down) {
-            vdir.y -= 1.0f;
-        }
 
-        vdir = Vec3Normalize(vdir);
-        POS = Vec3Add(POS, Vec3Scale(vdir, 100.0f * dt));
+        // Update transforms.
+        {
+            Grid* grid = &gstate->grid;
+            Mat4 grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
+            for (isize r = 0; r < grid->nrows; ++r) {
+                for (isize c = 0; c < grid->ncols; ++c) {
+                    Tile* tile = GridGetTile(grid, r, c);
+                    Vec3 tile_pos = Vec3Lit(c, r, 0);
+                    tile->graphics.transform =
+                        Mat4Multiply(grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
+                }
+            }
 
-        Grid* grid = &gstate->grid;
-        Mat4 grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
-        for (isize r = 0; r < grid->nrows; ++r) {
-            for (isize c = 0; c < grid->ncols; ++c) {
-                Tile* tile = GridGetTile(grid, r, c);
-                Vec3 tile_pos = Vec3Lit(c, r, 0);
-                tile->graphics.transform =
-                    Mat4Multiply(grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
+            {
+                Entity* member = EntityFromId(gstate->party_root_id);
+                // We only transform pos as we want don't want to overly scale the texture (since we specify the texture
+                // in 16x16 pixels).
+                member->graphics.transform =
+                    Mat4SVRT(member->scale, member->orient, Vec3WTransform(member->pos, grid_to_world));
             }
         }
     }
@@ -5169,6 +5178,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Tile* tile = GridGetTile(grid, r, c);
                             DrawGraphicsInfo2(&tile->graphics);
                         }
+                    }
+
+                    {
+                        Entity* member = EntityFromId(gstate->party_root_id);
+                        DrawGraphicsInfo2(&member->graphics);
                     }
                 }
 
@@ -5210,10 +5224,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         color_idx += grid_cols % 2 == 0;
                     }
                 }
-
-                DrawLModel(LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE),
-                           POS, Mat4Identity(), Vec3LitAll(1.0f));
 
                 EndShaderPass();
             }
