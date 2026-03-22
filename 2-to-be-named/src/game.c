@@ -5247,6 +5247,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
             // Draw the texture framebuffer to screen quad.
             {
+                // We aren't specifying a view or proj matrix, since we are specifying the coordinates in clip space
+                // directly.
                 Mat4 view = Mat4Identity();
                 Mat4 proj = Mat4Identity();
                 RenderPassLoadAction load_action = {
