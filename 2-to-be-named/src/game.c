@@ -5008,7 +5008,8 @@ static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
 }
 
 typedef enum {
-    BATTLE_PLAYING = 0,
+    BATTLE_INIT = 0,
+    BATTLE_PLAYING,
     BATTLE_END,
 } BattlePhase;
 
@@ -5285,7 +5286,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     BattleState* battle = &gstate->battle;
 
     if (gstate->init) {
-        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
     }
 
     if (gstate->update) {
@@ -5295,6 +5295,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
 
         switch (battle->phase) {
+            case BATTLE_INIT: {
+                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
+                break;
+            }
             case BATTLE_PLAYING: {
                 Entity* turn_entity = BattleStateGetTurnEntity(battle);
                 if (turn_entity) {
@@ -5342,7 +5346,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 break;
             }
             case BATTLE_END: {
-                PlatformLog(LLOG_INFO, "battle done");
+                if (controller->action_down.pressed) {
+                    battle->phase = BATTLE_INIT;
+                }
                 break;
             }
             default: {
