@@ -5003,8 +5003,6 @@ static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
 typedef struct {
     Grid grid;
 
-    bool turn;
-
     EntityId turns_buffer[10];
     EntityIdArr turns;
     isize turns_idx;
@@ -5042,7 +5040,6 @@ static void BattleStateInit(BattleState* battle, f32 renderw_world, f32 renderh_
         }
     }
 
-    battle->turn = true;
     InitArrS(&battle->turns, battle->turns_buffer, ArraySizeOf(battle->turns_buffer));
 }
 
