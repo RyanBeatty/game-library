@@ -5130,9 +5130,6 @@ typedef struct GameState {
     // Scene fields
 
     BattleState battle;
-
-    // TODO: Remove.
-    EntityId party_root_id;
 } GameState;
 
 static GameState GState;
