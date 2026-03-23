@@ -4133,6 +4133,11 @@ typedef enum {
     TEAM_COUNT,
 } TeamType;
 
+typedef enum {
+    STATE_ALIVE = 0,
+    STATE_DEAD,
+} EntityState;
+
 ////////////////////////////////////////////////////////////
 
 typedef struct {
@@ -4175,6 +4180,8 @@ typedef struct {
 
     // LL for all entities currently on grid.
     EntityId grid_right_id;
+
+    EntityState state;
 } Entity;
 
 typedef struct {
@@ -5000,15 +5007,29 @@ static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     grid->entities_root_id = e->id;
 }
 
+typedef enum {
+    BATTLE_PLAYING = 0,
+    BATTLE_END,
+} BattlePhase;
+
+typedef enum {
+    OUTCOME_WIN = 0,
+    OUTCOME_LOSS,
+} BattleOutcome;
+
 typedef struct {
+    BattlePhase phase;
+
     Grid grid;
 
     EntityId turns_buffer[10];
     EntityIdArr turns;
     isize turns_idx;
+
+    BattleOutcome outcome;
 } BattleState;
 
-static void BattleStateInit(BattleState* battle, f32 renderw_world, f32 renderh_world) {
+static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world) {
     static BattleState ZERO = {0};
     *battle = ZERO;
 
@@ -5023,6 +5044,7 @@ static void BattleStateInit(BattleState* battle, f32 renderw_world, f32 renderh_
 
             e->hp = 1;
             e->team = TEAM_PLAYER;
+            e->state = STATE_ALIVE;
 
             GridAddEntity(&battle->grid, e, 0, 0);
         }
@@ -5035,15 +5057,17 @@ static void BattleStateInit(BattleState* battle, f32 renderw_world, f32 renderh_
 
             e->hp = 1;
             e->team = TEAM_ENEMY;
+            e->state = STATE_ALIVE;
 
             GridAddEntity(&battle->grid, e, 5, 5);
         }
     }
 
     InitArrS(&battle->turns, battle->turns_buffer, ArraySizeOf(battle->turns_buffer));
+    battle->phase = BATTLE_PLAYING;
 }
 
-static void BattleStateNewRound(BattleState* battle) {
+static void BattleEndRound(BattleState* battle) {
     ArrClear(&battle->turns);
     battle->turns_idx = 0;
 
@@ -5060,8 +5084,6 @@ static void BattleStateNewRound(BattleState* battle) {
     }
 }
 
-static void BattleStateEndTurn(BattleState* battle) { ++battle->turns_idx; }
-
 static Entity* BattleStateGetTurnEntity(BattleState* battle) {
     if (battle->turns_idx >= ArrLen(&battle->turns)) {
         return NULL;
@@ -5069,6 +5091,30 @@ static Entity* BattleStateGetTurnEntity(BattleState* battle) {
 
     Entity* e = EntityFromId(ArrGet(&battle->turns, battle->turns_idx));
     return e;
+}
+
+static void BattleEndTurn(BattleState* battle) {
+    ++battle->turns_idx;
+
+    bool player_found = false;
+    bool enemy_found = false;
+    for (isize i = 0; i < ArrLen(&battle->turns); ++i) {
+        Entity* e = EntityFromId(ArrGet(&battle->turns, i));
+        if (e->team == TEAM_ENEMY && e->state == STATE_ALIVE) {
+            enemy_found = true;
+        }
+        if (e->team == TEAM_PLAYER && e->state == STATE_ALIVE) {
+            player_found = true;
+        }
+    }
+
+    if (!player_found) {
+        battle->phase = BATTLE_END;
+        battle->outcome = OUTCOME_LOSS;
+    } else if (!enemy_found) {
+        battle->phase = BATTLE_END;
+        battle->outcome = OUTCOME_WIN;
+    }
 }
 
 ////////////////////////////////////////////////////
@@ -5239,7 +5285,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     BattleState* battle = &gstate->battle;
 
     if (gstate->init) {
-        BattleStateInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
+        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
     }
 
     if (gstate->update) {
@@ -5248,47 +5294,60 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Tile* hovered_tile = GridGetCursorHoverTile(grid, controller);
         Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
 
-        Entity* turn_entity = BattleStateGetTurnEntity(battle);
-        if (turn_entity) {
-            bool end_turn = false;
+        switch (battle->phase) {
+            case BATTLE_PLAYING: {
+                Entity* turn_entity = BattleStateGetTurnEntity(battle);
+                if (turn_entity) {
+                    bool end_turn = false;
 
-            switch (turn_entity->team) {
-                case TEAM_PLAYER: {
-                    if (controller->action_down.pressed) {
-                        if (hovered_entity) {
-                            if (!EntityIdEq(turn_entity->id, hovered_entity->id)) {
-                                end_turn = true;
-                                hovered_entity->hp -= 1;
-                                if (hovered_entity->hp <= 0) {
-                                    FlagOff(hovered_entity->flags, EFLAG_DRAW);
+                    switch (turn_entity->team) {
+                        case TEAM_PLAYER: {
+                            if (controller->action_down.pressed) {
+                                if (hovered_entity) {
+                                    if (!EntityIdEq(turn_entity->id, hovered_entity->id)) {
+                                        end_turn = true;
+                                        hovered_entity->hp -= 1;
+                                        if (hovered_entity->hp <= 0) {
+                                            FlagOff(hovered_entity->flags, EFLAG_DRAW);
+                                            hovered_entity->state = STATE_DEAD;
+                                        }
+                                    }
+                                } else if (hovered_tile) {
+                                    end_turn = true;
+                                    turn_entity->pos = hovered_tile->pos;
                                 }
                             }
-                        } else if (hovered_tile) {
-                            end_turn = true;
-                            turn_entity->pos = hovered_tile->pos;
+                            break;
+                        }
+                        case TEAM_ENEMY: {
+                            if (turn_entity) {
+                                turn_entity->pos.x += 1;
+                                end_turn = true;
+                            } else {
+                                end_turn = true;
+                            }
+                            break;
+                        }
+                        default: {
+                            Assert(0);
                         }
                     }
-                    break;
-                }
-                case TEAM_ENEMY: {
-                    if (turn_entity) {
-                        turn_entity->pos.x += 1;
-                        end_turn = true;
-                    } else {
-                        end_turn = true;
-                    }
-                    break;
-                }
-                default: {
-                    Assert(0);
-                }
-            }
 
-            if (end_turn) {
-                BattleStateEndTurn(battle);
+                    if (end_turn) {
+                        BattleEndTurn(battle);
+                    }
+                } else {
+                    BattleEndRound(battle);
+                }
+                break;
             }
-        } else {
-            BattleStateNewRound(battle);
+            case BATTLE_END: {
+                PlatformLog(LLOG_INFO, "battle done");
+                break;
+            }
+            default: {
+                Assert(0);
+            }
         }
 
         // Update transforms.
