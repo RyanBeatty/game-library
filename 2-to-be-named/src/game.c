@@ -4912,10 +4912,15 @@ static bool GridIncrementEntity(Grid* grid, Entity** e) {
     return *e != NULL;
 }
 
+static Tile* GridMaybeGetTile(Grid* grid, isize r, isize c) {
+    bool valid_idx = (r >= 0 && r < grid->nrows && c >= 0 && c < grid->ncols);
+    return valid_idx ? &grid->tiles[r][c] : NULL;
+}
+
 static Tile* GridGetTile(Grid* grid, isize r, isize c) {
-    Assert(r < grid->nrows);
-    Assert(c < grid->ncols);
-    return &grid->tiles[r][c];
+    Tile* tile = GridMaybeGetTile(grid, r, c);
+    Assert(tile);
+    return tile;
 }
 
 static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
@@ -4999,6 +5004,20 @@ static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
 
     return NULL;
 }
+
+// static Entity* GridGetEntityAtPos(Grid* grid, Vec3 pos) {
+//     if (pos.y < 0 || pos.y >= grid->nrows || pos.x < 0 || pos.x >= grid->ncols) {
+//         return NULL;
+//     }
+
+//     for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
+//         if (Vec3Eq(e->pos, pos)) {
+//             return e;
+//         }
+//     }
+
+//     return NULL;
+// }
 
 static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     e->pos = Vec3Lit(c, r, 0);
@@ -5324,12 +5343,43 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             break;
                         }
                         case TEAM_ENEMY: {
-                            if (turn_entity) {
-                                turn_entity->pos.x += 1;
-                                end_turn = true;
-                            } else {
-                                end_turn = true;
+                            f32 c = turn_entity->pos.x;
+                            f32 r = turn_entity->pos.y;
+
+                            Vec2 buffer[4] = {0};
+                            Vec2Arr possible;
+                            InitArrS(&possible, buffer, ArraySizeOf(buffer));
+
+                            {
+                                Tile* tile = GridMaybeGetTile(grid, r + 1, c);
+                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                    ArrPush(&possible, Vec2Lit(c, r + 1));
+                                }
                             }
+                            {
+                                Tile* tile = GridMaybeGetTile(grid, r - 1, c);
+                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                    ArrPush(&possible, Vec2Lit(c, r - 1));
+                                }
+                            }
+                            {
+                                Tile* tile = GridMaybeGetTile(grid, r, c + 1);
+                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                    ArrPush(&possible, Vec2Lit(c + 1, r));
+                                }
+                            }
+                            {
+                                Tile* tile = GridMaybeGetTile(grid, r, c - 1);
+                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                    ArrPush(&possible, Vec2Lit(c - 1, r));
+                                }
+                            }
+
+                            if (ArrLen(&possible) > 0) {
+                                i32 idx = (i32)f32randab(0, ArrLen(&possible));
+                                turn_entity->pos = Vec2ToVec3(ArrGet(&possible, idx));
+                            }
+                            end_turn = true;
                             break;
                         }
                         default: {
