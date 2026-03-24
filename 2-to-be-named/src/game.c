@@ -4887,8 +4887,15 @@ typedef struct {
     i32 height;
 } TileId;
 
+typedef struct {
+    TileId* data;
+    isize len;
+    isize cap;
+} TileIdArr;
+
 #define TileIdFromVec3(v) ((TileId){.r = (v).y, .c = (v).x, .height = (v).z})
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
+static bool TileIdVec3Eq(TileId id, Vec3 pos) { return id.r == pos.y && id.c == pos.x && id.height == pos.z; }
 
 typedef struct {
     Vec3 pos;
@@ -4922,9 +4929,13 @@ static bool GridIncrementEntity(Grid* grid, Entity** e) {
     return *e != NULL;
 }
 
+static Tile* GridMaybeTileFromId(Grid* grid, TileId id) {
+    bool valid_idx = (id.r >= 0 && id.r < grid->nrows && id.c >= 0 && id.c < grid->ncols);
+    return valid_idx ? &grid->tiles[id.r][id.c] : NULL;
+}
+
 static Tile* GridMaybeGetTile(Grid* grid, isize r, isize c) {
-    bool valid_idx = (r >= 0 && r < grid->nrows && c >= 0 && c < grid->ncols);
-    return valid_idx ? &grid->tiles[r][c] : NULL;
+    return GridMaybeTileFromId(grid, (TileId){.r = r, .c = c, .height = 0});
 }
 
 static Tile* GridGetTile(Grid* grid, isize r, isize c) {
@@ -5354,41 +5365,43 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             break;
                         }
                         case TEAM_ENEMY: {
-                            f32 c = turn_entity->pos.x;
-                            f32 r = turn_entity->pos.y;
-
-                            Vec2 buffer[4] = {0};
-                            Vec2Arr possible;
+                            TileId id = TileIdFromVec3(turn_entity->pos);
+                            TileId buffer[4] = {0};
+                            TileIdArr possible;
                             InitArrS(&possible, buffer, ArraySizeOf(buffer));
 
                             {
-                                Tile* tile = GridMaybeGetTile(grid, r + 1, c);
+                                TileId new_id = (TileId){.r = id.r + 1, .c = id.c, .height = id.height};
+                                Tile* tile = GridMaybeTileFromId(grid, new_id);
                                 if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, Vec2Lit(c, r + 1));
+                                    ArrPush(&possible, new_id);
                                 }
                             }
                             {
-                                Tile* tile = GridMaybeGetTile(grid, r - 1, c);
+                                TileId new_id = (TileId){.r = id.r - 1, .c = id.c, .height = id.height};
+                                Tile* tile = GridMaybeTileFromId(grid, new_id);
                                 if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, Vec2Lit(c, r - 1));
+                                    ArrPush(&possible, new_id);
                                 }
                             }
                             {
-                                Tile* tile = GridMaybeGetTile(grid, r, c + 1);
+                                TileId new_id = (TileId){.r = id.r, .c = id.c + 1, .height = id.height};
+                                Tile* tile = GridMaybeTileFromId(grid, new_id);
                                 if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, Vec2Lit(c + 1, r));
+                                    ArrPush(&possible, new_id);
                                 }
                             }
                             {
-                                Tile* tile = GridMaybeGetTile(grid, r, c - 1);
+                                TileId new_id = (TileId){.r = id.r, .c = id.c - 1, .height = id.height};
+                                Tile* tile = GridMaybeTileFromId(grid, new_id);
                                 if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, Vec2Lit(c - 1, r));
+                                    ArrPush(&possible, new_id);
                                 }
                             }
 
                             if (ArrLen(&possible) > 0) {
                                 i32 idx = (i32)f32randab(0, ArrLen(&possible));
-                                turn_entity->pos = Vec2ToVec3(ArrGet(&possible, idx));
+                                turn_entity->pos = TileIdtoVec3(ArrGet(&possible, idx));
                             }
                             end_turn = true;
                             break;
