@@ -4182,6 +4182,7 @@ typedef struct {
     EntityId grid_right_id;
 
     EntityState state;
+    bool moved;
 } Entity;
 
 typedef struct {
@@ -5087,6 +5088,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->hp = 1;
             e->team = TEAM_PLAYER;
             e->state = STATE_ALIVE;
+            e->moved = false;
 
             GridAddEntity(&battle->grid, e, 0, 0);
         }
@@ -5100,6 +5102,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->hp = 1;
             e->team = TEAM_ENEMY;
             e->state = STATE_ALIVE;
+            e->moved = false;
 
             GridAddEntity(&battle->grid, e, 5, 5);
         }
@@ -5126,7 +5129,7 @@ static void BattleEndRound(BattleState* battle) {
     }
 }
 
-static Entity* BattleStateGetTurnEntity(BattleState* battle) {
+static Entity* BattleGetTurnEntity(BattleState* battle) {
     if (battle->turns_idx >= ArrLen(&battle->turns)) {
         return NULL;
     }
@@ -5136,6 +5139,10 @@ static Entity* BattleStateGetTurnEntity(BattleState* battle) {
 }
 
 static void BattleEndTurn(BattleState* battle) {
+    Entity* turn_entity = BattleGetTurnEntity(battle);
+    Assert(turn_entity);
+    turn_entity->moved = false;
+
     ++battle->turns_idx;
 
     bool player_found = false;
@@ -5333,7 +5340,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GameControllerState* controller = GetController(input, 0);
 
         Tile* hovered_tile = GridGetCursorHoverTile(grid, controller);
-        Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
 
         switch (battle->phase) {
             case BATTLE_INIT: {
@@ -5341,25 +5347,30 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 break;
             }
             case BATTLE_PLAYING: {
-                Entity* turn_entity = BattleStateGetTurnEntity(battle);
+                Entity* turn_entity = BattleGetTurnEntity(battle);
                 if (turn_entity) {
                     bool end_turn = false;
 
                     switch (turn_entity->team) {
                         case TEAM_PLAYER: {
-                            if (controller->action_down.pressed) {
-                                if (hovered_entity) {
-                                    if (!EntityIdEq(turn_entity->id, hovered_entity->id)) {
-                                        end_turn = true;
+                            if (!turn_entity->moved) {
+                                if (controller->action_down.pressed && hovered_tile) {
+                                    end_turn = false;
+                                    turn_entity->moved = true;
+                                    turn_entity->pos = hovered_tile->pos;
+                                }
+                            } else {
+                                if (controller->action_down.pressed && hovered_tile) {
+                                    end_turn = true;
+
+                                    Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
+                                    if (hovered_entity && !EntityIdEq(turn_entity->id, hovered_entity->id)) {
                                         hovered_entity->hp -= 1;
                                         if (hovered_entity->hp <= 0) {
                                             FlagOff(hovered_entity->flags, EFLAG_DRAW);
                                             hovered_entity->state = STATE_DEAD;
                                         }
                                     }
-                                } else if (hovered_tile) {
-                                    end_turn = true;
-                                    turn_entity->pos = hovered_tile->pos;
                                 }
                             }
                             break;
