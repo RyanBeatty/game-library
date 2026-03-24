@@ -4882,7 +4882,17 @@ typedef enum {
 #define GRID_NUM_COLS 12
 
 typedef struct {
+    i32 r;
+    i32 c;
+    i32 height;
+} TileId;
+
+#define TileIdFromVec3(v) ((TileId){.r = (v).y, .c = (v).x, .height = (v).z})
+#define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
+
+typedef struct {
     Vec3 pos;
+    TileId id;
     GraphicsInfo graphics;
 } Tile;
 
@@ -4950,6 +4960,7 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
         for (i32 c = 0; c < ncols; ++c, ++color_idx) {
             Tile* tile = &grid->tiles[r][c];
             tile->pos = Vec3Lit(c, r, 0);
+            tile->id = (TileId){.r = r, .c = c, .height = 0};
             LModel model = color_idx % 2 == 0 ? black_model : grey_model;
             GraphicsInfoSetLModel(&tile->graphics, model);
         }
