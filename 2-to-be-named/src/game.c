@@ -4182,7 +4182,7 @@ typedef struct {
     EntityId grid_right_id;
 
     EntityState state;
-    bool moved;
+    i32 move_ap;
 } Entity;
 
 typedef struct {
@@ -5088,7 +5088,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->hp = 1;
             e->team = TEAM_PLAYER;
             e->state = STATE_ALIVE;
-            e->moved = false;
+            e->move_ap = 1;
 
             GridAddEntity(&battle->grid, e, 0, 0);
         }
@@ -5102,7 +5102,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->hp = 1;
             e->team = TEAM_ENEMY;
             e->state = STATE_ALIVE;
-            e->moved = false;
+            e->move_ap = 1;
 
             GridAddEntity(&battle->grid, e, 5, 5);
         }
@@ -5141,7 +5141,7 @@ static Entity* BattleGetTurnEntity(BattleState* battle) {
 static void BattleEndTurn(BattleState* battle) {
     Entity* turn_entity = BattleGetTurnEntity(battle);
     Assert(turn_entity);
-    turn_entity->moved = false;
+    turn_entity->move_ap = 1;
 
     ++battle->turns_idx;
 
@@ -5353,10 +5353,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     switch (turn_entity->team) {
                         case TEAM_PLAYER: {
-                            if (!turn_entity->moved) {
+                            if (turn_entity->move_ap > 0) {
                                 if (controller->action_down.pressed && hovered_tile) {
-                                    end_turn = false;
-                                    turn_entity->moved = true;
+                                    --turn_entity->move_ap;
                                     turn_entity->pos = hovered_tile->pos;
                                 }
                             } else {
