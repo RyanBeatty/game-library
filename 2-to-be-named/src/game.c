@@ -5050,6 +5050,52 @@ static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     grid->entities_root_id = e->id;
 }
 
+typedef struct {
+    i32 dr;
+    i32 dc;
+} Step;
+
+typedef struct {
+    Step* data;
+    isize len;
+    isize cap;
+} StepArr;
+
+typedef struct {
+    TileId start;
+    StepArr steps;
+    TileId finish;
+} Path;
+
+// TODO: Add path generation.
+
+typedef enum {
+    BTXN_NONE = 0,
+    BTXN_TELEPORT,
+    BTXN_ATTACK,
+} BattleTxnType;
+
+typedef struct {
+    BattleTxnType type;
+
+    union {
+        struct {
+            TileId dest;
+        } teleport;
+
+        struct {
+            EntityId victim;
+            i32 damage;
+        } attack;
+    };
+} BattleTxn;
+
+typedef struct {
+    BattleTxn* data;
+    isize len;
+    isize cap;
+} BattleTxnArr;
+
 typedef enum {
     BATTLE_INIT = 0,
     BATTLE_PLAYING,
@@ -5071,9 +5117,11 @@ typedef struct {
     isize turns_idx;
 
     BattleOutcome outcome;
+
+    BattleTxnArr txns;
 } BattleState;
 
-static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world) {
+static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world, Arena* perm) {
     static BattleState ZERO = {0};
     *battle = ZERO;
 
@@ -5113,6 +5161,8 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
 
     InitArrS(&battle->turns, battle->turns_buffer, ArraySizeOf(battle->turns_buffer));
     battle->phase = BATTLE_PLAYING;
+
+    InitArr(&battle->txns, perm, BattleTxn, 100);
 }
 
 static void BattleEndRound(BattleState* battle) {
@@ -5355,7 +5405,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (battle->phase) {
             case BATTLE_INIT: {
-                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
+                // TODO: Instead of perm, there should be some like perm scene storage or maybe we allocate this once
+                // somewhere on scene startup. That feels more right Then we provide the txn storage to the battle
+                // system?
+                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, &gstate->perm);
                 break;
             }
             case BATTLE_PLAYING: {
@@ -5364,6 +5417,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     switch (turn_entity->team) {
                         case TEAM_PLAYER: {
                             if (turn_entity->move_ap > 0) {
+                                // if (controller->action_down) {
+                                //     Paths* paths = GridComputeMovementPaths(grid, turn_entity);
+                                //     Path* path = PathSetCanReach(hovered_tile);
+
+                                //     if (path) {
+                                //         --turn_entity->move_ap;
+                                //         // Hacky we should actually resolve all the inbetween moves to determine
+                                //         final
+                                //         // position.
+                                //         turn_entity->pos = hovered_tile->pos;
+                                //     }
+                                // }
+
                                 if (controller->action_down.pressed && hovered_tile) {
                                     --turn_entity->move_ap;
                                     turn_entity->pos = hovered_tile->pos;
