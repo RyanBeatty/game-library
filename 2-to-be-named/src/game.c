@@ -4183,6 +4183,7 @@ typedef struct {
 
     EntityState state;
     i32 move_ap;
+    i32 attack_ap;
 } Entity;
 
 typedef struct {
@@ -5089,6 +5090,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->team = TEAM_PLAYER;
             e->state = STATE_ALIVE;
             e->move_ap = 1;
+            e->attack_ap = 1;
 
             GridAddEntity(&battle->grid, e, 0, 0);
         }
@@ -5103,6 +5105,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->team = TEAM_ENEMY;
             e->state = STATE_ALIVE;
             e->move_ap = 1;
+            e->attack_ap = 1;
 
             GridAddEntity(&battle->grid, e, 5, 5);
         }
@@ -5142,6 +5145,7 @@ static void BattleEndTurn(BattleState* battle) {
     Entity* turn_entity = BattleGetTurnEntity(battle);
     Assert(turn_entity);
     turn_entity->move_ap = 1;
+    turn_entity->attack_ap = 1;
 
     ++battle->turns_idx;
 
@@ -5163,6 +5167,14 @@ static void BattleEndTurn(BattleState* battle) {
     } else if (!enemy_found) {
         battle->phase = BATTLE_END;
         battle->outcome = OUTCOME_WIN;
+    }
+}
+
+static void BattleMaybeEndTurn(BattleState* battle) {
+    Entity* turn_entity = BattleGetTurnEntity(battle);
+    Assert(turn_entity);
+    if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
+        BattleEndTurn(battle);
     }
 }
 
@@ -5349,8 +5361,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             case BATTLE_PLAYING: {
                 Entity* turn_entity = BattleGetTurnEntity(battle);
                 if (turn_entity) {
-                    bool end_turn = false;
-
                     switch (turn_entity->team) {
                         case TEAM_PLAYER: {
                             if (turn_entity->move_ap > 0) {
@@ -5358,9 +5368,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     --turn_entity->move_ap;
                                     turn_entity->pos = hovered_tile->pos;
                                 }
-                            } else {
+                            } else if (turn_entity->attack_ap == 1) {
                                 if (controller->action_down.pressed && hovered_tile) {
-                                    end_turn = true;
+                                    --turn_entity->attack_ap;
 
                                     Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
                                     if (hovered_entity && !EntityIdEq(turn_entity->id, hovered_entity->id)) {
@@ -5413,7 +5423,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 i32 idx = (i32)f32randab(0, ArrLen(&possible));
                                 turn_entity->pos = TileIdtoVec3(ArrGet(&possible, idx));
                             }
-                            end_turn = true;
+                            --turn_entity->move_ap;
+                            --turn_entity->attack_ap;
                             break;
                         }
                         default: {
@@ -5421,9 +5432,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    if (end_turn) {
-                        BattleEndTurn(battle);
-                    }
+                    BattleMaybeEndTurn(battle);
                 } else {
                     BattleEndRound(battle);
                 }
