@@ -4926,6 +4926,8 @@ typedef struct {
     EntityId entities_root_id;
 } Grid;
 
+#define GridValidTileId(grid, id) ((id).r >= 0 && (id).r < (grid)->nrows && (id).c >= 0 && (id).c < (grid)->ncols)
+
 static bool GridIncrementEntity(Grid* grid, Entity** e) {
     *e = *e == NULL ? EntityFromId(grid->entities_root_id) : EntityFromId((*e)->grid_right_id);
     return *e != NULL;
@@ -5033,6 +5035,16 @@ static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
     }
 
     return NULL;
+}
+
+static bool GridEntityCanMoveTo(Grid* grid, Entity* e, Tile* dest) {
+    TileId cur_pos = TileIdFromVec3(e->pos);
+    Assert(GridValidTileId(grid, cur_pos));
+
+    i32 dr = i32abs(dest->id.r - cur_pos.r);
+    i32 dc = i32abs(dest->id.c - cur_pos.c);
+
+    return dr + dc <= 1;
 }
 
 // static Entity* GridGetEntityAtPos(Grid* grid, Vec3 pos) {
@@ -5206,9 +5218,11 @@ static void BattleResolveTxns(BattleState* battle) {
         switch (txn->type) {
             case BTXN_MOVE: {
                 Entity* e = EntityFromId(txn->move.e);
-                // TODO: Validate we can move there.
-                e->pos = TileIdtoVec3(txn->move.dest);
-                --e->move_ap;
+                Tile* dest = GridTileFromId(&battle->grid, txn->move.dest);
+                if (GridEntityCanMoveTo(&battle->grid, e, dest)) {
+                    e->pos = TileIdtoVec3(txn->move.dest);
+                    --e->move_ap;
+                }
                 break;
             }
             case BTXN_ATTACK: {
