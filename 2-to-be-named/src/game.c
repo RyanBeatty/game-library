@@ -5494,34 +5494,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     switch (turn_entity->team) {
                         case TEAM_PLAYER: {
                             if (turn_entity->move_ap > 0) {
-                                // if (controller->action_down) {
-                                //     Paths* paths = GridComputeMovementPaths(grid, turn_entity);
-                                //     Path* path = PathSetCanReach(hovered_tile);
-
-                                //     if (path) {
-                                //         --turn_entity->move_ap;
-                                //         // Hacky we should actually resolve all the inbetween moves to determine
-                                //         final
-                                //         // position.
-                                //         turn_entity->pos = hovered_tile->pos;
-                                //     }
-                                // }
-
                                 if (controller->action_down.pressed) {
                                     BattleMoveEntityTo(battle, turn_entity, hovered_tile);
                                 }
                             } else if (turn_entity->attack_ap == 1) {
-                                if (controller->action_down.pressed && hovered_tile) {
-                                    --turn_entity->attack_ap;
-
-                                    Entity* hovered_entity = GridGetEntityAtTile(grid, hovered_tile);
-                                    if (hovered_entity && !EntityIdEq(turn_entity->id, hovered_entity->id)) {
-                                        hovered_entity->hp -= 1;
-                                        if (hovered_entity->hp <= 0) {
-                                            FlagOff(hovered_entity->flags, EFLAG_DRAW);
-                                            hovered_entity->state = STATE_DEAD;
-                                        }
-                                    }
+                                if (controller->action_down.pressed) {
+                                    BattleAttackTile(battle, turn_entity, hovered_tile);
                                 }
                             }
                             break;
