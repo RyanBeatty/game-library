@@ -5080,6 +5080,7 @@ typedef struct {
 
     union {
         struct {
+            EntityId e;
             TileId dest;
         } teleport;
 
@@ -5165,6 +5166,56 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
     InitArr(&battle->txns, perm, BattleTxn, 100);
 }
 
+static void BattleTeleportTxn(BattleState* battle, EntityId e, Tile* tile) {
+    if (!tile) {
+        return;
+    }
+
+    BattleTxn txn = {
+        .type = BTXN_TELEPORT,
+        .teleport =
+            {
+                .e = e,
+                .dest = tile->id,
+            },
+    };
+    ArrPush(&battle->txns, txn);
+}
+
+// TODO: Push as much complexity as I can into txn system. So the maintick shouldn't be checking if an entity can move
+// or attack a tile it should just gneerate the move or attack txn with all the info it has and let the txn system
+// figure it out.
+static void BattleResolveTxns(BattleState* battle) {
+    for (isize i = 0; i < ArrLen(&battle->txns); ++i) {
+        BattleTxn* txn = ArrGetPtr(&battle->txns, i);
+        switch (txn->type) {
+            case BTXN_TELEPORT: {
+                Entity* e = EntityFromId(txn->teleport.e);
+                // TODO: Validate we can move there.
+                e->pos = TileIdtoVec3(txn->teleport.dest);
+                --e->move_ap;
+                break;
+            }
+            case BTXN_ATTACK: {
+                Entity* victim = EntityFromId(txn->attack.victim);
+                Assert(victim);
+                // TODO: validate.
+                victim->hp -= txn->attack.damage;
+                if (victim->hp <= 0) {
+                    victim->state = STATE_DEAD;
+                    FlagOff(victim->flags, EFLAG_DRAW);
+                }
+                break;
+            }
+            default: {
+                Assert(0);
+            }
+        }
+    }
+
+    ArrClear(&battle->txns);
+}
+
 static void BattleEndRound(BattleState* battle) {
     ArrClear(&battle->turns);
     battle->turns_idx = 0;
@@ -5180,6 +5231,8 @@ static void BattleEndRound(BattleState* battle) {
             ArrPush(&battle->turns, e->id);
         }
     }
+
+    ArrClear(&battle->txns);
 }
 
 static Entity* BattleGetTurnEntity(BattleState* battle) {
@@ -5223,6 +5276,9 @@ static void BattleEndTurn(BattleState* battle) {
 static void BattleMaybeEndTurn(BattleState* battle) {
     Entity* turn_entity = BattleGetTurnEntity(battle);
     Assert(turn_entity);
+
+    BattleResolveTxns(battle);
+
     if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
         BattleEndTurn(battle);
     }
@@ -5431,8 +5487,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // }
 
                                 if (controller->action_down.pressed && hovered_tile) {
-                                    --turn_entity->move_ap;
-                                    turn_entity->pos = hovered_tile->pos;
+                                    // --turn_entity->move_ap;
+                                    // turn_entity->pos = hovered_tile->pos;
+                                    BattleTeleportTxn(battle, turn_entity->id, hovered_tile);
                                 }
                             } else if (turn_entity->attack_ap == 1) {
                                 if (controller->action_down.pressed && hovered_tile) {
