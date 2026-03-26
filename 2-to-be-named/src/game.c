@@ -5071,7 +5071,7 @@ typedef struct {
 
 typedef enum {
     BTXN_NONE = 0,
-    BTXN_TELEPORT,
+    BTXN_MOVE,
     BTXN_ATTACK,
 } BattleTxnType;
 
@@ -5082,7 +5082,7 @@ typedef struct {
         struct {
             EntityId e;
             TileId dest;
-        } teleport;
+        } move;
 
         struct {
             EntityId victim;
@@ -5166,14 +5166,14 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
     InitArr(&battle->txns, perm, BattleTxn, 100);
 }
 
-static void BattleTeleportTxn(BattleState* battle, EntityId e, Tile* tile) {
+static void BattleMoveEntityTo(BattleState* battle, EntityId e, Tile* tile) {
     if (!tile) {
         return;
     }
 
     BattleTxn txn = {
-        .type = BTXN_TELEPORT,
-        .teleport =
+        .type = BTXN_MOVE,
+        .move =
             {
                 .e = e,
                 .dest = tile->id,
@@ -5189,10 +5189,10 @@ static void BattleResolveTxns(BattleState* battle) {
     for (isize i = 0; i < ArrLen(&battle->txns); ++i) {
         BattleTxn* txn = ArrGetPtr(&battle->txns, i);
         switch (txn->type) {
-            case BTXN_TELEPORT: {
-                Entity* e = EntityFromId(txn->teleport.e);
+            case BTXN_MOVE: {
+                Entity* e = EntityFromId(txn->move.e);
                 // TODO: Validate we can move there.
-                e->pos = TileIdtoVec3(txn->teleport.dest);
+                e->pos = TileIdtoVec3(txn->move.dest);
                 --e->move_ap;
                 break;
             }
@@ -5487,9 +5487,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // }
 
                                 if (controller->action_down.pressed && hovered_tile) {
-                                    // --turn_entity->move_ap;
-                                    // turn_entity->pos = hovered_tile->pos;
-                                    BattleTeleportTxn(battle, turn_entity->id, hovered_tile);
+                                    BattleMoveEntityTo(battle, turn_entity->id, hovered_tile);
                                 }
                             } else if (turn_entity->attack_ap == 1) {
                                 if (controller->action_down.pressed && hovered_tile) {
