@@ -5047,20 +5047,6 @@ static bool GridEntityCanMoveTo(Grid* grid, Entity* e, Tile* dest) {
     return dr + dc <= 1;
 }
 
-// static Entity* GridGetEntityAtPos(Grid* grid, Vec3 pos) {
-//     if (pos.y < 0 || pos.y >= grid->nrows || pos.x < 0 || pos.x >= grid->ncols) {
-//         return NULL;
-//     }
-
-//     for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
-//         if (Vec3Eq(e->pos, pos)) {
-//             return e;
-//         }
-//     }
-
-//     return NULL;
-// }
-
 static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     e->pos = Vec3Lit(c, r, 0);
 
