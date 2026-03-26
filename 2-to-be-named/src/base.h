@@ -209,6 +209,7 @@ static f32 TOL = 0.001;
 LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
 
 #define i32rand() ((i32)rand())
+#define i32max(x, y) ((x) < (y) ? (x) : (y))
 
 // #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
 #define f32rand01() ((f32)rand() / (f32)RAND_MAX)

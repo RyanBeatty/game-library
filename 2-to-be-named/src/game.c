@@ -4936,6 +4936,12 @@ static Tile* GridMaybeTileFromId(Grid* grid, TileId id) {
     return valid_idx ? &grid->tiles[id.r][id.c] : NULL;
 }
 
+static Tile* GridTileFromId(Grid* grid, TileId id) {
+    Tile* tile = GridMaybeTileFromId(grid, id);
+    Assert(tile);
+    return tile;
+}
+
 static Tile* GridMaybeGetTile(Grid* grid, isize r, isize c) {
     return GridMaybeTileFromId(grid, (TileId){.r = r, .c = c, .height = 0});
 }
@@ -5085,8 +5091,8 @@ typedef struct {
         } move;
 
         struct {
-            EntityId victim;
-            i32 damage;
+            EntityId source;
+            TileId target;
         } attack;
     };
 } BattleTxn;
@@ -5166,7 +5172,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
     InitArr(&battle->txns, perm, BattleTxn, 100);
 }
 
-static void BattleMoveEntityTo(BattleState* battle, EntityId e, Tile* tile) {
+static void BattleMoveEntityTo(BattleState* battle, Entity* e, Tile* tile) {
     if (!tile) {
         return;
     }
@@ -5175,10 +5181,19 @@ static void BattleMoveEntityTo(BattleState* battle, EntityId e, Tile* tile) {
         .type = BTXN_MOVE,
         .move =
             {
-                .e = e,
+                .e = e->id,
                 .dest = tile->id,
             },
     };
+    ArrPush(&battle->txns, txn);
+}
+
+static void BattleAttackTile(BattleState* battle, Entity* e, Tile* tile) {
+    if (!tile) {
+        return;
+    }
+
+    BattleTxn txn = {.type = BTXN_ATTACK, .attack = {.source = e->id, .target = tile->id}};
     ArrPush(&battle->txns, txn);
 }
 
@@ -5197,13 +5212,19 @@ static void BattleResolveTxns(BattleState* battle) {
                 break;
             }
             case BTXN_ATTACK: {
-                Entity* victim = EntityFromId(txn->attack.victim);
-                Assert(victim);
-                // TODO: validate.
-                victim->hp -= txn->attack.damage;
-                if (victim->hp <= 0) {
-                    victim->state = STATE_DEAD;
-                    FlagOff(victim->flags, EFLAG_DRAW);
+                Entity* source = EntityFromId(txn->attack.source);
+                Assert(source);
+                source->attack_ap = i32max(source->attack_ap - 1, 0);
+                i32 damage = 1;
+
+                Tile* target = GridTileFromId(&battle->grid, txn->attack.target);
+                Entity* victim = GridGetEntityAtTile(&battle->grid, target);
+                if (victim) {
+                    victim->hp -= damage;
+                    if (victim->hp <= 0) {
+                        victim->state = STATE_DEAD;
+                        FlagOff(victim->flags, EFLAG_DRAW);
+                    }
                 }
                 break;
             }
@@ -5487,7 +5508,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // }
 
                                 if (controller->action_down.pressed) {
-                                    BattleMoveEntityTo(battle, turn_entity->id, hovered_tile);
+                                    BattleMoveEntityTo(battle, turn_entity, hovered_tile);
                                 }
                             } else if (turn_entity->attack_ap == 1) {
                                 if (controller->action_down.pressed && hovered_tile) {
@@ -5546,7 +5567,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 dest = GridMaybeTileFromId(grid, ArrGet(&possible, idx));
                             }
 
-                            BattleMoveEntityTo(battle, turn_entity->id, dest);
+                            BattleMoveEntityTo(battle, turn_entity, dest);
                             --turn_entity->attack_ap;
                             break;
                         }
