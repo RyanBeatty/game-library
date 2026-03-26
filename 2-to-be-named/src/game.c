@@ -5172,7 +5172,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
     InitArr(&battle->txns, perm, BattleTxn, 100);
 }
 
-static void BattleMoveEntityTo(BattleState* battle, Entity* e, Tile* tile) {
+static void BattleMoveToTile(BattleState* battle, Entity* e, Tile* tile) {
     if (!tile) {
         return;
     }
@@ -5495,7 +5495,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         case TEAM_PLAYER: {
                             if (turn_entity->move_ap > 0) {
                                 if (controller->action_down.pressed) {
-                                    BattleMoveEntityTo(battle, turn_entity, hovered_tile);
+                                    BattleMoveToTile(battle, turn_entity, hovered_tile);
                                 }
                             } else if (turn_entity->attack_ap == 1) {
                                 if (controller->action_down.pressed) {
@@ -5545,7 +5545,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 dest = GridMaybeTileFromId(grid, ArrGet(&possible, idx));
                             }
 
-                            BattleMoveEntityTo(battle, turn_entity, dest);
+                            BattleMoveToTile(battle, turn_entity, dest);
                             --turn_entity->attack_ap;
                             break;
                         }
