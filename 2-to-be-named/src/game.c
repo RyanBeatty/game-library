@@ -4184,6 +4184,8 @@ typedef struct {
     EntityState state;
     i32 move_ap;
     i32 attack_ap;
+
+    i32 base_speed;
 } Entity;
 
 typedef struct {
@@ -5044,7 +5046,9 @@ static bool GridEntityCanMoveTo(Grid* grid, Entity* e, Tile* dest) {
     i32 dr = i32abs(dest->id.r - cur_pos.r);
     i32 dc = i32abs(dest->id.c - cur_pos.c);
 
-    return dr + dc <= 1;
+    bool moveable = dr + dc <= e->base_speed;
+    Entity* already_there = GridGetEntityAtTile(grid, dest);
+    return (moveable && (!already_there || EntityIdEq(already_there->id, e->id)));
 }
 
 static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
@@ -5144,6 +5148,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->state = STATE_ALIVE;
             e->move_ap = 1;
             e->attack_ap = 1;
+            e->base_speed = 2;
 
             GridAddEntity(&battle->grid, e, 0, 0);
         }
@@ -5159,6 +5164,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             e->state = STATE_ALIVE;
             e->move_ap = 1;
             e->attack_ap = 1;
+            e->base_speed = 1;
 
             GridAddEntity(&battle->grid, e, 5, 5);
         }
