@@ -5486,7 +5486,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 //     }
                                 // }
 
-                                if (controller->action_down.pressed && hovered_tile) {
+                                if (controller->action_down.pressed) {
                                     BattleMoveEntityTo(battle, turn_entity->id, hovered_tile);
                                 }
                             } else if (turn_entity->attack_ap == 1) {
@@ -5540,11 +5540,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
+                            Tile* dest = NULL;
                             if (ArrLen(&possible) > 0) {
                                 i32 idx = (i32)f32randab(0, ArrLen(&possible));
-                                turn_entity->pos = TileIdtoVec3(ArrGet(&possible, idx));
+                                dest = GridMaybeTileFromId(grid, ArrGet(&possible, idx));
                             }
-                            --turn_entity->move_ap;
+
+                            BattleMoveEntityTo(battle, turn_entity->id, dest);
                             --turn_entity->attack_ap;
                             break;
                         }
