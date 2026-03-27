@@ -5051,6 +5051,17 @@ static bool GridEntityCanMoveTo(Grid* grid, Entity* e, Tile* dest) {
     return (moveable && (!already_there || EntityIdEq(already_there->id, e->id)));
 }
 
+static bool GridEntityCanHitTile(Grid* grid, Entity* e, Tile* target) {
+    TileId cur_pos = TileIdFromVec3(e->pos);
+    Assert(GridValidTileId(grid, cur_pos));
+
+    i32 dr = i32abs(target->id.r - cur_pos.r);
+    i32 dc = i32abs(target->id.c - cur_pos.c);
+
+    bool can_hit = (dr + dc) == 1;
+    return can_hit;
+}
+
 static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
     e->pos = Vec3Lit(c, r, 0);
 
@@ -5225,7 +5236,7 @@ static void BattleResolveTxns(BattleState* battle) {
 
                 Tile* target = GridTileFromId(&battle->grid, txn->attack.target);
                 Entity* victim = GridGetEntityAtTile(&battle->grid, target);
-                if (victim) {
+                if (GridEntityCanHitTile(&battle->grid, source, target) && victim) {
                     victim->hp -= damage;
                     if (victim->hp <= 0) {
                         victim->state = STATE_DEAD;
