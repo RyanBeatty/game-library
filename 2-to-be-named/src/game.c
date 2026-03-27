@@ -5231,16 +5231,18 @@ static void BattleResolveTxns(BattleState* battle) {
             case BTXN_ATTACK: {
                 Entity* source = EntityFromId(txn->attack.source);
                 Assert(source);
-                source->attack_ap = i32max(source->attack_ap - 1, 0);
                 i32 damage = 1;
 
                 Tile* target = GridTileFromId(&battle->grid, txn->attack.target);
                 Entity* victim = GridGetEntityAtTile(&battle->grid, target);
-                if (GridEntityCanHitTile(&battle->grid, source, target) && victim) {
-                    victim->hp -= damage;
-                    if (victim->hp <= 0) {
-                        victim->state = STATE_DEAD;
-                        FlagOff(victim->flags, EFLAG_DRAW);
+                if (GridEntityCanHitTile(&battle->grid, source, target)) {
+                    source->attack_ap = i32max(source->attack_ap - 1, 0);
+                    if (victim) {
+                        victim->hp -= damage;
+                        if (victim->hp <= 0) {
+                            victim->state = STATE_DEAD;
+                            FlagOff(victim->flags, EFLAG_DRAW);
+                        }
                     }
                 }
                 break;
