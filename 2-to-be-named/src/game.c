@@ -5130,6 +5130,11 @@ typedef struct {
     EntityIdArr turns;
     isize turns_idx;
 
+    EntityId party_ids_buffer[10];
+    EntityIdArr party_ids;
+    EntityId enemy_ids_buffer[10];
+    EntityIdArr enemy_ids;
+
     BattleOutcome outcome;
 
     BattleTxnArr txns;
@@ -5138,6 +5143,13 @@ typedef struct {
 static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world, Arena* perm) {
     static BattleState ZERO = {0};
     *battle = ZERO;
+
+    InitArrS(&battle->turns, battle->turns_buffer, ArraySizeOf(battle->turns_buffer));
+    InitArrS(&battle->party_ids, battle->party_ids_buffer, ArraySizeOf(battle->party_ids_buffer));
+    InitArrS(&battle->enemy_ids, battle->enemy_ids_buffer, ArraySizeOf(battle->enemy_ids_buffer));
+    battle->phase = BATTLE_PLAYING;
+
+    InitArr(&battle->txns, perm, BattleTxn, 100);
 
     GridInit(&battle->grid, renderw_world, renderh_world);
 
@@ -5174,11 +5186,6 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
             GridAddEntity(&battle->grid, e, 5, 5);
         }
     }
-
-    InitArrS(&battle->turns, battle->turns_buffer, ArraySizeOf(battle->turns_buffer));
-    battle->phase = BATTLE_PLAYING;
-
-    InitArr(&battle->txns, perm, BattleTxn, 100);
 }
 
 static void BattleMoveToTile(BattleState* battle, Entity* e, Tile* tile) {
