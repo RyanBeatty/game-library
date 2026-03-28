@@ -4882,8 +4882,8 @@ typedef enum {
     PHASE_SHOP_OPEN,
 } GamePhase;
 
-#define GRID_NUM_ROWS 4  // 9
-#define GRID_NUM_COLS 4  // 12
+#define GRID_NUM_ROWS 6  // 9
+#define GRID_NUM_COLS 6  // 12
 
 typedef struct {
     i32 r;
@@ -5152,40 +5152,6 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
     InitArrS(&battle->enemy_ids, battle->enemy_ids_buffer, ArraySizeOf(battle->enemy_ids_buffer));
     InitArrS(&battle->txns, battle->txns_buffer, ArraySizeOf(battle->txns_buffer));
     battle->phase = BATTLE_PLAYING;
-
-    {
-        {
-            Entity* e = AllocateEntity();
-            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
-            GraphicsInfoSetLModel(&e->graphics, model);
-
-            e->hp = 1;
-            e->team = TEAM_PLAYER;
-            e->state = STATE_ALIVE;
-            e->move_ap = 1;
-            e->attack_ap = 1;
-            e->base_speed = 2;
-
-            GridAddEntity(&battle->grid, e, 0, 0);
-        }
-
-        {
-            Entity* e = AllocateEntity();
-            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
-            GraphicsInfoSetLModel(&e->graphics, model);
-
-            e->hp = 1;
-            e->team = TEAM_ENEMY;
-            e->state = STATE_ALIVE;
-            e->move_ap = 1;
-            e->attack_ap = 1;
-            e->base_speed = 1;
-
-            GridAddEntity(&battle->grid, e, 5, 5);
-        }
-    }
 }
 
 static void BattleMoveToTile(BattleState* battle, Entity* e, Tile* tile) {
@@ -5503,6 +5469,42 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         switch (battle->phase) {
             case BATTLE_INIT: {
                 BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
+
+                {
+                    {
+                        Entity* e = AllocateEntity();
+                        LModel model =
+                            LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
+                        GraphicsInfoSetLModel(&e->graphics, model);
+
+                        e->hp = 1;
+                        e->team = TEAM_PLAYER;
+                        e->state = STATE_ALIVE;
+                        e->move_ap = 1;
+                        e->attack_ap = 1;
+                        e->base_speed = 2;
+
+                        GridAddEntity(&battle->grid, e, 0, 0);
+                    }
+
+                    {
+                        Entity* e = AllocateEntity();
+                        LModel model =
+                            LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
+                        GraphicsInfoSetLModel(&e->graphics, model);
+
+                        e->hp = 1;
+                        e->team = TEAM_ENEMY;
+                        e->state = STATE_ALIVE;
+                        e->move_ap = 1;
+                        e->attack_ap = 1;
+                        e->base_speed = 1;
+
+                        GridAddEntity(&battle->grid, e, 5, 5);
+                    }
+                }
                 break;
             }
             case BATTLE_PLAYING: {
