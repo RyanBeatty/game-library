@@ -4921,6 +4921,7 @@ typedef struct {
     isize ncols;
     Tile tiles[GRID_NUM_ROWS][GRID_NUM_COLS];
 
+    // TODO: Remove I think. This can be implied from the occupant entries on the grid tiles.
     EntityId entities_root_id;
 } Grid;
 
