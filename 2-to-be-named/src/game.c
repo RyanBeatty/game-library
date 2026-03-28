@@ -5570,7 +5570,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             break;
                         }
                         case TEAM_ENEMY: {
-                            Entity* target = EntityFromId(ArrGet(&battle->party_ids, 0));
+                            Entity* target = NULL;
+                            for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
+                                Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
+                                if (e->state != STATE_DEAD) {
+                                    target = e;
+                                    break;
+                                }
+                            }
                             Assert(target);
                             TileId target_tileid = TileIdFromVec3(target->pos);
                             Tile* target_tile = GridTileFromId(grid, target_tileid);
