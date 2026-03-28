@@ -5137,21 +5137,21 @@ typedef struct {
 
     BattleOutcome outcome;
 
+    BattleTxn txns_buffer[100];
     BattleTxnArr txns;
 } BattleState;
 
-static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world, Arena* perm) {
+static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world) {
     static BattleState ZERO = {0};
     *battle = ZERO;
+
+    GridInit(&battle->grid, renderw_world, renderh_world);
 
     InitArrS(&battle->turns, battle->turns_buffer, ArraySizeOf(battle->turns_buffer));
     InitArrS(&battle->party_ids, battle->party_ids_buffer, ArraySizeOf(battle->party_ids_buffer));
     InitArrS(&battle->enemy_ids, battle->enemy_ids_buffer, ArraySizeOf(battle->enemy_ids_buffer));
+    InitArrS(&battle->txns, battle->txns_buffer, ArraySizeOf(battle->txns_buffer));
     battle->phase = BATTLE_PLAYING;
-
-    InitArr(&battle->txns, perm, BattleTxn, 100);
-
-    GridInit(&battle->grid, renderw_world, renderh_world);
 
     {
         {
@@ -5502,10 +5502,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (battle->phase) {
             case BATTLE_INIT: {
-                // TODO: Instead of perm, there should be some like perm scene storage or maybe we allocate this once
-                // somewhere on scene startup. That feels more right Then we provide the txn storage to the battle
-                // system?
-                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, &gstate->perm);
+                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
                 break;
             }
             case BATTLE_PLAYING: {
