@@ -4178,9 +4178,6 @@ typedef struct {
 
     i32 hp;
 
-    // LL for all entities currently on grid.
-    EntityId grid_right_id;
-
     EntityState state;
     i32 move_ap;
     i32 attack_ap;
@@ -4920,9 +4917,6 @@ typedef struct {
     isize nrows;
     isize ncols;
     Tile tiles[GRID_NUM_ROWS][GRID_NUM_COLS];
-
-    // TODO: Remove I think. This can be implied from the occupant entries on the grid tiles.
-    EntityId entities_root_id;
 } Grid;
 
 #define GridValidTileId(grid, id) ((id).r >= 0 && (id).r < (grid)->nrows && (id).c >= 0 && (id).c < (grid)->ncols)
@@ -5064,12 +5058,6 @@ static bool GridEntityCanHitTile(Grid* grid, Entity* e, Tile* target) {
     return can_hit;
 }
 
-static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
-    GridPlaceEntity(grid, e, (TileId){.r = r, .c = c});
-    e->grid_right_id = grid->entities_root_id;
-    grid->entities_root_id = e->id;
-}
-
 typedef struct {
     i32 dr;
     i32 dc;
@@ -5162,7 +5150,7 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
 }
 
 static void BattleSpawnEntity(BattleState* battle, Entity* e, TileId tileid) {
-    GridAddEntity(&battle->grid, e, tileid.r, tileid.c);
+    GridPlaceEntity(&battle->grid, e, tileid);
 
     EntityIdArr* team_arr = NULL;
     switch (e->team) {
