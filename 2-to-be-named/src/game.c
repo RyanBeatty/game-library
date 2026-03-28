@@ -5547,6 +5547,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             break;
                         }
                         case TEAM_ENEMY: {
+                            Entity* target = EntityFromId(ArrGet(&battle->party_ids, 0));
+                            Assert(target);
+                            TileId target_tileid = TileIdFromVec3(target->pos);
+
                             TileId id = TileIdFromVec3(turn_entity->pos);
                             TileId buffer[4] = {0};
                             TileIdArr possible;
@@ -5583,8 +5587,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Tile* dest = NULL;
                             if (ArrLen(&possible) > 0) {
-                                i32 idx = (i32)f32randab(0, ArrLen(&possible));
-                                dest = GridMaybeTileFromId(grid, ArrGet(&possible, idx));
+                                i32 best_score = I32_MAX;
+
+                                for (isize i = 0; i < ArrLen(&possible); ++i) {
+                                    TileId potential = ArrGet(&possible, i);
+                                    i32 score =
+                                        i32abs(potential.r - target_tileid.r) + i32abs(potential.c - target_tileid.c);
+                                    if (score < best_score) {
+                                        best_score = score;
+                                        dest = GridTileFromId(grid, potential);
+                                    }
+                                }
                             }
 
                             BattleMoveToTile(battle, turn_entity, dest);
