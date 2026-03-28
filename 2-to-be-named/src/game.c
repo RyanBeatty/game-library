@@ -5550,6 +5550,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Entity* target = EntityFromId(ArrGet(&battle->party_ids, 0));
                             Assert(target);
                             TileId target_tileid = TileIdFromVec3(target->pos);
+                            Tile* target_tile = GridTileFromId(grid, target_tileid);
 
                             TileId id = TileIdFromVec3(turn_entity->pos);
                             TileId buffer[4] = {0};
@@ -5601,6 +5602,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
 
                             BattleMoveToTile(battle, turn_entity, dest);
+                            BattleAttackTile(battle, turn_entity, target_tile);
                             --turn_entity->attack_ap;
                             break;
                         }
