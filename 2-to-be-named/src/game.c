@@ -5154,6 +5154,27 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
     battle->phase = BATTLE_PLAYING;
 }
 
+static void BattleSpawnEntity(BattleState* battle, Entity* e, TileId tileid) {
+    GridAddEntity(&battle->grid, e, tileid.r, tileid.c);
+
+    EntityIdArr* team_arr = NULL;
+    switch (e->team) {
+        case TEAM_PLAYER: {
+            team_arr = &battle->party_ids;
+            break;
+        }
+        case TEAM_ENEMY: {
+            team_arr = &battle->enemy_ids;
+            break;
+        }
+        default: {
+            Assert(0);
+        }
+    }
+    Assert(team_arr);
+    ArrPush(team_arr, e->id);
+}
+
 static void BattleMoveToTile(BattleState* battle, Entity* e, Tile* tile) {
     if (!tile) {
         return;
@@ -5485,7 +5506,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->attack_ap = 1;
                         e->base_speed = 2;
 
-                        GridAddEntity(&battle->grid, e, 0, 0);
+                        TileId tileid = {.r = 0, .c = 0};
+                        BattleSpawnEntity(battle, e, tileid);
                     }
 
                     {
@@ -5502,7 +5524,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->attack_ap = 1;
                         e->base_speed = 1;
 
-                        GridAddEntity(&battle->grid, e, 5, 5);
+                        TileId tileid = {.r = 5, .c = 5};
+                        BattleSpawnEntity(battle, e, tileid);
                     }
                 }
                 break;
