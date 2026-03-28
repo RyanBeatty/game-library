@@ -5026,13 +5026,8 @@ static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
         return NULL;
     }
 
-    for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
-        if (Vec3Eq(e->pos, tile->pos)) {
-            return e;
-        }
-    }
-
-    return NULL;
+    Entity* e = EntityFromId(tile->occupant);
+    return e;
 }
 
 static void GridPlaceEntity(Grid* grid, Entity* e, TileId dest_id) {
@@ -5266,14 +5261,18 @@ static void BattleEndRound(BattleState* battle) {
     ArrClear(&battle->turns);
     battle->turns_idx = 0;
 
-    for (Entity* e = NULL; GridIncrementEntity(&battle->grid, &e);) {
-        if (e->team == TEAM_PLAYER) {
+    for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
+        Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
+        Assert(e);
+        if (e->state != STATE_DEAD) {
             ArrPush(&battle->turns, e->id);
         }
     }
 
-    for (Entity* e = NULL; GridIncrementEntity(&battle->grid, &e);) {
-        if (e->team == TEAM_ENEMY) {
+    for (isize i = 0; i < ArrLen(&battle->enemy_ids); ++i) {
+        Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
+        Assert(e);
+        if (e->state != STATE_DEAD) {
             ArrPush(&battle->turns, e->id);
         }
     }
