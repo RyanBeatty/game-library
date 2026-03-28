@@ -4927,11 +4927,6 @@ typedef struct {
 
 #define GridValidTileId(grid, id) ((id).r >= 0 && (id).r < (grid)->nrows && (id).c >= 0 && (id).c < (grid)->ncols)
 
-static bool GridIncrementEntity(Grid* grid, Entity** e) {
-    *e = *e == NULL ? EntityFromId(grid->entities_root_id) : EntityFromId((*e)->grid_right_id);
-    return *e != NULL;
-}
-
 static Tile* GridMaybeTileFromId(Grid* grid, TileId id) {
     bool valid_idx = (id.r >= 0 && id.r < grid->nrows && id.c >= 0 && id.c < grid->ncols);
     return valid_idx ? &grid->tiles[id.r][id.c] : NULL;
@@ -5660,7 +5655,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
 
             {
-                for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
+                for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
+                    Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
+                    // We only transform pos as we want don't want to overly scale the texture (since we specify the
+                    // texture
+                    // in 16x16 pixels).
+                    e->graphics.transform = Mat4SVRT(e->scale, e->orient, Vec3WTransform(e->pos, grid->grid_to_world));
+                }
+
+                for (isize i = 0; i < ArrLen(&battle->enemy_ids); ++i) {
+                    Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
                     // We only transform pos as we want don't want to overly scale the texture (since we specify the
                     // texture
                     // in 16x16 pixels).
@@ -5690,7 +5694,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    for (Entity* e = NULL; GridIncrementEntity(grid, &e);) {
+                    for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
+                        Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
+                        if (TestFlag(e->flags, EFLAG_DRAW)) {
+                            DrawGraphicsInfo2(&e->graphics);
+                        }
+                    }
+
+                    for (isize i = 0; i < ArrLen(&battle->enemy_ids); ++i) {
+                        Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
                         if (TestFlag(e->flags, EFLAG_DRAW)) {
                             DrawGraphicsInfo2(&e->graphics);
                         }
