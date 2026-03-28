@@ -4905,6 +4905,8 @@ typedef struct {
     Vec3 pos;
     TileId id;
     GraphicsInfo graphics;
+
+    EntityId occupant;
 } Tile;
 
 typedef struct {
@@ -5033,6 +5035,21 @@ static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
     return NULL;
 }
 
+static void GridPlaceEntity(Grid* grid, Entity* e, TileId dest_id) {
+    Tile* dest = GridTileFromId(grid, dest_id);
+    dest->occupant = e->id;
+    e->pos = TileIdtoVec3(dest_id);
+}
+
+static void GridMoveEntity(Grid* grid, Entity* e, TileId dest_id) {
+    TileId cur_id = TileIdFromVec3(e->pos);
+    Tile* cur_tile = GridTileFromId(grid, cur_id);
+    Assert(EntityIdEq(cur_tile->occupant, e->id));
+    cur_tile->occupant = NULLID;
+
+    GridPlaceEntity(grid, e, dest_id);
+}
+
 static bool GridEntityCanMoveTo(Grid* grid, Entity* e, Tile* dest) {
     TileId cur_pos = TileIdFromVec3(e->pos);
     Assert(GridValidTileId(grid, cur_pos));
@@ -5057,8 +5074,7 @@ static bool GridEntityCanHitTile(Grid* grid, Entity* e, Tile* target) {
 }
 
 static void GridAddEntity(Grid* grid, Entity* e, i32 r, i32 c) {
-    e->pos = Vec3Lit(c, r, 0);
-
+    GridPlaceEntity(grid, e, (TileId){.r = r, .c = c});
     e->grid_right_id = grid->entities_root_id;
     grid->entities_root_id = e->id;
 }
@@ -5209,10 +5225,12 @@ static void BattleResolveTxns(BattleState* battle) {
         switch (txn->type) {
             case BTXN_MOVE: {
                 Entity* e = EntityFromId(txn->move.e);
-                Tile* dest = GridTileFromId(&battle->grid, txn->move.dest);
-                if (GridEntityCanMoveTo(&battle->grid, e, dest)) {
-                    e->pos = TileIdtoVec3(txn->move.dest);
-                    --e->move_ap;
+                if (e->move_ap > 0) {
+                    Tile* dest = GridTileFromId(&battle->grid, txn->move.dest);
+                    if (GridEntityCanMoveTo(&battle->grid, e, dest)) {
+                        GridMoveEntity(&battle->grid, e, txn->move.dest);
+                        --e->move_ap;
+                    }
                 }
                 break;
             }
@@ -5603,6 +5621,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             BattleMoveToTile(battle, turn_entity, dest);
                             BattleAttackTile(battle, turn_entity, target_tile);
+                            // TODO: We should have the game logic determine if turn should be ended I think. Otherwise
+                            // will get into weird states where we need to detect when enemy AI should end turn.
+                            turn_entity->attack_ap--;
                             break;
                         }
                         default: {
