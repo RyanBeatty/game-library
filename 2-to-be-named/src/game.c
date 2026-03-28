@@ -4882,8 +4882,8 @@ typedef enum {
     PHASE_SHOP_OPEN,
 } GamePhase;
 
-#define GRID_NUM_ROWS 9
-#define GRID_NUM_COLS 12
+#define GRID_NUM_ROWS 4  // 9
+#define GRID_NUM_COLS 4  // 12
 
 typedef struct {
     i32 r;
@@ -4917,12 +4917,6 @@ typedef struct {
 
     isize nrows;
     isize ncols;
-    // I suspect this will change a lot. There is a decision to be made about if you make some dedicated Tile struct or
-    // just have all cells be Entities. You would have a root transform entity that stores the grid world transform
-    // info. Then all of its children would be the Entity cells. This could make it simpler to add things like terrain
-    // effects later. Would potentially need some hashmap structure on top for fast coordinate position -> Entity
-    // lookup.
-    // EntityId root;
     Tile tiles[GRID_NUM_ROWS][GRID_NUM_COLS];
 
     EntityId entities_root_id;
