@@ -5603,7 +5603,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             BattleMoveToTile(battle, turn_entity, dest);
                             BattleAttackTile(battle, turn_entity, target_tile);
-                            --turn_entity->attack_ap;
                             break;
                         }
                         default: {
