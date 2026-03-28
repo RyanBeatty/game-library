@@ -5517,6 +5517,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Entity* e = AllocateEntity();
                         LModel model =
                             LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LGREEN);
+                        GraphicsInfoSetLModel(&e->graphics, model);
+
+                        e->hp = 1;
+                        e->team = TEAM_PLAYER;
+                        e->state = STATE_ALIVE;
+                        e->move_ap = 1;
+                        e->attack_ap = 1;
+                        e->base_speed = 2;
+                        e->base_range = 3;
+
+                        TileId tileid = {.r = 1, .c = 0};
+                        BattleSpawnEntity(battle, e, tileid);
+                    }
+
+                    {
+                        Entity* e = AllocateEntity();
+                        LModel model =
+                            LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
                                            Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
                         GraphicsInfoSetLModel(&e->graphics, model);
 
