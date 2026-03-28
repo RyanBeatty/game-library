@@ -5747,7 +5747,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
                      load_action, GetScreenRenderTarget()) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
-                    UILabel(&ui, Str8FromC("hello, world"), UI_FLAG_NONE);
+                    UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
+                        if (UIButton(&ui, Str8FromC("End Turn"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE)
+                                .clicked) {
+                            BattleEndTurn(battle);
+                        }
+                    }
                 }
             }
         }
