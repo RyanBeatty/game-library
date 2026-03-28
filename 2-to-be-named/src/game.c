@@ -4183,6 +4183,7 @@ typedef struct {
     i32 attack_ap;
 
     i32 base_speed;
+    i32 base_range;
 } Entity;
 
 typedef struct {
@@ -5054,7 +5055,7 @@ static bool GridEntityCanHitTile(Grid* grid, Entity* e, Tile* target) {
     i32 dr = i32abs(target->id.r - cur_pos.r);
     i32 dc = i32abs(target->id.c - cur_pos.c);
 
-    bool can_hit = (dr + dc) == 1;
+    bool can_hit = (dr + dc) <= e->base_range;
     return can_hit;
 }
 
@@ -5506,6 +5507,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->move_ap = 1;
                         e->attack_ap = 1;
                         e->base_speed = 2;
+                        e->base_range = 1;
 
                         TileId tileid = {.r = 0, .c = 0};
                         BattleSpawnEntity(battle, e, tileid);
@@ -5524,6 +5526,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->move_ap = 1;
                         e->attack_ap = 1;
                         e->base_speed = 1;
+                        e->base_range = 1;
 
                         TileId tileid = {.r = 5, .c = 5};
                         BattleSpawnEntity(battle, e, tileid);
