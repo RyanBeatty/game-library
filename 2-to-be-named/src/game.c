@@ -5704,6 +5704,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
 
                 {
+                    Entity* turn_entity = BattleGetTurnEntity(battle);
+
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
                             Tile* tile = GridGetTile(grid, r, c);
@@ -5714,7 +5716,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
                         Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
                         if (TestFlag(e->flags, EFLAG_DRAW)) {
-                            DrawGraphicsInfo2(&e->graphics);
+                            GraphicsInfo* graphics = &e->graphics;
+                            LModel model = graphics->model;
+
+                            model.tint = turn_entity && EntityIdEq(e->id, turn_entity->id) ? LYELLOW : model.tint;
+
+                            DrawLModelEx2(model, graphics->frame_idx, graphics->transform);
                         }
                     }
 
