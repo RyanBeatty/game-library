@@ -1580,7 +1580,8 @@ LCORE void DrawCmdExecute(DrawCmd* cmd) {
 
             i32 clear_mask = 0;
             if (cmd->beginpass.clear_color_flag) {
-                glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+                Vec4 clear_color = cmd->beginpass.clear_color;
+                glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
                 clear_mask |= GL_COLOR_BUFFER_BIT;
             }
             clear_mask |= GL_DEPTH_BUFFER_BIT;
@@ -5792,15 +5793,26 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
                 Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
                                       -100.0f, 100.0f);
-                BeginShaderPass(GetDefaultShader(), DefaultLoadAction(), view, proj, GetDefaultRenderTarget());
+                RenderPassLoadAction load_action = DefaultLoadAction();
+                load_action.clear_color = LPURPLE;
+                load_action.clear_color_flag = true;
+                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
                 {
                     Entity* turn_entity = BattleGetTurnEntity(battle);
+                    MoveRange* range = &battle->range;
 
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
                             Tile* tile = GridGetTile(grid, r, c);
-                            DrawGraphicsInfo2(&tile->graphics);
+                            GraphicsInfo* graphics = &tile->graphics;
+                            DrawGraphicsInfo2(graphics);
+
+                            if (MoveRangeCanReach(range, tile->id)) {
+                                GraphicsInfo graphics2 = *graphics;
+                                graphics2.model.tint = Vec4Lit(1.0f, 1.0f, 1.0f, .7f);
+                                DrawGraphicsInfo2(&graphics2);
+                            }
                         }
                     }
 
