@@ -5201,6 +5201,10 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
         for (isize nidx = 0; nidx < ArrLen(&neighbors); ++nidx) {
             TileId neighbor = ArrGet(&neighbors, nidx);
 
+            if (TileIdEq(neighbor, start)) {
+                continue;
+            }
+
             Entity* maybe_neighbor = GridGetEntityAtTileId(grid, neighbor);
             if (maybe_neighbor && maybe_neighbor->state == STATE_ALIVE) {
                 continue;
@@ -5367,11 +5371,6 @@ static void BattleEndTurn(BattleState* battle) {
     ArenaClear(&battle->turn_arena);
 
     ++battle->turns_idx;
-    if (battle->turns_idx < ArrLen(&battle->turns)) {
-        Entity* new_turn_entity = BattleGetTurnEntity(battle);
-        Assert(new_turn_entity);
-        battle->range = BattleGenerateMoveRange(battle, new_turn_entity, &battle->turn_arena);
-    }
 
     bool player_found = false;
     bool enemy_found = false;
@@ -5650,6 +5649,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 if (turn_entity) {
                     switch (turn_entity->team) {
                         case TEAM_PLAYER: {
+                            // TODO: The battle system should probably do this automatically and not every frame. Move
+                            // this to happen on turn *start*. Since we don't end a turn to start the battle, the first
+                            // turn entity would otherwise not get this calculated.
+                            battle->range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
+
                             if (turn_entity->move_ap > 0) {
                                 if (controller->action_down.pressed) {
                                     BattleMoveToTile(battle, turn_entity, hovered_tile);
