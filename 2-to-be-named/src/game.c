@@ -5810,7 +5810,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             if (MoveRangeCanReach(range, tile->id)) {
                                 GraphicsInfo graphics2 = *graphics;
-                                graphics2.model.tint = Vec4Lit(1.0f, 1.0f, 1.0f, .7f);
+                                graphics2.model.tint = LORANGE;
                                 DrawGraphicsInfo2(&graphics2);
                             }
                         }
