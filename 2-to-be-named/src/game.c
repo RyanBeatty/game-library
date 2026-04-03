@@ -5175,53 +5175,73 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
     TileIdArr tiles = {0};
     InitArr(&tiles, perm, TileId, 20);
 
+    TileId queue_buffer[20] = {0};
+    TileIdArr queue = {0};
+    InitArrS(&queue, queue_buffer, ArraySizeOf(queue_buffer));
+
+    TileId next_queue_buffer[20] = {0};
+    TileIdArr next_queue = {0};
+    InitArrS(&next_queue, next_queue_buffer, ArraySizeOf(next_queue_buffer));
+
+    ArrPush(&queue, start);
+
     i32 max_distance = e->base_speed;
     for (i32 cur_distance = 0; cur_distance < max_distance; ++cur_distance) {
-        TileId neighbors_buffer[4] = {0};
-        TileIdArr neighbors = {0};
-        InitArrS(&neighbors, neighbors_buffer, ArraySizeOf(neighbors_buffer));
+        for (isize qidx = 0; qidx < ArrLen(&queue); ++qidx) {
+            TileId cur = ArrGet(&queue, qidx);
 
-        TileId right = {.r = start.r, .c = start.c + 1, .height = start.height};
-        TileId left = {.r = start.r, .c = start.c - 1, .height = start.height};
-        TileId up = {.r = start.r + 1, .c = start.c, .height = start.height};
-        TileId down = {.r = start.r - 1, .c = start.c, .height = start.height};
-        if (GridValidTileId(grid, right)) {
-            ArrPush(&neighbors, right);
-        }
-        if (GridValidTileId(grid, left)) {
-            ArrPush(&neighbors, left);
-        }
-        if (GridValidTileId(grid, up)) {
-            ArrPush(&neighbors, up);
-        }
-        if (GridValidTileId(grid, down)) {
-            ArrPush(&neighbors, down);
-        }
+            TileId neighbors_buffer[4] = {0};
+            TileIdArr neighbors = {0};
+            InitArrS(&neighbors, neighbors_buffer, ArraySizeOf(neighbors_buffer));
 
-        for (isize nidx = 0; nidx < ArrLen(&neighbors); ++nidx) {
-            TileId neighbor = ArrGet(&neighbors, nidx);
-
-            if (TileIdEq(neighbor, start)) {
-                continue;
+            TileId right = {.r = cur.r, .c = cur.c + 1, .height = cur.height};
+            TileId left = {.r = cur.r, .c = cur.c - 1, .height = cur.height};
+            TileId up = {.r = cur.r + 1, .c = cur.c, .height = cur.height};
+            TileId down = {.r = cur.r - 1, .c = cur.c, .height = cur.height};
+            if (GridValidTileId(grid, right)) {
+                ArrPush(&neighbors, right);
+            }
+            if (GridValidTileId(grid, left)) {
+                ArrPush(&neighbors, left);
+            }
+            if (GridValidTileId(grid, up)) {
+                ArrPush(&neighbors, up);
+            }
+            if (GridValidTileId(grid, down)) {
+                ArrPush(&neighbors, down);
             }
 
-            Entity* maybe_neighbor = GridGetEntityAtTileId(grid, neighbor);
-            if (maybe_neighbor && maybe_neighbor->state == STATE_ALIVE) {
-                continue;
-            }
+            for (isize nidx = 0; nidx < ArrLen(&neighbors); ++nidx) {
+                TileId neighbor = ArrGet(&neighbors, nidx);
 
-            bool exists = false;
-            for (isize tidx = 0; tidx < ArrLen(&tiles); ++tidx) {
-                if (TileIdEq(neighbor, ArrGet(&tiles, tidx))) {
-                    exists = true;
-                    break;
+                if (TileIdEq(neighbor, start)) {
+                    continue;
+                }
+
+                Entity* maybe_neighbor = GridGetEntityAtTileId(grid, neighbor);
+                if (maybe_neighbor && maybe_neighbor->state == STATE_ALIVE) {
+                    continue;
+                }
+
+                bool exists = false;
+                for (isize tidx = 0; tidx < ArrLen(&tiles); ++tidx) {
+                    if (TileIdEq(neighbor, ArrGet(&tiles, tidx))) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists) {
+                    ArrPush(&tiles, neighbor);
+                    ArrPush(&next_queue, neighbor);
                 }
             }
-
-            if (!exists) {
-                ArrPush(&tiles, neighbor);
-            }
         }
+
+        ArrClear(&queue);
+        TileIdArr temp = queue;
+        queue = next_queue;
+        next_queue = temp;
     }
 
     MoveRange range = {.reachable = tiles};
