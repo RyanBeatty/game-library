@@ -5076,7 +5076,10 @@ typedef struct {
     TileId finish;
 } Path;
 
-// TODO: Add path generation.
+// Note: Contains no pathing info. Generate this later.
+typedef struct {
+    TileIdArr reachable;
+} MoveRange;
 
 typedef enum {
     BTXN_NONE = 0,
@@ -5118,6 +5121,9 @@ typedef enum {
 } BattleOutcome;
 
 typedef struct {
+    // Used to own memory that lives for the duration of a turn (which can be over many frames).
+    Arena turn_arena;
+
     BattlePhase phase;
 
     Grid grid;
@@ -5131,12 +5137,15 @@ typedef struct {
     BattleOutcome outcome;
 
     BattleTxnArr txns;
+
+    MoveRange range;  // Range for the current turn entity.
 } BattleState;
 
 static void BattleInit(BattleState* battle, Arena* perm) {
     static BattleState ZERO = {0};
     *battle = ZERO;
 
+    battle->turn_arena = NewSubArena(perm, MB(1));
     InitArr(&battle->turns, perm, EntityId, 10);
     InitArr(&battle->party_ids, perm, EntityId, 10);
     InitArr(&battle->enemy_ids, perm, EntityId, 10);
@@ -5144,6 +5153,7 @@ static void BattleInit(BattleState* battle, Arena* perm) {
 }
 
 static void BattleRestart(BattleState* battle, f32 renderw_world, f32 renderh_world) {
+    ArenaClear(&battle->turn_arena);
     GridInit(&battle->grid, renderw_world, renderh_world);
     ArrClear(&battle->turns);
     ArrClear(&battle->party_ids);
@@ -5151,11 +5161,6 @@ static void BattleRestart(BattleState* battle, f32 renderw_world, f32 renderh_wo
     ArrClear(&battle->txns);
     battle->phase = BATTLE_PLAYING;
 }
-
-// Note: Contains no pathing info. Generate this later.
-typedef struct {
-    TileIdArr reachable;
-} MoveRange;
 
 static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* perm) {
     TileId start = TileIdFromVec3(e->pos);
@@ -5349,7 +5354,14 @@ static void BattleEndTurn(BattleState* battle) {
     turn_entity->move_ap = 1;
     turn_entity->attack_ap = 1;
 
+    ArenaClear(&battle->turn_arena);
+
     ++battle->turns_idx;
+    if (battle->turns_idx < ArrLen(&battle->turns)) {
+        // Entity* new_turn_entity = BattleGetTurnEntity(battle);
+        // Assert(new_turn_entity);
+        // battle->range = BattleGenerateMoveRange(battle, new_turn_entity, )
+    }
 
     bool player_found = false;
     bool enemy_found = false;

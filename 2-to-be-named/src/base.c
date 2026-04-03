@@ -23,6 +23,7 @@ Arena NewArena(byte* buffer, isize cap) {
     a.beg = buffer;
     Assert(a.beg != NULL);
     a.end = a.beg + cap;
+    a.beg_orig = a.beg;
     return a;
 }
 
@@ -30,6 +31,7 @@ Arena NewSubArena(Arena* perm, isize cap) {
     Arena arena = {0};
     arena.beg = New(perm, cap, byte);
     arena.end = arena.beg + cap;
+    arena.beg_orig = arena.beg;
     return arena;
 }
 

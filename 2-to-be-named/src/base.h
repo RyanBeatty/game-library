@@ -80,12 +80,14 @@ typedef struct {
     // TODO: I might want to include a stable pointer to the start if I ever want to free() arenas.
     byte* beg;
     byte* end;
+    byte* beg_orig;  // The original unaltered beginning pointer. Set beg to this to reset/"free" the arena.
 } Arena;
 
 void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment);
 Arena NewArena(byte* buffer, isize cap);
 Arena NewSubArena(Arena* perm, isize count);
 #define TempArena(a) ((a))
+#define ArenaClear(a) ((a)->beg = (a)->beg_orig)
 
 // :a = arena, :count = num elems to alloc, :type = type to allocate
 #define New(a, count, type) ((type*)ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
