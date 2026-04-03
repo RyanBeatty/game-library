@@ -5122,18 +5122,14 @@ typedef struct {
 
     Grid grid;
 
-    EntityId turns_buffer[10];
     EntityIdArr turns;
     isize turns_idx;
 
-    EntityId party_ids_buffer[10];
     EntityIdArr party_ids;
-    EntityId enemy_ids_buffer[10];
     EntityIdArr enemy_ids;
 
     BattleOutcome outcome;
 
-    BattleTxn txns_buffer[100];
     BattleTxnArr txns;
 } BattleState;
 
