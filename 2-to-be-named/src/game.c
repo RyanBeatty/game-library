@@ -5021,6 +5021,10 @@ static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
     return e;
 }
 
+static Entity* GridGetEntityAtTileId(Grid* grid, TileId tile) {
+    return GridGetEntityAtTile(grid, GridTileFromId(grid, tile));
+}
+
 static void GridPlaceEntity(Grid* grid, Entity* e, TileId dest_id) {
     Tile* dest = GridTileFromId(grid, dest_id);
     dest->occupant = e->id;
@@ -5196,6 +5200,11 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
         for (isize nidx = 0; nidx < ArrLen(&neighbors); ++nidx) {
             TileId neighbor = ArrGet(&neighbors, nidx);
 
+            Entity* maybe_neighbor = GridGetEntityAtTileId(grid, neighbor);
+            if (maybe_neighbor && maybe_neighbor->state == STATE_ALIVE) {
+                continue;
+            }
+
             bool exists = false;
             for (isize tidx = 0; tidx < ArrLen(&tiles); ++tidx) {
                 if (TileIdEq(neighbor, ArrGet(&tiles, tidx))) {
@@ -5358,9 +5367,9 @@ static void BattleEndTurn(BattleState* battle) {
 
     ++battle->turns_idx;
     if (battle->turns_idx < ArrLen(&battle->turns)) {
-        // Entity* new_turn_entity = BattleGetTurnEntity(battle);
-        // Assert(new_turn_entity);
-        // battle->range = BattleGenerateMoveRange(battle, new_turn_entity, )
+        Entity* new_turn_entity = BattleGetTurnEntity(battle);
+        Assert(new_turn_entity);
+        battle->range = BattleGenerateMoveRange(battle, new_turn_entity, &battle->turn_arena);
     }
 
     bool player_found = false;
