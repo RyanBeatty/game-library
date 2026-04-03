@@ -4897,7 +4897,7 @@ typedef struct {
 
 #define TileIdFromVec3(v) ((TileId){.r = (v).y, .c = (v).x, .height = (v).z})
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
-static bool TileIdVec3Eq(TileId id, Vec3 pos) { return id.r == pos.y && id.c == pos.x && id.height == pos.z; }
+#define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
 
 typedef struct {
     Vec3 pos;
@@ -5148,6 +5148,73 @@ static void BattleInit(BattleState* battle, f32 renderw_world, f32 renderh_world
     InitArrS(&battle->enemy_ids, battle->enemy_ids_buffer, ArraySizeOf(battle->enemy_ids_buffer));
     InitArrS(&battle->txns, battle->txns_buffer, ArraySizeOf(battle->txns_buffer));
     battle->phase = BATTLE_PLAYING;
+}
+
+// Note: Contains no pathing info. Generate this later.
+typedef struct {
+    TileIdArr reachable;
+} MoveRange;
+
+static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* perm) {
+    TileId start = TileIdFromVec3(e->pos);
+
+    Grid* grid = &battle->grid;
+    Assert(GridValidTileId(grid, start));
+    TileIdArr tiles = {0};
+    InitArr(&tiles, perm, TileId, 20);
+
+    i32 max_distance = e->base_speed;
+    for (i32 cur_distance = 0; cur_distance < max_distance; ++cur_distance) {
+        TileId neighbors_buffer[4] = {0};
+        TileIdArr neighbors = {0};
+        InitArrS(&neighbors, neighbors_buffer, ArraySizeOf(neighbors_buffer));
+
+        TileId right = {.r = start.r, .c = start.c + 1, .height = start.height};
+        TileId left = {.r = start.r, .c = start.c - 1, .height = start.height};
+        TileId up = {.r = start.r + 1, .c = start.c, .height = start.height};
+        TileId down = {.r = start.r - 1, .c = start.c, .height = start.height};
+        if (GridValidTileId(grid, right)) {
+            ArrPush(&neighbors, right);
+        }
+        if (GridValidTileId(grid, left)) {
+            ArrPush(&neighbors, left);
+        }
+        if (GridValidTileId(grid, up)) {
+            ArrPush(&neighbors, up);
+        }
+        if (GridValidTileId(grid, down)) {
+            ArrPush(&neighbors, down);
+        }
+
+        for (isize nidx = 0; nidx < ArrLen(&neighbors); ++nidx) {
+            TileId neighbor = ArrGet(&neighbors, nidx);
+
+            bool exists = false;
+            for (isize tidx = 0; tidx < ArrLen(&tiles); ++tidx) {
+                if (TileIdEq(neighbor, ArrGet(&tiles, tidx))) {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists) {
+                ArrPush(&tiles, neighbor);
+            }
+        }
+    }
+
+    MoveRange range = {.reachable = tiles};
+    return range;
+}
+
+static bool MoveRangeCanReach(MoveRange* range, TileId dest) {
+    for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
+        if (TileIdEq(ArrGet(&range->reachable, i), dest)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static void BattleSpawnEntity(BattleState* battle, Entity* e, TileId tileid) {

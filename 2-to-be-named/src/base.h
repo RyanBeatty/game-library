@@ -91,11 +91,11 @@ Arena NewSubArena(Arena* perm, isize count);
 #define New(a, count, type) ((type*)ArenaAlloc((a), (count), sizeof(type), _Alignof(type)))
 
 // Init array static. Inits a static buffer.
-#define InitArrS(s, d, c) \
-    do {                  \
-        (s)->data = (d);  \
-        (s)->len = 0;     \
-        (s)->cap = (c);   \
+#define InitArrS(array, _buffer, _cap) \
+    do {                               \
+        (array)->data = (_buffer);     \
+        (array)->len = 0;              \
+        (array)->cap = (_cap);         \
     } while (0)
 
 // Init static array. :buf is the buffer variable, :arena is a pointer to arena to allocate storage on. :ElemType is the
