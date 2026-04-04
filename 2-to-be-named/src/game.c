@@ -5125,9 +5125,18 @@ typedef enum {
     OUTCOME_LOSS,
 } BattleOutcome;
 
+typedef enum {
+    PLAYER_TURN_STATE_NONE = 0,
+    PLAYER_TURN_STATE_IDLE,  // Nothing selected at start of turn.
+    PLAYER_TURN_STATE_MOVE_SELECTED,
+    PLAYER_TURN_STATE_ATTACK_SELECTED,
+} PlayerTurnState;
+
 typedef struct {
     // Used to own memory that lives for the duration of a turn (which can be over many frames).
     Arena turn_arena;
+
+    PlayerTurnState player_turn_state;
 
     BattlePhase phase;
 
@@ -5165,6 +5174,8 @@ static void BattleRestart(BattleState* battle, f32 renderw_world, f32 renderh_wo
     ArrClear(&battle->enemy_ids);
     ArrClear(&battle->txns);
     battle->phase = BATTLE_PLAYING;
+    battle->outcome = OUTCOME_WIN;
+    battle->player_turn_state = PLAYER_TURN_STATE_NONE;
 }
 
 static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* perm) {
@@ -5386,6 +5397,17 @@ static Entity* BattleGetTurnEntity(BattleState* battle) {
     return e;
 }
 
+static void BattleBeginTurn(BattleState* battle) {
+    Entity* e = BattleGetTurnEntity(battle);
+    Assert(e);
+
+    battle->player_turn_state = PLAYER_TURN_STATE_NONE;
+
+    if (e->team == TEAM_PLAYER) {
+        battle->player_turn_state = PLAYER_TURN_STATE_IDLE;
+    }
+}
+
 static void BattleEndTurn(BattleState* battle) {
     Entity* turn_entity = BattleGetTurnEntity(battle);
     Assert(turn_entity);
@@ -5414,6 +5436,8 @@ static void BattleEndTurn(BattleState* battle) {
     } else if (!enemy_found) {
         battle->phase = BATTLE_END;
         battle->outcome = OUTCOME_WIN;
+    } else if (player_found && enemy_found) {
+        BattleBeginTurn(battle);
     }
 }
 
@@ -5917,9 +5941,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                      load_action, GetScreenRenderTarget()) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
                     UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
-                        if (UIButton(&ui, Str8FromC("End Turn"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE)
+                        UIFlag hide = battle->player_turn_state == PLAYER_TURN_STATE_NONE ? UI_FLAG_HIDE : UI_FLAG_NONE;
+                        if (UIButton(&ui, Str8FromC("End Turn"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
                                 .clicked) {
                             BattleEndTurn(battle);
+                        }
+
+                        if (UIButton(&ui, Str8FromC("Move"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
+                                .clicked) {
+                        }
+
+                        if (UIButton(&ui, Str8FromC("Attack"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
+                                .clicked) {
                         }
                     }
                 }
