@@ -5116,7 +5116,10 @@ typedef struct {
 
 typedef enum {
     BATTLE_INIT = 0,
+    BATTLE_END_ROUND,
+    BATTLE_BEGIN_TURN,
     BATTLE_PLAYING,
+    BATTLE_END_TURN,
     BATTLE_END,
 } BattlePhase;
 
@@ -5173,7 +5176,7 @@ static void BattleRestart(BattleState* battle, f32 renderw_world, f32 renderh_wo
     ArrClear(&battle->party_ids);
     ArrClear(&battle->enemy_ids);
     ArrClear(&battle->txns);
-    battle->phase = BATTLE_PLAYING;
+    battle->phase = BATTLE_END_ROUND;
     battle->outcome = OUTCOME_WIN;
     battle->player_turn_state = PLAYER_TURN_STATE_NONE;
 }
@@ -5386,6 +5389,7 @@ static void BattleEndRound(BattleState* battle) {
     }
 
     ArrClear(&battle->txns);
+    battle->phase = BATTLE_PLAYING;
 }
 
 static Entity* BattleGetTurnEntity(BattleState* battle) {
@@ -5437,7 +5441,10 @@ static void BattleEndTurn(BattleState* battle) {
         battle->phase = BATTLE_END;
         battle->outcome = OUTCOME_WIN;
     } else if (player_found && enemy_found) {
-        BattleBeginTurn(battle);
+        if (battle->turns_idx >= ArrLen(&battle->turns)) {
+            battle->phase = BATTLE_END_ROUND;
+        }
+        // BattleBeginTurn(battle);
     }
 }
 
@@ -5793,6 +5800,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 } else {
                     BattleEndRound(battle);
                 }
+                break;
+            }
+            case BATTLE_END_ROUND: {
+                BattleEndRound(battle);
                 break;
             }
             case BATTLE_END: {
