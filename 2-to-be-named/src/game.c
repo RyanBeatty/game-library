@@ -5470,6 +5470,11 @@ static void BattleMaybeEndTurn(BattleState* battle) {
 
     BattleResolveTxns(battle);
 
+    // This should probably be refined a bit more. Unclear to me what best strategy for detecing player turn transition
+    if (turn_entity->move_ap <= 0 && battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED) {
+        battle->player_turn_state = PLAYER_TURN_STATE_IDLE;
+    }
+
     if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
         battle->phase = BATTLE_END_TURN;
     }
@@ -5758,13 +5763,24 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Assert(turn_entity);
                 switch (turn_entity->team) {
                     case TEAM_PLAYER: {
-                        if (turn_entity->move_ap > 0) {
-                            if (controller->action_down.pressed) {
-                                BattleMoveToTile(battle, turn_entity, hovered_tile);
+                        switch (battle->player_turn_state) {
+                            case PLAYER_TURN_STATE_IDLE: {
+                                break;
                             }
-                        } else if (turn_entity->attack_ap == 1) {
-                            if (controller->action_down.pressed) {
-                                BattleAttackTile(battle, turn_entity, hovered_tile);
+                            case PLAYER_TURN_STATE_MOVE_SELECTED: {
+                                if (controller->action_down.pressed) {
+                                    BattleMoveToTile(battle, turn_entity, hovered_tile);
+                                }
+                                break;
+                            }
+                            case PLAYER_TURN_STATE_ATTACK_SELECTED: {
+                                if (controller->action_down.pressed) {
+                                    BattleAttackTile(battle, turn_entity, hovered_tile);
+                                }
+                                break;
+                            }
+                            default: {
+                                PlatformLog(LLOG_ERROR, "Unknown player turn state: %d", battle->player_turn_state);
                             }
                         }
                         break;
@@ -5918,6 +5934,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 {
                     Entity* turn_entity = BattleGetTurnEntity(battle);
                     MoveRange* range = &battle->range;
+                    bool move_selected = battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED;
 
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
@@ -5925,7 +5942,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             GraphicsInfo* graphics = &tile->graphics;
                             DrawGraphicsInfo2(graphics);
 
-                            if (MoveRangeCanReach(range, tile->id)) {
+                            if (move_selected && MoveRangeCanReach(range, tile->id)) {
                                 GraphicsInfo graphics2 = *graphics;
                                 graphics2.model.tint = LORANGE;
                                 DrawGraphicsInfo2(&graphics2);
@@ -6012,10 +6029,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         if (UIButton(&ui, Str8FromC("Move"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
                                 .clicked) {
+                            battle->player_turn_state = PLAYER_TURN_STATE_MOVE_SELECTED;
                         }
 
                         if (UIButton(&ui, Str8FromC("Attack"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
                                 .clicked) {
+                            battle->player_turn_state = PLAYER_TURN_STATE_ATTACK_SELECTED;
                         }
                     }
                 }
