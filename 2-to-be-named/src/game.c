@@ -5419,6 +5419,8 @@ static void BattleBeginTurn(BattleState* battle) {
     } else {
         battle->range = (MoveRange){0};
     }
+
+    battle->phase = BATTLE_PLAYING;
 }
 
 static void BattleEndTurn(BattleState* battle) {
@@ -5470,6 +5472,40 @@ static void BattleMaybeEndTurn(BattleState* battle) {
 
     if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
         battle->phase = BATTLE_END_TURN;
+    }
+}
+
+static void BattlePrintState(BattleState* battle) {
+    switch (battle->phase) {
+        case BATTLE_INIT: {
+            PlatformLog(LLOG_INFO, "BATTLE_INIT");
+            break;
+        }
+        case BATTLE_BEGIN_TURN: {
+            PlatformLog(LLOG_INFO, "BATTLE_BEGIN_TURN");
+            break;
+        }
+        case BATTLE_END_TURN: {
+            PlatformLog(LLOG_INFO, "BATTLE_END_TURN");
+            break;
+        }
+        case BATTLE_END: {
+            PlatformLog(LLOG_INFO, "BATTLE_END");
+            break;
+        }
+        case BATTLE_END_ROUND: {
+            PlatformLog(LLOG_INFO, "BATTLE_END_ROUND");
+            break;
+        }
+        case BATTLE_PLAYING: {
+            PlatformLog(LLOG_INFO, "BATTLE_PLAYING");
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown battle phase: %d", battle->phase);
+            Assert(0);
+            break;
+        }
     }
 }
 
@@ -5645,6 +5681,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->update) {
+        if (gstate->debug) {
+            BattlePrintState(battle);
+        }
+
         GameControllerState* controller = GetController(input, 0);
 
         Tile* hovered_tile = GridGetCursorHoverTile(grid, controller);
