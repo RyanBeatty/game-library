@@ -5369,6 +5369,7 @@ static void BattleResolveTxns(BattleState* battle) {
 }
 
 static void BattleEndRound(BattleState* battle) {
+    Assert(battle->phase == BATTLE_END_ROUND);
     ArrClear(&battle->turns);
     battle->turns_idx = 0;
 
@@ -5402,6 +5403,7 @@ static Entity* BattleGetTurnEntity(BattleState* battle) {
 }
 
 static void BattleBeginTurn(BattleState* battle) {
+    Assert(battle->phase == BATTLE_BEGIN_TURN);
     Entity* e = BattleGetTurnEntity(battle);
     Assert(e);
 
@@ -5413,6 +5415,7 @@ static void BattleBeginTurn(BattleState* battle) {
 }
 
 static void BattleEndTurn(BattleState* battle) {
+    Assert(battle->phase == BATTLE_END_TURN);
     Entity* turn_entity = BattleGetTurnEntity(battle);
     Assert(turn_entity);
     turn_entity->move_ap = 1;
@@ -5450,6 +5453,7 @@ static void BattleEndTurn(BattleState* battle) {
 }
 
 static void BattleMaybeEndTurn(BattleState* battle) {
+    Assert(battle->phase == BATTLE_PLAYING);
     Entity* turn_entity = BattleGetTurnEntity(battle);
     Assert(turn_entity);
 
@@ -5959,6 +5963,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
                     UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
                         UIFlag hide = battle->player_turn_state == PLAYER_TURN_STATE_NONE ? UI_FLAG_HIDE : UI_FLAG_NONE;
+                        PlatformLog(LLOG_INFO, "hide %d, turn_state %d", hide, battle->player_turn_state);
                         if (UIButton(&ui, Str8FromC("End Turn"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
                                 .clicked) {
                             BattleEndTurn(battle);
