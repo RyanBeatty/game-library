@@ -5474,6 +5474,9 @@ static void BattleMaybeEndTurn(BattleState* battle) {
     if (turn_entity->move_ap <= 0 && battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED) {
         battle->player_turn_state = PLAYER_TURN_STATE_IDLE;
     }
+    if (turn_entity->attack_ap <= 0 && battle->player_turn_state == PLAYER_TURN_STATE_ATTACK_SELECTED) {
+        battle->player_turn_state = PLAYER_TURN_STATE_IDLE;
+    }
 
     if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
         battle->phase = BATTLE_END_TURN;
@@ -6034,17 +6037,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
 
                             {
-                                UIFlag hide = turn_entity->move_ap <= 0 ? UI_FLAG_HIDE : UI_FLAG_NONE;
-                                if (UIButton(&ui, Str8FromC("Move"),
-                                             UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
-                                        .clicked) {
+                                UIFlag clickable = turn_entity->move_ap > 0 ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                                if (UIButton(&ui, Str8FromC("Move"), UI_FLAG_ABLE_TO_BE_CLICKED | clickable).clicked) {
                                     battle->player_turn_state = PLAYER_TURN_STATE_MOVE_SELECTED;
                                 }
                             }
 
-                            if (UIButton(&ui, Str8FromC("Attack"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE)
-                                    .clicked) {
-                                battle->player_turn_state = PLAYER_TURN_STATE_ATTACK_SELECTED;
+                            {
+                                UIFlag clickable = turn_entity->attack_ap > 0 ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                                if (UIButton(&ui, Str8FromC("Attack"), UI_FLAG_ABLE_TO_BE_CLICKED | clickable)
+                                        .clicked) {
+                                    battle->player_turn_state = PLAYER_TURN_STATE_ATTACK_SELECTED;
+                                }
                             }
                         }
                     }
