@@ -5444,10 +5444,12 @@ static void BattleEndTurn(BattleState* battle) {
         battle->phase = BATTLE_END;
         battle->outcome = OUTCOME_WIN;
     } else if (player_found && enemy_found) {
+        battle->player_turn_state = PLAYER_TURN_STATE_NONE;
+
         if (battle->turns_idx >= ArrLen(&battle->turns)) {
             battle->phase = BATTLE_END_ROUND;
         } else {
-            battle->phase = BATTLE_PLAYING;
+            battle->phase = BATTLE_BEGIN_TURN;
         }
     }
 }
