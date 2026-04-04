@@ -6021,18 +6021,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                      load_action, GetScreenRenderTarget()) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
                     UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
-                        UIFlag hide = battle->player_turn_state == PLAYER_TURN_STATE_NONE ? UI_FLAG_HIDE : UI_FLAG_NONE;
-                        if (UIButton(&ui, Str8FromC("End Turn"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
+                        UIFlag hide_all =
+                            battle->player_turn_state == PLAYER_TURN_STATE_NONE ? UI_FLAG_HIDE : UI_FLAG_NONE;
+                        if (UIButton(&ui, Str8FromC("End Turn"),
+                                     UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide_all)
                                 .clicked) {
                             battle->phase = BATTLE_END_TURN;
                         }
 
-                        if (UIButton(&ui, Str8FromC("Move"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
+                        if (UIButton(&ui, Str8FromC("Move"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide_all)
                                 .clicked) {
                             battle->player_turn_state = PLAYER_TURN_STATE_MOVE_SELECTED;
                         }
 
-                        if (UIButton(&ui, Str8FromC("Attack"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
+                        if (UIButton(&ui, Str8FromC("Attack"),
+                                     UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide_all)
                                 .clicked) {
                             battle->player_turn_state = PLAYER_TURN_STATE_ATTACK_SELECTED;
                         }
