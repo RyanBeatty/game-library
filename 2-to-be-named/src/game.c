@@ -5411,6 +5411,13 @@ static void BattleBeginTurn(BattleState* battle) {
 
     if (e->team == TEAM_PLAYER) {
         battle->player_turn_state = PLAYER_TURN_STATE_IDLE;
+
+        // TODO: The battle system should probably do this automatically and not every frame.
+        // Move this to happen on turn *start*. Since we don't end a turn to start the battle,
+        // the first turn entity would otherwise not get this calculated.
+        battle->range = BattleGenerateMoveRange(battle, e, &battle->turn_arena);
+    } else {
+        battle->range = (MoveRange){0};
     }
 }
 
@@ -5711,13 +5718,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Assert(turn_entity);
                 switch (turn_entity->team) {
                     case TEAM_PLAYER: {
-                        if (turn_entity->move_ap > 0) {
-                            // TODO: The battle system should probably do this automatically and not every frame.
-                            // Move this to happen on turn *start*. Since we don't end a turn to start the battle,
-                            // the first turn entity would otherwise not get this calculated.
-                            battle->range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
-                        }
-
                         if (turn_entity->move_ap > 0) {
                             if (controller->action_down.pressed) {
                                 BattleMoveToTile(battle, turn_entity, hovered_tile);
