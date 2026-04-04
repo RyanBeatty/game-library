@@ -6037,14 +6037,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
 
                             {
-                                UIFlag clickable = turn_entity->move_ap > 0 ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                                UIFlag clickable = turn_entity->move_ap > 0 &&
+                                                           battle->player_turn_state != PLAYER_TURN_STATE_MOVE_SELECTED
+                                                       ? UI_FLAG_CLICKABLE
+                                                       : UI_FLAG_NONE;
                                 if (UIButton(&ui, Str8FromC("Move"), UI_FLAG_ABLE_TO_BE_CLICKED | clickable).clicked) {
                                     battle->player_turn_state = PLAYER_TURN_STATE_MOVE_SELECTED;
                                 }
                             }
 
                             {
-                                UIFlag clickable = turn_entity->attack_ap > 0 ? UI_FLAG_CLICKABLE : UI_FLAG_NONE;
+                                UIFlag clickable = turn_entity->attack_ap > 0 && battle->player_turn_state !=
+                                                                                     PLAYER_TURN_STATE_ATTACK_SELECTED
+                                                       ? UI_FLAG_CLICKABLE
+                                                       : UI_FLAG_NONE;
                                 if (UIButton(&ui, Str8FromC("Attack"), UI_FLAG_ABLE_TO_BE_CLICKED | clickable)
                                         .clicked) {
                                     battle->player_turn_state = PLAYER_TURN_STATE_ATTACK_SELECTED;
