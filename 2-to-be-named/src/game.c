@@ -5420,7 +5420,6 @@ static void BattleEndTurn(BattleState* battle) {
 
     ArenaClear(&battle->turn_arena);
 
-    breakpoint();
     ++battle->turns_idx;
 
     bool player_found = false;
@@ -5457,7 +5456,6 @@ static void BattleMaybeEndTurn(BattleState* battle) {
     BattleResolveTxns(battle);
 
     if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
-        breakpoint();
         battle->phase = BATTLE_END_TURN;
     }
 }
@@ -5808,6 +5806,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
             case BATTLE_END_TURN: {
                 BattleEndTurn(battle);
+                break;
+            }
+            case BATTLE_BEGIN_TURN: {
+                BattleBeginTurn(battle);
                 break;
             }
             case BATTLE_END: {
