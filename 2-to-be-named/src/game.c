@@ -5390,7 +5390,7 @@ static void BattleEndRound(BattleState* battle) {
     }
 
     ArrClear(&battle->txns);
-    battle->phase = BATTLE_PLAYING;
+    battle->phase = BATTLE_BEGIN_TURN;
 }
 
 static Entity* BattleGetTurnEntity(BattleState* battle) {
