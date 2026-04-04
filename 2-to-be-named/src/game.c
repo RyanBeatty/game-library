@@ -5965,10 +5965,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
                     UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
                         UIFlag hide = battle->player_turn_state == PLAYER_TURN_STATE_NONE ? UI_FLAG_HIDE : UI_FLAG_NONE;
-                        PlatformLog(LLOG_INFO, "hide %d, turn_state %d", hide, battle->player_turn_state);
                         if (UIButton(&ui, Str8FromC("End Turn"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
                                 .clicked) {
-                            BattleEndTurn(battle);
+                            battle->phase = BATTLE_END_TURN;
                         }
 
                         if (UIButton(&ui, Str8FromC("Move"), UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE | hide)
