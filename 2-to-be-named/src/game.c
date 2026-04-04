@@ -5420,6 +5420,7 @@ static void BattleEndTurn(BattleState* battle) {
 
     ArenaClear(&battle->turn_arena);
 
+    breakpoint();
     ++battle->turns_idx;
 
     bool player_found = false;
@@ -5443,8 +5444,9 @@ static void BattleEndTurn(BattleState* battle) {
     } else if (player_found && enemy_found) {
         if (battle->turns_idx >= ArrLen(&battle->turns)) {
             battle->phase = BATTLE_END_ROUND;
+        } else {
+            battle->phase = BATTLE_PLAYING;
         }
-        // BattleBeginTurn(battle);
     }
 }
 
@@ -5455,7 +5457,8 @@ static void BattleMaybeEndTurn(BattleState* battle) {
     BattleResolveTxns(battle);
 
     if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
-        BattleEndTurn(battle);
+        breakpoint();
+        battle->phase = BATTLE_END_TURN;
     }
 }
 
@@ -5701,109 +5704,110 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
             case BATTLE_PLAYING: {
                 Entity* turn_entity = BattleGetTurnEntity(battle);
-                if (turn_entity) {
-                    switch (turn_entity->team) {
-                        case TEAM_PLAYER: {
-                            if (turn_entity->move_ap > 0) {
-                                // TODO: The battle system should probably do this automatically and not every frame.
-                                // Move this to happen on turn *start*. Since we don't end a turn to start the battle,
-                                // the first turn entity would otherwise not get this calculated.
-                                battle->range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
-                            }
-
-                            if (turn_entity->move_ap > 0) {
-                                if (controller->action_down.pressed) {
-                                    BattleMoveToTile(battle, turn_entity, hovered_tile);
-                                }
-                            } else if (turn_entity->attack_ap == 1) {
-                                if (controller->action_down.pressed) {
-                                    BattleAttackTile(battle, turn_entity, hovered_tile);
-                                }
-                            }
-                            break;
+                Assert(turn_entity);
+                switch (turn_entity->team) {
+                    case TEAM_PLAYER: {
+                        if (turn_entity->move_ap > 0) {
+                            // TODO: The battle system should probably do this automatically and not every frame.
+                            // Move this to happen on turn *start*. Since we don't end a turn to start the battle,
+                            // the first turn entity would otherwise not get this calculated.
+                            battle->range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
                         }
-                        case TEAM_ENEMY: {
-                            Entity* target = NULL;
-                            for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
-                                Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
-                                if (e->state != STATE_DEAD) {
-                                    target = e;
-                                    break;
-                                }
-                            }
-                            Assert(target);
-                            TileId target_tileid = TileIdFromVec3(target->pos);
-                            Tile* target_tile = GridTileFromId(grid, target_tileid);
 
-                            TileId id = TileIdFromVec3(turn_entity->pos);
-                            TileId buffer[4] = {0};
-                            TileIdArr possible;
-                            InitArrS(&possible, buffer, ArraySizeOf(buffer));
-
-                            {
-                                TileId new_id = (TileId){.r = id.r + 1, .c = id.c, .height = id.height};
-                                Tile* tile = GridMaybeTileFromId(grid, new_id);
-                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, new_id);
-                                }
+                        if (turn_entity->move_ap > 0) {
+                            if (controller->action_down.pressed) {
+                                BattleMoveToTile(battle, turn_entity, hovered_tile);
                             }
-                            {
-                                TileId new_id = (TileId){.r = id.r - 1, .c = id.c, .height = id.height};
-                                Tile* tile = GridMaybeTileFromId(grid, new_id);
-                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, new_id);
-                                }
+                        } else if (turn_entity->attack_ap == 1) {
+                            if (controller->action_down.pressed) {
+                                BattleAttackTile(battle, turn_entity, hovered_tile);
                             }
-                            {
-                                TileId new_id = (TileId){.r = id.r, .c = id.c + 1, .height = id.height};
-                                Tile* tile = GridMaybeTileFromId(grid, new_id);
-                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, new_id);
-                                }
-                            }
-                            {
-                                TileId new_id = (TileId){.r = id.r, .c = id.c - 1, .height = id.height};
-                                Tile* tile = GridMaybeTileFromId(grid, new_id);
-                                if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
-                                    ArrPush(&possible, new_id);
-                                }
-                            }
-
-                            Tile* dest = NULL;
-                            if (ArrLen(&possible) > 0) {
-                                i32 best_score = I32_MAX;
-
-                                for (isize i = 0; i < ArrLen(&possible); ++i) {
-                                    TileId potential = ArrGet(&possible, i);
-                                    i32 score =
-                                        i32abs(potential.r - target_tileid.r) + i32abs(potential.c - target_tileid.c);
-                                    if (score < best_score) {
-                                        best_score = score;
-                                        dest = GridTileFromId(grid, potential);
-                                    }
-                                }
-                            }
-
-                            BattleMoveToTile(battle, turn_entity, dest);
-                            BattleAttackTile(battle, turn_entity, target_tile);
-                            // TODO: We should have the game logic determine if turn should be ended I think. Otherwise
-                            // will get into weird states where we need to detect when enemy AI should end turn.
-                            turn_entity->attack_ap--;
-                            break;
                         }
-                        default: {
-                            Assert(0);
-                        }
+                        break;
                     }
+                    case TEAM_ENEMY: {
+                        Entity* target = NULL;
+                        for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
+                            Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
+                            if (e->state != STATE_DEAD) {
+                                target = e;
+                                break;
+                            }
+                        }
+                        Assert(target);
+                        TileId target_tileid = TileIdFromVec3(target->pos);
+                        Tile* target_tile = GridTileFromId(grid, target_tileid);
 
-                    BattleMaybeEndTurn(battle);
-                } else {
-                    BattleEndRound(battle);
+                        TileId id = TileIdFromVec3(turn_entity->pos);
+                        TileId buffer[4] = {0};
+                        TileIdArr possible;
+                        InitArrS(&possible, buffer, ArraySizeOf(buffer));
+
+                        {
+                            TileId new_id = (TileId){.r = id.r + 1, .c = id.c, .height = id.height};
+                            Tile* tile = GridMaybeTileFromId(grid, new_id);
+                            if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                ArrPush(&possible, new_id);
+                            }
+                        }
+                        {
+                            TileId new_id = (TileId){.r = id.r - 1, .c = id.c, .height = id.height};
+                            Tile* tile = GridMaybeTileFromId(grid, new_id);
+                            if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                ArrPush(&possible, new_id);
+                            }
+                        }
+                        {
+                            TileId new_id = (TileId){.r = id.r, .c = id.c + 1, .height = id.height};
+                            Tile* tile = GridMaybeTileFromId(grid, new_id);
+                            if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                ArrPush(&possible, new_id);
+                            }
+                        }
+                        {
+                            TileId new_id = (TileId){.r = id.r, .c = id.c - 1, .height = id.height};
+                            Tile* tile = GridMaybeTileFromId(grid, new_id);
+                            if (tile && GridGetEntityAtTile(grid, tile) == NULL) {
+                                ArrPush(&possible, new_id);
+                            }
+                        }
+
+                        Tile* dest = NULL;
+                        if (ArrLen(&possible) > 0) {
+                            i32 best_score = I32_MAX;
+
+                            for (isize i = 0; i < ArrLen(&possible); ++i) {
+                                TileId potential = ArrGet(&possible, i);
+                                i32 score =
+                                    i32abs(potential.r - target_tileid.r) + i32abs(potential.c - target_tileid.c);
+                                if (score < best_score) {
+                                    best_score = score;
+                                    dest = GridTileFromId(grid, potential);
+                                }
+                            }
+                        }
+
+                        BattleMoveToTile(battle, turn_entity, dest);
+                        BattleAttackTile(battle, turn_entity, target_tile);
+                        // TODO: We should have the game logic determine if turn should be ended I think. Otherwise
+                        // will get into weird states where we need to detect when enemy AI should end turn.
+                        turn_entity->attack_ap--;
+                        break;
+                    }
+                    default: {
+                        Assert(0);
+                    }
                 }
+
+                BattleMaybeEndTurn(battle);
                 break;
             }
             case BATTLE_END_ROUND: {
                 BattleEndRound(battle);
+                break;
+            }
+            case BATTLE_END_TURN: {
+                BattleEndTurn(battle);
                 break;
             }
             case BATTLE_END: {
