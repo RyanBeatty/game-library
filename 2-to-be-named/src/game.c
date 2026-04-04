@@ -5249,6 +5249,10 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
 }
 
 static bool MoveRangeCanReach(MoveRange* range, TileId dest) {
+    if (range == NULL) {
+        return false;
+    }
+
     for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
         if (TileIdEq(ArrGet(&range->reachable, i), dest)) {
             return true;
@@ -5669,10 +5673,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 if (turn_entity) {
                     switch (turn_entity->team) {
                         case TEAM_PLAYER: {
-                            // TODO: The battle system should probably do this automatically and not every frame. Move
-                            // this to happen on turn *start*. Since we don't end a turn to start the battle, the first
-                            // turn entity would otherwise not get this calculated.
-                            battle->range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
+                            if (turn_entity->move_ap > 0) {
+                                // TODO: The battle system should probably do this automatically and not every frame.
+                                // Move this to happen on turn *start*. Since we don't end a turn to start the battle,
+                                // the first turn entity would otherwise not get this calculated.
+                                battle->range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
+                            }
 
                             if (turn_entity->move_ap > 0) {
                                 if (controller->action_down.pressed) {
