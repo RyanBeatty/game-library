@@ -6028,6 +6028,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     bool move_selected = battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED;
                     bool attack_selected = battle->player_turn_state == PLAYER_TURN_STATE_ATTACK_SELECTED;
 
+                    // Draw base grid.
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
                             Tile* tile = GridGetTile(grid, r, c);
@@ -6036,6 +6037,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
+                    // Draw move range viz.
                     if (move_selected) {
                         for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
                             TileId tileid = ArrGet(&range->reachable, i);
@@ -6046,6 +6048,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
+                    // Draw attack range viz.
                     if (attack_selected) {
                         AttackRange attack_range =
                             BattleGenerateAttackRange(battle, TileIdFromVec3(turn_entity->pos), &gstate->temp);
@@ -6059,6 +6062,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
+                    // Draw player chars.
                     for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
                         Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
                         if (TestFlag(e->flags, EFLAG_DRAW)) {
@@ -6071,6 +6075,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
+                    // Draw enemies.
                     for (isize i = 0; i < ArrLen(&battle->enemy_ids); ++i) {
                         Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
                         if (TestFlag(e->flags, EFLAG_DRAW)) {
