@@ -6077,7 +6077,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TileId tileid = ArrGet(&range->reachable, i);
                             Tile* tile = GridTileFromId(grid, tileid);
                             GraphicsInfo graphics = tile->graphics;
-                            graphics.model.tint = Vec4Lit(LORANGE.r, LORANGE.g, LORANGE.b, 0.6f);
+                            graphics.model.tint = Vec4Lit(LBLUE.r, LBLUE.g, LBLUE.b, 0.6f);
                             DrawGraphicsInfo2(&graphics);
                         }
 
@@ -6085,7 +6085,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TileId tileid = ArrGet(&attack_range.reachable, i);
                             Tile* tile = GridTileFromId(grid, tileid);
                             GraphicsInfo graphics = tile->graphics;
-                            graphics.model.tint = Vec4Lit(LRED.r, LRED.g, LRED.b, 0.2f);
+                            graphics.model.tint = Vec4Lit(LRED.r, LRED.g, LRED.b, 0.4f);
                             DrawGraphicsInfo2(&graphics);
                         }
                     }
