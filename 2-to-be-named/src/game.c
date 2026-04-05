@@ -4997,6 +4997,13 @@ static Vec3 GridGetTilePosBL(Grid* grid, TileId tileid) {
     return pos;
 }
 
+static Vec3 GridGetTilePosBR(Grid* grid, TileId tileid) {
+    Vec3 pos = TileIdtoVec3(tileid);
+    pos.x += 0.5f;
+    pos.y -= 0.5f;
+    return pos;
+}
+
 static Vec3 GridPosToWorld(Grid* grid, Vec3 pos) { return Vec3WTransform(pos, grid->grid_to_world); }
 
 // Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
@@ -6078,8 +6085,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             {
                                 TileId tileid = TileIdFromVec3(e->pos);
                                 Vec3 bl_grid = GridGetTilePosBL(grid, tileid);
-                                Vec3 bl_world = GridPosToWorld(grid, bl_grid);
-                                DrawAABB(bl_world, Vec3Lit(1.0f, 1.0f, 1.0f), LGREEN);
+                                Vec3 br_grid = GridGetTilePosBR(grid, tileid);
+                                Vec3 center = GridPosToWorld(grid, Vec3Lerp(bl_grid, br_grid, 0.5f));
+                                f32 height = 4.0f;
+                                center.y += 0.5f * height;
+                                DrawAABB(center, Vec3Lit(grid->scale.x, height, 1.0f), LGREEN);
                             }
                         }
                     }
