@@ -6034,6 +6034,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     bool move_selected = battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED;
                     bool attack_selected = battle->player_turn_state == PLAYER_TURN_STATE_ATTACK_SELECTED;
 
+                    Tile* maybe_hover_tile = GridGetCursorHoverTile(grid, controller);
+
                     // Draw base grid.
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
@@ -6066,11 +6068,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     // Draw move range viz.
                     if (move_selected) {
-                        Tile* maybe_attack_tile = GridGetCursorHoverTile(grid, controller);
                         AttackRange attack_range = {0};
 
-                        if (maybe_attack_tile) {
-                            attack_range = BattleGenerateAttackRange(battle, maybe_attack_tile->id, &gstate->temp);
+                        if (maybe_hover_tile) {
+                            attack_range = BattleGenerateAttackRange(battle, maybe_hover_tile->id, &gstate->temp);
                         }
 
                         for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
@@ -6102,6 +6103,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             graphics.model.tint = Vec4Lit(LRED.r, LRED.g, LRED.b, 0.2f);
                             DrawGraphicsInfo2(&graphics);
                         }
+                    }
+
+                    if (maybe_hover_tile) {
+                        GraphicsInfo graphics = maybe_hover_tile->graphics;
+                        graphics.model.tint = Vec4Lit(LWHITE.r, LWHITE.g, LWHITE.b, 0.4f);
+                        DrawGraphicsInfo2(&graphics);
                     }
                 }
 
