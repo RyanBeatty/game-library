@@ -6027,20 +6027,24 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     MoveRange* range = &battle->range;
                     bool move_selected = battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED;
                     bool attack_selected = battle->player_turn_state == PLAYER_TURN_STATE_ATTACK_SELECTED;
-                    AttackRange attack_range =
-                        BattleGenerateAttackRange(battle, TileIdFromVec3(turn_entity->pos), &gstate->temp);
+                    // AttackRange attack_range =
+                    //     BattleGenerateAttackRange(battle, TileIdFromVec3(turn_entity->pos), &gstate->temp);
 
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
                             Tile* tile = GridGetTile(grid, r, c);
                             GraphicsInfo* graphics = &tile->graphics;
                             DrawGraphicsInfo2(graphics);
+                        }
+                    }
 
-                            if (move_selected && MoveRangeCanReach(range, tile->id)) {
-                                GraphicsInfo graphics2 = *graphics;
-                                graphics2.model.tint = LORANGE;
-                                DrawGraphicsInfo2(&graphics2);
-                            }
+                    if (move_selected) {
+                        for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
+                            TileId tileid = ArrGet(&range->reachable, i);
+                            Tile* tile = GridTileFromId(grid, tileid);
+                            GraphicsInfo graphics = tile->graphics;
+                            graphics.model.tint = LORANGE;
+                            DrawGraphicsInfo2(&graphics);
                         }
                     }
 
