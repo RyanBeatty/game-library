@@ -5778,6 +5778,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     Grid* grid = GameStateGetGrid(gstate);
     BattleState* battle = &gstate->battle;
 
+    GameControllerState* controller = GetController(input, 0);
+
     if (gstate->init) {
         BattleInit(battle, &gstate->perm);
     }
@@ -5786,8 +5788,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         if (gstate->debug) {
             BattlePrintState(battle);
         }
-
-        GameControllerState* controller = GetController(input, 0);
 
         Tile* hovered_tile = GridGetCursorHoverTile(grid, controller);
 
@@ -6066,11 +6066,26 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     // Draw move range viz.
                     if (move_selected) {
+                        Tile* maybe_attack_tile = GridGetCursorHoverTile(grid, controller);
+                        AttackRange attack_range = {0};
+
+                        if (maybe_attack_tile) {
+                            attack_range = BattleGenerateAttackRange(battle, maybe_attack_tile->id, &gstate->temp);
+                        }
+
                         for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
                             TileId tileid = ArrGet(&range->reachable, i);
                             Tile* tile = GridTileFromId(grid, tileid);
                             GraphicsInfo graphics = tile->graphics;
                             graphics.model.tint = Vec4Lit(LORANGE.r, LORANGE.g, LORANGE.b, 0.6f);
+                            DrawGraphicsInfo2(&graphics);
+                        }
+
+                        for (isize i = 0; i < ArrLen(&attack_range.reachable); ++i) {
+                            TileId tileid = ArrGet(&attack_range.reachable, i);
+                            Tile* tile = GridTileFromId(grid, tileid);
+                            GraphicsInfo graphics = tile->graphics;
+                            graphics.model.tint = Vec4Lit(LRED.r, LRED.g, LRED.b, 0.2f);
                             DrawGraphicsInfo2(&graphics);
                         }
                     }
