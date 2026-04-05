@@ -4901,6 +4901,7 @@ typedef struct {
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
 
 typedef struct {
+    // Reminder that this pos refers to the *center* of the tile.
     Vec3 pos;
     TileId id;
     GraphicsInfo graphics;
@@ -4988,6 +4989,15 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
     grid->world_to_grid = Mat4Invert(grid->grid_to_world);
 }
+
+static Vec3 GridGetTilePosBL(Grid* grid, TileId tileid) {
+    Vec3 pos = TileIdtoVec3(tileid);
+    pos.x -= 0.5f;
+    pos.y -= 0.5f;
+    return pos;
+}
+
+static Vec3 GridPosToWorld(Grid* grid, Vec3 pos) { return Vec3WTransform(pos, grid->grid_to_world); }
 
 // Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
 static TileId GridGetCursorHoverTileId(Grid* grid, GameControllerState* controller) {
@@ -6063,6 +6073,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
                         if (TestFlag(e->flags, EFLAG_DRAW)) {
                             DrawGraphicsInfo2(&e->graphics);
+
+                            // Draw health.
+                            {
+                                TileId tileid = TileIdFromVec3(e->pos);
+                                Vec3 bl_grid = GridGetTilePosBL(grid, tileid);
+                                Vec3 bl_world = GridPosToWorld(grid, bl_grid);
+                                DrawAABB(bl_world, Vec3Lit(1.0f, 1.0f, 1.0f), LGREEN);
+                            }
                         }
                     }
 
