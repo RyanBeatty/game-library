@@ -6027,8 +6027,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     MoveRange* range = &battle->range;
                     bool move_selected = battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED;
                     bool attack_selected = battle->player_turn_state == PLAYER_TURN_STATE_ATTACK_SELECTED;
-                    AttackRange attack_range = {0};
-                    // BattleGenerateAttackRange(battle, TileIdFromVec3(turn_entity->pos), &gstate->temp);
 
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
@@ -6049,6 +6047,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     if (attack_selected) {
+                        AttackRange attack_range =
+                            BattleGenerateAttackRange(battle, TileIdFromVec3(turn_entity->pos), &gstate->temp);
+
                         for (isize i = 0; i < ArrLen(&attack_range.reachable); ++i) {
                             TileId tileid = ArrGet(&attack_range.reachable, i);
                             Tile* tile = GridTileFromId(grid, tileid);
