@@ -6037,6 +6037,27 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
+                    // Draw player chars.
+                    for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
+                        Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
+                        if (TestFlag(e->flags, EFLAG_DRAW)) {
+                            GraphicsInfo* graphics = &e->graphics;
+                            LModel model = graphics->model;
+
+                            model.tint = turn_entity && EntityIdEq(e->id, turn_entity->id) ? LYELLOW : model.tint;
+
+                            DrawLModelEx2(model, graphics->frame_idx, graphics->transform);
+                        }
+                    }
+
+                    // Draw enemies.
+                    for (isize i = 0; i < ArrLen(&battle->enemy_ids); ++i) {
+                        Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
+                        if (TestFlag(e->flags, EFLAG_DRAW)) {
+                            DrawGraphicsInfo2(&e->graphics);
+                        }
+                    }
+
                     // Draw move range viz.
                     if (move_selected) {
                         for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
@@ -6057,29 +6078,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TileId tileid = ArrGet(&attack_range.reachable, i);
                             Tile* tile = GridTileFromId(grid, tileid);
                             GraphicsInfo graphics = tile->graphics;
-                            graphics.model.tint = LORANGE;
+                            graphics.model.tint = Vec4Lit(LRED.r, LRED.g, LRED.b, 0.2f);
                             DrawGraphicsInfo2(&graphics);
-                        }
-                    }
-
-                    // Draw player chars.
-                    for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
-                        Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
-                        if (TestFlag(e->flags, EFLAG_DRAW)) {
-                            GraphicsInfo* graphics = &e->graphics;
-                            LModel model = graphics->model;
-
-                            model.tint = turn_entity && EntityIdEq(e->id, turn_entity->id) ? LYELLOW : model.tint;
-
-                            DrawLModelEx2(model, graphics->frame_idx, graphics->transform);
-                        }
-                    }
-
-                    // Draw enemies.
-                    for (isize i = 0; i < ArrLen(&battle->enemy_ids); ++i) {
-                        Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
-                        if (TestFlag(e->flags, EFLAG_DRAW)) {
-                            DrawGraphicsInfo2(&e->graphics);
                         }
                     }
                 }
