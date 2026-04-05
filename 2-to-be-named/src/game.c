@@ -4990,7 +4990,7 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 }
 
 // Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
-static Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) {
+static TileId GridGetCursorHoverTileId(Grid* grid, GameControllerState* controller) {
     Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
     // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
     // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
@@ -5006,11 +5006,17 @@ static Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller)
         cursor_pos_grid.y >= grid->nrows) {
         // PlatformLog(LLOG_INFO, "Cursor <%f, %f> outside of grid, no tile selected", cursor_pos_grid.x,
         // cursor_pos_grid.y);
-        return NULL;
+        return (TileId){.r = -1, .c = -1, .height = -1};
     }
 
     // PlatformLog(LLOG_INFO, "Tile r=%f, c=%f selected", cursor_pos_grid.y, cursor_pos_grid.x);
-    return GridGetTile(grid, cursor_pos_grid.y, cursor_pos_grid.x);
+    return TileIdFromVec3(cursor_pos_grid);
+}
+
+// Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
+static Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) {
+    TileId tileid = GridGetCursorHoverTileId(grid, controller);
+    return GridMaybeTileFromId(grid, tileid);
 }
 
 static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
