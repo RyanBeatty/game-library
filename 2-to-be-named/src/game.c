@@ -5086,6 +5086,10 @@ typedef struct {
     TileIdArr reachable;
 } MoveRange;
 
+typedef struct {
+    TileIdArr reachable;
+} AttackRange;
+
 typedef enum {
     BTXN_NONE = 0,
     BTXN_MOVE,
@@ -5259,6 +5263,90 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
     }
 
     MoveRange range = {.reachable = tiles};
+    return range;
+}
+
+static AttackRange BattleGenerateAttackRange(BattleState* battle, TileId start, Arena* perm) {
+    Grid* grid = &battle->grid;
+    Assert(GridValidTileId(grid, start));
+    TileIdArr tiles = {0};
+    InitArr(&tiles, perm, TileId, 20);
+
+    TileId queue_buffer[20] = {0};
+    TileIdArr queue = {0};
+    InitArrS(&queue, queue_buffer, ArraySizeOf(queue_buffer));
+
+    TileId next_queue_buffer[20] = {0};
+    TileIdArr next_queue = {0};
+    InitArrS(&next_queue, next_queue_buffer, ArraySizeOf(next_queue_buffer));
+
+    ArrPush(&queue, start);
+
+    i32 max_distance = 1;
+    for (i32 cur_distance = 0; cur_distance < max_distance; ++cur_distance) {
+        for (isize qidx = 0; qidx < ArrLen(&queue); ++qidx) {
+            TileId cur = ArrGet(&queue, qidx);
+
+            TileId neighbors_buffer[4] = {0};
+            TileIdArr neighbors = {0};
+            InitArrS(&neighbors, neighbors_buffer, ArraySizeOf(neighbors_buffer));
+
+            TileId right = {.r = cur.r, .c = cur.c + 1, .height = cur.height};
+            TileId left = {.r = cur.r, .c = cur.c - 1, .height = cur.height};
+            TileId up = {.r = cur.r + 1, .c = cur.c, .height = cur.height};
+            TileId down = {.r = cur.r - 1, .c = cur.c, .height = cur.height};
+            if (GridValidTileId(grid, right)) {
+                ArrPush(&neighbors, right);
+            }
+            if (GridValidTileId(grid, left)) {
+                ArrPush(&neighbors, left);
+            }
+            if (GridValidTileId(grid, up)) {
+                ArrPush(&neighbors, up);
+            }
+            if (GridValidTileId(grid, down)) {
+                ArrPush(&neighbors, down);
+            }
+
+            for (isize nidx = 0; nidx < ArrLen(&neighbors); ++nidx) {
+                TileId neighbor = ArrGet(&neighbors, nidx);
+
+                if (TileIdEq(neighbor, start)) {
+                    continue;
+                }
+
+                Entity* maybe_neighbor = GridGetEntityAtTileId(grid, neighbor);
+                if (maybe_neighbor && maybe_neighbor->state == STATE_ALIVE) {
+                    continue;
+                }
+
+                // Disallow diagonal attacks for now
+                if (neighbor.r != start.r && neighbor.c != start.c) {
+                    continue;
+                }
+
+                bool exists = false;
+                for (isize tidx = 0; tidx < ArrLen(&tiles); ++tidx) {
+                    if (TileIdEq(neighbor, ArrGet(&tiles, tidx))) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists) {
+                    ArrPush(&tiles, neighbor);
+                    ArrPush(&next_queue, neighbor);
+                }
+            }
+        }
+
+        ArrClear(&queue);
+        TileIdArr temp = queue;
+        queue = next_queue;
+        next_queue = temp;
+    }
+
+    AttackRange range = {.reachable = tiles};
     return range;
 }
 
@@ -5938,6 +6026,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Entity* turn_entity = BattleGetTurnEntity(battle);
                     MoveRange* range = &battle->range;
                     bool move_selected = battle->player_turn_state == PLAYER_TURN_STATE_MOVE_SELECTED;
+                    bool attack_selected = battle->player_turn_state == PLAYER_TURN_STATE_ATTACK_SELECTED;
+                    AttackRange attack_range =
+                        BattleGenerateAttackRange(battle, TileIdFromVec3(turn_entity->pos), &gstate->temp);
 
                     for (isize r = 0; r < grid->nrows; ++r) {
                         for (isize c = 0; c < grid->ncols; ++c) {
