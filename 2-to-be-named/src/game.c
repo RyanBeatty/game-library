@@ -4933,14 +4933,14 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->world_to_grid = Mat4Invert(grid->grid_to_world);
 }
 
-static Vec3 GridGetTilePosBL(Grid* grid, TileId tileid) {
+LCORE Vec3 GridGetTilePosBL(Grid* grid, TileId tileid) {
     Vec3 pos = TileIdtoVec3(tileid);
     pos.x -= 0.5f;
     pos.y -= 0.5f;
     return pos;
 }
 
-static Vec3 GridGetTilePosBR(Grid* grid, TileId tileid) {
+LCORE Vec3 GridGetTilePosBR(Grid* grid, TileId tileid) {
     Vec3 pos = TileIdtoVec3(tileid);
     pos.x += 0.5f;
     pos.y -= 0.5f;
@@ -6015,6 +6015,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             model.tint = turn_entity && EntityIdEq(e->id, turn_entity->id) ? LYELLOW : model.tint;
 
                             DrawLModelEx2(model, graphics->frame_idx, graphics->transform);
+
+                            // Draw health.
+                            {
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "%d", e->hp);
+                                Str8 health_txt = Str8FromC(buffer);
+                                LFont health_font = GetLFontClosest(10.0f);
+                                TextBox box = LFontMeasureStr8Quad(health_font, health_txt);
+                                Vec2 center = Vec3ToVec2(GridPosToWorld(grid, e->pos));
+                                DrawStr8Ex(health_font, Vec2Add(Vec3ToVec2(center), box.baseline_offset), LBLACK,
+                                           health_txt);
+                            }
                         }
                     }
 
@@ -6026,13 +6038,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             // Draw health.
                             {
-                                TileId tileid = TileIdFromVec3(e->pos);
-                                Vec3 bl_grid = GridGetTilePosBL(grid, tileid);
-                                Vec3 br_grid = GridGetTilePosBR(grid, tileid);
-                                Vec3 center = GridPosToWorld(grid, Vec3Lerp(bl_grid, br_grid, 0.5f));
-                                f32 height = 4.0f;
-                                center.y += 0.5f * height;
-                                DrawAABB(center, Vec3Lit(grid->scale.x, height, 1.0f), LGREEN);
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "%d", e->hp);
+                                Str8 health_txt = Str8FromC(buffer);
+                                LFont health_font = GetLFontClosest(10.0f);
+                                TextBox box = LFontMeasureStr8Quad(health_font, health_txt);
+                                Vec2 center = Vec3ToVec2(GridPosToWorld(grid, e->pos));
+                                DrawStr8Ex(health_font, Vec2Add(Vec3ToVec2(center), box.baseline_offset), LBLACK,
+                                           health_txt);
                             }
                         }
                     }
