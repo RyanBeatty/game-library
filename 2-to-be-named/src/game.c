@@ -6182,6 +6182,40 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
                 }
+
+                {
+                    // Reminder that using the _world variables here ensures we convert from world units back to pixel
+                    // units
+                    // correctly.
+                    Mat4 view = Mat4Identity();
+                    Mat4 proj = Mat4Ortho(0, PlatformScreenWidth(), 0, PlatformScreenHeight(), -1.0f, 1.0f);
+                    BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
+
+                    // Draw Turn order
+                    {
+                        Vec3 turn_order_origin =
+                            Vec3Lit(PlatformScreenWidth() * 0.7f, PlatformScreenHeight() * 0.8f, 0);
+                        Vec3 turn_order_scale = Vec3Lit(16 * 8, 16 * 8, 0);
+                        Mat4 turn_order_to_world =
+                            Mat4Multiply(Mat4TranslateV(turn_order_origin), Mat4ScaleV(turn_order_scale));
+                        for (isize i = 0; i < ArrLen(&battle->turns); ++i) {
+                            Entity* e = EntityFromId(ArrGet(&battle->turns, i));
+                            Assert(e);
+                            if (e->state == STATE_DEAD) {
+                                continue;
+                            }
+
+                            Vec4 tint = e->graphics.model.tint;
+                            tint = battle->turns_idx > i ? LGRAY : tint;
+
+                            Vec3 pos = Vec3Lit(i, 0, 0);
+                            pos = Vec3WTransform(pos, turn_order_to_world);
+                            DrawAABB(pos, turn_order_scale, tint);
+                        }
+                    }
+
+                    EndShaderPass();
+                }
             }
         }
     }
