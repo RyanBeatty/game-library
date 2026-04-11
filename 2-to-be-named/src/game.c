@@ -4846,6 +4846,7 @@ typedef struct {
     isize cap;
 } TileIdArr;
 
+#define TileIdLit(row, col, height) ((TileId){.r = (row), .c = (col), .h = (height)})
 #define TileIdFromVec3(v) ((TileId){.r = (v).y, .c = (v).x, .height = (v).z})
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
@@ -5570,6 +5571,125 @@ static void BattlePrintState(BattleState* battle) {
     }
 }
 
+typedef struct {
+    TileIdArr player_spawn_tiles;
+
+    TileIdArr enemey_spawn_tiles;
+} RoomPrefab;
+
+// static RoomPrefab GetRoomPrefab(isize i, Arena* perm) {
+//     RoomPrefab prefabs[10] = {0};
+//     Assert(i < ArraySizeOf(prefabs));
+
+//     {
+//         RoomPrefab* prefab = &prefabs[0];
+//         InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+//         InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 2);
+
+//         ArrPush(&prefab->player_spawn_tiles, TileIdLit(1, 0, 0));
+//         ArrPush(&prefab->player_spawn_tiles, TileIdLit(0, 1, 0));
+
+//         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(GRID_NUM_ROWS - 1, GRID_NUM_COLS - 2, 0));
+//         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(GRID_NUM_ROWS - 2, GRID_NUM_COLS - 1, 0));
+//     }
+
+//     return prefabs[i];
+// }
+
+static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 renderh_world, RoomPrefab* prefab) {
+    BattleRestart(battle, renderw_world, renderh_world);
+
+    {
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            e->hp = 1;
+            e->team = TEAM_PLAYER;
+            e->state = STATE_ALIVE;
+            e->move_ap = 1;
+            e->attack_ap = 1;
+            e->base_speed = 2;
+            e->attack = (AttackInfo){
+                .dmg = 1,
+                .range = 1,
+                .ranged = false,
+            };
+
+            TileId tileid = {.r = 0, .c = 0};
+            BattleSpawnEntity(battle, e, tileid);
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LGREEN);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            e->hp = 1;
+            e->team = TEAM_PLAYER;
+            e->state = STATE_ALIVE;
+            e->move_ap = 1;
+            e->attack_ap = 1;
+            e->base_speed = 2;
+            e->attack = (AttackInfo){
+                .dmg = 1,
+                .range = 3,
+                .ranged = true,
+            };
+
+            TileId tileid = {.r = 1, .c = 0};
+            BattleSpawnEntity(battle, e, tileid);
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            e->hp = 1;
+            e->team = TEAM_ENEMY;
+            e->state = STATE_ALIVE;
+            e->move_ap = 1;
+            e->attack_ap = 1;
+            e->base_speed = 1;
+            e->attack = (AttackInfo){
+                .dmg = 1,
+                .range = 1,
+                .ranged = false,
+            };
+
+            TileId tileid = {.r = 5, .c = 5};
+            BattleSpawnEntity(battle, e, tileid);
+        }
+
+        {
+            Entity* e = AllocateEntity();
+            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
+            GraphicsInfoSetLModel(&e->graphics, model);
+
+            e->hp = 1;
+            e->team = TEAM_ENEMY;
+            e->state = STATE_ALIVE;
+            e->move_ap = 1;
+            e->attack_ap = 1;
+            e->base_speed = 1;
+            e->attack = (AttackInfo){
+                .dmg = 1,
+                .range = 1,
+                .ranged = false,
+            };
+
+            TileId tileid = {.r = 4, .c = 5};
+            BattleSpawnEntity(battle, e, tileid);
+        }
+    }
+}
+
 ////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
@@ -5752,101 +5872,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (battle->phase) {
             case BATTLE_INIT: {
-                BattleRestart(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
-
-                {
-                    {
-                        Entity* e = AllocateEntity();
-                        LModel model =
-                            LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
-                        GraphicsInfoSetLModel(&e->graphics, model);
-
-                        e->hp = 1;
-                        e->team = TEAM_PLAYER;
-                        e->state = STATE_ALIVE;
-                        e->move_ap = 1;
-                        e->attack_ap = 1;
-                        e->base_speed = 2;
-                        e->attack = (AttackInfo){
-                            .dmg = 1,
-                            .range = 1,
-                            .ranged = false,
-                        };
-
-                        TileId tileid = {.r = 0, .c = 0};
-                        BattleSpawnEntity(battle, e, tileid);
-                    }
-
-                    {
-                        Entity* e = AllocateEntity();
-                        LModel model =
-                            LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LGREEN);
-                        GraphicsInfoSetLModel(&e->graphics, model);
-
-                        e->hp = 1;
-                        e->team = TEAM_PLAYER;
-                        e->state = STATE_ALIVE;
-                        e->move_ap = 1;
-                        e->attack_ap = 1;
-                        e->base_speed = 2;
-                        e->attack = (AttackInfo){
-                            .dmg = 1,
-                            .range = 3,
-                            .ranged = true,
-                        };
-
-                        TileId tileid = {.r = 1, .c = 0};
-                        BattleSpawnEntity(battle, e, tileid);
-                    }
-
-                    {
-                        Entity* e = AllocateEntity();
-                        LModel model =
-                            LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
-                        GraphicsInfoSetLModel(&e->graphics, model);
-
-                        e->hp = 1;
-                        e->team = TEAM_ENEMY;
-                        e->state = STATE_ALIVE;
-                        e->move_ap = 1;
-                        e->attack_ap = 1;
-                        e->base_speed = 1;
-                        e->attack = (AttackInfo){
-                            .dmg = 1,
-                            .range = 1,
-                            .ranged = false,
-                        };
-
-                        TileId tileid = {.r = 5, .c = 5};
-                        BattleSpawnEntity(battle, e, tileid);
-                    }
-
-                    {
-                        Entity* e = AllocateEntity();
-                        LModel model =
-                            LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
-                        GraphicsInfoSetLModel(&e->graphics, model);
-
-                        e->hp = 1;
-                        e->team = TEAM_ENEMY;
-                        e->state = STATE_ALIVE;
-                        e->move_ap = 1;
-                        e->attack_ap = 1;
-                        e->base_speed = 1;
-                        e->attack = (AttackInfo){
-                            .dmg = 1,
-                            .range = 1,
-                            .ranged = false,
-                        };
-
-                        TileId tileid = {.r = 4, .c = 5};
-                        BattleSpawnEntity(battle, e, tileid);
-                    }
-                }
+                RoomPrefab prefab = {0};
+                BattleFromRoomPrefab(&gstate->battle, gstate->renderw_world, gstate->renderh_world, &prefab);
                 break;
             }
             case BATTLE_PLAYING: {
