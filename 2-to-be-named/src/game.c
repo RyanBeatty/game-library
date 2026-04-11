@@ -5165,15 +5165,15 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
     Grid* grid = &battle->grid;
     Assert(GridValidTileId(grid, start));
     TileIdArr tiles = {0};
-    InitArr(&tiles, perm, TileId, 20);
+    InitArr(&tiles, perm, TileId, grid->nrows * grid->ncols);
 
-    TileId queue_buffer[20] = {0};
+    Arena temp = NewSubArena(perm, KB(1));
+
     TileIdArr queue = {0};
-    InitArrS(&queue, queue_buffer, ArraySizeOf(queue_buffer));
+    InitArr(&queue, &temp, TileId, grid->nrows * grid->ncols);
 
-    TileId next_queue_buffer[20] = {0};
     TileIdArr next_queue = {0};
-    InitArrS(&next_queue, next_queue_buffer, ArraySizeOf(next_queue_buffer));
+    InitArr(&next_queue, &temp, TileId, grid->nrows * grid->ncols);
 
     ArrPush(&queue, start);
 
@@ -5231,9 +5231,9 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
         }
 
         ArrClear(&queue);
-        TileIdArr temp = queue;
+        TileIdArr temp_q = queue;
         queue = next_queue;
-        next_queue = temp;
+        next_queue = temp_q;
     }
 
     MoveRange range = {.reachable = tiles};
