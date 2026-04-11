@@ -4082,6 +4082,12 @@ typedef enum {
     STATE_DEAD,
 } EntityState;
 
+typedef struct {
+    i32 range;
+    i32 dmg;
+    bool ranged;  // True if the attacker is a ranged unit.
+} AttackInfo;
+
 ////////////////////////////////////////////////////////////
 
 typedef struct {
@@ -4128,6 +4134,8 @@ typedef struct {
 
     i32 base_speed;
     i32 base_range;
+
+    AttackInfo attack;
 } Entity;
 
 typedef struct {
@@ -5232,23 +5240,23 @@ static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* 
     return range;
 }
 
-static AttackRange BattleGenerateAttackRange(BattleState* battle, TileId start, Arena* perm) {
+static AttackRange BattleGenerateAttackRange(BattleState* battle, AttackInfo* attack, TileId start, Arena* perm) {
     Grid* grid = &battle->grid;
     Assert(GridValidTileId(grid, start));
     TileIdArr tiles = {0};
-    InitArr(&tiles, perm, TileId, 20);
+    InitArr(&tiles, perm, TileId, grid->ncols * grid->nrows);
 
-    TileId queue_buffer[20] = {0};
+    Arena temp = NewSubArena(perm, MB(1));
+
     TileIdArr queue = {0};
-    InitArrS(&queue, queue_buffer, ArraySizeOf(queue_buffer));
+    InitArr(&queue, &temp, TileId, grid->ncols * grid->nrows);
 
-    TileId next_queue_buffer[20] = {0};
     TileIdArr next_queue = {0};
-    InitArrS(&next_queue, next_queue_buffer, ArraySizeOf(next_queue_buffer));
+    InitArr(&next_queue, &temp, TileId, grid->ncols * grid->nrows);
 
     ArrPush(&queue, start);
 
-    i32 max_distance = 1;
+    i32 max_distance = attack->range;
     for (i32 cur_distance = 0; cur_distance < max_distance; ++cur_distance) {
         for (isize qidx = 0; qidx < ArrLen(&queue); ++qidx) {
             TileId cur = ArrGet(&queue, qidx);
@@ -5281,13 +5289,8 @@ static AttackRange BattleGenerateAttackRange(BattleState* battle, TileId start, 
                     continue;
                 }
 
-                Entity* maybe_neighbor = GridGetEntityAtTileId(grid, neighbor);
-                if (maybe_neighbor && maybe_neighbor->state == STATE_ALIVE) {
-                    continue;
-                }
-
-                // Disallow diagonal attacks for now
-                if (neighbor.r != start.r && neighbor.c != start.c) {
+                // Check if we can attack diagonally.
+                if (attack->ranged && (neighbor.r != start.r && neighbor.c != start.c)) {
                     continue;
                 }
 
@@ -5307,9 +5310,9 @@ static AttackRange BattleGenerateAttackRange(BattleState* battle, TileId start, 
         }
 
         ArrClear(&queue);
-        TileIdArr temp = queue;
+        TileIdArr temp_q = queue;
         queue = next_queue;
-        next_queue = temp;
+        next_queue = temp_q;
     }
 
     AttackRange range = {.reachable = tiles};
@@ -5770,6 +5773,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->attack_ap = 1;
                         e->base_speed = 2;
                         e->base_range = 1;
+                        e->attack = (AttackInfo){
+                            .dmg = 1,
+                            .range = 1,
+                            .ranged = false,
+                        };
 
                         TileId tileid = {.r = 0, .c = 0};
                         BattleSpawnEntity(battle, e, tileid);
@@ -5788,7 +5796,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->move_ap = 1;
                         e->attack_ap = 1;
                         e->base_speed = 2;
-                        e->base_range = 3;
+                        e->attack = (AttackInfo){
+                            .dmg = 1,
+                            .range = 3,
+                            .ranged = false,
+                        };
 
                         TileId tileid = {.r = 1, .c = 0};
                         BattleSpawnEntity(battle, e, tileid);
@@ -6074,7 +6086,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         AttackRange attack_range = {0};
 
                         if (maybe_hover_tile) {
-                            attack_range = BattleGenerateAttackRange(battle, maybe_hover_tile->id, &gstate->temp);
+                            attack_range = BattleGenerateAttackRange(battle, &turn_entity->attack, maybe_hover_tile->id,
+                                                                     &gstate->temp);
                         }
 
                         for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
@@ -6096,8 +6109,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     // Draw attack range viz.
                     if (attack_selected) {
-                        AttackRange attack_range =
-                            BattleGenerateAttackRange(battle, TileIdFromVec3(turn_entity->pos), &gstate->temp);
+                        AttackRange attack_range = BattleGenerateAttackRange(
+                            battle, &turn_entity->attack, TileIdFromVec3(turn_entity->pos), &gstate->temp);
 
                         for (isize i = 0; i < ArrLen(&attack_range.reachable); ++i) {
                             TileId tileid = ArrGet(&attack_range.reachable, i);
