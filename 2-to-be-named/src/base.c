@@ -27,6 +27,12 @@ Arena NewArena(byte* buffer, isize cap) {
     return a;
 }
 
+void ArenaPrintInfo(Arena* arena) {
+    char buffer[1024] = {0};
+    snprintf(buffer, ArraySizeOf(buffer) - 1, "Arena:\n* Free: %lld", arena->end - arena->beg);
+    PlatformLog(LLOG_INFO, "%s", buffer);
+}
+
 Arena NewSubArena(Arena* perm, isize cap) {
     Arena arena = {0};
     arena.beg = New(perm, cap, byte);

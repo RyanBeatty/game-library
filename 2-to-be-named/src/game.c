@@ -5246,7 +5246,7 @@ static AttackRange BattleGenerateAttackRange(BattleState* battle, AttackInfo* at
     TileIdArr tiles = {0};
     InitArr(&tiles, perm, TileId, grid->ncols * grid->nrows);
 
-    Arena temp = NewSubArena(perm, MB(1));
+    Arena temp = NewSubArena(perm, KB(1));
 
     TileIdArr queue = {0};
     InitArr(&queue, &temp, TileId, grid->ncols * grid->nrows);
@@ -5333,6 +5333,20 @@ static bool MoveRangeCanReach(MoveRange* range, TileId dest) {
     return false;
 }
 
+static bool AttackRangeCanReach(AttackRange* range, TileId dest) {
+    if (range == NULL) {
+        return false;
+    }
+
+    for (isize i = 0; i < ArrLen(&range->reachable); ++i) {
+        if (TileIdEq(ArrGet(&range->reachable, i), dest)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static void BattleSpawnEntity(BattleState* battle, Entity* e, TileId tileid) {
     GridPlaceEntity(&battle->grid, e, tileid);
 
@@ -5400,14 +5414,16 @@ static void BattleResolveTxns(BattleState* battle) {
             case BTXN_ATTACK: {
                 Entity* source = EntityFromId(txn->attack.source);
                 Assert(source);
-                i32 damage = 1;
+
+                AttackRange attack_range = BattleGenerateAttackRange(battle, &source->attack,
+                                                                     TileIdFromVec3(source->pos), &battle->turn_arena);
 
                 Tile* target = GridTileFromId(&battle->grid, txn->attack.target);
                 Entity* victim = GridGetEntityAtTile(&battle->grid, target);
-                if (GridEntityCanHitTile(&battle->grid, source, target)) {
+                if (AttackRangeCanReach(&attack_range, target->id)) {
                     source->attack_ap = i32max(source->attack_ap - 1, 0);
                     if (victim) {
-                        victim->hp -= damage;
+                        victim->hp -= source->attack.dmg;
                         if (victim->hp <= 0) {
                             victim->state = STATE_DEAD;
                             FlagOff(victim->flags, EFLAG_DRAW);

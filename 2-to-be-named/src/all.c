@@ -34,9 +34,9 @@
 // Project files below
 #include "base.h"
 //
-#include "base.c"
-//
 #include "platform.h"
+//
+#include "base.c"
 //
 //
 #include "game.h"

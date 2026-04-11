@@ -42,6 +42,7 @@ typedef size_t usize;
 typedef uintptr_t uptr;
 typedef unsigned char byte;
 
+#define KB(x) ((u64)1024 * (x))
 #define MB(x) ((u64)1024 * 1024 * (x))
 #define GB(x) ((u64)1024 * 1024 * 1024 * (x))
 
@@ -86,6 +87,7 @@ typedef struct {
 void* ArenaAlloc(Arena* a, isize count, isize size, isize alignment);
 Arena NewArena(byte* buffer, isize cap);
 Arena NewSubArena(Arena* perm, isize count);
+void ArenaPrintInfo(Arena* a);
 #define TempArena(a) ((a))
 #define ArenaClear(a) ((a)->beg = (a)->beg_orig)
 
