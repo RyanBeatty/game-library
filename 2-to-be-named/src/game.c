@@ -5403,10 +5403,12 @@ static void BattleResolveTxns(BattleState* battle) {
             case BTXN_MOVE: {
                 Entity* e = EntityFromId(txn->move.e);
                 if (e->move_ap > 0) {
+                    MoveRange move_range = BattleGenerateMoveRange(battle, e, &battle->turn_arena);
+
                     Tile* dest = GridTileFromId(&battle->grid, txn->move.dest);
-                    if (GridEntityCanMoveTo(&battle->grid, e, dest)) {
+                    if (MoveRangeCanReach(&move_range, dest->id)) {
                         GridMoveEntity(&battle->grid, e, txn->move.dest);
-                        --e->move_ap;
+                        e->move_ap = i32max(e->move_ap - 1, 0);
                     }
                 }
                 break;
@@ -5414,22 +5416,24 @@ static void BattleResolveTxns(BattleState* battle) {
             case BTXN_ATTACK: {
                 Entity* source = EntityFromId(txn->attack.source);
                 Assert(source);
+                if (source->attack_ap > 0) {
+                    AttackRange attack_range = BattleGenerateAttackRange(
+                        battle, &source->attack, TileIdFromVec3(source->pos), &battle->turn_arena);
 
-                AttackRange attack_range = BattleGenerateAttackRange(battle, &source->attack,
-                                                                     TileIdFromVec3(source->pos), &battle->turn_arena);
-
-                Tile* target = GridTileFromId(&battle->grid, txn->attack.target);
-                Entity* victim = GridGetEntityAtTile(&battle->grid, target);
-                if (AttackRangeCanReach(&attack_range, target->id)) {
-                    source->attack_ap = i32max(source->attack_ap - 1, 0);
-                    if (victim) {
-                        victim->hp -= source->attack.dmg;
-                        if (victim->hp <= 0) {
-                            victim->state = STATE_DEAD;
-                            FlagOff(victim->flags, EFLAG_DRAW);
+                    Tile* target = GridTileFromId(&battle->grid, txn->attack.target);
+                    Entity* victim = GridGetEntityAtTile(&battle->grid, target);
+                    if (AttackRangeCanReach(&attack_range, target->id)) {
+                        source->attack_ap = i32max(source->attack_ap - 1, 0);
+                        if (victim) {
+                            victim->hp -= source->attack.dmg;
+                            if (victim->hp <= 0) {
+                                victim->state = STATE_DEAD;
+                                FlagOff(victim->flags, EFLAG_DRAW);
+                            }
                         }
                     }
                 }
+
                 break;
             }
             default: {
