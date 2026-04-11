@@ -5015,29 +5015,6 @@ static void GridMoveEntity(Grid* grid, Entity* e, TileId dest_id) {
     GridPlaceEntity(grid, e, dest_id);
 }
 
-static bool GridEntityCanMoveTo(Grid* grid, Entity* e, Tile* dest) {
-    TileId cur_pos = TileIdFromVec3(e->pos);
-    Assert(GridValidTileId(grid, cur_pos));
-
-    i32 dr = i32abs(dest->id.r - cur_pos.r);
-    i32 dc = i32abs(dest->id.c - cur_pos.c);
-
-    bool moveable = dr + dc <= e->base_speed;
-    Entity* already_there = GridGetEntityAtTile(grid, dest);
-    return (moveable && (!already_there || EntityIdEq(already_there->id, e->id)));
-}
-
-static bool GridEntityCanHitTile(Grid* grid, Entity* e, Tile* target) {
-    TileId cur_pos = TileIdFromVec3(e->pos);
-    Assert(GridValidTileId(grid, cur_pos));
-
-    i32 dr = i32abs(target->id.r - cur_pos.r);
-    i32 dc = i32abs(target->id.c - cur_pos.c);
-
-    bool can_hit = (dr + dc) <= e->base_range;
-    return can_hit;
-}
-
 typedef struct {
     i32 dr;
     i32 dc;
