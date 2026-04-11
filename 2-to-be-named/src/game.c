@@ -5578,12 +5578,31 @@ typedef struct {
     TileIdArr enemy_spawn_tiles;
 } RoomPrefab;
 
-static RoomPrefab GetRoomPrefab(isize i, Arena* perm) {
+static RoomPrefab GetRoomPrefab(Arena* perm) {
     RoomPrefab prefabs[10] = {0};
-    Assert(i < ArraySizeOf(prefabs));
+    isize j = 0;
 
+    // Template
+    /*
+          5 4 3 2 1 0
+        5 * * * * * *
+        4 * * * * * *
+        3 * * * * * *
+        2 * * * * * *
+        1 * * * * * *
+        0 * * * * * *
+    */
+
+    /*    5 4 3 2 1 0
+        5 * * * * X *
+        4 * * * * * X
+        3 * * * * * *
+        2 * * * * * *
+        1 O * * * * *
+        0 * O * * * *
+    */
     {
-        RoomPrefab* prefab = &prefabs[0];
+        RoomPrefab* prefab = &prefabs[j++];
         InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
         InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 2);
 
@@ -5594,6 +5613,28 @@ static RoomPrefab GetRoomPrefab(isize i, Arena* perm) {
         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(GRID_NUM_ROWS - 2, GRID_NUM_COLS - 1, 0));
     }
 
+    /*
+          0 1 2 3 4 5
+        5 X * * * * *
+        4 * * * * * *
+        3 * * O * * *
+        2 * * * O * *
+        1 * * * * * *
+        0 * * * * * X
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 2);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(3, 2, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(2, 3, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(5, 0, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(0, 5, 0));
+    }
+
+    isize i = i32rand() % j;
     return prefabs[i];
 }
 
@@ -5902,7 +5943,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (battle->phase) {
             case BATTLE_INIT: {
-                RoomPrefab prefab = GetRoomPrefab(0, &gstate->temp);
+                RoomPrefab prefab = GetRoomPrefab(&gstate->temp);
                 BattleFromRoomPrefab(&gstate->battle, gstate->renderw_world, gstate->renderh_world, &prefab);
                 break;
             }
