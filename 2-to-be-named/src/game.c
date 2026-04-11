@@ -4133,7 +4133,6 @@ typedef struct {
     i32 attack_ap;
 
     i32 base_speed;
-    i32 base_range;
 
     AttackInfo attack;
 } Entity;
@@ -5769,7 +5768,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->move_ap = 1;
                         e->attack_ap = 1;
                         e->base_speed = 2;
-                        e->base_range = 1;
                         e->attack = (AttackInfo){
                             .dmg = 1,
                             .range = 1,
@@ -5816,7 +5814,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->move_ap = 1;
                         e->attack_ap = 1;
                         e->base_speed = 1;
-                        e->base_range = 1;
+                        e->attack = (AttackInfo){
+                            .dmg = 1,
+                            .range = 1,
+                            .ranged = false,
+                        };
 
                         TileId tileid = {.r = 5, .c = 5};
                         BattleSpawnEntity(battle, e, tileid);
@@ -5835,7 +5837,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->move_ap = 1;
                         e->attack_ap = 1;
                         e->base_speed = 1;
-                        e->base_range = 1;
+                        e->attack = (AttackInfo){
+                            .dmg = 1,
+                            .range = 1,
+                            .ranged = false,
+                        };
 
                         TileId tileid = {.r = 4, .c = 5};
                         BattleSpawnEntity(battle, e, tileid);
