@@ -5266,7 +5266,7 @@ static AttackRange BattleGenerateAttackRange(BattleState* battle, AttackInfo* at
                 }
 
                 // Check if we can attack diagonally.
-                if (attack->ranged && (neighbor.r != start.r && neighbor.c != start.c)) {
+                if (!attack->ranged && (neighbor.r != start.r && neighbor.c != start.c)) {
                     continue;
                 }
 
@@ -5794,7 +5794,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         e->attack = (AttackInfo){
                             .dmg = 1,
                             .range = 3,
-                            .ranged = false,
+                            .ranged = true,
                         };
 
                         TileId tileid = {.r = 1, .c = 0};
