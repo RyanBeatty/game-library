@@ -4846,7 +4846,7 @@ typedef struct {
     isize cap;
 } TileIdArr;
 
-#define TileIdLit(row, col, height) ((TileId){.r = (row), .c = (col), .h = (height)})
+#define TileIdLit(row, col, hheight) ((TileId){.r = (row), .c = (col), .height = (hheight)})
 #define TileIdFromVec3(v) ((TileId){.r = (v).y, .c = (v).x, .height = (v).z})
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
@@ -5000,6 +5000,7 @@ static Entity* GridGetEntityAtTileId(Grid* grid, TileId tile) {
     return GridGetEntityAtTile(grid, GridTileFromId(grid, tile));
 }
 
+// TODO: Should this check that its unocupied first?
 static void GridPlaceEntity(Grid* grid, Entity* e, TileId dest_id) {
     Tile* dest = GridTileFromId(grid, dest_id);
     dest->occupant = e->id;
@@ -5574,30 +5575,38 @@ static void BattlePrintState(BattleState* battle) {
 typedef struct {
     TileIdArr player_spawn_tiles;
 
-    TileIdArr enemey_spawn_tiles;
+    TileIdArr enemy_spawn_tiles;
 } RoomPrefab;
 
-// static RoomPrefab GetRoomPrefab(isize i, Arena* perm) {
-//     RoomPrefab prefabs[10] = {0};
-//     Assert(i < ArraySizeOf(prefabs));
+static RoomPrefab GetRoomPrefab(isize i, Arena* perm) {
+    RoomPrefab prefabs[10] = {0};
+    Assert(i < ArraySizeOf(prefabs));
 
-//     {
-//         RoomPrefab* prefab = &prefabs[0];
-//         InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
-//         InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 2);
+    {
+        RoomPrefab* prefab = &prefabs[0];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 2);
 
-//         ArrPush(&prefab->player_spawn_tiles, TileIdLit(1, 0, 0));
-//         ArrPush(&prefab->player_spawn_tiles, TileIdLit(0, 1, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(1, 0, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(0, 1, 0));
 
-//         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(GRID_NUM_ROWS - 1, GRID_NUM_COLS - 2, 0));
-//         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(GRID_NUM_ROWS - 2, GRID_NUM_COLS - 1, 0));
-//     }
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(GRID_NUM_ROWS - 1, GRID_NUM_COLS - 2, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(GRID_NUM_ROWS - 2, GRID_NUM_COLS - 1, 0));
+    }
 
-//     return prefabs[i];
-// }
+    return prefabs[i];
+}
 
 static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 renderh_world, RoomPrefab* prefab) {
     BattleRestart(battle, renderw_world, renderh_world);
+
+    EntityId player_ids_buffer[2] = {0};
+    EntityIdArr player_ids = {0};
+    InitArrS(&player_ids, player_ids_buffer, ArraySizeOf(player_ids_buffer));
+
+    EntityId enemy_ids_buffer[2] = {0};
+    EntityIdArr enemy_ids = {0};
+    InitArrS(&enemy_ids, enemy_ids_buffer, ArraySizeOf(enemy_ids_buffer));
 
     {
         {
@@ -5618,8 +5627,9 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                 .ranged = false,
             };
 
-            TileId tileid = {.r = 0, .c = 0};
-            BattleSpawnEntity(battle, e, tileid);
+            // TileId tileid = {.r = 0, .c = 0};
+            // e->pos = TileIdtoVec3(tileid);
+            ArrPush(&player_ids, e->id);
         }
 
         {
@@ -5640,8 +5650,9 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                 .ranged = true,
             };
 
-            TileId tileid = {.r = 1, .c = 0};
-            BattleSpawnEntity(battle, e, tileid);
+            // TileId tileid = {.r = 1, .c = 0};
+            // e->pos = TileIdtoVec3(tileid);
+            ArrPush(&player_ids, e->id);
         }
 
         {
@@ -5662,8 +5673,9 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                 .ranged = false,
             };
 
-            TileId tileid = {.r = 5, .c = 5};
-            BattleSpawnEntity(battle, e, tileid);
+            // TileId tileid = {.r = 5, .c = 5};
+            // e->pos = TileIdtoVec3(tileid);
+            ArrPush(&enemy_ids, e->id);
         }
 
         {
@@ -5684,9 +5696,27 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                 .ranged = false,
             };
 
-            TileId tileid = {.r = 4, .c = 5};
-            BattleSpawnEntity(battle, e, tileid);
+            // TileId tileid = {.r = 4, .c = 5};
+            // e->pos = TileIdtoVec3(tileid);
+            ArrPush(&enemy_ids, e->id);
         }
+    }
+
+    Assert(ArrLen(&player_ids) <= ArrLen(&prefab->player_spawn_tiles));
+    Assert(ArrLen(&enemy_ids) <= ArrLen(&prefab->enemy_spawn_tiles));
+
+    for (isize i = 0; i < ArrLen(&player_ids); ++i) {
+        Entity* e = EntityFromId(ArrGet(&player_ids, i));
+        Assert(e);
+        TileId spawn = ArrGet(&prefab->player_spawn_tiles, i);
+        BattleSpawnEntity(battle, e, spawn);
+    }
+
+    for (isize i = 0; i < ArrLen(&enemy_ids); ++i) {
+        Entity* e = EntityFromId(ArrGet(&enemy_ids, i));
+        Assert(e);
+        TileId spawn = ArrGet(&prefab->enemy_spawn_tiles, i);
+        BattleSpawnEntity(battle, e, spawn);
     }
 }
 
@@ -5872,7 +5902,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (battle->phase) {
             case BATTLE_INIT: {
-                RoomPrefab prefab = {0};
+                RoomPrefab prefab = GetRoomPrefab(0, &gstate->temp);
                 BattleFromRoomPrefab(&gstate->battle, gstate->renderw_world, gstate->renderh_world, &prefab);
                 break;
             }
