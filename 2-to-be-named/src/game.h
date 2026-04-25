@@ -26,6 +26,7 @@ typedef struct {
     Vec2 left_stick;
 
     // Where the virtualized cursor is in screen space. Mostly used for determing if we clicked a UI element.
+    // The coordinates are guaranteed to be integer coordinates, no floating portion.
     Vec2 cursor_pos;
     // Where the virtualized cursor is (this could be the mouse or a cursor controlled by the controller)
     // Ideally this is in game space.

@@ -2555,6 +2555,8 @@ static const f32 SLOP = 2.0f * F32_EPSILON;
 
 static const Vec3 AXIS[] = {Vec3Lit(1.0f, 0.0f, 0.0f), Vec3Lit(0.0f, 1.0f, 0.0f), Vec3Lit(0.0f, 0.0f, 1.0f)};
 
+typedef Vec2 Point2D;
+
 LCORE Vec3 ComputeCentroid(Vec3* vs, u32 vsize) {
     Vec3 center = {0};
     for (u32 i = 0; i < vsize; ++i) {
@@ -2653,6 +2655,38 @@ LCORE bool TestAABB2DVsAABB2D(AABB2D a, AABB2D b, Vec2* normal, f32* depth) {
         *depth = depthx;
     } else {
         *normal = Vec2Lit(0.0f, 1.0f * (ba.y < 0 ? -1.0f : 1.0f));
+        *depth = depthy;
+    }
+
+    return true;
+}
+
+// Normal will point towards the axis closest that would resolve penetration.
+LCORE bool TestPoint2DVsAABB2D(Point2D point, AABB2D box, Vec2* normal, f32* depth) {
+    // Get vector between point and box center.
+    Vec2 dist = Vec2Sub(point, box.c);
+
+    *normal = Vec2Zero();
+    *depth = F32_MAX;
+
+    // If we are futher than the half horizontal width of the box, no collision.
+    f32 depthx = box.r.x - f32abs(dist.x);
+    if (depthx < 0.0f) {
+        return false;
+    }
+
+    // If we are further than the half veritical height of the box, no collision.
+    f32 depthy = box.r.y - f32abs(dist.y);
+    if (depthy < 0.0f) {
+        return false;
+    }
+
+    // Otherwise we have a collision and need to find axis of separation.
+    if (depthx <= depthy) {
+        *normal = Vec2Lit(1.0f * (dist.x < 0 ? -1.0f : 1.0f), 0.0f);
+        *depth = depthx;
+    } else {
+        *normal = Vec2Lit(0.0f, 1.0f * (dist.y < 0 ? -1.0f : 1.0f));
         *depth = depthy;
     }
 
@@ -4706,14 +4740,10 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width
 
     GameControllerState* controller = GetController(ui->input, 0);
 
-    Polyhedron rect;
-    PolyHedronSetAABB2D(&rect, box.box);
-
-    Polyhedron cursor;
-    PolyhedronSetCircle(&cursor, controller->cursor_pos, 3.0f);
-
-    CollisionInfo info = {0};
-    bool collides = TestPolyhedronVsPolyhedron(&cursor, &rect, &info.normal, &info.depth);
+    // Note that the box should be in screen space already.
+    Vec2 normal = {0};
+    f32 depth = 0.0f;
+    bool collides = TestPoint2DVsAABB2D(controller->cursor_pos, box.box, &normal, &depth);
 
     UIAction action = {0};
     // TODO: There is a potential issue here in that by the time we've checked the down action here,
