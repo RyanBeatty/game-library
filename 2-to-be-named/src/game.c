@@ -5584,7 +5584,7 @@ static RoomPrefab GetRoomPrefab(Arena* perm) {
 
     // Template
     /*
-          5 4 3 2 1 0
+          0 1 2 3 4 5
         5 * * * * * *
         4 * * * * * *
         3 * * * * * *
@@ -5629,6 +5629,27 @@ static RoomPrefab GetRoomPrefab(Arena* perm) {
 
         ArrPush(&prefab->player_spawn_tiles, TileIdLit(3, 2, 0));
         ArrPush(&prefab->player_spawn_tiles, TileIdLit(2, 3, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(5, 0, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(0, 5, 0));
+    }
+
+    /*
+          0 1 2 3 4 5
+        5 * * * * * O
+        4 * * * * * *
+        3 * * * * * *
+        2 * * * * * *
+        1 * * * * * *
+        0 O * * * * *
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 2);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(0, 0, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(5, 5, 0));
 
         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(5, 0, 0));
         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(0, 5, 0));
