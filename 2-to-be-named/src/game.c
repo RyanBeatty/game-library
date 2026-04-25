@@ -6333,6 +6333,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     battle->player_turn_state = PLAYER_TURN_STATE_ATTACK_SELECTED;
                                 }
                             }
+
+                            {
+                                if (UIButton(&ui, Str8FromC("Reset Game"),
+                                             UI_FLAG_ABLE_TO_BE_CLICKED | UI_FLAG_CLICKABLE)
+                                        .clicked) {
+                                    battle->phase = BATTLE_INIT;
+                                }
+                            }
                         }
                     }
                 }
