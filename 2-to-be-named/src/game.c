@@ -5659,16 +5659,30 @@ static RoomPrefab GetRoomPrefab(Arena* perm) {
     return prefabs[i];
 }
 
+static void RandomInitEnemy(Entity* e) {
+    LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
+                                  Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
+    GraphicsInfoSetLModel(&e->graphics, model);
+
+    e->hp = 1;
+    e->team = TEAM_ENEMY;
+    e->state = STATE_ALIVE;
+    e->move_ap = 1;
+    e->attack_ap = 1;
+    e->base_speed = 1;
+    e->attack = (AttackInfo){
+        .dmg = 1,
+        .range = 1,
+        .ranged = false,
+    };
+}
+
 static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 renderh_world, RoomPrefab* prefab) {
     BattleRestart(battle, renderw_world, renderh_world);
 
     EntityId player_ids_buffer[2] = {0};
     EntityIdArr player_ids = {0};
     InitArrS(&player_ids, player_ids_buffer, ArraySizeOf(player_ids_buffer));
-
-    EntityId enemy_ids_buffer[2] = {0};
-    EntityIdArr enemy_ids = {0};
-    InitArrS(&enemy_ids, enemy_ids_buffer, ArraySizeOf(enemy_ids_buffer));
 
     {
         {
@@ -5716,56 +5730,9 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
             // e->pos = TileIdtoVec3(tileid);
             ArrPush(&player_ids, e->id);
         }
-
-        {
-            Entity* e = AllocateEntity();
-            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
-            GraphicsInfoSetLModel(&e->graphics, model);
-
-            e->hp = 1;
-            e->team = TEAM_ENEMY;
-            e->state = STATE_ALIVE;
-            e->move_ap = 1;
-            e->attack_ap = 1;
-            e->base_speed = 1;
-            e->attack = (AttackInfo){
-                .dmg = 1,
-                .range = 1,
-                .ranged = false,
-            };
-
-            // TileId tileid = {.r = 5, .c = 5};
-            // e->pos = TileIdtoVec3(tileid);
-            ArrPush(&enemy_ids, e->id);
-        }
-
-        {
-            Entity* e = AllocateEntity();
-            LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
-                                          Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
-            GraphicsInfoSetLModel(&e->graphics, model);
-
-            e->hp = 1;
-            e->team = TEAM_ENEMY;
-            e->state = STATE_ALIVE;
-            e->move_ap = 1;
-            e->attack_ap = 1;
-            e->base_speed = 1;
-            e->attack = (AttackInfo){
-                .dmg = 1,
-                .range = 1,
-                .ranged = false,
-            };
-
-            // TileId tileid = {.r = 4, .c = 5};
-            // e->pos = TileIdtoVec3(tileid);
-            ArrPush(&enemy_ids, e->id);
-        }
     }
 
     Assert(ArrLen(&player_ids) <= ArrLen(&prefab->player_spawn_tiles));
-    Assert(ArrLen(&enemy_ids) <= ArrLen(&prefab->enemy_spawn_tiles));
 
     for (isize i = 0; i < ArrLen(&player_ids); ++i) {
         Entity* e = EntityFromId(ArrGet(&player_ids, i));
@@ -5774,10 +5741,11 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
         BattleSpawnEntity(battle, e, spawn);
     }
 
-    for (isize i = 0; i < ArrLen(&enemy_ids); ++i) {
-        Entity* e = EntityFromId(ArrGet(&enemy_ids, i));
-        Assert(e);
+    for (isize i = 0; i < ArrLen(&prefab->enemy_spawn_tiles); ++i) {
         TileId spawn = ArrGet(&prefab->enemy_spawn_tiles, i);
+        Entity* e = AllocateEntity();
+        Assert(e);
+        RandomInitEnemy(e);
         BattleSpawnEntity(battle, e, spawn);
     }
 }
