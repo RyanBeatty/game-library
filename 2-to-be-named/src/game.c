@@ -5579,7 +5579,7 @@ typedef struct {
 } RoomPrefab;
 
 static RoomPrefab GetRoomPrefab(Arena* perm) {
-    RoomPrefab prefabs[16] = {0};
+    RoomPrefab prefabs[10] = {0};
     isize j = 0;
 
     // Template
@@ -5677,6 +5677,155 @@ static RoomPrefab GetRoomPrefab(Arena* perm) {
         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(3, 2, 0));
         ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(4, 3, 0));
     }
+    /*
+          0 1 2 3 4 5
+        5 * * * * * X
+        4 * X * * * *
+        3 * * X * * *
+        2 * X * * * *
+        1 * * * * * O
+        0 * * * * O *
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 4);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(0, 4, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(1, 5, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(5, 5, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(4, 1, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(3, 2, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(2, 1, 0));
+    }
+
+    /*
+          0 1 2 3 4 5
+        5 X * * * * *
+        4 * * * * * *
+        3 * * O * * *
+        2 * * * * * *
+        1 * X * * X *
+        0 * * * * * O
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 3);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(3, 2, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(0, 5, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(5, 0, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(1, 1, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(1, 4, 0));
+    }
+
+    /*
+          0 1 2 3 4 5
+        5 * * * * * *
+        4 * X * * X *
+        3 * * O * * *
+        2 * * * O * *
+        1 * X * * X *
+        0 * * * * * *
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 4);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(3, 2, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(2, 3, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(4, 1, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(4, 4, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(1, 1, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(1, 4, 0));
+    }
+
+    /*
+          0 1 2 3 4 5
+        5 * * * * * *
+        4 X * X * X *
+        3 * X * X * X
+        2 * * * * * *
+        1 * O * * O *
+        0 * * * * * *
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 6);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(1, 1, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(1, 4, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(4, 0, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(4, 2, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(4, 4, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(3, 1, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(3, 3, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(3, 5, 0));
+    }
+
+    /*
+          0 1 2 3 4 5
+        5 * X * * O *
+        4 * * * * * O
+        3 * * * X * *
+        2 * * * * * X
+        1 * X * * * *
+        0 * * * * * *
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 4);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(5, 4, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(4, 5, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(5, 1, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(3, 3, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(2, 5, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(1, 1, 0));
+    }
+
+    /*
+          0 1 2 3 4 5
+        5 * * * * * X
+        4 * * * * * *
+        3 O * * X * *
+        2 * * X * * O
+        1 * * * * * *
+        0 X * * * * *
+    */
+    {
+        RoomPrefab* prefab = &prefabs[j++];
+        InitArr(&prefab->player_spawn_tiles, perm, TileId, 2);
+        InitArr(&prefab->enemy_spawn_tiles, perm, TileId, 4);
+
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(3, 0, 0));
+        ArrPush(&prefab->player_spawn_tiles, TileIdLit(2, 5, 0));
+
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(5, 5, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(3, 3, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(2, 2, 0));
+        ArrPush(&prefab->enemy_spawn_tiles, TileIdLit(0, 0, 0));
+    }
+
+    // Template
+    /*
+          0 1 2 3 4 5
+        5 * * * * * *
+        4 * * * * * *
+        3 * * * * * *
+        2 * * * * * *
+        1 * * * * * *
+        0 * * * * * *
+    */
 
     isize i = i32rand() % j;
     return prefabs[i];
