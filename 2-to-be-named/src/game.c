@@ -4426,6 +4426,12 @@ typedef struct {
 } UIBoxStyle;
 
 typedef struct {
+    isize id;
+} UIBoxId;
+
+typedef struct {
+    UIBoxId id;
+
     // The box's center should be in world position.
     // TODO: Longer term I should probably think about just storing an offset to parent and a dimension
     // Then you recalculate the world position each frame from the parent (root of tree will get actual screen top left
@@ -4500,6 +4506,8 @@ typedef struct {
 
     UITheme theme;
 
+    UIBoxId next_id;
+
     GameInput* input;  // Reset each frame.
 } UIState;
 
@@ -4538,6 +4546,12 @@ static void UIPopThemeColor(UIState* ui) {
 #define UIPopParent(ui) (ArrPop(&(ui)->parents))
 #define UIParent(ui, pparent) Scoped(UIPushParent((ui), (pparent)), UIPopParent((ui)))
 
+static UIBoxId UIStateNextId(UIState* ui) {
+    UIBoxId id = ui->next_id;
+    ui->next_id = (UIBoxId){.id = id.id + 1};
+    return id;
+}
+
 // Set the current parent's cursor offset to pos.
 static void UISetCursor(UIState* ui, Vec2 pos) {
     UIBox* root = UIGetParent(ui);
@@ -4555,7 +4569,7 @@ static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInp
 
     InitArr(&ui->parents, perm, UIBox, 10);
     AABB2D parent_box = AABB2DFromMinMax(Vec2Lit(0, 0), Vec2Lit(width, height));
-    UIBox root_parent = {.box = parent_box, .cursor_top_left_offset = Vec2Zero()};
+    UIBox root_parent = {.box = parent_box, .cursor_top_left_offset = Vec2Zero(), .id = UIStateNextId(ui)};
     UIPushParent(ui, root_parent);
 
     {
@@ -4635,7 +4649,7 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBo
     Vec2 box_max = Vec2Lit(top_left.x + resolved_dims.x, top_left.y);
 
     AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
-    UIBox box = {.box = aabb, .text = text, .textbox = textbox};
+    UIBox box = {.box = aabb, .text = text, .textbox = textbox, .id = UIStateNextId(ui)};
 
     // Update parent pos.
     Vec2 box_dims = AABB2DDims(box.box);
