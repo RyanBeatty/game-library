@@ -212,10 +212,6 @@ static f32 TOL = 0.001;
 // number then it will cause us to get incorrect results.
 LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
 
-#define i32rand() ((i32)rand())
-#define i32max(x, y) ((x) < (y) ? (x) : (y))
-#define i32abs(x) (abs(x))
-
 // #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
 #define f32rand01() ((f32)rand() / (f32)RAND_MAX)
 #define f32randab(a, b) (f32lerp((a), (b), (f32rand01())))
@@ -224,6 +220,11 @@ LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
 // Returns the percent t is between start and end so range s..e to 0..1
 // Note only returns positive pct. To invert direction do 1.0f - res
 #define f32lerp_pct(s, e, t) (f32clamp01(((t) - (s)) / ((e) - (s))))
+
+#define i32rand() ((i32)rand())
+#define i32randab(a, b) ((i32)f32randab(a, b))
+#define i32max(x, y) ((x) < (y) ? (x) : (y))
+#define i32abs(x) (abs(x))
 
 typedef struct {
     union {

@@ -5893,14 +5893,14 @@ static void InitRandomEnemy(Entity* e) {
                                   Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
     GraphicsInfoSetLModel(&e->graphics, model);
 
-    e->hp = 1;
+    e->hp = i32randab(2, 4);
     e->team = TEAM_ENEMY;
     e->state = STATE_ALIVE;
     e->move_ap = 1;
     e->attack_ap = 1;
-    e->base_speed = 1;
+    e->base_speed = f32randab(1, 6);
     e->attack = (AttackInfo){
-        .dmg = 1,
+        .dmg = f32randab(2, 3),
         .range = 1,
         .ranged = false,
     };
@@ -5920,14 +5920,14 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LBLUE);
             GraphicsInfoSetLModel(&e->graphics, model);
 
-            e->hp = 1;
+            e->hp = 4;
             e->team = TEAM_PLAYER;
             e->state = STATE_ALIVE;
             e->move_ap = 1;
             e->attack_ap = 1;
-            e->base_speed = 2;
+            e->base_speed = 4;
             e->attack = (AttackInfo){
-                .dmg = 1,
+                .dmg = 2,
                 .range = 1,
                 .ranged = false,
             };
@@ -5943,7 +5943,7 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                                           Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LGREEN);
             GraphicsInfoSetLModel(&e->graphics, model);
 
-            e->hp = 1;
+            e->hp = 2;
             e->team = TEAM_PLAYER;
             e->state = STATE_ALIVE;
             e->move_ap = 1;
