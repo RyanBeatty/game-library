@@ -4429,6 +4429,10 @@ typedef struct {
     isize id;
 } UIBoxId;
 
+static UIBoxId NULL_UIBOXID = {.id = 0};
+#define UIBoxIdEq(a, b) ((a).id == (b).id)
+#define UIBoxIdIsNull(a) (UIBoxIdEq(a, NULL_UIBOXID))
+
 typedef struct {
     UIBoxId id;
 
@@ -4507,6 +4511,7 @@ typedef struct {
     UITheme theme;
 
     UIBoxId next_id;
+    UIBoxId active_id;
 
     GameInput* input;  // Reset each frame.
 } UIState;
@@ -4566,6 +4571,9 @@ static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInp
     UIPushFont(ui, GetLFontClosest(10.0f));
     InitArr(&ui->layout_dirs, perm, UILayoutDirection, 2);
     UIPushLayoutDirection(ui, UI_LAYOUT_DOWN);
+
+    // Make sure first id is not the null id.
+    ui->next_id = (UIBoxId){.id = NULL_UIBOXID.id + 1};
 
     InitArr(&ui->parents, perm, UIBox, 10);
     AABB2D parent_box = AABB2DFromMinMax(Vec2Lit(0, 0), Vec2Lit(width, height));
@@ -4765,9 +4773,14 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width
     // update step. Ideally we decouple the UI logic detection/gameplay state update and the render.
     // But they are coupled for the time being.
     if (collides && UITestFlag(flags, UI_FLAG_CLICKABLE)) {
-        action.hover = true;
-        action.clicked = controller->action_down.pressed;
-        action.down = controller->action_down.down;
+        // Prevent us from activating two adjacent buttonsa t the same time. This can happen occasionally due to
+        // floating point math.
+        if (UIBoxIdIsNull(ui->active_id) || UIBoxIdEq(ui->active_id, box.id)) {
+            ui->active_id = box.id;
+            action.hover = true;
+            action.clicked = controller->action_down.pressed;
+            action.down = controller->action_down.down;
+        }
     }
 
     DrawUIBoxEx(ui, &box, flags, action);
