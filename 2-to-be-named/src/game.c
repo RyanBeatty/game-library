@@ -5888,7 +5888,7 @@ static RoomPrefab GetRoomPrefab(Arena* perm) {
     return prefabs[i];
 }
 
-static void RandomInitEnemy(Entity* e) {
+static void InitRandomEnemy(Entity* e) {
     LModel model = LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(),
                                   Vec3Lit(Px2Meter(16.0f), Px2Meter(16.0f), 1.0f), LRED);
     GraphicsInfoSetLModel(&e->graphics, model);
@@ -5974,7 +5974,7 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
         TileId spawn = ArrGet(&prefab->enemy_spawn_tiles, i);
         Entity* e = AllocateEntity();
         Assert(e);
-        RandomInitEnemy(e);
+        InitRandomEnemy(e);
         BattleSpawnEntity(battle, e, spawn);
     }
 }
