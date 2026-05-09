@@ -4899,6 +4899,8 @@ typedef struct {
     i32 height;
 } TileId;
 
+static const TileId NULL_TILEID = {.r = -1, .c = -1, .height = -1};
+
 typedef struct {
     TileId* data;
     isize len;
@@ -6210,12 +6212,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case TEAM_ENEMY: {
-                        TileId attack_target = {0};
-                        bool attack_target_found = false;
                         TileId turn_entity_tileid = TileIdFromVec3(turn_entity->pos);
                         PlatformLog(LLOG_DEBUG, "Beginning entity at (%d, %d) think", turn_entity_tileid.r,
                                     turn_entity_tileid.c);
 
+                        TileId attack_target = NULL_TILEID;
                         if (turn_entity->attack_ap > 0) {
                             AttackRange attack_range = BattleGenerateAttackRange(battle, &turn_entity->attack,
                                                                                  turn_entity_tileid, &gstate->temp);
@@ -6225,7 +6226,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 if (e && e->state != STATE_DEAD && e->team != turn_entity->team) {
                                     PlatformLog(LLOG_DEBUG, "Found target");
                                     attack_target = *it;
-                                    attack_target_found = true;
                                     break;
                                 } else {
                                     PlatformLog(LLOG_DEBUG, "no target at tile");
@@ -6235,11 +6235,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             PlatformLog(LLOG_DEBUG, "No more attack ap");
                         }
 
+                        bool attack_found = !TileIdEq(attack_target, NULL_TILEID);
+
                         // Has some bugs in that you could select a move that you are unable to make because the place
                         // where you want to move is occupied.
                         bool move_found = false;
                         TileId best_move_id = {0};
-                        if (!attack_target_found) {
+                        if (!attack_found) {
                             f32 best_move_score = F32_MAX;
                             MoveRange move_range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
                             MoveRangeIter(&move_range, move_it) {
@@ -6261,18 +6263,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                         move_found = false;
 
-                        if (attack_target_found || move_found) {
-                            Tile* attack_target_tile = NULL;
-                            Tile* move_target_tile = NULL;
-                            if (attack_target_found) {
-                                PlatformLog(LLOG_DEBUG, "entity found attack (%d, %d)", attack_target.r,
-                                            attack_target.c);
-                                attack_target_tile = GridTileFromId(grid, attack_target);
-                            }
-
-                            if (move_found) {
-                                move_target_tile = GridTileFromId(grid, best_move_id);
-                            }
+                        if (attack_found || move_found) {
+                            Tile* attack_target_tile = GridMaybeTileFromId(grid, attack_target);
+                            Tile* move_target_tile = GridMaybeTileFromId(grid, best_move_id);
                             BattleMoveToTile(battle, turn_entity, move_target_tile);
                             BattleAttackTile(battle, turn_entity, attack_target_tile);
                         } else {
