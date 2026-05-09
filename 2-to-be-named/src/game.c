@@ -6239,8 +6239,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         // Has some bugs in that you could select a move that you are unable to make because the place
                         // where you want to move is occupied.
-                        bool move_found = false;
-                        TileId best_move_id = {0};
+                        TileId move_target = NULL_TILEID;
                         if (!attack_found) {
                             f32 best_move_score = F32_MAX;
                             MoveRange move_range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
@@ -6253,19 +6252,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         i32 dist = GridGetDistanceBetween(grid, candidate_move, party_tile);
                                         f32 score = dist;
                                         if (score < best_move_score) {
-                                            move_found = true;
-                                            best_move_id = candidate_move;
+                                            move_target = candidate_move;
                                             best_move_score = score;
                                         }
                                     }
                                 }
                             }
                         }
+                        bool move_found = !TileIdEq(move_target, NULL_TILEID);
                         move_found = false;
 
                         if (attack_found || move_found) {
                             Tile* attack_target_tile = GridMaybeTileFromId(grid, attack_target);
-                            Tile* move_target_tile = GridMaybeTileFromId(grid, best_move_id);
+                            Tile* move_target_tile = GridMaybeTileFromId(grid, move_target);
                             BattleMoveToTile(battle, turn_entity, move_target_tile);
                             BattleAttackTile(battle, turn_entity, attack_target_tile);
                         } else {
