@@ -5213,6 +5213,8 @@ static void BattleRestart(BattleState* battle, f32 renderw_world, f32 renderh_wo
     battle->player_turn_state = PLAYER_TURN_STATE_NONE;
 }
 
+// Will return the list of valid moves (i.e. tiles we can actually move to taking into account terrain effects and
+// occupied state).
 static MoveRange BattleGenerateMoveRange(BattleState* battle, Entity* e, Arena* perm) {
     TileId start = TileIdFromVec3(e->pos);
 
@@ -6212,6 +6214,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case TEAM_ENEMY: {
+                        // The enemy is pretty basic. If we can attack, then attack, else try to move. Note that due to
+                        // nature of how we exhaust AP. its possible the AI could tick twice in one turn. once to move
+                        // the enemy and then again to attack now that its in range.
                         TileId turn_entity_tileid = TileIdFromVec3(turn_entity->pos);
                         PlatformLog(LLOG_DEBUG, "Beginning entity at (%d, %d) think", turn_entity_tileid.r,
                                     turn_entity_tileid.c);
@@ -6237,30 +6242,32 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         bool attack_found = !TileIdEq(attack_target, NULL_TILEID);
 
-                        // Has some bugs in that you could select a move that you are unable to make because the place
-                        // where you want to move is occupied.
                         TileId move_target = NULL_TILEID;
                         if (!attack_found) {
-                            f32 best_move_score = F32_MAX;
-                            MoveRange move_range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
-                            MoveRangeIter(&move_range, move_it) {
-                                TileId candidate_move = *move_it;
-                                BattlePartyIter(battle, party_it) {
-                                    Entity* e_party = EntityFromId(*party_it);
-                                    if (e_party && e_party->state == STATE_ALIVE) {
-                                        TileId party_tile = TileIdFromVec3(e_party->pos);
-                                        i32 dist = GridGetDistanceBetween(grid, candidate_move, party_tile);
-                                        f32 score = dist;
-                                        if (score < best_move_score) {
-                                            move_target = candidate_move;
-                                            best_move_score = score;
+                            if (turn_entity->move_ap > 0) {
+                                f32 best_move_score = F32_MAX;
+                                MoveRange move_range = BattleGenerateMoveRange(battle, turn_entity, &gstate->temp);
+                                MoveRangeIter(&move_range, move_it) {
+                                    TileId candidate_move = *move_it;
+                                    BattlePartyIter(battle, party_it) {
+                                        Entity* e_party = EntityFromId(*party_it);
+                                        if (e_party && e_party->state == STATE_ALIVE) {
+                                            TileId party_tile = TileIdFromVec3(e_party->pos);
+                                            i32 dist = GridGetDistanceBetween(grid, candidate_move, party_tile);
+                                            f32 score = dist;
+                                            if (score < best_move_score) {
+                                                move_target = candidate_move;
+                                                best_move_score = score;
+                                            }
                                         }
                                     }
                                 }
+                            } else {
+                                PlatformLog(LLOG_DEBUG, "No more move ap");
                             }
                         }
                         bool move_found = !TileIdEq(move_target, NULL_TILEID);
-                        move_found = false;
+                        // move_found = false;
 
                         if (attack_found || move_found) {
                             Tile* attack_target_tile = GridMaybeTileFromId(grid, attack_target);
