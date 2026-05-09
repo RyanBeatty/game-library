@@ -4102,7 +4102,7 @@ typedef struct {
     isize cap;
 } EntityIdArr;
 
-#define EntityIdArrIter(arr, it) for (EntityId* it = ArrGetR(arr, 0); it != ArrTailR(arr); ++it)
+#define EntityIdArrIter(arr, it) for (EntityId* it = ArrGetR(arr, 0); it <= ArrTailR(arr); ++it)
 
 ////////////////////////////////////////////////////////////
 // s:gameplay fields.
@@ -4905,7 +4905,7 @@ typedef struct {
     isize cap;
 } TileIdArr;
 
-#define TileIdArrIter(arr, it) for (TileId* it = ArrGetR(arr, 0); it != ArrTailR(arr); ++it)
+#define TileIdArrIter(arr, it) for (TileId* it = ArrGetR(arr, 0); it <= ArrTailR(arr); ++it)
 
 #define TileIdLit(row, col, hheight) ((TileId){.r = (row), .c = (col), .height = (hheight)})
 #define TileIdFromVec3(v) ((TileId){.r = (v).y, .c = (v).x, .height = (v).z})
