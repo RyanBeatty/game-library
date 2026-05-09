@@ -5915,9 +5915,9 @@ static void InitRandomEnemy(Entity* e) {
     e->state = STATE_ALIVE;
     e->move_ap = 1;
     e->attack_ap = 1;
-    e->base_speed = f32randab(1, 6);
+    e->base_speed = i32randab(1, 6);
     e->attack = (AttackInfo){
-        .dmg = f32randab(2, 3),
+        .dmg = i32randab(2, 3),
         .range = 1,
         .ranged = false,
     };
@@ -6212,18 +6212,27 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case TEAM_ENEMY: {
                         TileId attack_target = {0};
                         bool attack_target_found = false;
+                        TileId turn_entity_tileid = TileIdFromVec3(turn_entity->pos);
+                        PlatformLog(LLOG_DEBUG, "Beginning entity at (%d, %d) think", turn_entity_tileid.r,
+                                    turn_entity_tileid.c);
 
                         if (turn_entity->attack_ap > 0) {
-                            AttackRange attack_range = BattleGenerateAttackRange(
-                                battle, &turn_entity->attack, TileIdFromVec3(turn_entity->pos), &gstate->temp);
+                            AttackRange attack_range = BattleGenerateAttackRange(battle, &turn_entity->attack,
+                                                                                 turn_entity_tileid, &gstate->temp);
                             AttackRangeIter(&attack_range, it) {
+                                PlatformLog(LLOG_DEBUG, "Checking tile (%d, %d) for attack", it->r, it->c);
                                 Entity* e = GridGetEntityAtTileId(grid, *it);
                                 if (e && e->state != STATE_DEAD && e->team != turn_entity->team) {
+                                    PlatformLog(LLOG_DEBUG, "Found target");
                                     attack_target = *it;
                                     attack_target_found = true;
                                     break;
+                                } else {
+                                    PlatformLog(LLOG_DEBUG, "no target at tile");
                                 }
                             }
+                        } else {
+                            PlatformLog(LLOG_DEBUG, "No more attack ap");
                         }
 
                         // Has some bugs in that you could select a move that you are unable to make because the place
@@ -6253,10 +6262,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         move_found = false;
 
                         if (attack_target_found || move_found) {
-                            breakpoint();
                             Tile* attack_target_tile = NULL;
                             Tile* move_target_tile = NULL;
                             if (attack_target_found) {
+                                PlatformLog(LLOG_DEBUG, "entity found attack (%d, %d)", attack_target.r,
+                                            attack_target.c);
                                 attack_target_tile = GridTileFromId(grid, attack_target);
                             }
 
@@ -6267,6 +6277,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             BattleAttackTile(battle, turn_entity, attack_target_tile);
                         } else {
                             // If can't move or attack, exhaust self.
+                            PlatformLog(LLOG_DEBUG, "entity exhausts self");
                             turn_entity->move_ap = 0;
                             turn_entity->attack_ap = 0;
                         }
