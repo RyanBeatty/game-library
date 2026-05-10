@@ -5611,8 +5611,12 @@ static void BattleMaybeEndTurn(BattleState* battle) {
         battle->player_turn_state = PLAYER_TURN_STATE_IDLE;
     }
 
+    // We only auto end turn for non player entities. otherwise one could accidentally hit end turn twice (they could
+    // move and attack to exhaust their first character, then hit end turn exhausting their second).
     if (turn_entity->move_ap <= 0 && turn_entity->attack_ap <= 0) {
-        battle->phase = BATTLE_END_TURN;
+        if (!TestFlag(turn_entity->flags, EFLAG_PLAYER_CONTROLLED)) {
+            battle->phase = BATTLE_END_TURN;
+        }
     }
 }
 
@@ -5953,6 +5957,8 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                 .ranged = false,
             };
 
+            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
+
             // TileId tileid = {.r = 0, .c = 0};
             // e->pos = TileIdtoVec3(tileid);
             ArrPush(&player_ids, e->id);
@@ -5975,6 +5981,8 @@ static void BattleFromRoomPrefab(BattleState* battle, f32 renderw_world, f32 ren
                 .range = 3,
                 .ranged = true,
             };
+
+            FlagOn(e->flags, EFLAG_PLAYER_CONTROLLED);
 
             // TileId tileid = {.r = 1, .c = 0};
             // e->pos = TileIdtoVec3(tileid);
