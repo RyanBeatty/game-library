@@ -4918,9 +4918,14 @@ typedef struct {
     // Reminder that this pos refers to the *center* of the tile.
     Vec3 pos;
     TileId id;
+    // TODO: I don't remember why I added the graphics field here. Why does a tile need to maintain its own graphics
+    // statefully? Sort of feels like maybe we should remove this and then just set the graphics with procedural code
+    // when we actually draw out the grid in the main tick.
     GraphicsInfo graphics;
 
     EntityId occupant;
+
+    TeamType territory_owner;
 } Tile;
 
 typedef struct {
@@ -4989,6 +4994,10 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
             tile->id = (TileId){.r = r, .c = c, .height = 0};
             LModel model = color_idx % 2 == 0 ? black_model : grey_model;
             GraphicsInfoSetLModel(&tile->graphics, model);
+
+            {
+                tile->territory_owner = c < ncols / 2 ? TEAM_PLAYER : TEAM_ENEMY;
+            }
         }
 
         // If even cols, offset color index for start of next row by 1 to get checkerboard pattern.
