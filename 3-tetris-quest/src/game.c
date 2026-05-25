@@ -4904,12 +4904,37 @@ typedef struct {
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
 
+typedef enum {
+    PC_DEFAULT = 0,
+    PC_RED,
+    PC_GREEN,
+    PC_BLUE,
+    PC_PURPLE,
+    PC_YELLOW,
+    PC_ORANGE,
+    PC_COUNT,
+} PieceBaseColor;
+
+static Vec4 GetPieceBaseColor(PieceBaseColor color) {
+    Vec4 PIECE_BASE_COLORS[PC_COUNT] = {
+        RGBLit(180, 180, 180),  // DEFAULT
+        RGBLit(220, 50, 50),    // RED
+        RGBLit(60, 200, 80),    // GREEN
+        RGBLit(50, 130, 230),   // BLUE
+        RGBLit(160, 60, 220),   // PURPLE
+        RGBLit(240, 210, 40),   // YELLOW
+        RGBLit(235, 120, 30),   // ORANGE
+    };
+
+    return PIECE_BASE_COLORS[color];
+}
+
 typedef struct {
     // Reminder that this pos refers to the *center* of the tile.
     Vec3 pos;
     TileId id;
-
-    EntityId occupant;
+    bool occupied;
+    PieceBaseColor base_color;
 } Tile;
 
 typedef struct {
@@ -5027,17 +5052,25 @@ LCORE Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) 
     return GridMaybeTileFromId(grid, tileid);
 }
 
-LCORE Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
-    if (tile == NULL) {
-        return NULL;
-    }
+// LCORE Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
+//     if (tile == NULL) {
+//         return NULL;
+//     }
 
-    Entity* e = EntityFromId(tile->occupant);
-    return e;
-}
+//     Entity* e = EntityFromId(tile->occupant);
+//     return e;
+// }
 
-LCORE Entity* GridGetEntityAtTileId(Grid* grid, TileId tile) {
-    return GridGetEntityAtTile(grid, GridTileFromId(grid, tile));
+// LCORE Entity* GridGetEntityAtTileId(Grid* grid, TileId tile) {
+//     return GridGetEntityAtTile(grid, GridTileFromId(grid, tile));
+// }
+
+LCORE void GridPlacePiece(Grid* grid) {
+    PieceBaseColor base_color = i32randab(PC_DEFAULT + 1, PC_COUNT - 1);
+
+    Tile* tile = GridGetTile(grid, 0, 0);
+    tile->occupied = true;
+    tile->base_color = base_color;
 }
 
 typedef struct {
@@ -5221,6 +5254,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         // Update transforms.
         {
+            if (controller->action_down.pressed) {
+                GridPlacePiece(grid);
+            }
+
             // for (isize r = 0; r < grid->nrows; ++r) {
             //     for (isize c = 0; c < grid->ncols; ++c) {
             //         Tile* tile = GridGetTile(grid, r, c);
@@ -5281,6 +5318,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                             Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
                             DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
+
+                            if (tile->occupied) {
+                                Vec4 piece_color = GetPieceBaseColor(tile->base_color);
+                                DrawQuad(pos, scale.x, scale.y, Mat4Identity(), piece_color);
+                            }
                         }
 
                         // Offset each row.
