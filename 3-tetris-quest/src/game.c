@@ -5070,7 +5070,7 @@ LCORE void GridPlacePiece(Grid* grid) {
     TileId offsets[4] = {TileIdLit(3, 0, 0), TileIdLit(2, 0, 0), TileIdLit(1, 0, 0), TileIdLit(0, 0, 0)};
     isize offsets_len = ArraySizeOf(offsets);
 
-    isize c = 0;
+    isize c = 4;
     isize r_candidate = grid->nrows;
     for (isize r = r_candidate - 1; r >= 0; --r) {
         Tile* tile = GridMaybeGetTile(grid, r, c);
