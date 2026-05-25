@@ -5112,13 +5112,17 @@ LCORE void GridPlacePiece(Grid* grid, isize column) {
 
 typedef struct {
     Grid grid;
+
+    isize anchor_column;
 } Battle;
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     GridInit(&battle->grid, renderw_world, renderh_world);
+    battle->anchor_column = 4;
 }
 
-static void BattlePlacePiece(Battle* battle) { GridPlacePiece(&battle->grid, 4); }
+static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
+static void BattlePlacePiece(Battle* battle) { GridPlacePiece(&battle->grid, battle->anchor_column); }
 
 ////////////////////////////////////////////////////
 
@@ -5294,6 +5298,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         // Update transforms.
         {
+            if (controller->action_left.pressed || controller->action_right.pressed) {
+                isize offset = 0;
+                if (controller->action_left.pressed) {
+                    offset += -1;
+                }
+                if (controller->action_right.pressed) {
+                    offset += 1;
+                }
+
+                BattleMoveAnchor(battle, offset);
+            }
+
             if (controller->action_down.pressed) {
                 BattlePlacePiece(battle);
             }
