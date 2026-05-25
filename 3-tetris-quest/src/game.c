@@ -5067,8 +5067,27 @@ LCORE Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) 
 
 LCORE void GridPlacePiece(Grid* grid) {
     PieceBaseColor base_color = i32randab(PC_DEFAULT + 1, PC_COUNT - 1);
+    TileId offsets[4] = {TileIdLit(3, 0, 0), TileIdLit(2, 0, 0), TileIdLit(1, 0, 0), TileIdLit(0, 0, 0)};
+    isize offsets_len = ArraySizeOf(offsets);
 
-    Tile* tile = GridGetTile(grid, 0, 0);
+    isize c = 0;
+    isize r_candidate = grid->nrows;
+    for (isize r = r_candidate - 1; r >= 0; --r) {
+        Tile* tile = GridMaybeGetTile(grid, r, c);
+        if (!tile) {
+            continue;
+        } else if (tile->occupied) {
+            // Gone too far.
+            break;
+        } else {
+            r_candidate = r;
+            continue;
+        }
+    }
+
+    Assert(r_candidate < grid->nrows && r_candidate >= 0);
+
+    Tile* tile = GridGetTile(grid, r_candidate, c);
     tile->occupied = true;
     tile->base_color = base_color;
 }
