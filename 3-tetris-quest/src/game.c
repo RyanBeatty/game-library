@@ -5083,7 +5083,7 @@ typedef struct {
     PieceRot rot_idx;
 } Piece;
 
-LCORE void GridPlacePiece(Grid* grid, isize column) {
+LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
     PieceBaseColor base_color = i32randab(PC_DEFAULT + 1, PC_COUNT - 1);
     TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
@@ -5095,10 +5095,6 @@ LCORE void GridPlacePiece(Grid* grid, isize column) {
             {TileIdLit(-1, 1), TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(0, -1)},  // Rot 180
             {TileIdLit(-1, -1), TileIdLit(0, -1), TileIdLit(0, 0), TileIdLit(1, 0)},  // Rot 270
         },
-    };
-    Piece piece = {
-        .type = PT_Z,
-        .rot_idx = PR_0,
     };
 
     isize r_candidate = grid->nrows;
@@ -5151,7 +5147,13 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
 }
 
 static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
-static void BattlePlacePiece(Battle* battle) { GridPlacePiece(&battle->grid, battle->anchor_column); }
+static void BattlePlacePiece(Battle* battle) {
+    Piece piece = {
+        .type = PT_Z,
+        .rot_idx = PR_0,
+    };
+    GridPlacePiece(&battle->grid, piece, battle->anchor_column);
+}
 
 ////////////////////////////////////////////////////
 
