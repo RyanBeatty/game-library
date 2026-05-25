@@ -4899,7 +4899,7 @@ typedef struct {
 
 #define TileIdArrIter(arr, it) for (TileId* it = ArrGetR(arr, 0); it <= ArrTailR(arr); ++it)
 
-#define TileIdLit(row, col, hheight) ((TileId){.r = (row), .c = (col), .height = (hheight)})
+#define TileIdLit(row, col) ((TileId){.r = (row), .c = (col), .height = 0})
 #define TileIdFromVec3(v) ((TileId){.r = (v).y, .c = (v).x, .height = (v).z})
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
@@ -5067,8 +5067,10 @@ LCORE Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) 
 
 LCORE void GridPlacePiece(Grid* grid) {
     PieceBaseColor base_color = i32randab(PC_DEFAULT + 1, PC_COUNT - 1);
-    TileId offsets[4] = {TileIdLit(3, 0, 0), TileIdLit(2, 0, 0), TileIdLit(1, 0, 0), TileIdLit(0, 0, 0)};
-    isize offsets_len = ArraySizeOf(offsets);
+    TileId OFFSETS[1][4] = {
+        {TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(0, -1), TileIdLit(1, -1)},
+    };
+    isize piece_type = 0;
 
     isize c = 4;
     isize r_candidate = grid->nrows;
@@ -5080,16 +5082,33 @@ LCORE void GridPlacePiece(Grid* grid) {
             // Gone too far.
             break;
         } else {
-            r_candidate = r;
-            continue;
+            bool can_place = true;
+            for (isize i = 0; i < ArraySizeOf(OFFSETS[piece_type]); ++i) {
+                TileId offset = OFFSETS[piece_type][i];
+                Tile* t = GridMaybeGetTile(grid, r + offset.r, c + offset.c);
+                if (!t) {
+                    can_place = false;
+                    break;
+                } else if (t->occupied) {
+                    can_place = false;
+                    break;
+                }
+            }
+
+            if (can_place) {
+                r_candidate = r;
+            }
         }
     }
 
     Assert(r_candidate < grid->nrows && r_candidate >= 0);
 
-    Tile* tile = GridGetTile(grid, r_candidate, c);
-    tile->occupied = true;
-    tile->base_color = base_color;
+    for (isize i = 0; i < ArraySizeOf(OFFSETS[piece_type]); ++i) {
+        TileId offset = OFFSETS[piece_type][i];
+        Tile* tile = GridGetTile(grid, r_candidate + offset.r, c + offset.c);
+        tile->occupied = true;
+        tile->base_color = base_color;
+    }
 }
 
 typedef struct {
