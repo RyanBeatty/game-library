@@ -5040,6 +5040,14 @@ LCORE Entity* GridGetEntityAtTileId(Grid* grid, TileId tile) {
     return GridGetEntityAtTile(grid, GridTileFromId(grid, tile));
 }
 
+typedef struct {
+    Grid grid;
+} Battle;
+
+static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
+    GridInit(&battle->grid, renderw_world, renderh_world);
+}
+
 ////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
@@ -5095,7 +5103,7 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Scene fields
 
-    Grid grid;
+    Battle battle;
 
 } GameState;
 
@@ -5203,10 +5211,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     // Grid* grid = GameStateGetGrid(gstate);
 
     GameControllerState* controller = GetController(input, 0);
+    Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
         // BattleInit(battle, &gstate->perm);
-        GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world);
+        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
     }
 
     if (gstate->update) {
@@ -5263,7 +5272,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec4 GRAY1 = RGBLit(70, 70, 72);
                     Vec4 GRAY2 = RGBLit(82, 82, 84);
 
-                    Grid* grid = &gstate->grid;
                     Mat4 grid_to_world = grid->grid_to_world;
                     i32 color_idx = 0;
                     for (i32 r = 0; r < grid->nrows; ++r) {
