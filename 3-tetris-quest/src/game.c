@@ -5065,17 +5065,16 @@ LCORE Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) 
 //     return GridGetEntityAtTile(grid, GridTileFromId(grid, tile));
 // }
 
-LCORE void GridPlacePiece(Grid* grid) {
+LCORE void GridPlacePiece(Grid* grid, isize column) {
     PieceBaseColor base_color = i32randab(PC_DEFAULT + 1, PC_COUNT - 1);
     TileId OFFSETS[1][4] = {
         {TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(0, -1), TileIdLit(1, -1)},
     };
     isize piece_type = 0;
 
-    isize c = 4;
     isize r_candidate = grid->nrows;
     for (isize r = r_candidate - 1; r >= 0; --r) {
-        Tile* tile = GridMaybeGetTile(grid, r, c);
+        Tile* tile = GridMaybeGetTile(grid, r, column);
         if (!tile) {
             continue;
         } else if (tile->occupied) {
@@ -5085,7 +5084,7 @@ LCORE void GridPlacePiece(Grid* grid) {
             bool can_place = true;
             for (isize i = 0; i < ArraySizeOf(OFFSETS[piece_type]); ++i) {
                 TileId offset = OFFSETS[piece_type][i];
-                Tile* t = GridMaybeGetTile(grid, r + offset.r, c + offset.c);
+                Tile* t = GridMaybeGetTile(grid, r + offset.r, column + offset.c);
                 if (!t) {
                     can_place = false;
                     break;
@@ -5105,7 +5104,7 @@ LCORE void GridPlacePiece(Grid* grid) {
 
     for (isize i = 0; i < ArraySizeOf(OFFSETS[piece_type]); ++i) {
         TileId offset = OFFSETS[piece_type][i];
-        Tile* tile = GridGetTile(grid, r_candidate + offset.r, c + offset.c);
+        Tile* tile = GridGetTile(grid, r_candidate + offset.r, column + offset.c);
         tile->occupied = true;
         tile->base_color = base_color;
     }
@@ -5118,6 +5117,8 @@ typedef struct {
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     GridInit(&battle->grid, renderw_world, renderh_world);
 }
+
+static void BattlePlacePiece(Battle* battle) { GridPlacePiece(&battle->grid, 4); }
 
 ////////////////////////////////////////////////////
 
@@ -5282,6 +5283,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     // Grid* grid = GameStateGetGrid(gstate);
 
     GameControllerState* controller = GetController(input, 0);
+    Battle* battle = &gstate->battle;
     Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
@@ -5293,7 +5295,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         // Update transforms.
         {
             if (controller->action_down.pressed) {
-                GridPlacePiece(grid);
+                BattlePlacePiece(battle);
             }
 
             // for (isize r = 0; r < grid->nrows; ++r) {
