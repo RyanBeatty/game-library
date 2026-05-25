@@ -4855,8 +4855,8 @@ LCORE Mat4 GetCameraMat(Vec3 eye, Vec3 orient) {
     return Mat4Invert(Mat4Multiply(Mat4TranslateV(eye), Mat4RotateEuler(orient)));
 }
 
+// I think all unused.
 #define Grid2WorldEx(pos, w, h, d) (Vec3Lit((pos).x * (w), (pos).y * (h), (pos).z * (d)))
-
 static const f32 GRID_WIDTH = 16.0f;
 static const f32 GRID_HEIGHT = 16.0f;
 static const f32 GRID_DEPTH = 1.0f;
@@ -4953,7 +4953,7 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     *grid = ZERO;
 
-    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
+    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f));
 
     i32 ncols = GRID_NUM_COLS;
     i32 grid_width = grid_tile_dims.x * ncols;
@@ -5258,18 +5258,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
-                DrawQuad2D(Vec2Zero(), 10, 10, Mat4Identity(), LBLUE);
-
-                // DrawGrid
+                // Draw grid
                 {
+                    Vec4 GRAY1 = RGBLit(70, 70, 72);
+                    Vec4 GRAY2 = RGBLit(82, 82, 84);
+
                     Grid* grid = &gstate->grid;
                     Mat4 grid_to_world = grid->grid_to_world;
+                    i32 color_idx = 0;
                     for (i32 r = 0; r < grid->nrows; ++r) {
-                        for (i32 c = 0; c < grid->ncols; ++c) {
+                        for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
                             Tile* tile = GridGetTile(grid, r, c);
                             Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                            DrawQuad(pos, 3.0f, 3.0f, Mat4Identity(), LGRAY);
+                            Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                            Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
+                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
                         }
+
+                        // Offset each row.
+                        ++color_idx;
                     }
                 }
 
