@@ -3857,8 +3857,6 @@ static void EasingZero(Easing* easing) {
     *easing = e;
 }
 
-static Easing EaseInExpo() { return (Easing){.type = ET_IN_EXPO}; }
-static Easing EaseOutBack() { return (Easing){.type = ET_OUT_BACK}; }
 static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
 
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
@@ -3955,7 +3953,7 @@ LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) 
                                   ((f32)(graphics->model.animation.sprites.len - 1)));
 }
 
-static void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3 scale_game, Mat4 orient_game) {
+LCORE void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3 scale_game, Mat4 orient_game) {
     switch (graphics->pos_type) {
         case VA_SNAP_TO: {
             graphics->pos = pos_game;
@@ -4108,12 +4106,6 @@ typedef struct {
 // s:gameplay fields.
 
 typedef enum {
-    TEAM_PLAYER = 0,
-    TEAM_ENEMY,
-    TEAM_COUNT,
-} TeamType;
-
-typedef enum {
     STATE_ALIVE = 0,
     STATE_DEAD,
 } EntityState;
@@ -4153,15 +4145,13 @@ typedef struct {
 
     f32 active_dt;
 
+    // TODO: I think unused at the moment.
     EntityId down_id;   // Child
     EntityId right_id;  // Neighbor/sibling
     EntityId up_id;     // Parent
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-
-    TeamType team;
-
     i32 hp;
 
     EntityState state;
@@ -4217,7 +4207,7 @@ static void EntitySystemInit(Arena* perm) {
     EntityManagerReset(em);
 }
 
-static void EntitySystemReset() { EntityManagerReset(GetEntityManager()); }
+LCORE void EntitySystemReset() { EntityManagerReset(GetEntityManager()); }
 
 static Entity* EntityFromId(EntityId id) {
     EntityManager* em = GetEntityManager();
@@ -4321,7 +4311,7 @@ static Mat4 EntityGetParentMat(Entity* e) {
     return parent_mat;
 }
 
-static Mat4 EntityGetMat(Entity* e) {
+LCORE Mat4 EntityGetMat(Entity* e) {
     Mat4 parent_mat = EntityGetParentMat(e);
     Mat4 local_mat = Mat4SVRT(e->scale, e->orient, e->pos);
     return Mat4Multiply(parent_mat, local_mat);
@@ -4535,12 +4525,12 @@ typedef struct {
 #define UILayoutDirection(ui, llayout) Scoped(UIPushLayoutDirection(ui, llayout), UIPopLayoutDirection(ui))
 
 #define UIGetThemeColor(ui, uikind) ((ui)->theme.colors[(uikind)])
-static void UIPushThemeColor(UIState* ui, UIThemeKind kind, Vec4 color) {
+LCORE void UIPushThemeColor(UIState* ui, UIThemeKind kind, Vec4 color) {
     UIThemeColorOverride override = {.idx = kind, .color_prev = ui->theme.colors[kind]};
     ArrPush(&ui->theme.color_overrides, override);
     ui->theme.colors[kind] = color;
 }
-static void UIPopThemeColor(UIState* ui) {
+LCORE void UIPopThemeColor(UIState* ui) {
     UIThemeColorOverride override = ArrPop(&ui->theme.color_overrides);
     ui->theme.colors[override.idx] = override.color_prev;
 }
@@ -4560,7 +4550,7 @@ static UIBoxId UIStateNextId(UIState* ui) {
 }
 
 // Set the current parent's cursor offset to pos.
-static void UISetCursor(UIState* ui, Vec2 pos) {
+LCORE void UISetCursor(UIState* ui, Vec2 pos) {
     UIBox* root = UIGetParent(ui);
     // TODO: We should potentially add some checks or clamping around setting a cursor outside of the parent's window.
     root->cursor_top_left_offset = pos;
@@ -4826,11 +4816,11 @@ static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic
     return action;
 }
 
-static UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
+LCORE UIAction UIButton(UIState* ui, Str8 text, UIFlag flags) {
     return UIButtonEx(ui, text, flags, UISizePctParent(1.0f), UISizeText());
 }
 
-static UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
+LCORE UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
     UIBoxStyle style = {
         .color_bg = UIGetThemeColor(ui, UI_THEME_LABEL_BG_COLOR),
         .color_text = UIGetThemeColor(ui, UI_THEME_LABEL_TEXT_COLOR),
@@ -4890,8 +4880,8 @@ typedef enum {
     PHASE_SHOP_OPEN,
 } GamePhase;
 
-#define GRID_NUM_ROWS 3  // 9
-#define GRID_NUM_COLS 6  // 12
+#define GRID_NUM_ROWS 16  // 9
+#define GRID_NUM_COLS 10  // 12
 
 typedef struct {
     i32 r;
@@ -4918,14 +4908,8 @@ typedef struct {
     // Reminder that this pos refers to the *center* of the tile.
     Vec3 pos;
     TileId id;
-    // TODO: I don't remember why I added the graphics field here. Why does a tile need to maintain its own graphics
-    // statefully? Sort of feels like maybe we should remove this and then just set the graphics with procedural code
-    // when we actually draw out the grid in the main tick.
-    GraphicsInfo graphics;
 
     EntityId occupant;
-
-    TeamType territory_owner;
 } Tile;
 
 typedef struct {
@@ -4943,28 +4927,28 @@ typedef struct {
 
 #define GridValidTileId(grid, id) ((id).r >= 0 && (id).r < (grid)->nrows && (id).c >= 0 && (id).c < (grid)->ncols)
 
-static Tile* GridMaybeTileFromId(Grid* grid, TileId id) {
+LCORE Tile* GridMaybeTileFromId(Grid* grid, TileId id) {
     bool valid_idx = (id.r >= 0 && id.r < grid->nrows && id.c >= 0 && id.c < grid->ncols);
     return valid_idx ? &grid->tiles[id.r][id.c] : NULL;
 }
 
-static Tile* GridTileFromId(Grid* grid, TileId id) {
+LCORE Tile* GridTileFromId(Grid* grid, TileId id) {
     Tile* tile = GridMaybeTileFromId(grid, id);
     Assert(tile);
     return tile;
 }
 
-static Tile* GridMaybeGetTile(Grid* grid, isize r, isize c) {
+LCORE Tile* GridMaybeGetTile(Grid* grid, isize r, isize c) {
     return GridMaybeTileFromId(grid, (TileId){.r = r, .c = c, .height = 0});
 }
 
-static Tile* GridGetTile(Grid* grid, isize r, isize c) {
+LCORE Tile* GridGetTile(Grid* grid, isize r, isize c) {
     Tile* tile = GridMaybeGetTile(grid, r, c);
     Assert(tile);
     return tile;
 }
 
-static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
+LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     static Grid ZERO = {0};
 
     *grid = ZERO;
@@ -4980,28 +4964,12 @@ static void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
 
     Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
-
-    LModel grey_model =
-        LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LGRAY);
-    LModel black_model =
-        LModelFromMesh(GetMesh(M_QUAD), GetTexture(TX_DEFAULT), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LBLACK);
-
-    i32 color_idx = 0;
     for (i32 r = 0; r < nrows; ++r) {
-        for (i32 c = 0; c < ncols; ++c, ++color_idx) {
+        for (i32 c = 0; c < ncols; ++c) {
             Tile* tile = &grid->tiles[r][c];
             tile->pos = Vec3Lit(c, r, 0);
             tile->id = (TileId){.r = r, .c = c, .height = 0};
-            LModel model = color_idx % 2 == 0 ? black_model : grey_model;
-            GraphicsInfoSetLModel(&tile->graphics, model);
-
-            {
-                tile->territory_owner = c < ncols / 2 ? TEAM_PLAYER : TEAM_ENEMY;
-            }
         }
-
-        // If even cols, offset color index for start of next row by 1 to get checkerboard pattern.
-        color_idx += grid->ncols % 2 == 0;
     }
 
     grid->ncols = ncols;
@@ -5027,10 +4995,10 @@ LCORE Vec3 GridGetTilePosBR(Grid* grid, TileId tileid) {
     return pos;
 }
 
-static Vec3 GridPosToWorld(Grid* grid, Vec3 pos) { return Vec3WTransform(pos, grid->grid_to_world); }
+LCORE Vec3 GridPosToWorld(Grid* grid, Vec3 pos) { return Vec3WTransform(pos, grid->grid_to_world); }
 
 // Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
-static TileId GridGetCursorHoverTileId(Grid* grid, GameControllerState* controller) {
+LCORE TileId GridGetCursorHoverTileId(Grid* grid, GameControllerState* controller) {
     Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
     // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
     // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
@@ -5054,12 +5022,12 @@ static TileId GridGetCursorHoverTileId(Grid* grid, GameControllerState* controll
 }
 
 // Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
-static Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) {
+LCORE Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) {
     TileId tileid = GridGetCursorHoverTileId(grid, controller);
     return GridMaybeTileFromId(grid, tileid);
 }
 
-static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
+LCORE Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
     if (tile == NULL) {
         return NULL;
     }
@@ -5068,31 +5036,8 @@ static Entity* GridGetEntityAtTile(Grid* grid, Tile* tile) {
     return e;
 }
 
-static Entity* GridGetEntityAtTileId(Grid* grid, TileId tile) {
+LCORE Entity* GridGetEntityAtTileId(Grid* grid, TileId tile) {
     return GridGetEntityAtTile(grid, GridTileFromId(grid, tile));
-}
-
-// TODO: Should this check that its unocupied first?
-static void GridPlaceEntity(Grid* grid, Entity* e, TileId dest_id) {
-    Tile* dest = GridTileFromId(grid, dest_id);
-    dest->occupant = e->id;
-    e->pos = TileIdtoVec3(dest_id);
-}
-
-static void GridMoveEntity(Grid* grid, Entity* e, TileId dest_id) {
-    TileId cur_id = TileIdFromVec3(e->pos);
-    Tile* cur_tile = GridTileFromId(grid, cur_id);
-    Assert(EntityIdEq(cur_tile->occupant, e->id));
-    cur_tile->occupant = NULLID;
-
-    GridPlaceEntity(grid, e, dest_id);
-}
-
-static i32 GridGetDistanceBetween(Grid* grid, TileId start, TileId end) {
-    Assert(GridValidTileId(grid, start));
-    Assert(GridValidTileId(grid, end));
-
-    return f32abs(end.r - start.r) + f32abs(end.c - start.c);
 }
 
 ////////////////////////////////////////////////////
