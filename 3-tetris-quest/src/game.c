@@ -5084,7 +5084,7 @@ typedef struct {
 } Piece;
 
 LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
-    PieceBaseColor base_color = i32randab(PC_DEFAULT + 1, PC_COUNT - 1);
+    PieceBaseColor COLOR_MAP[PT_COUNT] = {PC_RED};
     TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
         // OA
@@ -5131,7 +5131,7 @@ LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
         TileId offset = OFFSETS[piece.type][piece.rot_idx][i];
         Tile* tile = GridGetTile(grid, r_candidate + offset.r, column + offset.c);
         tile->occupied = true;
-        tile->base_color = base_color;
+        tile->base_color = COLOR_MAP[piece.type];
     }
 }
 
