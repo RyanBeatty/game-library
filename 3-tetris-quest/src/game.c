@@ -5095,6 +5095,8 @@ typedef struct GameState {
     /////////////////////////////////////////
     // Scene fields
 
+    Grid grid;
+
 } GameState;
 
 static GameState GState;
@@ -5204,6 +5206,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         // BattleInit(battle, &gstate->perm);
+        GridInit(&gstate->grid, gstate->renderw_world, gstate->renderh_world);
     }
 
     if (gstate->update) {
@@ -5254,6 +5257,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 load_action.clear_color = LPURPLE;
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+
+                DrawQuad2D(Vec2Zero(), 10, 10, Mat4Identity(), LBLUE);
+
+                // DrawGrid
+                {
+                    Grid* grid = &gstate->grid;
+                    Mat4 grid_to_world = grid->grid_to_world;
+                    for (i32 r = 0; r < grid->nrows; ++r) {
+                        for (i32 c = 0; c < grid->ncols; ++c) {
+                            Tile* tile = GridGetTile(grid, r, c);
+                            Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                            DrawQuad(pos, 3.0f, 3.0f, Mat4Identity(), LGRAY);
+                        }
+                    }
+                }
 
                 EndShaderPass();
             }
