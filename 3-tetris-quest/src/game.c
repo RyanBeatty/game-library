@@ -5064,7 +5064,7 @@ typedef struct {
     PieceRot rot_idx;
 } Piece;
 
-LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
+LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
     Vec4 PIECE_BASE_COLORS[PT_COUNT] = {RGBLit(180, 180, 180)};
     PIECE_BASE_COLORS[PT_Z] = RGBLit(220, 50, 50);   // RED
     PIECE_BASE_COLORS[PT_S] = RGBLit(60, 200, 80);   // GREEN
@@ -5182,26 +5182,36 @@ LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
         tile->occupied = true;
         tile->base_color = PIECE_BASE_COLORS[piece.type];
     }
+
+    return true;
 }
 
 typedef struct {
     Grid grid;
 
+    Piece next_piece;
     isize anchor_column;
 } Battle;
 
-static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
-    GridInit(&battle->grid, renderw_world, renderh_world);
-    battle->anchor_column = 4;
-}
-
-static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
-static void BattlePlacePiece(Battle* battle) {
+static Piece RandomPiece() {
     Piece piece = {
         .type = i32randab(0, PT_COUNT - 1),
         .rot_idx = i32randab(PR_0, PR_270),
     };
-    GridPlacePiece(&battle->grid, piece, battle->anchor_column);
+    return piece;
+}
+
+static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
+    GridInit(&battle->grid, renderw_world, renderh_world);
+    battle->anchor_column = 4;
+    battle->next_piece = RandomPiece();
+}
+
+static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
+static void BattlePlacePiece(Battle* battle) {
+    bool placed = GridPlacePiece(&battle->grid, battle->next_piece, battle->anchor_column);
+    Assert(placed);
+    battle->next_piece = RandomPiece();
 }
 
 ////////////////////////////////////////////////////
