@@ -5078,7 +5078,7 @@ static Vec4 PieceGetBaseColor(PieceType type) {
 }
 
 LCORE TileIdArr PieceGetOffsets(Piece piece) {
-    TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
+    static TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
         // XX
         //  AX
@@ -5488,6 +5488,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         // Offset each row.
                         ++color_idx;
+                    }
+
+                    TileId anchor = TileIdLit(5, battle->anchor_column);
+                    TileIdArr offsets = PieceGetOffsets(battle->next_piece);
+                    Vec4 next_piece_color = PieceGetBaseColor(battle->next_piece.type);
+                    for (isize i = 0; i < ArrLen(&offsets); ++i) {
+                        TileId offset = ArrGet(&offsets, i);
+                        Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
+                        Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                        Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), next_piece_color);
                     }
                 }
 
