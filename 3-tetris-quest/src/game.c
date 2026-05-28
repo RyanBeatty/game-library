@@ -4904,37 +4904,12 @@ typedef struct {
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
 
-typedef enum {
-    PC_DEFAULT = 0,
-    PC_RED,
-    PC_GREEN,
-    PC_BLUE,
-    PC_PURPLE,
-    PC_YELLOW,
-    PC_ORANGE,
-    PC_COUNT,
-} PieceBaseColor;
-
-static Vec4 GetPieceBaseColor(PieceBaseColor color) {
-    Vec4 PIECE_BASE_COLORS[PC_COUNT] = {
-        RGBLit(180, 180, 180),  // DEFAULT
-        RGBLit(220, 50, 50),    // RED
-        RGBLit(60, 200, 80),    // GREEN
-        RGBLit(50, 130, 230),   // BLUE
-        RGBLit(160, 60, 220),   // PURPLE
-        RGBLit(240, 210, 40),   // YELLOW
-        RGBLit(235, 120, 30),   // ORANGE
-    };
-
-    return PIECE_BASE_COLORS[color];
-}
-
 typedef struct {
     // Reminder that this pos refers to the *center* of the tile.
     Vec3 pos;
     TileId id;
     bool occupied;
-    PieceBaseColor base_color;
+    Vec4 base_color;
 } Tile;
 
 typedef struct {
@@ -5090,15 +5065,15 @@ typedef struct {
 } Piece;
 
 LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
-    PieceBaseColor COLOR_MAP[PT_COUNT] = {
-        PC_RED,     // PT_Z
-        PC_GREEN,   // PT_S
-        PC_ORANGE,  // PT_L
-        PC_BLUE,    // PT_J
-        PC_PURPLE,  // PT_T
-        PC_BLUE,    // PT_I
-        PC_YELLOW,  // PT_O
-    };
+    Vec4 PIECE_BASE_COLORS[PT_COUNT] = {RGBLit(180, 180, 180)};
+    PIECE_BASE_COLORS[PT_Z] = RGBLit(220, 50, 50);   // RED
+    PIECE_BASE_COLORS[PT_S] = RGBLit(60, 200, 80);   // GREEN
+    PIECE_BASE_COLORS[PT_L] = RGBLit(235, 120, 30);  // ORANGE
+    PIECE_BASE_COLORS[PT_J] = RGBLit(50, 130, 230);  // BLUE
+    PIECE_BASE_COLORS[PT_T] = RGBLit(160, 60, 220);  // PURPLE
+    PIECE_BASE_COLORS[PT_I] = RGBLit(50, 130, 230);  // BLUE
+    PIECE_BASE_COLORS[PT_O] = RGBLit(240, 210, 40);  // YELLOW
+
     TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
         // XX
@@ -5205,7 +5180,7 @@ LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
         TileId offset = OFFSETS[piece.type][piece.rot_idx][i];
         Tile* tile = GridGetTile(grid, r_candidate + offset.r, column + offset.c);
         tile->occupied = true;
-        tile->base_color = COLOR_MAP[piece.type];
+        tile->base_color = PIECE_BASE_COLORS[piece.type];
     }
 }
 
@@ -5222,14 +5197,11 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
 
 static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
 static void BattlePlacePiece(Battle* battle) {
-    static i32 ROT_IDX = PR_0;
-
     Piece piece = {
-        .type = PT_COUNT - 1,
-        .rot_idx = ROT_IDX,
+        .type = i32randab(0, PT_COUNT - 1),
+        .rot_idx = i32randab(PR_0, PR_270),
     };
     GridPlacePiece(&battle->grid, piece, battle->anchor_column);
-    ROT_IDX = (ROT_IDX + 1) % PR_COUNT;
 }
 
 ////////////////////////////////////////////////////
@@ -5484,7 +5456,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
 
                             if (tile->occupied) {
-                                Vec4 piece_color = GetPieceBaseColor(tile->base_color);
+                                Vec4 piece_color = tile->base_color;
                                 DrawQuad(pos, scale.x, scale.y, Mat4Identity(), piece_color);
                             }
                         }
