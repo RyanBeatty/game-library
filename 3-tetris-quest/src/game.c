@@ -5071,6 +5071,7 @@ typedef enum {
     PT_L,
     PT_J,
     PT_T,
+    PT_I,
     PT_COUNT,
 } PieceType;
 
@@ -5094,6 +5095,7 @@ LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
         PC_ORANGE,  // PT_L
         PC_BLUE,    // PT_J
         PC_PURPLE,  // PT_T
+        PC_BLUE,    // PT_I
     };
     TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
@@ -5143,6 +5145,17 @@ LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
             {TileIdLit(1, 0), TileIdLit(0, 0), TileIdLit(-1, 0), TileIdLit(0, 1)},   // Rot 90
             {TileIdLit(0, 1), TileIdLit(0, 0), TileIdLit(0, -1), TileIdLit(-1, 0)},  // Rot 180
             {TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(1, 0), TileIdLit(0, -1)},  // Rot 270
+        },
+
+        // I block. Because for I block the anchor point moves from rotation to rotation
+        // we need to be careful so that all rotation states are specified to a consistent anchor point
+        // which might mean that the anchor point is not being occupied by a block.
+        // XAXX
+        {
+            {TileIdLit(0, -1), TileIdLit(0, 0), TileIdLit(0, 1), TileIdLit(0, 2)},      // Rot 0
+            {TileIdLit(1, 1), TileIdLit(0, 1), TileIdLit(-1, 1), TileIdLit(-2, 1)},     // Rot 90
+            {TileIdLit(-1, 2), TileIdLit(-1, 1), TileIdLit(-1, 0), TileIdLit(-1, -1)},  // Rot 180
+            {TileIdLit(-2, 0), TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(1, 0)},     // Rot 270
         },
     };
 
