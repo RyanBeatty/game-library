@@ -5069,6 +5069,7 @@ typedef enum {
     PT_Z = 0,
     PT_S,
     PT_L,
+    PT_J,
     PT_COUNT,
 } PieceType;
 
@@ -5090,6 +5091,7 @@ LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
         PC_RED,     // PT_Z
         PC_GREEN,   // PT_S
         PC_ORANGE,  // PT_L
+        PC_BLUE,    // PT_J
     };
     TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
@@ -5119,6 +5121,16 @@ LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
             {TileIdLit(1, 0), TileIdLit(0, 0), TileIdLit(-1, 0), TileIdLit(-1, 1)},   // Rot 90
             {TileIdLit(0, 1), TileIdLit(0, 0), TileIdLit(0, -1), TileIdLit(-1, -1)},  // Rot 180
             {TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(1, 0), TileIdLit(1, -1)},   // Rot 270
+        },
+
+        // J block.
+        // X
+        // XAX
+        {
+            {TileIdLit(1, -1), TileIdLit(0, -1), TileIdLit(0, 0), TileIdLit(0, 1)},   // Rot 0
+            {TileIdLit(1, 1), TileIdLit(1, 0), TileIdLit(0, 0), TileIdLit(-1, 0)},    // Rot 90
+            {TileIdLit(-1, 1), TileIdLit(0, 1), TileIdLit(0, 0), TileIdLit(0, -1)},   // Rot 180
+            {TileIdLit(-1, -1), TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(1, 0)},  // Rot 270
         },
     };
 
@@ -5176,7 +5188,7 @@ static void BattlePlacePiece(Battle* battle) {
     static i32 ROT_IDX = PR_0;
 
     Piece piece = {
-        .type = PT_L,
+        .type = PT_COUNT - 1,
         .rot_idx = ROT_IDX,
     };
     GridPlacePiece(&battle->grid, piece, battle->anchor_column);
