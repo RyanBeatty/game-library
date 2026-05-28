@@ -5064,7 +5064,7 @@ typedef struct {
     PieceRot rot_idx;
 } Piece;
 
-LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
+static Vec4 PieceGetBaseColor(PieceType type) {
     Vec4 PIECE_BASE_COLORS[PT_COUNT] = {RGBLit(180, 180, 180)};
     PIECE_BASE_COLORS[PT_Z] = RGBLit(220, 50, 50);   // RED
     PIECE_BASE_COLORS[PT_S] = RGBLit(60, 200, 80);   // GREEN
@@ -5074,6 +5074,10 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
     PIECE_BASE_COLORS[PT_I] = RGBLit(50, 130, 230);  // BLUE
     PIECE_BASE_COLORS[PT_O] = RGBLit(240, 210, 40);  // YELLOW
 
+    return PIECE_BASE_COLORS[type];
+}
+
+LCORE TileIdArr PieceGetOffsets(Piece piece) {
     TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
         // XX
@@ -5146,6 +5150,17 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
         },
     };
 
+    TileIdArr arr = {
+        .data = OFFSETS[piece.type][piece.rot_idx],
+        .len = ArraySizeOf(OFFSETS[piece.type][piece.rot_idx]),
+        .cap = ArraySizeOf(OFFSETS[piece.type][piece.rot_idx]),
+    };
+    return arr;
+}
+
+LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
+    TileIdArr offsets = PieceGetOffsets(piece);
+
     isize r_candidate = grid->nrows;
     for (isize r = r_candidate - 1; r >= 0; --r) {
         Tile* tile = GridMaybeGetTile(grid, r, column);
@@ -5156,8 +5171,8 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
             break;
         } else {
             bool can_place = true;
-            for (isize i = 0; i < ArraySizeOf(OFFSETS[piece.type][piece.rot_idx]); ++i) {
-                TileId offset = OFFSETS[piece.type][piece.rot_idx][i];
+            for (isize i = 0; i < ArrLen(&offsets); ++i) {
+                TileId offset = ArrGet(&offsets, i);
                 Tile* t = GridMaybeGetTile(grid, r + offset.r, column + offset.c);
                 if (!t) {
                     can_place = false;
@@ -5176,11 +5191,11 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
 
     Assert(r_candidate < grid->nrows && r_candidate >= 0);
 
-    for (isize i = 0; i < ArraySizeOf(OFFSETS[piece.type]); ++i) {
-        TileId offset = OFFSETS[piece.type][piece.rot_idx][i];
+    for (isize i = 0; i < ArrLen(&offsets); ++i) {
+        TileId offset = ArrGet(&offsets, i);
         Tile* tile = GridGetTile(grid, r_candidate + offset.r, column + offset.c);
         tile->occupied = true;
-        tile->base_color = PIECE_BASE_COLORS[piece.type];
+        tile->base_color = PieceGetBaseColor(piece.type);
     }
 
     return true;
