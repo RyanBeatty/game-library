@@ -5067,6 +5067,7 @@ LCORE Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) 
 
 typedef enum {
     PT_Z = 0,
+    PT_S,
     PT_COUNT,
 } PieceType;
 
@@ -5084,16 +5085,28 @@ typedef struct {
 } Piece;
 
 LCORE void GridPlacePiece(Grid* grid, Piece piece, isize column) {
-    PieceBaseColor COLOR_MAP[PT_COUNT] = {PC_RED};
+    PieceBaseColor COLOR_MAP[PT_COUNT] = {
+        PC_RED,    // PT_Z
+        PC_GREEN,  // PT_S
+    };
     TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
-        // OA
-        //  OO
+        // XX
+        //  AX
         {
             {TileIdLit(1, -1), TileIdLit(1, 0), TileIdLit(0, 0), TileIdLit(0, 1)},    // Rot 0
             {TileIdLit(1, 1), TileIdLit(0, 1), TileIdLit(0, 0), TileIdLit(-1, 0)},    // Rot 90
             {TileIdLit(-1, 1), TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(0, -1)},  // Rot 180
             {TileIdLit(-1, -1), TileIdLit(0, -1), TileIdLit(0, 0), TileIdLit(1, 0)},  // Rot 270
+        },
+        // S block.
+        //  XX
+        // XA
+        {
+            {TileIdLit(1, 1), TileIdLit(1, 0), TileIdLit(0, 0), TileIdLit(0, -1)},    // Rot 0
+            {TileIdLit(-1, 1), TileIdLit(0, 1), TileIdLit(0, 0), TileIdLit(1, 0)},    // Rot 90
+            {TileIdLit(-1, -1), TileIdLit(-1, 0), TileIdLit(0, 0), TileIdLit(0, 1)},  // Rot 180
+            {TileIdLit(1, -1), TileIdLit(0, -1), TileIdLit(0, 0), TileIdLit(-1, 0)},  // Rot 270
         },
     };
 
@@ -5148,11 +5161,14 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
 
 static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
 static void BattlePlacePiece(Battle* battle) {
+    static i32 ROT_IDX = PR_0;
+
     Piece piece = {
-        .type = PT_Z,
-        .rot_idx = PR_0,
+        .type = PT_S,
+        .rot_idx = ROT_IDX,
     };
     GridPlacePiece(&battle->grid, piece, battle->anchor_column);
+    ROT_IDX = (ROT_IDX + 1) % PR_COUNT;
 }
 
 ////////////////////////////////////////////////////
