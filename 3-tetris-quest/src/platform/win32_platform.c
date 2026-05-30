@@ -872,6 +872,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->left_stick.y += keyboard->down[VK_UP] ? 1.0f : 0.0f;
                 controller->left_stick.y += keyboard->down[VK_DOWN] ? -1.0f : 0.0f;
 
+                // dpad
+                controller->move_up.down = keyboard->down[VK_UP];
+                controller->move_up.pressed = !keyboard->down[VK_UP] && keyboard_prev->down[VK_UP];
+                controller->move_down.down = keyboard->down[VK_DOWN];
+                controller->move_down.pressed = !keyboard->down[VK_DOWN] && keyboard_prev->down[VK_DOWN];
+                controller->move_left.down = keyboard->down[VK_LEFT];
+                controller->move_left.pressed = !keyboard->down[VK_LEFT] && keyboard_prev->down[VK_LEFT];
+                controller->move_right.down = keyboard->down[VK_RIGHT];
+                controller->move_right.pressed = !keyboard->down[VK_RIGHT] && keyboard_prev->down[VK_RIGHT];
+
                 {
                     // Windows gives us mouse position in screen space where origin is in top left. We need to map it to
                     // bottom left.

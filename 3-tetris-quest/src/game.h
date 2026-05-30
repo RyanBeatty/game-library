@@ -41,6 +41,17 @@ typedef struct {
             GameButtonState action_right;
         };
     };
+
+    // Dpad essentially on our virtual keyboard.
+    union {
+        GameButtonState moves[4];
+        struct {
+            GameButtonState move_up;
+            GameButtonState move_down;
+            GameButtonState move_left;
+            GameButtonState move_right;
+        };
+    };
 } GameControllerState;
 
 typedef struct {

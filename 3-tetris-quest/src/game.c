@@ -5420,12 +5420,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         // Update transforms.
         {
-            if (controller->action_left.pressed || controller->action_right.pressed) {
+            if (controller->move_left.pressed || controller->move_right.pressed) {
                 isize offset = 0;
-                if (controller->action_left.pressed) {
+                if (controller->move_left.pressed) {
                     offset += -1;
                 }
-                if (controller->action_right.pressed) {
+                if (controller->move_right.pressed) {
                     offset += 1;
                 }
 
@@ -5730,6 +5730,11 @@ void GameTick(f32 dt, GameInput* input) {
                 for (isize j = 0; j < ArraySizeOf(input->controllers[i].buttons); ++j) {
                     GameButtonState button = {0};
                     input->controllers[i].buttons[j] = button;
+                }
+
+                for (isize j = 0; j < ArraySizeOf(input->controllers[i].moves); ++j) {
+                    GameButtonState move = {0};
+                    input->controllers[i].moves[j] = move;
                 }
             }
             DeactivateEntities();
