@@ -5204,7 +5204,7 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
 typedef struct {
     Grid grid;
 
-    Piece next_piece;
+    Piece active_piece;
     TileId anchor;
 } Battle;
 
@@ -5217,12 +5217,12 @@ static Piece RandomPiece() {
     return piece;
 }
 
-static void BattleGenerateNextPiece(Battle* battle) {
-    battle->next_piece = RandomPiece();
+static void BattleGenerateActivePiece(Battle* battle) {
+    battle->active_piece = RandomPiece();
 
     i32 max_height = I32_MIN;
-    for (isize i = 0; i < ArrLen(&battle->next_piece.block_offsets); ++i) {
-        TileId offset = ArrGet(&battle->next_piece.block_offsets, i);
+    for (isize i = 0; i < ArrLen(&battle->active_piece.block_offsets); ++i) {
+        TileId offset = ArrGet(&battle->active_piece.block_offsets, i);
         max_height = i32max(offset.r, max_height);
     }
 
@@ -5236,20 +5236,20 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     *battle = BATTLE_ZERO;
     GridInit(&battle->grid, renderw_world, renderh_world);
     battle->anchor = TileIdLit(battle->grid.nrows, 4);
-    BattleGenerateNextPiece(battle);
+    BattleGenerateActivePiece(battle);
 }
 
 static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor.c += offset; }
 static void BattlePlacePiece(Battle* battle) {
-    bool placed = GridPlacePiece(&battle->grid, battle->next_piece, battle->anchor.c);
+    bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->anchor.c);
     Assert(placed);
-    battle->next_piece = RandomPiece();
+    battle->active_piece = RandomPiece();
 }
 
-static void BattleRotateNextPiece(Battle* battle, bool clockwise) {
+static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     isize dir = clockwise ? 1 : -1;
 
-    Piece* active_piece = &battle->next_piece;
+    Piece* active_piece = &battle->active_piece;
     active_piece->rot_idx = ((active_piece->rot_idx + dir) + PR_COUNT) % PR_COUNT;
     active_piece->block_offsets = PieceGetOffsets(active_piece->type, active_piece->rot_idx);
 }
@@ -5444,11 +5444,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 if (controller->action_down.pressed) {
                     PlatformLog(LLOG_INFO, "action down");
-                    BattleRotateNextPiece(battle, true);
+                    BattleRotateActivePiece(battle, true);
                 }
 
                 if (controller->action_right.pressed) {
-                    BattleRotateNextPiece(battle, false);
+                    BattleRotateActivePiece(battle, false);
                 }
             }
 
@@ -5528,13 +5528,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     TileId anchor = battle->anchor;
-                    Piece* next_piece = &battle->next_piece;
-                    for (isize i = 0; i < ArrLen(&next_piece->block_offsets); ++i) {
-                        TileId offset = ArrGet(&next_piece->block_offsets, i);
+                    Piece* active_piece = &battle->active_piece;
+                    for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+                        TileId offset = ArrGet(&active_piece->block_offsets, i);
                         Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
                         Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                         Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), next_piece->base_color);
+                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->base_color);
                     }
                 }
 
