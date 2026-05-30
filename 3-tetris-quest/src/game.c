@@ -5206,6 +5206,7 @@ typedef struct {
 
     Piece next_piece;
     isize anchor_column;
+    isize anchor_row;
 } Battle;
 
 static Piece RandomPiece() {
@@ -5217,10 +5218,28 @@ static Piece RandomPiece() {
     return piece;
 }
 
+static void BattleGenerateNextPiece(Battle* battle) {
+    battle->next_piece = RandomPiece();
+
+    i32 max_height = I32_MIN;
+    for (isize i = 0; i < ArrLen(&battle->next_piece.block_offsets); ++i) {
+        TileId offset = ArrGet(&battle->next_piece.block_offsets, i);
+        breakpoint();
+        max_height = i32max(offset.r, max_height);
+    }
+
+    Assert(max_height < battle->grid.nrows);
+    Assert(max_height >= 0);
+    battle->anchor_row = (battle->grid.nrows - 1) - max_height;
+}
+
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
+    static Battle BATTLE_ZERO = {0};
+    *battle = BATTLE_ZERO;
     GridInit(&battle->grid, renderw_world, renderh_world);
     battle->anchor_column = 4;
-    battle->next_piece = RandomPiece();
+    battle->anchor_row = battle->grid.nrows - 1;
+    BattleGenerateNextPiece(battle);
 }
 
 static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
@@ -5491,7 +5510,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         ++color_idx;
                     }
 
-                    TileId anchor = TileIdLit(5, battle->anchor_column);
+                    TileId anchor = TileIdLit(battle->anchor_row, battle->anchor_column);
                     Piece* next_piece = &battle->next_piece;
                     for (isize i = 0; i < ArrLen(&next_piece->block_offsets); ++i) {
                         TileId offset = ArrGet(&next_piece->block_offsets, i);
