@@ -5246,6 +5246,14 @@ static void BattlePlacePiece(Battle* battle) {
     battle->next_piece = RandomPiece();
 }
 
+static void BattleRotateNextPiece(Battle* battle, bool clockwise) {
+    isize dir = clockwise ? 1 : -1;
+
+    Piece* active_piece = &battle->next_piece;
+    active_piece->rot_idx = ((active_piece->rot_idx + dir) + PR_COUNT) % PR_COUNT;
+    active_piece->block_offsets = PieceGetOffsets(active_piece->type, active_piece->rot_idx);
+}
+
 ////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
@@ -5420,16 +5428,28 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         // Update transforms.
         {
-            if (controller->move_left.pressed || controller->move_right.pressed) {
-                isize offset = 0;
-                if (controller->move_left.pressed) {
-                    offset += -1;
-                }
-                if (controller->move_right.pressed) {
-                    offset += 1;
+            // Movement and rotation.
+            {
+                if (controller->move_left.pressed || controller->move_right.pressed) {
+                    isize offset = 0;
+                    if (controller->move_left.pressed) {
+                        offset += -1;
+                    }
+                    if (controller->move_right.pressed) {
+                        offset += 1;
+                    }
+
+                    BattleMoveAnchor(battle, offset);
                 }
 
-                BattleMoveAnchor(battle, offset);
+                if (controller->action_down.pressed) {
+                    PlatformLog(LLOG_INFO, "action down");
+                    BattleRotateNextPiece(battle, true);
+                }
+
+                if (controller->action_right.pressed) {
+                    BattleRotateNextPiece(battle, false);
+                }
             }
 
             if (controller->action_left.pressed) {

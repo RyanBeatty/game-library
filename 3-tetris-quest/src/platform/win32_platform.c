@@ -855,12 +855,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
                 controller->action_up.down = keyboard->down['C'];
                 controller->action_up.pressed = !keyboard->down['C'] && keyboard_prev->down['C'];
-                controller->action_down.down = keyboard->down['Z'];
-                controller->action_down.pressed = !keyboard->down['Z'] && keyboard_prev->down['Z'];
+                controller->action_down.down = keyboard->down[VK_UP];
+                controller->action_down.pressed = !keyboard->down[VK_UP] && keyboard_prev->down[VK_UP];
                 controller->action_left.down = keyboard->down[VK_SPACE];
                 controller->action_left.pressed = !keyboard->down[VK_SPACE] && keyboard_prev->down[VK_SPACE];
-                controller->action_right.down = keyboard->down['X'];
-                controller->action_right.pressed = !keyboard->down['X'] && keyboard_prev->down['X'];
+                controller->action_right.down = keyboard->down['Z'];
+                controller->action_right.pressed = !keyboard->down['Z'] && keyboard_prev->down['Z'];
 
                 controller->left_stick.x += keyboard->down[VK_RIGHT] ? 1.0f : 0.0f;
                 controller->left_stick.x += keyboard->down[VK_LEFT] ? -1.0f : 0.0f;
