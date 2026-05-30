@@ -5432,7 +5432,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BattleMoveAnchor(battle, offset);
             }
 
-            if (controller->action_down.pressed) {
+            if (controller->action_left.pressed) {
                 BattlePlacePiece(battle);
             }
 

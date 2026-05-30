@@ -846,11 +846,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         GameInput input = {0};
         {
             {
-                static const isize KEY_UP = VK_UP;
-                static const isize KEY_DOWN = VK_DOWN;
-                static const isize KEY_LEFT = VK_LEFT;
-                static const isize KEY_RIGHT = VK_RIGHT;
-
                 GameControllerState* controller = &input.controllers[0];
 
                 Win32Input* keyboard = w32state->cur_input;
@@ -858,14 +853,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->connected = true;
 
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-                controller->action_up.down = keyboard->down[KEY_UP];
-                controller->action_up.pressed = !keyboard->down[KEY_UP] && keyboard_prev->down[KEY_UP];
-                controller->action_down.down = keyboard->down[KEY_DOWN];
-                controller->action_down.pressed = !keyboard->down[KEY_DOWN] && keyboard_prev->down[KEY_DOWN];
-                controller->action_left.down = keyboard->down[KEY_LEFT];
-                controller->action_left.pressed = !keyboard->down[KEY_LEFT] && keyboard_prev->down[KEY_LEFT];
-                controller->action_right.down = keyboard->down[KEY_RIGHT];
-                controller->action_right.pressed = !keyboard->down[KEY_RIGHT] && keyboard_prev->down[KEY_RIGHT];
+                controller->action_up.down = keyboard->down['C'];
+                controller->action_up.pressed = !keyboard->down['C'] && keyboard_prev->down['C'];
+                controller->action_down.down = keyboard->down['Z'];
+                controller->action_down.pressed = !keyboard->down['Z'] && keyboard_prev->down['Z'];
+                controller->action_left.down = keyboard->down[VK_SPACE];
+                controller->action_left.pressed = !keyboard->down[VK_SPACE] && keyboard_prev->down[VK_SPACE];
+                controller->action_right.down = keyboard->down['X'];
+                controller->action_right.pressed = !keyboard->down['X'] && keyboard_prev->down['X'];
 
                 controller->left_stick.x += keyboard->down[VK_RIGHT] ? 1.0f : 0.0f;
                 controller->left_stick.x += keyboard->down[VK_LEFT] ? -1.0f : 0.0f;
