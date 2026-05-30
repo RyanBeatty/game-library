@@ -5062,6 +5062,8 @@ typedef enum {
 typedef struct {
     PieceType type;
     PieceRot rot_idx;
+    TileIdArr block_offsets;
+    Vec4 base_color;
 } Piece;
 
 static Vec4 PieceGetBaseColor(PieceType type) {
@@ -5077,7 +5079,7 @@ static Vec4 PieceGetBaseColor(PieceType type) {
     return PIECE_BASE_COLORS[type];
 }
 
-LCORE TileIdArr PieceGetOffsets(Piece piece) {
+LCORE TileIdArr PieceGetOffsets(PieceType type, PieceRot rot_idx) {
     static TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
         // Z block.
         // XX
@@ -5151,16 +5153,14 @@ LCORE TileIdArr PieceGetOffsets(Piece piece) {
     };
 
     TileIdArr arr = {
-        .data = OFFSETS[piece.type][piece.rot_idx],
-        .len = ArraySizeOf(OFFSETS[piece.type][piece.rot_idx]),
-        .cap = ArraySizeOf(OFFSETS[piece.type][piece.rot_idx]),
+        .data = OFFSETS[type][rot_idx],
+        .len = ArraySizeOf(OFFSETS[type][rot_idx]),
+        .cap = ArraySizeOf(OFFSETS[type][rot_idx]),
     };
     return arr;
 }
 
 LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
-    TileIdArr offsets = PieceGetOffsets(piece);
-
     isize r_candidate = grid->nrows;
     for (isize r = r_candidate - 1; r >= 0; --r) {
         Tile* tile = GridMaybeGetTile(grid, r, column);
@@ -5171,8 +5171,8 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
             break;
         } else {
             bool can_place = true;
-            for (isize i = 0; i < ArrLen(&offsets); ++i) {
-                TileId offset = ArrGet(&offsets, i);
+            for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
+                TileId offset = ArrGet(&piece.block_offsets, i);
                 Tile* t = GridMaybeGetTile(grid, r + offset.r, column + offset.c);
                 if (!t) {
                     can_place = false;
@@ -5191,11 +5191,11 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
 
     Assert(r_candidate < grid->nrows && r_candidate >= 0);
 
-    for (isize i = 0; i < ArrLen(&offsets); ++i) {
-        TileId offset = ArrGet(&offsets, i);
+    for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
+        TileId offset = ArrGet(&piece.block_offsets, i);
         Tile* tile = GridGetTile(grid, r_candidate + offset.r, column + offset.c);
         tile->occupied = true;
-        tile->base_color = PieceGetBaseColor(piece.type);
+        tile->base_color = piece.base_color;
     }
 
     return true;
@@ -5209,10 +5209,11 @@ typedef struct {
 } Battle;
 
 static Piece RandomPiece() {
-    Piece piece = {
-        .type = i32randab(0, PT_COUNT - 1),
-        .rot_idx = i32randab(PR_0, PR_270),
-    };
+    Piece piece = {0};
+    piece.type = i32randab(0, PT_COUNT - 1);
+    piece.rot_idx = i32randab(PR_0, PR_270);
+    piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
+    piece.base_color = PieceGetBaseColor(piece.type);
     return piece;
 }
 
@@ -5491,14 +5492,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     TileId anchor = TileIdLit(5, battle->anchor_column);
-                    TileIdArr offsets = PieceGetOffsets(battle->next_piece);
-                    Vec4 next_piece_color = PieceGetBaseColor(battle->next_piece.type);
-                    for (isize i = 0; i < ArrLen(&offsets); ++i) {
-                        TileId offset = ArrGet(&offsets, i);
+                    Piece* next_piece = &battle->next_piece;
+                    for (isize i = 0; i < ArrLen(&next_piece->block_offsets); ++i) {
+                        TileId offset = ArrGet(&next_piece->block_offsets, i);
                         Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
                         Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                         Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), next_piece_color);
+                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), next_piece->base_color);
                     }
                 }
 
