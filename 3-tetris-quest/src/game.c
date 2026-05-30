@@ -5205,8 +5205,7 @@ typedef struct {
     Grid grid;
 
     Piece next_piece;
-    isize anchor_column;
-    isize anchor_row;
+    TileId anchor;
 } Battle;
 
 static Piece RandomPiece() {
@@ -5224,27 +5223,25 @@ static void BattleGenerateNextPiece(Battle* battle) {
     i32 max_height = I32_MIN;
     for (isize i = 0; i < ArrLen(&battle->next_piece.block_offsets); ++i) {
         TileId offset = ArrGet(&battle->next_piece.block_offsets, i);
-        breakpoint();
         max_height = i32max(offset.r, max_height);
     }
 
     Assert(max_height < battle->grid.nrows);
     Assert(max_height >= 0);
-    battle->anchor_row = (battle->grid.nrows - 1) - max_height;
+    battle->anchor.r = (battle->grid.nrows - 1) - max_height;
 }
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
     GridInit(&battle->grid, renderw_world, renderh_world);
-    battle->anchor_column = 4;
-    battle->anchor_row = battle->grid.nrows - 1;
+    battle->anchor = TileIdLit(battle->grid.nrows, 4);
     BattleGenerateNextPiece(battle);
 }
 
-static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor_column += offset; }
+static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor.c += offset; }
 static void BattlePlacePiece(Battle* battle) {
-    bool placed = GridPlacePiece(&battle->grid, battle->next_piece, battle->anchor_column);
+    bool placed = GridPlacePiece(&battle->grid, battle->next_piece, battle->anchor.c);
     Assert(placed);
     battle->next_piece = RandomPiece();
 }
@@ -5510,7 +5507,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         ++color_idx;
                     }
 
-                    TileId anchor = TileIdLit(battle->anchor_row, battle->anchor_column);
+                    TileId anchor = battle->anchor;
                     Piece* next_piece = &battle->next_piece;
                     for (isize i = 0; i < ArrLen(&next_piece->block_offsets); ++i) {
                         TileId offset = ArrGet(&next_piece->block_offsets, i);
