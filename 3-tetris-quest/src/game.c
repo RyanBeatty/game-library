@@ -5217,15 +5217,19 @@ static Piece RandomPiece() {
     return piece;
 }
 
+static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
+    i32 max_height = I32_MIN;
+    for (isize i = 0; i < ArrLen(&block_offsets); ++i) {
+        TileId offset = ArrGet(&block_offsets, i);
+        max_height = i32max(offset.r, max_height);
+    }
+    return max_height;
+}
+
 static void BattleGenerateActivePiece(Battle* battle) {
     battle->active_piece = RandomPiece();
 
-    i32 max_height = I32_MIN;
-    for (isize i = 0; i < ArrLen(&battle->active_piece.block_offsets); ++i) {
-        TileId offset = ArrGet(&battle->active_piece.block_offsets, i);
-        max_height = i32max(offset.r, max_height);
-    }
-
+    i32 max_height = CalculateOffsetHeight(battle->active_piece.block_offsets);
     Assert(max_height < battle->grid.nrows);
     Assert(max_height >= 0);
     battle->anchor.r = (battle->grid.nrows - 1) - max_height;
@@ -5247,11 +5251,28 @@ static void BattlePlacePiece(Battle* battle) {
 }
 
 static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
+    Piece* active_piece = &battle->active_piece;
     isize dir = clockwise ? 1 : -1;
 
-    Piece* active_piece = &battle->active_piece;
-    active_piece->rot_idx = ((active_piece->rot_idx + dir) + PR_COUNT) % PR_COUNT;
-    active_piece->block_offsets = PieceGetOffsets(active_piece->type, active_piece->rot_idx);
+    PieceRot next_rot = ((active_piece->rot_idx + dir) + PR_COUNT) % PR_COUNT;
+    TileIdArr next_block_offsets = PieceGetOffsets(active_piece->type, next_rot);
+    i32 next_rot_max_height = CalculateOffsetHeight(next_block_offsets);
+    TileId next_anchor = TileIdLit((battle->grid.nrows - 1) - next_rot_max_height, battle->anchor.c);
+
+    for (isize i = 0; i < ArrLen(&next_block_offsets); ++i) {
+        TileId offset = ArrGet(&next_block_offsets, i);
+        TileId tile = TileIdLit(next_anchor.r + offset.r, next_anchor.c + offset.c);
+        if (!GridValidTileId(&battle->grid, tile)) {
+            next_rot = active_piece->rot_idx;
+            next_block_offsets = active_piece->block_offsets;
+            next_anchor = battle->anchor;
+            break;
+        }
+    }
+
+    active_piece->rot_idx = next_rot;
+    active_piece->block_offsets = next_block_offsets;
+    battle->anchor = next_anchor;
 }
 
 ////////////////////////////////////////////////////
