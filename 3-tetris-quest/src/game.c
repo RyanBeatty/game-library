@@ -5233,6 +5233,7 @@ static void BattleGenerateActivePiece(Battle* battle) {
     Assert(max_height < battle->grid.nrows);
     Assert(max_height >= 0);
     battle->anchor.r = (battle->grid.nrows - 1) - max_height;
+    battle->anchor.c = 4;  // Always reset to the middle.
 }
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
@@ -5249,6 +5250,7 @@ static void BattlePlacePiece(Battle* battle) {
     battle->active_piece = RandomPiece();
 }
 
+// TODO: Combine with rotate function. move + rotate.
 static void BattleMoveActivePiece(Battle* battle, bool right) {
     Piece* active_piece = &battle->active_piece;
     i32 move_dir = right ? 1 : -1;
