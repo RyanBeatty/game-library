@@ -5243,11 +5243,31 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     BattleGenerateActivePiece(battle);
 }
 
-static void BattleMoveAnchor(Battle* battle, isize offset) { battle->anchor.c += offset; }
 static void BattlePlacePiece(Battle* battle) {
     bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->anchor.c);
     Assert(placed);
     battle->active_piece = RandomPiece();
+}
+
+static void BattleMoveActivePiece(Battle* battle, bool right) {
+    Piece* active_piece = &battle->active_piece;
+    i32 move_dir = right ? 1 : -1;
+
+    TileId new_anchor = TileIdLit(battle->anchor.r, battle->anchor.c + move_dir);
+    if (!GridValidTileId(&battle->grid, new_anchor)) {
+        return;
+    }
+
+    for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+        TileId offset = ArrGet(&active_piece->block_offsets, i);
+        TileId tile = TileIdLit(new_anchor.r + offset.r, new_anchor.c + offset.c);
+        if (!GridValidTileId(&battle->grid, tile)) {
+            new_anchor = battle->anchor;
+            break;
+        }
+    }
+
+    battle->anchor = new_anchor;
 }
 
 static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
@@ -5451,24 +5471,22 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         {
             // Movement and rotation.
             {
-                if (controller->move_left.pressed || controller->move_right.pressed) {
-                    isize offset = 0;
-                    if (controller->move_left.pressed) {
-                        offset += -1;
-                    }
-                    if (controller->move_right.pressed) {
-                        offset += 1;
-                    }
-
-                    BattleMoveAnchor(battle, offset);
+                if (controller->move_left.pressed) {
+                    PlatformLog(LLOG_INFO, "move left");
+                    BattleMoveActivePiece(battle, false);
+                }
+                if (controller->move_right.pressed) {
+                    PlatformLog(LLOG_INFO, "move right");
+                    BattleMoveActivePiece(battle, true);
                 }
 
                 if (controller->action_down.pressed) {
-                    PlatformLog(LLOG_INFO, "action down");
+                    PlatformLog(LLOG_INFO, "rotate clockwise");
                     BattleRotateActivePiece(battle, true);
                 }
 
                 if (controller->action_right.pressed) {
+                    PlatformLog(LLOG_INFO, "rotate counterclockwise");
                     BattleRotateActivePiece(battle, false);
                 }
             }
