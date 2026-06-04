@@ -5208,16 +5208,19 @@ typedef struct {
     TileId anchor;
 } Battle;
 
-static Piece RandomPiece() {
+static Piece MakePiece(PieceType type, PieceRot rot) {
     Piece piece = {0};
-    piece.type = i32randab(0, PT_COUNT - 1);
-    piece.rot_idx = i32randab(PR_0, PR_270);
+    piece.type = type;
+    piece.rot_idx = rot;
     piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
     piece.base_color = PieceGetBaseColor(piece.type);
-
-    piece.type = PT_I;
-    piece.rot_idx = 0;
     return piece;
+}
+
+static Piece RandomPiece() {
+    PieceType type = i32randab(0, PT_COUNT - 1);
+    PieceRot rot = i32randab(PR_0, PR_270);
+    return MakePiece(type, rot);
 }
 
 static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
@@ -5234,7 +5237,6 @@ static void BattleGenerateActivePiece(Battle* battle) {
 
     i32 max_height = CalculateOffsetHeight(battle->active_piece.block_offsets);
     Assert(max_height < battle->grid.nrows);
-    Assert(max_height >= 0);
     battle->anchor.r = (battle->grid.nrows - 1) - max_height;
     battle->anchor.c = 4;  // Always reset to the middle.
 }
@@ -5250,7 +5252,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
 static void BattlePlacePiece(Battle* battle) {
     bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->anchor.c);
     Assert(placed);
-    battle->active_piece = RandomPiece();
+    BattleGenerateActivePiece(battle);
 }
 
 // TODO: Combine with rotate function. move + rotate.
