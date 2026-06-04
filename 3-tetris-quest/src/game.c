@@ -5214,6 +5214,9 @@ static Piece RandomPiece() {
     piece.rot_idx = i32randab(PR_0, PR_270);
     piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
     piece.base_color = PieceGetBaseColor(piece.type);
+
+    piece.type = PT_I;
+    piece.rot_idx = 0;
     return piece;
 }
 
@@ -5256,10 +5259,6 @@ static void BattleMoveActivePiece(Battle* battle, bool right) {
     i32 move_dir = right ? 1 : -1;
 
     TileId new_anchor = TileIdLit(battle->anchor.r, battle->anchor.c + move_dir);
-    if (!GridValidTileId(&battle->grid, new_anchor)) {
-        return;
-    }
-
     for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
         TileId offset = ArrGet(&active_piece->block_offsets, i);
         TileId tile = TileIdLit(new_anchor.r + offset.r, new_anchor.c + offset.c);
@@ -5277,6 +5276,7 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     isize dir = clockwise ? 1 : -1;
 
     PieceRot next_rot = ((active_piece->rot_idx + dir) + PR_COUNT) % PR_COUNT;
+    Assert(next_rot >= 0 && next_rot < PR_COUNT);
     TileIdArr next_block_offsets = PieceGetOffsets(active_piece->type, next_rot);
     i32 next_rot_max_height = CalculateOffsetHeight(next_block_offsets);
     TileId next_anchor = TileIdLit((battle->grid.nrows - 1) - next_rot_max_height, battle->anchor.c);
