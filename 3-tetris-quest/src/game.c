@@ -5163,29 +5163,21 @@ LCORE TileIdArr PieceGetOffsets(PieceType type, PieceRot rot_idx) {
 LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, isize column) {
     isize r_candidate = grid->nrows;
     for (isize r = r_candidate - 1; r >= 0; --r) {
-        Tile* tile = GridMaybeGetTile(grid, r, column);
-        if (!tile) {
-            continue;
-        } else if (tile->occupied) {
-            // Gone too far.
-            break;
-        } else {
-            bool can_place = true;
-            for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
-                TileId offset = ArrGet(&piece.block_offsets, i);
-                Tile* t = GridMaybeGetTile(grid, r + offset.r, column + offset.c);
-                if (!t) {
-                    can_place = false;
-                    break;
-                } else if (t->occupied) {
-                    can_place = false;
-                    break;
-                }
+        bool can_place = true;
+        for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
+            TileId offset = ArrGet(&piece.block_offsets, i);
+            Tile* t = GridMaybeGetTile(grid, r + offset.r, column + offset.c);
+            if (!t) {
+                can_place = false;
+                break;
+            } else if (t->occupied) {
+                can_place = false;
+                break;
             }
+        }
 
-            if (can_place) {
-                r_candidate = r;
-            }
+        if (can_place) {
+            r_candidate = r;
         }
     }
 
