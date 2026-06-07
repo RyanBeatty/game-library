@@ -5193,12 +5193,10 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, isize co
     return TileIdLit(r_candidate, column);
 }
 
-LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
-    TileId anchor = GridCalculatePiecePlacementAnchor(grid, piece, column);
-
+LCORE bool GridPlacePiece(Grid* grid, Piece piece, TileId placement_anchor) {
     for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
         TileId offset = ArrGet(&piece.block_offsets, i);
-        Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
+        Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
         tile->occupied = true;
         tile->base_color = piece.base_color;
     }
@@ -5211,6 +5209,7 @@ typedef struct {
 
     Piece active_piece;
     TileId anchor;
+    TileId placement_anchor;
 } Battle;
 
 static Piece MakePiece(PieceType type, PieceRot rot) {
@@ -5244,18 +5243,18 @@ static void BattleGenerateActivePiece(Battle* battle) {
     Assert(max_height < battle->grid.nrows);
     battle->anchor.r = (battle->grid.nrows - 1) - max_height;
     battle->anchor.c = 4;  // Always reset to the middle.
+    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor.c);
 }
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
     GridInit(&battle->grid, renderw_world, renderh_world);
-    battle->anchor = TileIdLit(battle->grid.nrows, 4);
     BattleGenerateActivePiece(battle);
 }
 
 static void BattlePlacePiece(Battle* battle) {
-    bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->anchor.c);
+    bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->placement_anchor);
     Assert(placed);
 
     // Detect line clears.
@@ -5322,6 +5321,7 @@ static void BattleMoveActivePiece(Battle* battle, bool right) {
     }
 
     battle->anchor = new_anchor;
+    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor.c);
 }
 
 static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
@@ -5348,6 +5348,7 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     active_piece->rot_idx = next_rot;
     active_piece->block_offsets = next_block_offsets;
     battle->anchor = next_anchor;
+    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor.c);
 }
 
 ////////////////////////////////////////////////////
