@@ -5274,6 +5274,7 @@ static void BattlePlacePiece(Battle* battle) {
             }
         }
 
+        // Zero out the cleared rows.
         for (isize i = 0; i < num_cleared_rows; ++i) {
             isize r = cleared_row_start + i;
             Assert(r < grid->nrows);
@@ -5283,6 +5284,7 @@ static void BattlePlacePiece(Battle* battle) {
             }
         }
 
+        // Shift down everything above the cleared lines.
         for (isize r = cleared_row_start + num_cleared_rows; r < grid->nrows; ++r) {
             for (isize c = 0; c < grid->ncols; ++c) {
                 Tile* source = GridGetTile(grid, r, c);
