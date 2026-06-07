@@ -222,7 +222,8 @@ LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
 #define f32lerp_pct(s, e, t) (f32clamp01(((t) - (s)) / ((e) - (s))))
 
 #define i32rand() ((i32)rand())
-#define i32randab(a, b) ((i32)f32randab(a, b))
+// There is some bias here in the distribution potentially when RAND_MAX is divisible by b
+#define i32randab(a, b) ((a) + i32rand() % ((b) - (a) + 1))
 #define i32max(x, y) ((x) > (y) ? (x) : (y))
 #define i32min(x, y) ((x) < (y) ? (x) : (y))
 #define i32abs(x) (abs(x))

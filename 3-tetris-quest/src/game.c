@@ -5214,7 +5214,8 @@ static Piece MakePiece(PieceType type, PieceRot rot) {
 }
 
 static Piece RandomPiece() {
-    PieceType type = i32randab(0, PT_COUNT - 1);
+    // TODO: Shouldn't this be PT_COUNT - 1?
+    PieceType type = i32randab(0, PT_COUNT);
     PieceRot rot = i32randab(PR_0, PR_270);
     return MakePiece(type, rot);
 }
