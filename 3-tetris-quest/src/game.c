@@ -5160,13 +5160,13 @@ LCORE TileIdArr PieceGetOffsets(PieceType type, PieceRot rot_idx) {
     return arr;
 }
 
-LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, isize column) {
-    isize r_candidate = grid->nrows;
-    for (isize r = r_candidate - 1; r >= 0; --r) {
+LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId anchor) {
+    isize r_candidate = -1;
+    for (isize r = anchor.r; r >= 0; --r) {
         bool can_place = true;
         for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
             TileId offset = ArrGet(&piece.block_offsets, i);
-            Tile* t = GridMaybeGetTile(grid, r + offset.r, column + offset.c);
+            Tile* t = GridMaybeGetTile(grid, r + offset.r, anchor.c + offset.c);
             if (!t) {
                 can_place = false;
                 break;
@@ -5176,13 +5176,15 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, isize co
             }
         }
 
-        if (can_place) {
-            r_candidate = r;
+        if (!can_place) {
+            break;
         }
+
+        r_candidate = r;
     }
 
     Assert(r_candidate < grid->nrows && r_candidate >= 0);
-    return TileIdLit(r_candidate, column);
+    return TileIdLit(r_candidate, anchor.c);
 }
 
 LCORE bool GridPlacePiece(Grid* grid, Piece piece, TileId placement_anchor) {
@@ -5214,8 +5216,7 @@ static Piece MakePiece(PieceType type, PieceRot rot) {
 }
 
 static Piece RandomPiece() {
-    // TODO: Shouldn't this be PT_COUNT - 1?
-    PieceType type = i32randab(0, PT_COUNT);
+    PieceType type = i32randab(0, PT_COUNT - 1);
     PieceRot rot = i32randab(PR_0, PR_270);
     return MakePiece(type, rot);
 }
@@ -5226,6 +5227,8 @@ static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
         TileId offset = ArrGet(&block_offsets, i);
         max_height = i32max(offset.r, max_height);
     }
+    Assert(max_height <= 100);
+    Assert(max_height >= -100);
     return max_height;
 }
 
@@ -5236,7 +5239,7 @@ static void BattleGenerateActivePiece(Battle* battle) {
     Assert(max_height < battle->grid.nrows);
     battle->anchor.r = (battle->grid.nrows - 1) - max_height;
     battle->anchor.c = 4;  // Always reset to the middle.
-    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor.c);
+    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor);
 }
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
@@ -5314,7 +5317,7 @@ static void BattleMoveActivePiece(Battle* battle, bool right) {
     }
 
     battle->anchor = new_anchor;
-    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor.c);
+    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
 }
 
 static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
@@ -5341,7 +5344,7 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     active_piece->rot_idx = next_rot;
     active_piece->block_offsets = next_block_offsets;
     battle->anchor = next_anchor;
-    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor.c);
+    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
 }
 
 ////////////////////////////////////////////////////
