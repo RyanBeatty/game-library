@@ -224,6 +224,7 @@ LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
 #define i32rand() ((i32)rand())
 #define i32randab(a, b) ((i32)f32randab(a, b))
 #define i32max(x, y) ((x) > (y) ? (x) : (y))
+#define i32min(x, y) ((x) < (y) ? (x) : (y))
 #define i32abs(x) (abs(x))
 
 typedef struct {

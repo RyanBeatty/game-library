@@ -5252,6 +5252,50 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
 static void BattlePlacePiece(Battle* battle) {
     bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->anchor.c);
     Assert(placed);
+
+    // Detect line clears.
+    {
+        Grid* grid = &battle->grid;
+        isize cleared_row_start = grid->nrows;
+        i32 num_cleared_rows = 0;
+        for (isize r = 0; r < grid->nrows; ++r) {
+            bool cleared = true;
+            for (isize c = 0; c < grid->ncols; ++c) {
+                Tile* tile = GridGetTile(grid, r, c);
+                if (!tile->occupied) {
+                    cleared = false;
+                    break;
+                }
+            }
+
+            if (cleared) {
+                ++num_cleared_rows;
+                cleared_row_start = i32min(cleared_row_start, r);
+            }
+        }
+
+        for (isize i = 0; i < num_cleared_rows; ++i) {
+            isize r = cleared_row_start + i;
+            Assert(r < grid->nrows);
+            for (isize c = 0; c < grid->ncols; ++c) {
+                Tile* tile = GridGetTile(grid, r, c);
+                tile->occupied = false;
+            }
+        }
+
+        for (isize r = cleared_row_start + num_cleared_rows; r < grid->nrows; ++r) {
+            for (isize c = 0; c < grid->ncols; ++c) {
+                Tile* source = GridGetTile(grid, r, c);
+                Tile* dest = GridGetTile(grid, r - num_cleared_rows, c);
+
+                dest->occupied = source->occupied;
+                dest->base_color = source->base_color;
+
+                source->occupied = false;
+            }
+        }
+    }
+
     BattleGenerateActivePiece(battle);
 }
 
