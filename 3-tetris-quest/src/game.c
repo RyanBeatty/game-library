@@ -5631,6 +5631,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                         DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->base_color);
                     }
+
+                    // Draw placement preview viz
+                    TileId placement_anchor = battle->placement_anchor;
+                    for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+                        TileId offset = ArrGet(&active_piece->block_offsets, i);
+                        Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
+                        Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                        Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                        Vec4 color = active_piece->base_color;
+                        color.a = 0.3f;
+                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
+                    }
                 }
 
                 EndShaderPass();
