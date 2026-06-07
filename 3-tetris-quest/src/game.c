@@ -5160,7 +5160,7 @@ LCORE TileIdArr PieceGetOffsets(PieceType type, PieceRot rot_idx) {
     return arr;
 }
 
-LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
+LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, isize column) {
     isize r_candidate = grid->nrows;
     for (isize r = r_candidate - 1; r >= 0; --r) {
         Tile* tile = GridMaybeGetTile(grid, r, column);
@@ -5190,10 +5190,15 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
     }
 
     Assert(r_candidate < grid->nrows && r_candidate >= 0);
+    return TileIdLit(r_candidate, column);
+}
+
+LCORE bool GridPlacePiece(Grid* grid, Piece piece, isize column) {
+    TileId anchor = GridCalculatePiecePlacementAnchor(grid, piece, column);
 
     for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
         TileId offset = ArrGet(&piece.block_offsets, i);
-        Tile* tile = GridGetTile(grid, r_candidate + offset.r, column + offset.c);
+        Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
         tile->occupied = true;
         tile->base_color = piece.base_color;
     }
