@@ -5204,6 +5204,8 @@ typedef struct {
     Piece active_piece;
     TileId anchor;
     TileId placement_anchor;
+
+    i32 score;
 } Battle;
 
 static Piece MakePiece(PieceType type, PieceRot rot) {
@@ -5296,6 +5298,8 @@ static void BattlePlacePiece(Battle* battle) {
                 source->occupied = false;
             }
         }
+
+        battle->score += num_cleared_rows * grid->ncols;
     }
 
     BattleGenerateActivePiece(battle);
@@ -5691,7 +5695,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
                      load_action, GetScreenRenderTarget()) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
-                    UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {}
+                    UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
+                    UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %d", battle->score);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                    }
                 }
 
                 {
