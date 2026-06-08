@@ -5205,8 +5205,9 @@ typedef struct {
     TileId anchor;
     TileId placement_anchor;
 
-    i32 blocks_placed_since_last_clear;
     i32 score;
+    i32 blocks_placed_since_last_clear;
+    i32 max_blocks_placed_since_last_clear;
 } Battle;
 
 static Piece MakePiece(PieceType type, PieceRot rot) {
@@ -5259,6 +5260,8 @@ static void BattlePlacePiece(Battle* battle) {
     // Metrics.
     {
         ++battle->blocks_placed_since_last_clear;
+        battle->max_blocks_placed_since_last_clear =
+            i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
     }
 
     // Detect line clears.
@@ -5713,6 +5716,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Blocks Since Clear: %d",
                                      battle->blocks_placed_since_last_clear);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Max Blocks Since Clear: %d",
+                                     battle->max_blocks_placed_since_last_clear);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                     }
