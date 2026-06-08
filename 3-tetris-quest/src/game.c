@@ -5205,6 +5205,7 @@ typedef struct {
     TileId anchor;
     TileId placement_anchor;
 
+    i32 blocks_placed_since_last_clear;
     i32 score;
 } Battle;
 
@@ -5255,6 +5256,11 @@ static void BattlePlacePiece(Battle* battle) {
     bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->placement_anchor);
     Assert(placed);
 
+    // Metrics.
+    {
+        ++battle->blocks_placed_since_last_clear;
+    }
+
     // Detect line clears.
     {
         Grid* grid = &battle->grid;
@@ -5300,6 +5306,7 @@ static void BattlePlacePiece(Battle* battle) {
         }
 
         battle->score += num_cleared_rows * grid->ncols;
+        battle->blocks_placed_since_last_clear = num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear;
     }
 
     BattleGenerateActivePiece(battle);
@@ -5700,6 +5707,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %d", battle->score);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Blocks Since Clear: %d",
+                                     battle->blocks_placed_since_last_clear);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                     }
