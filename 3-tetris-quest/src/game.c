@@ -5206,6 +5206,8 @@ typedef struct {
     TileId placement_anchor;
 
     i32 score;
+    i32 num_cleared;
+    i32 cleared_streak;
     i32 blocks_placed_since_last_clear;
     i32 max_blocks_placed_since_last_clear;
 } Battle;
@@ -5257,13 +5259,6 @@ static void BattlePlacePiece(Battle* battle) {
     bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->placement_anchor);
     Assert(placed);
 
-    // Metrics.
-    {
-        ++battle->blocks_placed_since_last_clear;
-        battle->max_blocks_placed_since_last_clear =
-            i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
-    }
-
     // Detect line clears.
     {
         Grid* grid = &battle->grid;
@@ -5308,8 +5303,16 @@ static void BattlePlacePiece(Battle* battle) {
             }
         }
 
-        battle->score += num_cleared_rows * grid->ncols;
-        battle->blocks_placed_since_last_clear = num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear;
+        // Metrics
+        {
+            battle->score += num_cleared_rows * grid->ncols;
+            battle->blocks_placed_since_last_clear =
+                num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
+            battle->max_blocks_placed_since_last_clear =
+                i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
+            battle->num_cleared += num_cleared_rows;
+            battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + num_cleared_rows : 0;
+        }
     }
 
     BattleGenerateActivePiece(battle);
@@ -5722,6 +5725,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Max Blocks Since Clear: %d",
                                      battle->max_blocks_placed_since_last_clear);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Cleared: %d", battle->num_cleared);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Cleared Streak: %d", battle->cleared_streak);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                     }
