@@ -5660,13 +5660,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 // Draw hand
                 {
+                    Piece piece = MakePiece(PT_Z, PR_0);
+
                     Mat4 hand_to_world =
                         Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                  Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
+                    f32 piece_scale = Px2Meter(5.0f);
+                    // Mat4 piece_to_hand = Mat4SVRT(Vec3Lit(Px2Meter(5.0f), Px2Meter(5.0f), Px2Meter(1.0f)),
+                    //                               Mat4Identity(), Vec3LitAll(0.0f));
                     for (isize r = 0; r < 3; ++r) {
                         for (isize c = 0; c < 2; ++c) {
-                            Vec3 pos = Vec3WTransform(Vec3Lit(c, r, 0), hand_to_world);
-                            DrawQuad(pos, 20, 20, Mat4Identity(), LRED);
+                            Vec3 quad_pos = Vec3WTransform(Vec3Lit(c, r, 0), hand_to_world);
+                            DrawQuad(quad_pos, 20, 20, Mat4Identity(), LGRAY);
+
+                            for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
+                                TileId offset = ArrGet(&piece.block_offsets, i);
+                                Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
+                                pos = Vec3Add(pos, quad_pos);
+                                DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), piece.base_color);
+                            }
                         }
                     }
                 }
