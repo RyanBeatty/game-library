@@ -5658,6 +5658,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
+                // Draw hand
+                {
+                    Mat4 hand_to_world =
+                        Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
+                                 Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
+                    for (isize r = 0; r < 3; ++r) {
+                        for (isize c = 0; c < 2; ++c) {
+                            Vec3 pos = Vec3WTransform(Vec3Lit(c, r, 0), hand_to_world);
+                            DrawQuad(pos, 20, 20, Mat4Identity(), LRED);
+                        }
+                    }
+                }
+
                 EndShaderPass();
             }
 
