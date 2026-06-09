@@ -5666,8 +5666,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                  Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
                     f32 piece_scale = Px2Meter(5.0f);
-                    // Mat4 piece_to_hand = Mat4SVRT(Vec3Lit(Px2Meter(5.0f), Px2Meter(5.0f), Px2Meter(1.0f)),
-                    //                               Mat4Identity(), Vec3LitAll(0.0f));
                     for (isize r = 0; r < 3; ++r) {
                         for (isize c = 0; c < 2; ++c) {
                             Vec3 quad_pos = Vec3WTransform(Vec3Lit(c, r, 0), hand_to_world);
