@@ -2621,6 +2621,14 @@ LCORE AABB2D AABB2DFromMinMax(Vec2 pmin, Vec2 pmax) {
     return box;
 }
 
+// Returns a aabb2d given a center + full dims.
+LCORE AABB2D AABB2DFromWidthHeight(Vec2 center, Vec2 dims) {
+    AABB2D box = {0};
+    box.c = center;
+    box.r = Vec2Lit(dims.x * 0.5f, dims.y * 0.5f);
+    return box;
+}
+
 // Convert an aseprite bb on a marked up png to a world position bb.
 // The aseprite bb min will be the bottom left corner of the box THAT I SEE ON THE SCREEN. Not the bottom
 // left according to the pixel coords in the UI. The Top right will be similar.
@@ -5665,11 +5673,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Mat4 hand_to_world =
                         Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                  Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
+                    Vec2 card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
                     f32 piece_scale = Px2Meter(5.0f);
                     for (isize r = 0; r < 3; ++r) {
                         for (isize c = 0; c < 2; ++c) {
                             Vec3 quad_pos = Vec3WTransform(Vec3Lit(c, r, 0), hand_to_world);
-                            DrawQuad(quad_pos, 20, 20, Mat4Identity(), LGRAY);
+                            DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
+
+                            AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), card_scale);
+                            Vec2 normal = {0};
+                            f32 depth = 0.0f;
+                            bool collides =
+                                TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
+                            if (collides) {
+                                PlatformLog(LLOG_INFO, "Inside %d %d", r, c);
+                            }
 
                             for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
                                 TileId offset = ArrGet(&piece.block_offsets, i);
