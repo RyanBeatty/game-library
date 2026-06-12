@@ -5206,6 +5206,20 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, TileId placement_anchor) {
     return true;
 }
 
+////////////////////////////////////////////////////
+
+typedef struct {
+    Vec3 pos;
+    Piece piece;
+} Card;
+
+typedef struct {
+    Card* data;
+    isize len;
+    isize cap;
+} CardArr;
+////////////////////////////////////////////////////
+
 typedef struct {
     Grid grid;
 
@@ -5218,6 +5232,9 @@ typedef struct {
     i32 cleared_streak;
     i32 blocks_placed_since_last_clear;
     i32 max_blocks_placed_since_last_clear;
+
+    Card card_buffer[6];
+    CardArr hand;
 } Battle;
 
 static Piece MakePiece(PieceType type, PieceRot rot) {
@@ -5261,6 +5278,18 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     *battle = BATTLE_ZERO;
     GridInit(&battle->grid, renderw_world, renderh_world);
     BattleGenerateActivePiece(battle);
+
+    {
+        InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
+        for (isize r = 0; r < 3; ++r) {
+            for (isize c = 0; c < 2; ++c) {
+                Card card = {0};
+                card.pos = Vec3Lit(c, r, 0);
+                card.piece = RandomPiece();
+                ArrPush(&battle->hand, card);
+            }
+        }
+    }
 }
 
 static void BattlePlacePiece(Battle* battle) {
@@ -5668,34 +5697,31 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 // Draw hand
                 {
-                    Piece piece = MakePiece(PT_Z, PR_0);
-
                     Mat4 hand_to_world =
                         Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                  Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
                     Vec2 card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
                     f32 piece_scale = Px2Meter(5.0f);
-                    for (isize r = 0; r < 3; ++r) {
-                        for (isize c = 0; c < 2; ++c) {
-                            Vec3 quad_pos = Vec3WTransform(Vec3Lit(c, r, 0), hand_to_world);
-                            DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
+                    for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
+                        Card* card = ArrGetPtr(&battle->hand, i);
+                        Vec3 quad_pos = Vec3WTransform(card->pos, hand_to_world);
+                        DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
-                            // Draw piece inside card.
-                            for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
-                                TileId offset = ArrGet(&piece.block_offsets, i);
-                                Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
-                                pos = Vec3Add(pos, quad_pos);
-                                DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), piece.base_color);
-                            }
+                        // Draw piece inside card.
+                        for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
+                            TileId offset = ArrGet(&card->piece.block_offsets, j);
+                            Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
+                            pos = Vec3Add(pos, quad_pos);
+                            DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), card->piece.base_color);
+                        }
 
-                            AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), card_scale);
-                            Vec2 normal = {0};
-                            f32 depth = 0.0f;
-                            bool collides =
-                                TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
-                            if (collides) {
-                                PlatformLog(LLOG_INFO, "Inside %d %d", r, c);
-                            }
+                        AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), card_scale);
+                        Vec2 normal = {0};
+                        f32 depth = 0.0f;
+                        bool collides =
+                            TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
+                        if (collides) {
+                            PlatformLog(LLOG_INFO, "Inside %f %f", card->pos.y, card->pos.x);
                         }
                     }
                 }
