@@ -5680,6 +5680,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec3 quad_pos = Vec3WTransform(Vec3Lit(c, r, 0), hand_to_world);
                             DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
+                            // Draw piece inside card.
+                            for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
+                                TileId offset = ArrGet(&piece.block_offsets, i);
+                                Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
+                                pos = Vec3Add(pos, quad_pos);
+                                DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), piece.base_color);
+                            }
+
                             AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), card_scale);
                             Vec2 normal = {0};
                             f32 depth = 0.0f;
@@ -5687,13 +5695,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
                             if (collides) {
                                 PlatformLog(LLOG_INFO, "Inside %d %d", r, c);
-                            }
-
-                            for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
-                                TileId offset = ArrGet(&piece.block_offsets, i);
-                                Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
-                                pos = Vec3Add(pos, quad_pos);
-                                DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), piece.base_color);
                             }
                         }
                     }
