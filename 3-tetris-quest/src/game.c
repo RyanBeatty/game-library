@@ -5272,16 +5272,6 @@ static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
     return max_height;
 }
 
-static void BattleGenerateActivePiece(Battle* battle) {
-    battle->active_piece = RandomPiece();
-
-    i32 max_height = CalculateOffsetHeight(battle->active_piece.block_offsets);
-    Assert(max_height < battle->grid.nrows);
-    battle->anchor.r = (battle->grid.nrows - 1) - max_height;
-    battle->anchor.c = 4;  // Always reset to the middle.
-    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor);
-}
-
 static void BattleSetActivePiece(Battle* battle) {
     PlatformLog(LLOG_INFO, "Setting active piece idx=%d", battle->selection_idx);
 
@@ -5298,7 +5288,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
     GridInit(&battle->grid, renderw_world, renderh_world);
-    BattleGenerateActivePiece(battle);
 
     // Hand init
     {
@@ -5747,26 +5736,30 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         ++color_idx;
                     }
 
-                    TileId anchor = battle->anchor;
-                    Piece* active_piece = &battle->active_piece;
-                    for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
-                        TileId offset = ArrGet(&active_piece->block_offsets, i);
-                        Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
-                        Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                        Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->base_color);
-                    }
+                    // Draw active piece.
+                    if (battle->selection_idx != NULL_HAND_IDX) {
+                        TileId anchor = battle->anchor;
+                        Piece* active_piece = &battle->active_piece;
+                        for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+                            TileId offset = ArrGet(&active_piece->block_offsets, i);
+                            Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
+                            Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                            Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->base_color);
+                        }
 
-                    // Draw placement preview viz
-                    TileId placement_anchor = battle->placement_anchor;
-                    for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
-                        TileId offset = ArrGet(&active_piece->block_offsets, i);
-                        Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
-                        Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                        Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                        Vec4 color = active_piece->base_color;
-                        color.a = 0.3f;
-                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
+                        // Draw placement preview viz
+                        TileId placement_anchor = battle->placement_anchor;
+                        for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+                            TileId offset = ArrGet(&active_piece->block_offsets, i);
+                            Tile* tile =
+                                GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
+                            Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                            Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                            Vec4 color = active_piece->base_color;
+                            color.a = 0.3f;
+                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
+                        }
                     }
                 }
 
