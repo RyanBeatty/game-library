@@ -786,7 +786,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     Vec2 pos_screen = Vec2Lit(xpos, ypos);
                     w32state->cur_input->mouse_pos_screen = pos_screen;
                 } else if (msg.message == WM_LBUTTONDOWN || msg.message == WM_LBUTTONUP) {
+                    // left mouse.
                     Win32InputMarkKeyEvent(cur_input, LKEY_LBUTTON, msg.message == WM_LBUTTONDOWN);
+                } else if (msg.message == WM_RBUTTONDOWN || msg.message == WM_RBUTTONUP) {
+                    // right mouse.
+                    Win32InputMarkKeyEvent(cur_input, LKEY_RBUTTON, msg.message == WM_RBUTTONDOWN);
                 } else {
                     // Translates char input related messages (e.g. key up/down). seems like it doesn't modify
                     // msg struct and just adds more messages to the queue. do we even need this?
@@ -891,8 +895,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     Vec2 cursor_world = GameScreenToWorld2D(pos_screen);
                     controller->cursor_pos_world = cursor_world;
 
-                    controller->action_down.down |= keyboard->down[VK_LBUTTON];
-                    controller->action_down.pressed |= !keyboard->down[VK_LBUTTON] && keyboard_prev->down[VK_LBUTTON];
+                    controller->action_left.down |= keyboard->down[VK_LBUTTON];
+                    controller->action_left.pressed |= !keyboard->down[VK_LBUTTON] && keyboard_prev->down[VK_LBUTTON];
+
+                    controller->right_shoulder.down |= keyboard->down[VK_RBUTTON];
+                    controller->right_shoulder.pressed |=
+                        !keyboard->down[VK_RBUTTON] && keyboard_prev->down[VK_RBUTTON];
                 }
             }
 

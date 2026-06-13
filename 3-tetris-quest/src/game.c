@@ -5241,6 +5241,8 @@ typedef struct {
     isize selection_idx;
 } Battle;
 
+static const isize NULL_HAND_IDX = 0;
+
 // Assume position zero is sentinel.
 #define BattleHandIter(arr, it) for (Card* it = ArrGetR(arr, 1); it <= ArrTailR(arr); ++it)
 
@@ -5273,6 +5275,18 @@ static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
 static void BattleGenerateActivePiece(Battle* battle) {
     battle->active_piece = RandomPiece();
 
+    i32 max_height = CalculateOffsetHeight(battle->active_piece.block_offsets);
+    Assert(max_height < battle->grid.nrows);
+    battle->anchor.r = (battle->grid.nrows - 1) - max_height;
+    battle->anchor.c = 4;  // Always reset to the middle.
+    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor);
+}
+
+static void BattleSetActivePiece(Battle* battle) {
+    PlatformLog(LLOG_INFO, "Setting active piece idx=%d", battle->selection_idx);
+
+    Card* card = ArrGetPtr(&battle->hand, battle->selection_idx);
+    battle->active_piece = card->piece;
     i32 max_height = CalculateOffsetHeight(battle->active_piece.block_offsets);
     Assert(max_height < battle->grid.nrows);
     battle->anchor.r = (battle->grid.nrows - 1) - max_height;
@@ -5617,20 +5631,34 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (controller->action_left.pressed) {
-                    BattlePlacePiece(battle);
+                    // BattlePlacePiece(battle);
                 }
 
                 // Update hand
                 {
-                    BattleHandIter(&battle->hand, card) {
+                    isize selection_to_be = NULL_HAND_IDX;
+                    for (isize i = 1; i < ArrLen(&battle->hand); ++i) {
+                        Card* card = ArrGetPtr(&battle->hand, i);
                         Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
                         AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
                         Vec2 normal = {0};
                         f32 depth = 0.0f;
                         bool collides =
                             TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
-                        if (collides) {
+                        if (collides && controller->action_left.pressed) {
+                            // PlatformLog(LLOG_INFO, "mouse collides hand %d", i);
+                            selection_to_be = i;
                         }
+                    }
+
+                    if (selection_to_be != NULL_HAND_IDX && battle->selection_idx == NULL_HAND_IDX) {
+                        battle->selection_idx = selection_to_be;
+                        BattleSetActivePiece(battle);
+                    }
+
+                    if (controller->right_shoulder.pressed) {
+                        battle->selection_idx = NULL_HAND_IDX;
+                        BattleSetActivePiece(battle);
                     }
                 }
             }
