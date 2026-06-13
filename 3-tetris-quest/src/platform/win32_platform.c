@@ -859,12 +859,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
                 controller->action_up.down = keyboard->down['C'];
                 controller->action_up.pressed = !keyboard->down['C'] && keyboard_prev->down['C'];
-                controller->action_down.down = keyboard->down[VK_UP];
-                controller->action_down.pressed = !keyboard->down[VK_UP] && keyboard_prev->down[VK_UP];
+                controller->action_down.down = keyboard->down['W'];
+                controller->action_down.pressed = !keyboard->down['W'] && keyboard_prev->down['W'];
                 controller->action_left.down = keyboard->down[VK_SPACE];
                 controller->action_left.pressed = !keyboard->down[VK_SPACE] && keyboard_prev->down[VK_SPACE];
-                controller->action_right.down = keyboard->down['Z'];
-                controller->action_right.pressed = !keyboard->down['Z'] && keyboard_prev->down['Z'];
+                controller->action_right.down = keyboard->down['S'];
+                controller->action_right.pressed = !keyboard->down['S'] && keyboard_prev->down['S'];
 
                 controller->left_stick.x += keyboard->down[VK_RIGHT] ? 1.0f : 0.0f;
                 controller->left_stick.x += keyboard->down[VK_LEFT] ? -1.0f : 0.0f;
@@ -872,14 +872,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 controller->left_stick.y += keyboard->down[VK_DOWN] ? -1.0f : 0.0f;
 
                 // dpad
-                controller->move_up.down = keyboard->down[VK_UP];
-                controller->move_up.pressed = !keyboard->down[VK_UP] && keyboard_prev->down[VK_UP];
-                controller->move_down.down = keyboard->down[VK_DOWN];
-                controller->move_down.pressed = !keyboard->down[VK_DOWN] && keyboard_prev->down[VK_DOWN];
-                controller->move_left.down = keyboard->down[VK_LEFT];
-                controller->move_left.pressed = !keyboard->down[VK_LEFT] && keyboard_prev->down[VK_LEFT];
-                controller->move_right.down = keyboard->down[VK_RIGHT];
-                controller->move_right.pressed = !keyboard->down[VK_RIGHT] && keyboard_prev->down[VK_RIGHT];
+                controller->move_up.down = keyboard->down['W'];
+                controller->move_up.pressed = !keyboard->down['W'] && keyboard_prev->down['W'];
+                controller->move_down.down = keyboard->down['S'];
+                controller->move_down.pressed = !keyboard->down['S'] && keyboard_prev->down['S'];
+                controller->move_left.down = keyboard->down['A'];
+                controller->move_left.pressed = !keyboard->down['A'] && keyboard_prev->down['A'];
+                controller->move_right.down = keyboard->down['D'];
+                controller->move_right.pressed = !keyboard->down['D'] && keyboard_prev->down['D'];
 
                 {
                     // Windows gives us mouse position in screen space where origin is in top left. We need to map it to
