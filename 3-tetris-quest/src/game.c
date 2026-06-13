@@ -5218,6 +5218,7 @@ typedef struct {
     isize len;
     isize cap;
 } CardArr;
+
 ////////////////////////////////////////////////////
 
 typedef struct {
@@ -5233,11 +5234,15 @@ typedef struct {
     i32 blocks_placed_since_last_clear;
     i32 max_blocks_placed_since_last_clear;
 
-    Card card_buffer[6];
+    Card card_buffer[7];
     CardArr hand;
     Mat4 hand_to_world;
     Vec2 card_scale;
+    isize selection_idx;
 } Battle;
+
+// Assume position zero is sentinel.
+#define BattleHandIter(arr, it) for (Card* it = ArrGetR(arr, 1); it <= ArrTailR(arr); ++it)
 
 static Piece MakePiece(PieceType type, PieceRot rot) {
     Piece piece = {0};
@@ -5284,6 +5289,10 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     // Hand init
     {
         InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
+        Card nullcard = {0};
+        nullcard.piece = MakePiece(PT_O, PR_0);
+        nullcard.piece.base_color = LWHITE;
+        ArrPush(&battle->hand, nullcard);
         for (isize r = 0; r < 3; ++r) {
             for (isize c = 0; c < 2; ++c) {
                 Card card = {0};
@@ -5292,6 +5301,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
                 ArrPush(&battle->hand, card);
             }
         }
+        battle->selection_idx = 0;
 
         battle->hand_to_world = Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                          Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
@@ -5582,30 +5592,47 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->update) {
         // Update transforms.
         {
-            // Movement and rotation.
+            // update battle
             {
-                if (controller->move_left.pressed) {
-                    PlatformLog(LLOG_INFO, "move left");
-                    BattleMoveActivePiece(battle, false);
-                }
-                if (controller->move_right.pressed) {
-                    PlatformLog(LLOG_INFO, "move right");
-                    BattleMoveActivePiece(battle, true);
+                // Movement and rotation.
+                {
+                    if (controller->move_left.pressed) {
+                        PlatformLog(LLOG_INFO, "move left");
+                        BattleMoveActivePiece(battle, false);
+                    }
+                    if (controller->move_right.pressed) {
+                        PlatformLog(LLOG_INFO, "move right");
+                        BattleMoveActivePiece(battle, true);
+                    }
+
+                    if (controller->action_down.pressed) {
+                        PlatformLog(LLOG_INFO, "rotate clockwise");
+                        BattleRotateActivePiece(battle, true);
+                    }
+
+                    if (controller->action_right.pressed) {
+                        PlatformLog(LLOG_INFO, "rotate counterclockwise");
+                        BattleRotateActivePiece(battle, false);
+                    }
                 }
 
-                if (controller->action_down.pressed) {
-                    PlatformLog(LLOG_INFO, "rotate clockwise");
-                    BattleRotateActivePiece(battle, true);
+                if (controller->action_left.pressed) {
+                    BattlePlacePiece(battle);
                 }
 
-                if (controller->action_right.pressed) {
-                    PlatformLog(LLOG_INFO, "rotate counterclockwise");
-                    BattleRotateActivePiece(battle, false);
+                // Update hand
+                {
+                    BattleHandIter(&battle->hand, card) {
+                        Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
+                        AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
+                        Vec2 normal = {0};
+                        f32 depth = 0.0f;
+                        bool collides =
+                            TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
+                        if (collides) {
+                        }
+                    }
                 }
-            }
-
-            if (controller->action_left.pressed) {
-                BattlePlacePiece(battle);
             }
 
             // for (isize r = 0; r < grid->nrows; ++r) {
@@ -5705,8 +5732,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // Draw hand
                 {
                     f32 piece_scale = Px2Meter(5.0f);
-                    for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
-                        Card* card = ArrGetPtr(&battle->hand, i);
+                    BattleHandIter(&battle->hand, card) {
                         Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
                         DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
 
