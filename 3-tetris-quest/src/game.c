@@ -5383,7 +5383,20 @@ static void BattlePlacePiece(Battle* battle) {
         }
     }
 
-    BattleGenerateActivePiece(battle);
+    // Update hand.
+    {
+        for (isize i = battle->selection_idx; i + 1 < ArrLen(&battle->hand); ++i) {
+            Card* to = ArrGetPtr(&battle->hand, i);
+            Card* from = ArrGetPtr(&battle->hand, i + 1);
+            // copying the entire card copies the pos which will lead to visual oddities. Should think about a better
+            // way for this.
+            to->piece = from->piece;
+        }
+
+        battle->selection_idx = NULL_HAND_IDX;
+        Card* end = ArrTailR(&battle->hand);
+        end->piece = RandomPiece();
+    }
 }
 
 // TODO: Combine with rotate function. move + rotate.
@@ -5630,8 +5643,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                if (controller->action_left.pressed) {
-                    // BattlePlacePiece(battle);
+                if (controller->action_left.pressed && battle->selection_idx != NULL_HAND_IDX) {
+                    BattlePlacePiece(battle);
                 }
 
                 // Update hand
