@@ -5228,11 +5228,13 @@ typedef struct {
     TileId anchor;
     TileId placement_anchor;
 
-    i32 score;
+    i32 total_score;
     i32 num_cleared;
     i32 cleared_streak;
     i32 blocks_placed_since_last_clear;
     i32 max_blocks_placed_since_last_clear;
+    i32 hand_base_score;
+    i32 hand_mult_score;
 
     Card card_buffer[7];
     CardArr hand;
@@ -5362,7 +5364,7 @@ static void BattlePlacePiece(Battle* battle) {
 
         // Metrics
         {
-            battle->score += num_cleared_rows * grid->ncols;
+            battle->total_score += num_cleared_rows * grid->ncols;
             battle->blocks_placed_since_last_clear =
                 num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
             battle->max_blocks_placed_since_last_clear =
@@ -5842,7 +5844,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
                         {
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Score: %d", battle->score);
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", battle->total_score);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         {
