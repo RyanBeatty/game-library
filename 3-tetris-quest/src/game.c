@@ -4888,8 +4888,8 @@ typedef enum {
     PHASE_SHOP_OPEN,
 } GamePhase;
 
-#define GRID_NUM_ROWS 16  // 9
-#define GRID_NUM_COLS 10  // 12
+#define GRID_NUM_ROWS 16
+#define GRID_NUM_COLS 8  // 10
 
 typedef struct {
     i32 r;
@@ -5280,7 +5280,7 @@ static void BattleSetActivePiece(Battle* battle) {
     i32 max_height = CalculateOffsetHeight(battle->active_piece.block_offsets);
     Assert(max_height < battle->grid.nrows);
     battle->anchor.r = (battle->grid.nrows - 1) - max_height;
-    battle->anchor.c = 4;  // Always reset to the middle.
+    battle->anchor.c = (i32)(battle->grid.ncols / 2);  // Always reset to the middle.
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor);
 }
 
