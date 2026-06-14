@@ -5228,6 +5228,7 @@ typedef struct {
     TileId anchor;
     TileId placement_anchor;
 
+    i32 score_target;
     i32 total_score;
     i32 num_cleared;
     i32 cleared_streak;
@@ -5235,6 +5236,7 @@ typedef struct {
     i32 max_blocks_placed_since_last_clear;
     i32 hand_base_score;
     i32 hand_mult_score;
+    i32 num_hands;
 
     Card card_buffer[7];
     CardArr hand;
@@ -5315,6 +5317,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
         BattleRefreshHand(battle);
         battle->hand_mult_score = 1;
+        battle->score_target = 160;
+        battle->num_hands = 5;
     }
 }
 
@@ -5398,11 +5402,23 @@ static void BattlePlacePiece(Battle* battle) {
 
     // Hand over + score hand.
     if (ArrLen(&battle->hand) <= 1) {
-        BattleRefreshHand(battle);
-
         battle->total_score += battle->hand_base_score * battle->hand_mult_score;
         battle->hand_base_score = 0;
         battle->hand_mult_score = 1;
+        if (battle->total_score >= battle->score_target) {
+            PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
+            // TODO: Do something
+        } else {
+            --battle->num_hands;
+            if (battle->num_hands > 0) {
+                BattleRefreshHand(battle);
+
+            } else {
+                // TODO: Detect round win or game over.
+                PlatformLog(LLOG_INFO, "Score Target Missed - Round Loss!");
+                Assert(0);
+            }
+        }
     }
 }
 
@@ -5860,6 +5876,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
                         {
                             char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", battle->score_target);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                        {
+                            char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", battle->total_score);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
@@ -5871,9 +5892,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                         {
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", battle->total_score);
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Hands: %d", battle->num_hands);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
+                        UILabel(&ui, Str8Lit("space"), UI_FLAG_HIDE);
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Blocks Since Clear: %d",
