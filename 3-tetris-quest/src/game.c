@@ -5286,6 +5286,23 @@ static void BattleSetActivePiece(Battle* battle) {
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor);
 }
 
+static void BattleRefreshHand(Battle* battle) {
+    InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
+    Card nullcard = {0};
+    nullcard.piece = MakePiece(PT_O, PR_0);
+    nullcard.piece.base_color = LWHITE;
+    ArrPush(&battle->hand, nullcard);
+    for (isize r = 0; r < 3; ++r) {
+        for (isize c = 0; c < 2; ++c) {
+            Card card = {0};
+            card.pos = Vec3Lit(c, r, 0);
+            card.piece = RandomPiece();
+            ArrPush(&battle->hand, card);
+        }
+    }
+    battle->selection_idx = 0;
+}
+
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
@@ -5293,24 +5310,10 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
 
     // Hand init
     {
-        InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
-        Card nullcard = {0};
-        nullcard.piece = MakePiece(PT_O, PR_0);
-        nullcard.piece.base_color = LWHITE;
-        ArrPush(&battle->hand, nullcard);
-        for (isize r = 0; r < 3; ++r) {
-            for (isize c = 0; c < 2; ++c) {
-                Card card = {0};
-                card.pos = Vec3Lit(c, r, 0);
-                card.piece = RandomPiece();
-                ArrPush(&battle->hand, card);
-            }
-        }
-        battle->selection_idx = 0;
-
         battle->hand_to_world = Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                          Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
+        BattleRefreshHand(battle);
     }
 }
 
@@ -5374,7 +5377,7 @@ static void BattlePlacePiece(Battle* battle) {
         }
     }
 
-    // Update hand.
+    // Remove card from hand.
     {
         for (isize i = battle->selection_idx; i + 1 < ArrLen(&battle->hand); ++i) {
             Card* to = ArrGetPtr(&battle->hand, i);
@@ -5384,9 +5387,12 @@ static void BattlePlacePiece(Battle* battle) {
             to->piece = from->piece;
         }
 
+        ArrPop(&battle->hand);
         battle->selection_idx = NULL_HAND_IDX;
-        Card* end = ArrTailR(&battle->hand);
-        end->piece = RandomPiece();
+
+        if (ArrLen(&battle->hand) <= 1) {
+            BattleRefreshHand(battle);
+        }
     }
 }
 
