@@ -5314,6 +5314,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
                                          Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
         BattleRefreshHand(battle);
+        battle->hand_mult_score = 1;
     }
 }
 
@@ -5365,6 +5366,9 @@ static void BattlePlacePiece(Battle* battle) {
             }
         }
 
+        battle->hand_base_score += ArrLen(&battle->active_piece.block_offsets);
+        battle->hand_mult_score += num_cleared_rows;
+
         // Metrics
         {
             battle->total_score += num_cleared_rows * grid->ncols;
@@ -5389,10 +5393,15 @@ static void BattlePlacePiece(Battle* battle) {
 
         ArrPop(&battle->hand);
         battle->selection_idx = NULL_HAND_IDX;
+    }
 
-        if (ArrLen(&battle->hand) <= 1) {
-            BattleRefreshHand(battle);
-        }
+    // Refresh + score hand.
+    if (ArrLen(&battle->hand) <= 1) {
+        BattleRefreshHand(battle);
+
+        battle->total_score += battle->hand_base_score * battle->hand_mult_score;
+        battle->hand_base_score = 0;
+        battle->hand_mult_score = 1;
     }
 }
 
@@ -5848,6 +5857,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
                     UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
                     UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", battle->total_score);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Hand Score: %d X %d", battle->hand_base_score,
+                                     battle->hand_mult_score);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", battle->total_score);
