@@ -5318,11 +5318,12 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
     }
 }
 
+// TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
 static void BattlePlacePiece(Battle* battle) {
     bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->placement_anchor);
     Assert(placed);
 
-    // Detect line clears.
+    // Score placement
     {
         Grid* grid = &battle->grid;
         isize cleared_row_start = grid->nrows;
@@ -5395,7 +5396,7 @@ static void BattlePlacePiece(Battle* battle) {
         battle->selection_idx = NULL_HAND_IDX;
     }
 
-    // Refresh + score hand.
+    // Hand over + score hand.
     if (ArrLen(&battle->hand) <= 1) {
         BattleRefreshHand(battle);
 
