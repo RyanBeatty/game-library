@@ -19,6 +19,8 @@ LCORE void PlatformLog(LogLevel level, const char* fmt, ...);
 
 // This basically follows the window vkey assignments.
 // https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+// As a reminder, I can essentially use the windows virtual keycodes in place of these lkeys.
+// TODO: I should probably just get rid of these lkeys tbh and just use the windows keycodes
 typedef enum {
     LKEY_NONE = 0,
     LKEY_LBUTTON = 0x01,     // Left mouse button
