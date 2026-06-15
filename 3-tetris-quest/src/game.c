@@ -5243,6 +5243,9 @@ typedef struct {
     Mat4 hand_to_world;
     Vec2 card_scale;
     isize selection_idx;
+
+    i32 renderw_world;
+    i32 renderh_world;
 } Battle;
 
 static const isize NULL_HAND_IDX = 0;
@@ -5305,10 +5308,13 @@ static void BattleRefreshHand(Battle* battle) {
     battle->selection_idx = 0;
 }
 
-static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
+static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
-    GridInit(&battle->grid, renderw_world, renderh_world);
+
+    battle->renderw_world = renderw_world;
+    battle->renderh_world = renderh_world;
+    GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
 
     // Hand init
     {
@@ -5317,9 +5323,10 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world) {
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
         BattleRefreshHand(battle);
         battle->hand_mult_score = 1;
-        battle->score_target = 160;
         battle->num_hands = 5;
     }
+
+    battle->score_target = score_target;
 }
 
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
@@ -5407,7 +5414,7 @@ static void BattlePlacePiece(Battle* battle) {
         battle->hand_mult_score = 1;
         if (battle->total_score >= battle->score_target) {
             PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
-            // TODO: Do something
+            BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
         } else {
             --battle->num_hands;
             if (battle->num_hands > 0) {
@@ -5636,7 +5643,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         // BattleInit(battle, &gstate->perm);
-        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world);
+        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, 160);
     }
 
     if (gstate->update) {
