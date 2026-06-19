@@ -5382,6 +5382,10 @@ static void BattlePlacePiece(Battle* battle) {
         battle->trick_base_score += ArrLen(&battle->active_piece.block_offsets);
         battle->trick_mult_score += num_cleared_rows;
 
+        battle->total_score += battle->trick_base_score * battle->trick_mult_score;
+        battle->trick_base_score = 0;
+        battle->trick_mult_score = 1;
+
         // Metrics
         {
             battle->total_score += num_cleared_rows * grid->ncols;
@@ -5410,9 +5414,6 @@ static void BattlePlacePiece(Battle* battle) {
 
     // Hand over + score hand.
     if (ArrLen(&battle->hand) <= 1) {
-        battle->total_score += battle->trick_base_score * battle->trick_mult_score;
-        battle->trick_base_score = 0;
-        battle->trick_mult_score = 1;
         if (battle->total_score >= battle->score_target) {
             PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
             BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
