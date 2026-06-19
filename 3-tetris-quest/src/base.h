@@ -766,6 +766,11 @@ typedef struct {
 
 #define Vec4Lit(v0, v1, v2, v3) ((Vec4){.x = (v0), .y = (v1), .z = (v2), .w = (v3)})
 
+LCORE bool Vec4Eq(Vec4 a, Vec4 b) {
+    return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL) && (f32abs(a.z - b.z) < TOL) &&
+            (f32abs(a.w - b.w) < TOL));
+}
+
 LCORE Vec4 Vec4Lerp(Vec4 start, Vec4 end, f32 t) {
     // clang-format off
     return Vec4Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t), f32lerp(start.z, end.z, t), f32lerp(start.w, end.w, t));

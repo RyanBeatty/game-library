@@ -5392,13 +5392,25 @@ static void BattlePlacePiece(Battle* battle) {
         // Score trick.
         if (num_cleared_rows) {
             i32 block_score = 0;
+            i32 mult = 0;
             for (isize i = 0; i < num_cleared_rows; ++i) {
                 isize r = cleared_row_start + i;
                 Assert(r < grid->nrows);
+
+                Tile* first = GridGetTile(grid, r, 0);
+                Vec4 suit = first->base_color;
+                bool same_suit = true;
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
                     Assert(tile->occupied);
                     block_score += tile->base_points;
+                    same_suit = Vec4Eq(suit, tile->base_color);
+                }
+
+                ++mult;
+
+                if (same_suit) {
+                    ++mult;
                 }
             }
 
@@ -5407,7 +5419,7 @@ static void BattlePlacePiece(Battle* battle) {
             battle->trick_base_score = 0;
             battle->trick_mult_score = 0;
             battle->trick_base_score += block_score;
-            battle->trick_mult_score += num_cleared_rows;
+            battle->trick_mult_score += mult;
 
             battle->total_score += battle->trick_base_score * battle->trick_mult_score;
         }
