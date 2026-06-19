@@ -5234,8 +5234,8 @@ typedef struct {
     i32 cleared_streak;
     i32 blocks_placed_since_last_clear;
     i32 max_blocks_placed_since_last_clear;
-    i32 hand_base_score;
-    i32 hand_mult_score;
+    i32 trick_base_score;
+    i32 trick_mult_score;
     i32 num_hands;
 
     Card card_buffer[7];
@@ -5322,7 +5322,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
                                          Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
         BattleRefreshHand(battle);
-        battle->hand_mult_score = 1;
+        battle->trick_mult_score = 1;
         battle->num_hands = 5;
     }
 
@@ -5378,8 +5378,9 @@ static void BattlePlacePiece(Battle* battle) {
             }
         }
 
-        battle->hand_base_score += ArrLen(&battle->active_piece.block_offsets);
-        battle->hand_mult_score += num_cleared_rows;
+        // Score trick.
+        battle->trick_base_score += ArrLen(&battle->active_piece.block_offsets);
+        battle->trick_mult_score += num_cleared_rows;
 
         // Metrics
         {
@@ -5409,9 +5410,9 @@ static void BattlePlacePiece(Battle* battle) {
 
     // Hand over + score hand.
     if (ArrLen(&battle->hand) <= 1) {
-        battle->total_score += battle->hand_base_score * battle->hand_mult_score;
-        battle->hand_base_score = 0;
-        battle->hand_mult_score = 1;
+        battle->total_score += battle->trick_base_score * battle->trick_mult_score;
+        battle->trick_base_score = 0;
+        battle->trick_mult_score = 1;
         if (battle->total_score >= battle->score_target) {
             PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
             BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
@@ -5893,8 +5894,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                         {
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Hand Score: %d X %d", battle->hand_base_score,
-                                     battle->hand_mult_score);
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %d", battle->trick_base_score,
+                                     battle->trick_mult_score);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         {
