@@ -5245,6 +5245,10 @@ typedef struct {
 
     Card card_buffer[7];
     CardArr hand;
+
+    Card deck_buffer[20];
+    CardArr deck;
+
     Mat4 hand_to_world;
     Vec2 card_scale;
     isize selection_idx;
@@ -5258,7 +5262,13 @@ static const isize NULL_HAND_IDX = 0;
 // Assume position zero is sentinel.
 #define BattleHandIter(arr, it) for (Card* it = ArrGetR(arr, 1); it <= ArrTailR(arr); ++it)
 
-static Piece MakePiece(PieceType type, PieceRot rot) {
+static const Vec4 BLOCK_PURPLE = RGBLit(138, 92, 245);
+static const Vec4 BLOCK_GREEN = RGBLit(72, 207, 134);
+static const Vec4 BLOCK_ORANGE = RGBLit(255, 159, 67);
+static const Vec4 BLOCK_RED = RGBLit(245, 92, 135);
+static Vec4 BLOCK_COLORS[] = {BLOCK_PURPLE, BLOCK_GREEN, BLOCK_ORANGE, BLOCK_RED};
+
+static Piece MakePiece(PieceType type, PieceRot rot, isize color_idx) {
     Piece piece = {0};
     piece.type = type;
     piece.rot_idx = rot;
@@ -5266,13 +5276,8 @@ static Piece MakePiece(PieceType type, PieceRot rot) {
     piece.base_points = 1;
 
     {
-        static const Vec4 BLOCK_PURPLE = RGBLit(138, 92, 245);
-        static const Vec4 BLOCK_GREEN = RGBLit(72, 207, 134);
-        static const Vec4 BLOCK_ORANGE = RGBLit(255, 159, 67);
-        static const Vec4 BLOCK_RED = RGBLit(245, 92, 135);
-        static Vec4 BLOCK_COLORS[] = {BLOCK_PURPLE, BLOCK_GREEN, BLOCK_ORANGE, BLOCK_RED};
-
-        piece.base_color = BLOCK_COLORS[i32randab(0, ArraySizeOf(BLOCK_COLORS) - 1)];
+        Assert(color_idx < ArraySizeOf(BLOCK_COLORS));
+        piece.base_color = BLOCK_COLORS[color_idx];
     }
     return piece;
 }
@@ -5280,7 +5285,8 @@ static Piece MakePiece(PieceType type, PieceRot rot) {
 static Piece RandomPiece() {
     PieceType type = i32randab(0, PT_COUNT - 1);
     PieceRot rot = i32randab(PR_0, PR_270);
-    return MakePiece(type, rot);
+    isize color_idx = i32randab(0, ArraySizeOf(BLOCK_COLORS) - 1);
+    return MakePiece(type, rot, color_idx);
 }
 
 static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
@@ -5310,13 +5316,13 @@ static void BattleSetActivePiece(Battle* battle) {
 static void BattleDrawToFull(Battle* battle) {
     if (ArrLen(&battle->hand) == 0) {
         Card nullcard = {0};
-        nullcard.piece = MakePiece(PT_O, PR_0);
+        nullcard.piece = MakePiece(PT_O, PR_0, 0);
         nullcard.piece.base_color = LWHITE;
         ArrPush(&battle->hand, nullcard);
     }
 
-    for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand); ++i) {
-        Card card = {0};
+    for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand) && ArrLen(&battle->deck) > 0; ++i) {
+        Card card = ArrPop(&battle->deck);
         i32 r = (i - 1) / 2;
         i32 c = (i - 1) % 2;
         card.pos = Vec3Lit(c, r, 0);
@@ -5333,14 +5339,24 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderh_world = renderh_world;
     GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
 
-    // Hand init
+    // hand init deck init
     {
         battle->hand_to_world = Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                          Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
+
+        InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
+        i32 pieces_per_suit = ArrCap(&battle->deck) / 4;
+        for (isize color_idx = 0; color_idx < 4; ++color_idx) {
+            for (isize i = 0, piece_type = 0; i < pieces_per_suit; ++i, piece_type = (piece_type + 1) % PT_COUNT) {
+                Card card = {0};
+                card.piece = MakePiece(piece_type, PR_0, 0);
+                ArrPush(&battle->deck, card);
+            }
+        }
+
         InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
         BattleDrawToFull(battle);
-        battle->trick_mult_score = 0;
         battle->num_hands = 5;
     }
 
@@ -5448,7 +5464,7 @@ static void BattlePlacePiece(Battle* battle) {
     BattleDrawToFull(battle);
 
     // Hand over + score hand.
-    if (ArrLen(&battle->hand) <= 1) {
+    if (ArrLen(&battle->deck) <= 0) {
         if (battle->total_score >= battle->score_target) {
             PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
             BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
@@ -5930,7 +5946,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                         {
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Hands: %d", battle->num_hands);
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %lld", ArrLen(&battle->deck));
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         UILabel(&ui, Str8Lit("space"), UI_FLAG_HIDE);
