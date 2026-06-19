@@ -4918,6 +4918,7 @@ typedef struct {
     TileId id;
     bool occupied;
     Vec4 base_color;
+    i32 base_points;
 } Tile;
 
 typedef struct {
@@ -5259,6 +5260,7 @@ static Piece MakePiece(PieceType type, PieceRot rot) {
     piece.rot_idx = rot;
     piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
     piece.base_color = PieceGetBaseColor(piece.type);
+    piece.base_points = 1;
     return piece;
 }
 
@@ -5367,7 +5369,7 @@ static void BattlePlacePiece(Battle* battle) {
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
                     Assert(tile->occupied);
-                    block_score += 1;
+                    block_score += tile->base_points;
                 }
             }
 
