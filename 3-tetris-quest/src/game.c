@@ -5292,7 +5292,7 @@ static void BattleSetActivePiece(Battle* battle) {
 }
 
 // Draw up to max handsize
-static void BattleRefreshHand(Battle* battle) {
+static void BattleDrawToFull(Battle* battle) {
     if (ArrLen(&battle->hand) == 0) {
         Card nullcard = {0};
         nullcard.piece = MakePiece(PT_O, PR_0);
@@ -5324,7 +5324,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
                                          Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
         InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
-        BattleRefreshHand(battle);
+        BattleDrawToFull(battle);
         battle->trick_mult_score = 1;
         battle->num_hands = 5;
     }
@@ -5415,7 +5415,7 @@ static void BattlePlacePiece(Battle* battle) {
         battle->selection_idx = NULL_HAND_IDX;
     }
 
-    BattleRefreshHand(battle);
+    BattleDrawToFull(battle);
 
     // Hand over + score hand.
     if (ArrLen(&battle->hand) <= 1) {
