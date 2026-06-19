@@ -5308,14 +5308,6 @@ static void BattleRefreshHand(Battle* battle) {
         card.piece = RandomPiece();
         ArrPush(&battle->hand, card);
     }
-
-    // for (isize r = 0; r < 3; ++r) {
-    //     for (isize c = 0; c < 2; ++c) {
-
-    //         ArrPush(&battle->hand, card);
-    //     }
-    // }
-    // battle->selection_idx = 0;
 }
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
