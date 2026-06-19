@@ -5358,12 +5358,46 @@ static void BattlePlacePiece(Battle* battle) {
             }
         }
 
+        // Score trick.
+        {
+            i32 block_score = 0;
+            for (isize i = 0; i < num_cleared_rows; ++i) {
+                isize r = cleared_row_start + i;
+                Assert(r < grid->nrows);
+                for (isize c = 0; c < grid->ncols; ++c) {
+                    Tile* tile = GridGetTile(grid, r, c);
+                    Assert(tile->occupied);
+                    block_score += 1;
+                }
+            }
+
+            // Score trick.
+            battle->trick_base_score += block_score;
+            battle->trick_mult_score += num_cleared_rows;
+
+            battle->total_score += battle->trick_base_score * battle->trick_mult_score;
+            battle->trick_base_score = 0;
+            battle->trick_mult_score = 1;
+        }
+
+        // Metrics
+        {
+            battle->total_score += num_cleared_rows * grid->ncols;
+            battle->blocks_placed_since_last_clear =
+                num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
+            battle->max_blocks_placed_since_last_clear =
+                i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
+            battle->num_cleared += num_cleared_rows;
+            battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + num_cleared_rows : 0;
+        }
+
         // Zero out the cleared rows.
         for (isize i = 0; i < num_cleared_rows; ++i) {
             isize r = cleared_row_start + i;
             Assert(r < grid->nrows);
             for (isize c = 0; c < grid->ncols; ++c) {
                 Tile* tile = GridGetTile(grid, r, c);
+                Assert(tile->occupied);
                 tile->occupied = false;
             }
         }
@@ -5379,25 +5413,6 @@ static void BattlePlacePiece(Battle* battle) {
 
                 source->occupied = false;
             }
-        }
-
-        // Score trick.
-        battle->trick_base_score += ArrLen(&battle->active_piece.block_offsets);
-        battle->trick_mult_score += num_cleared_rows;
-
-        battle->total_score += battle->trick_base_score * battle->trick_mult_score;
-        battle->trick_base_score = 0;
-        battle->trick_mult_score = 1;
-
-        // Metrics
-        {
-            battle->total_score += num_cleared_rows * grid->ncols;
-            battle->blocks_placed_since_last_clear =
-                num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
-            battle->max_blocks_placed_since_last_clear =
-                i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
-            battle->num_cleared += num_cleared_rows;
-            battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + num_cleared_rows : 0;
         }
     }
 
