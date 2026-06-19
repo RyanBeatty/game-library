@@ -5073,6 +5073,7 @@ typedef struct {
     PieceRot rot_idx;
     TileIdArr block_offsets;
     Vec4 base_color;
+    i32 base_points;
 } Piece;
 
 static Vec4 PieceGetBaseColor(PieceType type) {
@@ -5201,7 +5202,10 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, TileId placement_anchor) {
         TileId offset = ArrGet(&piece.block_offsets, i);
         Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
         tile->occupied = true;
+        // TODO: I should pull these into a struct that can just be straight copied so I don't need to remember to
+        // update.
         tile->base_color = piece.base_color;
+        tile->base_points = piece.base_points;
     }
 
     return true;
@@ -5259,8 +5263,17 @@ static Piece MakePiece(PieceType type, PieceRot rot) {
     piece.type = type;
     piece.rot_idx = rot;
     piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
-    piece.base_color = PieceGetBaseColor(piece.type);
     piece.base_points = 1;
+
+    {
+        static const Vec4 BLOCK_PURPLE = RGBLit(138, 92, 245);
+        static const Vec4 BLOCK_GREEN = RGBLit(72, 207, 134);
+        static const Vec4 BLOCK_ORANGE = RGBLit(255, 159, 67);
+        static const Vec4 BLOCK_RED = RGBLit(245, 92, 135);
+        static Vec4 BLOCK_COLORS[] = {BLOCK_PURPLE, BLOCK_GREEN, BLOCK_ORANGE, BLOCK_RED};
+
+        piece.base_color = BLOCK_COLORS[i32randab(0, ArraySizeOf(BLOCK_COLORS) - 1)];
+    }
     return piece;
 }
 
