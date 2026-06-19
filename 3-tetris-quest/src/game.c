@@ -5464,7 +5464,7 @@ static void BattlePlacePiece(Battle* battle) {
     BattleDrawToFull(battle);
 
     // Hand over + score hand.
-    if (ArrLen(&battle->deck) <= 0) {
+    if (ArrLen(&battle->hand) <= 1) {
         if (battle->total_score >= battle->score_target) {
             PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
             BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
