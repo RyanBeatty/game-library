@@ -5325,7 +5325,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
         InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
         BattleDrawToFull(battle);
-        battle->trick_mult_score = 1;
+        battle->trick_mult_score = 0;
         battle->num_hands = 5;
     }
 
@@ -5359,7 +5359,7 @@ static void BattlePlacePiece(Battle* battle) {
         }
 
         // Score trick.
-        {
+        if (num_cleared_rows) {
             i32 block_score = 0;
             for (isize i = 0; i < num_cleared_rows; ++i) {
                 isize r = cleared_row_start + i;
@@ -5372,17 +5372,17 @@ static void BattlePlacePiece(Battle* battle) {
             }
 
             // Score trick.
+            // Don't reset after scoring so that UI can display for the moment.
+            battle->trick_base_score = 0;
+            battle->trick_mult_score = 0;
             battle->trick_base_score += block_score;
             battle->trick_mult_score += num_cleared_rows;
 
             battle->total_score += battle->trick_base_score * battle->trick_mult_score;
-            battle->trick_base_score = 0;
-            battle->trick_mult_score = 1;
         }
 
         // Metrics
         {
-            battle->total_score += num_cleared_rows * grid->ncols;
             battle->blocks_placed_since_last_clear =
                 num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
             battle->max_blocks_placed_since_last_clear =
