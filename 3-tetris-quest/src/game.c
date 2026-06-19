@@ -5291,21 +5291,31 @@ static void BattleSetActivePiece(Battle* battle) {
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor);
 }
 
+// Draw up to max handsize
 static void BattleRefreshHand(Battle* battle) {
-    InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
-    Card nullcard = {0};
-    nullcard.piece = MakePiece(PT_O, PR_0);
-    nullcard.piece.base_color = LWHITE;
-    ArrPush(&battle->hand, nullcard);
-    for (isize r = 0; r < 3; ++r) {
-        for (isize c = 0; c < 2; ++c) {
-            Card card = {0};
-            card.pos = Vec3Lit(c, r, 0);
-            card.piece = RandomPiece();
-            ArrPush(&battle->hand, card);
-        }
+    if (ArrLen(&battle->hand) == 0) {
+        Card nullcard = {0};
+        nullcard.piece = MakePiece(PT_O, PR_0);
+        nullcard.piece.base_color = LWHITE;
+        ArrPush(&battle->hand, nullcard);
     }
-    battle->selection_idx = 0;
+
+    for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand); ++i) {
+        Card card = {0};
+        i32 r = (i - 1) / 2;
+        i32 c = (i - 1) % 2;
+        card.pos = Vec3Lit(c, r, 0);
+        card.piece = RandomPiece();
+        ArrPush(&battle->hand, card);
+    }
+
+    // for (isize r = 0; r < 3; ++r) {
+    //     for (isize c = 0; c < 2; ++c) {
+
+    //         ArrPush(&battle->hand, card);
+    //     }
+    // }
+    // battle->selection_idx = 0;
 }
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
@@ -5321,6 +5331,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->hand_to_world = Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
                                          Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
+        InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
         BattleRefreshHand(battle);
         battle->trick_mult_score = 1;
         battle->num_hands = 5;
@@ -5412,21 +5423,17 @@ static void BattlePlacePiece(Battle* battle) {
         battle->selection_idx = NULL_HAND_IDX;
     }
 
+    BattleRefreshHand(battle);
+
     // Hand over + score hand.
     if (ArrLen(&battle->hand) <= 1) {
         if (battle->total_score >= battle->score_target) {
             PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
             BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
         } else {
-            --battle->num_hands;
-            if (battle->num_hands > 0) {
-                BattleRefreshHand(battle);
-
-            } else {
-                // TODO: Detect round win or game over.
-                PlatformLog(LLOG_INFO, "Score Target Missed - Round Loss!");
-                Assert(0);
-            }
+            // TODO: Detect round win or game over.
+            PlatformLog(LLOG_INFO, "Score Target Missed - Round Loss!");
+            Assert(0);
         }
     }
 }
