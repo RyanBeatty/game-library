@@ -5318,6 +5318,7 @@ static void BattleDrawToFull(Battle* battle) {
         ArrPush(&battle->hand, nullcard);
     }
 
+    breakpoint();
     for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand) && ArrLen(&battle->deck) > 0; ++i) {
         Card card = ArrPop(&battle->deck);
         i32 r = (i - 1) / 2;
@@ -5342,7 +5343,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
 
         InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
-        i32 pieces_per_suit = ArrCap(&battle->deck) / 4;
+        i32 pieces_per_suit = ArrCap(&battle->deck) / SUIT_COUNT;
         for (Suit suit = SUIT_A; suit < SUIT_COUNT; ++suit) {
             for (isize i = 0, piece_type = 0; i < pieces_per_suit; ++i, piece_type = (piece_type + 1) % PT_COUNT) {
                 Card card = {0};
@@ -5862,6 +5863,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 {
                     f32 piece_scale = Px2Meter(5.0f);
                     BattleHandIter(&battle->hand, card) {
+                        breakpoint();
                         Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
                         DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
 
