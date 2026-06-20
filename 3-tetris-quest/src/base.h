@@ -129,7 +129,8 @@ void ArenaPrintInfo(Arena* a);
 // Get reference
 #define ArrGetR(a, idx) (&ArrGet(a, idx))
 #define ArrGetPtr(a, idx) (ArrGetR(a, idx))
-#define ArrPop(a) (assert((a)->len != 0), (a)->data[(a)->len--])
+// NOTE: Remember, important to decrement before indexing.
+#define ArrPop(a) (assert((a)->len != 0), (a)->data[--(a)->len])
 #define ArrCap(a) ((a)->cap)
 #define ArrLen(a) ((a)->len)
 #define ArrClear(a) ((a)->len = 0)

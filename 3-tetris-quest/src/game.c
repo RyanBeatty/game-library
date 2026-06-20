@@ -5318,8 +5318,8 @@ static void BattleDrawToFull(Battle* battle) {
         ArrPush(&battle->hand, nullcard);
     }
 
-    breakpoint();
     for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand) && ArrLen(&battle->deck) > 0; ++i) {
+        breakpoint();
         Card card = ArrPop(&battle->deck);
         i32 r = (i - 1) / 2;
         i32 c = (i - 1) % 2;
@@ -5350,7 +5350,10 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
                 card.piece = MakePiece(piece_type, PR_0, suit);
                 ArrPush(&battle->deck, card);
             }
+            breakpoint();
         }
+
+        breakpoint();
 
         InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
         BattleDrawToFull(battle);
