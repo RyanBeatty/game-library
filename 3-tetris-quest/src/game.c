@@ -4881,6 +4881,17 @@ static const f32 GRID_DEPTH = 1.0f;
 ////////////////////////////////////////////////////
 
 typedef enum {
+    SUIT_NONE = 0,
+    SUIT_A,
+    SUIT_B,
+    SUIT_C,
+    SUIT_D,
+    SUIT_COUNT,
+} Suit;
+
+////////////////////////////////////////////////////
+
+typedef enum {
     PHASE_NONE = 0,
     PHASE_EOD,
     PHASE_PLAYING,
@@ -4914,6 +4925,7 @@ typedef struct {
 
 typedef struct {
     i32 points;
+    Suit suit;
     Vec4 base_color;
 } TileEffects;
 
@@ -5078,19 +5090,6 @@ typedef struct {
     TileIdArr block_offsets;
     TileEffects effects;
 } Piece;
-
-static Vec4 PieceGetBaseColor(PieceType type) {
-    Vec4 PIECE_BASE_COLORS[PT_COUNT] = {RGBLit(180, 180, 180)};
-    PIECE_BASE_COLORS[PT_Z] = RGBLit(220, 50, 50);   // RED
-    PIECE_BASE_COLORS[PT_S] = RGBLit(60, 200, 80);   // GREEN
-    PIECE_BASE_COLORS[PT_L] = RGBLit(235, 120, 30);  // ORANGE
-    PIECE_BASE_COLORS[PT_J] = RGBLit(50, 130, 230);  // BLUE
-    PIECE_BASE_COLORS[PT_T] = RGBLit(160, 60, 220);  // PURPLE
-    PIECE_BASE_COLORS[PT_I] = RGBLit(50, 130, 230);  // BLUE
-    PIECE_BASE_COLORS[PT_O] = RGBLit(240, 210, 40);  // YELLOW
-
-    return PIECE_BASE_COLORS[type];
-}
 
 LCORE TileIdArr PieceGetOffsets(PieceType type, PieceRot rot_idx) {
     static TileId OFFSETS[PT_COUNT][PR_COUNT][4] = {
@@ -5266,27 +5265,25 @@ static const Vec4 BLOCK_PURPLE = RGBLit(138, 92, 245);
 static const Vec4 BLOCK_GREEN = RGBLit(72, 207, 134);
 static const Vec4 BLOCK_ORANGE = RGBLit(255, 159, 67);
 static const Vec4 BLOCK_RED = RGBLit(245, 92, 135);
-static Vec4 BLOCK_COLORS[] = {BLOCK_PURPLE, BLOCK_GREEN, BLOCK_ORANGE, BLOCK_RED};
+static Vec4 BLOCK_COLORS[SUIT_COUNT] = {LBLACK, BLOCK_PURPLE, BLOCK_GREEN, BLOCK_ORANGE, BLOCK_RED};
 
-static Piece MakePiece(PieceType type, PieceRot rot, isize color_idx) {
+static Piece MakePiece(PieceType type, PieceRot rot, Suit suit) {
     Piece piece = {0};
     piece.type = type;
     piece.rot_idx = rot;
     piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
-    piece.effects.points = 1;
 
-    {
-        Assert(color_idx < ArraySizeOf(BLOCK_COLORS));
-        piece.effects.base_color = BLOCK_COLORS[color_idx];
-    }
+    piece.effects.points = 1;
+    piece.effects.suit = suit;
+    piece.effects.base_color = BLOCK_COLORS[suit];
     return piece;
 }
 
 static Piece RandomPiece() {
     PieceType type = i32randab(0, PT_COUNT - 1);
     PieceRot rot = i32randab(PR_0, PR_270);
-    isize color_idx = i32randab(0, ArraySizeOf(BLOCK_COLORS) - 1);
-    return MakePiece(type, rot, color_idx);
+    Suit suit = i32randab(0, SUIT_COUNT - 1);
+    return MakePiece(type, rot, suit);
 }
 
 static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
@@ -5316,7 +5313,7 @@ static void BattleSetActivePiece(Battle* battle) {
 static void BattleDrawToFull(Battle* battle) {
     if (ArrLen(&battle->hand) == 0) {
         Card nullcard = {0};
-        nullcard.piece = MakePiece(PT_O, PR_0, 0);
+        nullcard.piece = MakePiece(PT_O, PR_0, SUIT_NONE);
         nullcard.piece.effects.base_color = LWHITE;
         ArrPush(&battle->hand, nullcard);
     }
@@ -5326,7 +5323,6 @@ static void BattleDrawToFull(Battle* battle) {
         i32 r = (i - 1) / 2;
         i32 c = (i - 1) % 2;
         card.pos = Vec3Lit(c, r, 0);
-        card.piece = RandomPiece();
         ArrPush(&battle->hand, card);
     }
 }
@@ -5347,10 +5343,10 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
         InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
         i32 pieces_per_suit = ArrCap(&battle->deck) / 4;
-        for (isize color_idx = 0; color_idx < 4; ++color_idx) {
+        for (Suit suit = SUIT_A; suit < SUIT_COUNT; ++suit) {
             for (isize i = 0, piece_type = 0; i < pieces_per_suit; ++i, piece_type = (piece_type + 1) % PT_COUNT) {
                 Card card = {0};
-                card.piece = MakePiece(piece_type, PR_0, 0);
+                card.piece = MakePiece(piece_type, PR_0, suit);
                 ArrPush(&battle->deck, card);
             }
         }
