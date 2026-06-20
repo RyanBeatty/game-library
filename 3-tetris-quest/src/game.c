@@ -4913,12 +4913,16 @@ typedef struct {
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
 
 typedef struct {
+    i32 points;
+    Vec4 base_color;
+} TileEffects;
+
+typedef struct {
     // Reminder that this pos refers to the *center* of the tile.
     Vec3 pos;
     TileId id;
     bool occupied;
-    Vec4 base_color;
-    i32 base_points;
+    TileEffects effects;
 } Tile;
 
 typedef struct {
@@ -5072,8 +5076,7 @@ typedef struct {
     PieceType type;
     PieceRot rot_idx;
     TileIdArr block_offsets;
-    Vec4 base_color;
-    i32 base_points;
+    TileEffects effects;
 } Piece;
 
 static Vec4 PieceGetBaseColor(PieceType type) {
@@ -5202,10 +5205,7 @@ LCORE bool GridPlacePiece(Grid* grid, Piece piece, TileId placement_anchor) {
         TileId offset = ArrGet(&piece.block_offsets, i);
         Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
         tile->occupied = true;
-        // TODO: I should pull these into a struct that can just be straight copied so I don't need to remember to
-        // update.
-        tile->base_color = piece.base_color;
-        tile->base_points = piece.base_points;
+        tile->effects = piece.effects;
     }
 
     return true;
@@ -5273,11 +5273,11 @@ static Piece MakePiece(PieceType type, PieceRot rot, isize color_idx) {
     piece.type = type;
     piece.rot_idx = rot;
     piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
-    piece.base_points = 1;
+    piece.effects.points = 1;
 
     {
         Assert(color_idx < ArraySizeOf(BLOCK_COLORS));
-        piece.base_color = BLOCK_COLORS[color_idx];
+        piece.effects.base_color = BLOCK_COLORS[color_idx];
     }
     return piece;
 }
@@ -5317,7 +5317,7 @@ static void BattleDrawToFull(Battle* battle) {
     if (ArrLen(&battle->hand) == 0) {
         Card nullcard = {0};
         nullcard.piece = MakePiece(PT_O, PR_0, 0);
-        nullcard.piece.base_color = LWHITE;
+        nullcard.piece.effects.base_color = LWHITE;
         ArrPush(&battle->hand, nullcard);
     }
 
@@ -5398,13 +5398,13 @@ static void BattlePlacePiece(Battle* battle) {
                 Assert(r < grid->nrows);
 
                 Tile* first = GridGetTile(grid, r, 0);
-                Vec4 suit = first->base_color;
+                Vec4 suit = first->effects.base_color;
                 bool same_suit = true;
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
                     Assert(tile->occupied);
-                    block_score += tile->base_points;
-                    same_suit = Vec4Eq(suit, tile->base_color);
+                    block_score += tile->effects.points;
+                    same_suit = Vec4Eq(suit, tile->effects.base_color);
                 }
 
                 ++mult;
@@ -5452,8 +5452,7 @@ static void BattlePlacePiece(Battle* battle) {
                 Tile* dest = GridGetTile(grid, r - num_cleared_rows, c);
 
                 dest->occupied = source->occupied;
-                dest->base_color = source->base_color;
-
+                dest->effects = source->effects;
                 source->occupied = false;
             }
         }
@@ -5827,7 +5826,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
 
                             if (tile->occupied) {
-                                Vec4 piece_color = tile->base_color;
+                                Vec4 piece_color = tile->effects.base_color;
                                 DrawQuad(pos, scale.x, scale.y, Mat4Identity(), piece_color);
                             }
                         }
@@ -5845,7 +5844,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
                             Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                             Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->base_color);
+                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->effects.base_color);
                         }
 
                         // Draw placement preview viz
@@ -5856,7 +5855,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
                             Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                             Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                            Vec4 color = active_piece->base_color;
+                            Vec4 color = active_piece->effects.base_color;
                             color.a = 0.3f;
                             DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
                         }
@@ -5875,7 +5874,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TileId offset = ArrGet(&card->piece.block_offsets, j);
                             Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
                             pos = Vec3Add(pos, quad_pos);
-                            DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), card->piece.base_color);
+                            DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), card->piece.effects.base_color);
                         }
 
                         AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
