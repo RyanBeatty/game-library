@@ -5227,7 +5227,14 @@ static Str8 RELIC_DESCRIPTIONS[] = {Str8Lit("RELIC_NONE"),
 
 typedef struct {
     RelicType type;
+    bool active;
 } Relic;
+
+static Relic RELICS[] = {{.type = RELIC_NONE},
+#define RELICX(name, desc) {.type = (name)},
+                         RELIC_LIST
+#undef RELICX
+};
 
 typedef struct {
     Vec3 pos;
@@ -6020,7 +6027,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 }
 
 static void SceneShopTick(GameState* gstate, GameInput* input) {
-    static Relic RELICS[] = {{.type = RELIC_SUIT_A_MULT}};
     static isize RELICS_SELECTION_IDX = -1;
 
     f32 dt = gstate->dt;
@@ -6056,11 +6062,11 @@ static void SceneShopTick(GameState* gstate, GameInput* input) {
                     Vec2 relic_scale = Vec2Lit(Px2Meter(30.0f), Px2Meter(50.0f));
                     Mat4 relic_to_world = Mat4SVRT(Vec3Lit(Px2Meter(40.0f), Px2Meter(40.0f), Px2Meter(1.0f)),
                                                    Mat4Identity(), Vec3Lit(0, 0, 0));
-                    // for (isize i = 0; i < ArraySizeOf(RELICS); ++i) {
-                    Vec3 quad_pos = Vec3Lit(0, 0, 0);
-                    // quad_pos = Vec3WTransform(quad_pos, relic_to_world);
-                    DrawQuad(quad_pos, relic_scale.x, relic_scale.y, Mat4Identity(), LGRAY);
-                    // }
+                    for (isize i = 0; i < ArraySizeOf(RELICS); ++i) {
+                        Vec3 quad_pos = Vec3Lit(i, 0, 0);
+                        quad_pos = Vec3WTransform(quad_pos, relic_to_world);
+                        DrawQuad(quad_pos, relic_scale.x, relic_scale.y, Mat4Identity(), LGRAY);
+                    }
                 }
 
                 EndShaderPass();
