@@ -5902,14 +5902,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             pos = Vec3Add(pos, quad_pos);
                             DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), card->piece.effects.base_color);
                         }
-
-                        AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
-                        Vec2 normal = {0};
-                        f32 depth = 0.0f;
-                        bool collides =
-                            TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
-                        if (collides) {
-                        }
                     }
                 }
 
@@ -6028,6 +6020,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 }
 
 static void SceneShopTick(GameState* gstate, GameInput* input) {
+    static Relic RELICS[] = {{.type = RELIC_SUIT_A_MULT}};
+    static isize RELICS_SELECTION_IDX = -1;
+
     f32 dt = gstate->dt;
 
     // Grid* grid = GameStateGetGrid(gstate);
@@ -6035,6 +6030,7 @@ static void SceneShopTick(GameState* gstate, GameInput* input) {
     GameControllerState* controller = GetController(input, 0);
 
     if (gstate->init) {
+        RELICS_SELECTION_IDX = -1;
     }
 
     if (gstate->update) {
@@ -6054,6 +6050,18 @@ static void SceneShopTick(GameState* gstate, GameInput* input) {
                 load_action.clear_color = LPURPLE;
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+
+                // Draw relics
+                {
+                    Vec2 relic_scale = Vec2Lit(Px2Meter(30.0f), Px2Meter(50.0f));
+                    Mat4 relic_to_world = Mat4SVRT(Vec3Lit(Px2Meter(40.0f), Px2Meter(40.0f), Px2Meter(1.0f)),
+                                                   Mat4Identity(), Vec3Lit(0, 0, 0));
+                    // for (isize i = 0; i < ArraySizeOf(RELICS); ++i) {
+                    Vec3 quad_pos = Vec3Lit(0, 0, 0);
+                    // quad_pos = Vec3WTransform(quad_pos, relic_to_world);
+                    DrawQuad(quad_pos, relic_scale.x, relic_scale.y, Mat4Identity(), LGRAY);
+                    // }
+                }
 
                 EndShaderPass();
             }
