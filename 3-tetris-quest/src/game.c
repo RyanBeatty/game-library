@@ -5199,17 +5199,6 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
     return TileIdLit(r_candidate, anchor.c);
 }
 
-LCORE bool GridPlacePiece(Grid* grid, Piece piece, TileId placement_anchor) {
-    for (isize i = 0; i < ArrLen(&piece.block_offsets); ++i) {
-        TileId offset = ArrGet(&piece.block_offsets, i);
-        Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
-        tile->occupied = true;
-        tile->effects = piece.effects;
-    }
-
-    return true;
-}
-
 ////////////////////////////////////////////////////
 
 typedef struct {
@@ -5361,12 +5350,22 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
 static void BattlePlacePiece(Battle* battle) {
-    bool placed = GridPlacePiece(&battle->grid, battle->active_piece, battle->placement_anchor);
-    Assert(placed);
+    Grid* grid = &battle->grid;
+
+    // Place piece.
+    {
+        TileId placement_anchor = battle->placement_anchor;
+        Piece* active_piece = &battle->active_piece;
+        for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+            TileId offset = ArrGet(&active_piece->block_offsets, i);
+            Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
+            tile->occupied = true;
+            tile->effects = active_piece->effects;
+        }
+    }
 
     // Score placement
     {
-        Grid* grid = &battle->grid;
         isize cleared_row_start = grid->nrows;
         i32 num_cleared_rows = 0;
         for (isize r = 0; r < grid->nrows; ++r) {
