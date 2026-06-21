@@ -5242,7 +5242,7 @@ typedef struct {
     i32 trick_mult_score;
     i32 num_hands;
 
-    Card card_buffer[7];
+    Card hand_buffer[6];
     CardArr hand;
 
     Card deck_buffer[20];
@@ -5256,10 +5256,10 @@ typedef struct {
     i32 renderh_world;
 } Battle;
 
-static const isize NULL_HAND_IDX = 0;
+static const isize NO_CARD_SELECTED_IDX = -1;
 
 // Assume position zero is sentinel.
-#define BattleHandIter(arr, it) for (Card* it = ArrGetR(arr, 1); it <= ArrTailR(arr); ++it)
+#define BattleHandIter(arr, it) for (Card* it = ArrGetR(arr, 0); it <= ArrTailR(arr); ++it)
 
 static const Vec4 BLOCK_PURPLE = RGBLit(138, 92, 245);
 static const Vec4 BLOCK_GREEN = RGBLit(72, 207, 134);
@@ -5311,17 +5311,17 @@ static void BattleSetActivePiece(Battle* battle) {
 
 // Draw up to max handsize
 static void BattleDrawToFull(Battle* battle) {
-    if (ArrLen(&battle->hand) == 0) {
-        Card nullcard = {0};
-        nullcard.piece = MakePiece(PT_O, PR_0, SUIT_NONE);
-        nullcard.piece.effects.base_color = LWHITE;
-        ArrPush(&battle->hand, nullcard);
-    }
+    // if (ArrLen(&battle->hand) == 0) {
+    //     Card nullcard = {0};
+    //     nullcard.piece = MakePiece(PT_O, PR_0, SUIT_NONE);
+    //     nullcard.piece.effects.base_color = LWHITE;
+    //     ArrPush(&battle->hand, nullcard);
+    // }
 
     for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand) && ArrLen(&battle->deck) > 0; ++i) {
         Card card = ArrPop(&battle->deck);
-        i32 r = (i - 1) / 2;
-        i32 c = (i - 1) % 2;
+        i32 r = i / 2;
+        i32 c = i % 2;
         card.pos = Vec3Lit(c, r, 0);
         ArrPush(&battle->hand, card);
     }
@@ -5351,7 +5351,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
             }
         }
 
-        InitArrS(&battle->hand, battle->card_buffer, ArraySizeOf(battle->card_buffer));
+        InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
         BattleDrawToFull(battle);
         battle->num_hands = 5;
     }
@@ -5465,13 +5465,13 @@ static void BattlePlacePiece(Battle* battle) {
         }
 
         ArrPop(&battle->hand);
-        battle->selection_idx = NULL_HAND_IDX;
+        battle->selection_idx = NO_CARD_SELECTED_IDX;
     }
 
     BattleDrawToFull(battle);
 
     // Hand over + score hand.
-    if (ArrLen(&battle->hand) <= 1) {
+    if (ArrLen(&battle->hand) <= 0) {
         if (battle->total_score >= battle->score_target) {
             PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
             BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
@@ -5727,14 +5727,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                if (controller->action_left.pressed && battle->selection_idx != NULL_HAND_IDX) {
+                if (controller->action_left.pressed && battle->selection_idx != NO_CARD_SELECTED_IDX) {
                     BattlePlacePiece(battle);
                 }
 
                 // Update hand
                 {
-                    isize selection_to_be = NULL_HAND_IDX;
-                    for (isize i = 1; i < ArrLen(&battle->hand); ++i) {
+                    isize selection_to_be = NO_CARD_SELECTED_IDX;
+                    for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                         Card* card = ArrGetPtr(&battle->hand, i);
                         Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
                         AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
@@ -5748,14 +5748,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    if (selection_to_be != NULL_HAND_IDX && battle->selection_idx == NULL_HAND_IDX) {
+                    if (selection_to_be != NO_CARD_SELECTED_IDX && battle->selection_idx == NO_CARD_SELECTED_IDX) {
                         battle->selection_idx = selection_to_be;
                         BattleSetActivePiece(battle);
                     }
 
                     if (controller->right_shoulder.pressed) {
-                        battle->selection_idx = NULL_HAND_IDX;
-                        BattleSetActivePiece(battle);
+                        battle->selection_idx = NO_CARD_SELECTED_IDX;
+                        // Causes issues with trying to set active piece while we have nothing selected. I should maybe
+                        // consider instead not having active piece live as data, but instead just always select it
+                        // given the idx. BattleSetActivePiece(battle);
                     }
                 }
             }
@@ -5832,7 +5834,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     // Draw active piece.
-                    if (battle->selection_idx != NULL_HAND_IDX) {
+                    if (battle->selection_idx != NO_CARD_SELECTED_IDX) {
                         TileId anchor = battle->anchor;
                         Piece* active_piece = &battle->active_piece;
                         for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
