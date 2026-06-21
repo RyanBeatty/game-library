@@ -5201,6 +5201,34 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
 
 ////////////////////////////////////////////////////
 
+#define RELIC_LIST                                                             \
+    RELICX(RELIC_SUIT_A_MULT, "+1 mult when all blocks in line are of suit A") \
+    RELICX(RELIC_SUIT_B_MULT, "+1 mult when all blocks in line are of suit B")
+
+typedef enum {
+    RELIC_NONE = 0,
+#define RELICX(name, desc) name,
+    RELIC_LIST
+#undef RELICX
+        RELIC_COUNT,
+} RelicType;
+
+static Str8 RELIC_NAMES[] = {Str8Lit("RELIC_NONE"),
+#define RELICX(name, desc) Str8Lit(#name),
+                             RELIC_LIST
+#undef RELICX
+};
+
+static Str8 RELIC_DESCRIPTIONS[] = {Str8Lit("RELIC_NONE"),
+#define RELICX(name, desc) Str8Lit(desc),
+                                    RELIC_LIST
+#undef RELICX
+};
+
+typedef struct {
+    RelicType type;
+} Relic;
+
 typedef struct {
     Vec3 pos;
     Piece piece;
@@ -5535,6 +5563,7 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
 typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_MAIN,
+    SCENE_SHOP,
     SCENE_DEFAULT_3D,
     SCENE_COUNT,
 } SceneId;
@@ -5998,6 +6027,109 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 }
 
+static void SceneShopTick(GameState* gstate, GameInput* input) {
+    f32 dt = gstate->dt;
+
+    // Grid* grid = GameStateGetGrid(gstate);
+
+    GameControllerState* controller = GetController(input, 0);
+
+    if (gstate->init) {
+    }
+
+    if (gstate->update) {
+    }
+
+    if (gstate->render) {
+        Render(dt) {
+            // Entities/Game World
+            {
+                // Reminder that using the _world variables here ensures we convert from world units back to pixel units
+                // correctly.
+                Mat4 view = CameraGetViewMat(gstate->camera);
+                Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
+                Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
+                                      -100.0f, 100.0f);
+                RenderPassLoadAction load_action = DefaultLoadAction();
+                load_action.clear_color = LPURPLE;
+                load_action.clear_color_flag = true;
+                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+
+                EndShaderPass();
+            }
+
+            // Draw the texture framebuffer to screen quad.
+            {
+                // We aren't specifying a view or proj matrix, since we are specifying the coordinates in clip space
+                // directly.
+                Mat4 view = Mat4Identity();
+                Mat4 proj = Mat4Identity();
+                RenderPassLoadAction load_action = {
+                    .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
+                    .clear_color_flag = true,
+                    .depth_test = false,
+                };
+                BeginShaderPass(GetEffectsShader(), load_action, view, proj, GetScreenRenderTarget());
+
+                // DrawCmd* cmd = AddDrawMeshCmd();
+                // // DrawMeshCmdInit(cmd);
+                // cmd->meshcmd.meshid = GetMesh(M_QUAD);
+                // // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
+                // // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+                // cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+                // // cmd->meshcmd.color = LRED;  // For debug.
+                // RenderTarget game_target = GetDefaultRenderTarget();
+                // cmd->meshcmd.tx.id = game_target.txid;
+                // cmd->meshcmd.tx.width = game_target.width;
+                // cmd->meshcmd.tx.height = game_target.height;
+
+                RenderTarget game_target = GetDefaultRenderTarget();
+                LTexture game_texture = {
+                    .id = game_target.txid, .width = game_texture.width, .height = game_target.height};
+                // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
+                // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+                // iirc this is specific to how this effects shader works.
+                DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(), Vec2Lit(2.0f, 2.0f), 0.0f,
+                                  LCLEAR);
+
+                EndShaderPass();
+            }
+
+            // UI.
+            {
+                UIState ui = {0};
+                RenderPassLoadAction load_action = {
+                    .clear_color_flag = false,
+                    .depth_test = true,
+                };
+                UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
+                     load_action, GetScreenRenderTarget()) {
+                    UIPushFont(&ui, GetLFontClosest(40.0f));
+                    UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
+                    UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
+                        {
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", 100);
+                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        }
+                    }
+                }
+
+                {
+                    // Reminder that using the _world variables here ensures we convert from world units back to pixel
+                    // units
+                    // correctly.
+                    Mat4 view = Mat4Identity();
+                    Mat4 proj = Mat4Ortho(0, PlatformScreenWidth(), 0, PlatformScreenHeight(), -1.0f, 1.0f);
+                    BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
+
+                    EndShaderPass();
+                }
+            }
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////
 
 static void TestL();
@@ -6056,10 +6188,11 @@ void GameInit() {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_MAIN] = SceneMainTick;
+        gstate->scenefuncs[SCENE_SHOP] = SceneShopTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_MAIN);
+    GameStateLoadScene(gstate, SCENE_SHOP);
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
