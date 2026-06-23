@@ -5267,6 +5267,9 @@ typedef struct {
     Card deck_buffer[20];
     CardArr deck;
 
+    RelicSlot relics_buffer[3];
+    RelicSlotArr relics;
+
     Mat4 hand_to_world;
     Vec2 card_scale;
     isize selection_idx;
@@ -5373,6 +5376,11 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
         BattleDrawToFull(battle);
         battle->num_hands = 5;
+    }
+
+    {
+        InitArrS(&battle->relics, battle->relics_buffer, ArraySizeOf(battle->relics_buffer));
+        ArrPush(&battle->relics, (RelicSlot){.id = RELIC_SUIT_A_MULT});
     }
 
     battle->score_target = score_target;
@@ -6005,7 +6013,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
-                            UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {}
+                            UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
+                                for (isize i = 0; i < ArrLen(&battle->relics); ++i) {
+                                    RelicSlot relic = ArrGet(&battle->relics, i);
+                                    UILabel(&ui, RELICS[relic.id].name, UI_FLAG_NONE);
+                                }
+                            }
                         }
                     }
                 }
