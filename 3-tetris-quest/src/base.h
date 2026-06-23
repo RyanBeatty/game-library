@@ -111,6 +111,13 @@ void ArenaPrintInfo(Arena* a);
         (buf)->cap = (ccap);                          \
     } while (0)
 
+#define TypedefArr(struct_name) \
+    typedef struct {            \
+        struct_name* data;      \
+        isize len;              \
+        isize cap;              \
+    } struct_name##Arr
+
 // Assumes that :s: is a struct with members
 // struct {
 //  T *data;

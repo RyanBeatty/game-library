@@ -5211,30 +5211,25 @@ typedef enum {
     RELIC_LIST
 #undef RELICX
         RELIC_COUNT,
-} RelicType;
+} RelicId;
 
-static Str8 RELIC_NAMES[] = {Str8Lit("RELIC_NONE"),
-#define RELICX(name, desc) Str8Lit(#name),
-                             RELIC_LIST
-#undef RELICX
-};
+typedef struct {
+    Str8 name;
+    Str8 description;
+} Relic;
 
-static Str8 RELIC_DESCRIPTIONS[] = {Str8Lit("RELIC_NONE"),
-#define RELICX(name, desc) Str8Lit(desc),
-                                    RELIC_LIST
+static Relic RELICS[] = {{.name = Str8Lit("NULL"), .description = Str8Lit("NULL")},
+#define RELICX(nname, desc) {.name = Str8Lit(#nname), .description = Str8Lit(desc)},
+                         RELIC_LIST
 #undef RELICX
 };
 
 typedef struct {
-    RelicType type;
-    bool active;
-} Relic;
+    RelicId id;
+    // Other data potentially for rendering like "time" last activated below.
+} RelicSlot;
 
-static Relic RELICS[] = {{.type = RELIC_NONE},
-#define RELICX(name, desc) {.type = (name)},
-                         RELIC_LIST
-#undef RELICX
-};
+TypedefArr(RelicSlot);
 
 typedef struct {
     Vec3 pos;
@@ -6008,6 +6003,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Cleared Streak: %d", battle->cleared_streak);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
+
+                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
+                            UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {}
+                        }
                     }
                 }
 
@@ -6206,7 +6205,7 @@ void GameInit() {
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
-    GameStateLoadScene(gstate, SCENE_SHOP);
+    GameStateLoadScene(gstate, SCENE_MAIN);
 
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
