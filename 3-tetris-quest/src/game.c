@@ -5213,6 +5213,8 @@ typedef enum {
         RELIC_COUNT,
 } RelicId;
 
+TypedefArr(RelicId);
+
 typedef struct {
     Str8 name;
     Str8 description;
@@ -5224,12 +5226,41 @@ static Relic RELICS[] = {{.name = Str8Lit("NULL"), .description = Str8Lit("NULL"
 #undef RELICX
 };
 
+#define RelicGet(id) &RELICS[(id)]
+
 typedef struct {
     RelicId id;
-    // Other data potentially for rendering like "time" last activated below.
-} RelicSlot;
+    bool owned;
+} RelicState;
 
-TypedefArr(RelicSlot);
+TypedefArr(RelicState);
+
+typedef struct {
+    RelicState state[RELIC_COUNT];
+    RelicId ids_buffer[RELIC_COUNT];
+    RelicIdArr ids;
+} Relics;
+
+void RelicsInit(Relics* relics) {
+    static Relics RELICS_ZERO = {0};
+    *relics = RELICS_ZERO;
+    for (isize i = 0; i < ArraySizeOf(relics->state); ++i) {
+        relics->state[i].id = (RelicId)i;
+    }
+
+    InitArrS(&relics->ids, relics->ids_buffer, ArraySizeOf(relics->ids_buffer));
+}
+
+void RelicsAdd(Relics* relics, RelicId id) {
+    RelicState* state = &relics->state[id];
+    Assert(!state->owned);
+    RelicState new_state = {.id = id, .owned = true};
+    *state = new_state;
+    ArrPush(&relics->ids, id);
+}
+
+#define RelicsOwnedCount(relics) ArrLen(&(relics)->ids)
+#define RelicsStateGet(relics, i) &(relics)->state[ArrGet(&(relics)->ids, (i))]
 
 typedef struct {
     Vec3 pos;
@@ -5267,8 +5298,7 @@ typedef struct {
     Card deck_buffer[20];
     CardArr deck;
 
-    RelicSlot relics_buffer[3];
-    RelicSlotArr relics;
+    Relics relics;
 
     Mat4 hand_to_world;
     Vec2 card_scale;
@@ -5379,8 +5409,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     }
 
     {
-        InitArrS(&battle->relics, battle->relics_buffer, ArraySizeOf(battle->relics_buffer));
-        ArrPush(&battle->relics, (RelicSlot){.id = RELIC_SUIT_A_MULT});
+        RelicsInit(&battle->relics);
+        RelicsAdd(&battle->relics, RELIC_SUIT_A_MULT);
     }
 
     battle->score_target = score_target;
@@ -6014,9 +6044,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
                             UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
-                                for (isize i = 0; i < ArrLen(&battle->relics); ++i) {
-                                    RelicSlot relic = ArrGet(&battle->relics, i);
-                                    UILabel(&ui, RELICS[relic.id].name, UI_FLAG_NONE);
+                                for (isize i = 0; i < RelicsOwnedCount(&battle->relics); ++i) {
+                                    RelicState* relic_state = RelicsStateGet(&battle->relics, i);
+                                    Relic* relic = RelicGet(relic_state->id);
+                                    UILabel(&ui, relic->name, UI_FLAG_NONE);
                                 }
                             }
                         }
