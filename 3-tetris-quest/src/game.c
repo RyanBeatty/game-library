@@ -5203,7 +5203,9 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
 
 #define RELIC_LIST                                                             \
     RELICX(RELIC_SUIT_A_MULT, "+1 mult when all blocks in line are of suit A") \
-    RELICX(RELIC_SUIT_B_MULT, "+1 mult when all blocks in line are of suit B")
+    RELICX(RELIC_SUIT_B_MULT, "+1 mult when all blocks in line are of suit B") \
+    RELICX(RELIC_SUIT_C_MULT, "+1 mult when all blocks in line are of suit C") \
+    RELICX(RELIC_SUIT_D_MULT, "+1 mult when all blocks in line are of suit D")
 
 typedef enum {
     RELIC_NONE = 0,
@@ -5259,6 +5261,7 @@ void RelicsAdd(Relics* relics, RelicId id) {
     ArrPush(&relics->ids, id);
 }
 
+#define RelicsHas(relics, id) (relics)->state[(id)].owned
 #define RelicsOwnedCount(relics) ArrLen(&(relics)->ids)
 #define RelicsStateGet(relics, i) &(relics)->state[ArrGet(&(relics)->ids, (i))]
 
@@ -5410,7 +5413,16 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
     {
         RelicsInit(&battle->relics);
-        RelicsAdd(&battle->relics, RELIC_SUIT_A_MULT);
+        for (isize i = 0; i < 3; ++i) {
+            RelicId id = {0};
+            i32 count = 0;
+            do {
+                id = i32randab(1, RELIC_COUNT - 1);
+                ++count;
+            } while (RelicsHas(&battle->relics, id) && count < 50);
+            Assert(!RelicsHas(&battle->relics, id));
+            RelicsAdd(&battle->relics, id);
+        }
     }
 
     battle->score_target = score_target;
