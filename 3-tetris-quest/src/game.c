@@ -5431,6 +5431,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
 static void BattlePlacePiece(Battle* battle) {
     Grid* grid = &battle->grid;
+    Relics* relics = &battle->relics;
 
     // Place piece.
     {
@@ -5473,18 +5474,26 @@ static void BattlePlacePiece(Battle* battle) {
                 Assert(r < grid->nrows);
 
                 Tile* first = GridGetTile(grid, r, 0);
-                Vec4 suit = first->effects.base_color;
-                bool same_suit = true;
+                Suit suit = first->effects.suit;
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
                     Assert(tile->occupied);
                     block_score += tile->effects.points;
-                    same_suit = Vec4Eq(suit, tile->effects.base_color);
+                    suit = suit == tile->effects.suit ? suit : SUIT_NONE;
                 }
 
                 ++mult;
 
-                if (same_suit) {
+                if (suit == SUIT_A && RelicsHas(relics, RELIC_SUIT_A_MULT)) {
+                    ++mult;
+                }
+                if (suit == SUIT_B && RelicsHas(relics, RELIC_SUIT_B_MULT)) {
+                    ++mult;
+                }
+                if (suit == SUIT_C && RelicsHas(relics, RELIC_SUIT_C_MULT)) {
+                    ++mult;
+                }
+                if (suit == SUIT_D && RelicsHas(relics, RELIC_SUIT_D_MULT)) {
                     ++mult;
                 }
             }
