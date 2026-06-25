@@ -5298,7 +5298,7 @@ typedef struct {
     Card hand_buffer[6];
     CardArr hand;
 
-    Card deck_buffer[20];
+    Card deck_buffer[32];
     CardArr deck;
 
     Relics relics;
