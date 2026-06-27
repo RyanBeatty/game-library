@@ -5692,8 +5692,9 @@ typedef struct GameState {
 
     bool debug_ever;
 
-    f32 dt;                // frame delta time.
-    f32 timer;             // THIS IS REALLY ACCUMULATED FRAME TIME ACROSS THE ENTIRE PROGRAM
+    f32 dt;     // frame delta time.
+    f32 timer;  // THIS IS REALLY ACCUMULATED FRAME TIME ACROSS THE ENTIRE PROGRAM
+    FrameTime frame_time;
     u32 nframe;            // num frame we are on.
     f32 frame_times[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
     i32 fts_tail;
@@ -5858,8 +5859,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (controller->action_left.pressed && battle->selection_idx != NO_CARD_SELECTED_IDX) {
-                    FrameTime time = {.dt = gstate->dt, .accumulated = gstate->timer};
-                    BattlePlacePiece(battle, time);
+                    BattlePlacePiece(battle, gstate->frame_time);
                 }
 
                 // Update hand
@@ -6333,6 +6333,8 @@ void GameTick(f32 dt, GameInput* input) {
     GameState* gstate = &GState;
     gstate->dt = dt;
     gstate->timer += dt;
+    gstate->frame_time.dt = dt;
+    gstate->frame_time.accumulated = gstate->timer;
 
     gstate->screenw = PlatformScreenWidth();
     gstate->screenh = PlatformScreenHeight();
