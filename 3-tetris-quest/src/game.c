@@ -5233,6 +5233,7 @@ static Relic RELICS[] = {{.name = Str8Lit("NULL"), .description = Str8Lit("NULL"
 typedef struct {
     RelicId id;
     bool owned;
+    bool activated;
 } RelicState;
 
 TypedefArr(RelicState);
@@ -5492,24 +5493,28 @@ static void BattlePlacePiece(Battle* battle) {
                         case RELIC_SUIT_A_MULT: {
                             if (suit == SUIT_A) {
                                 ++mult;
+                                relic_state->activated = true;
                             }
                             break;
                         }
                         case RELIC_SUIT_B_MULT: {
                             if (suit == SUIT_B) {
                                 ++mult;
+                                relic_state->activated = true;
                             }
                             break;
                         }
                         case RELIC_SUIT_C_MULT: {
                             if (suit == SUIT_C) {
                                 ++mult;
+                                relic_state->activated = true;
                             }
                             break;
                         }
                         case RELIC_SUIT_D_MULT: {
                             if (suit == SUIT_D) {
                                 ++mult;
+                                relic_state->activated = true;
                             }
                             break;
                         }
@@ -6091,7 +6096,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 for (isize i = 0; i < RelicsOwnedCount(&battle->relics); ++i) {
                                     RelicState* relic_state = RelicsStateGet(&battle->relics, i);
                                     Relic* relic = RelicGet(relic_state->id);
-                                    UILabel(&ui, relic->name, UI_FLAG_NONE);
+                                    Vec4 color = relic_state->activated ? LYELLOW : LWHITE;
+                                    UIThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, color) {
+                                        UILabel(&ui, relic->name, UI_FLAG_NONE);
+                                    }
                                 }
                             }
                         }
