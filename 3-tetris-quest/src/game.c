@@ -5218,7 +5218,9 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
     RELICX(RELIC_SUIT_D_CHIPS, "+50 CHIPS when all blocks in line are of suit D")             \
     RELICX(RELIC_PLUS_MULT_CONSECTUTIVE, "+X mult for the number of consecutive line clears") \
     RELICX(RELIC_FIRST_CLEAR_MULT, "+3 mult for the first clear each round")                  \
-    RELICX(RELIC_CLEAR_COUNT_MULT, "+mult equal to the number of line in a clear")
+    RELICX(RELIC_CLEAR_COUNT_MULT, "+mult equal to the number of line in a clear")            \
+    RELICX(RELIC_ALL_SUIT_MULT, "+1 mult if line cleared contains all suits")                 \
+    RELICX(RELIC_ALL_SUIT_CHIPS, "+25 chips if line cleared contains all suits")
 
 typedef enum {
     RELIC_NONE = 0,
@@ -5495,11 +5497,13 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
 
                 Tile* first = GridGetTile(grid, r, 0);
                 Suit suit = first->effects.suit;
+                i32 all_suit_mask = 0;
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
                     Assert(tile->occupied);
                     block_score += tile->effects.points;
                     suit = suit == tile->effects.suit ? suit : SUIT_NONE;
+                    all_suit_mask |= 1 << tile->effects.suit;
                 }
 
                 ++mult;
@@ -5583,6 +5587,22 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                             // rows. A simpler impl would be to just += num_cleared_rows
                             ++mult;
                             activated = true;
+                            break;
+                        }
+                        case RELIC_ALL_SUIT_MULT: {
+                            static i32 ALL_SUIT_MASK = (1 << SUIT_A) | (1 << SUIT_B) | (1 << SUIT_C) | (1 << SUIT_D);
+                            if (all_suit_mask == ALL_SUIT_MASK) {
+                                activated = true;
+                                mult += 1;
+                            }
+                            break;
+                        }
+                        case RELIC_ALL_SUIT_CHIPS: {
+                            static i32 ALL_SUIT_MASK = (1 << SUIT_A) | (1 << SUIT_B) | (1 << SUIT_C) | (1 << SUIT_D);
+                            if (all_suit_mask == ALL_SUIT_MASK) {
+                                activated = true;
+                                block_score += 20;
+                            }
                             break;
                         }
                         default: {
