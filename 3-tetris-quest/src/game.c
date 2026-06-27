@@ -5217,7 +5217,8 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
     RELICX(RELIC_SUIT_C_CHIPS, "+50 CHIPS when all blocks in line are of suit C")             \
     RELICX(RELIC_SUIT_D_CHIPS, "+50 CHIPS when all blocks in line are of suit D")             \
     RELICX(RELIC_PLUS_MULT_CONSECTUTIVE, "+X mult for the number of consecutive line clears") \
-    RELICX(RELIC_FIRST_CLEAR_MULT, "+3 mult for the first clear each round")
+    RELICX(RELIC_FIRST_CLEAR_MULT, "+3 mult for the first clear each round")                  \
+    RELICX(RELIC_CLEAR_COUNT_MULT, "+mult equal to the number of line in a clear")
 
 typedef enum {
     RELIC_NONE = 0,
@@ -5575,6 +5576,13 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                                 activated = true;
                                 mult += 3;
                             }
+                            break;
+                        }
+                        case RELIC_CLEAR_COUNT_MULT: {
+                            // Little hacky in that we are relying on the fact that we are looping over the cleared
+                            // rows. A simpler impl would be to just += num_cleared_rows
+                            ++mult;
+                            activated = true;
                             break;
                         }
                         default: {
