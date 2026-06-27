@@ -5426,6 +5426,20 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
             }
         }
 
+        // shuffle deck (crude approach)
+        for (isize shuffles = 0; shuffles < 10; ++shuffles) {
+            for (isize i = 0; i < ArrLen(&battle->deck); ++i) {
+                for (isize j = 0; j < 3; ++j) {
+                    isize dest_idx = i32randab(0, ArrLen(&battle->deck) - 1);
+                    Card* dest = ArrGetPtr(&battle->deck, dest_idx);
+                    Card temp = *dest;
+                    Card* source = ArrGetPtr(&battle->deck, i);
+                    *dest = *source;
+                    *source = temp;
+                }
+            }
+        }
+
         InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
         BattleDrawToFull(battle);
         battle->num_hands = 5;
