@@ -5215,7 +5215,8 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
     RELICX(RELIC_SUIT_A_CHIPS, "+50 CHIPS when all blocks in line are of suit A") \
     RELICX(RELIC_SUIT_B_CHIPS, "+50 CHIPS when all blocks in line are of suit B") \
     RELICX(RELIC_SUIT_C_CHIPS, "+50 CHIPS when all blocks in line are of suit C") \
-    RELICX(RELIC_SUIT_D_CHIPS, "+50 CHIPS when all blocks in line are of suit D")
+    RELICX(RELIC_SUIT_D_CHIPS, "+50 CHIPS when all blocks in line are of suit D") \
+    RELICX(RELIC_PLUS_MULT_CONSECTUTIVE, "+X mult for the number of consecutive line clears")
 
 typedef enum {
     RELIC_NONE = 0,
@@ -5561,6 +5562,13 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                             }
                             break;
                         }
+                        case RELIC_PLUS_MULT_CONSECTUTIVE: {
+                            if (battle->cleared_streak) {
+                                activated = true;
+                                mult += battle->cleared_streak;
+                            }
+                            break;
+                        }
                         default: {
                             PlatformLog(LLOG_ERROR, "Unknown owned relic: %d", relic_state);
                             Assert(0);
@@ -5588,7 +5596,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
             battle->max_blocks_placed_since_last_clear =
                 i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
             battle->num_cleared += num_cleared_rows;
-            battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + num_cleared_rows : 0;
+            battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
         }
 
         // Zero out the cleared rows.
