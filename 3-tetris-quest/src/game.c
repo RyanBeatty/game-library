@@ -5315,7 +5315,7 @@ typedef struct {
     Card hand_buffer[6];
     CardArr hand;
 
-    Card deck_buffer[32];
+    Card deck_buffer[SUIT_COUNT * PT_COUNT];
     CardArr deck;
 
     Relics relics;
