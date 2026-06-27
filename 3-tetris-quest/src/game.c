@@ -5486,17 +5486,38 @@ static void BattlePlacePiece(Battle* battle) {
 
                 ++mult;
 
-                if (suit == SUIT_A && RelicsHas(relics, RELIC_SUIT_A_MULT)) {
-                    ++mult;
-                }
-                if (suit == SUIT_B && RelicsHas(relics, RELIC_SUIT_B_MULT)) {
-                    ++mult;
-                }
-                if (suit == SUIT_C && RelicsHas(relics, RELIC_SUIT_C_MULT)) {
-                    ++mult;
-                }
-                if (suit == SUIT_D && RelicsHas(relics, RELIC_SUIT_D_MULT)) {
-                    ++mult;
+                for (isize ri = 0; ri < RelicsOwnedCount(relics); ++ri) {
+                    RelicState* relic_state = RelicsStateGet(relics, ri);
+                    switch (relic_state->id) {
+                        case RELIC_SUIT_A_MULT: {
+                            if (suit == SUIT_A) {
+                                ++mult;
+                            }
+                            break;
+                        }
+                        case RELIC_SUIT_B_MULT: {
+                            if (suit == SUIT_B) {
+                                ++mult;
+                            }
+                            break;
+                        }
+                        case RELIC_SUIT_C_MULT: {
+                            if (suit == SUIT_C) {
+                                ++mult;
+                            }
+                            break;
+                        }
+                        case RELIC_SUIT_D_MULT: {
+                            if (suit == SUIT_D) {
+                                ++mult;
+                            }
+                            break;
+                        }
+                        default: {
+                            PlatformLog(LLOG_ERROR, "Unknown owned relic: %d", relic_state);
+                            Assert(0);
+                        }
+                    }
                 }
             }
 
