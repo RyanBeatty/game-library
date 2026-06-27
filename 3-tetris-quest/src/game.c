@@ -5409,6 +5409,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
         BattleDrawToFull(battle);
         battle->num_hands = 5;
+
+        battle->selection_idx = NO_CARD_SELECTED_IDX;
     }
 
     {
