@@ -4878,6 +4878,12 @@ static const f32 GRID_DEPTH = 1.0f;
 #define MPP (1.0f / PPM)
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
+
+typedef struct {
+    f32 dt;
+    f32 accumulated;
+} FrameTime;
+
 ////////////////////////////////////////////////////
 
 typedef enum {
@@ -5233,7 +5239,7 @@ static Relic RELICS[] = {{.name = Str8Lit("NULL"), .description = Str8Lit("NULL"
 typedef struct {
     RelicId id;
     bool owned;
-    bool activated;
+    f32 activated_time;  // timestamp the relic was last activated.
 } RelicState;
 
 TypedefArr(RelicState);
@@ -5310,6 +5316,9 @@ typedef struct {
 
     i32 renderw_world;
     i32 renderh_world;
+
+    // TODO: this feels kind of hacky
+    f32 accumulated_time;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5432,7 +5441,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 }
 
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
-static void BattlePlacePiece(Battle* battle) {
+static void BattlePlacePiece(Battle* battle, FrameTime time) {
     Grid* grid = &battle->grid;
     Relics* relics = &battle->relics;
 
@@ -5489,32 +5498,33 @@ static void BattlePlacePiece(Battle* battle) {
 
                 for (isize ri = 0; ri < RelicsOwnedCount(relics); ++ri) {
                     RelicState* relic_state = RelicsStateGet(relics, ri);
+                    bool activated = false;
                     switch (relic_state->id) {
                         case RELIC_SUIT_A_MULT: {
                             if (suit == SUIT_A) {
+                                activated = true;
                                 ++mult;
-                                relic_state->activated = true;
                             }
                             break;
                         }
                         case RELIC_SUIT_B_MULT: {
                             if (suit == SUIT_B) {
+                                activated = true;
                                 ++mult;
-                                relic_state->activated = true;
                             }
                             break;
                         }
                         case RELIC_SUIT_C_MULT: {
                             if (suit == SUIT_C) {
+                                activated = true;
                                 ++mult;
-                                relic_state->activated = true;
                             }
                             break;
                         }
                         case RELIC_SUIT_D_MULT: {
                             if (suit == SUIT_D) {
+                                activated = true;
                                 ++mult;
-                                relic_state->activated = true;
                             }
                             break;
                         }
@@ -5523,6 +5533,8 @@ static void BattlePlacePiece(Battle* battle) {
                             Assert(0);
                         }
                     }
+
+                    relic_state->activated_time = activated ? time.accumulated : 0.0f;
                 }
             }
 
@@ -5680,8 +5692,8 @@ typedef struct GameState {
 
     bool debug_ever;
 
-    f32 dt;  // frame delta time.
-    f32 timer;
+    f32 dt;                // frame delta time.
+    f32 timer;             // THIS IS REALLY ACCUMULATED FRAME TIME ACROSS THE ENTIRE PROGRAM
     u32 nframe;            // num frame we are on.
     f32 frame_times[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
     i32 fts_tail;
@@ -5689,7 +5701,8 @@ typedef struct GameState {
     u32 fps;
     i32 target_fps;        // render fps we are targetting.
     f32 fixed_dt;          // fixed dt we will update the simulation with for stability.
-    f32 accumulated_time;  // Time we have yet to simulate.
+    f32 accumulated_time;  // Time we have yet to simulate. THIS IS NOT ACCUMULATED FRAME TIME ACROSS THE ENTIRE LIFE OF
+                           // THE PROGRAM.
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*, GameInput* input);
     u32 scenefuncssize;
@@ -5845,7 +5858,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (controller->action_left.pressed && battle->selection_idx != NO_CARD_SELECTED_IDX) {
-                    BattlePlacePiece(battle);
+                    FrameTime time = {.dt = gstate->dt, .accumulated = gstate->timer};
+                    BattlePlacePiece(battle, time);
                 }
 
                 // Update hand
@@ -6091,12 +6105,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
 
+                        // Draw relics
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
+                            static f32 RELIC_TEXT_ANIMATION_TIME = 1.0f;
                             UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
                                 for (isize i = 0; i < RelicsOwnedCount(&battle->relics); ++i) {
                                     RelicState* relic_state = RelicsStateGet(&battle->relics, i);
                                     Relic* relic = RelicGet(relic_state->id);
-                                    Vec4 color = relic_state->activated ? LYELLOW : LWHITE;
+
+                                    f32 activated_dt =
+                                        f32clamp(gstate->timer - relic_state->activated_time, 0.0f, 1.0f);
+                                    f32 activated_t = activated_dt / RELIC_TEXT_ANIMATION_TIME;
+                                    Vec4 color = Vec4Lerp(LYELLOW, LWHITE, activated_t);
                                     UIThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, color) {
                                         UILabel(&ui, relic->name, UI_FLAG_NONE);
                                     }
@@ -6152,7 +6172,6 @@ static void SceneShopTick(GameState* gstate, GameInput* input) {
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
-                // Draw relics
                 {
                     Vec2 relic_scale = Vec2Lit(Px2Meter(30.0f), Px2Meter(50.0f));
                     Mat4 relic_to_world = Mat4SVRT(Vec3Lit(Px2Meter(40.0f), Px2Meter(40.0f), Px2Meter(1.0f)),
