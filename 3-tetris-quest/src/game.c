@@ -5263,7 +5263,8 @@ void RelicsInit(Relics* relics) {
 void RelicsAdd(Relics* relics, RelicId id) {
     RelicState* state = &relics->state[id];
     Assert(!state->owned);
-    RelicState new_state = {.id = id, .owned = true};
+    // The activated time is a bit of a hack to ensure we don't display them as activated on startup/when added
+    RelicState new_state = {.id = id, .owned = true, .activated_time = -100.0f};
     *state = new_state;
     ArrPush(&relics->ids, id);
 }
