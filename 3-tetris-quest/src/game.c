@@ -5207,16 +5207,17 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
 
 ////////////////////////////////////////////////////
 
-#define RELIC_LIST                                                                \
-    RELICX(RELIC_SUIT_A_MULT, "+1 mult when all blocks in line are of suit A")    \
-    RELICX(RELIC_SUIT_B_MULT, "+1 mult when all blocks in line are of suit B")    \
-    RELICX(RELIC_SUIT_C_MULT, "+1 mult when all blocks in line are of suit C")    \
-    RELICX(RELIC_SUIT_D_MULT, "+1 mult when all blocks in line are of suit D")    \
-    RELICX(RELIC_SUIT_A_CHIPS, "+50 CHIPS when all blocks in line are of suit A") \
-    RELICX(RELIC_SUIT_B_CHIPS, "+50 CHIPS when all blocks in line are of suit B") \
-    RELICX(RELIC_SUIT_C_CHIPS, "+50 CHIPS when all blocks in line are of suit C") \
-    RELICX(RELIC_SUIT_D_CHIPS, "+50 CHIPS when all blocks in line are of suit D") \
-    RELICX(RELIC_PLUS_MULT_CONSECTUTIVE, "+X mult for the number of consecutive line clears")
+#define RELIC_LIST                                                                            \
+    RELICX(RELIC_SUIT_A_MULT, "+1 mult when all blocks in line are of suit A")                \
+    RELICX(RELIC_SUIT_B_MULT, "+1 mult when all blocks in line are of suit B")                \
+    RELICX(RELIC_SUIT_C_MULT, "+1 mult when all blocks in line are of suit C")                \
+    RELICX(RELIC_SUIT_D_MULT, "+1 mult when all blocks in line are of suit D")                \
+    RELICX(RELIC_SUIT_A_CHIPS, "+50 CHIPS when all blocks in line are of suit A")             \
+    RELICX(RELIC_SUIT_B_CHIPS, "+50 CHIPS when all blocks in line are of suit B")             \
+    RELICX(RELIC_SUIT_C_CHIPS, "+50 CHIPS when all blocks in line are of suit C")             \
+    RELICX(RELIC_SUIT_D_CHIPS, "+50 CHIPS when all blocks in line are of suit D")             \
+    RELICX(RELIC_PLUS_MULT_CONSECTUTIVE, "+X mult for the number of consecutive line clears") \
+    RELICX(RELIC_FIRST_CLEAR_MULT, "+3 mult for the first clear each round")
 
 typedef enum {
     RELIC_NONE = 0,
@@ -5566,6 +5567,13 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                             if (battle->cleared_streak) {
                                 activated = true;
                                 mult += battle->cleared_streak;
+                            }
+                            break;
+                        }
+                        case RELIC_FIRST_CLEAR_MULT: {
+                            if (battle->num_cleared == 0) {
+                                activated = true;
+                                mult += 3;
                             }
                             break;
                         }
