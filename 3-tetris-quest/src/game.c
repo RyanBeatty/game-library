@@ -5296,6 +5296,27 @@ typedef struct {
 ////////////////////////////////////////////////////
 
 typedef struct {
+    TileId block_id;
+} ScoreEvent;
+
+TypedefArr(ScoreEvent);
+
+typedef struct {
+    ScoreEvent events_buffer[1024];
+    ScoreEventArr events;
+} ScoreLog;
+
+static void ScoreLogInit(ScoreLog* log) {
+    static ScoreLog ZERO_SCORE_LOG = {0};
+    *log = ZERO_SCORE_LOG;
+    InitArrS(&log->events, log->events_buffer, ArraySizeOf(log->events_buffer));
+}
+
+static void ScoreLogBlockScored(ScoreLog* log, TileId block_id) {
+    ArrPush(&log->events, (ScoreEvent){.block_id = block_id});
+}
+
+typedef struct {
     Grid grid;
 
     Piece active_piece;
@@ -5327,8 +5348,7 @@ typedef struct {
     i32 renderw_world;
     i32 renderh_world;
 
-    // TODO: this feels kind of hacky
-    f32 accumulated_time;
+    ScoreLog score_log;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5352,13 +5372,6 @@ static Piece MakePiece(PieceType type, PieceRot rot, Suit suit) {
     piece.effects.suit = suit;
     piece.effects.base_color = BLOCK_COLORS[suit];
     return piece;
-}
-
-static Piece RandomPiece() {
-    PieceType type = i32randab(0, PT_COUNT - 1);
-    PieceRot rot = i32randab(PR_0, PR_270);
-    Suit suit = i32randab(0, SUIT_COUNT - 1);
-    return MakePiece(type, rot, suit);
 }
 
 static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
@@ -5462,6 +5475,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     }
 
     battle->score_target = score_target;
+
+    ScoreLogInit(&battle->score_log);
 }
 
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
@@ -5518,6 +5533,8 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                     block_score += tile->effects.points;
                     suit = suit == tile->effects.suit ? suit : SUIT_NONE;
                     all_suit_mask |= 1 << tile->effects.suit;
+
+                    ScoreLogBlockScored(&battle->score_log, tile->id);
                 }
 
                 ++mult;
@@ -6172,29 +6189,29 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %lld", ArrLen(&battle->deck));
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
-                        UILabel(&ui, Str8Lit("space"), UI_FLAG_HIDE);
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Blocks Since Clear: %d",
-                                     battle->blocks_placed_since_last_clear);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Max Blocks Since Clear: %d",
-                                     battle->max_blocks_placed_since_last_clear);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Cleared: %d", battle->num_cleared);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Cleared Streak: %d", battle->cleared_streak);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
+                        // UILabel(&ui, Str8Lit("space"), UI_FLAG_HIDE);
+                        // {
+                        //     char buffer[256] = {0};
+                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Blocks Since Clear: %d",
+                        //              battle->blocks_placed_since_last_clear);
+                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        // }
+                        // {
+                        //     char buffer[256] = {0};
+                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Max Blocks Since Clear: %d",
+                        //              battle->max_blocks_placed_since_last_clear);
+                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        // }
+                        // {
+                        //     char buffer[256] = {0};
+                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Cleared: %d", battle->num_cleared);
+                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        // }
+                        // {
+                        //     char buffer[256] = {0};
+                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Cleared Streak: %d", battle->cleared_streak);
+                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                        // }
 
                         // Draw relics
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
@@ -6233,120 +6250,125 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 }
 
 static void SceneShopTick(GameState* gstate, GameInput* input) {
-    static isize RELICS_SELECTION_IDX = -1;
+    // static isize RELICS_SELECTION_IDX = -1;
 
-    f32 dt = gstate->dt;
+    // f32 dt = gstate->dt;
 
-    // Grid* grid = GameStateGetGrid(gstate);
+    // // Grid* grid = GameStateGetGrid(gstate);
 
-    GameControllerState* controller = GetController(input, 0);
+    // GameControllerState* controller = GetController(input, 0);
 
-    if (gstate->init) {
-        RELICS_SELECTION_IDX = -1;
-    }
+    // if (gstate->init) {
+    //     RELICS_SELECTION_IDX = -1;
+    // }
 
-    if (gstate->update) {
-    }
+    // if (gstate->update) {
+    // }
 
-    if (gstate->render) {
-        Render(dt) {
-            // Entities/Game World
-            {
-                // Reminder that using the _world variables here ensures we convert from world units back to pixel units
-                // correctly.
-                Mat4 view = CameraGetViewMat(gstate->camera);
-                Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
-                Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
-                                      -100.0f, 100.0f);
-                RenderPassLoadAction load_action = DefaultLoadAction();
-                load_action.clear_color = LPURPLE;
-                load_action.clear_color_flag = true;
-                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+    // if (gstate->render) {
+    //     Render(dt) {
+    //         // Entities/Game World
+    //         {
+    //             // Reminder that using the _world variables here ensures we convert from world units back to pixel
+    //             units
+    //             // correctly.
+    //             Mat4 view = CameraGetViewMat(gstate->camera);
+    //             Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
+    //             Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
+    //             half_render_dims.y,
+    //                                   -100.0f, 100.0f);
+    //             RenderPassLoadAction load_action = DefaultLoadAction();
+    //             load_action.clear_color = LPURPLE;
+    //             load_action.clear_color_flag = true;
+    //             BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
-                {
-                    Vec2 relic_scale = Vec2Lit(Px2Meter(30.0f), Px2Meter(50.0f));
-                    Mat4 relic_to_world = Mat4SVRT(Vec3Lit(Px2Meter(40.0f), Px2Meter(40.0f), Px2Meter(1.0f)),
-                                                   Mat4Identity(), Vec3Lit(0, 0, 0));
-                    for (isize i = 0; i < ArraySizeOf(RELICS); ++i) {
-                        Vec3 quad_pos = Vec3Lit(i, 0, 0);
-                        quad_pos = Vec3WTransform(quad_pos, relic_to_world);
-                        DrawQuad(quad_pos, relic_scale.x, relic_scale.y, Mat4Identity(), LGRAY);
-                    }
-                }
+    //             {
+    //                 Vec2 relic_scale = Vec2Lit(Px2Meter(30.0f), Px2Meter(50.0f));
+    //                 Mat4 relic_to_world = Mat4SVRT(Vec3Lit(Px2Meter(40.0f), Px2Meter(40.0f), Px2Meter(1.0f)),
+    //                                                Mat4Identity(), Vec3Lit(0, 0, 0));
+    //                 for (isize i = 0; i < ArraySizeOf(RELICS); ++i) {
+    //                     Vec3 quad_pos = Vec3Lit(i, 0, 0);
+    //                     quad_pos = Vec3WTransform(quad_pos, relic_to_world);
+    //                     DrawQuad(quad_pos, relic_scale.x, relic_scale.y, Mat4Identity(), LGRAY);
+    //                 }
+    //             }
 
-                EndShaderPass();
-            }
+    //             EndShaderPass();
+    //         }
 
-            // Draw the texture framebuffer to screen quad.
-            {
-                // We aren't specifying a view or proj matrix, since we are specifying the coordinates in clip space
-                // directly.
-                Mat4 view = Mat4Identity();
-                Mat4 proj = Mat4Identity();
-                RenderPassLoadAction load_action = {
-                    .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
-                    .clear_color_flag = true,
-                    .depth_test = false,
-                };
-                BeginShaderPass(GetEffectsShader(), load_action, view, proj, GetScreenRenderTarget());
+    //         // Draw the texture framebuffer to screen quad.
+    //         {
+    //             // We aren't specifying a view or proj matrix, since we are specifying the coordinates in clip space
+    //             // directly.
+    //             Mat4 view = Mat4Identity();
+    //             Mat4 proj = Mat4Identity();
+    //             RenderPassLoadAction load_action = {
+    //                 .clear_color = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f),
+    //                 .clear_color_flag = true,
+    //                 .depth_test = false,
+    //             };
+    //             BeginShaderPass(GetEffectsShader(), load_action, view, proj, GetScreenRenderTarget());
 
-                // DrawCmd* cmd = AddDrawMeshCmd();
-                // // DrawMeshCmdInit(cmd);
-                // cmd->meshcmd.meshid = GetMesh(M_QUAD);
-                // // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
-                // // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
-                // cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
-                // // cmd->meshcmd.color = LRED;  // For debug.
-                // RenderTarget game_target = GetDefaultRenderTarget();
-                // cmd->meshcmd.tx.id = game_target.txid;
-                // cmd->meshcmd.tx.width = game_target.width;
-                // cmd->meshcmd.tx.height = game_target.height;
+    //             // DrawCmd* cmd = AddDrawMeshCmd();
+    //             // // DrawMeshCmdInit(cmd);
+    //             // cmd->meshcmd.meshid = GetMesh(M_QUAD);
+    //             // // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since
+    //             the
+    //             // // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+    //             // cmd->meshcmd.modelm = Mat4ScaleV(Vec3Lit(2.0f, 2.0f, 1.0f));
+    //             // // cmd->meshcmd.color = LRED;  // For debug.
+    //             // RenderTarget game_target = GetDefaultRenderTarget();
+    //             // cmd->meshcmd.tx.id = game_target.txid;
+    //             // cmd->meshcmd.tx.width = game_target.width;
+    //             // cmd->meshcmd.tx.height = game_target.height;
 
-                RenderTarget game_target = GetDefaultRenderTarget();
-                LTexture game_texture = {
-                    .id = game_target.txid, .width = game_texture.width, .height = game_target.height};
-                // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
-                // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
-                // iirc this is specific to how this effects shader works.
-                DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(), Vec2Lit(2.0f, 2.0f), 0.0f,
-                                  LCLEAR);
+    //             RenderTarget game_target = GetDefaultRenderTarget();
+    //             LTexture game_texture = {
+    //                 .id = game_target.txid, .width = game_texture.width, .height = game_target.height};
+    //             // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
+    //             // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
+    //             // iirc this is specific to how this effects shader works.
+    //             DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(), Vec2Lit(2.0f, 2.0f),
+    //             0.0f,
+    //                               LCLEAR);
 
-                EndShaderPass();
-            }
+    //             EndShaderPass();
+    //         }
 
-            // UI.
-            {
-                UIState ui = {0};
-                RenderPassLoadAction load_action = {
-                    .clear_color_flag = false,
-                    .depth_test = true,
-                };
-                UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
-                     load_action, GetScreenRenderTarget()) {
-                    UIPushFont(&ui, GetLFontClosest(40.0f));
-                    UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
-                    UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", 100);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                    }
-                }
+    //         // UI.
+    //         {
+    //             UIState ui = {0};
+    //             RenderPassLoadAction load_action = {
+    //                 .clear_color_flag = false,
+    //                 .depth_test = true,
+    //             };
+    //             UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
+    //                  load_action, GetScreenRenderTarget()) {
+    //                 UIPushFont(&ui, GetLFontClosest(40.0f));
+    //                 UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
+    //                 UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
+    //                     {
+    //                         char buffer[256] = {0};
+    //                         snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", 100);
+    //                         UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+    //                     }
+    //                 }
+    //             }
 
-                {
-                    // Reminder that using the _world variables here ensures we convert from world units back to pixel
-                    // units
-                    // correctly.
-                    Mat4 view = Mat4Identity();
-                    Mat4 proj = Mat4Ortho(0, PlatformScreenWidth(), 0, PlatformScreenHeight(), -1.0f, 1.0f);
-                    BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
+    //             {
+    //                 // Reminder that using the _world variables here ensures we convert from world units back to
+    //                 pixel
+    //                 // units
+    //                 // correctly.
+    //                 Mat4 view = Mat4Identity();
+    //                 Mat4 proj = Mat4Ortho(0, PlatformScreenWidth(), 0, PlatformScreenHeight(), -1.0f, 1.0f);
+    //                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
 
-                    EndShaderPass();
-                }
-            }
-        }
-    }
+    //                 EndShaderPass();
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 ////////////////////////////////////////////////////////////
