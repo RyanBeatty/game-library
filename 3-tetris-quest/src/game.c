@@ -4897,14 +4897,6 @@ typedef enum {
 
 ////////////////////////////////////////////////////
 
-typedef enum {
-    PHASE_NONE = 0,
-    PHASE_EOD,
-    PHASE_PLAYING,
-    PHASE_GAMEOVER,
-    PHASE_SHOP_OPEN,
-} GamePhase;
-
 #define GRID_NUM_ROWS 16
 #define GRID_NUM_COLS 8  // 10
 
@@ -5325,13 +5317,6 @@ static void ScoreLogBlockScored(ScoreLog* log, TileId block_id) {
 
 #define ScoreLogHead(sl) (&(sl)->events[(sl)->head_idx])
 
-typedef enum {
-    BP_NONE = 0,
-    BP_PLAYING,
-    BP_SHOP,
-    BP_COUNT,
-} BattlePhase;
-
 typedef struct {
     Grid grid;
 
@@ -5365,9 +5350,6 @@ typedef struct {
     i32 renderh_world;
 
     ScoreLog score_log;
-
-    BattlePhase phase;
-    BattlePhase phase_to_be;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5441,8 +5423,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderw_world = renderw_world;
     battle->renderh_world = renderh_world;
     GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
-
-    battle->phase = BP_PLAYING;
 
     // hand init deck init
     {
@@ -5806,6 +5786,14 @@ typedef enum {
     SCENE_COUNT,
 } SceneId;
 
+typedef enum {
+    GP_NONE = 0,
+    GP_NEW_ROUND,
+    GP_PLAYING,
+    GP_SHOP,
+    GP_COUNT,
+} GamePhase;
+
 typedef struct GameState {
     /////////////////////////////////////////
     // Core fields
@@ -5851,6 +5839,9 @@ typedef struct GameState {
 
     /////////////////////////////////////////
     // Scene fields
+
+    GamePhase phase;
+    i32 score_target;
 
     Battle battle;
 
@@ -5964,13 +5955,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
-        // BattleInit(battle, &gstate->perm);
-        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, 20);
+        gstate->phase = GP_NEW_ROUND;
+        gstate->score_target = 10;
+        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
     }
 
     if (gstate->update) {
-        switch (battle->phase) {
-            case BP_PLAYING: {
+        switch (gstate->phase) {
+            case GP_NEW_ROUND: {
+                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
+                gstate->phase = GP_PLAYING;
+                break;
+            }
+            case GP_PLAYING: {
                 // Movement and rotation.
                 {
                     if (controller->move_left.pressed) {
@@ -6028,16 +6025,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (battle->total_score >= battle->score_target) {
-                    battle->phase = BP_SHOP;
+                    gstate->phase = GP_NEW_ROUND;
                 }
 
                 break;
             }
-            case BP_SHOP: {
+            case GP_SHOP: {
                 break;
             }
             default: {
-                PlatformLog(LLOG_INFO, "UNKNOWN UPDATE BATTLE PHASE %d", battle->phase);
+                PlatformLog(LLOG_INFO, "UNKNOWN UPDATE GAME PHASE %d", gstate->phase);
                 Assert(0);
             }
         }
