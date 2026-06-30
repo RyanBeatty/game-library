@@ -6017,35 +6017,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
             }
-
-            // for (isize r = 0; r < grid->nrows; ++r) {
-            //     for (isize c = 0; c < grid->ncols; ++c) {
-            //         Tile* tile = GridGetTile(grid, r, c);
-            //         Vec3 tile_pos = Vec3Lit(c, r, 0);
-            //         tile->graphics.transform =
-            //             Mat4Multiply(grid->grid_to_world, Mat4SVRT(Vec3LitAll(1.0f), Mat4Identity(), tile_pos));
-            //     }
-            // }
-
-            // {
-            //     for (isize i = 0; i < ArrLen(&battle->party_ids); ++i) {
-            //         Entity* e = EntityFromId(ArrGet(&battle->party_ids, i));
-            //         // We only transform pos as we want don't want to overly scale the texture (since we specify the
-            //         // texture
-            //         // in 16x16 pixels).
-            //         e->graphics.transform = Mat4SVRT(e->scale, e->orient, Vec3WTransform(e->pos,
-            //         grid->grid_to_world));
-            //     }
-
-            //     for (isize i = 0; i < ArrLen(&battle->enemy_ids); ++i) {
-            //         Entity* e = EntityFromId(ArrGet(&battle->enemy_ids, i));
-            //         // We only transform pos as we want don't want to overly scale the texture (since we specify the
-            //         // texture
-            //         // in 16x16 pixels).
-            //         e->graphics.transform = Mat4SVRT(e->scale, e->orient, Vec3WTransform(e->pos,
-            //         grid->grid_to_world));
-            //     }
-            // }
         }
     }
 
