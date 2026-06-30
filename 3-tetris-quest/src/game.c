@@ -5325,6 +5325,13 @@ static void ScoreLogBlockScored(ScoreLog* log, TileId block_id) {
 
 #define ScoreLogHead(sl) (&(sl)->events[(sl)->head_idx])
 
+typedef enum {
+    BP_NONE = 0,
+    BP_PLAYING,
+    BP_SHOP,
+    BP_COUNT,
+} BattlePhase;
+
 typedef struct {
     Grid grid;
 
@@ -5358,6 +5365,9 @@ typedef struct {
     i32 renderh_world;
 
     ScoreLog score_log;
+
+    BattlePhase phase;
+    BattlePhase phase_to_be;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5431,6 +5441,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderw_world = renderw_world;
     battle->renderh_world = renderh_world;
     GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
+
+    battle->phase = BP_PLAYING;
 
     // hand init deck init
     {
@@ -5953,14 +5965,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         // BattleInit(battle, &gstate->perm);
-        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, 160);
+        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, 20);
     }
 
     if (gstate->update) {
-        // Update transforms.
-        {
-            // update battle
-            {
+        switch (battle->phase) {
+            case BP_PLAYING: {
                 // Movement and rotation.
                 {
                     if (controller->move_left.pressed) {
@@ -6016,6 +6026,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // given the idx. BattleSetActivePiece(battle);
                     }
                 }
+
+                if (battle->total_score >= battle->score_target) {
+                    battle->phase = BP_SHOP;
+                }
+
+                break;
+            }
+            case BP_SHOP: {
+                break;
+            }
+            default: {
+                PlatformLog(LLOG_INFO, "UNKNOWN UPDATE BATTLE PHASE %d", battle->phase);
+                Assert(0);
             }
         }
     }
