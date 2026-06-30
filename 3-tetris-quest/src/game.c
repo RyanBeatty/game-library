@@ -5302,19 +5302,28 @@ typedef struct {
 TypedefArr(ScoreEvent);
 
 typedef struct {
-    ScoreEvent events_buffer[1024];
-    ScoreEventArr events;
+    ScoreEvent events[1024];
+
+    isize head_idx;
+    isize tail_idx;
+    isize cap;
 } ScoreLog;
 
 static void ScoreLogInit(ScoreLog* log) {
     static ScoreLog ZERO_SCORE_LOG = {0};
     *log = ZERO_SCORE_LOG;
-    InitArrS(&log->events, log->events_buffer, ArraySizeOf(log->events_buffer));
+    log->cap = ArraySizeOf(log->events);
+    log->head_idx = 1;
+    log->tail_idx = 0;
 }
 
 static void ScoreLogBlockScored(ScoreLog* log, TileId block_id) {
-    ArrPush(&log->events, (ScoreEvent){.block_id = block_id});
+    log->head_idx = (log->head_idx + 1) % log->cap;
+    log->events[log->head_idx] = (ScoreEvent){.block_id = block_id};
+    Assert(log->head_idx != log->tail_idx);
 }
+
+#define ScoreLogHead(sl) (&(sl)->events[(sl)->head_idx])
 
 typedef struct {
     Grid grid;
@@ -5763,6 +5772,14 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     active_piece->block_offsets = next_block_offsets;
     battle->anchor = next_anchor;
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
+}
+
+typedef struct {
+    TileId block_scored;
+} BattleRenderState;
+
+static void ComputeBattleRenderState(BattleRenderState* brs, ScoreLog* log) {
+    brs->block_scored = ScoreLogHead(log)->block_id;
 }
 
 ////////////////////////////////////////////////////
