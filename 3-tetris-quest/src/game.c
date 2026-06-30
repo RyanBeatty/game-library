@@ -6025,12 +6025,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (battle->total_score >= battle->score_target) {
-                    gstate->phase = GP_NEW_ROUND;
+                    gstate->phase = GP_SHOP;
+                    battle->score_target += 5;
                 }
 
                 break;
             }
             case GP_SHOP: {
+                if (controller->action_down.pressed) {
+                    gstate->phase = GP_NEW_ROUND;
+                }
                 break;
             }
             default: {
