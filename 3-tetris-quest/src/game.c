@@ -6045,6 +6045,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->render) {
+        // TODO: Focus on orienting UI to be more like balatro. Have a play area that is reserved for changing UI
+        // elements (grid, shop, etc), have a UI overlay that is static and does not fixed. Score on the left, relics on
+        // top, cards on the bottom (?). As the "scenes transition", just the middle swappable area moves
         Render(dt) {
             // Entities/Game World
             {
@@ -6059,72 +6062,88 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
-                // Draw grid
-                {
-                    Vec4 GRAY1 = RGBLit(70, 70, 72);
-                    Vec4 GRAY2 = RGBLit(82, 82, 84);
+                switch (gstate->phase) {
+                    case GP_NEW_ROUND: {
+                        break;
+                    }
+                    case GP_PLAYING: {
+                        // Draw grid
+                        {
+                            Vec4 GRAY1 = RGBLit(70, 70, 72);
+                            Vec4 GRAY2 = RGBLit(82, 82, 84);
 
-                    Mat4 grid_to_world = grid->grid_to_world;
-                    i32 color_idx = 0;
-                    for (i32 r = 0; r < grid->nrows; ++r) {
-                        for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
-                            Tile* tile = GridGetTile(grid, r, c);
-                            Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                            Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                            Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
-                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
+                            Mat4 grid_to_world = grid->grid_to_world;
+                            i32 color_idx = 0;
+                            for (i32 r = 0; r < grid->nrows; ++r) {
+                                for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
+                                    Tile* tile = GridGetTile(grid, r, c);
+                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                                    Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
+                                    DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
 
-                            if (tile->occupied) {
-                                Vec4 piece_color = tile->effects.base_color;
-                                DrawQuad(pos, scale.x, scale.y, Mat4Identity(), piece_color);
+                                    if (tile->occupied) {
+                                        Vec4 piece_color = tile->effects.base_color;
+                                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), piece_color);
+                                    }
+                                }
+
+                                // Offset each row.
+                                ++color_idx;
+                            }
+
+                            // Draw active piece.
+                            if (battle->selection_idx != NO_CARD_SELECTED_IDX) {
+                                TileId anchor = battle->anchor;
+                                Piece* active_piece = &battle->active_piece;
+                                for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+                                    TileId offset = ArrGet(&active_piece->block_offsets, i);
+                                    Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
+                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                                    DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->effects.base_color);
+                                }
+
+                                // Draw placement preview viz
+                                TileId placement_anchor = battle->placement_anchor;
+                                for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
+                                    TileId offset = ArrGet(&active_piece->block_offsets, i);
+                                    Tile* tile =
+                                        GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
+                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                                    Vec4 color = active_piece->effects.base_color;
+                                    color.a = 0.3f;
+                                    DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
+                                }
                             }
                         }
 
-                        // Offset each row.
-                        ++color_idx;
+                        // Draw hand
+                        {
+                            f32 piece_scale = Px2Meter(5.0f);
+                            BattleHandIter(&battle->hand, card) {
+                                Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
+                                DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
+
+                                // Draw piece inside card.
+                                for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
+                                    TileId offset = ArrGet(&card->piece.block_offsets, j);
+                                    Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
+                                    pos = Vec3Add(pos, quad_pos);
+                                    DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(),
+                                             card->piece.effects.base_color);
+                                }
+                            }
+                        }
+                        break;
                     }
-
-                    // Draw active piece.
-                    if (battle->selection_idx != NO_CARD_SELECTED_IDX) {
-                        TileId anchor = battle->anchor;
-                        Piece* active_piece = &battle->active_piece;
-                        for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
-                            TileId offset = ArrGet(&active_piece->block_offsets, i);
-                            Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
-                            Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                            Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->effects.base_color);
-                        }
-
-                        // Draw placement preview viz
-                        TileId placement_anchor = battle->placement_anchor;
-                        for (isize i = 0; i < ArrLen(&active_piece->block_offsets); ++i) {
-                            TileId offset = ArrGet(&active_piece->block_offsets, i);
-                            Tile* tile =
-                                GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
-                            Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                            Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                            Vec4 color = active_piece->effects.base_color;
-                            color.a = 0.3f;
-                            DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
-                        }
+                    case GP_SHOP: {
+                        break;
                     }
-                }
-
-                // Draw hand
-                {
-                    f32 piece_scale = Px2Meter(5.0f);
-                    BattleHandIter(&battle->hand, card) {
-                        Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
-                        DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
-
-                        // Draw piece inside card.
-                        for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
-                            TileId offset = ArrGet(&card->piece.block_offsets, j);
-                            Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
-                            pos = Vec3Add(pos, quad_pos);
-                            DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(), card->piece.effects.base_color);
-                        }
+                    default: {
+                        PlatformLog(LLOG_ERROR, "Unknown game phase for rendering: %d", gstate->phase);
+                        Assert(0);
                     }
                 }
 
