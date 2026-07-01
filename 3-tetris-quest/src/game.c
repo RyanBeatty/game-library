@@ -5958,6 +5958,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->phase = GP_NEW_ROUND;
         gstate->score_target = 10;
         BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
+        gstate->phase = GP_SHOP;
     }
 
     if (gstate->update) {
@@ -6142,15 +6143,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_SHOP: {
                         DrawQuad(playing_area_origin, playing_area_dims.x, playing_area_dims.y, Mat4Identity(), LGRAY);
 
-                        Vec3 relic_origin = playing_area_origin;
-                        Vec3 relic_scale = Vec3Lit(10.0f, 1.0f, 1.0f);
-                        Mat4 relic_to_world = Mat4SVRT(relic_scale, Mat4Identity(), relic_origin);
+                        Vec3 relic_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
+                        Vec3 relic_card_scale = Vec3Lit(40.0f, 70.0f, 1.0f);
+                        Vec3 relic_area_scale =
+                            Vec3Lit(relic_card_scale.x * 1.5f, relic_card_scale.y, relic_card_scale.z);
+                        Mat4 relic_to_world = Mat4SVRT(relic_area_scale, Mat4Identity(), relic_origin);
                         isize num_relics = 3;
-                        f32 offset = ((f32)num_relics) * 0.5f;
+                        f32 offset = ((f32)num_relics - 1.0f) * 0.5f;
                         for (isize i = 0; i < num_relics; ++i) {
                             Vec3 pos = Vec3Lit(i - offset, 0.0f, 0.0f);
                             pos = Vec3WTransform(pos, relic_to_world);
-                            DrawQuad(pos, relic_scale.x * 0.8f, 20.0f, Mat4Identity(), LBLUE);
+                            DrawQuad(pos, relic_card_scale.x, relic_card_scale.y, Mat4Identity(), LBLUE);
                         }
                         break;
                     }
