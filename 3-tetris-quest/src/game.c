@@ -6140,7 +6140,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case GP_SHOP: {
-                        DrawQuad(playing_area_origin, playing_area_dims.x, playing_area_scale.y, Mat4Identity(), LGRAY);
+                        DrawQuad(playing_area_origin, playing_area_dims.x, playing_area_dims.y, Mat4Identity(), LGRAY);
+
+                        Vec3 relic_origin = playing_area_origin;
+                        Vec3 relic_scale = Vec3Lit(10.0f, 1.0f, 1.0f);
+                        Mat4 relic_to_world = Mat4SVRT(relic_scale, Mat4Identity(), relic_origin);
+                        isize num_relics = 3;
+                        f32 offset = ((f32)num_relics) * 0.5f;
+                        for (isize i = 0; i < num_relics; ++i) {
+                            Vec3 pos = Vec3Lit(i - offset, 0.0f, 0.0f);
+                            pos = Vec3WTransform(pos, relic_to_world);
+                            DrawQuad(pos, relic_scale.x * 0.8f, 20.0f, Mat4Identity(), LBLUE);
+                        }
                         break;
                     }
                     default: {
