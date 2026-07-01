@@ -6045,9 +6045,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->render) {
-        // TODO: Focus on orienting UI to be more like balatro. Have a play area that is reserved for changing UI
-        // elements (grid, shop, etc), have a UI overlay that is static and does not fixed. Score on the left, relics on
-        // top, cards on the bottom (?). As the "scenes transition", just the middle swappable area moves
         Render(dt) {
             // Entities/Game World
             {
@@ -6061,6 +6058,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 load_action.clear_color = LPURPLE;
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+
+                DrawQuad(Vec3Lit(30.0f, -5.0f, 0.0f), gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f,
+                         Mat4Identity(), LGRAY);
 
                 switch (gstate->phase) {
                     case GP_NEW_ROUND: {
@@ -6198,7 +6198,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                      load_action, GetScreenRenderTarget()) {
                     UIPushFont(&ui, GetLFontClosest(40.0f));
                     UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
-                    UIWindow(&ui, UISizePctParent(0.3f), UISizePctParent(1.0f)) {
+                    UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(1.0f)) {
                         {
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", battle->score_target);
