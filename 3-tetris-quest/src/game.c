@@ -6061,7 +6061,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
                 Vec3 playing_area_scale = Vec3Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f, 1.0f);
-                DrawQuad(playing_area_origin, playing_area_scale.x, playing_area_scale.y, Mat4Identity(), LGRAY);
+                // DrawQuad(playing_area_origin, playing_area_scale.x, playing_area_scale.y, Mat4Identity(), LGRAY);
 
                 switch (gstate->phase) {
                     case GP_NEW_ROUND: {
@@ -6140,6 +6140,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case GP_SHOP: {
+                        DrawQuad(playing_area_origin, playing_area_scale.x, playing_area_scale.y, Mat4Identity(),
+                                 LGRAY);
                         break;
                     }
                     default: {
