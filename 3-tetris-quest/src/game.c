@@ -6119,7 +6119,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
                 }
 
-                isize selected_shopable_to_be = -1;
+                isize hovered_shopable_to_be = -1;
                 for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
                     Shopable* item = ArrGetPtr(&shop->for_sale, i);
 
@@ -6127,9 +6127,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec2 normal = {0};
                     f32 depth = 0.0f;
                     bool collides = TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
-                    if (collides && controller->action_left.pressed) {
-                        PlatformLog(LLOG_INFO, "mouse collides shopable %d", i);
-                        selected_shopable_to_be = i;
+                    if (collides) {
+                        PlatformLog(LLOG_INFO, "mouse hovers shopable %d", i);
+                        hovered_shopable_to_be = i;
                     }
                 }
                 break;
