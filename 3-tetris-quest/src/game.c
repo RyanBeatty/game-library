@@ -6130,13 +6130,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // Okay remember, this gets us into clip space which is a 1x1x1 cube to get into screenspace, we
                         // need to drop the z coord, shift the origin from 0, 0 to the bottom left hand of the screen
                         // (which should be -1, -1). Shifting the origin by (-1, -1) has the effect of shifting all
-                        // objects in clip space by (+1, +1). Then to get the screen coordinatese, we multiply by the
-                        // viewport dimensions
+                        // objects in clip space by (+1, +1). This shifts everything in clip space to be in (0, 2). to
+                        // get (0, viewport_dim)/screen space, you just need to multiply by 0.5f * view_port_dim along
+                        // each axis.
                         item->pos_screen = Vec3ToVec2(Vec3WTransform(item->pos, vp));
-                        item->pos_screen = Vec2Lit((1.0f + item->pos_screen.x) * gstate->renderw,
-                                                   (1.0f + item->pos_screen.y) * gstate->renderh);
-                        breakpoint();
-                        int a = 0;
+                        item->pos_screen = Vec2Lit((1.0f + item->pos_screen.x) * (0.5f * gstate->renderw),
+                                                   (1.0f + item->pos_screen.y) * (0.5f * gstate->renderh));
                     }
                 }
 
