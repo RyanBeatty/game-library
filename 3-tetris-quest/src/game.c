@@ -5803,26 +5803,26 @@ static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* playe
     shop->player_relics = player_relics;
     InitArrS(&shop->for_sale, shop->for_sale_buffer, ArraySizeOf(shop->for_sale_buffer));
 
-    // // Populate relics for sale in shop.
-    // bool for_sale[RELIC_COUNT] = {0};
-    // for (isize i = 0; i < 3; ++i) {
-    //     RelicId free = RELIC_NONE;
+    // Populate relics for sale in shop.
+    bool for_sale[RELIC_COUNT] = {0};
+    for (isize i = 0; i < 3; ++i) {
+        RelicId free = RELIC_NONE;
 
-    //     RelicId search = i32randab(RELIC_NONE + 1, RELIC_COUNT - 1);
-    //     for (isize count = 0; count < RELIC_COUNT + 10; ++count) {
-    //         if (!RelicsHas(shop->player_relics, search) && !free[search]) {
-    //             free = search;
-    //             break;
-    //         }
+        RelicId search = i32randab(RELIC_NONE + 1, RELIC_COUNT - 1);
+        for (isize count = 0; count < RELIC_COUNT + 10; ++count) {
+            if (!RelicsHas(shop->player_relics, search) && !for_sale[search]) {
+                free = search;
+                break;
+            }
 
-    //         search = (search + 1) % RELIC_COUNT;
-    //         search = search == RELIC_NONE ? search + 1 : search;
-    //     }
+            search = (search + 1) % RELIC_COUNT;
+            search = search == RELIC_NONE ? search + 1 : search;
+        }
 
-    //     Assert(free != RELIC_NONE);
-    //     for_sale[free] = true;
-    //     ArrPush(&shop->for_sale, free);
-    // }
+        Assert(free != RELIC_NONE);
+        for_sale[free] = true;
+        ArrPush(&shop->for_sale, free);
+    }
 
     shop->for_sale_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
     shop->for_sale_quad_scale = Vec3Lit(40.0f, 70.0f, 1.0f);
@@ -6199,15 +6199,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                         break;
                     }
+                    // Draw shop
                     case GP_SHOP: {
                         DrawQuad(shop->area_origin, shop->area_dims.x, shop->area_dims.y, Mat4Identity(), LGRAY);
 
-                        // Vec3 relic_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
-                        // Vec3 relic_card_scale = Vec3Lit(40.0f, 70.0f, 1.0f);
-                        // Vec3 relic_area_scale =
-                        //     Vec3Lit(relic_card_scale.x * 1.5f, relic_card_scale.y, relic_card_scale.z);
-                        // Mat4 relic_to_world = Mat4SVRT(relic_area_scale, Mat4Identity(), relic_origin);
-                        isize num_relics = 3;
+                        isize num_relics = ArrLen(&shop->for_sale);
                         f32 offset = ((f32)num_relics - 1.0f) * 0.5f;
                         for (isize i = 0; i < num_relics; ++i) {
                             Vec3 pos = Vec3Lit(i - offset, 0.0f, 0.0f);
