@@ -5779,11 +5779,20 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
 #define MAX_SHOP_FOR_SALE 3
 
 typedef struct {
+    RelicId relic_id;
+
+    Vec3 pos;
+    Vec2 pos_scree;
+} Shopable;
+
+TypedefArr(Shopable);
+
+typedef struct {
     Vec3 area_origin;
     Vec2 area_dims;
 
-    RelicId for_sale_buffer[MAX_SHOP_FOR_SALE];
-    RelicIdArr for_sale;
+    Shopable for_sale_buffer[MAX_SHOP_FOR_SALE];
+    ShopableArr for_sale;
 
     Relics* player_relics;
 
@@ -5821,7 +5830,7 @@ static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* playe
 
         Assert(free != RELIC_NONE);
         for_sale[free] = true;
-        ArrPush(&shop->for_sale, free);
+        ArrPush(&shop->for_sale, (Shopable){.relic_id = free});
     }
 
     shop->for_sale_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -6095,6 +6104,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 break;
             }
+            // update shop
             case GP_SHOP: {
                 if (controller->action_down.pressed) {
                     gstate->phase = GP_NEW_ROUND;
