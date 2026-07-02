@@ -5793,6 +5793,7 @@ typedef struct {
 
     Shopable for_sale_buffer[MAX_SHOP_FOR_SALE];
     ShopableArr for_sale;
+    isize for_sale_hover_idx;
 
     Relics* player_relics;
 
@@ -5837,6 +5838,8 @@ static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* playe
     shop->for_sale_quad_scale = Vec2Lit(40.0f, 70.0f);
     shop->for_sale_scale = Vec3Lit(shop->for_sale_quad_scale.x * 1.5f, shop->for_sale_quad_scale.y, 1.0f);
     shop->for_sale_to_world = Mat4SVRT(shop->for_sale_scale, Mat4Identity(), shop->for_sale_origin);
+
+    shop->for_sale_hover_idx = -1;
 }
 
 ////////////////////////////////////////////////////
@@ -6119,7 +6122,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
                 }
 
-                isize hovered_shopable_to_be = -1;
+                isize for_sale_hover_idx_to_be = -1;
                 for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
                     Shopable* item = ArrGetPtr(&shop->for_sale, i);
 
@@ -6129,9 +6132,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     bool collides = TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
                     if (collides) {
                         PlatformLog(LLOG_INFO, "mouse hovers shopable %d", i);
-                        hovered_shopable_to_be = i;
+                        for_sale_hover_idx_to_be = i;
                     }
                 }
+
+                shop->for_sale_hover_idx = for_sale_hover_idx_to_be;
                 break;
             }
             default: {
