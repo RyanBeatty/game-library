@@ -5799,7 +5799,7 @@ typedef struct {
     // Drawing related
     Vec3 for_sale_origin;
     Vec3 for_sale_scale;
-    Vec3 for_sale_quad_scale;
+    Vec2 for_sale_quad_scale;
     Mat4 for_sale_to_world;
 } Shop;
 
@@ -5834,9 +5834,8 @@ static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* playe
     }
 
     shop->for_sale_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
-    shop->for_sale_quad_scale = Vec3Lit(40.0f, 70.0f, 1.0f);
-    shop->for_sale_scale =
-        Vec3Lit(shop->for_sale_quad_scale.x * 1.5f, shop->for_sale_quad_scale.y, shop->for_sale_quad_scale.z);
+    shop->for_sale_quad_scale = Vec2Lit(40.0f, 70.0f);
+    shop->for_sale_scale = Vec3Lit(shop->for_sale_quad_scale.x * 1.5f, shop->for_sale_quad_scale.y, 1.0f);
     shop->for_sale_to_world = Mat4SVRT(shop->for_sale_scale, Mat4Identity(), shop->for_sale_origin);
 }
 
@@ -6118,6 +6117,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     item->pos = Vec3Lit(i - offset, 0.0f, 0.0f);
                     item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
+                }
+
+                isize selected_shopable_to_be = -1;
+                for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
+                    Shopable* item = ArrGetPtr(&shop->for_sale, i);
+
+                    AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(item->pos), shop->for_sale_quad_scale);
+                    Vec2 normal = {0};
+                    f32 depth = 0.0f;
+                    bool collides = TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
+                    if (collides && controller->action_left.pressed) {
+                        PlatformLog(LLOG_INFO, "mouse collides shopable %d", i);
+                        selected_shopable_to_be = i;
+                    }
                 }
                 break;
             }
