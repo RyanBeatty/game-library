@@ -5766,12 +5766,69 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
 }
 
-typedef struct {
-    TileId block_scored;
-} BattleRenderState;
+// typedef struct {
+//     TileId block_scored;
+// } BattleRenderState;
 
-static void ComputeBattleRenderState(BattleRenderState* brs, ScoreLog* log) {
-    brs->block_scored = ScoreLogHead(log)->block_id;
+// static void ComputeBattleRenderState(BattleRenderState* brs, ScoreLog* log) {
+//     brs->block_scored = ScoreLogHead(log)->block_id;
+// }
+
+////////////////////////////////////////////////////
+
+#define MAX_SHOP_FOR_SALE 3
+
+typedef struct {
+    Vec3 area_origin;
+    Vec2 area_dims;
+
+    RelicId for_sale_buffer[MAX_SHOP_FOR_SALE];
+    RelicIdArr for_sale;
+
+    Relics* player_relics;
+
+    // Drawing related
+    Vec3 for_sale_origin;
+    Vec3 for_sale_scale;
+    Vec3 for_sale_quad_scale;
+    Mat4 for_sale_to_world;
+} Shop;
+
+static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* player_relics) {
+    static Shop SHOP_ZERO = {0};
+    *shop = SHOP_ZERO;
+
+    shop->area_origin = area_origin;
+    shop->area_dims = area_dims;
+    shop->player_relics = player_relics;
+    InitArrS(&shop->for_sale, shop->for_sale_buffer, ArraySizeOf(shop->for_sale_buffer));
+
+    // // Populate relics for sale in shop.
+    // bool for_sale[RELIC_COUNT] = {0};
+    // for (isize i = 0; i < 3; ++i) {
+    //     RelicId free = RELIC_NONE;
+
+    //     RelicId search = i32randab(RELIC_NONE + 1, RELIC_COUNT - 1);
+    //     for (isize count = 0; count < RELIC_COUNT + 10; ++count) {
+    //         if (!RelicsHas(shop->player_relics, search) && !free[search]) {
+    //             free = search;
+    //             break;
+    //         }
+
+    //         search = (search + 1) % RELIC_COUNT;
+    //         search = search == RELIC_NONE ? search + 1 : search;
+    //     }
+
+    //     Assert(free != RELIC_NONE);
+    //     for_sale[free] = true;
+    //     ArrPush(&shop->for_sale, free);
+    // }
+
+    shop->for_sale_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
+    shop->for_sale_quad_scale = Vec3Lit(40.0f, 70.0f, 1.0f);
+    shop->for_sale_scale =
+        Vec3Lit(shop->for_sale_quad_scale.x * 1.5f, shop->for_sale_quad_scale.y, shop->for_sale_quad_scale.z);
+    shop->for_sale_to_world = Mat4SVRT(shop->for_sale_scale, Mat4Identity(), shop->for_sale_origin);
 }
 
 ////////////////////////////////////////////////////
@@ -5844,6 +5901,7 @@ typedef struct GameState {
     i32 score_target;
 
     Battle battle;
+    Shop shop;
 
 } GameState;
 
@@ -5952,6 +6010,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     GameControllerState* controller = GetController(input, 0);
     Battle* battle = &gstate->battle;
+    Shop* shop = &gstate->shop;
     Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
@@ -5959,6 +6018,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->score_target = 10;
         BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
         gstate->phase = GP_SHOP;
+
+        Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
+        Vec2 playing_area_dims = Vec2Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f);
+        ShopInit(&gstate->shop, playing_area_origin, playing_area_dims, &battle->relics);
     }
 
     if (gstate->update) {
@@ -6060,10 +6123,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
-                Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
-                Vec3 playing_area_dims = Vec3Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f, 1.0f);
-                // DrawQuad(playing_area_origin, playing_area_dims.x, playing_area_dims.y, Mat4Identity(), LGRAY);
-
                 switch (gstate->phase) {
                     case GP_NEW_ROUND: {
                         break;
@@ -6141,19 +6200,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case GP_SHOP: {
-                        DrawQuad(playing_area_origin, playing_area_dims.x, playing_area_dims.y, Mat4Identity(), LGRAY);
+                        DrawQuad(shop->area_origin, shop->area_dims.x, shop->area_dims.y, Mat4Identity(), LGRAY);
 
-                        Vec3 relic_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
-                        Vec3 relic_card_scale = Vec3Lit(40.0f, 70.0f, 1.0f);
-                        Vec3 relic_area_scale =
-                            Vec3Lit(relic_card_scale.x * 1.5f, relic_card_scale.y, relic_card_scale.z);
-                        Mat4 relic_to_world = Mat4SVRT(relic_area_scale, Mat4Identity(), relic_origin);
+                        // Vec3 relic_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
+                        // Vec3 relic_card_scale = Vec3Lit(40.0f, 70.0f, 1.0f);
+                        // Vec3 relic_area_scale =
+                        //     Vec3Lit(relic_card_scale.x * 1.5f, relic_card_scale.y, relic_card_scale.z);
+                        // Mat4 relic_to_world = Mat4SVRT(relic_area_scale, Mat4Identity(), relic_origin);
                         isize num_relics = 3;
                         f32 offset = ((f32)num_relics - 1.0f) * 0.5f;
                         for (isize i = 0; i < num_relics; ++i) {
                             Vec3 pos = Vec3Lit(i - offset, 0.0f, 0.0f);
-                            pos = Vec3WTransform(pos, relic_to_world);
-                            DrawQuad(pos, relic_card_scale.x, relic_card_scale.y, Mat4Identity(), LBLUE);
+                            pos = Vec3WTransform(pos, shop->for_sale_to_world);
+                            DrawQuad(pos, shop->for_sale_quad_scale.x, shop->for_sale_quad_scale.y, Mat4Identity(),
+                                     LBLUE);
                         }
                         break;
                     }
