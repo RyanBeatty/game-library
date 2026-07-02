@@ -6241,11 +6241,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_SHOP: {
                         DrawQuad(shop->area_origin, shop->area_dims.x, shop->area_dims.y, Mat4Identity(), LGRAY);
 
+                        if (shop->for_sale_hover_idx != -1) {
+                            Shopable* item = ArrGetPtr(&shop->for_sale, shop->for_sale_hover_idx);
+                            Vec2 highlight_scale = Vec2Scale(shop->for_sale_quad_scale, 1.1f);
+                            DrawQuad(item->pos, highlight_scale.x, highlight_scale.y, Mat4Identity(), LYELLOW);
+                        }
+
                         for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
                             Shopable* item = ArrGetPtr(&shop->for_sale, i);
                             DrawQuad(item->pos, shop->for_sale_quad_scale.x, shop->for_sale_quad_scale.y,
                                      Mat4Identity(), LBLUE);
                         }
+
                         break;
                     }
                     default: {
