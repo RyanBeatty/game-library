@@ -5782,7 +5782,7 @@ typedef struct {
     RelicId relic_id;
 
     Vec3 pos;
-    Vec2 pos_scree;
+    Vec2 pos_screen;
 } Shopable;
 
 TypedefArr(Shopable);
@@ -6113,13 +6113,31 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 // Update shopable positions
-                isize num_relics = ArrLen(&shop->for_sale);
-                f32 offset = ((f32)num_relics - 1.0f) * 0.5f;
-                for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
-                    Shopable* item = ArrGetPtr(&shop->for_sale, i);
+                {
+                    Mat4 view = CameraGetViewMat(gstate->camera);
+                    Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
+                    Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
+                                          half_render_dims.y, -100.0f, 100.0f);
+                    Mat4 vp = Mat4Multiply(proj, view);
 
-                    item->pos = Vec3Lit(i - offset, 0.0f, 0.0f);
-                    item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
+                    isize num_relics = ArrLen(&shop->for_sale);
+                    f32 offset = ((f32)num_relics - 1.0f) * 0.5f;
+                    for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
+                        Shopable* item = ArrGetPtr(&shop->for_sale, i);
+
+                        item->pos = Vec3Lit(i - offset, 0.0f, 0.0f);
+                        item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
+                        // Okay remember, this gets us into clip space which is a 1x1x1 cube to get into screenspace, we
+                        // need to drop the z coord, shift the origin from 0, 0 to the bottom left hand of the screen
+                        // (which should be -1, -1). Shifting the origin by (-1, -1) has the effect of shifting all
+                        // objects in clip space by (+1, +1). Then to get the screen coordinatese, we multiply by the
+                        // viewport dimensions
+                        item->pos_screen = Vec3ToVec2(Vec3WTransform(item->pos, vp));
+                        item->pos_screen = Vec2Lit((1.0f + item->pos_screen.x) * gstate->renderw,
+                                                   (1.0f + item->pos_screen.y) * gstate->renderh);
+                        breakpoint();
+                        int a = 0;
+                    }
                 }
 
                 isize for_sale_hover_idx_to_be = -1;
