@@ -6109,6 +6109,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 if (controller->action_down.pressed) {
                     gstate->phase = GP_NEW_ROUND;
                 }
+
+                // Update shopable positions
+                isize num_relics = ArrLen(&shop->for_sale);
+                f32 offset = ((f32)num_relics - 1.0f) * 0.5f;
+                for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
+                    Shopable* item = ArrGetPtr(&shop->for_sale, i);
+
+                    item->pos = Vec3Lit(i - offset, 0.0f, 0.0f);
+                    item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
+                }
                 break;
             }
             default: {
@@ -6213,13 +6223,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_SHOP: {
                         DrawQuad(shop->area_origin, shop->area_dims.x, shop->area_dims.y, Mat4Identity(), LGRAY);
 
-                        isize num_relics = ArrLen(&shop->for_sale);
-                        f32 offset = ((f32)num_relics - 1.0f) * 0.5f;
-                        for (isize i = 0; i < num_relics; ++i) {
-                            Vec3 pos = Vec3Lit(i - offset, 0.0f, 0.0f);
-                            pos = Vec3WTransform(pos, shop->for_sale_to_world);
-                            DrawQuad(pos, shop->for_sale_quad_scale.x, shop->for_sale_quad_scale.y, Mat4Identity(),
-                                     LBLUE);
+                        for (isize i = 0; i < ArrLen(&shop->for_sale); ++i) {
+                            Shopable* item = ArrGetPtr(&shop->for_sale, i);
+                            DrawQuad(item->pos, shop->for_sale_quad_scale.x, shop->for_sale_quad_scale.y,
+                                     Mat4Identity(), LBLUE);
                         }
                         break;
                     }
