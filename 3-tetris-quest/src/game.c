@@ -5782,7 +5782,7 @@ typedef struct {
     RelicId relic_id;
 
     Vec3 pos;
-    Vec2 pos_screen;
+    // Vec2 pos_screen;
 } Shopable;
 
 TypedefArr(Shopable);
@@ -5802,6 +5802,8 @@ typedef struct {
     Vec3 for_sale_scale;
     Vec2 for_sale_quad_scale;
     Mat4 for_sale_to_world;
+
+    Vec2 for_sale_description_pos_screen;
 } Shop;
 
 static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* player_relics) {
@@ -5882,6 +5884,9 @@ typedef struct GameState {
     f32 renderh_world;  // in meters
     u32 screenw;
     u32 screenh;
+    // The scaling factor we will scale up the game render texture to the screen texture.
+    // TODO: We might want to somehow keep screenw/h and this inline. Or just make sure we letterbox or something
+    f32 render_to_screen_scale;
 
     bool debug_ever;
 
@@ -6127,15 +6132,36 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         item->pos = Vec3Lit(i - offset, 0.0f, 0.0f);
                         item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
+                        // // Okay remember, this gets us into clip space which is a 1x1x1 cube to get into screenspace,
+                        // we
+                        // // need to drop the z coord, shift the origin from 0, 0 to the bottom left hand of the screen
+                        // // (which should be -1, -1). Shifting the origin by (-1, -1) has the effect of shifting all
+                        // // objects in clip space by (+1, +1). This shifts everything in clip space to be in (0, 2).
+                        // to
+                        // // get (0, viewport_dim)/screen space, you just need to multiply by 0.5f * view_port_dim
+                        // along
+                        // // each axis.
+                        // item->pos_screen = Vec3ToVec2(Vec3WTransform(item->pos, vp));
+                        // item->pos_screen = Vec2Lit((1.0f + item->pos_screen.x) * (0.5f * gstate->renderw),
+                        //                            (1.0f + item->pos_screen.y) * (0.5f * gstate->renderh));
+                    }
+
+                    {
+                        Vec3 pos = Vec3Zero();
+                        pos = Vec3WTransform(pos, shop->for_sale_to_world);
+                        pos = Vec3WTransform(pos, vp);
                         // Okay remember, this gets us into clip space which is a 1x1x1 cube to get into screenspace, we
                         // need to drop the z coord, shift the origin from 0, 0 to the bottom left hand of the screen
                         // (which should be -1, -1). Shifting the origin by (-1, -1) has the effect of shifting all
                         // objects in clip space by (+1, +1). This shifts everything in clip space to be in (0, 2). to
                         // get (0, viewport_dim)/screen space, you just need to multiply by 0.5f * view_port_dim along
                         // each axis.
-                        item->pos_screen = Vec3ToVec2(Vec3WTransform(item->pos, vp));
-                        item->pos_screen = Vec2Lit((1.0f + item->pos_screen.x) * (0.5f * gstate->renderw),
-                                                   (1.0f + item->pos_screen.y) * (0.5f * gstate->renderh));
+                        Vec2 pos_screen =
+                            Vec2Lit((pos.x + 1.0f) * 0.5f * gstate->renderw, (pos.y + 1.0f) * 0.5f * gstate->renderh);
+                        // Since we scale our offscreen texture up to the screen, we need to make sure we scale by the
+                        // same amount here.
+                        pos_screen = Vec2Scale(pos_screen, gstate->render_to_screen_scale);
+                        shop->for_sale_description_pos_screen = pos_screen;
                     }
                 }
 
@@ -6148,7 +6174,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     f32 depth = 0.0f;
                     bool collides = TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
                     if (collides) {
-                        PlatformLog(LLOG_INFO, "mouse hovers shopable %d", i);
+                        // PlatformLog(LLOG_INFO, "mouse hovers shopable %d", i);
                         for_sale_hover_idx_to_be = i;
                     }
                 }
@@ -6312,7 +6338,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
                 // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
                 // iirc this is specific to how this effects shader works.
-                DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(), Vec2Lit(2.0f, 2.0f), 0.0f,
+                DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(),
+                                  Vec2Lit(gstate->render_to_screen_scale, gstate->render_to_screen_scale), 0.0f,
                                   LCLEAR);
 
                 EndShaderPass();
@@ -6556,6 +6583,7 @@ void GameInit() {
     // projection matrix.
     gstate->renderw_world = Px2Meter(gstate->renderw);
     gstate->renderh_world = Px2Meter(gstate->renderh);
+    gstate->render_to_screen_scale = 2.0f;
 
     gstate->target_fps = 60;
     gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
