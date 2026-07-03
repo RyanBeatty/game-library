@@ -6160,6 +6160,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec2Lit((pos.x + 1.0f) * 0.5f * gstate->renderw, (pos.y + 1.0f) * 0.5f * gstate->renderh);
                         // Since we scale our offscreen texture up to the screen, we need to make sure we scale by the
                         // same amount here.
+                        breakpoint();
                         pos_screen = Vec2Scale(pos_screen, gstate->render_to_screen_scale);
                         shop->for_sale_description_pos_screen = pos_screen;
                     }
@@ -6338,8 +6339,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // Since we only set a scale matrix, essentially we are specifying this quad in clip space. since the
                 // quad is from -0.5, 0.5, we mult by 2 to get -1, 1 so we cover the entire screen.
                 // iirc this is specific to how this effects shader works.
-                DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(),
-                                  Vec2Lit(gstate->render_to_screen_scale, gstate->render_to_screen_scale), 0.0f,
+                DrawLTextureProUV(game_texture, Vec2Zero(), Vec2Lit(1.0f, 1.0f), Vec2Zero(), Vec2Lit(2.0f, 2.0f), 0.0f,
                                   LCLEAR);
 
                 EndShaderPass();
@@ -6421,6 +6421,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
                     }
+
+                    DrawStr8Ex(GetLFontClosest(40.0f), shop->for_sale_description_pos_screen, LWHITE,
+                               Str8Lit("hello, world!"));
                 }
 
                 {
@@ -6583,13 +6586,13 @@ void GameInit() {
     // projection matrix.
     gstate->renderw_world = Px2Meter(gstate->renderw);
     gstate->renderh_world = Px2Meter(gstate->renderh);
-    gstate->render_to_screen_scale = 2.0f;
+    gstate->render_to_screen_scale = 6.0f;
 
     gstate->target_fps = 60;
     gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
 
-    u32 scale = 6;
-    PlatformInit(scale * gstate->renderw, scale * gstate->renderh, gstate->target_fps);
+    PlatformInit(gstate->render_to_screen_scale * gstate->renderw, gstate->render_to_screen_scale * gstate->renderh,
+                 gstate->target_fps);
 
     isize sound_cap = GB(2);
     byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
