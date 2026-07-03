@@ -6160,7 +6160,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec2Lit((pos.x + 1.0f) * 0.5f * gstate->renderw, (pos.y + 1.0f) * 0.5f * gstate->renderh);
                         // Since we scale our offscreen texture up to the screen, we need to make sure we scale by the
                         // same amount here.
-                        breakpoint();
                         pos_screen = Vec2Scale(pos_screen, gstate->render_to_screen_scale);
                         shop->for_sale_description_pos_screen = pos_screen;
                     }
