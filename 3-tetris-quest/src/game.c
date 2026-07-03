@@ -5416,7 +5416,7 @@ static void BattleDrawToFull(Battle* battle) {
     }
 }
 
-static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
+static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target, Relics* player_relics) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
 
@@ -5461,19 +5461,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->selection_idx = NO_CARD_SELECTED_IDX;
     }
 
-    {
-        RelicsInit(&battle->relics);
-        for (isize i = 0; i < 3; ++i) {
-            RelicId id = {0};
-            i32 count = 0;
-            do {
-                id = i32randab(1, RELIC_COUNT - 1);
-                ++count;
-            } while (RelicsHas(&battle->relics, id) && count < 50);
-            Assert(!RelicsHas(&battle->relics, id));
-            RelicsAdd(&battle->relics, id);
-        }
-    }
+    battle->relics = player_relics;
 
     battle->score_target = score_target;
 
@@ -6113,9 +6101,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
             // update shop
             case GP_SHOP: {
-                if (controller->action_down.pressed) {
-                    gstate->phase = GP_NEW_ROUND;
-                }
+                Relics* player_relics = &battle->relics;
 
                 // Update shopable positions
                 {
@@ -6183,6 +6169,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 shop->for_sale_hover_idx = for_sale_hover_idx_to_be;
+
+                if (controller->action_left.pressed && shop->for_sale_hover_idx != -1) {
+                    Shopable* item = ArrGetPtr(&shop->for_sale, shop->for_sale_hover_idx);
+                    shop->for_sale_hover_idx = -1;
+                    RelicsAdd(player_relics, item->relic_id);
+                    gstate->phase = GP_NEW_ROUND;
+                }
+
                 break;
             }
             default: {
@@ -6442,6 +6436,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             break;
                         }
                         case GP_PLAYING: {
+                            break;
                         }
                         default: {
                             PlatformLog(LLOG_ERROR, "Unknown game state phase in draw: %d", gstate->phase);
