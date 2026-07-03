@@ -5340,7 +5340,7 @@ typedef struct {
     Card deck_buffer[SUIT_COUNT * PT_COUNT];
     CardArr deck;
 
-    Relics relics;
+    Relics* relics;
 
     Mat4 hand_to_world;
     Vec2 card_scale;
@@ -5471,7 +5471,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
 static void BattlePlacePiece(Battle* battle, FrameTime time) {
     Grid* grid = &battle->grid;
-    Relics* relics = &battle->relics;
+    Relics* relics = battle->relics;
 
     // Place piece.
     {
@@ -5695,17 +5695,17 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
 
     BattleDrawToFull(battle);
 
-    // Hand over + score hand.
-    if (ArrLen(&battle->hand) <= 0) {
-        if (battle->total_score >= battle->score_target) {
-            PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
-            BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
-        } else {
-            // TODO: Detect round win or game over.
-            PlatformLog(LLOG_INFO, "Score Target Missed - Round Loss!");
-            Assert(0);
-        }
-    }
+    // // Hand over + score hand.
+    // if (ArrLen(&battle->hand) <= 0) {
+    //     if (battle->total_score >= battle->score_target) {
+    //         PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
+    //         BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
+    //     } else {
+    //         // TODO: Detect round win or game over.
+    //         PlatformLog(LLOG_INFO, "Score Target Missed - Round Loss!");
+    //         Assert(0);
+    //     }
+    // }
 }
 
 // TODO: Combine with rotate function. move + rotate.
@@ -5903,6 +5903,7 @@ typedef struct GameState {
 
     GamePhase phase;
     i32 score_target;
+    Relics player_relics;
 
     Battle battle;
     Shop shop;
@@ -6018,20 +6019,24 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
+        RelicsInit(&gstate->player_relics);
+
         gstate->phase = GP_NEW_ROUND;
         gstate->score_target = 10;
-        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
+        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target,
+                   &gstate->player_relics);
         gstate->phase = GP_SHOP;
 
         Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
         Vec2 playing_area_dims = Vec2Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f);
-        ShopInit(&gstate->shop, playing_area_origin, playing_area_dims, &battle->relics);
+        ShopInit(&gstate->shop, playing_area_origin, playing_area_dims, &gstate->player_relics);
     }
 
     if (gstate->update) {
         switch (gstate->phase) {
             case GP_NEW_ROUND: {
-                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
+                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target,
+                           &gstate->player_relics);
                 gstate->phase = GP_PLAYING;
                 break;
             }
@@ -6101,7 +6106,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
             // update shop
             case GP_SHOP: {
-                Relics* player_relics = &battle->relics;
+                Relics* player_relics = &gstate->player_relics;
 
                 // Update shopable positions
                 {
@@ -6402,8 +6407,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
                             static f32 RELIC_TEXT_ANIMATION_TIME = 1.0f;
                             UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
-                                for (isize i = 0; i < RelicsOwnedCount(&battle->relics); ++i) {
-                                    RelicState* relic_state = RelicsStateGet(&battle->relics, i);
+                                for (isize i = 0; i < RelicsOwnedCount(battle->relics); ++i) {
+                                    RelicState* relic_state = RelicsStateGet(battle->relics, i);
                                     Relic* relic = RelicGet(relic_state->id);
 
                                     f32 activated_dt =
