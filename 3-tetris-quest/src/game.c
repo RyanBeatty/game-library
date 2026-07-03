@@ -6146,8 +6146,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         //                            (1.0f + item->pos_screen.y) * (0.5f * gstate->renderh));
                     }
 
+                    // TODO: Maybe what we should do instead is ahve a general "relic selected" field on the game state.
+                    // If selected (and we put in the screen coords of the selected relic), we draw a popup text box
+                    // over the relic instead of making this specific to the store.
                     {
-                        Vec3 pos = Vec3Zero();
+                        Vec3 pos = Vec3Lit(0.0f, -1.0f, 0.0f);
                         pos = Vec3WTransform(pos, shop->for_sale_to_world);
                         pos = Vec3WTransform(pos, vp);
                         // Okay remember, this gets us into clip space which is a 1x1x1 cube to get into screenspace, we
@@ -6421,8 +6424,30 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                     }
 
-                    DrawStr8Ex(GetLFontClosest(40.0f), shop->for_sale_description_pos_screen, LWHITE,
-                               Str8Lit("hello, world!"));
+                    switch (gstate->phase) {
+                        // Draw shop ui
+                        case GP_SHOP: {
+                            if (shop->for_sale_hover_idx != -1) {
+                                Shopable* item = ArrGetPtr(&shop->for_sale, shop->for_sale_hover_idx);
+                                Relic* relic = RelicGet(item->relic_id);
+                                LFont font = GetLFontClosest(40.f);
+                                TextBox box = LFontMeasureStr8Quad(font, relic->description);
+                                Vec2 pos = Vec2Add(shop->for_sale_description_pos_screen, box.baseline_offset);
+                                DrawStr8Ex(font, pos, LWHITE, relic->description);
+                            }
+
+                            break;
+                        }
+                        case GP_NEW_ROUND: {
+                            break;
+                        }
+                        case GP_PLAYING: {
+                        }
+                        default: {
+                            PlatformLog(LLOG_ERROR, "Unknown game state phase in draw: %d", gstate->phase);
+                            Assert(0);
+                        }
+                    }
                 }
 
                 {
