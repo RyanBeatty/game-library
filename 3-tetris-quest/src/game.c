@@ -5200,14 +5200,8 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
 ////////////////////////////////////////////////////
 
 #define RELIC_LIST                                                                            \
-    RELICX(RELIC_SUIT_A_MULT, "+1 mult when all blocks in line are of suit A")                \
-    RELICX(RELIC_SUIT_B_MULT, "+1 mult when all blocks in line are of suit B")                \
-    RELICX(RELIC_SUIT_C_MULT, "+1 mult when all blocks in line are of suit C")                \
-    RELICX(RELIC_SUIT_D_MULT, "+1 mult when all blocks in line are of suit D")                \
-    RELICX(RELIC_SUIT_A_CHIPS, "+50 CHIPS when all blocks in line are of suit A")             \
-    RELICX(RELIC_SUIT_B_CHIPS, "+50 CHIPS when all blocks in line are of suit B")             \
-    RELICX(RELIC_SUIT_C_CHIPS, "+50 CHIPS when all blocks in line are of suit C")             \
-    RELICX(RELIC_SUIT_D_CHIPS, "+50 CHIPS when all blocks in line are of suit D")             \
+    RELICX(RELIC_SAME_SUIT_MULT, "+1 mult when all blocks in line are the same suit")         \
+    RELICX(RELIC_SAME_SUIT_CHIPS, "+50 CHIPS when all blocks in line are the same suit")      \
     RELICX(RELIC_PLUS_MULT_CONSECTUTIVE, "+X mult for the number of consecutive line clears") \
     RELICX(RELIC_FIRST_CLEAR_MULT, "+3 mult for the first clear each round")                  \
     RELICX(RELIC_CLEAR_COUNT_MULT, "+mult equal to the number of line in a clear")            \
@@ -5532,57 +5526,15 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                     RelicState* relic_state = RelicsStateGet(relics, ri);
                     bool activated = false;
                     switch (relic_state->id) {
-                        case RELIC_SUIT_A_MULT: {
-                            if (suit == SUIT_A) {
+                        case RELIC_SAME_SUIT_MULT: {
+                            if (suit != SUIT_NONE) {
                                 activated = true;
                                 ++mult;
                             }
                             break;
                         }
-                        case RELIC_SUIT_B_MULT: {
-                            if (suit == SUIT_B) {
-                                activated = true;
-                                ++mult;
-                            }
-                            break;
-                        }
-                        case RELIC_SUIT_C_MULT: {
-                            if (suit == SUIT_C) {
-                                activated = true;
-                                ++mult;
-                            }
-                            break;
-                        }
-                        case RELIC_SUIT_D_MULT: {
-                            if (suit == SUIT_D) {
-                                activated = true;
-                                ++mult;
-                            }
-                            break;
-                        }
-                        case RELIC_SUIT_A_CHIPS: {
-                            if (suit == SUIT_A) {
-                                activated = true;
-                                block_score += 50;
-                            }
-                            break;
-                        }
-                        case RELIC_SUIT_B_CHIPS: {
-                            if (suit == SUIT_B) {
-                                activated = true;
-                                block_score += 50;
-                            }
-                            break;
-                        }
-                        case RELIC_SUIT_C_CHIPS: {
-                            if (suit == SUIT_C) {
-                                activated = true;
-                                block_score += 50;
-                            }
-                            break;
-                        }
-                        case RELIC_SUIT_D_CHIPS: {
-                            if (suit == SUIT_D) {
+                        case RELIC_SAME_SUIT_CHIPS: {
+                            if (suit != SUIT_NONE) {
                                 activated = true;
                                 block_score += 50;
                             }
