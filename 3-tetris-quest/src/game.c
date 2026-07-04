@@ -5646,18 +5646,6 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
     }
 
     BattleDrawToFull(battle);
-
-    // // Hand over + score hand.
-    // if (ArrLen(&battle->hand) <= 0) {
-    //     if (battle->total_score >= battle->score_target) {
-    //         PlatformLog(LLOG_INFO, "Score Target Reached - Round Win!");
-    //         BattleInit(battle, battle->renderw_world, battle->renderh_world, battle->score_target * 1.5f);
-    //     } else {
-    //         // TODO: Detect round win or game over.
-    //         PlatformLog(LLOG_INFO, "Score Target Missed - Round Loss!");
-    //         Assert(0);
-    //     }
-    // }
 }
 
 // TODO: Combine with rotate function. move + rotate.
