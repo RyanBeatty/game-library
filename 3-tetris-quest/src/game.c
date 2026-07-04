@@ -5790,6 +5790,7 @@ typedef enum {
     GP_PLAYING,
     GP_SHOP,
     GP_GAME_OVER,
+    GP_NEW_GAME,
     GP_COUNT,
 } GamePhase;
 
@@ -5972,6 +5973,11 @@ static void GamePhaseChange(GameState* gstate) {
         case GP_GAME_OVER: {
             break;
         }
+        case GP_NEW_GAME: {
+            RelicsInit(&gstate->player_relics);
+            gstate->score_target = 10;
+            break;
+        }
         default: {
             PlatformLog(LLOG_ERROR, "Unknown phase change phase: %d", gstate->phase_to_be);
             Assert(0);
@@ -5993,9 +5999,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
-        RelicsInit(&gstate->player_relics);
-
-        gstate->score_target = 10;
         gstate->phase_to_be = GP_GAME_OVER;
         GamePhaseChange(gstate);
     }
@@ -6004,6 +6007,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GamePhaseChange(gstate);
 
         switch (gstate->phase) {
+            case GP_NEW_GAME: {
+                gstate->phase_to_be = GP_SHOP;
+                break;
+            }
             case GP_NEW_ROUND: {
                 gstate->phase_to_be = GP_PLAYING;
                 break;
@@ -6145,6 +6152,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             case GP_GAME_OVER: {
                 if (controller->action_left.pressed) {
                     PlatformLog(LLOG_INFO, "New Game");
+                    gstate->phase_to_be = GP_NEW_GAME;
                 }
                 break;
             }
@@ -6171,9 +6179,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
                 switch (gstate->phase) {
-                    case GP_NEW_ROUND: {
-                        break;
-                    }
                     case GP_PLAYING: {
                         // Draw grid
                         {
@@ -6265,6 +6270,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case GP_GAME_OVER: {
+                        break;
+                    }
+                    case GP_NEW_GAME: {
+                        break;
+                    }
+                    case GP_NEW_ROUND: {
                         break;
                     }
                     default: {
@@ -6404,12 +6415,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             break;
                         }
-                        case GP_NEW_ROUND: {
-                            break;
-                        }
-                        case GP_PLAYING: {
-                            break;
-                        }
                         case GP_GAME_OVER: {
                             Vec2 screen_center = Vec2Lit(gstate->screenw * 0.5f, gstate->screenh * 0.5f);
                             DrawQuad2D(screen_center, gstate->screenw * 0.8f, gstate->screenh * 0.9f, Mat4Identity(),
@@ -6418,6 +6423,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Str8 game_over = Str8Lit("GAME OVER");
                             TextBox box = LFontMeasureStr8Quad(font, game_over);
                             DrawStr8Ex(font, Vec2Add(screen_center, box.baseline_offset), LWHITE, game_over);
+                            break;
+                        }
+                        case GP_NEW_ROUND: {
+                            break;
+                        }
+                        case GP_PLAYING: {
+                            break;
+                        }
+                        case GP_NEW_GAME: {
                             break;
                         }
                         default: {
