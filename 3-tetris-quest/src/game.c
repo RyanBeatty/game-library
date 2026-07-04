@@ -5902,6 +5902,7 @@ typedef struct GameState {
     // Scene fields
 
     GamePhase phase;
+    GamePhase phase_to_be;
     i32 score_target;
     Relics player_relics;
 
@@ -6008,6 +6009,35 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
+static void GamePhaseChange(GameState* gstate) {
+    switch (gstate->phase_to_be) {
+        case GP_NONE: {
+            break;
+        }
+        case GP_NEW_ROUND: {
+            break;
+        }
+        case GP_PLAYING: {
+            BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target,
+                       &gstate->player_relics);
+            break;
+        }
+        case GP_SHOP: {
+            Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
+            Vec2 playing_area_dims = Vec2Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f);
+            ShopInit(&gstate->shop, playing_area_origin, playing_area_dims, &gstate->player_relics);
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown phase change phase: %d", gstate->phase_to_be);
+            Assert(0);
+        }
+    }
+
+    gstate->phase = gstate->phase_to_be == GP_NONE ? gstate->phase : gstate->phase_to_be;
+    gstate->phase_to_be = GP_NONE;
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -6021,23 +6051,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->init) {
         RelicsInit(&gstate->player_relics);
 
-        gstate->phase = GP_NEW_ROUND;
         gstate->score_target = 10;
-        BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target,
-                   &gstate->player_relics);
-        gstate->phase = GP_SHOP;
-
-        Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
-        Vec2 playing_area_dims = Vec2Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f);
-        ShopInit(&gstate->shop, playing_area_origin, playing_area_dims, &gstate->player_relics);
+        gstate->phase_to_be = GP_SHOP;
+        GamePhaseChange(gstate);
     }
 
     if (gstate->update) {
+        GamePhaseChange(gstate);
+
         switch (gstate->phase) {
             case GP_NEW_ROUND: {
-                BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target,
-                           &gstate->player_relics);
-                gstate->phase = GP_PLAYING;
+                gstate->phase_to_be = GP_PLAYING;
                 break;
             }
             case GP_PLAYING: {
@@ -6098,8 +6122,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 if (battle->total_score >= battle->score_target) {
-                    gstate->phase = GP_SHOP;
                     battle->score_target += 5;
+                    gstate->phase_to_be = GP_SHOP;
                 }
 
                 break;
@@ -6123,18 +6147,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         item->pos = Vec3Lit(i - offset, 0.0f, 0.0f);
                         item->pos = Vec3WTransform(item->pos, shop->for_sale_to_world);
-                        // // Okay remember, this gets us into clip space which is a 1x1x1 cube to get into screenspace,
-                        // we
-                        // // need to drop the z coord, shift the origin from 0, 0 to the bottom left hand of the screen
-                        // // (which should be -1, -1). Shifting the origin by (-1, -1) has the effect of shifting all
-                        // // objects in clip space by (+1, +1). This shifts everything in clip space to be in (0, 2).
-                        // to
-                        // // get (0, viewport_dim)/screen space, you just need to multiply by 0.5f * view_port_dim
-                        // along
-                        // // each axis.
-                        // item->pos_screen = Vec3ToVec2(Vec3WTransform(item->pos, vp));
-                        // item->pos_screen = Vec2Lit((1.0f + item->pos_screen.x) * (0.5f * gstate->renderw),
-                        //                            (1.0f + item->pos_screen.y) * (0.5f * gstate->renderh));
                     }
 
                     // TODO: Maybe what we should do instead is ahve a general "relic selected" field on the game state.
@@ -6179,7 +6191,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Shopable* item = ArrGetPtr(&shop->for_sale, shop->for_sale_hover_idx);
                     shop->for_sale_hover_idx = -1;
                     RelicsAdd(player_relics, item->relic_id);
-                    gstate->phase = GP_NEW_ROUND;
+                    gstate->phase_to_be = GP_NEW_ROUND;
                 }
 
                 break;
@@ -6407,8 +6419,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
                             static f32 RELIC_TEXT_ANIMATION_TIME = 1.0f;
                             UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
-                                for (isize i = 0; i < RelicsOwnedCount(battle->relics); ++i) {
-                                    RelicState* relic_state = RelicsStateGet(battle->relics, i);
+                                for (isize i = 0; i < RelicsOwnedCount(&gstate->player_relics); ++i) {
+                                    RelicState* relic_state = RelicsStateGet(&gstate->player_relics, i);
                                     Relic* relic = RelicGet(relic_state->id);
 
                                     f32 activated_dt =
