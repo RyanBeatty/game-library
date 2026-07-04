@@ -5789,6 +5789,7 @@ typedef enum {
     GP_NEW_ROUND,
     GP_PLAYING,
     GP_SHOP,
+    GP_GAME_OVER,
     GP_COUNT,
 } GamePhase;
 
@@ -5968,6 +5969,9 @@ static void GamePhaseChange(GameState* gstate) {
             ShopInit(&gstate->shop, playing_area_origin, playing_area_dims, &gstate->player_relics);
             break;
         }
+        case GP_GAME_OVER: {
+            break;
+        }
         default: {
             PlatformLog(LLOG_ERROR, "Unknown phase change phase: %d", gstate->phase_to_be);
             Assert(0);
@@ -5992,7 +5996,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         RelicsInit(&gstate->player_relics);
 
         gstate->score_target = 10;
-        gstate->phase_to_be = GP_SHOP;
+        gstate->phase_to_be = GP_GAME_OVER;
         GamePhaseChange(gstate);
     }
 
@@ -6064,6 +6068,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 if (battle->total_score >= battle->score_target) {
                     battle->score_target += 5;
                     gstate->phase_to_be = GP_SHOP;
+                } else if (ArrLen(&battle->hand) == 0 && ArrLen(&battle->deck) == 0) {
+                    gstate->phase_to_be = GP_GAME_OVER;
                 }
 
                 break;
@@ -6134,6 +6140,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     gstate->phase_to_be = GP_NEW_ROUND;
                 }
 
+                break;
+            }
+            case GP_GAME_OVER: {
+                if (controller->action_left.pressed) {
+                    PlatformLog(LLOG_INFO, "New Game");
+                }
                 break;
             }
             default: {
@@ -6250,6 +6262,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                      Mat4Identity(), LBLUE);
                         }
 
+                        break;
+                    }
+                    case GP_GAME_OVER: {
                         break;
                     }
                     default: {
@@ -6393,6 +6408,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             break;
                         }
                         case GP_PLAYING: {
+                            break;
+                        }
+                        case GP_GAME_OVER: {
+                            Vec2 screen_center = Vec2Lit(gstate->screenw * 0.5f, gstate->screenh * 0.5f);
+                            DrawQuad2D(screen_center, gstate->screenw * 0.8f, gstate->screenh * 0.9f, Mat4Identity(),
+                                       LGRAY);
+                            LFont font = GetLFontClosest(40.0f);
+                            Str8 game_over = Str8Lit("GAME OVER");
+                            TextBox box = LFontMeasureStr8Quad(font, game_over);
+                            DrawStr8Ex(font, Vec2Add(screen_center, box.baseline_offset), LWHITE, game_over);
                             break;
                         }
                         default: {
