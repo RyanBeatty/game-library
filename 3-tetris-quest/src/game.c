@@ -5999,7 +5999,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
-        gstate->phase_to_be = GP_GAME_OVER;
+        gstate->phase_to_be = GP_NEW_GAME;
+        // We need to do an initial one of these here because we init and then render on the first call to tick()
         GamePhaseChange(gstate);
     }
 
