@@ -4921,11 +4921,19 @@ typedef struct {
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
 
+typedef enum {
+    TE_NONE = 0,
+    TE_HI_LO = 1 << 0,
+} TileEffectType;
+
 typedef struct {
     i32 points;
     Suit suit;
     Vec4 base_color;
+    TileEffectType flags;
 } TileEffects;
+
+#define TileEffectsHas(effects, ty) ((effects)->flags & (ty))
 
 typedef struct {
     // Reminder that this pos refers to the *center* of the tile.
@@ -5517,6 +5525,24 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                     suit = suit == tile->effects.suit ? suit : SUIT_NONE;
                     all_suit_mask |= 1 << tile->effects.suit;
 
+                    // Evaluate block effects on score.
+                    for (isize mask_pos = 1; mask_pos < 32; ++mask_pos) {
+                        TileEffectType effect_type = tile->effects.flags & mask_pos;
+                        switch (effect_type) {
+                            case TE_HI_LO: {
+                                Tile* hi = GridMaybeGetTile(grid, tile->id.r + 1, tile->id.c);
+                                Tile* lo = GridMaybeGetTile(grid, tile->id.r - 1, tile->id.c);
+                                block_score += (hi && hi->occupied ? hi->effects.points : 0) +
+                                               (lo && lo->occupied ? lo->effects.points : 0);
+                                break;
+                            }
+                            default: {
+                                PlatformLog(LLOG_ERROR, "UNKNOWN tile effect type when scoring: %d", effect_type);
+                                Assert(0);
+                            }
+                        }
+                    }
+
                     ScoreLogBlockScored(&battle->score_log, tile->id);
                 }
 
@@ -5607,26 +5633,33 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
             battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
         }
 
-        // Zero out the cleared rows.
-        for (isize i = 0; i < num_cleared_rows; ++i) {
-            isize r = cleared_row_start + i;
-            Assert(r < grid->nrows);
-            for (isize c = 0; c < grid->ncols; ++c) {
-                Tile* tile = GridGetTile(grid, r, c);
-                Assert(tile->occupied);
-                tile->occupied = false;
+        {
+            static TileEffects ZERO_TILE_EFFECTS = {0};
+
+            // Zero out the cleared rows.
+            for (isize i = 0; i < num_cleared_rows; ++i) {
+                isize r = cleared_row_start + i;
+                Assert(r < grid->nrows);
+                for (isize c = 0; c < grid->ncols; ++c) {
+                    Tile* tile = GridGetTile(grid, r, c);
+                    Assert(tile->occupied);
+                    tile->occupied = false;
+                    tile->effects = ZERO_TILE_EFFECTS;
+                }
             }
-        }
 
-        // Shift down everything above the cleared lines.
-        for (isize r = cleared_row_start + num_cleared_rows; r < grid->nrows; ++r) {
-            for (isize c = 0; c < grid->ncols; ++c) {
-                Tile* source = GridGetTile(grid, r, c);
-                Tile* dest = GridGetTile(grid, r - num_cleared_rows, c);
+            // Shift down everything above the cleared lines.
+            for (isize r = cleared_row_start + num_cleared_rows; r < grid->nrows; ++r) {
+                for (isize c = 0; c < grid->ncols; ++c) {
+                    Tile* source = GridGetTile(grid, r, c);
+                    Tile* dest = GridGetTile(grid, r - num_cleared_rows, c);
 
-                dest->occupied = source->occupied;
-                dest->effects = source->effects;
-                source->occupied = false;
+                    dest->occupied = source->occupied;
+                    dest->effects = source->effects;
+                    source->occupied = false;
+                    // TODO: I think this is correct.
+                    source->effects = ZERO_TILE_EFFECTS;
+                }
             }
         }
     }
