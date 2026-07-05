@@ -5532,8 +5532,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                             case TE_HI_LO: {
                                 Tile* hi = GridMaybeGetTile(grid, tile->id.r + 1, tile->id.c);
                                 Tile* lo = GridMaybeGetTile(grid, tile->id.r - 1, tile->id.c);
-                                block_score += (hi && hi->occupied ? hi->effects.points : 0) +
-                                               (lo && lo->occupied ? lo->effects.points : 0);
+                                block_score += (hi ? hi->effects.points : 0) + (lo ? lo->effects.points : 0);
                                 break;
                             }
                             default: {
