@@ -5461,6 +5461,12 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->num_hands = 5;
 
         battle->selection_idx = NO_CARD_SELECTED_IDX;
+
+        // Add some basic effects
+        {
+            Card* card = ArrGetPtr(&battle->hand, 0);
+            card->piece.effects.flags |= TE_HI_LO;
+        }
     }
 
     battle->relics = player_relics;
@@ -5526,13 +5532,17 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                     all_suit_mask |= 1 << tile->effects.suit;
 
                     // Evaluate block effects on score.
-                    for (isize mask_pos = 1; mask_pos < 32; ++mask_pos) {
+                    for (isize mask_pos = 0; mask_pos < 32; ++mask_pos) {
                         TileEffectType effect_type = tile->effects.flags & mask_pos;
                         switch (effect_type) {
                             case TE_HI_LO: {
                                 Tile* hi = GridMaybeGetTile(grid, tile->id.r + 1, tile->id.c);
                                 Tile* lo = GridMaybeGetTile(grid, tile->id.r - 1, tile->id.c);
+                                PlatformLog(LLOG_INFO, "hi lo block r=%d c=%d", tile->id.r, tile->id.c);
                                 block_score += (hi ? hi->effects.points : 0) + (lo ? lo->effects.points : 0);
+                                break;
+                            }
+                            case TE_NONE: {
                                 break;
                             }
                             default: {
