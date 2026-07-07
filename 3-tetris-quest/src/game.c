@@ -5993,6 +5993,11 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
+static void DrawBlock(Vec3 pos, Vec2 dims, TileEffects* effects) {
+    Vec4 color = effects->base_color;
+    DrawQuad(pos, dims.x, dims.y, Mat4Identity(), color);
+}
+
 static void GamePhaseChange(GameState* gstate) {
     switch (gstate->phase_to_be) {
         case GP_NONE: {
@@ -6278,6 +6283,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // Draw hand
                         {
                             f32 piece_scale = Px2Meter(5.0f);
+                            Vec2 piece_dims = Vec2Lit(piece_scale, piece_scale);
                             BattleHandIter(&battle->hand, card) {
                                 Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
                                 DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
@@ -6287,8 +6293,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     TileId offset = ArrGet(&card->piece.block_offsets, j);
                                     Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
                                     pos = Vec3Add(pos, quad_pos);
-                                    DrawQuad(pos, piece_scale, piece_scale, Mat4Identity(),
-                                             card->piece.effects.base_color);
+                                    DrawBlock(pos, piece_dims, &card->piece.effects);
                                 }
                             }
                         }
