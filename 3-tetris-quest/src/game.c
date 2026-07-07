@@ -5993,8 +5993,14 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
-static void DrawBlock(Vec3 pos, Vec2 dims, TileEffects* effects) {
-    Vec4 color = effects->base_color;
+typedef struct {
+    Vec4 base_color;
+    bool preview;
+} BlockGraphics;
+
+static void DrawBlock(Vec3 pos, Vec2 dims, BlockGraphics* graphics) {
+    Vec4 color = graphics->base_color;
+    color.a = graphics->preview ? color.a * 0.3f : color.a;
     DrawQuad(pos, dims.x, dims.y, Mat4Identity(), color);
 }
 
@@ -6273,9 +6279,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                                    Vec4 color = active_piece->effects.base_color;
-                                    color.a = 0.3f;
-                                    DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
+                                    BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
+                                                              .preview = true};
+                                    DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
                             }
                         }
@@ -6293,7 +6299,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     TileId offset = ArrGet(&card->piece.block_offsets, j);
                                     Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
                                     pos = Vec3Add(pos, quad_pos);
-                                    DrawBlock(pos, piece_dims, &card->piece.effects);
+                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color};
+                                    DrawBlock(pos, piece_dims, &graphics);
                                 }
                             }
                         }
