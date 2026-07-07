@@ -6247,12 +6247,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                                     Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
-                                    DrawQuad(pos, scale.x, scale.y, Mat4Identity(), color);
 
-                                    if (tile->occupied) {
-                                        Vec4 piece_color = tile->effects.base_color;
-                                        DrawQuad(pos, scale.x, scale.y, Mat4Identity(), piece_color);
-                                    }
+                                    color = tile->occupied ? tile->effects.base_color : color;
+                                    BlockGraphics graphics = {.base_color = color};
+                                    DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
 
                                 // Offset each row.
@@ -6268,7 +6266,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                                    DrawQuad(pos, scale.x, scale.y, Mat4Identity(), active_piece->effects.base_color);
+                                    BlockGraphics graphics = {.base_color = active_piece->effects.base_color};
+                                    DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
 
                                 // Draw placement preview viz
