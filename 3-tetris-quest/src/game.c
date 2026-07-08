@@ -391,7 +391,7 @@ LCORE Animation AnimationFromDisk(const char* dir, const char* filename_prefix, 
     return animation;
 }
 
-static void TexturesInit() {
+static void TextureCacheInit() {
     static TextureCache TEXTURE_CACHE_ZERO = {0};
     TextureCache* tcache = &TCACHE;
     *tcache = TEXTURE_CACHE_ZERO;
@@ -416,6 +416,10 @@ static void TexturesInit() {
 
     for (isize i = 0; i < ArrCap(&tcache->textures); ++i) {
         ArrPush(&tcache->textures, default_tx);
+    }
+
+    {
+        *ArrGetPtr(&tcache->textures, TX_ALL) = TextureFromFile("assets/textures/all.png", FILTER_NEAREST);
     }
 }
 
@@ -1421,7 +1425,7 @@ static void RenderDataInit(Arena* perm) {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv));
     glEnableVertexAttribArray(2);
 
-    TexturesInit();
+    TextureCacheInit();
 }
 
 #define GLSL(src) "#version 330 core\n" #src
