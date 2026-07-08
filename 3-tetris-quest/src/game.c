@@ -134,6 +134,8 @@ typedef struct {
     byte* data;
 } LTexture;
 
+TypedefArr(LTexture);
+
 typedef enum {
     FILTER_NONE = 0,
     FILTER_NEAREST = GL_NEAREST,
@@ -206,18 +208,17 @@ static LTexture TextureFromFile(const char* filename, LTextureFilter filter) {
 
 #define MAX_TEXTURES 32
 typedef struct {
-    u32 txlen;
-    u32 txcap;
-    LTexture textures[MAX_TEXTURES];
+    LTexture textures_buffer[MAX_TEXTURES];
+    LTextureArr textures;
 } TextureCache;
 
 static TextureCache TCACHE;
 
-typedef enum TextureLabel { TX_DEFAULT = 0, TX_COUNT } TextureLabel;
+typedef enum TextureLabel { TX_DEFAULT = 0, TX_ALL, TX_COUNT } TextureLabel;
 
 static LTexture GetTexture(TextureLabel label) {
     TextureCache* tcache = &TCACHE;
-    return tcache->textures[label];
+    return ArrGet(&tcache->textures, label);
 }
 
 #define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
@@ -391,35 +392,31 @@ LCORE Animation AnimationFromDisk(const char* dir, const char* filename_prefix, 
 }
 
 static void TexturesInit() {
+    static TextureCache TEXTURE_CACHE_ZERO = {0};
     TextureCache* tcache = &TCACHE;
-    tcache->txlen = 0;
-    tcache->txcap = MAX_TEXTURES;
+    *tcache = TEXTURE_CACHE_ZERO;
+    InitArrS(&tcache->textures, tcache->textures_buffer, ArraySizeOf(tcache->textures_buffer));
 
     // Default black texture.
-    {
-        Assert(tcache->txlen < tcache->txcap);
+    LTexture default_tx = {0};
+    default_tx.width = 1;
+    default_tx.height = 1;
+    glGenTextures(1, &default_tx.id);
+    glBindTexture(GL_TEXTURE_2D, default_tx.id);
 
-        LTexture tx = {0};
-        tx.width = 1;
-        tx.height = 1;
-        glGenTextures(1, &tx.id);
-        glBindTexture(GL_TEXTURE_2D, tx.id);
+    // The texture will be all white. Important to do this so that we can properly blend
+    // texture colors and uniform frag color.
+    GLubyte transparentPixel[] = {255, 255, 255, 255};
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
 
-        // The texture will be all white. Important to do this so that we can properly blend
-        // texture colors and uniform frag color.
-        GLubyte transparentPixel[] = {255, 255, 255, 255};
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-        tcache->textures[TX_DEFAULT] = tx;
-        ++tcache->txlen;
+    for (isize i = 0; i < ArrCap(&tcache->textures); ++i) {
+        ArrPush(&tcache->textures, default_tx);
     }
-
-    ++tcache->txlen;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
