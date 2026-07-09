@@ -5927,6 +5927,9 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
     // Transform from clip to camera space and from camera to world.
     // TODO: I should auto derive these matrices from render or game state potentially? The values hardcoded here could
     // become out of sync if I change the setup in the game tick rendering
+    // TODO: Potentially if we are doing pixel perfect rendering (e.g. snapping camera pos + draw call positions at
+    // render time), we need to make sure that we use the pixel perfect camera to unconvert from screen to world here as
+    // well.
     Mat4 inv_proj = Mat4Invert(Mat4Ortho(-0.5f * gstate->renderw_world, 0.5f * gstate->renderw_world,
                                          -0.5f * gstate->renderh_world, 0.5f * gstate->renderh_world, -100.0f, 100.0f));
     Mat4 inv_view = Mat4Invert(CameraGetViewMat(gstate->camera));
@@ -6337,6 +6340,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         PlatformLog(LLOG_ERROR, "Unknown game phase for rendering: %d", gstate->phase);
                         Assert(0);
                     }
+                }
+
+                {
+                    LTexture tx = GetTexture(TX_ALL);
+                    // f32 hw = tx.width * 0.5f;
+                    // f32 hh = tx.height * 0.5f;
+                    // Vec2 pos = Vec2Lit(f32round(-hw), f32round(-hh));
+                    DrawLTexture(GetTexture(TX_ALL), Vec2Lit(0, 0), 1.0f);
                 }
 
                 EndShaderPass();
