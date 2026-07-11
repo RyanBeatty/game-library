@@ -2446,6 +2446,16 @@ LCORE DrawCmd* DrawQuad(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 co
     return cmd;
 }
 
+LCORE DrawCmd* DrawQuadEx(Vec3 center, f32 width, f32 height, Mat4 orient, Vec4 color, LTexture* tx) {
+    DrawCmd* cmd = AddDrawMeshCmd();
+    cmd->meshcmd.meshid = GetMesh(M_QUAD);
+    cmd->meshcmd.modelm = Mat4SVRT(Vec3Lit(width, height, 1.0f), orient, center);
+    cmd->meshcmd.color = color;
+    cmd->meshcmd.tx = *tx;
+    cmd->meshcmd.uvscale = Vec2Lit(1.0f, 1.0f);
+    return cmd;
+}
+
 #define DrawQuad2D(center2d, width, height, orient, color) \
     (DrawQuad(Vec2ToVec3(center2d), (width), (height), (orient), (color)))
 
@@ -6035,7 +6045,9 @@ typedef struct {
 static void DrawBlock(Vec3 pos, Vec2 dims, BlockGraphics* graphics) {
     Vec4 color = graphics->base_color;
     color.a = graphics->preview ? color.a * 0.3f : color.a;
+    LTexture tx = GetTexture(TX_ALL);
     DrawQuad(pos, dims.x, dims.y, Mat4Identity(), color);
+    DrawQuadEx(pos, dims.x, dims.y, Mat4Identity(), LCLEAR, &tx);
 }
 
 static void GamePhaseChange(GameState* gstate) {
