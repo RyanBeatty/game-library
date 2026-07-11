@@ -1786,8 +1786,21 @@ static LShader GetDefaultShader() {
 
         out vec4 FragColor;
 
+        // vec2 iq_uv(vec2 uv, ivec2 txdims) {
+        //     vec2 px = uv * txdims;
+        //     vec2 seam = floor(px + 0.5);
+        //     vec2 dudv = fwidth(px);
+        //     px = seam + clamp((px - seam) / dudv, -0.5, 0.5);
+        //     return px / txdims;
+        // }
+
         void main() {
+            // ivec2 txdims = ivec2(Texture0Resolution.xy);
+            // vec2 uv3 = iq_uv(fTextCoords, txdims);
+            // vec4 txColor = texture(texture0, uv3);
             vec4 txColor = texture(texture0, fTextCoords);
+
+
             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
             // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
             if (txColor.a < 0.01) {
@@ -4985,7 +4998,7 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     *grid = ZERO;
 
-    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(10.0f), Px2Meter(10.0f));
+    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
 
     i32 ncols = GRID_NUM_COLS;
     i32 grid_width = grid_tile_dims.x * ncols;
@@ -5429,12 +5442,12 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
     // hand init deck init
     {
-        battle->hand_to_world = Mat4SVRT(Vec3Lit(Px2Meter(30.0f), Px2Meter(30.0f), Px2Meter(1.0f)), Mat4Identity(),
-                                         Vec3Lit(Px2Meter(80.0f), Px2Meter(0.0f), Px2Meter(0.0f)));
-        battle->card_scale = Vec2Lit(Px2Meter(20.0f), Px2Meter(20.0f));
+        battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
+        battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 1.3f)), Mat4Identity(),
+                                         Vec3Lit(Px2Meter(120.0f), Px2Meter(-50.0f), Px2Meter(0.0f)));
 
         InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
-        i32 pieces_per_suit = ArrCap(&battle->deck) / SUIT_COUNT;
+        i64 pieces_per_suit = ArrCap(&battle->deck) / SUIT_COUNT;
         for (Suit suit = SUIT_A; suit < SUIT_COUNT; ++suit) {
             for (isize i = 0, piece_type = 0; i < pieces_per_suit; ++i, piece_type = (piece_type + 1) % PT_COUNT) {
                 Card card = {0};
@@ -5997,6 +6010,23 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
+// Returns the fractional offset (0.0 or 0.5) that a position needs to have
+// for a quad of the given size to land on pixel boundaries, given the
+// render target's dimension. Assumes PPM = 1 (1 world unit = 1 pixel).
+f32 PixelSnapOffset(f32 render_dim, f32 quad_dim) {
+    i32 render_odd = ((i32)render_dim) & 1;
+    i32 quad_odd = ((i32)quad_dim) & 1;
+    return (render_odd != quad_odd) ? 0.5f : 0.0f;
+}
+
+// Snaps `desired_pos` to the nearest grid point that has the correct
+// fractional offset for this axis (0.0 or 0.5), rather than just rounding
+// to the nearest whole number.
+f32 SnapAxis(f32 desired_pos, f32 render_dim, f32 quad_dim) {
+    f32 required_frac = PixelSnapOffset(render_dim, quad_dim);
+    return roundf(desired_pos - required_frac) + required_frac;
+}
+
 typedef struct {
     Vec4 base_color;
     bool preview;
@@ -6291,7 +6321,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         // Draw hand
                         {
-                            f32 piece_scale = Px2Meter(5.0f);
+                            f32 piece_scale = Px2Meter(16.0f);
                             Vec2 piece_dims = Vec2Lit(piece_scale, piece_scale);
                             BattleHandIter(&battle->hand, card) {
                                 Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
@@ -6344,10 +6374,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 {
                     LTexture tx = GetTexture(TX_ALL);
-                    // f32 hw = tx.width * 0.5f;
-                    // f32 hh = tx.height * 0.5f;
-                    // Vec2 pos = Vec2Lit(f32round(-hw), f32round(-hh));
-                    DrawLTexture(GetTexture(TX_ALL), Vec2Lit(0, 0), 1.0f);
+                    Vec2 pos = Vec2Lit(50.0f * f32cos(0.3f * gstate->timer), 50.0f * f32sin(0.3f * gstate->timer));
+                    DrawLTexture(GetTexture(TX_ALL), pos, 1.0f);
                 }
 
                 EndShaderPass();
@@ -6661,13 +6689,13 @@ void GameInit() {
     byte* temp_buffer = New(&gstate->perm, GB(1), byte);
     gstate->temp = NewArena(temp_buffer, GB(1));
 
-    gstate->renderw = 320.0f;
-    gstate->renderh = 180.0f;
+    gstate->renderw = 640.0f;
+    gstate->renderh = 360.0f;
     // Reminder, the way we convert from world units back to screen units for rendering is by using these for the
     // projection matrix.
     gstate->renderw_world = Px2Meter(gstate->renderw);
     gstate->renderh_world = Px2Meter(gstate->renderh);
-    gstate->render_to_screen_scale = 6.0f;
+    gstate->render_to_screen_scale = 3.0f;
 
     gstate->target_fps = 60;
     gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
