@@ -4955,11 +4955,20 @@ typedef enum {
 
 #define TileEffectTypeIter(flags, id) for (TileEffectType id = 1; id < TE_MAX; id <<= 1)
 
+typedef enum {
+    PR_0 = 0,
+    PR_90,
+    PR_180,
+    PR_270,
+    PR_COUNT,
+} PieceRot;
+
 typedef struct {
     i32 points;
     Suit suit;
     Vec4 base_color;
     TileEffectType flags;
+    PieceRot rot;
 } TileEffects;
 
 #define TileEffectsHas(effects, ty) ((effects)->flags & (ty))
@@ -5110,14 +5119,6 @@ typedef enum {
     PT_O,
     PT_COUNT,
 } PieceType;
-
-typedef enum {
-    PR_0 = 0,
-    PR_90,
-    PR_180,
-    PR_270,
-    PR_COUNT,
-} PieceRot;
 
 typedef struct {
     PieceType type;
@@ -5403,6 +5404,7 @@ static Piece MakePiece(PieceType type, PieceRot rot, Suit suit) {
     piece.effects.points = 1;
     piece.effects.suit = suit;
     piece.effects.base_color = BLOCK_COLORS[suit];
+    piece.effects.rot = rot;
     return piece;
 }
 
@@ -5760,6 +5762,7 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     }
 
     active_piece->rot_idx = next_rot;
+    active_piece->effects.rot = next_rot;
     active_piece->block_offsets = next_block_offsets;
     battle->anchor = next_anchor;
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
@@ -6068,7 +6071,9 @@ static void DrawBlock(Vec3 pos, Vec2 dims, BlockGraphics* graphics) {
 
     DrawQuad(pos, dims.x, dims.y, Mat4Identity(), color);
     if (effects_tx) {
-        DrawQuadEx(pos, dims.x, dims.y, Mat4Identity(), LCLEAR, effects_tx);
+        f32 rot_rad = Deg2Rad(90.0f) * graphics->effects->rot;
+        Mat4 rot = Mat4RotateZ(rot_rad);
+        DrawQuadEx(pos, dims.x, dims.y, rot, LCLEAR, effects_tx);
     }
 }
 
