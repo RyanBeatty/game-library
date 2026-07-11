@@ -221,6 +221,8 @@ static LTexture GetTexture(TextureLabel label) {
     return ArrGet(&tcache->textures, label);
 }
 
+#define GetTexturePtr(label) (ArrGetPtr(&TCACHE.textures, (label)))
+
 #define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
 
 // Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
@@ -4947,8 +4949,11 @@ typedef struct {
 
 typedef enum {
     TE_NONE = 0,
-    TE_HI_LO = 1 << 0,
+    TE_HI_LO = 1u << 0,
+    TE_MAX = 1u << 31,
 } TileEffectType;
+
+#define TileEffectTypeIter(flags, id) for (TileEffectType id = 1; id < TE_MAX; id <<= 1)
 
 typedef struct {
     i32 points;
@@ -6040,14 +6045,31 @@ f32 SnapAxis(f32 desired_pos, f32 render_dim, f32 quad_dim) {
 typedef struct {
     Vec4 base_color;
     bool preview;
+    TileEffects* effects;
 } BlockGraphics;
 
 static void DrawBlock(Vec3 pos, Vec2 dims, BlockGraphics* graphics) {
     Vec4 color = graphics->base_color;
     color.a = graphics->preview ? color.a * 0.3f : color.a;
-    LTexture tx = GetTexture(TX_ALL);
+    LTexture* effects_tx = NULL;
+    TileEffectTypeIter(graphics->effects->flags, effect_type) {
+        if (((graphics->effects->flags) & effect_type)) {
+            switch (effect_type) {
+                case TE_HI_LO: {
+                    effects_tx = GetTexturePtr(TX_ALL);
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+        }
+    }
+
     DrawQuad(pos, dims.x, dims.y, Mat4Identity(), color);
-    DrawQuadEx(pos, dims.x, dims.y, Mat4Identity(), LCLEAR, &tx);
+    if (effects_tx) {
+        DrawQuadEx(pos, dims.x, dims.y, Mat4Identity(), LCLEAR, effects_tx);
+    }
 }
 
 static void GamePhaseChange(GameState* gstate) {
@@ -6295,7 +6317,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
 
                                     color = tile->occupied ? tile->effects.base_color : color;
-                                    BlockGraphics graphics = {.base_color = color};
+                                    BlockGraphics graphics = {.base_color = color, .effects = &tile->effects};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
 
@@ -6312,7 +6334,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                                    BlockGraphics graphics = {.base_color = active_piece->effects.base_color};
+                                    BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
+                                                              .effects = &active_piece->effects};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
 
@@ -6325,7 +6348,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                                     BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
-                                                              .preview = true};
+                                                              .preview = true,
+                                                              .effects = &active_piece->effects};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
                             }
@@ -6344,7 +6368,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     TileId offset = ArrGet(&card->piece.block_offsets, j);
                                     Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
                                     pos = Vec3Add(pos, quad_pos);
-                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color};
+                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
+                                                              .effects = &card->piece.effects};
                                     DrawBlock(pos, piece_dims, &graphics);
                                 }
                             }
@@ -6382,12 +6407,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         PlatformLog(LLOG_ERROR, "Unknown game phase for rendering: %d", gstate->phase);
                         Assert(0);
                     }
-                }
-
-                {
-                    LTexture tx = GetTexture(TX_ALL);
-                    Vec2 pos = Vec2Lit(50.0f * f32cos(0.3f * gstate->timer), 50.0f * f32sin(0.3f * gstate->timer));
-                    DrawLTexture(GetTexture(TX_ALL), pos, 1.0f);
                 }
 
                 EndShaderPass();
