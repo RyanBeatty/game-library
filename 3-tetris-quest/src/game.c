@@ -6071,15 +6071,17 @@ static void DrawBlock(Vec3 pos, Vec2 dims, BlockGraphics* graphics) {
     Vec4 color = graphics->base_color;
     color.a = graphics->preview ? color.a * 0.3f : color.a;
     LTexture* effects_tx = NULL;
-    TileEffectTypeIter(graphics->effects->flags, effect_type) {
-        if (((graphics->effects->flags) & effect_type)) {
-            switch (effect_type) {
-                case TE_HI_LO: {
-                    effects_tx = GetTexturePtr(TX_ALL);
-                    break;
-                }
-                default: {
-                    break;
+    if (graphics->effects) {
+        TileEffectTypeIter(graphics->effects->flags, effect_type) {
+            if (((graphics->effects->flags) & effect_type)) {
+                switch (effect_type) {
+                    case TE_HI_LO: {
+                        effects_tx = GetTexturePtr(TX_ALL);
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
                 }
             }
         }
@@ -6385,6 +6387,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     color = tile->occupied ? tile->effects.base_color : color;
                                     BlockGraphics graphics = {.base_color = color, .effects = &tile->effects};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
+
+                                    if (ArrLen(&battle->score_log.events)) {
+                                        ScoreEvent* event =
+                                            ArrGetPtr(&battle->score_log.events, battle->score_log.cur_idx);
+
+                                        if (TileIdEq(event->block_id, tile->id)) {
+                                            Vec4 color2 = LYELLOW;
+                                            color2.a = f32sin(battle->score_log.cur_event_timer * 30.0f);
+                                            BlockGraphics graphics2 = {.base_color = color2};
+                                            DrawBlock(pos, Vec3ToVec2(scale), &graphics2);
+                                        }
+                                    }
                                 }
 
                                 // Offset each row.
