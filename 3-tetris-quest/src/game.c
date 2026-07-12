@@ -6394,7 +6394,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                         if (TileIdEq(event->block_id, tile->id)) {
                                             Vec4 color2 = LYELLOW;
-                                            color2.a = f32sin(battle->score_log.cur_event_timer * 30.0f);
+                                            color2.a = f32sin(battle->score_log.cur_event_timer * 7.0f);
                                             BlockGraphics graphics2 = {.base_color = color2};
                                             DrawBlock(pos, Vec3ToVec2(scale), &graphics2);
                                         }
