@@ -5349,7 +5349,17 @@ static void ScoreLogBlockScored(ScoreLog* log, TileId block_id) {
 
 #define ScoreLogHead(sl) (&(sl)->events[(sl)->head_idx])
 
+typedef enum {
+    BP_NONE = 0,
+    BP_PLAYING,
+    BP_SCORING,
+    BP_COUNT,
+} BattlePhase;
+
 typedef struct {
+    BattlePhase phase;
+    BattlePhase phase_to_be;
+
     Grid grid;
 
     Piece active_piece;
@@ -5453,6 +5463,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
 
+    battle->phase = BP_PLAYING;
     battle->renderw_world = renderw_world;
     battle->renderh_world = renderh_world;
     GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
@@ -5524,7 +5535,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
         }
     }
 
-    // Score placement
+    // Score piece
     {
         isize cleared_row_start = grid->nrows;
         i32 num_cleared_rows = 0;
@@ -5546,6 +5557,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
 
         // Score trick.
         if (num_cleared_rows) {
+            battle->phase_to_be = BP_SCORING;
             i32 block_score = 0;
             i32 mult = 0;
             for (isize i = 0; i < num_cleared_rows; ++i) {
@@ -5673,7 +5685,8 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
             battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
         }
 
-        {
+        // Remove scored rows.
+        if (false) {
             static TileEffects ZERO_TILE_EFFECTS = {0};
 
             // Zero out the cleared rows.
@@ -6114,6 +6127,27 @@ static void GamePhaseChange(GameState* gstate) {
     gstate->phase_to_be = GP_NONE;
 }
 
+static void BattlePhaseChange(Battle* battle) {
+    switch (battle->phase_to_be) {
+        case BP_PLAYING: {
+            break;
+        }
+        case BP_SCORING: {
+            break;
+        }
+        case BP_NONE: {
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown battle phase change phase: %d", battle->phase_to_be);
+            Assert(0);
+        }
+    }
+
+    battle->phase = battle->phase_to_be == BP_NONE ? battle->phase : battle->phase_to_be;
+    battle->phase_to_be = BP_NONE;
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -6142,68 +6176,84 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 gstate->phase_to_be = GP_PLAYING;
                 break;
             }
+            // Update battle
             case GP_PLAYING: {
-                // Movement and rotation.
-                {
-                    if (controller->move_left.pressed) {
-                        PlatformLog(LLOG_INFO, "move left");
-                        BattleMoveActivePiece(battle, false);
-                    }
-                    if (controller->move_right.pressed) {
-                        PlatformLog(LLOG_INFO, "move right");
-                        BattleMoveActivePiece(battle, true);
-                    }
+                BattlePhaseChange(battle);
 
-                    if (controller->action_down.pressed) {
-                        PlatformLog(LLOG_INFO, "rotate clockwise");
-                        BattleRotateActivePiece(battle, true);
-                    }
+                switch (battle->phase) {
+                    case BP_PLAYING: {
+                        // Movement and rotation.
+                        {
+                            if (controller->move_left.pressed) {
+                                PlatformLog(LLOG_INFO, "move left");
+                                BattleMoveActivePiece(battle, false);
+                            }
+                            if (controller->move_right.pressed) {
+                                PlatformLog(LLOG_INFO, "move right");
+                                BattleMoveActivePiece(battle, true);
+                            }
 
-                    if (controller->action_right.pressed) {
-                        PlatformLog(LLOG_INFO, "rotate counterclockwise");
-                        BattleRotateActivePiece(battle, false);
-                    }
-                }
+                            if (controller->action_down.pressed) {
+                                PlatformLog(LLOG_INFO, "rotate clockwise");
+                                BattleRotateActivePiece(battle, true);
+                            }
 
-                if (controller->action_left.pressed && battle->selection_idx != NO_CARD_SELECTED_IDX) {
-                    BattlePlacePiece(battle, gstate->frame_time);
-                }
-
-                // Update hand
-                {
-                    isize selection_to_be = NO_CARD_SELECTED_IDX;
-                    for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
-                        Card* card = ArrGetPtr(&battle->hand, i);
-                        Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
-                        AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
-                        Vec2 normal = {0};
-                        f32 depth = 0.0f;
-                        bool collides =
-                            TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
-                        if (collides && controller->action_left.pressed) {
-                            // PlatformLog(LLOG_INFO, "mouse collides hand %d", i);
-                            selection_to_be = i;
+                            if (controller->action_right.pressed) {
+                                PlatformLog(LLOG_INFO, "rotate counterclockwise");
+                                BattleRotateActivePiece(battle, false);
+                            }
                         }
-                    }
 
-                    if (selection_to_be != NO_CARD_SELECTED_IDX && battle->selection_idx == NO_CARD_SELECTED_IDX) {
-                        battle->selection_idx = selection_to_be;
-                        BattleSetActivePiece(battle);
-                    }
+                        if (controller->action_left.pressed && battle->selection_idx != NO_CARD_SELECTED_IDX) {
+                            BattlePlacePiece(battle, gstate->frame_time);
+                        }
 
-                    if (controller->right_shoulder.pressed) {
-                        battle->selection_idx = NO_CARD_SELECTED_IDX;
-                        // Causes issues with trying to set active piece while we have nothing selected. I should maybe
-                        // consider instead not having active piece live as data, but instead just always select it
-                        // given the idx. BattleSetActivePiece(battle);
-                    }
-                }
+                        // Update hand
+                        {
+                            isize selection_to_be = NO_CARD_SELECTED_IDX;
+                            for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
+                                Card* card = ArrGetPtr(&battle->hand, i);
+                                Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
+                                AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
+                                Vec2 normal = {0};
+                                f32 depth = 0.0f;
+                                bool collides =
+                                    TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
+                                if (collides && controller->action_left.pressed) {
+                                    // PlatformLog(LLOG_INFO, "mouse collides hand %d", i);
+                                    selection_to_be = i;
+                                }
+                            }
 
-                if (battle->total_score >= battle->score_target) {
-                    battle->score_target += 5;
-                    gstate->phase_to_be = GP_SHOP;
-                } else if (ArrLen(&battle->hand) == 0 && ArrLen(&battle->deck) == 0) {
-                    gstate->phase_to_be = GP_GAME_OVER;
+                            if (selection_to_be != NO_CARD_SELECTED_IDX &&
+                                battle->selection_idx == NO_CARD_SELECTED_IDX) {
+                                battle->selection_idx = selection_to_be;
+                                BattleSetActivePiece(battle);
+                            }
+
+                            if (controller->right_shoulder.pressed) {
+                                battle->selection_idx = NO_CARD_SELECTED_IDX;
+                                // Causes issues with trying to set active piece while we have nothing selected. I
+                                // should maybe consider instead not having active piece live as data, but instead just
+                                // always select it given the idx. BattleSetActivePiece(battle);
+                            }
+                        }
+
+                        if (battle->total_score >= battle->score_target) {
+                            battle->score_target += 5;
+                            gstate->phase_to_be = GP_SHOP;
+                        } else if (ArrLen(&battle->hand) == 0 && ArrLen(&battle->deck) == 0) {
+                            gstate->phase_to_be = GP_GAME_OVER;
+                        }
+                        break;
+                    }
+                    case BP_SCORING: {
+                        break;
+                    }
+                    default: {
+                        PlatformLog(LLOG_ERROR, "Unknown battle phase: %d", battle->phase);
+                        Assert(0);
+                    }
                 }
 
                 break;
