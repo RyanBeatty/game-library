@@ -5319,8 +5319,15 @@ typedef struct {
 
 ////////////////////////////////////////////////////
 
+typedef enum {
+    SE_NONE = 0,
+    SE_BLOCK,
+} ScoreEventType;
+
 typedef struct {
+    ScoreEventType type;
     TileId block_id;
+    i32 chip_value;
 } ScoreEvent;
 
 TypedefArr(ScoreEvent);
@@ -5338,8 +5345,8 @@ static void ScoreLogInit(ScoreLog* log) {
     InitArrS(&log->events, log->events_buffer, ArraySizeOf(log->events_buffer));
 }
 
-static void ScoreLogBlockScored(ScoreLog* log, TileId block_id) {
-    ScoreEvent event = {.block_id = block_id};
+static void ScoreLogBlockScored(ScoreLog* log, TileId block_id, i32 chip_value) {
+    ScoreEvent event = {.type = SE_BLOCK, .block_id = block_id, .chip_value = chip_value};
     ArrPush(&log->events, event);
 }
 
@@ -5358,6 +5365,13 @@ typedef enum {
     BP_SCORING,
     BP_COUNT,
 } BattlePhase;
+
+typedef struct {
+    TileId scored_tile;
+    i32 live_chip;
+
+    i32 score_display;
+} BattleDisplay;
 
 typedef struct {
     BattlePhase phase;
@@ -5618,7 +5632,8 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                 for (isize c = 0; c < grid->ncols; ++c) {
                     Tile* tile = GridGetTile(grid, r, c);
                     Assert(tile->occupied);
-                    block_score += tile->effects.points;
+                    i32 block_chip_value = tile->effects.points;
+                    block_score += block_chip_value;
                     suit = suit == tile->effects.suit ? suit : SUIT_NONE;
                     all_suit_mask |= 1 << tile->effects.suit;
 
@@ -5643,7 +5658,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                         }
                     }
 
-                    ScoreLogBlockScored(&battle->score_log, tile->id);
+                    ScoreLogBlockScored(&battle->score_log, tile->id, block_chip_value);
                 }
 
                 ++mult;
