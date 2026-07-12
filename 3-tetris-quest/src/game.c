@@ -5521,6 +5521,67 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     ScoreLogInit(&battle->score_log);
 }
 
+typedef struct {
+    isize cleared_row_start;
+    i32 num_cleared_rows;
+} ClearInfo;
+
+static ClearInfo GridDetectClearStartEnd(Grid* grid) {
+    isize cleared_row_start = grid->nrows;
+    i32 num_cleared_rows = 0;
+    for (isize r = 0; r < grid->nrows; ++r) {
+        bool cleared = true;
+        for (isize c = 0; c < grid->ncols; ++c) {
+            Tile* tile = GridGetTile(grid, r, c);
+            if (!tile->occupied) {
+                cleared = false;
+                break;
+            }
+        }
+
+        if (cleared) {
+            ++num_cleared_rows;
+            cleared_row_start = i32min(cleared_row_start, r);
+        }
+    }
+
+    return (ClearInfo){.cleared_row_start = cleared_row_start, .num_cleared_rows = num_cleared_rows};
+}
+
+static void BattleClearLines(Battle* battle) {
+    static TileEffects ZERO_TILE_EFFECTS = {0};
+    Grid* grid = &battle->grid;
+
+    ClearInfo clear_info = GridDetectClearStartEnd(grid);
+    Assert(clear_info.num_cleared_rows > 0);
+
+    // Zero out the cleared rows.
+    for (isize i = 0; i < clear_info.num_cleared_rows; ++i) {
+        isize r = clear_info.cleared_row_start + i;
+        Assert(r < grid->nrows);
+        for (isize c = 0; c < grid->ncols; ++c) {
+            Tile* tile = GridGetTile(grid, r, c);
+            Assert(tile->occupied);
+            tile->occupied = false;
+            tile->effects = ZERO_TILE_EFFECTS;
+        }
+    }
+
+    // Shift down everything above the cleared lines.
+    for (isize r = clear_info.cleared_row_start + clear_info.num_cleared_rows; r < grid->nrows; ++r) {
+        for (isize c = 0; c < grid->ncols; ++c) {
+            Tile* source = GridGetTile(grid, r, c);
+            Tile* dest = GridGetTile(grid, r - clear_info.num_cleared_rows, c);
+
+            dest->occupied = source->occupied;
+            dest->effects = source->effects;
+            source->occupied = false;
+            // TODO: I think this is correct.
+            source->effects = ZERO_TILE_EFFECTS;
+        }
+    }
+}
+
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
 static void BattlePlacePiece(Battle* battle, FrameTime time) {
     Grid* grid = &battle->grid;
@@ -6119,7 +6180,7 @@ static void GamePhaseChange(GameState* gstate) {
         }
         case GP_NEW_GAME: {
             RelicsInit(&gstate->player_relics);
-            gstate->score_target = 30;
+            gstate->score_target = 100;
             break;
         }
         default: {
@@ -6136,6 +6197,9 @@ static void BattlePhaseChange(Battle* battle) {
     switch (battle->phase_to_be) {
         case BP_PLAYING: {
             ArrClear(&battle->score_log.events);
+            BattleClearLines(battle);
+            battle->trick_base_score = 0;
+            battle->trick_mult_score = 0;
             PlatformLog(LLOG_INFO, "Battle phase: BP_PLAYING");
             break;
         }
