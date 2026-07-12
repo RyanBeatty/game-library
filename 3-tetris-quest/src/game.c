@@ -5601,31 +5601,15 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
 
     // Score piece
     {
-        isize cleared_row_start = grid->nrows;
-        i32 num_cleared_rows = 0;
-        for (isize r = 0; r < grid->nrows; ++r) {
-            bool cleared = true;
-            for (isize c = 0; c < grid->ncols; ++c) {
-                Tile* tile = GridGetTile(grid, r, c);
-                if (!tile->occupied) {
-                    cleared = false;
-                    break;
-                }
-            }
-
-            if (cleared) {
-                ++num_cleared_rows;
-                cleared_row_start = i32min(cleared_row_start, r);
-            }
-        }
+        ClearInfo clear_info = GridDetectClearStartEnd(grid);
 
         // Score trick.
-        if (num_cleared_rows) {
+        if (clear_info.num_cleared_rows) {
             battle->phase_to_be = BP_SCORING;
             i32 block_score = 0;
             i32 mult = 0;
-            for (isize i = 0; i < num_cleared_rows; ++i) {
-                isize r = cleared_row_start + i;
+            for (isize i = 0; i < clear_info.num_cleared_rows; ++i) {
+                isize r = clear_info.cleared_row_start + i;
                 Assert(r < grid->nrows);
 
                 Tile* first = GridGetTile(grid, r, 0);
@@ -5698,7 +5682,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                         }
                         case RELIC_CLEAR_COUNT_MULT: {
                             // Little hacky in that we are relying on the fact that we are looping over the cleared
-                            // rows. A simpler impl would be to just += num_cleared_rows
+                            // rows. A simpler impl would be to just += clear_info.num_cleared_rows
                             ++mult;
                             activated = true;
                             break;
@@ -5742,42 +5726,11 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
         // Metrics
         {
             battle->blocks_placed_since_last_clear =
-                num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
+                clear_info.num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
             battle->max_blocks_placed_since_last_clear =
                 i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
-            battle->num_cleared += num_cleared_rows;
-            battle->cleared_streak = num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
-        }
-
-        // Remove scored rows.
-        if (false) {
-            static TileEffects ZERO_TILE_EFFECTS = {0};
-
-            // Zero out the cleared rows.
-            for (isize i = 0; i < num_cleared_rows; ++i) {
-                isize r = cleared_row_start + i;
-                Assert(r < grid->nrows);
-                for (isize c = 0; c < grid->ncols; ++c) {
-                    Tile* tile = GridGetTile(grid, r, c);
-                    Assert(tile->occupied);
-                    tile->occupied = false;
-                    tile->effects = ZERO_TILE_EFFECTS;
-                }
-            }
-
-            // Shift down everything above the cleared lines.
-            for (isize r = cleared_row_start + num_cleared_rows; r < grid->nrows; ++r) {
-                for (isize c = 0; c < grid->ncols; ++c) {
-                    Tile* source = GridGetTile(grid, r, c);
-                    Tile* dest = GridGetTile(grid, r - num_cleared_rows, c);
-
-                    dest->occupied = source->occupied;
-                    dest->effects = source->effects;
-                    source->occupied = false;
-                    // TODO: I think this is correct.
-                    source->effects = ZERO_TILE_EFFECTS;
-                }
-            }
+            battle->num_cleared += clear_info.num_cleared_rows;
+            battle->cleared_streak = clear_info.num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
         }
     }
 
