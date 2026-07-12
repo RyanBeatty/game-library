@@ -6119,7 +6119,7 @@ static void GamePhaseChange(GameState* gstate) {
         }
         case GP_NEW_GAME: {
             RelicsInit(&gstate->player_relics);
-            gstate->score_target = 10;
+            gstate->score_target = 30;
             break;
         }
         default: {
