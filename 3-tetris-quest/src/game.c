@@ -4906,8 +4906,8 @@ static const f32 GRID_DEPTH = 1.0f;
 #define Px2Meter(px) ((px) * MPP)
 
 typedef struct {
-    f32 dt;
-    f32 accumulated;
+    f32 dt;           // per frame time
+    f32 accumulated;  // total accumulated time across program.
 } FrameTime;
 
 ////////////////////////////////////////////////////
@@ -5326,28 +5326,31 @@ typedef struct {
 TypedefArr(ScoreEvent);
 
 typedef struct {
-    ScoreEvent events[1024];
-
-    isize head_idx;
-    isize tail_idx;
-    isize cap;
+    ScoreEvent events_buffer[1024];
+    ScoreEventArr events;
+    isize cur_idx;
+    f32 cur_event_timer;
 } ScoreLog;
 
 static void ScoreLogInit(ScoreLog* log) {
     static ScoreLog ZERO_SCORE_LOG = {0};
     *log = ZERO_SCORE_LOG;
-    log->cap = ArraySizeOf(log->events);
-    log->head_idx = 1;
-    log->tail_idx = 0;
+    InitArrS(&log->events, log->events_buffer, ArraySizeOf(log->events_buffer));
 }
 
 static void ScoreLogBlockScored(ScoreLog* log, TileId block_id) {
-    log->head_idx = (log->head_idx + 1) % log->cap;
-    log->events[log->head_idx] = (ScoreEvent){.block_id = block_id};
-    Assert(log->head_idx != log->tail_idx);
+    ScoreEvent event = {.block_id = block_id};
+    ArrPush(&log->events, event);
 }
 
-#define ScoreLogHead(sl) (&(sl)->events[(sl)->head_idx])
+static void ScoreLogTick(ScoreLog* log, FrameTime time) {
+    Assert(log->cur_idx < ArrLen(&log->events));
+    log->cur_event_timer += time.dt;
+    if (log->cur_event_timer >= 1.0f) {
+        ++log->cur_idx;
+        log->cur_event_timer = f32mod(log->cur_event_timer, 1.0f);
+    }
+}
 
 typedef enum {
     BP_NONE = 0,
@@ -6130,6 +6133,8 @@ static void GamePhaseChange(GameState* gstate) {
 static void BattlePhaseChange(Battle* battle) {
     switch (battle->phase_to_be) {
         case BP_PLAYING: {
+            ArrClear(&battle->score_log.events);
+            PlatformLog(LLOG_INFO, "Battle phase: BP_PLAYING");
             break;
         }
         case BP_SCORING: {
@@ -6248,6 +6253,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case BP_SCORING: {
+                        ScoreLogTick(&battle->score_log, gstate->frame_time);
+                        if (battle->score_log.cur_idx >= ArrLen(&battle->score_log.events)) {
+                            battle->phase_to_be = BP_PLAYING;
+                        }
+                        PlatformLog(LLOG_INFO, "Scoring tick event %d out of %d", battle->score_log.cur_idx,
+                                    ArrLen(&battle->score_log.events));
                         break;
                     }
                     default: {
