@@ -5409,7 +5409,6 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
             break;
         }
         case BDP_NEXT: {
-            ++log->cur_idx;
             if (!ScoreLogEmpty(log)) {
                 PlatformLog(LLOG_DEBUG, "starting score event %d of %d", log->cur_idx, ArrLen(&log->events));
                 phase_to_be = BDP_PLAYING;
@@ -5429,6 +5428,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                         Assert(0);
                     }
                 }
+                ++log->cur_idx;
             } else {
                 phase_to_be = BDP_DONE;
             }
