@@ -5359,6 +5359,8 @@ static void ScoreLogTick(ScoreLog* log, FrameTime time) {
     }
 }
 
+#define ScoreLogEmpty(log) ((log)->cur_idx >= ArrLen(&(log)->events))
+
 typedef enum {
     BP_NONE = 0,
     BP_PLAYING,
@@ -5366,12 +5368,80 @@ typedef enum {
     BP_COUNT,
 } BattlePhase;
 
+typedef enum {
+    BDP_DONE = 0,
+    BDP_NEXT,
+    BDP_PLAYING,
+    BDP_COUNT,
+} BattleDisplayPhase;
+
 typedef struct {
+    BattleDisplayPhase phase;
     TileId scored_tile;
     i32 live_chip;
-
     i32 score_display;
+
+    f32 tween_elapsed;
+    f32 tween_duration;
 } BattleDisplay;
+
+static void BattleDisplayInit(BattleDisplay* display) {
+    static BattleDisplay BATTLE_DISPLAY_ZERO = {.scored_tile = NULL_TILEID};
+    *display = BATTLE_DISPLAY_ZERO;
+}
+
+static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime time) {
+    BattleDisplayPhase phase_to_be = display->phase;
+    switch (display->phase) {
+        case BDP_PLAYING: {
+            display->tween_elapsed += time.dt;
+            if (display->tween_elapsed >= display->tween_duration) {
+                // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
+                // over duration, then while mod'd elapsed is still over next duration pop off events from the score
+                // log.
+                display->tween_elapsed = f32mod(display->tween_elapsed, display->tween_duration);
+                phase_to_be = BDP_NEXT;
+            }
+            break;
+        }
+        case BDP_NEXT: {
+            ++log->cur_idx;
+            if (!ScoreLogEmpty(log)) {
+                PlatformLog(LLOG_DEBUG, "starting score event %d of %d", log->cur_idx, ArrLen(&log->events));
+                phase_to_be = BDP_PLAYING;
+                ScoreEvent* cur_event = ArrGetPtr(&log->events, log->cur_idx);
+                // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
+                // over duration, then while mod'd elapsed is still over next duration pop off events from the score
+                // log.
+                switch (cur_event->type) {
+                    case SE_BLOCK: {
+                        display->scored_tile = cur_event->block_id;
+                        display->live_chip += cur_event->chip_value;
+                        display->tween_duration = 1.0f;
+                        break;
+                    }
+                    default: {
+                        PlatformLog(LLOG_ERROR, "Unknown score event when computing display: %d", cur_event->type);
+                        Assert(0);
+                    }
+                }
+            } else {
+                phase_to_be = BDP_DONE;
+            }
+            break;
+        }
+        case BDP_DONE: {
+            BattleDisplayInit(display);
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown battle display phase: %d", display->phase);
+            Assert(0);
+        }
+    }
+
+    display->phase = phase_to_be;
+}
 
 typedef struct {
     BattlePhase phase;
@@ -5409,6 +5479,7 @@ typedef struct {
     i32 renderh_world;
 
     ScoreLog score_log;
+    BattleDisplay display;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5533,6 +5604,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->score_target = score_target;
 
     ScoreLogInit(&battle->score_log);
+    BattleDisplayInit(&battle->display);
 }
 
 typedef struct {
@@ -6172,6 +6244,7 @@ static void BattlePhaseChange(Battle* battle) {
             break;
         }
         case BP_SCORING: {
+            battle->display.phase = BDP_NEXT;
             break;
         }
         case BP_NONE: {
@@ -6287,12 +6360,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case BP_SCORING: {
-                        ScoreLogTick(&battle->score_log, gstate->frame_time);
-                        if (battle->score_log.cur_idx >= ArrLen(&battle->score_log.events)) {
+                        if (battle->display.phase == BDP_DONE) {
                             battle->phase_to_be = BP_PLAYING;
                         }
-                        PlatformLog(LLOG_INFO, "Scoring tick event %d out of %d", battle->score_log.cur_idx,
-                                    ArrLen(&battle->score_log.events));
+                        // ScoreLogTick(&battle->score_log, gstate->frame_time);
+                        // if (battle->score_log.cur_idx >= ArrLen(&battle->score_log.events)) {
+                        //     battle->phase_to_be = BP_PLAYING;
+                        // }
+                        // PlatformLog(LLOG_INFO, "Scoring tick event %d out of %d", battle->score_log.cur_idx,
+                        //             ArrLen(&battle->score_log.events));
                         break;
                     }
                     default: {
@@ -6300,6 +6376,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Assert(0);
                     }
                 }
+
+                BattleDisplayUpdate(&battle->display, &battle->score_log, gstate->frame_time);
 
                 break;
             }
@@ -6420,17 +6498,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     BlockGraphics graphics = {.base_color = color, .effects = &tile->effects};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
 
-                                    if (ArrLen(&battle->score_log.events)) {
-                                        ScoreEvent* event =
-                                            ArrGetPtr(&battle->score_log.events, battle->score_log.cur_idx);
+                                    // if (ArrLen(&battle->score_log.events)) {
+                                    //     ScoreEvent* event =
+                                    //         ArrGetPtr(&battle->score_log.events, battle->score_log.cur_idx);
 
-                                        if (TileIdEq(event->block_id, tile->id)) {
-                                            Vec4 color2 = LYELLOW;
-                                            color2.a = f32sin(battle->score_log.cur_event_timer * 7.0f);
-                                            BlockGraphics graphics2 = {.base_color = color2};
-                                            DrawBlock(pos, Vec3ToVec2(scale), &graphics2);
-                                        }
-                                    }
+                                    //     if (TileIdEq(event->block_id, tile->id)) {
+                                    //         Vec4 color2 = LYELLOW;
+                                    //         color2.a = f32sin(battle->score_log.cur_event_timer * 7.0f);
+                                    //         BlockGraphics graphics2 = {.base_color = color2};
+                                    //         DrawBlock(pos, Vec3ToVec2(scale), &graphics2);
+                                    //     }
+                                    // }
                                 }
 
                                 // Offset each row.
