@@ -5385,6 +5385,10 @@ typedef struct {
     f32 tween_duration;
 } BattleDisplay;
 
+// Compute the tween's T value which is from [0, 1]
+#define TweenT(elapsed, duration) (f32clamp01(elapsed / duration))
+#define BattleDisplayTweenT(display) TweenT((display)->tween_elapsed, (display)->tween_duration)
+
 static void BattleDisplayInit(BattleDisplay* display) {
     static BattleDisplay BATTLE_DISPLAY_ZERO = {.scored_tile = NULL_TILEID};
     *display = BATTLE_DISPLAY_ZERO;
@@ -6363,12 +6367,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (battle->display.phase == BDP_DONE) {
                             battle->phase_to_be = BP_PLAYING;
                         }
-                        // ScoreLogTick(&battle->score_log, gstate->frame_time);
-                        // if (battle->score_log.cur_idx >= ArrLen(&battle->score_log.events)) {
-                        //     battle->phase_to_be = BP_PLAYING;
-                        // }
-                        // PlatformLog(LLOG_INFO, "Scoring tick event %d out of %d", battle->score_log.cur_idx,
-                        //             ArrLen(&battle->score_log.events));
                         break;
                     }
                     default: {
@@ -6540,6 +6538,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
                                                               .preview = true,
                                                               .effects = &active_piece->effects};
+                                    DrawBlock(pos, Vec3ToVec2(scale), &graphics);
+                                }
+                            }
+
+                            // draw grid battle display
+                            {
+                                if (!TileIdEq(battle->display.scored_tile, NULL_TILEID)) {
+                                    Tile* tile =
+                                        GridGetTile(grid, battle->display.scored_tile.r, battle->display.scored_tile.c);
+                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                                    f32 t = BattleDisplayTweenT(&battle->display);
+                                    Vec4 color2 = LYELLOW;
+                                    color2.a = 0.5f * (f32sin((4.0f * LPI * t) - 0.5f * LPI) + 1.0f);
+                                    BlockGraphics graphics = {.base_color = color2};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
                             }
