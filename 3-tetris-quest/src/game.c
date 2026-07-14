@@ -5322,12 +5322,14 @@ typedef struct {
 typedef enum {
     SE_NONE = 0,
     SE_BLOCK,
+    SE_ADD_MULT,
 } ScoreEventType;
 
 typedef struct {
     ScoreEventType type;
     TileId block_id;
     i32 chip_value;
+    f32 mult_value;
 } ScoreEvent;
 
 TypedefArr(ScoreEvent);
@@ -5346,6 +5348,11 @@ static void ScoreLogInit(ScoreLog* log) {
 
 static void ScoreLogBlockScored(ScoreLog* log, TileId block_id, i32 chip_value) {
     ScoreEvent event = {.type = SE_BLOCK, .block_id = block_id, .chip_value = chip_value};
+    ArrPush(&log->events, event);
+}
+
+static void ScoreLogAddMult(ScoreLog* log, f32 mult_value) {
+    ScoreEvent event = {.type = SE_ADD_MULT, .mult_value = mult_value};
     ArrPush(&log->events, event);
 }
 
@@ -5378,6 +5385,7 @@ typedef struct {
 
     // Cumulative state that persists across all events.
     i32 live_chip_total;
+    f32 live_mult_total;
 } BattleDisplay;
 
 // Compute the tween's T value which is from [0, 1]
@@ -5418,6 +5426,11 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                         display->state.live_chip_tile = cur_event->chip_value;
                         display->live_chip_total += cur_event->chip_value;
                         display->tween_duration = 1.0f;
+                        break;
+                    }
+                    case SE_ADD_MULT: {
+                        display->live_mult_total += cur_event->mult_value;
+                        display->tween_duration = 0.5f;
                         break;
                     }
                     default: {
@@ -5699,6 +5712,9 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
                 isize r = clear_info.cleared_row_start + i;
                 Assert(r < grid->nrows);
 
+                ScoreLogAddMult(&battle->score_log, 1.0f);
+                ++mult;
+
                 Tile* first = GridGetTile(grid, r, 0);
                 Suit suit = first->effects.suit;
                 i32 all_suit_mask = 0;
@@ -5733,8 +5749,6 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
 
                     ScoreLogBlockScored(&battle->score_log, tile->id, block_chip_value);
                 }
-
-                ++mult;
 
                 for (isize ri = 0; ri < RelicsOwnedCount(relics); ++ri) {
                     RelicState* relic_state = RelicsStateGet(relics, ri);
@@ -6221,7 +6235,7 @@ static void GamePhaseChange(GameState* gstate) {
         }
         case GP_NEW_GAME: {
             RelicsInit(&gstate->player_relics);
-            gstate->score_target = 100;
+            gstate->score_target = 500;
             break;
         }
         default: {
@@ -6673,10 +6687,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                         {
                             i32 chip_score = battle->display.live_chip_total;
+                            f32 mult_score = battle->display.live_mult_total;
 
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %d", chip_score,
-                                     battle->trick_mult_score);
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %0.2f", chip_score,
+                                     mult_score);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         {
