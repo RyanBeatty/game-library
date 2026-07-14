@@ -5370,11 +5370,14 @@ typedef struct {
     f32 tween_elapsed;
     f32 tween_duration;
 
+    // This should be stuff that needs to be reset when scoring each new event.
     struct {
         TileId scored_tile;
-        i32 live_chip;
-        i32 score_display;
+        i32 live_chip_tile;
     } state;
+
+    // Cumulative state that persists across all events.
+    i32 live_chip_total;
 } BattleDisplay;
 
 // Compute the tween's T value which is from [0, 1]
@@ -5384,6 +5387,7 @@ typedef struct {
 static BattleDisplay BATTLE_DISPLAY_ZERO = {.state = {.scored_tile = NULL_TILEID}};
 
 #define BattleDisplayInit(display) (*(display) = BATTLE_DISPLAY_ZERO)
+#define BattleDisplayStateInit(display) ((display)->state = BATTLE_DISPLAY_ZERO.state)
 
 static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime time) {
     BattleDisplayPhase phase_to_be = display->phase;
@@ -5402,6 +5406,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
         case BDP_NEXT: {
             if (!ScoreLogEmpty(log)) {
                 PlatformLog(LLOG_DEBUG, "starting score event %d of %d", log->cur_idx, ArrLen(&log->events));
+                BattleDisplayStateInit(display);
                 phase_to_be = BDP_PLAYING;
                 ScoreEvent* cur_event = ArrGetPtr(&log->events, log->cur_idx);
                 // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
@@ -5410,7 +5415,8 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                 switch (cur_event->type) {
                     case SE_BLOCK: {
                         display->state.scored_tile = cur_event->block_id;
-                        display->state.live_chip += cur_event->chip_value;
+                        display->state.live_chip_tile = cur_event->chip_value;
+                        display->live_chip_total += cur_event->chip_value;
                         display->tween_duration = 1.0f;
                         break;
                     }
@@ -6666,8 +6672,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         {
+                            i32 chip_score = battle->display.live_chip_total;
+
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %d", battle->trick_base_score,
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %d", chip_score,
                                      battle->trick_mult_score);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
