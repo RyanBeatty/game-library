@@ -6240,7 +6240,7 @@ static void GamePhaseChange(GameState* gstate) {
 static void BattlePhaseChange(Battle* battle) {
     switch (battle->phase_to_be) {
         case BP_PLAYING: {
-            ArrClear(&battle->score_log.events);
+            ScoreLogInit(&battle->score_log);
             BattleClearLines(battle);
             battle->trick_base_score = 0;
             battle->trick_mult_score = 0;
