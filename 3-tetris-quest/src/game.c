@@ -5367,22 +5367,23 @@ typedef enum {
 
 typedef struct {
     BattleDisplayPhase phase;
-    TileId scored_tile;
-    i32 live_chip;
-    i32 score_display;
-
     f32 tween_elapsed;
     f32 tween_duration;
+
+    struct {
+        TileId scored_tile;
+        i32 live_chip;
+        i32 score_display;
+    } state;
 } BattleDisplay;
 
 // Compute the tween's T value which is from [0, 1]
 #define TweenT(elapsed, duration) (f32clamp01(elapsed / duration))
 #define BattleDisplayTweenT(display) TweenT((display)->tween_elapsed, (display)->tween_duration)
 
-static void BattleDisplayInit(BattleDisplay* display) {
-    static BattleDisplay BATTLE_DISPLAY_ZERO = {.scored_tile = NULL_TILEID};
-    *display = BATTLE_DISPLAY_ZERO;
-}
+static BattleDisplay BATTLE_DISPLAY_ZERO = {.state = {.scored_tile = NULL_TILEID}};
+
+#define BattleDisplayInit(display) (*(display) = BATTLE_DISPLAY_ZERO)
 
 static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime time) {
     BattleDisplayPhase phase_to_be = display->phase;
@@ -5408,8 +5409,8 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                 // log.
                 switch (cur_event->type) {
                     case SE_BLOCK: {
-                        display->scored_tile = cur_event->block_id;
-                        display->live_chip += cur_event->chip_value;
+                        display->state.scored_tile = cur_event->block_id;
+                        display->state.live_chip += cur_event->chip_value;
                         display->tween_duration = 1.0f;
                         break;
                     }
@@ -6534,9 +6535,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             // draw grid battle display
                             {
-                                if (!TileIdEq(battle->display.scored_tile, NULL_TILEID)) {
-                                    Tile* tile =
-                                        GridGetTile(grid, battle->display.scored_tile.r, battle->display.scored_tile.c);
+                                if (!TileIdEq(battle->display.state.scored_tile, NULL_TILEID)) {
+                                    Tile* tile = GridGetTile(grid, battle->display.state.scored_tile.r,
+                                                             battle->display.state.scored_tile.c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                                     f32 t = BattleDisplayTweenT(&battle->display);
