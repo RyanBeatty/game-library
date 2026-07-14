@@ -5336,7 +5336,6 @@ typedef struct {
     ScoreEvent events_buffer[1024];
     ScoreEventArr events;
     isize cur_idx;
-    f32 cur_event_timer;
 } ScoreLog;
 
 static void ScoreLogInit(ScoreLog* log) {
@@ -5348,15 +5347,6 @@ static void ScoreLogInit(ScoreLog* log) {
 static void ScoreLogBlockScored(ScoreLog* log, TileId block_id, i32 chip_value) {
     ScoreEvent event = {.type = SE_BLOCK, .block_id = block_id, .chip_value = chip_value};
     ArrPush(&log->events, event);
-}
-
-static void ScoreLogTick(ScoreLog* log, FrameTime time) {
-    Assert(log->cur_idx < ArrLen(&log->events));
-    log->cur_event_timer += time.dt;
-    if (log->cur_event_timer >= 1.0f) {
-        ++log->cur_idx;
-        log->cur_event_timer = f32mod(log->cur_event_timer, 1.0f);
-    }
 }
 
 #define ScoreLogEmpty(log) ((log)->cur_idx >= ArrLen(&(log)->events))
