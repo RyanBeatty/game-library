@@ -5359,8 +5359,8 @@ static void ScoreLogAddMult(ScoreLog* log, f32 mult_value) {
 }
 
 static void ScoreLogScoreHand(ScoreLog* log, i32 score_total) {
-    // ScoreEvent event = {.type = SE_SCORE_HAND, .score_total = score_total};
-    // ArrPush(&log->events, event);
+    ScoreEvent event = {.type = SE_SCORE_HAND, .score_total = score_total};
+    ArrPush(&log->events, event);
 }
 
 #define ScoreLogEmpty(log) ((log)->cur_idx >= ArrLen(&(log)->events))
@@ -5393,7 +5393,10 @@ typedef struct {
     // Cumulative state that persists across all events.
     i32 live_chip_total;
     f32 live_mult_total;
+
     i32 live_score_total;
+    i32 live_score_total_to_be;
+    i32 display_score_total;
 } BattleDisplay;
 
 // Compute the tween's T value which is from [0, 1]
@@ -5417,6 +5420,10 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                 display->tween_elapsed = f32mod(display->tween_elapsed, display->tween_duration);
                 phase_to_be = BDP_NEXT;
             }
+
+            f32 t = BattleDisplayTweenT(display);
+            display->display_score_total = f32lerp(display->live_score_total, display->live_score_total_to_be, t);
+
             break;
         }
         case BDP_NEXT: {
@@ -5441,6 +5448,15 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                         display->tween_duration = 0.5f;
                         break;
                     }
+                    case SE_SCORE_HAND: {
+                        display->live_score_total = display->display_score_total;
+                        display->live_score_total_to_be = cur_event->score_total;
+
+                        f32 distance = display->live_score_total_to_be - display->live_score_total;
+                        f32 elapsed_time = distance * (1 / (60.0f / 10.0f));
+                        display->tween_duration = elapsed_time;
+                        break;
+                    }
                     default: {
                         PlatformLog(LLOG_ERROR, "Unknown score event when computing display: %d", cur_event->type);
                         Assert(0);
@@ -5458,7 +5474,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
             // the new total guard against this by detecting that we are about to score the next frame. Come up with
             // something better here.
             if (ArrLen(&log->events) == 0) {
-                display->live_score_total = score_total;
+                display->display_score_total = score_total;
             }
             break;
         }
@@ -6696,7 +6712,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         {
-                            i32 score_total = battle->display.live_score_total;
+                            i32 score_total = battle->display.display_score_total;
 
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", score_total);
