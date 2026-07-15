@@ -5323,6 +5323,7 @@ typedef enum {
     SE_NONE = 0,
     SE_BLOCK,
     SE_ADD_MULT,
+    SE_SCORE_HAND,
 } ScoreEventType;
 
 typedef struct {
@@ -5330,6 +5331,7 @@ typedef struct {
     TileId block_id;
     i32 chip_value;
     f32 mult_value;
+    i32 score_total;
 } ScoreEvent;
 
 TypedefArr(ScoreEvent);
@@ -5354,6 +5356,11 @@ static void ScoreLogBlockScored(ScoreLog* log, TileId block_id, i32 chip_value) 
 static void ScoreLogAddMult(ScoreLog* log, f32 mult_value) {
     ScoreEvent event = {.type = SE_ADD_MULT, .mult_value = mult_value};
     ArrPush(&log->events, event);
+}
+
+static void ScoreLogScoreHand(ScoreLog* log, i32 score_total) {
+    // ScoreEvent event = {.type = SE_SCORE_HAND, .score_total = score_total};
+    // ArrPush(&log->events, event);
 }
 
 #define ScoreLogEmpty(log) ((log)->cur_idx >= ArrLen(&(log)->events))
@@ -5386,6 +5393,7 @@ typedef struct {
     // Cumulative state that persists across all events.
     i32 live_chip_total;
     f32 live_mult_total;
+    i32 live_score_total;
 } BattleDisplay;
 
 // Compute the tween's T value which is from [0, 1]
@@ -5397,7 +5405,7 @@ static BattleDisplay BATTLE_DISPLAY_ZERO = {.state = {.scored_tile = NULL_TILEID
 #define BattleDisplayInit(display) (*(display) = BATTLE_DISPLAY_ZERO)
 #define BattleDisplayStateInit(display) ((display)->state = BATTLE_DISPLAY_ZERO.state)
 
-static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime time) {
+static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime time, i32 score_total) {
     BattleDisplayPhase phase_to_be = display->phase;
     switch (display->phase) {
         case BDP_PLAYING: {
@@ -5446,6 +5454,12 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
         }
         case BDP_DONE: {
             BattleDisplayInit(display);
+            // HACK. There is a bug where on the frame we have scored lines, we will set the display score total to be
+            // the new total guard against this by detecting that we are about to score the next frame. Come up with
+            // something better here.
+            if (ArrLen(&log->events) == 0) {
+                display->live_score_total = score_total;
+            }
             break;
         }
         default: {
@@ -5823,6 +5837,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
             battle->trick_mult_score += mult;
 
             battle->total_score += battle->trick_base_score * battle->trick_mult_score;
+            ScoreLogScoreHand(&battle->score_log, battle->total_score);
         }
 
         // Metrics
@@ -6386,7 +6401,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                BattleDisplayUpdate(&battle->display, &battle->score_log, gstate->frame_time);
+                BattleDisplayUpdate(&battle->display, &battle->score_log, gstate->frame_time, battle->total_score);
 
                 break;
             }
@@ -6681,8 +6696,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         {
+                            i32 score_total = battle->display.live_score_total;
+
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", battle->total_score);
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", score_total);
                             UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                         }
                         {
