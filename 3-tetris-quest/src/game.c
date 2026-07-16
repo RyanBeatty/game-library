@@ -5397,6 +5397,8 @@ typedef struct {
     i32 live_score_total;
     i32 live_score_total_to_be;
     i32 display_score_total;
+
+    Vec4 tile_highlight_color;
 } BattleDisplay;
 
 // Compute the tween's T value which is from [0, 1]
@@ -5413,6 +5415,18 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
     switch (display->phase) {
         case BDP_PLAYING: {
             display->tween_elapsed += time.dt;
+
+            {
+                f32 t = BattleDisplayTweenT(display);
+
+                display->display_score_total = f32lerp(display->live_score_total, display->live_score_total_to_be, t);
+
+                // Tile flash
+                Vec4 tile_highlight_color = LYELLOW;
+                tile_highlight_color.a = 0.5f * (f32sin((4.0f * LPI * t) - 0.5f * LPI) + 1.0f);
+                display->tile_highlight_color = tile_highlight_color;
+            }
+
             if (display->tween_elapsed >= display->tween_duration) {
                 // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
                 // over duration, then while mod'd elapsed is still over next duration pop off events from the score
@@ -5420,9 +5434,6 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                 display->tween_elapsed = f32mod(display->tween_elapsed, display->tween_duration);
                 phase_to_be = BDP_NEXT;
             }
-
-            f32 t = BattleDisplayTweenT(display);
-            display->display_score_total = f32lerp(display->live_score_total, display->live_score_total_to_be, t);
 
             break;
         }
@@ -6593,10 +6604,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                              battle->display.state.scored_tile.c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                                    f32 t = BattleDisplayTweenT(&battle->display);
-                                    Vec4 color2 = LYELLOW;
-                                    color2.a = 0.5f * (f32sin((4.0f * LPI * t) - 0.5f * LPI) + 1.0f);
-                                    BlockGraphics graphics = {.base_color = color2};
+                                    BlockGraphics graphics = {.base_color = battle->display.tile_highlight_color};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
                             }
