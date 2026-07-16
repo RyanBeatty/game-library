@@ -5452,8 +5452,10 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                         display->live_score_total = display->display_score_total;
                         display->live_score_total_to_be = cur_event->score_total;
 
-                        f32 distance = display->live_score_total_to_be - display->live_score_total;
-                        f32 elapsed_time = distance * (1 / (60.0f / 10.0f));
+                        f32 num_distance = display->live_score_total_to_be - display->live_score_total;
+                        f32 num_per_frame = 1.0f;
+                        f32 elapsed_frames = num_distance * (1.0f / num_per_frame);
+                        f32 elapsed_time = elapsed_frames * (1.0f / 60.0f);
                         display->tween_duration = elapsed_time;
                         break;
                     }
