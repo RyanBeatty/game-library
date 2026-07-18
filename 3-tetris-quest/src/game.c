@@ -4872,6 +4872,12 @@ LCORE UIAction UILabel(UIState* ui, Str8 text, UIFlag flags) {
     return action;
 }
 
+static void UISpacer(UIState* ui, UISize semantic_width, UISize semantic_height) {
+    UIBoxStyle style = {0};
+    UIAction action = {0};
+    UIBoxEx(ui, Str8Zero(), UI_FLAG_HIDE, semantic_width, semantic_height, style, &action);
+}
+
 ////////////////////////////////////////////////////
 
 typedef struct {
@@ -6718,59 +6724,55 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                      load_action, GetScreenRenderTarget()) {
                     UIFont(&ui, GetLFontClosest(40.0f)) {
                         UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
-                        Vec4 bg_color = LGRAY;
-                        bg_color.a = 0.0f;
-                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, bg_color) {
-                            UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(0.5f)) {
-                                {
-                                    char buffer[256] = {0};
-                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", battle->score_target);
-                                    UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                                }
-                                {
-                                    i32 score_total = battle->display.display_score_total;
+                        UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(0.5f)) {
+                            {
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", battle->score_target);
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
+                            {
+                                i32 score_total = battle->display.display_score_total;
 
-                                    char buffer[256] = {0};
-                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", score_total);
-                                    UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                                }
-                                {
-                                    i32 chip_score = battle->display.live_chip_total;
-                                    f32 mult_score = battle->display.live_mult_total;
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", score_total);
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
+                            {
+                                i32 chip_score = battle->display.live_chip_total;
+                                f32 mult_score = battle->display.live_mult_total;
 
-                                    char buffer[256] = {0};
-                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %0.2f", chip_score,
-                                             mult_score);
-                                    UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                                }
-                                {
-                                    char buffer[256] = {0};
-                                    snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %lld", ArrLen(&battle->deck));
-                                    UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                                }
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %0.2f", chip_score,
+                                         mult_score);
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
+                            {
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %lld", ArrLen(&battle->deck));
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
 
-                                // Draw relics
-                                Vec4 bg_color2 = LRED;
-                                bg_color2.a = 0.0f;
-                                UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, bg_color2) {
-                                    static f32 RELIC_TEXT_ANIMATION_TIME = 1.0f;
-                                    UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
-                                        for (isize i = 0; i < RelicsOwnedCount(&gstate->player_relics); ++i) {
-                                            RelicState* relic_state = RelicsStateGet(&gstate->player_relics, i);
-                                            Relic* relic = RelicGet(relic_state->id);
+                            // Draw relics
+                            UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
+                                static f32 RELIC_TEXT_ANIMATION_TIME = 1.0f;
+                                UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
+                                    for (isize i = 0; i < RelicsOwnedCount(&gstate->player_relics); ++i) {
+                                        RelicState* relic_state = RelicsStateGet(&gstate->player_relics, i);
+                                        Relic* relic = RelicGet(relic_state->id);
 
-                                            f32 activated_dt =
-                                                f32clamp(gstate->timer - relic_state->activated_time, 0.0f, 1.0f);
-                                            f32 activated_t = activated_dt / RELIC_TEXT_ANIMATION_TIME;
-                                            Vec4 color = Vec4Lerp(LYELLOW, LWHITE, activated_t);
-                                            UIThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, color) {
-                                                UILabel(&ui, relic->name, UI_FLAG_NONE);
-                                            }
+                                        f32 activated_dt =
+                                            f32clamp(gstate->timer - relic_state->activated_time, 0.0f, 1.0f);
+                                        f32 activated_t = activated_dt / RELIC_TEXT_ANIMATION_TIME;
+                                        Vec4 color = Vec4Lerp(LYELLOW, LWHITE, activated_t);
+                                        UIThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, color) {
+                                            UILabel(&ui, relic->name, UI_FLAG_NONE);
                                         }
                                     }
                                 }
                             }
                         }
+
+                        UISpacer(&ui, UISizePctParent(0.1f), UISizePctParent(0.2f));
 
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LBLUE) {
                             UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(1.0f)) {}
