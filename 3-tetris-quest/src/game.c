@@ -4690,6 +4690,13 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBo
     // Update parent pos.
     Vec2 box_dims = AABB2DDims(box.box);
     UILayoutDirection dir = UIGetLayoutDirection(ui);
+    // TODO: We might want to modify this to be more like Imgui. Layout happens from top to bottom + left to right
+    // (though maybe we should consider for our purposes bottom to top?). When Imgui adds a box, it increments the X
+    // value as well as the Y value. once it detects X has hit the end of a line (guessing its the width of the parent),
+    // then it resets X offset to be 0 (i.e. parent's left edge coord) as well as increment Y by the new box height for
+    // the next line. At the moment, we always treat X offset as 0 from the parent, so hard to layout things in the same
+    // line without switching layout direction. Feel like it might be easier to layout right with just a few calls to
+    // UISameLine() instead of having to push the direction change each time
     switch (dir) {
         case UI_LAYOUT_DOWN: {
             parent->cursor_top_left_offset.y -= box_dims.y;
