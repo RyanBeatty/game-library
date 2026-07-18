@@ -5423,7 +5423,8 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
 
                 // Tile flash
                 Vec4 tile_highlight_color = LYELLOW;
-                tile_highlight_color.a = 0.5f * (f32sin((4.0f * LPI * t) - 0.5f * LPI) + 1.0f);
+                // tile_highlight_color.a = 0.5f * (f32sin((4.0f * LPI * t) - 0.5f * LPI) + 1.0f);
+                tile_highlight_color.a = f32sin(t * LPI);
                 display->tile_highlight_color = tile_highlight_color;
             }
 
@@ -5451,7 +5452,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                         display->state.scored_tile = cur_event->block_id;
                         display->state.live_chip_tile = cur_event->chip_value;
                         display->live_chip_total += cur_event->chip_value;
-                        display->tween_duration = 1.0f;
+                        display->tween_duration = 0.6f;
                         break;
                     }
                     case SE_ADD_MULT: {
