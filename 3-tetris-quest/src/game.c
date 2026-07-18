@@ -4550,6 +4550,8 @@ typedef struct {
 
 #define UIGetFont(ui) (ArrTail(&(ui)->fonts))
 #define UIPushFont(ui, ffont) (ArrPush(&(ui)->fonts, ffont))
+#define UIPopFont(ui) (ArrPop(&(ui)->fonts))
+#define UIFont(ui, ffont) Scoped(UIPushFont(ui, ffont), UIPopFont(ui))
 
 #define UIPushSpacing(ui, sspacing) (ArrPush(&(ui)->spacings, sspacing))
 
@@ -5726,10 +5728,148 @@ static void BattleClearLines(Battle* battle) {
     }
 }
 
+static void BattleScore(Battle* battle, FrameTime time) {
+    Grid* grid = &battle->grid;
+    Relics* relics = battle->relics;
+    ClearInfo clear_info = GridDetectClearStartEnd(grid);
+
+    // Score trick.
+    if (clear_info.num_cleared_rows) {
+        battle->phase_to_be = BP_SCORING;
+        i32 block_score = 0;
+        i32 mult = 0;
+        for (isize i = 0; i < clear_info.num_cleared_rows; ++i) {
+            isize r = clear_info.cleared_row_start + i;
+            Assert(r < grid->nrows);
+
+            ScoreLogAddMult(&battle->score_log, 1.0f);
+            ++mult;
+
+            Tile* first = GridGetTile(grid, r, 0);
+            Suit suit = first->effects.suit;
+            i32 all_suit_mask = 0;
+            for (isize c = 0; c < grid->ncols; ++c) {
+                Tile* tile = GridGetTile(grid, r, c);
+                Assert(tile->occupied);
+                i32 block_chip_value = tile->effects.points;
+                block_score += block_chip_value;
+                suit = suit == tile->effects.suit ? suit : SUIT_NONE;
+                all_suit_mask |= 1 << tile->effects.suit;
+
+                // Evaluate block effects on score.
+                for (isize mask_pos = 0; mask_pos < 32; ++mask_pos) {
+                    TileEffectType effect_type = tile->effects.flags & mask_pos;
+                    switch (effect_type) {
+                        case TE_HI_LO: {
+                            Tile* hi = GridMaybeGetTile(grid, tile->id.r + 1, tile->id.c);
+                            Tile* lo = GridMaybeGetTile(grid, tile->id.r - 1, tile->id.c);
+                            PlatformLog(LLOG_INFO, "hi lo block r=%d c=%d", tile->id.r, tile->id.c);
+                            block_score += (hi ? hi->effects.points : 0) + (lo ? lo->effects.points : 0);
+                            break;
+                        }
+                        case TE_NONE: {
+                            break;
+                        }
+                        default: {
+                            PlatformLog(LLOG_ERROR, "UNKNOWN tile effect type when scoring: %d", effect_type);
+                            Assert(0);
+                        }
+                    }
+                }
+
+                ScoreLogBlockScored(&battle->score_log, tile->id, block_chip_value);
+            }
+
+            for (isize ri = 0; ri < RelicsOwnedCount(relics); ++ri) {
+                RelicState* relic_state = RelicsStateGet(relics, ri);
+                bool activated = false;
+                switch (relic_state->id) {
+                    case RELIC_SAME_SUIT_MULT: {
+                        if (suit != SUIT_NONE) {
+                            activated = true;
+                            ++mult;
+                        }
+                        break;
+                    }
+                    case RELIC_SAME_SUIT_CHIPS: {
+                        if (suit != SUIT_NONE) {
+                            activated = true;
+                            block_score += 50;
+                        }
+                        break;
+                    }
+                    case RELIC_PLUS_MULT_CONSECTUTIVE: {
+                        if (battle->cleared_streak) {
+                            activated = true;
+                            mult += battle->cleared_streak;
+                        }
+                        break;
+                    }
+                    case RELIC_FIRST_CLEAR_MULT: {
+                        if (battle->num_cleared == 0) {
+                            activated = true;
+                            mult += 3;
+                        }
+                        break;
+                    }
+                    case RELIC_CLEAR_COUNT_MULT: {
+                        // Little hacky in that we are relying on the fact that we are looping over the cleared
+                        // rows. A simpler impl would be to just += clear_info.num_cleared_rows
+                        ++mult;
+                        activated = true;
+                        break;
+                    }
+                    case RELIC_ALL_SUIT_MULT: {
+                        static i32 ALL_SUIT_MASK = (1 << SUIT_A) | (1 << SUIT_B) | (1 << SUIT_C) | (1 << SUIT_D);
+                        if (all_suit_mask == ALL_SUIT_MASK) {
+                            activated = true;
+                            mult += 1;
+                        }
+                        break;
+                    }
+                    case RELIC_ALL_SUIT_CHIPS: {
+                        static i32 ALL_SUIT_MASK = (1 << SUIT_A) | (1 << SUIT_B) | (1 << SUIT_C) | (1 << SUIT_D);
+                        if (all_suit_mask == ALL_SUIT_MASK) {
+                            activated = true;
+                            block_score += 20;
+                        }
+                        break;
+                    }
+                    default: {
+                        PlatformLog(LLOG_ERROR, "Unknown owned relic: %d", relic_state);
+                        Assert(0);
+                    }
+                }
+
+                relic_state->activated_time = activated ? time.accumulated : 0.0f;
+            }
+        }
+
+        // Score trick.
+        // Don't reset after scoring so that UI can display for the moment.
+        battle->trick_base_score = 0;
+        battle->trick_mult_score = 0;
+        battle->trick_base_score += block_score;
+        battle->trick_mult_score += mult;
+
+        battle->total_score += battle->trick_base_score * battle->trick_mult_score;
+        ScoreLogScoreHand(&battle->score_log, battle->total_score);
+    }
+
+    // Metrics
+    {
+        battle->blocks_placed_since_last_clear =
+            clear_info.num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
+        battle->max_blocks_placed_since_last_clear =
+            i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
+        battle->num_cleared += clear_info.num_cleared_rows;
+        battle->cleared_streak = clear_info.num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
+    }
+}
+
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
 static void BattlePlacePiece(Battle* battle, FrameTime time) {
     Grid* grid = &battle->grid;
-    Relics* relics = battle->relics;
 
     // Place piece.
     {
@@ -5740,144 +5880,6 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
             Tile* tile = GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
             tile->occupied = true;
             tile->effects = active_piece->effects;
-        }
-    }
-
-    // Score piece
-    {
-        ClearInfo clear_info = GridDetectClearStartEnd(grid);
-
-        // Score trick.
-        if (clear_info.num_cleared_rows) {
-            battle->phase_to_be = BP_SCORING;
-            i32 block_score = 0;
-            i32 mult = 0;
-            for (isize i = 0; i < clear_info.num_cleared_rows; ++i) {
-                isize r = clear_info.cleared_row_start + i;
-                Assert(r < grid->nrows);
-
-                ScoreLogAddMult(&battle->score_log, 1.0f);
-                ++mult;
-
-                Tile* first = GridGetTile(grid, r, 0);
-                Suit suit = first->effects.suit;
-                i32 all_suit_mask = 0;
-                for (isize c = 0; c < grid->ncols; ++c) {
-                    Tile* tile = GridGetTile(grid, r, c);
-                    Assert(tile->occupied);
-                    i32 block_chip_value = tile->effects.points;
-                    block_score += block_chip_value;
-                    suit = suit == tile->effects.suit ? suit : SUIT_NONE;
-                    all_suit_mask |= 1 << tile->effects.suit;
-
-                    // Evaluate block effects on score.
-                    for (isize mask_pos = 0; mask_pos < 32; ++mask_pos) {
-                        TileEffectType effect_type = tile->effects.flags & mask_pos;
-                        switch (effect_type) {
-                            case TE_HI_LO: {
-                                Tile* hi = GridMaybeGetTile(grid, tile->id.r + 1, tile->id.c);
-                                Tile* lo = GridMaybeGetTile(grid, tile->id.r - 1, tile->id.c);
-                                PlatformLog(LLOG_INFO, "hi lo block r=%d c=%d", tile->id.r, tile->id.c);
-                                block_score += (hi ? hi->effects.points : 0) + (lo ? lo->effects.points : 0);
-                                break;
-                            }
-                            case TE_NONE: {
-                                break;
-                            }
-                            default: {
-                                PlatformLog(LLOG_ERROR, "UNKNOWN tile effect type when scoring: %d", effect_type);
-                                Assert(0);
-                            }
-                        }
-                    }
-
-                    ScoreLogBlockScored(&battle->score_log, tile->id, block_chip_value);
-                }
-
-                for (isize ri = 0; ri < RelicsOwnedCount(relics); ++ri) {
-                    RelicState* relic_state = RelicsStateGet(relics, ri);
-                    bool activated = false;
-                    switch (relic_state->id) {
-                        case RELIC_SAME_SUIT_MULT: {
-                            if (suit != SUIT_NONE) {
-                                activated = true;
-                                ++mult;
-                            }
-                            break;
-                        }
-                        case RELIC_SAME_SUIT_CHIPS: {
-                            if (suit != SUIT_NONE) {
-                                activated = true;
-                                block_score += 50;
-                            }
-                            break;
-                        }
-                        case RELIC_PLUS_MULT_CONSECTUTIVE: {
-                            if (battle->cleared_streak) {
-                                activated = true;
-                                mult += battle->cleared_streak;
-                            }
-                            break;
-                        }
-                        case RELIC_FIRST_CLEAR_MULT: {
-                            if (battle->num_cleared == 0) {
-                                activated = true;
-                                mult += 3;
-                            }
-                            break;
-                        }
-                        case RELIC_CLEAR_COUNT_MULT: {
-                            // Little hacky in that we are relying on the fact that we are looping over the cleared
-                            // rows. A simpler impl would be to just += clear_info.num_cleared_rows
-                            ++mult;
-                            activated = true;
-                            break;
-                        }
-                        case RELIC_ALL_SUIT_MULT: {
-                            static i32 ALL_SUIT_MASK = (1 << SUIT_A) | (1 << SUIT_B) | (1 << SUIT_C) | (1 << SUIT_D);
-                            if (all_suit_mask == ALL_SUIT_MASK) {
-                                activated = true;
-                                mult += 1;
-                            }
-                            break;
-                        }
-                        case RELIC_ALL_SUIT_CHIPS: {
-                            static i32 ALL_SUIT_MASK = (1 << SUIT_A) | (1 << SUIT_B) | (1 << SUIT_C) | (1 << SUIT_D);
-                            if (all_suit_mask == ALL_SUIT_MASK) {
-                                activated = true;
-                                block_score += 20;
-                            }
-                            break;
-                        }
-                        default: {
-                            PlatformLog(LLOG_ERROR, "Unknown owned relic: %d", relic_state);
-                            Assert(0);
-                        }
-                    }
-
-                    relic_state->activated_time = activated ? time.accumulated : 0.0f;
-                }
-            }
-
-            // Score trick.
-            // Don't reset after scoring so that UI can display for the moment.
-            battle->trick_base_score = 0;
-            battle->trick_mult_score = 0;
-            battle->trick_base_score += block_score;
-            battle->trick_mult_score += mult;
-
-            battle->total_score += battle->trick_base_score * battle->trick_mult_score;
-            ScoreLogScoreHand(&battle->score_log, battle->total_score);
-        }
-
-        // Metrics
-        {
-            battle->blocks_placed_since_last_clear =
-                clear_info.num_cleared_rows > 0 ? 0 : battle->blocks_placed_since_last_clear + 1;
-            battle->max_blocks_placed_since_last_clear =
-                i32max(battle->max_blocks_placed_since_last_clear, battle->blocks_placed_since_last_clear);
-            battle->num_cleared += clear_info.num_cleared_rows;
-            battle->cleared_streak = clear_info.num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
         }
     }
 
@@ -6714,115 +6716,93 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 };
                 UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
                      load_action, GetScreenRenderTarget()) {
-                    UIPushFont(&ui, GetLFontClosest(40.0f));
-                    UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
-                    UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(1.0f)) {
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", battle->score_target);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                        {
-                            i32 score_total = battle->display.display_score_total;
+                    UIFont(&ui, GetLFontClosest(40.0f)) {
+                        UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
+                        UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(1.0f)) {
+                            {
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", battle->score_target);
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
+                            {
+                                i32 score_total = battle->display.display_score_total;
 
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", score_total);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                        {
-                            i32 chip_score = battle->display.live_chip_total;
-                            f32 mult_score = battle->display.live_mult_total;
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Score: %d", score_total);
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
+                            {
+                                i32 chip_score = battle->display.live_chip_total;
+                                f32 mult_score = battle->display.live_mult_total;
 
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %0.2f", chip_score,
-                                     mult_score);
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                        {
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %lld", ArrLen(&battle->deck));
-                            UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        }
-                        // UILabel(&ui, Str8Lit("space"), UI_FLAG_HIDE);
-                        // {
-                        //     char buffer[256] = {0};
-                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Blocks Since Clear: %d",
-                        //              battle->blocks_placed_since_last_clear);
-                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        // }
-                        // {
-                        //     char buffer[256] = {0};
-                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Max Blocks Since Clear: %d",
-                        //              battle->max_blocks_placed_since_last_clear);
-                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        // }
-                        // {
-                        //     char buffer[256] = {0};
-                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Total Cleared: %d", battle->num_cleared);
-                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        // }
-                        // {
-                        //     char buffer[256] = {0};
-                        //     snprintf(buffer, ArraySizeOf(buffer) - 1, "Cleared Streak: %d", battle->cleared_streak);
-                        //     UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
-                        // }
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Trick Score: %d X %0.2f", chip_score,
+                                         mult_score);
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
+                            {
+                                char buffer[256] = {0};
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %lld", ArrLen(&battle->deck));
+                                UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
+                            }
 
-                        // Draw relics
-                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
-                            static f32 RELIC_TEXT_ANIMATION_TIME = 1.0f;
-                            UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
-                                for (isize i = 0; i < RelicsOwnedCount(&gstate->player_relics); ++i) {
-                                    RelicState* relic_state = RelicsStateGet(&gstate->player_relics, i);
-                                    Relic* relic = RelicGet(relic_state->id);
+                            // Draw relics
+                            UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LRED) {
+                                static f32 RELIC_TEXT_ANIMATION_TIME = 1.0f;
+                                UIWindow(&ui, UISizePctParent(1.0f), UISizePctParent(1.0f)) {
+                                    for (isize i = 0; i < RelicsOwnedCount(&gstate->player_relics); ++i) {
+                                        RelicState* relic_state = RelicsStateGet(&gstate->player_relics, i);
+                                        Relic* relic = RelicGet(relic_state->id);
 
-                                    f32 activated_dt =
-                                        f32clamp(gstate->timer - relic_state->activated_time, 0.0f, 1.0f);
-                                    f32 activated_t = activated_dt / RELIC_TEXT_ANIMATION_TIME;
-                                    Vec4 color = Vec4Lerp(LYELLOW, LWHITE, activated_t);
-                                    UIThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, color) {
-                                        UILabel(&ui, relic->name, UI_FLAG_NONE);
+                                        f32 activated_dt =
+                                            f32clamp(gstate->timer - relic_state->activated_time, 0.0f, 1.0f);
+                                        f32 activated_t = activated_dt / RELIC_TEXT_ANIMATION_TIME;
+                                        Vec4 color = Vec4Lerp(LYELLOW, LWHITE, activated_t);
+                                        UIThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, color) {
+                                            UILabel(&ui, relic->name, UI_FLAG_NONE);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    switch (gstate->phase) {
-                        // Draw shop ui
-                        case GP_SHOP: {
-                            if (shop->for_sale_hover_idx != -1) {
-                                Shopable* item = ArrGetPtr(&shop->for_sale, shop->for_sale_hover_idx);
-                                Relic* relic = RelicGet(item->relic_id);
-                                LFont font = GetLFontClosest(40.f);
-                                TextBox box = LFontMeasureStr8Quad(font, relic->description);
-                                Vec2 pos = Vec2Add(shop->for_sale_description_pos_screen, box.baseline_offset);
-                                DrawStr8Ex(font, pos, LWHITE, relic->description);
+                        switch (gstate->phase) {
+                            // Draw shop ui
+                            case GP_SHOP: {
+                                if (shop->for_sale_hover_idx != -1) {
+                                    Shopable* item = ArrGetPtr(&shop->for_sale, shop->for_sale_hover_idx);
+                                    Relic* relic = RelicGet(item->relic_id);
+                                    LFont font = GetLFontClosest(40.f);
+                                    TextBox box = LFontMeasureStr8Quad(font, relic->description);
+                                    Vec2 pos = Vec2Add(shop->for_sale_description_pos_screen, box.baseline_offset);
+                                    DrawStr8Ex(font, pos, LWHITE, relic->description);
+                                }
+
+                                break;
                             }
-
-                            break;
-                        }
-                        case GP_GAME_OVER: {
-                            Vec2 screen_center = Vec2Lit(gstate->screenw * 0.5f, gstate->screenh * 0.5f);
-                            DrawQuad2D(screen_center, gstate->screenw * 0.8f, gstate->screenh * 0.9f, Mat4Identity(),
-                                       LGRAY);
-                            LFont font = GetLFontClosest(40.0f);
-                            Str8 game_over = Str8Lit("GAME OVER");
-                            TextBox box = LFontMeasureStr8Quad(font, game_over);
-                            DrawStr8Ex(font, Vec2Add(screen_center, box.baseline_offset), LWHITE, game_over);
-                            break;
-                        }
-                        case GP_NEW_ROUND: {
-                            break;
-                        }
-                        case GP_PLAYING: {
-                            break;
-                        }
-                        case GP_NEW_GAME: {
-                            break;
-                        }
-                        default: {
-                            PlatformLog(LLOG_ERROR, "Unknown game state phase in draw: %d", gstate->phase);
-                            Assert(0);
+                            case GP_GAME_OVER: {
+                                Vec2 screen_center = Vec2Lit(gstate->screenw * 0.5f, gstate->screenh * 0.5f);
+                                DrawQuad2D(screen_center, gstate->screenw * 0.8f, gstate->screenh * 0.9f,
+                                           Mat4Identity(), LGRAY);
+                                LFont font = GetLFontClosest(40.0f);
+                                Str8 game_over = Str8Lit("GAME OVER");
+                                TextBox box = LFontMeasureStr8Quad(font, game_over);
+                                DrawStr8Ex(font, Vec2Add(screen_center, box.baseline_offset), LWHITE, game_over);
+                                break;
+                            }
+                            case GP_NEW_ROUND: {
+                                break;
+                            }
+                            case GP_PLAYING: {
+                                break;
+                            }
+                            case GP_NEW_GAME: {
+                                break;
+                            }
+                            default: {
+                                PlatformLog(LLOG_ERROR, "Unknown game state phase in draw: %d", gstate->phase);
+                                Assert(0);
+                            }
                         }
                     }
                 }
