@@ -5412,6 +5412,7 @@ static void ScoreLogScoreHand(ScoreLog* log, i32 score_total) {
 typedef enum {
     BP_NONE = 0,
     BP_PLAYING,
+    BP_PLAY_HAND,
     BP_SCORING,
     BP_COUNT,
 } BattlePhase;
@@ -5907,6 +5908,8 @@ static void BattleScore(Battle* battle, FrameTime time) {
         battle->num_cleared += clear_info.num_cleared_rows;
         battle->cleared_streak = clear_info.num_cleared_rows > 0 ? battle->cleared_streak + 1 : 0;
     }
+
+    BattleDrawToFull(battle);
 }
 
 // TODO: I should maybe make this BattleTick essentially and have all logic driven in a flat function here.
@@ -5939,7 +5942,7 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
         battle->selection_idx = NO_CARD_SELECTED_IDX;
     }
 
-    BattleDrawToFull(battle);
+    // BattleDrawToFull(battle);
 }
 
 // TODO: Combine with rotate function. move + rotate.
@@ -6354,6 +6357,9 @@ static void BattlePhaseChange(Battle* battle) {
         case BP_NONE: {
             break;
         }
+        case BP_PLAY_HAND: {
+            break;
+        }
         default: {
             PlatformLog(LLOG_ERROR, "Unknown battle phase change phase: %d", battle->phase_to_be);
             Assert(0);
@@ -6461,6 +6467,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         } else if (ArrLen(&battle->hand) == 0 && ArrLen(&battle->deck) == 0) {
                             gstate->phase_to_be = GP_GAME_OVER;
                         }
+                        break;
+                    }
+                    case BP_PLAY_HAND: {
+                        BattleScore(battle, gstate->frame_time);
                         break;
                     }
                     case BP_SCORING: {
@@ -6820,7 +6830,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {
                                 if (UIButton(&ui, Str8Lit("Play Hand"), UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED)
                                         .clicked) {
-                                    PlatformLog(LLOG_INFO, "clicked");
+                                    battle->phase_to_be =
+                                        battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
                                 }
                             }
                         }
