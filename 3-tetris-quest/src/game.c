@@ -4472,7 +4472,9 @@ typedef struct {
     // Note that this should be a *negative* offset from the top left. i.e. top left + this = next layout position.
     // TODO: I should potentially change to make everything based off of the bottom left as I think the math will be
     // less confusing.
-    Vec2 cursor_top_left_offset;  // Where the next point to layout a ui element inside of the box is.
+    Vec2 cursor_top_left_offset;            // Where the next point to layout a ui element inside of the box is.
+    Vec2 cursor_top_left_offset_prev_line;  // Where the cursor last was *on the previous line*. Useful if we need to
+                                            // reset to draw things on same line.
 
     Str8 text;
     TextBox textbox;  // Not positioned. i.e. the center here holds no meaning other than an offset.
@@ -4687,33 +4689,45 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBo
     AABB2D aabb = AABB2DFromMinMax(box_min, box_max);
     UIBox box = {.box = aabb, .text = text, .textbox = textbox, .id = UIStateNextId(ui)};
 
-    // Update parent pos.
-    Vec2 box_dims = AABB2DDims(box.box);
-    UILayoutDirection dir = UIGetLayoutDirection(ui);
-    // TODO: We might want to modify this to be more like Imgui. Layout happens from top to bottom + left to right
-    // (though maybe we should consider for our purposes bottom to top?). When Imgui adds a box, it increments the X
-    // value as well as the Y value. once it detects X has hit the end of a line (guessing its the width of the parent),
-    // then it resets X offset to be 0 (i.e. parent's left edge coord) as well as increment Y by the new box height for
-    // the next line. At the moment, we always treat X offset as 0 from the parent, so hard to layout things in the same
-    // line without switching layout direction. Feel like it might be easier to layout right with just a few calls to
-    // UISameLine() instead of having to push the direction change each time
-    switch (dir) {
-        case UI_LAYOUT_DOWN: {
-            parent->cursor_top_left_offset.y -= box_dims.y;
-            // Because its a negative offset, check with parent negative.
-            parent->cursor_top_left_offset.y = f32max(parent->cursor_top_left_offset.y, -parent_dims.y);
-            break;
-        }
-        case UI_LAYOUT_RIGHT: {
-            parent->cursor_top_left_offset.x += box_dims.x;
-            parent->cursor_top_left_offset.x = f32min(parent->cursor_top_left_offset.x, parent_dims.x);
-            break;
-        }
-        default: {
-            PlatformLog(LLOG_ERROR, "Unknown Layout Direction: %d", dir);
-            Assert(0);
-        }
+    // Update parent cursor pos.
+    {
+        Vec2 box_dims = AABB2DDims(box.box);
+        parent->cursor_top_left_offset.x = f32min(parent->cursor_top_left_offset.x + box_dims.x, parent_dims.x);
+        parent->cursor_top_left_offset_prev_line = parent->cursor_top_left_offset;
+        // Now we end the line, and advance to next line.
+        // Because our Y offsets are a negative offset (since we offset from the top left down), check with parent
+        // negative.
+        parent->cursor_top_left_offset.y = f32max(parent->cursor_top_left_offset.y - box_dims.y, -parent_dims.y);
+        parent->cursor_top_left_offset.x = 0;  // Reset to paren't left edge because we are new line.
     }
+
+    // UILayoutDirection dir = UIGetLayoutDirection(ui);
+    // // TODO: We might want to modify this to be more like Imgui. Layout happens from top to bottom + left to right
+    // // (though maybe we should consider for our purposes bottom to top?). When Imgui adds a box, it increments the X
+    // // value as well as the Y value. once it detects X has hit the end of a line (guessing its the width of the
+    // parent),
+    // // then it resets X offset to be 0 (i.e. parent's left edge coord) as well as increment Y by the new box height
+    // for
+    // // the next line. At the moment, we always treat X offset as 0 from the parent, so hard to layout things in the
+    // same
+    // // line without switching layout direction. Feel like it might be easier to layout right with just a few calls to
+    // // UISameLine() instead of having to push the direction change each time
+    // switch (dir) {
+    //     case UI_LAYOUT_DOWN: {
+    //         parent->cursor_top_left_offset.y -= box_dims.y;
+    //         parent->cursor_top_left_offset.y = f32max(parent->cursor_top_left_offset.y, -parent_dims.y);
+    //         break;
+    //     }
+    //     case UI_LAYOUT_RIGHT: {
+    //         parent->cursor_top_left_offset.x += box_dims.x;
+    //         parent->cursor_top_left_offset.x = f32min(parent->cursor_top_left_offset.x, parent_dims.x);
+    //         break;
+    //     }
+    //     default: {
+    //         PlatformLog(LLOG_ERROR, "Unknown Layout Direction: %d", dir);
+    //         Assert(0);
+    //     }
+    // }
 
     box.style = style;
 
@@ -4883,6 +4897,12 @@ static void UISpacer(UIState* ui, UISize semantic_width, UISize semantic_height)
     UIBoxStyle style = {0};
     UIAction action = {0};
     UIBoxEx(ui, Str8Zero(), UI_FLAG_HIDE, semantic_width, semantic_height, style, &action);
+}
+
+// Move the ui cursor to be at the previous line mark. Allows laying out horizontally.
+static void UISameLine(UIState* ui) {
+    UIBox* parent = UIGetParent(ui);
+    parent->cursor_top_left_offset = parent->cursor_top_left_offset_prev_line;
 }
 
 ////////////////////////////////////////////////////
@@ -6729,9 +6749,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 };
                 UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
                      load_action, GetScreenRenderTarget()) {
+                    f32 left_panel_width_pct = 0.2f;
+                    f32 right_panel_width_pct = 0.2f;
+                    f32 spacer_width_pct = 1.0f - left_panel_width_pct - right_panel_width_pct;
+
                     UIFont(&ui, GetLFontClosest(40.0f)) {
                         UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
-                        UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(0.5f)) {
+                        UIWindow(&ui, UISizePctParent(left_panel_width_pct), UISizePctParent(0.5f)) {
                             {
                                 char buffer[256] = {0};
                                 snprintf(buffer, ArraySizeOf(buffer) - 1, "Target: %d", battle->score_target);
@@ -6779,10 +6803,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        UISpacer(&ui, UISizePctParent(0.1f), UISizePctParent(0.2f));
+                        UISameLine(&ui);
+                        UISpacer(&ui, UISizePctParent(spacer_width_pct), UISizePctParent(1.0f));
+                        UISameLine(&ui);
 
-                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LBLUE) {
-                            UIWindow(&ui, UISizePctParent(0.2f), UISizePctParent(1.0f)) {}
+                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LGREEN) {
+                            UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {}
                         }
 
                         switch (gstate->phase) {
