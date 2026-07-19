@@ -24,6 +24,7 @@ typedef Vec4 RGBA;
 #define RGBLit(r, g, b) (RGBALit((r), (g), (b), 1.0f))
 
 static const Vec4 LCLEAR = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
+static const Vec4 LHIDDEN = Vec4Lit(1.0f, 1.0f, 1.0f, 0.0f);
 static const Vec4 LRED = Vec4Lit(1.0f, 0.0f, 0.0f, 1.0f);
 static const Vec4 LGREEN = Vec4Lit(0.0f, 1.0f, 0.0f, 1.0f);
 static const Vec4 LBLUE = Vec4Lit(0.0f, 0.0f, 1.0f, 1.0f);
@@ -6826,12 +6827,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UISpacer(&ui, UISizePctParent(spacer_width_pct), UISizePctParent(1.0f));
                         UISameLine(&ui);
 
-                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LGREEN) {
+                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LHIDDEN) {
                             UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {
-                                if (UIButton(&ui, Str8Lit("Play Hand"), UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED)
-                                        .clicked) {
-                                    battle->phase_to_be =
-                                        battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
+                                UISpacer(&ui, UISizePctParent(1.0f), UISizePctParent(0.8f));
+                                UIThemeColor(&ui, UI_THEME_BUTTON_BG_COLOR, LGRAY) {
+                                    if (UIButton(&ui, Str8Lit("Play Hand"),
+                                                 UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED)
+                                            .clicked) {
+                                        battle->phase_to_be =
+                                            battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
+                                    }
                                 }
                             }
                         }
