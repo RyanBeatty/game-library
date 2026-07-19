@@ -14,6 +14,16 @@ typedef struct {
     bool pressed;
 } GameButtonState;
 
+typedef enum {
+    GB_ACTION_UP = 0,
+    GB_ACTION_DOWN,
+    GB_ACTION_LEFT,
+    GB_ACTION_RIGHT,
+    GB_LEFT_SHOULDER,
+    GB_RIGHT_SHOULDER,
+    GB_COUNT,
+} GameButtonType;
+
 typedef struct {
     bool connected;
     // The idea behind this is to virtualize a game controller. Instead of the game checking was the physical button A
@@ -33,7 +43,7 @@ typedef struct {
     Vec2 cursor_pos_world;
 
     union {
-        GameButtonState buttons[6];
+        GameButtonState buttons[GB_COUNT];
         struct {
             GameButtonState action_up;
             GameButtonState action_down;

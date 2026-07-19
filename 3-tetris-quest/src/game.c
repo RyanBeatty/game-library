@@ -4544,6 +4544,7 @@ typedef struct {
     UIBoxId active_id;
 
     GameInput* input;  // Reset each frame.
+    GameButtonType mouse_click_button;
 } UIState;
 
 typedef struct {
@@ -4596,7 +4597,8 @@ LCORE void UISetCursor(UIState* ui, Vec2 pos) {
     root->cursor_top_left_offset = pos;
 }
 
-static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input) {
+static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input,
+                        GameButtonType mouse_click_button) {
     InitArr(&ui->spacings, perm, Vec2, 1);
 
     InitArr(&ui->fonts, perm, LFont, 3);
@@ -4635,21 +4637,23 @@ static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInp
     }
 
     ui->input = input;
+    ui->mouse_click_button = mouse_click_button;
 }
 
-static void UIBegin(UIState* ui, Arena* perm, GameInput* input, f32 width, f32 height, LShader shader,
-                    RenderPassLoadAction load_action, RenderTarget target) {
+static void UIBegin(UIState* ui, Arena* perm, GameInput* input, GameButtonType mouse_click_button, f32 width,
+                    f32 height, LShader shader, RenderPassLoadAction load_action, RenderTarget target) {
     Mat4 view = Mat4Identity();
     Mat4 proj = Mat4Ortho(0, width, 0, height, -1.0f, 1.0f);
 
     BeginShaderPass(shader, load_action, view, proj, target);
-    UIStateInit(ui, perm, width, height, input);
+    UIStateInit(ui, perm, width, height, input, mouse_click_button);
 }
 
 static void UIEnd(UIState* ui) { EndShaderPass(); }
 
-#define UI2D(ui, perm, input, width, height, shader, load_action, target) \
-    Scoped(UIBegin((ui), (perm), (input), (width), (height), (shader), (load_action), (target)), UIEnd((ui)))
+#define UI2D(ui, perm, input, mouse_click_button, width, height, shader, load_action, target)                          \
+    Scoped(UIBegin((ui), (perm), (input), (mouse_click_button), (width), (height), (shader), (load_action), (target)), \
+           UIEnd((ui)))
 
 static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBoxStyle style) {
     UIBox* parent = UIGetParent(ui);
@@ -4827,11 +4831,13 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width
         // Prevent us from activating two adjacent buttonsa t the same time. This can happen occasionally due to
         // floating point math.
         if (UIBoxIdIsNull(ui->active_id) || UIBoxIdEq(ui->active_id, box.id)) {
+            GameButtonState* mouse_button = &controller->buttons[ui->mouse_click_button];
+
             ui->active_id = box.id;
             action.hover = true;
-            action.clicked = controller->action_down.pressed;
-            action.down = controller->action_down.down;
-            PlatformLog(LLOG_INFO, "hover: %d| clicked: %d| down: %d", action.hover, action.clicked, action.down);
+            action.clicked = mouse_button->pressed;
+            action.down = mouse_button->down;
+            // PlatformLog(LLOG_INFO, "hover: %d| clicked: %d| down: %d", action.hover, action.clicked, action.down);
         }
     }
 
@@ -6750,8 +6756,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     .clear_color_flag = false,
                     .depth_test = true,
                 };
-                UI2D(&ui, &gstate->temp, input, PlatformScreenWidth(), PlatformScreenHeight(), GetDefaultShader(),
-                     load_action, GetScreenRenderTarget()) {
+                UI2D(&ui, &gstate->temp, input, GB_ACTION_LEFT, PlatformScreenWidth(), PlatformScreenHeight(),
+                     GetDefaultShader(), load_action, GetScreenRenderTarget()) {
                     f32 left_panel_width_pct = 0.2f;
                     f32 right_panel_width_pct = 0.2f;
                     f32 spacer_width_pct = 1.0f - left_panel_width_pct - right_panel_width_pct;
