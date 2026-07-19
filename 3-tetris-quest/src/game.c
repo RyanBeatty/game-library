@@ -4396,7 +4396,9 @@ typedef enum {
     UI_FLAG_NONE = 0,
     UI_FLAG_CLICKABLE = 1 << 0,
     UI_FLAG_HIDE = 1 << 1,  // Note that by default we draw boxes.
-    // i.e. a button.
+    // i.e. a button. I kind of don't remember why I added this, but for a button at the moment you need both this +
+    // CLICKABLE. This definitely controls if collision test will run and set the clicked action result. I think
+    // CLICKABLE is more an aesthetic thing about how the button is drawn.
     UI_FLAG_ABLE_TO_BE_CLICKED = 1 << 2,
 } UIFlag;
 
@@ -4829,6 +4831,7 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width
             action.hover = true;
             action.clicked = controller->action_down.pressed;
             action.down = controller->action_down.down;
+            PlatformLog(LLOG_INFO, "hover: %d| clicked: %d| down: %d", action.hover, action.clicked, action.down);
         }
     }
 
@@ -6808,7 +6811,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UISameLine(&ui);
 
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LGREEN) {
-                            UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {}
+                            UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {
+                                if (UIButton(&ui, Str8Lit("Play Hand"), UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED)
+                                        .clicked) {
+                                    PlatformLog(LLOG_INFO, "clicked");
+                                }
+                            }
                         }
 
                         switch (gstate->phase) {
