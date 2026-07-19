@@ -5898,6 +5898,8 @@ static void BattleScore(Battle* battle, FrameTime time) {
 
         battle->total_score += battle->trick_base_score * battle->trick_mult_score;
         ScoreLogScoreHand(&battle->score_log, battle->total_score);
+    } else {
+        battle->phase_to_be = BP_PLAYING;
     }
 
     // Metrics
