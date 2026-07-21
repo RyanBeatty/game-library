@@ -5665,7 +5665,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     // hand init deck init
     {
         battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
-        battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 1.3f)), Mat4Identity(),
+        battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 0.5f)), Mat4Identity(),
                                          Vec3Lit(Px2Meter(0.0f), Px2Meter(-50.0f), Px2Meter(0.0f)));
 
         InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
