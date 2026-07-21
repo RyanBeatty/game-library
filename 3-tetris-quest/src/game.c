@@ -5361,7 +5361,10 @@ typedef struct {
     isize cap;
 } CardArr;
 
-#define HandIdxToPos(idx) (Vec3Lit((idx), 0, 0))
+static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
+    f32 len = f32max((f32)ArrLen(cards), 0.0f);
+    return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
+}
 
 ////////////////////////////////////////////////////
 
@@ -5665,8 +5668,10 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     // hand init deck init
     {
         battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
-        battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 0.5f)), Mat4Identity(),
-                                         Vec3Lit(Px2Meter(0.0f), Px2Meter(-50.0f), Px2Meter(0.0f)));
+        // TODO: I should make it so that the playing area origin is fixed at 0, 0. and then maybe I push some transform
+        // that gets auto applied during rendering and collision detection?
+        Vec3 hand_pos = Vec3Lit(0.0f, Px2Meter(-130.0f), 0.0f);
+        battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 1.1f)), Mat4Identity(), hand_pos);
 
         InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
         i64 pieces_per_suit = ArrCap(&battle->deck) / SUIT_COUNT;
@@ -5694,6 +5699,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
         InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
         BattleDrawToFull(battle);
+        breakpoint();
         battle->num_hands = 5;
 
         battle->selection_idx = NO_CARD_SELECTED_IDX;
@@ -6443,7 +6449,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             isize selection_to_be = NO_CARD_SELECTED_IDX;
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 // Card* card = ArrGetPtr(&battle->hand, i);
-                                Vec3 quad_pos = HandIdxToPos(i);
+                                Vec3 quad_pos = HandIdxToPos(&battle->hand, i);
                                 quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
                                 AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
                                 Vec2 normal = {0};
@@ -6683,8 +6689,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec2 piece_dims = Vec2Lit(piece_scale, piece_scale);
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
-                                Vec3 quad_pos = HandIdxToPos(i);
+                                Vec3 quad_pos = HandIdxToPos(&battle->hand, i);
                                 quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
+                                breakpoint();
                                 Vec4 color = battle->focus_idx == i || battle->selection_idx == i ? LYELLOW : LGRAY;
                                 DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), color);
 
