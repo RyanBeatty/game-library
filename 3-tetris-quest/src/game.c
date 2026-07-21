@@ -5352,7 +5352,6 @@ void RelicsAdd(Relics* relics, RelicId id) {
 #define RelicsStateGet(relics, i) &(relics)->state[ArrGet(&(relics)->ids, (i))]
 
 typedef struct {
-    Vec3 pos;
     Piece piece;
 } Card;
 
@@ -5361,6 +5360,8 @@ typedef struct {
     isize len;
     isize cap;
 } CardArr;
+
+#define HandIdxToPos(idx) (Vec3Lit((idx), 0, 0))
 
 ////////////////////////////////////////////////////
 
@@ -5644,9 +5645,9 @@ static void BattleDrawToFull(Battle* battle) {
 
     for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand) && ArrLen(&battle->deck) > 0; ++i) {
         Card card = ArrPop(&battle->deck);
-        i32 r = i / 2;
-        i32 c = i % 2;
-        card.pos = Vec3Lit(c, r, 0);
+        // i32 r = i / 2;
+        // i32 c = i % 2;
+        // card.pos = Vec3Lit(c, r, 0);
         ArrPush(&battle->hand, card);
     }
 }
@@ -5664,7 +5665,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     {
         battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
         battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 1.3f)), Mat4Identity(),
-                                         Vec3Lit(Px2Meter(120.0f), Px2Meter(-50.0f), Px2Meter(0.0f)));
+                                         Vec3Lit(Px2Meter(0.0f), Px2Meter(-50.0f), Px2Meter(0.0f)));
 
         InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
         i64 pieces_per_suit = ArrCap(&battle->deck) / SUIT_COUNT;
@@ -6437,8 +6438,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         {
                             isize selection_to_be = NO_CARD_SELECTED_IDX;
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
-                                Card* card = ArrGetPtr(&battle->hand, i);
-                                Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
+                                // Card* card = ArrGetPtr(&battle->hand, i);
+                                Vec3 quad_pos = HandIdxToPos(i);
+                                quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
                                 AABB2D box = AABB2DFromWidthHeight(Vec3ToVec2(quad_pos), battle->card_scale);
                                 Vec2 normal = {0};
                                 f32 depth = 0.0f;
@@ -6672,8 +6674,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         {
                             f32 piece_scale = Px2Meter(16.0f);
                             Vec2 piece_dims = Vec2Lit(piece_scale, piece_scale);
-                            BattleHandIter(&battle->hand, card) {
-                                Vec3 quad_pos = Vec3WTransform(card->pos, battle->hand_to_world);
+                            for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
+                                Card* card = ArrGetPtr(&battle->hand, i);
+                                Vec3 quad_pos = HandIdxToPos(i);
+                                quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
                                 DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
 
                                 // Draw piece inside card.
