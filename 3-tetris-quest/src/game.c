@@ -5362,7 +5362,7 @@ typedef struct {
 } CardArr;
 
 static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
-    f32 len = f32max((f32)ArrLen(cards), 0.0f);
+    f32 len = f32max((f32)ArrLen(cards) - 1.0f, 0.0f);
     return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
 }
 
