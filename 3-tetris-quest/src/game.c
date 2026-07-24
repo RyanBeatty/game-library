@@ -6471,22 +6471,36 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            if (focus_idx_to_be != battle->focus_idx) {
-                                if (battle->focus_idx != NO_CARD_SELECTED_IDX) {
-                                    Card* prev_focus = ArrGetPtr(&battle->hand, battle->focus_idx);
-                                    prev_focus->scale_target = 1.0f;
+                            if (battle->selection_idx == NO_CARD_SELECTED_IDX) {
+                                if (focus_idx_to_be != battle->focus_idx) {
+                                    if (battle->focus_idx != NO_CARD_SELECTED_IDX) {
+                                        Card* prev_focus = ArrGetPtr(&battle->hand, battle->focus_idx);
+                                        prev_focus->scale_target = 1.0f;
+                                    }
+
+                                    battle->focus_idx = focus_idx_to_be;
+                                    Card* card = ArrGetPtr(&battle->hand, battle->focus_idx);
+                                    card->scale_target = 1.2f;
+                                }
+                            }
+
+                            if (selection_to_be != NO_CARD_SELECTED_IDX && selection_to_be != battle->selection_idx) {
+                                if (battle->selection_idx != NO_CARD_SELECTED_IDX) {
+                                    Card* prev_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
+                                    prev_selection->scale_target = 1.0f;
                                 }
 
-                                battle->focus_idx = focus_idx_to_be;
-                                Card* card = ArrGetPtr(&battle->hand, battle->focus_idx);
-                                card->scale_target = 1.2f;
-                            }
-
-                            if (selection_to_be != NO_CARD_SELECTED_IDX &&
-                                battle->selection_idx == NO_CARD_SELECTED_IDX) {
                                 battle->selection_idx = selection_to_be;
+                                Card* new_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
+                                new_selection->scale_target = 1.2f;
                                 BattleSetActivePiece(battle);
                             }
+
+                            // if (selection_to_be != NO_CARD_SELECTED_IDX &&
+                            //     battle->selection_idx == NO_CARD_SELECTED_IDX) {
+                            //     battle->selection_idx = selection_to_be;
+                            //     BattleSetActivePiece(battle);
+                            // }
 
                             if (controller->right_shoulder.pressed) {
                                 battle->selection_idx = NO_CARD_SELECTED_IDX;
