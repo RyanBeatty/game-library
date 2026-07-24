@@ -5660,7 +5660,7 @@ static void BattleDrawToFull(Battle* battle) {
         Card card = ArrPop(&battle->deck);
         card.scale_target = 1.0f;
         card.scale_live = card.scale_target;
-        card.scale_speed = 1.5f;
+        card.scale_speed = 4.0f;
         // i32 r = i / 2;
         // i32 c = i % 2;
         // card.pos = Vec3Lit(c, r, 0);
