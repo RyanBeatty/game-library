@@ -6725,6 +6725,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
                                 DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
+                                Vec2 scaled_piece_dims = Vec2Scale(piece_dims, card->scale_live);
+
                                 // Draw piece inside card.
                                 for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
                                     TileId offset = ArrGet(&card->piece.block_offsets, j);
@@ -6732,7 +6734,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     pos = Vec3Add(pos, quad_pos);
                                     BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
                                                               .effects = &card->piece.effects};
-                                    DrawBlock(pos, piece_dims, &graphics);
+                                    DrawBlock(pos, scaled_piece_dims, &graphics);
                                 }
                             }
                         }
