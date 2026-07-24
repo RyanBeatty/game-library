@@ -5365,11 +5365,6 @@ typedef struct {
     isize cap;
 } CardArr;
 
-static void CardInit(Card* card) {
-    static Card CARD_ZERO = {.scale_target = 1.0f};
-    *card = CARD_ZERO;
-}
-
 static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
     f32 len = f32max((f32)ArrLen(cards) - 1.0f, 0.0f);
     return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
@@ -6510,6 +6505,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                             Card* card = ArrGetPtr(&battle->hand, i);
+                            // TODO: Should we get rid of this initial check?
                             if (card->scale_target != card->scale_live) {
                                 f32 dist = card->scale_target - card->scale_live;
                                 f32 step = card->scale_speed * dt;
