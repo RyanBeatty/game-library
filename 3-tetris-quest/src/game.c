@@ -3578,9 +3578,10 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST                         \
-    SOUNDX(BEEP, "assets/sounds/beep.wav") \
-    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")
+#define SOUND_LIST                                     \
+    SOUNDX(BEEP, "assets/sounds/beep.wav")             \
+    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav") \
+    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -6506,6 +6507,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 Card* new_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
                                 new_selection->scale_target = 1.2f;
                                 BattleSetActivePiece(battle);
+                                PlatformPlaySound(GetSound(SOUND_CARD_SELECT), 0);
                             }
 
                             // if (selection_to_be != NO_CARD_SELECTED_IDX &&
