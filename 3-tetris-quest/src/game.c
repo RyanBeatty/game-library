@@ -3578,10 +3578,11 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST                                     \
-    SOUNDX(BEEP, "assets/sounds/beep.wav")             \
-    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav") \
-    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav")
+#define SOUND_LIST                                       \
+    SOUNDX(BEEP, "assets/sounds/beep.wav")               \
+    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")   \
+    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav") \
+    SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -5990,6 +5991,8 @@ static void BattleMoveActivePiece(Battle* battle, bool right) {
 
     battle->anchor = new_anchor;
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
+
+    PlatformPlaySound(GetSound(SOUND_PIECE_MOVE), 0);
 }
 
 static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
