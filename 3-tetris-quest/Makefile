@@ -63,6 +63,19 @@ raylib: $(BUILD_DIR)/$(TARGET_EXEC)
 clean:
 	rm -rf $(BUILD_DIR)
 
+SOUNDS_DIR := assets/sounds
+
+mono:
+	@for f in $(SOUNDS_DIR)/*.wav; do \
+		[ -e "$$f" ] || continue; \
+		tmp="$$(dirname "$$f")/.tmp_$$(basename "$$f")"; \
+		echo "Converting $$f to mono..."; \
+		ffmpeg -y -loglevel error -i "$$f" -ac 1 "$$tmp" && mv "$$tmp" "$$f" || { \
+			echo "Failed: $$f"; rm -f "$$tmp"; \
+		}; \
+	done
+	@echo "Done."
+
 # Include the .d makefiles. The - at the front suppresses the errors of missing
 # Makefiles. Initially, all the .d files will be missing, and we don't want those
 # errors to show up.

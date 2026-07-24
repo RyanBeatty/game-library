@@ -3578,11 +3578,13 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST                                       \
-    SOUNDX(BEEP, "assets/sounds/beep.wav")               \
-    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")   \
-    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav") \
-    SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")
+#define SOUND_LIST                                           \
+    SOUNDX(BEEP, "assets/sounds/beep.wav")                   \
+    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")       \
+    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav")     \
+    SOUNDX(CARD_DESELECT, "assets/sounds/card_deselect.wav") \
+    SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")       \
+    SOUNDX(PIECE_PLACE, "assets/sounds/piece_place.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -5971,6 +5973,8 @@ static void BattlePlacePiece(Battle* battle, FrameTime time) {
         battle->selection_idx = NO_CARD_SELECTED_IDX;
     }
 
+    PlatformPlaySound(GetSound(SOUND_PIECE_PLACE), 0);
+
     // BattleDrawToFull(battle);
 }
 
@@ -6523,6 +6527,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 Card* prev_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
                                 prev_selection->scale_target = 1.0f;
                                 battle->selection_idx = NO_CARD_SELECTED_IDX;
+                                PlatformPlaySound(GetSound(SOUND_CARD_DESELECT), 0);
                                 // Causes issues with trying to set active piece while we have nothing selected. I
                                 // should maybe consider instead not having active piece live as data, but instead just
                                 // always select it given the idx. BattleSetActivePiece(battle);
