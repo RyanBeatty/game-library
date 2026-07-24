@@ -5699,7 +5699,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
         InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
         BattleDrawToFull(battle);
-        breakpoint();
         battle->num_hands = 5;
 
         battle->selection_idx = NO_CARD_SELECTED_IDX;
@@ -6691,7 +6690,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
                                 Vec3 quad_pos = HandIdxToPos(&battle->hand, i);
                                 quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
-                                breakpoint();
                                 Vec4 color = battle->focus_idx == i || battle->selection_idx == i ? LYELLOW : LGRAY;
                                 DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), color);
 
