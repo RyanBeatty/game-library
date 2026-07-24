@@ -6025,6 +6025,8 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     active_piece->block_offsets = next_block_offsets;
     battle->anchor = next_anchor;
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
+
+    PlatformPlaySound(GetSound(SOUND_PIECE_MOVE), 0);
 }
 
 // typedef struct {
