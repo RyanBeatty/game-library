@@ -6476,7 +6476,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            if (focus_idx_to_be != NO_CARD_SELECTED_IDX && focus_idx_to_be != battle->focus_idx) {
+                            if (focus_idx_to_be != battle->focus_idx) {
+                                if (battle->focus_idx != NO_CARD_SELECTED_IDX) {
+                                    Card* prev_focus = ArrGetPtr(&battle->hand, battle->focus_idx);
+                                    prev_focus->scale_target = 1.0f;
+                                }
+
                                 battle->focus_idx = focus_idx_to_be;
                                 Card* card = ArrGetPtr(&battle->hand, battle->focus_idx);
                                 card->scale_target = 1.5f;
