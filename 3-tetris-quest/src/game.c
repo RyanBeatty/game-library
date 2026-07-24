@@ -5353,6 +5353,10 @@ void RelicsAdd(Relics* relics, RelicId id) {
 
 typedef struct {
     Piece piece;
+
+    f32 scale_target;
+    f32 scale_live;
+    f32 scale_speed;
 } Card;
 
 typedef struct {
@@ -5360,6 +5364,11 @@ typedef struct {
     isize len;
     isize cap;
 } CardArr;
+
+static void CardInit(Card* card) {
+    static Card CARD_ZERO = {.scale_target = 1.0f};
+    *card = CARD_ZERO;
+}
 
 static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
     f32 len = f32max((f32)ArrLen(cards) - 1.0f, 0.0f);
@@ -5649,6 +5658,9 @@ static void BattleDrawToFull(Battle* battle) {
 
     for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand) && ArrLen(&battle->deck) > 0; ++i) {
         Card card = ArrPop(&battle->deck);
+        card.scale_target = 1.0f;
+        card.scale_live = card.scale_target;
+        card.scale_speed = 1.5f;
         // i32 r = i / 2;
         // i32 c = i % 2;
         // card.pos = Vec3Lit(c, r, 0);
@@ -6437,7 +6449,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        battle->focus_idx = NO_CARD_SELECTED_IDX;
+                        isize focus_idx_to_be = NO_CARD_SELECTED_IDX;
 
                         if (controller->action_left.pressed && battle->selection_idx != NO_CARD_SELECTED_IDX) {
                             BattlePlacePiece(battle, gstate->frame_time);
@@ -6456,12 +6468,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 bool collides =
                                     TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), box, &normal, &depth);
                                 if (collides) {
-                                    battle->focus_idx = i;
+                                    focus_idx_to_be = i;
                                     if (controller->action_left.pressed) {
                                         // PlatformLog(LLOG_INFO, "mouse collides hand %d", i);
                                         selection_to_be = i;
                                     }
                                 }
+                            }
+
+                            if (focus_idx_to_be != NO_CARD_SELECTED_IDX && focus_idx_to_be != battle->focus_idx) {
+                                battle->focus_idx = focus_idx_to_be;
+                                Card* card = ArrGetPtr(&battle->hand, battle->focus_idx);
+                                card->scale_target = 1.5f;
                             }
 
                             if (selection_to_be != NO_CARD_SELECTED_IDX &&
@@ -6483,6 +6501,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             gstate->phase_to_be = GP_SHOP;
                         } else if (ArrLen(&battle->hand) == 0 && ArrLen(&battle->deck) == 0) {
                             gstate->phase_to_be = GP_GAME_OVER;
+                        }
+
+                        for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
+                            Card* card = ArrGetPtr(&battle->hand, i);
+                            if (card->scale_target != card->scale_live) {
+                                f32 dist = card->scale_target - card->scale_live;
+                                f32 step = card->scale_speed * dt;
+                                if (f32abs(dist) <= step) {
+                                    card->scale_live = card->scale_target;
+                                } else {
+                                    card->scale_live += step * (dist < 0.0f ? -1.0f : 1.0f);
+                                }
+                            }
                         }
                         break;
                     }
@@ -6690,8 +6721,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
                                 Vec3 quad_pos = HandIdxToPos(&battle->hand, i);
                                 quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
-                                Vec4 color = battle->focus_idx == i || battle->selection_idx == i ? LYELLOW : LGRAY;
-                                DrawQuad(quad_pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), color);
+                                Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
+                                DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
                                 // Draw piece inside card.
                                 for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
