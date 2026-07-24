@@ -6487,10 +6487,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         prev_focus->scale_target = 1.0f;
                                     }
 
-                                    battle->focus_idx = focus_idx_to_be;
-                                    Card* card = ArrGetPtr(&battle->hand, battle->focus_idx);
-                                    card->scale_target = 1.2f;
-                                    PlatformPlaySound(GetSound(SOUND_CARD_FOCUS), 0);
+                                    if (focus_idx_to_be != NO_CARD_SELECTED_IDX) {
+                                        battle->focus_idx = focus_idx_to_be;
+                                        Card* card = ArrGetPtr(&battle->hand, battle->focus_idx);
+                                        card->scale_target = 1.2f;
+                                        PlatformPlaySound(GetSound(SOUND_CARD_FOCUS), 0);
+                                    }
                                 }
                             }
 
