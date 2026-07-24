@@ -3578,10 +3578,16 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
+#define SOUND_LIST                         \
+    SOUNDX(BEEP, "assets/sounds/beep.wav") \
+    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")
+
 typedef enum {
     SOUND_NONE = 0,
-    SOUND_BEEP,
-    SOUND_COUNT,
+#define SOUNDX(tag, filename) SOUND_##tag,
+    SOUND_LIST
+#undef SOUNDX
+        SOUND_COUNT
 } SoundTag;
 
 static SoundId SOUNDS[SOUND_COUNT] = {0};
@@ -3595,7 +3601,10 @@ static void LoadSounds() {
     }
     INIT = true;
     SOUNDS[SOUND_NONE] = 0;
-    SOUNDS[SOUND_BEEP] = PlatformLoadSound("assets/sounds/beep.wav");
+
+#define SOUNDX(tag, filename) SOUNDS[SOUND_##tag] = PlatformLoadSound(filename);
+    SOUND_LIST
+#undef SOUNDX
 }
 
 ////////////////////////////////////////////////////////////
@@ -6481,6 +6490,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     battle->focus_idx = focus_idx_to_be;
                                     Card* card = ArrGetPtr(&battle->hand, battle->focus_idx);
                                     card->scale_target = 1.2f;
+                                    PlatformPlaySound(GetSound(SOUND_CARD_FOCUS), 0);
                                 }
                             }
 
@@ -6503,6 +6513,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             // }
 
                             if (controller->right_shoulder.pressed) {
+                                Card* prev_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
+                                prev_selection->scale_target = 1.0f;
                                 battle->selection_idx = NO_CARD_SELECTED_IDX;
                                 // Causes issues with trying to set active piece while we have nothing selected. I
                                 // should maybe consider instead not having active piece live as data, but instead just
