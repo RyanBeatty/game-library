@@ -6584,8 +6584,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         {
                             grid->pos_elapsed += gstate->frame_time.dt;
                             grid->pos_elapsed = f32min(grid->pos_elapsed, grid->pos_duration);
-                            grid->pos_live =
-                                Vec3Lerp(grid->pos_start, grid->pos_end, grid->pos_elapsed / grid->pos_duration);
+                            f32 t = grid->pos_elapsed / grid->pos_duration;
+                            // ease out back
+                            f32 c1 = 1.70158;
+                            f32 c3 = c1 + 1.0f;
+                            t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
+                            grid->pos_live = Vec3Lerp(grid->pos_start, grid->pos_end, t);
                         }
                         break;
                     }
