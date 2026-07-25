@@ -4991,7 +4991,7 @@ typedef enum {
 
 ////////////////////////////////////////////////////
 
-#define GRID_NUM_ROWS 16
+#define GRID_NUM_ROWS 10
 #define GRID_NUM_COLS 8  // 10
 
 typedef struct {
@@ -5714,7 +5714,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
         // TODO: I should make it so that the playing area origin is fixed at 0, 0. and then maybe I push some transform
         // that gets auto applied during rendering and collision detection?
-        Vec3 hand_pos = Vec3Lit(0.0f, Px2Meter(-130.0f), 0.0f);
+        Vec3 hand_pos = Vec3Lit(0.0f, Px2Meter(-80.0f), 0.0f);
         battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 1.1f)), Mat4Identity(), hand_pos);
 
         InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
@@ -6787,6 +6787,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
                             }
+
+                            // Draw Card Stack
+                            {
+                                Vec3 pos = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
+                                DrawQuad(pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
+                            }
                         }
 
                         // Draw hand
@@ -6957,7 +6963,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LHIDDEN) {
                             UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {
-                                UISpacer(&ui, UISizePctParent(1.0f), UISizePctParent(0.8f));
+                                UISpacer(&ui, UISizePctParent(1.0f), UISizePctParent(0.7f));
                                 UIThemeColor(&ui, UI_THEME_BUTTON_BG_COLOR, LGRAY) {
                                     if (UIButton(&ui, Str8Lit("Play Hand"),
                                                  UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED)
