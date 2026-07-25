@@ -5054,8 +5054,14 @@ typedef struct {
     Vec3 scale;
     Mat4 rot;
 
-    Mat4 grid_to_world;
-    Mat4 world_to_grid;
+    Vec3 pos_start;
+    Vec3 pos_end;
+    Vec3 pos_live;
+    f32 pos_duration;
+    f32 pos_elapsed;
+
+    // Mat4 grid_to_world;
+    // Mat4 world_to_grid;
 
     isize nrows;
     isize ncols;
@@ -5114,9 +5120,15 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->pos = grid_origin;
     grid->scale = Vec3Lit(grid_tile_dims.x, grid_tile_dims.y, grid_tile_dims.x);  // Important to make uniform scale.
     grid->rot = Mat4Identity();
-    grid->grid_to_world = Mat4SVRT(grid->scale, grid->rot, grid->pos);
-    grid->world_to_grid = Mat4Invert(grid->grid_to_world);
+
+    grid->pos_start = Vec3Lit(grid_origin.x, grid_origin.y + grid_height, grid_origin.z);
+    grid->pos_end = grid->pos;
+    grid->pos_live = grid->pos_start;
+    grid->pos_duration = 0.8f;
 }
+
+static Mat4 GridGetGridToWorld(Grid* grid) { return Mat4SVRT(grid->scale, grid->rot, grid->pos_live); }
+static Mat4 GridGetWorldToGrid(Grid* grid) { return Mat4Invert(GridGetGridToWorld(grid)); }
 
 LCORE Vec3 GridGetTilePosBL(Grid* grid, TileId tileid) {
     Vec3 pos = TileIdtoVec3(tileid);
@@ -5132,11 +5144,12 @@ LCORE Vec3 GridGetTilePosBR(Grid* grid, TileId tileid) {
     return pos;
 }
 
-LCORE Vec3 GridPosToWorld(Grid* grid, Vec3 pos) { return Vec3WTransform(pos, grid->grid_to_world); }
+LCORE Vec3 GridPosToWorld(Grid* grid, Vec3 pos) { return Vec3WTransform(pos, GridGetGridToWorld(grid)); }
 
 // Returns a reference to the tile a cursor is over, otherwise returns NULL if cursor outside of grid.
 LCORE TileId GridGetCursorHoverTileId(Grid* grid, GameControllerState* controller) {
-    Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), grid->world_to_grid);
+    Mat4 world_to_grid = GridGetWorldToGrid(grid);
+    Vec3 cursor_pos_grid = Vec3WTransform(Vec2ToVec3(controller->cursor_pos_world), world_to_grid);
     // PlatformLog(LLOG_INFO, "cursor pos world %f %f", controller->cursor_pos_world.x, controller->cursor_pos_world.y);
     // PlatformLog(LLOG_INFO, "cursor pos grid %f %f %f", cursor_pos_grid.x, cursor_pos_grid.y, cursor_pos_grid.z);
 
@@ -6567,6 +6580,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
                         }
+
+                        {
+                            grid->pos_elapsed += gstate->frame_time.dt;
+                            grid->pos_elapsed = f32min(grid->pos_elapsed, grid->pos_duration);
+                            grid->pos_live =
+                                Vec3Lerp(grid->pos_start, grid->pos_end, grid->pos_elapsed / grid->pos_duration);
+                        }
                         break;
                     }
                     case BP_PLAY_HAND: {
@@ -6693,7 +6713,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec4 GRAY1 = RGBLit(70, 70, 72);
                             Vec4 GRAY2 = RGBLit(82, 82, 84);
 
-                            Mat4 grid_to_world = grid->grid_to_world;
+                            Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
                             i32 color_idx = 0;
                             for (i32 r = 0; r < grid->nrows; ++r) {
                                 for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
