@@ -5390,6 +5390,10 @@ void RelicsAdd(Relics* relics, RelicId id) {
 typedef struct {
     Piece piece;
 
+    Vec3 pos_target;
+    Vec3 pos_live;
+    f32 pos_speed;
+
     f32 scale_target;
     f32 scale_live;
     f32 scale_speed;
@@ -5628,6 +5632,8 @@ typedef struct {
     i32 renderw_world;
     i32 renderh_world;
 
+    Vec3 deck_pos_world;
+
     ScoreLog score_log;
     BattleDisplay display;
 } Battle;
@@ -5758,6 +5764,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->relics = player_relics;
 
     battle->score_target = score_target;
+
+    battle->deck_pos_world = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
 
     ScoreLogInit(&battle->score_log);
     BattleDisplayInit(&battle->display);
@@ -6788,9 +6796,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            // Draw Card Stack
+                            // Draw draw deck
                             {
-                                Vec3 pos = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
+                                Vec3 pos = battle->deck_pos_world;
                                 DrawQuad(pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
                             }
                         }
