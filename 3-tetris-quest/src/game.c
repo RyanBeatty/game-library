@@ -5715,6 +5715,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderh_world = renderh_world;
     GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
 
+    battle->deck_pos_world = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
+
     // hand init deck init
     {
         battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
@@ -5764,8 +5766,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->relics = player_relics;
 
     battle->score_target = score_target;
-
-    battle->deck_pos_world = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
 
     ScoreLogInit(&battle->score_log);
     BattleDisplayInit(&battle->display);
@@ -6587,6 +6587,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     card->scale_live += step * (dist < 0.0f ? -1.0f : 1.0f);
                                 }
                             }
+
+                            card->pos_target = HandIdxToPos(&battle->hand, i);
+                            card->pos_live = card->pos_target;
                         }
 
                         {
