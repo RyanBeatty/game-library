@@ -5699,6 +5699,9 @@ static void BattleDrawToFull(Battle* battle) {
         card.scale_target = 1.0f;
         card.scale_live = card.scale_target;
         card.scale_speed = 4.0f;
+
+        card.pos_live = Vec3Zero();
+        card.pos_speed = 20.0f;
         // i32 r = i / 2;
         // i32 c = i % 2;
         // card.pos = Vec3Lit(c, r, 0);
@@ -6588,8 +6591,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            card->pos_target = HandIdxToPos(&battle->hand, i);
-                            card->pos_live = card->pos_target;
+                            card->pos_target = Vec3WTransform(HandIdxToPos(&battle->hand, i), battle->hand_to_world);
+                            if (!Vec3Eq(card->pos_live, card->pos_target)) {
+                                Vec3 diff = Vec3Sub(card->pos_target, card->pos_live);
+                                f32 distance = Vec3Len(diff);
+                                f32 step = card->pos_speed * gstate->frame_time.dt;
+                                if (distance <= step) {
+                                    card->pos_live = card->pos_target;
+                                } else {
+                                    Vec3 dir = Vec3Normalize(diff);
+                                    card->pos_live = Vec3Add(card->pos_live, Vec3Scale(dir, step));
+                                }
+                            } else {
+                                card->pos_live = card->pos_target;
+                            }
                         }
 
                         {
@@ -6812,8 +6827,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec2 piece_dims = Vec2Lit(piece_scale, piece_scale);
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
-                                Vec3 quad_pos = HandIdxToPos(&battle->hand, i);
-                                quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
+                                Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
+                                // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
                                 Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
                                 DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
