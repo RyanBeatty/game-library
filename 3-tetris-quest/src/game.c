@@ -3578,14 +3578,15 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST                                           \
-    SOUNDX(BEEP, "assets/sounds/beep.wav")                   \
-    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")       \
-    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav")     \
-    SOUNDX(CARD_DESELECT, "assets/sounds/card_deselect.wav") \
-    SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")       \
-    SOUNDX(PIECE_PLACE, "assets/sounds/piece_place.wav")     \
-    SOUNDX(UI_BUTTON_CLICK, "assets/sounds/ui_button_click.wav")
+#define SOUND_LIST                                               \
+    SOUNDX(BEEP, "assets/sounds/beep.wav")                       \
+    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")           \
+    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav")         \
+    SOUNDX(CARD_DESELECT, "assets/sounds/card_deselect.wav")     \
+    SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")           \
+    SOUNDX(PIECE_PLACE, "assets/sounds/piece_place.wav")         \
+    SOUNDX(UI_BUTTON_CLICK, "assets/sounds/ui_button_click.wav") \
+    SOUNDX(TILE_POP, "assets/sounds/tile_pop.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -5529,6 +5530,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime
                         display->state.live_chip_tile = cur_event->chip_value;
                         display->live_chip_total += cur_event->chip_value;
                         display->tween_duration = 0.6f;
+                        PlatformPlaySound(GetSound(SOUND_TILE_POP), 0);
                         break;
                     }
                     case SE_ADD_MULT: {
