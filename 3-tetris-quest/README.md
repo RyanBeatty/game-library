@@ -12,7 +12,8 @@ GAME
 * 10 different pairs of clothes
 * color palette: https://lospec.com/palette-list/pacific
 
-
+TAKEAWAYS
+* Derived positions are nice and fast to start out with but are a PITA when you want to do animations. Everything should store a position (game + visual pos).
 
 
 
