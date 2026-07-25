@@ -3584,7 +3584,8 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
     SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav")     \
     SOUNDX(CARD_DESELECT, "assets/sounds/card_deselect.wav") \
     SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")       \
-    SOUNDX(PIECE_PLACE, "assets/sounds/piece_place.wav")
+    SOUNDX(PIECE_PLACE, "assets/sounds/piece_place.wav")     \
+    SOUNDX(UI_BUTTON_CLICK, "assets/sounds/ui_button_click.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -4556,6 +4557,7 @@ typedef struct {
 
     UIBoxId next_id;
     UIBoxId active_id;
+    UIBoxId active_id_prev;
 
     GameInput* input;  // Reset each frame.
     GameButtonType mouse_click_button;
@@ -4851,6 +4853,13 @@ static UIBox UIBoxEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width
             action.hover = true;
             action.clicked = mouse_button->pressed;
             action.down = mouse_button->down;
+
+            // TODO: Would like to add a sound for when we are focusing an element. However that requires keeping track
+            // of prev_active_id which requires maintaining UI state between frames instead of within a single frame.
+            if (action.clicked) {
+                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+            }
+
             // PlatformLog(LLOG_INFO, "hover: %d| clicked: %d| down: %d", action.hover, action.clicked, action.down);
         }
     }
