@@ -5397,6 +5397,8 @@ typedef struct {
     f32 scale_target;
     f32 scale_live;
     f32 scale_speed;
+
+    bool visible;
 } Card;
 
 typedef struct {
@@ -5406,7 +5408,13 @@ typedef struct {
 } CardArr;
 
 static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
-    f32 len = f32max((f32)ArrLen(cards) - 1.0f, 0.0f);
+    i32 num_visible = 0;
+    for (isize i = 0; i < ArrLen(cards); ++i) {
+        Card* card = ArrGetPtr(cards, i);
+        num_visible += card->visible ? 1 : 0;
+    }
+
+    f32 len = f32max(num_visible - 1.0f, 0.0f);
     return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
 }
 
@@ -5417,6 +5425,7 @@ typedef enum {
     SE_BLOCK,
     SE_ADD_MULT,
     SE_SCORE_HAND,
+    SE_DRAW_CARD,
 } ScoreEventType;
 
 typedef struct {
@@ -5425,6 +5434,8 @@ typedef struct {
     i32 chip_value;
     f32 mult_value;
     i32 score_total;
+
+    isize hand_idx;
 } ScoreEvent;
 
 TypedefArr(ScoreEvent);
@@ -5702,6 +5713,7 @@ static void BattleDrawToFull(Battle* battle) {
 
         card.pos_live = Vec3Zero();
         card.pos_speed = 20.0f;
+        card.visible = true;
         // i32 r = i / 2;
         // i32 c = i % 2;
         // card.pos = Vec3Lit(c, r, 0);
@@ -6827,21 +6839,23 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec2 piece_dims = Vec2Lit(piece_scale, piece_scale);
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
-                                Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
-                                // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
-                                Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
-                                DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
+                                if (card->visible) {
+                                    Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
+                                    // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
+                                    Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
+                                    DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
-                                Vec2 scaled_piece_dims = Vec2Scale(piece_dims, card->scale_live);
+                                    Vec2 scaled_piece_dims = Vec2Scale(piece_dims, card->scale_live);
 
-                                // Draw piece inside card.
-                                for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
-                                    TileId offset = ArrGet(&card->piece.block_offsets, j);
-                                    Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
-                                    pos = Vec3Add(pos, quad_pos);
-                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
-                                                              .effects = &card->piece.effects};
-                                    DrawBlock(pos, scaled_piece_dims, &graphics);
+                                    // Draw piece inside card.
+                                    for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
+                                        TileId offset = ArrGet(&card->piece.block_offsets, j);
+                                        Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
+                                        pos = Vec3Add(pos, quad_pos);
+                                        BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
+                                                                  .effects = &card->piece.effects};
+                                        DrawBlock(pos, scaled_piece_dims, &graphics);
+                                    }
                                 }
                             }
                         }
