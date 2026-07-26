@@ -4552,6 +4552,10 @@ typedef struct {
 typedef struct {
     LFontArr fonts;
     Vec2Arr spacings;
+    // The *minimum* amount of pixel space from the left and right edges of a box to the left and right edges of the
+    // text (and similar for top and bottom). if the text width + padding >= parent container, will clamp to parent
+    // container (though text might overflow)
+    Vec2Arr paddings;
     UILayoutDirectionArr layout_dirs;
     UIBoxArr parents;
 
@@ -4577,6 +4581,10 @@ typedef struct {
 #define UIFont(ui, ffont) Scoped(UIPushFont(ui, ffont), UIPopFont(ui))
 
 #define UIPushSpacing(ui, sspacing) (ArrPush(&(ui)->spacings, sspacing))
+#define UIPushPadding(ui, padding) (ArrPush(&(ui)->paddings, (padding)))
+#define UIPopPadding(ui) (ArrPop(&(ui)->paddings))
+#define UIPadding(ui, padding) Scoped(UIPushPadding(ui, padding), UIPopPadding(ui))
+#define UIGetPadding(ui) (ArrTail(&(ui)->paddings))
 
 #define UIGetLayoutDirection(ui) (ArrTail(&(ui)->layout_dirs))
 #define UIPushLayoutDirection(ui, llayout) (ArrPush(&(ui)->layout_dirs, (llayout)))
@@ -4618,6 +4626,9 @@ LCORE void UISetCursor(UIState* ui, Vec2 pos) {
 static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input,
                         GameButtonType mouse_click_button) {
     InitArr(&ui->spacings, perm, Vec2, 1);
+
+    InitArr(&ui->paddings, perm, Vec2, 2);
+    UIPushPadding(ui, Vec2Zero());
 
     InitArr(&ui->fonts, perm, LFont, 3);
     UIPushFont(ui, GetLFontClosest(10.0f));
@@ -4683,12 +4694,14 @@ static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBo
     TextBox textbox = LFontMeasureStr8Quad(font, text);
     Vec2 textbox_dims = AABB2DDims(textbox.aabb);
 
+    Vec2 padding = UIGetPadding(ui);
     UISize semantic_sizes[] = {width, height};
     Vec2 resolved_dims = {0};
     for (isize i = 0; i < ArraySizeOf(semantic_sizes); ++i) {
         switch (semantic_sizes[i].kind) {
             case UI_SIZE_TEXT: {
-                resolved_dims.f[i] = textbox_dims.f[i];
+                // TODO: Should I clamp this parent dims?
+                resolved_dims.f[i] = textbox_dims.f[i] + padding.f[i];
                 break;
             }
             case UI_SIZE_PCT_OF_PARENT: {
@@ -7095,11 +7108,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {
                                 UISpacer(&ui, UISizePctParent(1.0f), UISizePctParent(0.7f));
                                 UIThemeColor(&ui, UI_THEME_BUTTON_BG_COLOR, LGRAY) {
-                                    if (UIButton(&ui, Str8Lit("Play Hand"),
-                                                 UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED)
-                                            .clicked) {
-                                        battle->phase_to_be =
-                                            battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
+                                    UIPadding(&ui, Vec2Lit(20.0f, 100.0f)) {
+                                        if (UIButtonEx(&ui, Str8Lit("Play Hand"),
+                                                       UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED, UISizeText(),
+                                                       UISizeText())
+                                                .clicked) {
+                                            battle->phase_to_be =
+                                                battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
+                                        }
                                     }
                                 }
                             }
