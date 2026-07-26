@@ -5467,6 +5467,11 @@ static void ScoreLogScoreHand(ScoreLog* log, i32 score_total) {
     ArrPush(&log->events, event);
 }
 
+static void ScoreLogDrawCard(ScoreLog* log, isize hand_idx) {
+    ScoreEvent event = {.type = SE_DRAW_CARD, .hand_idx = hand_idx};
+    ArrPush(&log->events, event);
+}
+
 #define ScoreLogEmpty(log) ((log)->cur_idx >= ArrLen(&(log)->events))
 
 typedef enum {
@@ -5514,98 +5519,6 @@ static BattleDisplay BATTLE_DISPLAY_ZERO = {.state = {.scored_tile = NULL_TILEID
 
 #define BattleDisplayInit(display) (*(display) = BATTLE_DISPLAY_ZERO)
 #define BattleDisplayStateInit(display) ((display)->state = BATTLE_DISPLAY_ZERO.state)
-
-static void BattleDisplayUpdate(BattleDisplay* display, ScoreLog* log, FrameTime time, i32 score_total) {
-    BattleDisplayPhase phase_to_be = display->phase;
-    switch (display->phase) {
-        case BDP_PLAYING: {
-            display->tween_elapsed += time.dt;
-
-            {
-                f32 t = BattleDisplayTweenT(display);
-
-                display->display_score_total = f32lerp(display->live_score_total, display->live_score_total_to_be, t);
-
-                // Tile flash
-                Vec4 tile_highlight_color = LYELLOW;
-                // tile_highlight_color.a = 0.5f * (f32sin((4.0f * LPI * t) - 0.5f * LPI) + 1.0f);
-                tile_highlight_color.a = f32sin(t * LPI);
-                display->tile_highlight_color = tile_highlight_color;
-            }
-
-            if (display->tween_elapsed >= display->tween_duration) {
-                // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
-                // over duration, then while mod'd elapsed is still over next duration pop off events from the score
-                // log.
-                display->tween_elapsed = f32mod(display->tween_elapsed, display->tween_duration);
-                phase_to_be = BDP_NEXT;
-            }
-
-            break;
-        }
-        case BDP_NEXT: {
-            if (!ScoreLogEmpty(log)) {
-                PlatformLog(LLOG_DEBUG, "starting score event %d of %d", log->cur_idx, ArrLen(&log->events));
-                BattleDisplayStateInit(display);
-                phase_to_be = BDP_PLAYING;
-                ScoreEvent* cur_event = ArrGetPtr(&log->events, log->cur_idx);
-                // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
-                // over duration, then while mod'd elapsed is still over next duration pop off events from the score
-                // log.
-                switch (cur_event->type) {
-                    case SE_BLOCK: {
-                        display->state.scored_tile = cur_event->block_id;
-                        display->state.live_chip_tile = cur_event->chip_value;
-                        display->live_chip_total += cur_event->chip_value;
-                        display->tween_duration = 0.6f;
-                        PlatformPlaySound(GetSound(SOUND_TILE_POP), 0);
-                        break;
-                    }
-                    case SE_ADD_MULT: {
-                        display->live_mult_total += cur_event->mult_value;
-                        display->tween_duration = 0.5f;
-                        break;
-                    }
-                    case SE_SCORE_HAND: {
-                        display->live_score_total = display->display_score_total;
-                        display->live_score_total_to_be = cur_event->score_total;
-
-                        f32 num_distance = display->live_score_total_to_be - display->live_score_total;
-                        f32 num_per_frame = 1.0f;
-                        f32 elapsed_frames = num_distance * (1.0f / num_per_frame);
-                        f32 elapsed_time = elapsed_frames * (1.0f / 60.0f);
-                        display->tween_duration = elapsed_time;
-                        break;
-                    }
-                    default: {
-                        PlatformLog(LLOG_ERROR, "Unknown score event when computing display: %d", cur_event->type);
-                        Assert(0);
-                    }
-                }
-                ++log->cur_idx;
-            } else {
-                phase_to_be = BDP_DONE;
-            }
-            break;
-        }
-        case BDP_DONE: {
-            BattleDisplayInit(display);
-            // HACK. There is a bug where on the frame we have scored lines, we will set the display score total to be
-            // the new total guard against this by detecting that we are about to score the next frame. Come up with
-            // something better here.
-            if (ArrLen(&log->events) == 0) {
-                display->display_score_total = score_total;
-            }
-            break;
-        }
-        default: {
-            PlatformLog(LLOG_ERROR, "Unknown battle display phase: %d", display->phase);
-            Assert(0);
-        }
-    }
-
-    display->phase = phase_to_be;
-}
 
 typedef struct {
     BattlePhase phase;
@@ -5718,6 +5631,8 @@ static void BattleDrawToFull(Battle* battle) {
         // i32 c = i % 2;
         // card.pos = Vec3Lit(c, r, 0);
         ArrPush(&battle->hand, card);
+        ScoreLogDrawCard(&battle->score_log, i);
+        PlatformLog(LLOG_INFO, "Draw Card %d", i);
     }
 }
 
@@ -5765,7 +5680,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         }
 
         InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
-        BattleDrawToFull(battle);
+        // BattleDrawToFull(battle);
         battle->num_hands = 5;
 
         battle->selection_idx = NO_CARD_SELECTED_IDX;
@@ -6074,6 +5989,104 @@ static void BattleRotateActivePiece(Battle* battle, bool clockwise) {
     battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, *active_piece, battle->anchor);
 
     PlatformPlaySound(GetSound(SOUND_PIECE_MOVE), 0);
+}
+
+static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTime time) {
+    ScoreLog* log = &battle->score_log;
+    i32 score_total = battle->total_score;
+
+    BattleDisplayPhase phase_to_be = display->phase;
+    switch (display->phase) {
+        case BDP_PLAYING: {
+            display->tween_elapsed += time.dt;
+
+            {
+                f32 t = BattleDisplayTweenT(display);
+
+                display->display_score_total = f32lerp(display->live_score_total, display->live_score_total_to_be, t);
+
+                // Tile flash
+                Vec4 tile_highlight_color = LYELLOW;
+                // tile_highlight_color.a = 0.5f * (f32sin((4.0f * LPI * t) - 0.5f * LPI) + 1.0f);
+                tile_highlight_color.a = f32sin(t * LPI);
+                display->tile_highlight_color = tile_highlight_color;
+            }
+
+            if (display->tween_elapsed >= display->tween_duration) {
+                // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
+                // over duration, then while mod'd elapsed is still over next duration pop off events from the score
+                // log.
+                display->tween_elapsed = f32mod(display->tween_elapsed, display->tween_duration);
+                phase_to_be = BDP_NEXT;
+            }
+
+            break;
+        }
+        case BDP_NEXT: {
+            if (!ScoreLogEmpty(log)) {
+                PlatformLog(LLOG_DEBUG, "starting score event %d of %d", log->cur_idx, ArrLen(&log->events));
+                BattleDisplayStateInit(display);
+                phase_to_be = BDP_PLAYING;
+                ScoreEvent* cur_event = ArrGetPtr(&log->events, log->cur_idx);
+                // TODO: Should we set tween_elapsed to 0 here? really what I think we should do is detect that elapsed
+                // over duration, then while mod'd elapsed is still over next duration pop off events from the score
+                // log.
+                switch (cur_event->type) {
+                    case SE_BLOCK: {
+                        display->state.scored_tile = cur_event->block_id;
+                        display->state.live_chip_tile = cur_event->chip_value;
+                        display->live_chip_total += cur_event->chip_value;
+                        display->tween_duration = 0.6f;
+                        PlatformPlaySound(GetSound(SOUND_TILE_POP), 0);
+                        break;
+                    }
+                    case SE_ADD_MULT: {
+                        display->live_mult_total += cur_event->mult_value;
+                        display->tween_duration = 0.5f;
+                        break;
+                    }
+                    case SE_SCORE_HAND: {
+                        display->live_score_total = display->display_score_total;
+                        display->live_score_total_to_be = cur_event->score_total;
+
+                        f32 num_distance = display->live_score_total_to_be - display->live_score_total;
+                        f32 num_per_frame = 1.0f;
+                        f32 elapsed_frames = num_distance * (1.0f / num_per_frame);
+                        f32 elapsed_time = elapsed_frames * (1.0f / 60.0f);
+                        display->tween_duration = elapsed_time;
+                        break;
+                    }
+                    case SE_DRAW_CARD: {
+                        break;
+                    }
+                    default: {
+                        PlatformLog(LLOG_ERROR, "Unknown score event when computing display: %d", cur_event->type);
+                        Assert(0);
+                    }
+                }
+                ++log->cur_idx;
+            } else {
+                phase_to_be = BDP_DONE;
+            }
+            break;
+        }
+        case BDP_DONE: {
+            BattleDisplayInit(display);
+            // HACK. There is a bug where on the frame we have scored lines, we will set the display score total to be
+            // the new total guard against this by detecting that we are about to score the next frame. Come up with
+            // something better here.
+            if (ArrLen(&log->events) == 0) {
+                display->display_score_total = score_total;
+            }
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown battle display phase: %d", display->phase);
+            Assert(0);
+        }
+    }
+
+    display->phase = phase_to_be;
 }
 
 // typedef struct {
@@ -6398,6 +6411,8 @@ static void GamePhaseChange(GameState* gstate) {
         case GP_PLAYING: {
             BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target,
                        &gstate->player_relics);
+            BattleDrawToFull(&gstate->battle);
+
             break;
         }
         case GP_SHOP: {
@@ -6647,7 +6662,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                BattleDisplayUpdate(&battle->display, &battle->score_log, gstate->frame_time, battle->total_score);
+                BattleDisplayUpdate(&battle->display, battle, gstate->frame_time);
 
                 break;
             }
