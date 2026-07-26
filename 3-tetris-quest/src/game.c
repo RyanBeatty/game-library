@@ -5064,6 +5064,9 @@ typedef struct {
     // Mat4 grid_to_world;
     // Mat4 world_to_grid;
 
+    f32 grid_height;
+    f32 grid_width;
+
     isize nrows;
     isize ncols;
     Tile tiles[GRID_NUM_ROWS][GRID_NUM_COLS];
@@ -5121,6 +5124,9 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->pos = grid_origin;
     grid->scale = Vec3Lit(grid_tile_dims.x, grid_tile_dims.y, grid_tile_dims.x);  // Important to make uniform scale.
     grid->rot = Mat4Identity();
+
+    grid->grid_height = grid_height;
+    grid->grid_width = grid_width;
 
     grid->pos_start = Vec3Lit(grid_origin.x, grid_origin.y + grid_height, grid_origin.z);
     grid->pos_end = grid->pos;
@@ -5553,6 +5559,11 @@ typedef struct {
 
     Card deck_buffer[SUIT_COUNT * PT_COUNT];
     CardArr deck;
+    Vec3 deck_pos_live;
+    Vec3 deck_pos_start;
+    Vec3 deck_pos_end;
+    f32 deck_pos_duration;
+    f32 deck_pos_elapsed;
 
     Relics* relics;
 
@@ -5562,12 +5573,6 @@ typedef struct {
 
     i32 renderw_world;
     i32 renderh_world;
-
-    Vec3 deck_pos_live;
-    Vec3 deck_pos_start;
-    Vec3 deck_pos_end;
-    f32 deck_pos_duration;
-    f32 deck_pos_elapsed;
 
     ScoreLog score_log;
     BattleDisplay display;
@@ -5656,7 +5661,13 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderh_world = renderh_world;
     GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
 
-    battle->deck_pos_live = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
+    {
+        battle->deck_pos_end = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
+        battle->deck_pos_start = battle->deck_pos_end;
+        battle->deck_pos_start.y -= Px2Meter(200.0f);
+        battle->deck_pos_live = battle->deck_pos_start;
+        battle->deck_pos_duration = 1.2f;
+    }
 
     // hand init deck init
     {
@@ -6083,6 +6094,8 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                     }
                     case SE_ROUND_START: {
                         battle->grid.pos_elapsed = 0.0f;
+                        battle->deck_pos_elapsed = 0.0f;
+                        battle->deck_pos_live = battle->deck_pos_start;
                         display->tween_duration = 1.5f;
                         break;
                     }
@@ -6692,6 +6705,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     f32 c3 = c1 + 1.0f;
                     t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
                     grid->pos_live = Vec3Lerp(grid->pos_start, grid->pos_end, t);
+                }
+
+                // update deck graphics
+                {
+                    battle->deck_pos_elapsed += gstate->frame_time.dt;
+                    battle->deck_pos_elapsed = f32min(battle->deck_pos_elapsed, battle->deck_pos_duration);
+                    f32 t = battle->deck_pos_elapsed / battle->deck_pos_duration;
+                    // ease out back
+                    f32 c1 = 1.70158;
+                    f32 c3 = c1 + 1.0f;
+                    t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
+                    battle->deck_pos_live = Vec3Lerp(battle->deck_pos_start, battle->deck_pos_end, t);
                 }
 
                 break;
