@@ -5625,8 +5625,8 @@ static void BattleDrawToFull(Battle* battle) {
         card.scale_speed = 4.0f;
 
         card.pos_live = Vec3Zero();
-        card.pos_speed = 20.0f;
-        card.visible = true;
+        card.pos_speed = 400.0f;
+        card.visible = false;
         // i32 r = i / 2;
         // i32 c = i % 2;
         // card.pos = Vec3Lit(c, r, 0);
@@ -5996,6 +5996,10 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
     i32 score_total = battle->total_score;
 
     BattleDisplayPhase phase_to_be = display->phase;
+    if (ArrLen(&log->events)) {
+        phase_to_be = BDP_NEXT;
+    }
+
     switch (display->phase) {
         case BDP_PLAYING: {
             display->tween_elapsed += time.dt;
