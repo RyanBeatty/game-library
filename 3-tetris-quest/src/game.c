@@ -5625,7 +5625,7 @@ static void BattleDrawToFull(Battle* battle) {
         card.scale_speed = 4.0f;
 
         card.pos_live = Vec3Zero();
-        card.pos_speed = 400.0f;
+        card.pos_speed = 200.0f;
         card.visible = false;
         // i32 r = i / 2;
         // i32 c = i % 2;
