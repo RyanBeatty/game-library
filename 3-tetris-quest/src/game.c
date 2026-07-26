@@ -3586,7 +3586,8 @@ LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
     SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")           \
     SOUNDX(PIECE_PLACE, "assets/sounds/piece_place.wav")         \
     SOUNDX(UI_BUTTON_CLICK, "assets/sounds/ui_button_click.wav") \
-    SOUNDX(TILE_POP, "assets/sounds/tile_pop.wav")
+    SOUNDX(TILE_POP, "assets/sounds/tile_pop.wav")               \
+    SOUNDX(CARD_DRAW, "assets/sounds/card_draw.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -6065,6 +6066,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                         card->visible = true;
                         card->pos_live = battle->deck_pos_world;
                         display->tween_duration = 1.0f;
+                        PlatformPlaySound(GetSound(SOUND_CARD_DRAW), 0);
                         break;
                     }
                     default: {
