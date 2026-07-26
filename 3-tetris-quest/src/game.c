@@ -5427,6 +5427,7 @@ typedef enum {
     SE_ADD_MULT,
     SE_SCORE_HAND,
     SE_DRAW_CARD,
+    SE_ROUND_START,
 } ScoreEventType;
 
 typedef struct {
@@ -5470,6 +5471,11 @@ static void ScoreLogScoreHand(ScoreLog* log, i32 score_total) {
 
 static void ScoreLogDrawCard(ScoreLog* log, isize hand_idx) {
     ScoreEvent event = {.type = SE_DRAW_CARD, .hand_idx = hand_idx};
+    ArrPush(&log->events, event);
+}
+
+static void ScoreLogRoundStart(ScoreLog* log) {
+    ScoreEvent event = {.type = SE_ROUND_START};
     ArrPush(&log->events, event);
 }
 
@@ -5700,6 +5706,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
     ScoreLogInit(&battle->score_log);
     BattleDisplayInit(&battle->display);
+
+    ScoreLogRoundStart(&battle->score_log);
 }
 
 typedef struct {
@@ -6067,6 +6075,11 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                         card->pos_live = battle->deck_pos_world;
                         display->tween_duration = 1.0f;
                         PlatformPlaySound(GetSound(SOUND_CARD_DRAW), 0);
+                        break;
+                    }
+                    case SE_ROUND_START: {
+                        battle->grid.pos_elapsed = 0.0f;
+                        display->tween_duration = 1.5f;
                         break;
                     }
                     default: {
@@ -6615,16 +6628,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             gstate->phase_to_be = GP_GAME_OVER;
                         }
 
-                        {
-                            grid->pos_elapsed += gstate->frame_time.dt;
-                            grid->pos_elapsed = f32min(grid->pos_elapsed, grid->pos_duration);
-                            f32 t = grid->pos_elapsed / grid->pos_duration;
-                            // ease out back
-                            f32 c1 = 1.70158;
-                            f32 c3 = c1 + 1.0f;
-                            t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
-                            grid->pos_live = Vec3Lerp(grid->pos_start, grid->pos_end, t);
-                        }
                         break;
                     }
                     case BP_PLAY_HAND: {
@@ -6645,6 +6648,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 BattleDisplayUpdate(&battle->display, battle, gstate->frame_time);
 
+                // update hand graphics
                 for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                     Card* card = ArrGetPtr(&battle->hand, i);
                     // TODO: Should we get rid of this initial check?
@@ -6672,6 +6676,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     } else {
                         card->pos_live = card->pos_target;
                     }
+                }
+
+                // update grid graphics
+                {
+                    grid->pos_elapsed += gstate->frame_time.dt;
+                    grid->pos_elapsed = f32min(grid->pos_elapsed, grid->pos_duration);
+                    f32 t = grid->pos_elapsed / grid->pos_duration;
+                    // ease out back
+                    f32 c1 = 1.70158;
+                    f32 c3 = c1 + 1.0f;
+                    t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
+                    grid->pos_live = Vec3Lerp(grid->pos_start, grid->pos_end, t);
                 }
 
                 break;
