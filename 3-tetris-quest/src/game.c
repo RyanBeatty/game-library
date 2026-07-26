@@ -5414,13 +5414,26 @@ typedef struct {
     isize cap;
 } CardArr;
 
-static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
+static i32 CardArrNumVisible(CardArr* cards) {
     i32 num_visible = 0;
     for (isize i = 0; i < ArrLen(cards); ++i) {
         Card* card = ArrGetPtr(cards, i);
         num_visible += card->visible ? 1 : 0;
     }
+    return num_visible;
+}
 
+static i32 CardArrNumHidden(CardArr* cards) {
+    i32 num_hidden = 0;
+    for (isize i = 0; i < ArrLen(cards); ++i) {
+        Card* card = ArrGetPtr(cards, i);
+        num_hidden += card->visible ? 0 : 1;
+    }
+    return num_hidden;
+}
+
+static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
+    i32 num_visible = CardArrNumVisible(cards);
     f32 len = f32max(num_visible - 1.0f, 0.0f);
     return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
 }
@@ -5559,6 +5572,7 @@ typedef struct {
 
     Card deck_buffer[SUIT_COUNT * PT_COUNT];
     CardArr deck;
+    i32 deck_size_live;
     Vec3 deck_pos_live;
     Vec3 deck_pos_start;
     Vec3 deck_pos_end;
@@ -6717,6 +6731,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     f32 c3 = c1 + 1.0f;
                     t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
                     battle->deck_pos_live = Vec3Lerp(battle->deck_pos_start, battle->deck_pos_end, t);
+
+                    // deck size
+                    {
+                        i32 num_hidden = CardArrNumHidden(&battle->hand);
+                        battle->deck_size_live = ArrLen(&battle->deck) + num_hidden;
+                    }
                 }
 
                 break;
@@ -7043,7 +7063,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                             {
                                 char buffer[256] = {0};
-                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %lld", ArrLen(&battle->deck));
+                                snprintf(buffer, ArraySizeOf(buffer) - 1, "Deck Size: %d", battle->deck_size_live);
                                 UILabel(&ui, Str8FromC(buffer), UI_FLAG_NONE);
                             }
 
