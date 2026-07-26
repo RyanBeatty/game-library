@@ -5549,13 +5549,13 @@ typedef struct {
 
     Card hand_buffer[6];
     CardArr hand;
+    Mat4 hand_to_world;
 
     Card deck_buffer[SUIT_COUNT * PT_COUNT];
     CardArr deck;
 
     Relics* relics;
 
-    Mat4 hand_to_world;
     Vec2 card_scale;
     isize selection_idx;
     isize focus_idx;
@@ -5563,7 +5563,11 @@ typedef struct {
     i32 renderw_world;
     i32 renderh_world;
 
-    Vec3 deck_pos_world;
+    Vec3 deck_pos_live;
+    Vec3 deck_pos_start;
+    Vec3 deck_pos_end;
+    f32 deck_pos_duration;
+    f32 deck_pos_elapsed;
 
     ScoreLog score_log;
     BattleDisplay display;
@@ -5652,7 +5656,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderh_world = renderh_world;
     GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
 
-    battle->deck_pos_world = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
+    battle->deck_pos_live = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
 
     // hand init deck init
     {
@@ -6072,7 +6076,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                     case SE_DRAW_CARD: {
                         Card* card = ArrGetPtr(&battle->hand, cur_event->hand_idx);
                         card->visible = true;
-                        card->pos_live = battle->deck_pos_world;
+                        card->pos_live = battle->deck_pos_live;
                         display->tween_duration = 1.0f;
                         PlatformPlaySound(GetSound(SOUND_CARD_DRAW), 0);
                         break;
@@ -6869,7 +6873,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             // Draw draw deck
                             {
-                                Vec3 pos = battle->deck_pos_world;
+                                Vec3 pos = battle->deck_pos_live;
                                 DrawQuad(pos, battle->card_scale.x, battle->card_scale.y, Mat4Identity(), LGRAY);
                             }
                         }
