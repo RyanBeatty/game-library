@@ -6057,6 +6057,10 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                         break;
                     }
                     case SE_DRAW_CARD: {
+                        Card* card = ArrGetPtr(&battle->hand, cur_event->hand_idx);
+                        card->visible = true;
+                        card->pos_live = battle->deck_pos_world;
+                        display->tween_duration = 1.0f;
                         break;
                     }
                     default: {
