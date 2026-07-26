@@ -5996,7 +5996,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
     i32 score_total = battle->total_score;
 
     BattleDisplayPhase phase_to_be = display->phase;
-    if (ArrLen(&log->events)) {
+    if (ArrLen(&log->events) && display->phase == BDP_DONE) {
         phase_to_be = BDP_NEXT;
     }
 
@@ -6613,35 +6613,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             gstate->phase_to_be = GP_GAME_OVER;
                         }
 
-                        for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
-                            Card* card = ArrGetPtr(&battle->hand, i);
-                            // TODO: Should we get rid of this initial check?
-                            if (card->scale_target != card->scale_live) {
-                                f32 dist = card->scale_target - card->scale_live;
-                                f32 step = card->scale_speed * dt;
-                                if (f32abs(dist) <= step) {
-                                    card->scale_live = card->scale_target;
-                                } else {
-                                    card->scale_live += step * (dist < 0.0f ? -1.0f : 1.0f);
-                                }
-                            }
-
-                            card->pos_target = Vec3WTransform(HandIdxToPos(&battle->hand, i), battle->hand_to_world);
-                            if (!Vec3Eq(card->pos_live, card->pos_target)) {
-                                Vec3 diff = Vec3Sub(card->pos_target, card->pos_live);
-                                f32 distance = Vec3Len(diff);
-                                f32 step = card->pos_speed * gstate->frame_time.dt;
-                                if (distance <= step) {
-                                    card->pos_live = card->pos_target;
-                                } else {
-                                    Vec3 dir = Vec3Normalize(diff);
-                                    card->pos_live = Vec3Add(card->pos_live, Vec3Scale(dir, step));
-                                }
-                            } else {
-                                card->pos_live = card->pos_target;
-                            }
-                        }
-
                         {
                             grid->pos_elapsed += gstate->frame_time.dt;
                             grid->pos_elapsed = f32min(grid->pos_elapsed, grid->pos_duration);
@@ -6671,6 +6642,35 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 BattleDisplayUpdate(&battle->display, battle, gstate->frame_time);
+
+                for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
+                    Card* card = ArrGetPtr(&battle->hand, i);
+                    // TODO: Should we get rid of this initial check?
+                    if (card->scale_target != card->scale_live) {
+                        f32 dist = card->scale_target - card->scale_live;
+                        f32 step = card->scale_speed * dt;
+                        if (f32abs(dist) <= step) {
+                            card->scale_live = card->scale_target;
+                        } else {
+                            card->scale_live += step * (dist < 0.0f ? -1.0f : 1.0f);
+                        }
+                    }
+
+                    card->pos_target = Vec3WTransform(HandIdxToPos(&battle->hand, i), battle->hand_to_world);
+                    if (!Vec3Eq(card->pos_live, card->pos_target)) {
+                        Vec3 diff = Vec3Sub(card->pos_target, card->pos_live);
+                        f32 distance = Vec3Len(diff);
+                        f32 step = card->pos_speed * gstate->frame_time.dt;
+                        if (distance <= step) {
+                            card->pos_live = card->pos_target;
+                        } else {
+                            Vec3 dir = Vec3Normalize(diff);
+                            card->pos_live = Vec3Add(card->pos_live, Vec3Scale(dir, step));
+                        }
+                    } else {
+                        card->pos_live = card->pos_target;
+                    }
+                }
 
                 break;
             }
