@@ -4617,10 +4617,16 @@ static UIBoxId UIStateNextId(UIState* ui) {
 }
 
 // Set the current parent's cursor offset to pos.
+// REMINDER THAT THE Y COORDINATE HERE SHOULD BE A NEGATIVE OFFSET FROM THE TOP LEFT
 LCORE void UISetCursor(UIState* ui, Vec2 pos) {
     UIBox* root = UIGetParent(ui);
     // TODO: We should potentially add some checks or clamping around setting a cursor outside of the parent's window.
     root->cursor_top_left_offset = pos;
+}
+
+LCORE Vec2 UIGetCursor(UIState* ui) {
+    UIBox* root = UIGetParent(ui);
+    return root->cursor_top_left_offset;
 }
 
 static void UIStateInit(UIState* ui, Arena* perm, f32 width, f32 height, GameInput* input,
@@ -7104,22 +7110,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UISpacer(&ui, UISizePctParent(spacer_width_pct), UISizePctParent(1.0f));
                         UISameLine(&ui);
 
-                        UIThemeColor(&ui, UI_THEME_WINDOW_BG_COLOR, LHIDDEN) {
-                            UIWindow(&ui, UISizePctParent(right_panel_width_pct), UISizePctParent(1.0f)) {
-                                UISpacer(&ui, UISizePctParent(1.0f), UISizePctParent(0.7f));
-                                UIThemeColor(&ui, UI_THEME_BUTTON_BG_COLOR, LGRAY) {
-                                    UIPadding(&ui, Vec2Lit(20.0f, 100.0f)) {
-                                        if (UIButtonEx(&ui, Str8Lit("Play Hand"),
-                                                       UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED, UISizeText(),
-                                                       UISizeText())
-                                                .clicked) {
-                                            battle->phase_to_be =
-                                                battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
-                                        }
-                                    }
+                        Vec2 cursor_prev = UIGetCursor(&ui);
+                        UISetCursor(&ui, Vec2Lit(0.45f * PlatformScreenWidth(), -0.84f * PlatformScreenHeight()));
+                        UIThemeColor(&ui, UI_THEME_BUTTON_BG_COLOR, LGRAY) {
+                            UIPadding(&ui, Vec2Lit(20.0f, 100.0f)) {
+                                if (UIButtonEx(&ui, Str8Lit("Play Hand"),
+                                               UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED, UISizeText(),
+                                               UISizeText())
+                                        .clicked) {
+                                    battle->phase_to_be =
+                                        battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
                                 }
                             }
                         }
+                        UISetCursor(&ui, cursor_prev);
 
                         switch (gstate->phase) {
                             // Draw shop ui
