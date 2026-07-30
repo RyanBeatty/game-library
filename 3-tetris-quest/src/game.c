@@ -5467,7 +5467,7 @@ static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
 
 ////////////////////////////////////////////////////
 
-// Struct for ui button state. mostly used for tweens I guess.
+// Struct for ui button/box state. mostly used for tweens I guess.
 typedef struct {
     Vec2 pos_end;
     Vec2 pos_start;
@@ -5628,6 +5628,7 @@ typedef struct {
     BattleDisplay display;
 
     UIVisualState play_button;
+    UIVisualState score_window;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5781,8 +5782,17 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         play_button->pos_duration = 1.2f;
         play_button->pos_end = Vec2Lit(0.45f * PlatformScreenWidth(), -0.84f * PlatformScreenHeight());
         play_button->pos_start = play_button->pos_end;
-        play_button->pos_start.y -= 120.0f;
+        play_button->pos_start.y -= 200.0f;
         play_button->pos_live = play_button->pos_start;
+    }
+
+    {
+        UIVisualState* score_window = &battle->score_window;
+        score_window->pos_duration = 0.8f;
+        score_window->pos_end = Vec2Lit(0, 0);
+        score_window->pos_start = score_window->pos_end;
+        score_window->pos_start.x -= 500.0f;
+        score_window->pos_live = score_window->pos_start;
     }
 }
 
@@ -6789,6 +6799,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     play_button->pos_live = Vec2Lerp(play_button->pos_start, play_button->pos_end, EaseOutBack(t));
                 }
 
+                // update score window graphics
+                {
+                    UIVisualState* score_window = &battle->score_window;
+                    score_window->pos_elapsed =
+                        f32min(score_window->pos_elapsed + gstate->frame_time.dt, score_window->pos_duration);
+                    f32 t = score_window->pos_elapsed / score_window->pos_duration;
+                    score_window->pos_live = Vec2Lerp(score_window->pos_start, score_window->pos_end, EaseOutBack(t));
+                }
+
                 break;
             }
             // update shop
@@ -7090,7 +7109,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIFont(&ui, GetLFontClosest(40.0f)) {
                         UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
                         Vec2 prev_cursor = UIGetCursor(&ui);
-                        UISetCursor(&ui, Vec2Lit(0, 0));
+                        UISetCursor(&ui, battle->score_window.pos_live);
                         UIWindow(&ui, UISizePctParent(left_panel_width_pct), UISizePctParent(0.5f)) {
                             {
                                 char buffer[256] = {0};
