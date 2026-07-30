@@ -5474,7 +5474,7 @@ typedef struct {
     Vec2 pos_live;
     f32 pos_elapsed;
     f32 pos_duration;
-} UIButtonState;
+} UIVisualState;
 
 typedef enum {
     SE_NONE = 0,
@@ -5627,7 +5627,7 @@ typedef struct {
     ScoreLog score_log;
     BattleDisplay display;
 
-    UIButtonState play_button;
+    UIVisualState play_button;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5777,7 +5777,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     ScoreLogRoundStart(&battle->score_log);
 
     {
-        UIButtonState* play_button = &battle->play_button;
+        UIVisualState* play_button = &battle->play_button;
         play_button->pos_duration = 1.2f;
         play_button->pos_end = Vec2Lit(0.45f * PlatformScreenWidth(), -0.84f * PlatformScreenHeight());
         play_button->pos_start = play_button->pos_end;
@@ -6782,7 +6782,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 // update play button graphics
                 {
-                    UIButtonState* play_button = &battle->play_button;
+                    UIVisualState* play_button = &battle->play_button;
                     play_button->pos_elapsed =
                         f32min(play_button->pos_elapsed + gstate->frame_time.dt, play_button->pos_duration);
                     f32 t = play_button->pos_elapsed / play_button->pos_duration;
@@ -7089,6 +7089,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     UIFont(&ui, GetLFontClosest(40.0f)) {
                         UIPushThemeColor(&ui, UI_THEME_LABEL_TEXT_COLOR, LWHITE);
+                        Vec2 prev_cursor = UIGetCursor(&ui);
+                        UISetCursor(&ui, Vec2Lit(0, 0));
                         UIWindow(&ui, UISizePctParent(left_panel_width_pct), UISizePctParent(0.5f)) {
                             {
                                 char buffer[256] = {0};
@@ -7136,6 +7138,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
                         }
+                        UISetCursor(&ui, prev_cursor);
 
                         UISameLine(&ui);
                         UISpacer(&ui, UISizePctParent(spacer_width_pct), UISizePctParent(1.0f));
