@@ -6158,6 +6158,8 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                         battle->deck_pos_elapsed = 0.0f;
                         battle->deck_pos_live = battle->deck_pos_start;
                         display->tween_duration = 1.5f;
+
+                        battle->play_button.pos_elapsed = 0.0f;
                         break;
                     }
                     default: {
