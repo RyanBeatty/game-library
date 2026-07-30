@@ -282,6 +282,9 @@ static f32 Vec2Len(Vec2 v) { return f32sqrt((v.x * v.x) + (v.y * v.y)); }
 static f32 Vec2Dot(Vec2 v1, Vec2 v2) { return (v1.x * v2.x) + (v1.y * v2.y); }
 static bool Vec2Eq(Vec2 a, Vec2 b) { return ((f32abs(a.x - b.x) < TOL) && (f32abs(a.y - b.y) < TOL)); }
 LCORE f32 Vec2Angle(Vec2 a, Vec2 b) { return f32acos(Vec2Dot(a, b) / (Vec2Len(a) * Vec2Len(b))); }
+LCORE Vec2 Vec2Lerp(Vec2 start, Vec2 end, f32 t) {
+    return Vec2Lit(f32lerp(start.x, end.x, t), f32lerp(start.y, end.y, t));
+}
 
 typedef struct {
     union {

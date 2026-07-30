@@ -5472,7 +5472,7 @@ typedef struct {
     Vec2 pos_end;
     Vec2 pos_start;
     Vec2 pos_live;
-    f32 pos_t;
+    f32 pos_elapsed;
     f32 pos_duration;
 } UIButtonState;
 
@@ -6780,6 +6780,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 // update play button graphics
                 {
+                    UIButtonState* play_button = &battle->play_button;
+                    play_button->pos_elapsed =
+                        f32min(play_button->pos_elapsed + gstate->frame_time.dt, play_button->pos_duration);
+                    f32 t = play_button->pos_elapsed / play_button->pos_duration;
+                    play_button->pos_live = Vec2Lerp(play_button->pos_start, play_button->pos_end, EaseOutBack(t));
                 }
 
                 break;
