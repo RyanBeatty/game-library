@@ -15,7 +15,15 @@ GAME
 TAKEAWAYS
 * Derived positions are nice and fast to start out with but are a PITA when you want to do animations. Everything should store a position (game + visual pos).
 
-
+TODO
+* make small tween when can't move anymore at edge of board
+* board pop when coming in?
+* cleanup Score UI
+* more sounds!
+* better score pop animation
+    * particles
+    * maybe some grid shake?
+* animation when lines clear
 
 
 Conventions

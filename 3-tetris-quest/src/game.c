@@ -5459,6 +5459,15 @@ static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
 
 ////////////////////////////////////////////////////
 
+// Struct for ui button state. mostly used for tweens I guess.
+typedef struct {
+    Vec2 pos_end;
+    Vec2 pos_start;
+    Vec2 pos_live;
+    f32 pos_t;
+    f32 pos_duration;
+} UIButtonState;
+
 typedef enum {
     SE_NONE = 0,
     SE_BLOCK,
@@ -5609,6 +5618,8 @@ typedef struct {
 
     ScoreLog score_log;
     BattleDisplay display;
+
+    UIButtonState play_button;
 } Battle;
 
 static const isize NO_CARD_SELECTED_IDX = -1;
@@ -5756,6 +5767,14 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     BattleDisplayInit(&battle->display);
 
     ScoreLogRoundStart(&battle->score_log);
+
+    {
+        UIButtonState* play_button = &battle->play_button;
+        play_button->pos_duration = 1.2f;
+        play_button->pos_end = Vec2Lit(0.45f * PlatformScreenWidth(), -0.84f * PlatformScreenHeight());
+        play_button->pos_start = play_button->pos_end;
+        play_button->pos_live = play_button->pos_end;
+    }
 }
 
 typedef struct {
@@ -7110,21 +7129,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UISpacer(&ui, UISizePctParent(spacer_width_pct), UISizePctParent(1.0f));
                         UISameLine(&ui);
 
-                        Vec2 cursor_prev = UIGetCursor(&ui);
-                        UISetCursor(&ui, Vec2Lit(0.45f * PlatformScreenWidth(), -0.84f * PlatformScreenHeight()));
-                        UIThemeColor(&ui, UI_THEME_BUTTON_BG_COLOR, LGRAY) {
-                            UIPadding(&ui, Vec2Lit(20.0f, 100.0f)) {
-                                if (UIButtonEx(&ui, Str8Lit("Play Hand"),
-                                               UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED, UISizeText(),
-                                               UISizeText())
-                                        .clicked) {
-                                    battle->phase_to_be =
-                                        battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
-                                }
-                            }
-                        }
-                        UISetCursor(&ui, cursor_prev);
-
                         switch (gstate->phase) {
                             // Draw shop ui
                             case GP_SHOP: {
@@ -7153,6 +7157,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 break;
                             }
                             case GP_PLAYING: {
+                                Vec2 cursor_prev = UIGetCursor(&ui);
+                                UISetCursor(&ui, battle->play_button.pos_live);
+                                UIThemeColor(&ui, UI_THEME_BUTTON_BG_COLOR, LGRAY) {
+                                    UIPadding(&ui, Vec2Lit(20.0f, 100.0f)) {
+                                        if (UIButtonEx(&ui, Str8Lit("Play Hand"),
+                                                       UI_FLAG_CLICKABLE | UI_FLAG_ABLE_TO_BE_CLICKED, UISizeText(),
+                                                       UISizeText())
+                                                .clicked) {
+                                            battle->phase_to_be =
+                                                battle->phase_to_be == BP_NONE ? BP_PLAY_HAND : battle->phase_to_be;
+                                        }
+                                    }
+                                }
+                                UISetCursor(&ui, cursor_prev);
                                 break;
                             }
                             case GP_NEW_GAME: {
