@@ -3908,6 +3908,14 @@ static void EasingZero(Easing* easing) {
     *easing = e;
 }
 
+static f32 EaseOutBack(f32 t) {
+    // ease out back
+    f32 c1 = 1.70158;
+    f32 c3 = c1 + 1.0f;
+    t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
+    return t;
+}
+
 static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
 
 static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
@@ -5773,7 +5781,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         play_button->pos_duration = 1.2f;
         play_button->pos_end = Vec2Lit(0.45f * PlatformScreenWidth(), -0.84f * PlatformScreenHeight());
         play_button->pos_start = play_button->pos_end;
-        play_button->pos_live = play_button->pos_end;
+        play_button->pos_start.y -= 120.0f;
+        play_button->pos_live = play_button->pos_start;
     }
 }
 
@@ -6752,11 +6761,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     grid->pos_elapsed += gstate->frame_time.dt;
                     grid->pos_elapsed = f32min(grid->pos_elapsed, grid->pos_duration);
                     f32 t = grid->pos_elapsed / grid->pos_duration;
-                    // ease out back
-                    f32 c1 = 1.70158;
-                    f32 c3 = c1 + 1.0f;
-                    t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
-                    grid->pos_live = Vec3Lerp(grid->pos_start, grid->pos_end, t);
+                    grid->pos_live = Vec3Lerp(grid->pos_start, grid->pos_end, EaseOutBack(t));
                 }
 
                 // update deck graphics
@@ -6764,17 +6769,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     battle->deck_pos_elapsed += gstate->frame_time.dt;
                     battle->deck_pos_elapsed = f32min(battle->deck_pos_elapsed, battle->deck_pos_duration);
                     f32 t = battle->deck_pos_elapsed / battle->deck_pos_duration;
-                    // ease out back
-                    f32 c1 = 1.70158;
-                    f32 c3 = c1 + 1.0f;
-                    t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
-                    battle->deck_pos_live = Vec3Lerp(battle->deck_pos_start, battle->deck_pos_end, t);
+                    battle->deck_pos_live = Vec3Lerp(battle->deck_pos_start, battle->deck_pos_end, EaseOutBack(t));
 
                     // deck size
                     {
                         i32 num_hidden = CardArrNumHidden(&battle->hand);
                         battle->deck_size_live = ArrLen(&battle->deck) + num_hidden;
                     }
+                }
+
+                // update play button graphics
+                {
                 }
 
                 break;
