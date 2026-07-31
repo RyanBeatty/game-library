@@ -6347,6 +6347,8 @@ typedef struct GameState {
     SceneId nextsceneid;
 
     LCamera camera;
+    Mat4 low_res_proj;
+    Mat4 high_res_proj;
 
     /////////////////////////////////////////
     // Scene fields
@@ -6390,13 +6392,10 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
     // PlatformLog(LLOG_INFO, "Pos clip %f %f %f", pos_clip.x, pos_clip.y, pos_clip.z);
 
     // Transform from clip to camera space and from camera to world.
-    // TODO: I should auto derive these matrices from render or game state potentially? The values hardcoded here could
-    // become out of sync if I change the setup in the game tick rendering
     // TODO: Potentially if we are doing pixel perfect rendering (e.g. snapping camera pos + draw call positions at
     // render time), we need to make sure that we use the pixel perfect camera to unconvert from screen to world here as
     // well.
-    Mat4 inv_proj = Mat4Invert(Mat4Ortho(-0.5f * gstate->renderw_world, 0.5f * gstate->renderw_world,
-                                         -0.5f * gstate->renderh_world, 0.5f * gstate->renderh_world, -100.0f, 100.0f));
+    Mat4 inv_proj = Mat4Invert(gstate->low_res_proj);
     Mat4 inv_view = Mat4Invert(CameraGetViewMat(gstate->camera));
     Mat4 inv = Mat4Multiply(inv_view, inv_proj);
     Vec3 pos_world = Vec3WTransform(pos_clip, inv);
@@ -6817,9 +6816,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // Update shopable positions
                 {
                     Mat4 view = CameraGetViewMat(gstate->camera);
-                    Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
-                    Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
-                                          half_render_dims.y, -100.0f, 100.0f);
+                    Mat4 proj = gstate->low_res_proj;
                     Mat4 vp = Mat4Multiply(proj, view);
 
                     isize num_relics = ArrLen(&shop->for_sale);
@@ -6896,16 +6893,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Render(dt) {
             // Entities/Game World
             {
-                // Reminder that using the _world variables here ensures we convert from world units back to pixel units
-                // correctly.
-                Mat4 view = CameraGetViewMat(gstate->camera);
-                Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
-                Mat4 proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y, half_render_dims.y,
-                                      -100.0f, 100.0f);
                 RenderPassLoadAction load_action = DefaultLoadAction();
                 load_action.clear_color = LPURPLE;
                 load_action.clear_color_flag = true;
-                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+                BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->low_res_proj,
+                                GetDefaultRenderTarget());
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
@@ -7423,8 +7415,27 @@ void GameInit() {
     gstate->fts_tail = 1;
     gstate->fts_head = 0;
 
-    gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
-    gstate->camera.eye = Vec3Lit(0.0f, 0.0f, 10.0f);
+    // Camera and proj init
+    {
+        gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
+        gstate->camera.eye = Vec3Lit(0.0f, 0.0f, 10.0f);
+
+        {
+            // Reminder that using the _world variables here ensures we convert from world units back to pixel units
+            // correctly.
+            Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
+            gstate->low_res_proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
+                                             half_render_dims.y, -100.0f, 100.0f);
+        }
+
+        {
+            // Reminder that using the _world variables here ensures we convert from world units back to pixel units
+            // correctly.
+            Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh);
+            gstate->high_res_proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
+                                              half_render_dims.y, -100.0f, 100.0f);
+        }
+    }
 }
 
 void GameTick(f32 dt, GameInput* input) {
