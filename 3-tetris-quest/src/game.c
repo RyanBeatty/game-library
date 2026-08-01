@@ -7016,19 +7016,44 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             static Vec3 POS = Vec3Lit(0, 0, 0);
                             static Vec3 V = Vec3Lit(0, 0, 0);
 
-                            if (controller->action_left.down) {
+                            static f32 SCALE_TARGET = 1.0f;
+                            static f32 SCALE = 1.0f;
+                            static f32 SCALE_V = 0.0f;
+
+                            if (controller->action_left.down && false) {
                                 POS = Vec2ToVec3(controller->cursor_pos_world);
                                 V = Vec3Zero();
+
+                                SCALE = 1.0f;
+                                SCALE_V = 0.0f;
+                            } else if (controller->action_left.down) {
+                                Vec3 pos = Vec2ToVec3(controller->cursor_pos_world);
+                                f32 dist = Vec3Len(Vec3Sub(POS_TARGET, pos));
+                                f32 pct = f32clamp01(dist / Px2Meter(100.0f));
+                                SCALE = f32lerp(1.0f, 0.5f, pct);
+
+                                // SCALE = 0.7f;
                             } else {
                                 f32 deltat = 1.0f / 60.0f;
-                                Vec3 diff = Vec3Sub(POS, POS_TARGET);
-                                Vec3 acc_pos = Vec3Scale(diff, -100.0f);
-                                Vec3 acc_v = Vec3Scale(V, -10.0f);
-                                Vec3 acc = Vec3Add(acc_pos, acc_v);
-                                V = Vec3Add(V, Vec3Scale(acc, deltat));
-                                POS = Vec3Add(POS, Vec3Scale(V, deltat));
+                                {
+                                    Vec3 diff = Vec3Sub(POS, POS_TARGET);
+                                    Vec3 acc_pos = Vec3Scale(diff, -60.0f);
+                                    Vec3 acc_v = Vec3Scale(V, -20.0f);
+                                    Vec3 acc = Vec3Add(acc_pos, acc_v);
+                                    V = Vec3Add(V, Vec3Scale(acc, deltat));
+                                    POS = Vec3Add(POS, Vec3Scale(V, deltat));
+                                }
+
+                                {
+                                    f32 dist = SCALE - SCALE_TARGET;
+                                    f32 acc_x = -200.0f * dist;
+                                    f32 acc_v = -1.0f * SCALE_V;
+                                    f32 acc = acc_x + acc_v;
+                                    SCALE_V += acc * deltat;
+                                    SCALE += SCALE_V * deltat;
+                                }
                             }
-                            DrawQuad(POS, Px2Meter(100), Px2Meter(100), Mat4Identity(), LRED);
+                            DrawQuad(POS, Px2Meter(100) * SCALE, Px2Meter(100) * SCALE, Mat4Identity(), LRED);
                         }
 
                         break;
