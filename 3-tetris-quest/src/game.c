@@ -7012,7 +7012,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         {
-                            DrawQuad(Vec3Lit(0, 0, 0), Px2Meter(10), Px2Meter(10), Mat4Identity(), LRED);
+                            static Vec3 POS = Vec3Lit(0, 0, 0);
+
+                            if (controller->action_left.down) {
+                                POS = Vec2ToVec3(controller->cursor_pos_world);
+                            }
+                            DrawQuad(POS, Px2Meter(100), Px2Meter(100), Mat4Identity(), LRED);
                         }
 
                         break;
