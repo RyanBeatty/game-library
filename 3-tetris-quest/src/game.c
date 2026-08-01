@@ -3762,6 +3762,74 @@ LCORE void ParticleSystemDraw() {
         // cmd->meshcmd.color = particle->color;
     }
 }
+////////////////////////////////////////////////////////////
+// s:easing
+
+typedef enum {
+    ET_NONE = 0,     // No easing, error!
+    ET_SMOOTH_LERP,  // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
+    ET_IN_EXPO,
+    ET_OUT_BACK,
+} EasingType;
+
+typedef struct {
+    EasingType type;
+
+    f32 T;
+
+    union {
+        struct {
+            f32 rate;  // This should be between 0 and 1. Essentially after 1s how much of the error should remain?
+        } lerp;
+    };
+} Easing;
+
+static void EasingZero(Easing* easing) {
+    Easing e = {0};
+    e.type = ET_NONE;
+    *easing = e;
+}
+
+static f32 EaseOutBack(f32 t) {
+    // ease out back
+    f32 c1 = 1.70158;
+    f32 c3 = c1 + 1.0f;
+    t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
+    return t;
+}
+static f32 EaseOutCubic(f32 t) { return 1.0f - f32pow(1.0f - t, 3.0f); }
+
+static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
+
+static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
+    f32 T = easing.T;
+
+    switch (easing.type) {
+        case ET_SMOOTH_LERP: {
+            T = 1.0f - f32pow(easing.lerp.rate, dt);
+            break;
+        }
+        case ET_IN_EXPO: {
+            T = T == 0.0f ? 0.0f : f32pow(2.0f, 10.0f * T - 10.0f);
+            break;
+        }
+        case ET_OUT_BACK: {
+            static f32 c1 = 1.70158;
+            f32 c3 = c1 + 1;
+
+            T = 1.0f + c3 * f32pow(T - 1.0f, 3.0f) + c1 * f32pow(T - 1.0f, 2.0f);
+            T = f32sin(T * LPI);
+            break;
+        }
+        case ET_NONE:
+        default: {
+            Assert(0);
+        }
+    }
+
+    cur = Vec3Lerp(cur, target, T);
+    return cur;
+}
 
 ////////////////////////////////////////////////////////////
 
@@ -3881,72 +3949,6 @@ LCORE DrawCmd* DrawLModelEx2(LModel model, isize frame_idx, Mat4 world_mat) {
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
 LCORE DrawCmd* DrawLModel(LModel model, Vec3 pos, Mat4 orient, Vec3 scale) {
     return DrawLModelEx(model, 0, pos, orient, scale);
-}
-
-typedef enum {
-    ET_NONE = 0,     // No easing, error!
-    ET_SMOOTH_LERP,  // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
-    ET_IN_EXPO,
-    ET_OUT_BACK,
-} EasingType;
-
-typedef struct {
-    EasingType type;
-
-    f32 T;
-
-    union {
-        struct {
-            f32 rate;  // This should be between 0 and 1. Essentially after 1s how much of the error should remain?
-        } lerp;
-    };
-} Easing;
-
-static void EasingZero(Easing* easing) {
-    Easing e = {0};
-    e.type = ET_NONE;
-    *easing = e;
-}
-
-static f32 EaseOutBack(f32 t) {
-    // ease out back
-    f32 c1 = 1.70158;
-    f32 c3 = c1 + 1.0f;
-    t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
-    return t;
-}
-static f32 EaseOutCubic(f32 t) { return 1.0f - f32pow(1.0f - t, 3.0f); }
-
-static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
-
-static Vec3 EaseVec3(Vec3 cur, Vec3 target, f32 dt, Easing easing) {
-    f32 T = easing.T;
-
-    switch (easing.type) {
-        case ET_SMOOTH_LERP: {
-            T = 1.0f - f32pow(easing.lerp.rate, dt);
-            break;
-        }
-        case ET_IN_EXPO: {
-            T = T == 0.0f ? 0.0f : f32pow(2.0f, 10.0f * T - 10.0f);
-            break;
-        }
-        case ET_OUT_BACK: {
-            static f32 c1 = 1.70158;
-            f32 c3 = c1 + 1;
-
-            T = 1.0f + c3 * f32pow(T - 1.0f, 3.0f) + c1 * f32pow(T - 1.0f, 2.0f);
-            T = f32sin(T * LPI);
-            break;
-        }
-        case ET_NONE:
-        default: {
-            Assert(0);
-        }
-    }
-
-    cur = Vec3Lerp(cur, target, T);
-    return cur;
 }
 
 typedef enum {
