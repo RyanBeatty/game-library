@@ -7010,6 +7010,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
                         }
+
+                        {
+                            DrawQuad(Vec3Lit(0, 0, 0), Px2Meter(10), Px2Meter(10), Mat4Identity(), LRED);
+                        }
+
                         break;
                     }
                     // Draw shop
@@ -7197,7 +7202,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     }
                                 }
                                 UISetCursor(&ui, cursor_prev);
-                                break;
                             }
                             case GP_NEW_GAME: {
                                 break;
