@@ -3915,6 +3915,7 @@ static f32 EaseOutBack(f32 t) {
     t = 1.0f + (c3 * f32pow(t - 1.0f, 3.0f) + (c1 * f32pow(t - 1.0f, 2.0f)));
     return t;
 }
+static f32 EaseOutCubic(f32 t) { return 1.0f - f32pow(1.0f - t, 3.0f); }
 
 static Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
 
@@ -7012,6 +7013,50 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         {
+                            static f32 SCALES[] = {
+                                0.9f, 1.2f, 1.4, 0.8f, 1.1f, 0.95f, 1.0f,
+                            };
+                            static f32 FRAMES[] = {
+                                0.0f,          2.0f / 60.0f,  3.0f / 60.0f,  7.0f / 60.0f,
+                                10.0f / 60.0f, 14.0f / 60.0f, 18.0f / 60.0f,
+                            };
+                            static f32 (*EASINGS[])(f32) = {
+                                EaseOutBack,  EaseOutBack,  EaseOutCubic, EaseOutCubic,
+                                EaseOutCubic, EaseOutCubic, EaseOutCubic,
+                            };
+                            static f32 ELAPSED = 0.0f;
+                            static bool PLAYING = false;
+
+                            if (controller->action_left.pressed) {
+                                PLAYING = true;
+                                ELAPSED = 0.0f;
+                            }
+
+                            f32 scale = 1.0f;
+                            if (PLAYING) {
+                                ELAPSED += gstate->frame_time.dt;
+
+                                isize frame = 0;
+                                for (; frame < ArraySizeOf(FRAMES) - 1; ++frame) {
+                                    if (FRAMES[frame] >= ELAPSED) {
+                                        break;
+                                    }
+                                }
+                                isize frame_prev = i32max(frame - 1, 0);
+
+                                f32 frame_duration = FRAMES[frame] - FRAMES[frame_prev];
+                                f32 frame_elapsed = ELAPSED - FRAMES[frame_prev];
+                                f32 t = f32min(frame_elapsed / frame_duration, 1.0f);
+
+                                t = EASINGS[frame](t);
+                                scale = f32lerp(SCALES[frame_prev], SCALES[frame], t);
+                            }
+
+                            DrawQuad(Vec3Zero(), Px2Meter(100.0f) * scale, Px2Meter(100.0f) * scale, Mat4Identity(),
+                                     LRED);
+                        }
+
+                        if (false) {
                             static Vec3 POS_TARGET = Vec3Lit(0, 0, 0);
                             static Vec3 POS = Vec3Lit(0, 0, 0);
                             static Vec3 V = Vec3Lit(0, 0, 0);
