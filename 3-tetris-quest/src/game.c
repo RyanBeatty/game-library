@@ -7012,10 +7012,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         {
+                            static Vec3 POS_TARGET = Vec3Lit(0, 0, 0);
                             static Vec3 POS = Vec3Lit(0, 0, 0);
+                            static Vec3 V = Vec3Lit(0, 0, 0);
 
                             if (controller->action_left.down) {
                                 POS = Vec2ToVec3(controller->cursor_pos_world);
+                                V = Vec3Zero();
+                            } else {
+                                f32 deltat = 1.0f / 60.0f;
+                                Vec3 diff = Vec3Sub(POS, POS_TARGET);
+                                Vec3 acc_pos = Vec3Scale(diff, -100.0f);
+                                Vec3 acc_v = Vec3Scale(V, -10.0f);
+                                Vec3 acc = Vec3Add(acc_pos, acc_v);
+                                V = Vec3Add(V, Vec3Scale(acc, deltat));
+                                POS = Vec3Add(POS, Vec3Scale(V, deltat));
                             }
                             DrawQuad(POS, Px2Meter(100), Px2Meter(100), Mat4Identity(), LRED);
                         }
