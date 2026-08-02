@@ -2563,13 +2563,18 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
 }
 
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
-LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
+LCORE DrawCmd* DrawSpriteEx(Sprite sprite, Vec3 pos, Mat4 orient, f32 scale, Vec4 tint) {
     // By default scale of 1 will mean draw the sprite with same width/height
-    DrawCmd* cmd = DrawQuad(pos, sprite.dims.x * scale.x, sprite.dims.y * scale.y, orient, LCLEAR);
+    DrawCmd* cmd = DrawQuad(pos, sprite.dims.x * scale, sprite.dims.y * scale, orient, tint);
     cmd->meshcmd.tx = sprite.tx;
     cmd->meshcmd.uvoffset = sprite.minuv;
     cmd->meshcmd.uvscale = sprite.dimsuv;
     return cmd;
+}
+
+// I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
+LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, f32 scale) {
+    return DrawSpriteEx(sprite, pos, orient, scale, LCLEAR);
 }
 
 ////////////////////////////////////////////////////////////
@@ -6156,6 +6161,13 @@ static void DrawBlock(Vec3 pos, Vec2 dims, BlockGraphics* graphics) {
     }
 }
 
+static void DrawBlock2(Vec3 pos, f32 scale, BlockGraphics* graphics) {
+    Vec4 color = graphics->base_color;
+    color.a = graphics->preview ? color.a * 0.3f : color.a;
+
+    DrawSpriteEx(*GetSprite(SPRITE_BLOCK), pos, Mat4Identity(), scale, color);
+}
+
 static void GamePhaseChange(GameState* gstate) {
     switch (gstate->phase_to_be) {
         case GP_NONE: {
@@ -6668,11 +6680,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         {
-                            f32 rot = f32sin(gstate->frame_time.accumulated);
-                            rot = 0.0f;
-                            Mat4 orient = Mat4RotateZ(rot);
-                            // DrawSprite(*GetSprite(SPRITE_BLOCK), Vec3Lit(0, 0, 0), orient, Vec3LitAll(1));
-                            DrawSprite(*GetSprite(SPRITE_BLOCK2), Vec3Lit(0, 0, 0), orient, Vec3LitAll(1));
+                            if (ArrLen(&battle->hand) > 0) {
+                                Card* card = ArrGetPtr(&battle->hand, 0);
+                                for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
+                                    TileId offset = ArrGet(&card->piece.block_offsets, i);
+                                    Vec3 pos = Vec3Lit(offset.c * 34.0f, offset.r * 34.0f, 0.0f);
+                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
+                                                              .effects = &card->piece.effects};
+                                    DrawBlock2(pos, 1.0f, &graphics);
+                                }
+                            }
                         }
 
                         if (false) {
