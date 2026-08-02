@@ -6659,8 +6659,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         // Draw hand
                         {
-                            f32 piece_scale = Px2Meter(16.0f);
-                            Vec2 piece_dims = Vec2Lit(piece_scale, piece_scale);
+                            Vec2 piece_step = Vec2Lit(Px2Meter(34.0f), Px2Meter(34.0f));
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
                                 if (card->visible) {
@@ -6669,33 +6668,35 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
                                     DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
-                                    Vec2 scaled_piece_dims = Vec2Scale(piece_dims, card->scale_live);
+                                    f32 piece_scale = card->scale_live;
+                                    Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
 
                                     // Draw piece inside card.
                                     for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
                                         TileId offset = ArrGet(&card->piece.block_offsets, j);
-                                        Vec3 pos = Vec3Lit(offset.c * piece_scale, offset.r * piece_scale, 0.0f);
+                                        Vec3 pos = Vec3Lit(offset.c * scaled_piece_step.x,
+                                                           offset.r * scaled_piece_step.y, 0.0f);
                                         pos = Vec3Add(pos, quad_pos);
                                         BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
                                                                   .effects = &card->piece.effects};
-                                        DrawBlock(pos, scaled_piece_dims, &graphics);
+                                        DrawBlock2(pos, piece_scale, &graphics);
                                     }
                                 }
                             }
                         }
 
-                        {
-                            if (ArrLen(&battle->hand) > 0) {
-                                Card* card = ArrGetPtr(&battle->hand, 0);
-                                for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
-                                    TileId offset = ArrGet(&card->piece.block_offsets, i);
-                                    Vec3 pos = Vec3Lit(offset.c * 34.0f, offset.r * 34.0f, 0.0f);
-                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
-                                                              .effects = &card->piece.effects};
-                                    DrawBlock2(pos, 1.0f, &graphics);
-                                }
-                            }
-                        }
+                        // {
+                        //     if (ArrLen(&battle->hand) > 0) {
+                        //         Card* card = ArrGetPtr(&battle->hand, 0);
+                        //         for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
+                        //             TileId offset = ArrGet(&card->piece.block_offsets, i);
+                        //             Vec3 pos = Vec3Lit(offset.c * 34.0f, offset.r * 34.0f, 0.0f);
+                        //             BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
+                        //                                       .effects = &card->piece.effects};
+                        //             DrawBlock2(pos, 1.0f, &graphics);
+                        //         }
+                        //     }
+                        // }
 
                         if (false) {
                             static f32 SCALES[] = {
