@@ -278,7 +278,7 @@ typedef struct {
     // visually draw a texture attached to an object at world (x, y), then you need to do (x - px2world(offset_px.x))
     // for instance.
     // Note that (0, 0) will mean that the sprite is drawn at the center of the backing quad.
-    Vec2 offset_px;
+    Vec2 origin_offset_px;
 } Sprite;
 
 typedef enum {
@@ -358,19 +358,30 @@ typedef struct {
     Vec2 dims;
 
     // Note that this does not necessarily mean the top left, or any corner. you can address any portion of an aseprite
-    // pixel.
-    Vec2 offset_px;
+    // pixel. But essentially this is the pixel (relative to the top left corner of our sprite) that we will pivot
+    // against/becomes our sprite's origin.
+    Vec2 pivot_offset;
 } AsepriteSprite;
 
-#define AsepriteLit(tl, dms, offset) ((AsepriteSprite){.top_left = (tl), .dims = (dms), .offset_px = (offset)})
+#define AsepriteLit(tl, dms, pv) ((AsepriteSprite){.top_left = (tl), .dims = (dms), .pivot_offset = (pv)})
+#define AsepriteCenteredLit(tl, dms) (AsepriteLit(tl, dms, Vec2Scale(dms, 0.5f)))
 
 static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     Vec2 top_left = AsepriteToEngine(tx, rect.top_left);
     Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - rect.dims.y);
-    return SpriteFromMinDims(tx, bottom_left, rect.dims);
+    Sprite sprite = SpriteFromMinDims(tx, bottom_left, rect.dims);
+
+    // Remember that pivot_offset is a direction defined with respect to the aseprite coordinate system min, so we can
+    // just add this to our engine coordinate system min and get the same point.
+    Vec2 pivot_point = Vec2Add(sprite.min, rect.pivot_offset);
+    Vec2 sprite_origin = Vec2Add(sprite.min, Vec2Scale(sprite.dims, 0.5f));
+    // This direction is intentional as essentially we need the displacement that moves the pivot point to the origin,
+    // so we go from pivot -> origin.
+    sprite.origin_offset_px = Vec2Sub(sprite_origin, pivot_point);
+    return sprite;
 }
 
-#define SPRITE_LIST SPRITEX(BLOCK, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Zero()))
+#define SPRITE_LIST SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))
 
 typedef enum {
     SPRITE_DEFAULT = 0,
@@ -2550,6 +2561,7 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
 LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
     // By default scale of 1 will mean draw the sprite with same width/height
     DrawCmd* cmd = DrawQuad(pos, sprite.dims.x * scale.x, sprite.dims.y * scale.y, orient, LCLEAR);
+    cmd->meshcmd.modelm = Mat4Multiply(cmd->meshcmd.modelm, Mat4TranslateV(Vec2ToVec3(sprite.origin_offset_px)));
     cmd->meshcmd.tx = sprite.tx;
     cmd->meshcmd.uvoffset = sprite.minuv;
     cmd->meshcmd.uvscale = sprite.dimsuv;
