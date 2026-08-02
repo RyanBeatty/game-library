@@ -374,7 +374,7 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
 #define SPRITE_LIST SPRITEX(BLOCK, AsepriteLit(Vec2Lit(64, 1), Vec2Lit(36, 36), Vec2Zero()))
 
 typedef enum {
-    SPRITE_NONE = 0,
+    SPRITE_DEFAULT = 0,
 #define SPRITEX(tag, rect) SPRITE##_tag,
     SPRITE_LIST
 #undef SPRITEX
@@ -387,6 +387,8 @@ static Sprite* GetSprite(SpriteTag tag) {
     if (!ONCE) {
         ONCE = true;
         LTexture tx = GetTexture(TX_ALL);
+
+        SPRITES[SPRITE_DEFAULT] = DefaultSprite();
 
 #define SPRITEX(tag, rect) SPRITES[SPRITE##_tag] = SpriteFromAseprite(tx, (rect));
         SPRITE_LIST
