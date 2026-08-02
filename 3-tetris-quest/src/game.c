@@ -266,16 +266,6 @@ typedef struct {
     Vec2 dimsuv;
 } Sprite;
 
-#define MAX_SPRITES (32)
-
-typedef struct {
-    // TODO: Figure out memory later if we really need to make this dynamic. Remember that
-    // audio memory takes up so much that it might not make sense to focus on optimizing this.
-    Sprite data[MAX_SPRITES];
-    isize len;
-    isize cap;
-} SpriteArr;
-
 typedef enum {
     SBB_FULL = 0,  // bb = width, height of texture
     SBB_CLOSEST_FIT,
@@ -327,72 +317,6 @@ LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
 }
 
 LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT), SBB_FULL); }
-
-// This extra layer of indirection might be redundant. But possible we will want to store other data here, so
-// leave for now.
-typedef struct {
-    SpriteArr sprites;
-    // For time based animations, this will be elapsed time in seconds for event based animations (like
-    // walk cycles), this will be in range 0-1
-    f32 duration;
-    bool loops;
-} Animation;
-
-LCORE Animation AnimationFromSprite(Sprite sprite) {
-    Animation animation = {.duration = 0.0f};
-    animation.sprites.cap = ArraySizeOf(animation.sprites.data);
-    ArrPush(&animation.sprites, sprite);
-    animation.loops = true;
-    return animation;
-}
-
-LCORE Animation DefaultAnimation() { return AnimationFromSprite(DefaultSprite()); }
-
-// TODO: This should be some sort of platform layer thing.
-i32 CountFilesInDir(const char* path) {
-    DIR* dir;
-    struct dirent* entry;
-    i32 count = 0;
-
-    dir = opendir(path);
-    if (dir == NULL) {
-        PlatformLog(LLOG_ERROR, "error opening dir: %s", path);
-    }
-
-    while ((entry = readdir(dir)) != NULL) {
-        // Skip "." and ".."
-        if (entry->d_name[0] == '.' &&
-            (entry->d_name[1] == '\0' || (entry->d_name[1] == '.' && entry->d_name[2] == '\0'))) {
-            continue;
-        }
-
-        count++;
-    }
-
-    closedir(dir);
-    return count;
-}
-
-// Assumes that all files under :dir: follow the format of :filename_prefixNNNNN.png where NNNNN
-// is a 0 left padded number denoting the frame.
-LCORE Animation AnimationFromDisk(const char* dir, const char* filename_prefix, f32 duration) {
-    Animation animation = {.duration = duration};
-    animation.sprites.cap = ArraySizeOf(animation.sprites.data);
-
-    SpriteArr* sprites = &animation.sprites;
-    i32 nfiles = CountFilesInDir(dir);
-
-    LTextureFilter filter = FILTER_LINEAR;
-    for (isize i = 0; i < nfiles; ++i) {
-        char filename[256] = {0};
-        snprintf(filename, ArraySizeOf(filename) - 1, "%s/%s%05lld.png", dir, filename_prefix, i);
-        LTexture tx = TextureFromFile(filename, filter);
-        ArrPush(sprites, SpriteFromLTexture(tx, SBB_FULL));
-    }
-
-    animation.loops = true;
-    return animation;
-}
 
 static void TextureCacheInit() {
     static TextureCache TEXTURE_CACHE_ZERO = {0};
