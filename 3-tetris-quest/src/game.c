@@ -363,21 +363,38 @@ typedef struct {
 
 #define AsepriteLit(tl, dms, offset) ((AsepriteSprite){.top_left = (tl), .dims = (dms), .pos_offset = (offset)})
 
-static Sprite SpriteFromAseprite(LTexture tx, Vec2 top_left, Vec2 dims) {
+static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
+    Vec2 top_left = rect.top_left;
+    Vec2 dims = rect.dims;
     top_left = AsepritePosToFlipped(tx, top_left);
     Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - dims.y);
     return SpriteFromMinDims(tx, bottom_left, dims);
 }
 
-#define SPRITES SPRITEX(BLOCK, AsepriteSprite(Vec2Lit(64, 1), Vec2Lit(36, 36), Vec2Zero()))
+#define SPRITE_LIST SPRITEX(BLOCK, AsepriteSprite(Vec2Lit(64, 1), Vec2Lit(36, 36), Vec2Zero()))
 
 typedef enum {
     SPRITE_NONE = 0,
-#define SPRITEX(tag, rect) TAG##_tag,
-    SPRITES
+#define SPRITEX(tag, rect) SPRITE##_tag,
+    SPRITE_LIST
 #undef SPRITEX
         SPRITE_COUNT,
 } SpriteTag;
+
+// static Sprite* GetSprite(SpriteTag tag) {
+//     static bool ONCE = false;
+//     static Sprite SPRITES[SPRITE_COUNT] = {0};
+//     if (!ONCE) {
+//         ONCE = true;
+//         LTexture tx = GetTexture(TX_ALL);
+
+// #define SPRITEX(tag, rect) SPRITES[SPRITE##_tag] = SpriteFromAseprite(tx, rect);
+//         SPRITE_LIST
+// #undef SPRITEX
+//     }
+
+//     return &SPRITES[tag];
+// }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // S:noise
