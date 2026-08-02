@@ -343,11 +343,11 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 
 // // Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
 // // given in the UI to be the top left of the pixel.
-// #define AspritePxCtr(px) (px)
+#define AspritePxCtr(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
 #define AsepritePxBL(px) (Vec2Lit((px).x, (px).y + 1.0f))
-// #define AsepritePxBR(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
+#define AsepritePxBR(px) (Vec2Lit((px).x + 1.0f, (px).y + 1.0f))
 #define AsepritePxTL(px) (px)
-// #define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
+#define AsepritePxTR(px) (Vec2Lit((px).x + 1.0f, (px).y))
 
 // This essentially moves the origin from aseprite top left corner to bottom left corner. Why do we do this?
 // Its because when we import the texture/png we flip the Y axis there.
@@ -385,9 +385,8 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return sprite;
 }
 
-#define SPRITE_LIST                                                                    \
-    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36))) \
-    SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
+#define SPRITE_LIST SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))
+// SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
 typedef enum {
     SPRITE_DEFAULT = 0,
