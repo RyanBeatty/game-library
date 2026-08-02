@@ -275,9 +275,10 @@ typedef struct {
     Vec2 dimsuv;
 
     // For when *positioning* the sprite visually. Note that this is in *pixels* not world units. If you were to
-    // visually draw a texture attached to an object at world (x, y), then you need to do (x - px2world(pos_offset.x))
+    // visually draw a texture attached to an object at world (x, y), then you need to do (x - px2world(offset_px.x))
     // for instance.
-    Vec2 pos_offset;
+    // Note that (0, 0) will mean that the sprite is drawn at the center of the backing quad.
+    Vec2 offset_px;
 } Sprite;
 
 typedef enum {
@@ -358,10 +359,10 @@ typedef struct {
 
     // Note that this does not necessarily mean the top left, or any corner. you can address any portion of an aseprite
     // pixel.
-    Vec2 pos_offset;
+    Vec2 offset_px;
 } AsepriteSprite;
 
-#define AsepriteLit(tl, dms, offset) ((AsepriteSprite){.top_left = (tl), .dims = (dms), .pos_offset = (offset)})
+#define AsepriteLit(tl, dms, offset) ((AsepriteSprite){.top_left = (tl), .dims = (dms), .offset_px = (offset)})
 
 static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     Vec2 top_left = AsepriteToEngine(tx, rect.top_left);
@@ -6651,7 +6652,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         {
-                            DrawSprite(*GetSprite(SPRITE_BLOCK), Vec3Lit(0, 1, 0), Mat4Identity(), Vec3LitAll(1));
+                            f32 rot = f32sin(gstate->frame_time.accumulated);
+                            Mat4 orient = Mat4RotateZ(rot);
+                            DrawSprite(*GetSprite(SPRITE_BLOCK), Vec3Lit(0, 1, 0), orient, Vec3LitAll(1));
                         }
 
                         if (false) {
