@@ -3842,19 +3842,6 @@ LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
     cmd->meshcmd.uvscale = sprite.dimsuv;
     return cmd;
 }
-
-// Rect in aseprite pos space.
-typedef struct {
-    Vec2 lc;  // bottom left corner.
-    Vec2 r;   // width + height.
-} AseRect;
-
-typedef struct {
-    AseRect start;  // Start Aserect of the animation.
-    Vec2 step;      // step to move each frame in aseprite coord space.
-    u32 nframes;
-} AnimationAseRect;
-
 ////////////////////////////////////////////////////////////
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
