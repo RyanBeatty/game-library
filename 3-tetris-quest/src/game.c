@@ -385,7 +385,10 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return sprite;
 }
 
-#define SPRITE_LIST SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))
+#define SPRITE_LIST                                                                        \
+    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))     \
+    SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36))) \
+    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32)))
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
 typedef enum {
@@ -6165,7 +6168,9 @@ static void DrawBlock2(Vec3 pos, f32 scale, BlockGraphics* graphics) {
     Vec4 color = graphics->base_color;
     color.a = graphics->preview ? color.a * 0.3f : color.a;
 
-    DrawSpriteEx(*GetSprite(SPRITE_BLOCK), pos, Mat4Identity(), scale, color);
+    Mat4 orient = Mat4Identity();
+    DrawSprite(*GetSprite(SPRITE_BLOCK_BG), pos, orient, scale);
+    DrawSpriteEx(*GetSprite(SPRITE_BLOCK_FG), pos, Mat4Identity(), scale, color);
 }
 
 static void GamePhaseChange(GameState* gstate) {
