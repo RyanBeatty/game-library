@@ -3957,176 +3957,6 @@ typedef enum {
     VA_ANIMATE_TO = 2,
 } VisualAnimationType;
 
-typedef struct {
-    // Visual attributes.
-    Vec3 pos;
-    Vec3 scale;
-    Mat4 orient;
-
-    Mat4 transform;
-
-    Vec3 pos_start;
-    Vec3 pos_end;
-    Easing pos_easing;
-    VisualAnimationType pos_type;
-
-    Vec3 scale_start;
-    Vec3 scale_end;
-    Easing scale_easing;
-    VisualAnimationType scale_type;
-
-    LModel model;
-    isize frame_idx;
-    f32 elapsed;
-    i32 nloops;
-
-    // If true, we will render the animation flipped.
-    bool facing_left;
-} GraphicsInfo;
-
-static void GraphicsInfoMemset(GraphicsInfo* graphics) {
-    memset(graphics, 0, sizeof(GraphicsInfo));
-    graphics->orient = Mat4Identity();
-    graphics->pos = Vec3Zero();
-    graphics->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-    graphics->facing_left = false;
-
-    EasingZero(&graphics->pos_easing);
-
-    graphics->model = LModelFromAnimation(DefaultAnimation(), Vec3Zero(), Mat4Identity(), Vec3LitAll(1.0f), LCLEAR);
-}
-
-// The key thing here is that elapsed_delta should be in the same units as the graphics elapsed.
-// Remember elapsed will not always be time in the case where it might be like distance traveled or something.
-LCORE void GraphicsInfoTickAnimation(GraphicsInfo* graphics, f32 elapsed_delta) {
-    graphics->elapsed += elapsed_delta;
-    if (graphics->elapsed >= graphics->model.animation.duration) {
-        if (graphics->model.animation.loops) {
-            graphics->elapsed = f32mod(graphics->elapsed, graphics->model.animation.duration);
-            ++graphics->nloops;
-        } else {
-            graphics->elapsed = graphics->model.animation.duration;
-            graphics->nloops = 1;
-        }
-    }
-
-    // minus 1 is important for case where elapsed == duration.
-    graphics->frame_idx = (isize)((graphics->elapsed / graphics->model.animation.duration) *
-                                  ((f32)(graphics->model.animation.sprites.len - 1)));
-}
-
-LCORE void GraphicsInfoTick(GraphicsInfo* graphics, f32 dt, Vec3 pos_game, Vec3 scale_game, Mat4 orient_game) {
-    switch (graphics->pos_type) {
-        case VA_SNAP_TO: {
-            graphics->pos = pos_game;
-            break;
-        }
-        case VA_ANIMATE_TO: {
-            graphics->pos = EaseVec3(graphics->pos_start, graphics->pos_end, dt, graphics->pos_easing);
-            break;
-        }
-        case VA_MOVE_TO: {
-            graphics->pos = EaseVec3(graphics->pos, pos_game, dt, graphics->pos_easing);
-            break;
-        }
-    }
-
-    // e->graphics.pos = EaseVec3(e->graphics.pos, e->pos, dt, e->graphics.pos_easing);
-    // if (TestFlag(e->flags, EFLAG_WORKER | EFLAG_RESEARCHER)) {
-    //     // TODO: Rework this.
-    //     static f32 ROT = 0.0f;
-
-    //     ROT = f32lerp(Deg2Rad(-1.5f), Deg2Rad(1.5f), f32sin(1.3f * gstate->timer));
-
-    //     e->graphics.orient = Mat4RotateZ(ROT);
-    // } else {
-    //     e->graphics.orient = e->orient;
-    // }
-    graphics->orient = orient_game;
-
-    switch (graphics->scale_type) {
-        case VA_SNAP_TO: {
-            graphics->scale = scale_game;
-            break;
-        }
-        case VA_ANIMATE_TO: {
-            graphics->scale = EaseVec3(graphics->scale_start, graphics->scale_end, dt, graphics->scale_easing);
-            break;
-        }
-        case VA_MOVE_TO: {
-            graphics->scale = EaseVec3(graphics->scale, scale_game, dt, graphics->scale_easing);
-            break;
-        }
-    }
-
-    GraphicsInfoTickAnimation(graphics, dt);
-}
-
-#define GraphicsInfoPositionSnapTo(gg) ((gg)->pos_type = VA_SNAP_TO)
-
-LCORE void GraphicsInfoPositionMoveTo(GraphicsInfo* graphics, f32 rate) {
-    graphics->pos_type = VA_MOVE_TO;
-    graphics->pos_easing = EaseSmoothLerp(rate);
-}
-
-LCORE void GraphicsInfoPositionAnimateTo(GraphicsInfo* graphics, Vec3 start, Vec3 end, Easing easing) {
-    graphics->pos_type = VA_ANIMATE_TO;
-    graphics->pos_start = start;
-    graphics->pos_end = end;
-    graphics->pos_easing = easing;
-}
-
-#define GraphicsInfoScaleSnapTo(gg) ((gg)->scale_type = VA_SNAP_TO)
-
-LCORE void GraphicsInfoScaleMoveTo(GraphicsInfo* graphics, f32 rate) {
-    graphics->scale_type = VA_MOVE_TO;
-    graphics->scale_easing = EaseSmoothLerp(rate);
-}
-
-LCORE void GraphicsInfoScaleAnimateTo(GraphicsInfo* graphics, Vec3 start, Vec3 end, Easing easing) {
-    graphics->scale_type = VA_ANIMATE_TO;
-    graphics->scale_start = start;
-    graphics->scale_end = end;
-    graphics->scale_easing = easing;
-}
-
-LCORE void GraphicsInfoSetLModel(GraphicsInfo* graphics, LModel model) {
-    graphics->model = model;
-    graphics->elapsed = 0.0f;
-    graphics->frame_idx = 0;
-    graphics->nloops = 0;
-}
-
-LCORE DrawCmd* DrawGraphicsInfo(GraphicsInfo* graphics) {
-    DrawCmd* cmd = DrawLModelEx(graphics->model, graphics->frame_idx, graphics->pos, graphics->orient, graphics->scale);
-
-    // If sprite is facing left, then we shift the bottom left corner to the bottom right corner
-    // and set a negative u dimension. This will cause us to interpolate from bottom right to top left.
-    if (graphics->facing_left) {
-        cmd->meshcmd.uvoffset.x += cmd->meshcmd.uvscale.x;
-        cmd->meshcmd.uvscale.x *= -1.0f;
-    }
-    return cmd;
-}
-
-LCORE DrawCmd* DrawGraphicsInfo2(GraphicsInfo* graphics) {
-    DrawCmd* cmd = DrawLModelEx2(graphics->model, graphics->frame_idx, graphics->transform);
-
-    // If sprite is facing left, then we shift the bottom left corner to the bottom right corner
-    // and set a negative u dimension. This will cause us to interpolate from bottom right to top left.
-    if (graphics->facing_left) {
-        cmd->meshcmd.uvoffset.x += cmd->meshcmd.uvscale.x;
-        cmd->meshcmd.uvscale.x *= -1.0f;
-    }
-    return cmd;
-}
-
-// LCORE void GraphicsInfoSetShape(GraphicsInfo* graphics, LMesh mesh, Vec3 scale, Vec4 color) {
-//     graphics->mid = mesh;
-//     graphics->scale = scale;
-//     graphics->txinfo.tint = color;
-// }
-
 ////////////////////////////////////////////////////////////
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
@@ -4202,8 +4032,6 @@ typedef struct {
     f32 mass_inv;  // Inverse mass. 0 == infinite mass.
 
     Polyhedron shape;
-
-    GraphicsInfo graphics;
 
     f32 active_dt;
 
@@ -4307,7 +4135,6 @@ LCORE Entity* AllocateEntity() {
     }
 
     PolyhedronInit(&e->shape);
-    GraphicsInfoMemset(&e->graphics);
     FlagOn(e->flags, EFLAG_DRAW);
 
     {
