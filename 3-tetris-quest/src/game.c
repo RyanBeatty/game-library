@@ -375,7 +375,7 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
 
 typedef enum {
     SPRITE_DEFAULT = 0,
-#define SPRITEX(tag, rect) SPRITE##_tag,
+#define SPRITEX(tag, rect) SPRITE_##tag,
     SPRITE_LIST
 #undef SPRITEX
         SPRITE_COUNT,
@@ -390,7 +390,7 @@ static Sprite* GetSprite(SpriteTag tag) {
 
         SPRITES[SPRITE_DEFAULT] = DefaultSprite();
 
-#define SPRITEX(tag, rect) SPRITES[SPRITE##_tag] = SpriteFromAseprite(tx, (rect));
+#define SPRITEX(tag, rect) SPRITES[SPRITE_##tag] = SpriteFromAseprite(tx, (rect));
         SPRITE_LIST
 #undef SPRITEX
     }
@@ -6650,6 +6650,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     }
                                 }
                             }
+                        }
+
+                        {
+                            DrawSprite(*GetSprite(SPRITE_BLOCK), Vec3Lit(0, 1, 0), Mat4Identity(), Vec3LitAll(1));
                         }
 
                         if (false) {
