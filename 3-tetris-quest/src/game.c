@@ -261,9 +261,14 @@ typedef struct {
     Vec2 min;
     Vec2 dims;
 
-    // UV space coordinates for drawing (computed once when loaded)
+    // UV space coordinates for texture sampling (computed once when loaded)
     Vec2 minuv;
     Vec2 dimsuv;
+
+    // For when *positioning* the sprite visually. Note that this is in *pixels* not world units. If you were to
+    // visually draw a texture attached to an object at world (x, y), then you need to do (x - px2world(pos_offset.x))
+    // for instance.
+    Vec2 pos_offset;
 } Sprite;
 
 typedef enum {
