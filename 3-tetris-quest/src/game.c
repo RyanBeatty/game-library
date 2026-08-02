@@ -2547,6 +2547,16 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
                     Vec2Lit(tx.width * scale, tx.height * scale), 0.0f, LCLEAR);
 }
 
+// I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
+LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
+    // By default scale of 1 will mean draw the sprite with same width/height
+    DrawCmd* cmd = DrawQuad(pos, sprite.dims.x * scale.x, sprite.dims.y * scale.y, orient, LCLEAR);
+    cmd->meshcmd.tx = sprite.tx;
+    cmd->meshcmd.uvoffset = sprite.minuv;
+    cmd->meshcmd.uvscale = sprite.dimsuv;
+    return cmd;
+}
+
 ////////////////////////////////////////////////////////////
 // S:Geometry
 
@@ -3745,17 +3755,6 @@ LCORE f32 EaseOutCubic(f32 t) { return 1.0f - f32pow(1.0f - t, 3.0f); }
 
 // LCORE Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
 
-////////////////////////////////////////////////////////////
-
-// I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
-LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
-    // By default scale of 1 will mean draw the sprite with same width/height
-    DrawCmd* cmd = DrawQuad(pos, sprite.dims.x * scale.x, sprite.dims.y * scale.y, orient, LCLEAR);
-    cmd->meshcmd.tx = sprite.tx;
-    cmd->meshcmd.uvoffset = sprite.minuv;
-    cmd->meshcmd.uvscale = sprite.dimsuv;
-    return cmd;
-}
 ////////////////////////////////////////////////////////////
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
