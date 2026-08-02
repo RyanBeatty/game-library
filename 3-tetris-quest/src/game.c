@@ -3855,24 +3855,6 @@ typedef struct {
     u32 nframes;
 } AnimationAseRect;
 
-// A model is basically a "static" set of geometry and visual info data.
-// We can load a model that has been created and durably stored a priori once and then
-// just refer to it in many places (e.g. load the idle state model and swap out with jump state model).
-typedef struct {
-    // The underlying geometry info.
-    // These transform fields are "static", i.e. they are just set once on model load.
-    // Allows for easy persistent transform (i.e. load this model rotated by 90 degrees).
-    Vec3 pos;
-    Mat4 orient;
-    Vec3 scale;
-    Vec4 tint;  // Color.
-    LMesh mesh;
-
-    // This is like the material info basically. How the model "looks"
-    // Unclear where custom shader info will need to go, maybe on the graphics state?
-    Animation animation;
-} LModel;
-
 ////////////////////////////////////////////////////////////
 
 static const Vec3 ORIGIN = Vec3Lit(0.0f, 0.0f, 0.0f);
