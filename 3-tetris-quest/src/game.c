@@ -371,7 +371,7 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return SpriteFromMinDims(tx, bottom_left, dims);
 }
 
-#define SPRITE_LIST SPRITEX(BLOCK, AsepriteSprite(Vec2Lit(64, 1), Vec2Lit(36, 36), Vec2Zero()))
+#define SPRITE_LIST SPRITEX(BLOCK, AsepriteLit(Vec2Lit(64, 1), Vec2Lit(36, 36), Vec2Zero()))
 
 typedef enum {
     SPRITE_NONE = 0,
@@ -381,20 +381,20 @@ typedef enum {
         SPRITE_COUNT,
 } SpriteTag;
 
-// static Sprite* GetSprite(SpriteTag tag) {
-//     static bool ONCE = false;
-//     static Sprite SPRITES[SPRITE_COUNT] = {0};
-//     if (!ONCE) {
-//         ONCE = true;
-//         LTexture tx = GetTexture(TX_ALL);
+static Sprite* GetSprite(SpriteTag tag) {
+    static bool ONCE = false;
+    static Sprite SPRITES[SPRITE_COUNT] = {0};
+    if (!ONCE) {
+        ONCE = true;
+        LTexture tx = GetTexture(TX_ALL);
 
-// #define SPRITEX(tag, rect) SPRITES[SPRITE##_tag] = SpriteFromAseprite(tx, rect);
-//         SPRITE_LIST
-// #undef SPRITEX
-//     }
+#define SPRITEX(tag, rect) SPRITES[SPRITE##_tag] = SpriteFromAseprite(tx, (rect));
+        SPRITE_LIST
+#undef SPRITEX
+    }
 
-//     return &SPRITES[tag];
-// }
+    return &SPRITES[tag];
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // S:noise
