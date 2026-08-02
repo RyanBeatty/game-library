@@ -336,26 +336,48 @@ LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
 
 LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT), SBB_FULL); }
 
-// Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
-// given in the UI to be the center of the pixel.
-#define AspritePxCtr(px) (px)
-#define AsepritePxBL(px) (Vec2Lit((px).x - 0.5f, (px).y + 0.5f))
-#define AsepritePxBR(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
-#define AsepritePxTL(px) (Vec2Lit((px).x - 0.5f, (px).y - 0.5f))
-#define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
+// // Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
+// // given in the UI to be the center of the pixel.
+// #define AspritePxCtr(px) (px)
+// #define AsepritePxBL(px) (Vec2Lit((px).x - 0.5f, (px).y + 0.5f))
+// #define AsepritePxBR(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
+// #define AsepritePxTL(px) (Vec2Lit((px).x - 0.5f, (px).y - 0.5f))
+// #define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
 
 // This essentially moves the origin from aseprite top left corner to bottom right corner. Why do we do this?
 // Its because when we import the texture/png we flip the Y axis there. subtract 1 from height so that the
 // max height aseprite pixel coords get mapped to 0
 #define AsepritePosToFlipped(tx, apos) (Vec2Lit((apos).x, (tx).height - 1.0f - (apos).y))
 
-// Rectangular coordinates of some rectangle as seen via the aseprite ui.
+// Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
+// in top left.
+typedef struct {
+    // The origin of aseprite is the *top left corner* of the first sprite.
+    Vec2 top_left;
+    Vec2 dims;
+
+    // Note that this does not necessarily mean the top left, or any corner. you can address any portion of an aseprite
+    // pixel.
+    Vec2 pos_offset;
+} AsepriteSprite;
+
+#define AsepriteLit(tl, dms, offset) ((AsepriteSprite){.top_left = (tl), .dims = (dms), .pos_offset = (offset)})
 
 static Sprite SpriteFromAseprite(LTexture tx, Vec2 top_left, Vec2 dims) {
     top_left = AsepritePosToFlipped(tx, top_left);
     Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - dims.y);
     return SpriteFromMinDims(tx, bottom_left, dims);
 }
+
+#define SPRITES SPRITEX(BLOCK, AsepriteSprite(Vec2Lit(64, 1), Vec2Lit(36, 36), Vec2Zero()))
+
+typedef enum {
+    SPRITE_NONE = 0,
+#define SPRITEX(tag, rect) TAG##_tag,
+    SPRITES
+#undef SPRITEX
+        SPRITE_COUNT,
+} SpriteTag;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // S:noise
