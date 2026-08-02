@@ -257,8 +257,8 @@ typedef struct {
     LTexture tx;
 
     // The min and max coordinate in image coordinates [0, with], [0, height]
+    // Remember that this essentially is the bottom left hand corner.
     Vec2 min;
-    Vec2 max;
     Vec2 dims;
 
     // UV space coordinates for drawing (computed once when loaded)
@@ -272,9 +272,9 @@ typedef enum {
 } SpriteBoundingBox;
 
 LCORE Sprite SpriteFromMinMax(LTexture tx, Vec2 min, Vec2 max) {
-    Sprite sprite = {.tx = tx, .min = min, .max = max};
+    Sprite sprite = {.tx = tx, .min = min};
     // think more about if adding 1,1 here is correct. I think it is.
-    sprite.dims = Vec2Sub(Vec2Add(sprite.max, Vec2Lit(1.0f, 1.0f)), sprite.min);
+    sprite.dims = Vec2Sub(Vec2Add(max, Vec2Lit(1.0f, 1.0f)), sprite.min);
     sprite.minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
     sprite.dimsuv = Vec2Lit(sprite.dims.x / sprite.tx.width, sprite.dims.y / sprite.tx.height);
     return sprite;
