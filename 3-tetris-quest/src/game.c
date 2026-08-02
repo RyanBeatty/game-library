@@ -278,6 +278,10 @@ typedef struct {
     // visually draw a texture attached to an object at world (x, y), then you need to do (x - px2world(offset_px.x))
     // for instance.
     // Note that (0, 0) will mean that the sprite is drawn at the center of the backing quad.
+    // TODO: We don't use this yet. one problem when trying to factor this into drawing is ordering: if you shift the
+    // origin first and then scale, the origin shift is actually scaled as well. So ideally you do Trans(pos) * Rot *
+    // Trans(pivot) * Scale so that you can rotate around your origin. But we need to make some changes to the DrawQuad
+    // api if this were to be the case.
     Vec2 origin_offset_px;
 } Sprite;
 
@@ -381,7 +385,9 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return sprite;
 }
 
-#define SPRITE_LIST SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))
+#define SPRITE_LIST                                                                    \
+    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36))) \
+    SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
 typedef enum {
     SPRITE_DEFAULT = 0,
@@ -2561,7 +2567,6 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
 LCORE DrawCmd* DrawSprite(Sprite sprite, Vec3 pos, Mat4 orient, Vec3 scale) {
     // By default scale of 1 will mean draw the sprite with same width/height
     DrawCmd* cmd = DrawQuad(pos, sprite.dims.x * scale.x, sprite.dims.y * scale.y, orient, LCLEAR);
-    cmd->meshcmd.modelm = Mat4Multiply(cmd->meshcmd.modelm, Mat4TranslateV(Vec2ToVec3(sprite.origin_offset_px)));
     cmd->meshcmd.tx = sprite.tx;
     cmd->meshcmd.uvoffset = sprite.minuv;
     cmd->meshcmd.uvscale = sprite.dimsuv;
@@ -6665,8 +6670,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         {
                             f32 rot = f32sin(gstate->frame_time.accumulated);
+                            rot = 0.0f;
                             Mat4 orient = Mat4RotateZ(rot);
-                            DrawSprite(*GetSprite(SPRITE_BLOCK), Vec3Lit(0, 1, 0), orient, Vec3LitAll(1));
+                            // DrawSprite(*GetSprite(SPRITE_BLOCK), Vec3Lit(0, 0, 0), orient, Vec3LitAll(1));
+                            DrawSprite(*GetSprite(SPRITE_BLOCK2), Vec3Lit(0, 0, 0), orient, Vec3LitAll(1));
                         }
 
                         if (false) {
