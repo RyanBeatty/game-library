@@ -3765,12 +3765,12 @@ LCORE void ParticleSystemDraw() {
 ////////////////////////////////////////////////////////////
 // s:easing
 
-typedef enum {
-    ET_NONE = 0,     // No easing, error!
-    ET_SMOOTH_LERP,  // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
-    ET_IN_EXPO,
-    ET_OUT_BACK,
-} EasingType;
+// typedef enum {
+//     ET_NONE = 0,     // No easing, error!
+//     ET_SMOOTH_LERP,  // Uses exponential damped lerp: https://www.youtube.com/watch?v=YJB1QnEmlTs
+//     ET_IN_EXPO,
+//     ET_OUT_BACK,
+// } EasingType;
 
 LCORE f32 EaseOutBack(f32 t) {
     // ease out back
@@ -3780,6 +3780,8 @@ LCORE f32 EaseOutBack(f32 t) {
     return t;
 }
 LCORE f32 EaseOutCubic(f32 t) { return 1.0f - f32pow(1.0f - t, 3.0f); }
+
+// LCORE Easing EaseSmoothLerp(f32 rate) { return (Easing){.type = ET_SMOOTH_LERP, .lerp = {.rate = rate}}; }
 
 ////////////////////////////////////////////////////////////
 
