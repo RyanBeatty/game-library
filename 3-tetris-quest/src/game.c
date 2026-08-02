@@ -341,13 +341,13 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 // #define AspritePxCtr(px) (px)
 #define AsepritePxBL(px) (Vec2Lit((px).x, (px).y + 1.0f))
 // #define AsepritePxBR(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
-// #define AsepritePxTL(px) (Vec2Lit((px).x - 0.5f, (px).y - 0.5f))
+#define AsepritePxTL(px) (px)
 // #define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
 
 // This essentially moves the origin from aseprite top left corner to bottom left corner. Why do we do this?
 // Its because when we import the texture/png we flip the Y axis there.
 // NOTE: It may seem like we need to subtract one, but we really don't (trust me)
-#define AsepritePosToFlipped(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
+#define AsepriteToEngine(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
 
 // Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
 // in top left.
@@ -364,12 +364,12 @@ typedef struct {
 #define AsepriteLit(tl, dms, offset) ((AsepriteSprite){.top_left = (tl), .dims = (dms), .pos_offset = (offset)})
 
 static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
-    Vec2 top_left = AsepritePosToFlipped(tx, rect.top_left);
+    Vec2 top_left = AsepriteToEngine(tx, rect.top_left);
     Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - rect.dims.y);
     return SpriteFromMinDims(tx, bottom_left, rect.dims);
 }
 
-#define SPRITE_LIST SPRITEX(BLOCK, AsepriteLit(Vec2Lit(64, 1), Vec2Lit(36, 36), Vec2Zero()))
+#define SPRITE_LIST SPRITEX(BLOCK, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Zero()))
 
 typedef enum {
     SPRITE_DEFAULT = 0,
