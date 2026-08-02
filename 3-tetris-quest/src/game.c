@@ -6921,18 +6921,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     color = tile->occupied ? tile->effects.base_color : color;
                                     BlockGraphics graphics = {.base_color = color, .effects = &tile->effects};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
-
-                                    // if (ArrLen(&battle->score_log.events)) {
-                                    //     ScoreEvent* event =
-                                    //         ArrGetPtr(&battle->score_log.events, battle->score_log.cur_idx);
-
-                                    //     if (TileIdEq(event->block_id, tile->id)) {
-                                    //         Vec4 color2 = LYELLOW;
-                                    //         color2.a = f32sin(battle->score_log.cur_event_timer * 7.0f);
-                                    //         BlockGraphics graphics2 = {.base_color = color2};
-                                    //         DrawBlock(pos, Vec3ToVec2(scale), &graphics2);
-                                    //     }
-                                    // }
                                 }
 
                                 // Offset each row.
