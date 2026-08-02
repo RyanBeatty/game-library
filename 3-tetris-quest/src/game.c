@@ -268,7 +268,9 @@ typedef struct {
     Vec2 min;
     Vec2 dims;
 
-    // UV space coordinates for texture sampling (computed once when loaded)
+    // UV space coordinates for texture sampling (computed once when loaded).
+    // Reminder that in general when we describe some *area* of a texture, we want to be covering
+    // the *edges* (not the centers) of all of the texels within that area.
     Vec2 minuv;
     Vec2 dimsuv;
 
