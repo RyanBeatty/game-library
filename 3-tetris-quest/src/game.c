@@ -5130,7 +5130,8 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     *grid = ZERO;
 
-    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f), Px2Meter(16.0f));
+    f32 scale = 1.0f;
+    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f) * scale, Px2Meter(16.0f) * scale);
 
     i32 ncols = GRID_NUM_COLS;
     i32 grid_width = grid_tile_dims.x * ncols;
@@ -6584,6 +6585,34 @@ static void BattlePhaseChange(Battle* battle) {
     battle->phase_to_be = BP_NONE;
 }
 
+static f32 TileScoreScalePopTween(f32 elapsed) {
+    static f32 SCALES[] = {
+        0.9f, 1.2f, 1.4, 0.8f, 1.1f, 0.95f, 1.0f,
+    };
+    static f32 FRAMES[] = {
+        0.0f, 2.0f / 60.0f, 3.0f / 60.0f, 7.0f / 60.0f, 10.0f / 60.0f, 14.0f / 60.0f, 18.0f / 60.0f,
+    };
+    static f32 (*EASINGS[])(f32) = {
+        EaseOutBack, EaseOutBack, EaseOutCubic, EaseOutCubic, EaseOutCubic, EaseOutCubic, EaseOutCubic,
+    };
+
+    isize frame = 0;
+    for (; frame < ArraySizeOf(FRAMES) - 1; ++frame) {
+        if (FRAMES[frame] >= elapsed) {
+            break;
+        }
+    }
+    isize frame_prev = i32max(frame - 1, 0);
+
+    f32 frame_duration = FRAMES[frame] - FRAMES[frame_prev];
+    f32 frame_elapsed = elapsed - FRAMES[frame_prev];
+    f32 t = f32min(frame_elapsed / frame_duration, 1.0f);
+
+    t = EASINGS[frame](t);
+    f32 scale = f32lerp(SCALES[frame_prev], SCALES[frame], t);
+    return scale;
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     f32 dt = gstate->dt;
 
@@ -6915,12 +6944,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
                                     Tile* tile = GridGetTile(grid, r, c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                                    Vec3 dims = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                                     Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
+                                    BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
+                                    DrawBlock(pos, Vec3ToVec2(dims), &bg_graphics);
 
-                                    color = tile->occupied ? tile->effects.base_color : color;
-                                    BlockGraphics graphics = {.base_color = color, .effects = &tile->effects};
-                                    DrawBlock(pos, Vec3ToVec2(scale), &graphics);
+                                    if (tile->occupied) {
+                                        f32 scale = 1.0f;
+                                        if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
+                                            scale = TileScoreScalePopTween(battle->display.tween_elapsed);
+                                        }
+                                        BlockGraphics graphics = {.base_color = tile->effects.base_color,
+                                                                  .effects = &tile->effects};
+                                        DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
+                                    }
                                 }
 
                                 // Offset each row.
@@ -6952,18 +6989,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
                                                               .preview = true,
                                                               .effects = &active_piece->effects};
-                                    DrawBlock(pos, Vec3ToVec2(scale), &graphics);
-                                }
-                            }
-
-                            // draw grid battle display
-                            {
-                                if (!TileIdEq(battle->display.state.scored_tile, NULL_TILEID)) {
-                                    Tile* tile = GridGetTile(grid, battle->display.state.scored_tile.r,
-                                                             battle->display.state.scored_tile.c);
-                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                                    BlockGraphics graphics = {.base_color = battle->display.tile_highlight_color};
                                     DrawBlock(pos, Vec3ToVec2(scale), &graphics);
                                 }
                             }
@@ -7002,7 +7027,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        {
+                        if (false) {
                             static f32 SCALES[] = {
                                 0.9f, 1.2f, 1.4, 0.8f, 1.1f, 0.95f, 1.0f,
                             };
