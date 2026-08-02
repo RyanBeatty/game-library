@@ -226,32 +226,39 @@ static LTexture GetTexture(TextureLabel label) {
 
 #define TextureBottomLeft(tx) (Vec3Lit(-0.5f * (tx).width, -0.5f * (tx).height, 0.0f))
 
-// Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
-// given in the UI to be the center of the pixel.
-#define AspritePxCtr(px) (px)
-#define AsepritePxBL(px) (Vec2Lit((px).x - 0.5f, (px).y + 0.5f))
-#define AsepritePxBR(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
-#define AsepritePxTL(px) (Vec2Lit((px).x - 0.5f, (px).y - 0.5f))
-#define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
+static void TextureCacheInit() {
+    static TextureCache TEXTURE_CACHE_ZERO = {0};
+    TextureCache* tcache = &TCACHE;
+    *tcache = TEXTURE_CACHE_ZERO;
+    InitArrS(&tcache->textures, tcache->textures_buffer, ArraySizeOf(tcache->textures_buffer));
 
-// This essentially moves the origin from aseprite top left corner to bottom right corner. Why do we do this?
-// Its because when we import the texture/png we flip the Y axis there. subtract 1 from height so that the
-// max height aseprite pixel coords get mapped to 0
-#define AsepritePosToFlipped(tx, apos) (Vec2Lit((apos).x, (tx).height - 1.0f - (apos).y))
+    // Default black texture.
+    LTexture default_tx = {0};
+    default_tx.width = 1;
+    default_tx.height = 1;
+    glGenTextures(1, &default_tx.id);
+    glBindTexture(GL_TEXTURE_2D, default_tx.id);
 
-// Conver the position in aseprite space to world space. aseprite space is the coordinate given by
-// aseprite UI.
-static Vec2 AsepritePosToWorldPos(LTexture tx, Vec2 pos_aseprite) {
-    pos_aseprite = AsepritePosToFlipped(tx, pos_aseprite);
+    // The texture will be all white. Important to do this so that we can properly blend
+    // texture colors and uniform frag color.
+    GLubyte transparentPixel[] = {255, 255, 255, 255};
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
 
-    // The origin in world space of the texture is at its center. We want to find the offset from the origin in
-    // aseprite space (which is the center of the bottom left pixel since we flip the Y coords) to the center of
-    // the texture itself. Subtract 1 from width/height because we want to find the midpoint between the bottem left
-    // pixel's center and the top right pixel's center.
-    Vec2 origin_offset = Vec2Lit(-0.5f * (tx.width - 1.0f), -0.5f * (tx.height - 1.0f));
-    Vec2 pos_world = Vec2Add(pos_aseprite, origin_offset);
-    return pos_world;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    for (isize i = 0; i < ArrCap(&tcache->textures); ++i) {
+        ArrPush(&tcache->textures, default_tx);
+    }
+
+    {
+        *ArrGetPtr(&tcache->textures, TX_ALL) = TextureFromFile("assets/textures/all.png", FILTER_NEAREST);
+    }
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// s:sprite
 
 typedef struct {
     LTexture tx;
@@ -276,13 +283,17 @@ typedef enum {
     SBB_CLOSEST_FIT,
 } SpriteBoundingBox;
 
-LCORE Sprite SpriteFromMinMax(LTexture tx, Vec2 min, Vec2 max) {
-    Sprite sprite = {.tx = tx, .min = min};
-    // think more about if adding 1,1 here is correct. I think it is.
-    sprite.dims = Vec2Sub(Vec2Add(max, Vec2Lit(1.0f, 1.0f)), sprite.min);
+LCORE Sprite SpriteFromMinDims(LTexture tx, Vec2 min, Vec2 dims) {
+    Sprite sprite = {.tx = tx, .min = min, .dims = dims};
     sprite.minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
     sprite.dimsuv = Vec2Lit(sprite.dims.x / sprite.tx.width, sprite.dims.y / sprite.tx.height);
     return sprite;
+}
+
+LCORE Sprite SpriteFromMinMax(LTexture tx, Vec2 min, Vec2 max) {
+    // think more about if adding 1,1 here is correct. I think it is.
+    Vec2 dims = Vec2Sub(Vec2Add(max, Vec2Lit(1.0f, 1.0f)), min);
+    return SpriteFromMinDims(tx, min, dims);
 }
 
 LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
@@ -323,36 +334,25 @@ LCORE Sprite SpriteFromLTexture(LTexture tx, SpriteBoundingBox bbox) {
 
 LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT), SBB_FULL); }
 
-static void TextureCacheInit() {
-    static TextureCache TEXTURE_CACHE_ZERO = {0};
-    TextureCache* tcache = &TCACHE;
-    *tcache = TEXTURE_CACHE_ZERO;
-    InitArrS(&tcache->textures, tcache->textures_buffer, ArraySizeOf(tcache->textures_buffer));
+// Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
+// given in the UI to be the center of the pixel.
+#define AspritePxCtr(px) (px)
+#define AsepritePxBL(px) (Vec2Lit((px).x - 0.5f, (px).y + 0.5f))
+#define AsepritePxBR(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
+#define AsepritePxTL(px) (Vec2Lit((px).x - 0.5f, (px).y - 0.5f))
+#define AsepritePxTR(px) (Vec2Lit((px).x + 0.5f, (px).y - 0.5f))
 
-    // Default black texture.
-    LTexture default_tx = {0};
-    default_tx.width = 1;
-    default_tx.height = 1;
-    glGenTextures(1, &default_tx.id);
-    glBindTexture(GL_TEXTURE_2D, default_tx.id);
+// This essentially moves the origin from aseprite top left corner to bottom right corner. Why do we do this?
+// Its because when we import the texture/png we flip the Y axis there. subtract 1 from height so that the
+// max height aseprite pixel coords get mapped to 0
+#define AsepritePosToFlipped(tx, apos) (Vec2Lit((apos).x, (tx).height - 1.0f - (apos).y))
 
-    // The texture will be all white. Important to do this so that we can properly blend
-    // texture colors and uniform frag color.
-    GLubyte transparentPixel[] = {255, 255, 255, 255};
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, transparentPixel);
+// Rectangular coordinates of some rectangle as seen via the aseprite ui.
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    for (isize i = 0; i < ArrCap(&tcache->textures); ++i) {
-        ArrPush(&tcache->textures, default_tx);
-    }
-
-    {
-        *ArrGetPtr(&tcache->textures, TX_ALL) = TextureFromFile("assets/textures/all.png", FILTER_NEAREST);
-    }
+static Sprite SpriteFromAseprite(LTexture tx, Vec2 top_left, Vec2 dims) {
+    top_left = AsepritePosToFlipped(tx, top_left);
+    Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - dims.y);
+    return SpriteFromMinDims(tx, bottom_left, dims);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2583,16 +2583,6 @@ LCORE AABB2D AABB2DFromWidthHeight(Vec2 center, Vec2 dims) {
     box.c = center;
     box.r = Vec2Lit(dims.x * 0.5f, dims.y * 0.5f);
     return box;
-}
-
-// Convert an aseprite bb on a marked up png to a world position bb.
-// The aseprite bb min will be the bottom left corner of the box THAT I SEE ON THE SCREEN. Not the bottom
-// left according to the pixel coords in the UI. The Top right will be similar.
-LCORE AABB2D AABB2DFromAsepriteBB(LTexture tx, Vec2 min_aseprite, Vec2 max_aseprite) {
-    Vec2 min_world = AsepritePosToWorldPos(tx, min_aseprite);
-    Vec2 max_world = AsepritePosToWorldPos(tx, max_aseprite);
-    AABB2D bb = AABB2DFromMinMax(min_world, max_world);
-    return bb;
 }
 
 // Normal from b -> a if there is a collision.
