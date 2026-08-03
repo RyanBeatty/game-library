@@ -399,7 +399,7 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))     \
     SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36))) \
     SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32))) \
-    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 43)), Vec2Lit(282, 248)))
+    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248)))
 
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
@@ -6176,6 +6176,7 @@ static void DrawBlock2(Vec3 pos, f32 scale, BlockGraphics* graphics) {
     color.a = graphics->preview ? color.a * 0.3f : color.a;
 
     Mat4 orient = Mat4Identity();
+    // DrawSprite(*GetSprite(SPRITE_BLOCK), pos, orient, scale);
     DrawSprite(*GetSprite(SPRITE_BLOCK_BG), pos, orient, scale);
     DrawSpriteEx(*GetSprite(SPRITE_BLOCK_FG), pos, Mat4Identity(), scale, color);
 }
@@ -6712,6 +6713,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
                                                               .effects = &card->piece.effects};
                                     DrawBlock2(pos, 1.0f, &graphics);
+                                    break;
                                 }
                             }
                         }
