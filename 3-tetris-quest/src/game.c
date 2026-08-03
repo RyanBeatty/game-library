@@ -4677,7 +4677,7 @@ typedef enum {
 
 ////////////////////////////////////////////////////
 
-#define GRID_NUM_ROWS 10
+#define GRID_NUM_ROWS 7
 #define GRID_NUM_COLS 8  // 10
 
 typedef struct {
