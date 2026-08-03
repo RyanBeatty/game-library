@@ -274,16 +274,9 @@ static void TextureCacheInit() {
 typedef struct {
     LTexture tx;
 
-    // The min and max coordinate in image coordinates [0, with], [0, height]
-    // Remember that this essentially is the bottom left hand corner.
+    // The dims are the size of the sprite in *world units*. Useful if we need to position other things relative to
+    // sprites.
     Vec2 dims;
-
-    // UV space coordinates for texture sampling (computed once when loaded).
-    // Reminder that in general when we describe some *area* of a texture, we want to be covering
-    // the *edges* (not the centers) of all of the texels within that area.
-    Vec2 minuv;
-    Vec2 dimsuv;
-
     // For when *positioning* the sprite visually. Note that this is in *pixels* not world units. If you were to
     // visually draw a texture attached to an object at world (x, y), then you need to do (x - px2world(offset_px.x))
     // for instance.
@@ -292,7 +285,13 @@ typedef struct {
     // origin first and then scale, the origin shift is actually scaled as well. So ideally you do Trans(pos) * Rot *
     // Trans(pivot) * Scale so that you can rotate around your origin. But we need to make some changes to the DrawQuad
     // api if this were to be the case.
-    Vec2 origin_offset_px;
+    Vec2 origin_offset;
+
+    // UV space coordinates for texture sampling (computed once when loaded).
+    // Reminder that in general when we describe some *area* of a texture, we want to be covering
+    // the *edges* (not the centers) of all of the texels within that area.
+    Vec2 minuv;
+    Vec2 dimsuv;
 } Sprite;
 
 typedef enum {
@@ -302,9 +301,9 @@ typedef enum {
 
 // Note that min and dims here are in pixels within the image space of the image.
 LCORE Sprite SpriteFromMinDims(LTexture tx, Vec2 min, Vec2 dims) {
-    Sprite sprite = {.tx = tx, .dims = dims};
+    Sprite sprite = {.tx = tx, .dims = Vec2Scale(dims, MPP)};
     sprite.minuv = Vec2Lit(min.x / sprite.tx.width, min.y / sprite.tx.height);
-    sprite.dimsuv = Vec2Lit(sprite.dims.x / sprite.tx.width, sprite.dims.y / sprite.tx.height);
+    sprite.dimsuv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
     return sprite;
 }
 
@@ -389,10 +388,10 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     // Remember that pivot_offset is a direction defined with respect to the aseprite coordinate system min, so we can
     // just add this to our engine coordinate system min and get the same point.
     Vec2 pivot_point = Vec2Add(bottom_left, rect.pivot_offset);
-    Vec2 sprite_origin = Vec2Add(bottom_left, Vec2Scale(sprite.dims, 0.5f));
+    Vec2 sprite_origin = Vec2Add(bottom_left, Vec2Scale(rect.dims, 0.5f));
     // This direction is intentional as essentially we need the displacement that moves the pivot point to the origin,
     // so we go from pivot -> origin.
-    sprite.origin_offset_px = Vec2Sub(sprite_origin, pivot_point);
+    sprite.origin_offset = Vec2Scale(Vec2Sub(sprite_origin, pivot_point), MPP);
     return sprite;
 }
 
@@ -6605,15 +6604,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
-                            BlockGraphics bg = {.base_color = LRED};
-                            Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
-                            DrawSprite(*GetSprite(SPRITE_BOARD_BG), grid_origin, Mat4Identity(), 1.0f);
+                            // BlockGraphics bg = {.base_color = LRED};
+                            // Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
+                            // DrawSprite(*GetSprite(SPRITE_BOARD_BG), grid_origin, Mat4Identity(), 1.0f);
 
-                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
-                            Vec3 grid_bottom_left = Vec3Add(
-                                grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
-                            Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
-                            DrawBlock2(tile_pos, 1.0f, &bg);
+                            // Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
+                            // Vec3 grid_bottom_left = Vec3Add(
+                            //     grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
+                            // Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
+                            // DrawBlock2(tile_pos, 1.0f, &bg);
 
                             // i32 color_idx = 0;
                             // for (i32 r = 0; r < grid->nrows; ++r) {
@@ -6677,7 +6676,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         // Draw hand
-                        {
+                        if (false) {
                             Vec2 piece_step = Vec2Lit(Px2Meter(34.0f), Px2Meter(34.0f));
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
@@ -6704,18 +6703,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        // {
-                        //     if (ArrLen(&battle->hand) > 0) {
-                        //         Card* card = ArrGetPtr(&battle->hand, 0);
-                        //         for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
-                        //             TileId offset = ArrGet(&card->piece.block_offsets, i);
-                        //             Vec3 pos = Vec3Lit(offset.c * 34.0f, offset.r * 34.0f, 0.0f);
-                        //             BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
-                        //                                       .effects = &card->piece.effects};
-                        //             DrawBlock2(pos, 1.0f, &graphics);
-                        //         }
-                        //     }
-                        // }
+                        {
+                            if (ArrLen(&battle->hand) > 0) {
+                                Card* card = ArrGetPtr(&battle->hand, 0);
+                                for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
+                                    TileId offset = ArrGet(&card->piece.block_offsets, i);
+                                    Vec3 pos = Vec3Lit(offset.c * 34.0f, offset.r * 34.0f, 0.0f);
+                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
+                                                              .effects = &card->piece.effects};
+                                    DrawBlock2(pos, 1.0f, &graphics);
+                                }
+                            }
+                        }
 
                         if (false) {
                             static f32 SCALES[] = {
