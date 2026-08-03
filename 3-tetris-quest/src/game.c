@@ -367,7 +367,8 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 // Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
 // in top left.
 typedef struct {
-    // The origin of aseprite is the *top left corner* of the first sprite.
+    // The origin of aseprite is the *top left corner* of the first sprite. This should essentially jsut be the number I
+    // see in aseprite UI when I hover over the pixel with the marquee tool.
     Vec2 top_left;
     Vec2 dims;
 
@@ -395,11 +396,11 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return sprite;
 }
 
-#define SPRITE_LIST                                                                        \
-    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))     \
-    SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36))) \
-    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32))) \
-    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248)))
+#define SPRITE_LIST                                                          \
+    SPRITEX(BLOCK, AsepriteCenteredLit(Vec2Lit(64, 1), Vec2Lit(36, 36)))     \
+    SPRITEX(BLOCK_BG, AsepriteCenteredLit(Vec2Lit(105, 7), Vec2Lit(36, 36))) \
+    SPRITEX(BLOCK_FG, AsepriteCenteredLit(Vec2Lit(154, 8), Vec2Lit(32, 32))) \
+    SPRITEX(BOARD_BG, AsepriteCenteredLit(Vec2Lit(5, 45), Vec2Lit(282, 248)))
 
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
