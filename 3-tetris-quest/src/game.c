@@ -6605,15 +6605,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
-                            // BlockGraphics bg = {.base_color = LRED};
-                            // Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
-                            // DrawSprite(*GetSprite(SPRITE_BOARD_BG), grid_origin, Mat4Identity(), 1.0f);
+                            BlockGraphics bg = {.base_color = LRED};
+                            Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
+                            DrawSprite(*GetSprite(SPRITE_BOARD_BG), grid_origin, Mat4Identity(), 1.0f);
 
-                            // Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
-                            // Vec3 grid_bottom_left = Vec3Add(
-                            //     grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
-                            // Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
-                            // DrawBlock2(tile_pos, 1.0f, &bg);
+                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
+                            Vec3 grid_bottom_left = Vec3Add(
+                                grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
+                            Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
+                            DrawBlock2(tile_pos, 1.0f, &bg);
 
                             // i32 color_idx = 0;
                             // for (i32 r = 0; r < grid->nrows; ++r) {
@@ -6677,7 +6677,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         // Draw hand
-                        if (false) {
+                        {
                             Vec2 piece_step = Vec2Lit(Px2Meter(34.0f), Px2Meter(34.0f));
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
@@ -6704,7 +6704,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        {
+                        if (false) {
                             if (ArrLen(&battle->hand) > 0) {
                                 Card* card = ArrGetPtr(&battle->hand, 0);
                                 for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
@@ -6713,7 +6713,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
                                                               .effects = &card->piece.effects};
                                     DrawBlock2(pos, 1.0f, &graphics);
-                                    break;
                                 }
                             }
                         }
