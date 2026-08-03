@@ -388,7 +388,9 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
 #define SPRITE_LIST                                                                        \
     SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))     \
     SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36))) \
-    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32)))
+    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32))) \
+    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 43)), Vec2Lit(282, 248)))
+
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
 typedef enum {
@@ -4729,6 +4731,7 @@ typedef struct {
 } Tile;
 
 typedef struct {
+    // This should be the bottom left of the grid I think?
     Vec3 pos;
     Vec3 scale;
     Mat4 rot;
@@ -6596,30 +6599,41 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec4 GRAY2 = RGBLit(82, 82, 84);
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
-                            i32 color_idx = 0;
-                            for (i32 r = 0; r < grid->nrows; ++r) {
-                                for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
-                                    Tile* tile = GridGetTile(grid, r, c);
-                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                                    Vec3 dims = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                                    Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
-                                    BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
-                                    DrawBlock(pos, Vec3ToVec2(dims), &bg_graphics);
 
-                                    if (tile->occupied) {
-                                        f32 scale = 1.0f;
-                                        if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
-                                            scale = TileScoreScalePopTween(battle->display.tween_elapsed);
-                                        }
-                                        BlockGraphics graphics = {.base_color = tile->effects.base_color,
-                                                                  .effects = &tile->effects};
-                                        DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
-                                    }
-                                }
+                            BlockGraphics bg = {.base_color = LRED};
+                            Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
+                            DrawSprite(*GetSprite(SPRITE_BOARD_BG), grid_origin, Mat4Identity(), 1.0f);
 
-                                // Offset each row.
-                                ++color_idx;
-                            }
+                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
+                            Vec3 grid_bottom_left = Vec3Add(
+                                grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
+                            Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
+                            DrawBlock2(tile_pos, 1.0f, &bg);
+
+                            // i32 color_idx = 0;
+                            // for (i32 r = 0; r < grid->nrows; ++r) {
+                            //     for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
+                            //         Tile* tile = GridGetTile(grid, r, c);
+                            //         Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                            //         Vec3 dims = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                            //         Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
+                            //         BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
+                            //         DrawBlock(pos, Vec3ToVec2(dims), &bg_graphics);
+
+                            //         if (tile->occupied) {
+                            //             f32 scale = 1.0f;
+                            //             if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
+                            //                 scale = TileScoreScalePopTween(battle->display.tween_elapsed);
+                            //             }
+                            //             BlockGraphics graphics = {.base_color = tile->effects.base_color,
+                            //                                       .effects = &tile->effects};
+                            //             DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
+                            //         }
+                            //     }
+
+                            //     // Offset each row.
+                            //     ++color_idx;
+                            // }
 
                             // Draw active piece.
                             if (battle->selection_idx != NO_CARD_SELECTED_IDX) {
