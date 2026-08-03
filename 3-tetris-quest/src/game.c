@@ -269,12 +269,13 @@ static void TextureCacheInit() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // s:sprite
 
+// Ideally a runtime sprite should contain only the info/units needed to render or do game operations on a sprite.
+// That means ideally all units are either in uv space for rendering or world units for positioning.
 typedef struct {
     LTexture tx;
 
     // The min and max coordinate in image coordinates [0, with], [0, height]
     // Remember that this essentially is the bottom left hand corner.
-    Vec2 min;
     Vec2 dims;
 
     // UV space coordinates for texture sampling (computed once when loaded).
@@ -299,9 +300,10 @@ typedef enum {
     SBB_CLOSEST_FIT,
 } SpriteBoundingBox;
 
+// Note that min and dims here are in pixels within the image space of the image.
 LCORE Sprite SpriteFromMinDims(LTexture tx, Vec2 min, Vec2 dims) {
-    Sprite sprite = {.tx = tx, .min = min, .dims = dims};
-    sprite.minuv = Vec2Lit(sprite.min.x / sprite.tx.width, sprite.min.y / sprite.tx.height);
+    Sprite sprite = {.tx = tx, .dims = dims};
+    sprite.minuv = Vec2Lit(min.x / sprite.tx.width, min.y / sprite.tx.height);
     sprite.dimsuv = Vec2Lit(sprite.dims.x / sprite.tx.width, sprite.dims.y / sprite.tx.height);
     return sprite;
 }
@@ -386,8 +388,8 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
 
     // Remember that pivot_offset is a direction defined with respect to the aseprite coordinate system min, so we can
     // just add this to our engine coordinate system min and get the same point.
-    Vec2 pivot_point = Vec2Add(sprite.min, rect.pivot_offset);
-    Vec2 sprite_origin = Vec2Add(sprite.min, Vec2Scale(sprite.dims, 0.5f));
+    Vec2 pivot_point = Vec2Add(bottom_left, rect.pivot_offset);
+    Vec2 sprite_origin = Vec2Add(bottom_left, Vec2Scale(sprite.dims, 0.5f));
     // This direction is intentional as essentially we need the displacement that moves the pivot point to the origin,
     // so we go from pivot -> origin.
     sprite.origin_offset_px = Vec2Sub(sprite_origin, pivot_point);
