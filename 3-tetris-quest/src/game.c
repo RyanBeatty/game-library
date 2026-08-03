@@ -16,6 +16,15 @@
 #endif
 
 ////////////////////////////////////////////////////////////
+// s:unit
+
+// 1 meter = N pixels scale factor. i.e. how many pixels are in 1 meter.
+#define PPM (1.0f)
+#define MPP (1.0f / PPM)
+#define Meter2Px(m) ((m) * PPM)
+#define Px2Meter(px) ((px) * MPP)
+
+////////////////////////////////////////////////////////////
 // S:Color
 
 typedef Vec4 RGBA;
@@ -4647,12 +4656,6 @@ static const f32 GRID_DEPTH = 1.0f;
 
 #define World2GridEx(pos, w, h, d) (Vec3Lit((u32)((pos).x / (w)), (u32)((pos).y / (h)), (u32)((pos).z) / (d)))
 #define World2Grid(pos) (World2GridEx(pos, GRID_WIDTH, GRID_HEIGHT, GRID_DEPTH))
-
-// 1 meter = N pixels scale factor. i.e. how many pixels are in 1 meter.
-#define PPM (1.0f)
-#define MPP (1.0f / PPM)
-#define Meter2Px(m) ((m) * PPM)
-#define Px2Meter(px) ((px) * MPP)
 
 typedef struct {
     f32 dt;           // per frame time
