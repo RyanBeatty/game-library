@@ -363,6 +363,9 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 // This essentially moves the origin from aseprite top left corner to bottom left corner. Why do we do this?
 // Its because when we import the texture/png we flip the Y axis there.
 // NOTE: It may seem like we need to subtract one, but we really don't (trust me)
+// remember we are converting continuous pixel coordinates not pixel indices. It might feel like hey the last px in
+// aseprite ui is actually (width-1, height-1) but thats the top left corner of that pixel. We could address the bottom
+// left corner and we'd end up at the y origin.
 #define AsepriteToEngineImage(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
 
 // Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
@@ -6611,20 +6614,23 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
-                            // TODO: change AsepriteToEngine to AsepriteToEngineImage and define AsepriteToEngineWorld
-                            // which takes aseprite coords and maps to origin at center
-                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
-                            BlockGraphics bg = {.base_color = LRED};
-                            Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
-                            Vec3 grid_pos = Vec3Lit(Px2Meter(164 - (0.5f * 640)) + (0.5f * grid_sprite->dims.x),
-                                                    Px2Meter((0.5f * 360) - 1 - 247) + (0.5f * grid_sprite->dims.y), 0);
-                            breakpoint();
-                            DrawSprite(*grid_sprite, grid_pos, Mat4Identity(), 1.0f);
+                            if (false) {
+                                // TODO: change AsepriteToEngine to AsepriteToEngineImage and define
+                                // AsepriteToEngineWorld which takes aseprite coords and maps to origin at center
+                                Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
+                                BlockGraphics bg = {.base_color = LRED};
+                                Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
+                                Vec3 grid_pos =
+                                    Vec3Lit(Px2Meter(164 - (0.5f * 640)) + (0.5f * grid_sprite->dims.x),
+                                            Px2Meter((360 - 247) - (0.5f * 360)) + (0.5f * grid_sprite->dims.y), 0);
+                                breakpoint();
+                                DrawSprite(*grid_sprite, grid_pos, Mat4Identity(), 1.0f);
 
-                            Vec3 grid_bottom_left = Vec3Add(
-                                grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
-                            Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
-                            DrawBlock2(tile_pos, 1.0f, &bg);
+                                Vec3 grid_bottom_left = Vec3Add(
+                                    grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
+                                Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
+                                DrawBlock2(tile_pos, 1.0f, &bg);
+                            }
 
                             // i32 color_idx = 0;
                             // for (i32 r = 0; r < grid->nrows; ++r) {
@@ -6688,7 +6694,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         // Draw hand
-                        {
+                        if (false) {
                             Vec2 piece_step = Vec2Lit(Px2Meter(34.0f), Px2Meter(34.0f));
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
@@ -6715,7 +6721,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        if (false) {
+                        if (true) {
                             if (ArrLen(&battle->hand) > 0) {
                                 Card* card = ArrGetPtr(&battle->hand, 0);
                                 for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
