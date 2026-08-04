@@ -370,6 +370,9 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 // see, see what corner/pos of the pixel I actually want to address, and then wrap that pixel index in a call to our
 // PX*() conversion functions before passing to this function.
 #define AsepriteToEngineImage(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
+static inline Vec3 AsepriteToEngineWorld(Vec2 render_dims, Vec2 apos, f32 z) {
+    return Vec3Lit(Px2Meter(apos.x - 0.5f * render_dims.x), Px2Meter(render_dims.y - apos.y - 0.5f * render_dims.y), z);
+}
 
 // Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
 // in top left.
@@ -6622,18 +6625,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // AsepriteToEngineWorld which takes aseprite coords and maps to origin at center
                                 Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
                                 BlockGraphics bg = {.base_color = LRED};
-                                Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
-                                Vec2 grid_pos_aseprite = AsepritePxBL(Vec2Lit(164, 247));
-                                Vec3 grid_pos = Vec3Lit(
-                                    Px2Meter(grid_pos_aseprite.x - (0.5f * 640.0f)) + (0.5f * grid_sprite->dims.x),
-                                    Px2Meter((360.0f - grid_pos_aseprite.y) - (0.5f * 360.0f)) +
-                                        (0.5f * grid_sprite->dims.y),
-                                    0);
-                                breakpoint();
+                                // Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
+                                // Vec2 grid_pos_aseprite = AsepritePxBL(Vec2Lit(164, 247));
+                                // Vec3 grid_pos = Vec3Lit(
+                                //     Px2Meter(grid_pos_aseprite.x - (0.5f * 640.0f)) + (0.5f * grid_sprite->dims.x),
+                                //     Px2Meter((360.0f - grid_pos_aseprite.y) - (0.5f * 360.0f)) +
+                                //         (0.5f * grid_sprite->dims.y),
+                                //     0);
+                                Vec3 grid_bottom_left = AsepriteToEngineWorld(Vec2Lit(gstate->renderw, gstate->renderh),
+                                                                              AsepritePxBL(Vec2Lit(164, 247)), 0);
+                                Vec3 grid_pos = Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x,
+                                                                                  0.5f * grid_sprite->dims.y, 0));
                                 DrawSprite(*grid_sprite, grid_pos, Mat4Identity(), 1.0f);
 
-                                Vec3 grid_bottom_left = Vec3Add(
-                                    grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
+                                // Vec3 grid_bottom_left = Vec3Add(
+                                //     grid_pos, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
                                 Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
                                 DrawBlock2(tile_pos, 1.0f, &bg);
                             }
