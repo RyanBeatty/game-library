@@ -366,6 +366,9 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 // remember we are converting continuous pixel coordinates not pixel indices. It might feel like hey the last px in
 // aseprite ui is actually (width-1, height-1) but thats the top left corner of that pixel. We could address the bottom
 // left corner and we'd end up at the y origin.
+// READ THIS IF CONFUSED: All of this gets less confusing if I just: look at the Aserpite UI, see what pixel index I
+// see, see what corner/pos of the pixel I actually want to address, and then wrap that pixel index in a call to our
+// PX*() conversion functions before passing to this function.
 #define AsepriteToEngineImage(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
 
 // Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
@@ -6614,15 +6617,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
-                            if (false) {
+                            if (true) {
                                 // TODO: change AsepriteToEngine to AsepriteToEngineImage and define
                                 // AsepriteToEngineWorld which takes aseprite coords and maps to origin at center
                                 Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
                                 BlockGraphics bg = {.base_color = LRED};
                                 Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
-                                Vec3 grid_pos =
-                                    Vec3Lit(Px2Meter(164 - (0.5f * 640)) + (0.5f * grid_sprite->dims.x),
-                                            Px2Meter((360 - 247) - (0.5f * 360)) + (0.5f * grid_sprite->dims.y), 0);
+                                Vec2 grid_pos_aseprite = AsepritePxBL(Vec2Lit(164, 247));
+                                Vec3 grid_pos = Vec3Lit(
+                                    Px2Meter(grid_pos_aseprite.x - (0.5f * 640.0f)) + (0.5f * grid_sprite->dims.x),
+                                    Px2Meter((360.0f - grid_pos_aseprite.y) - (0.5f * 360.0f)) +
+                                        (0.5f * grid_sprite->dims.y),
+                                    0);
                                 breakpoint();
                                 DrawSprite(*grid_sprite, grid_pos, Mat4Identity(), 1.0f);
 
