@@ -359,10 +359,11 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 #define AsepritePxTL(px) (px)
 #define AsepritePxTR(px) (Vec2Lit((px).x + 1.0f, (px).y))
 
+// This is converting from aseprite image space to our engine image space (not world space).
 // This essentially moves the origin from aseprite top left corner to bottom left corner. Why do we do this?
 // Its because when we import the texture/png we flip the Y axis there.
 // NOTE: It may seem like we need to subtract one, but we really don't (trust me)
-#define AsepriteToEngine(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
+#define AsepriteToEngineImage(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
 
 // Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
 // in top left.
@@ -382,7 +383,7 @@ typedef struct {
 #define AsepriteCenteredLit(tl, dms) (AsepriteLit(tl, dms, Vec2Scale(dms, 0.5f)))
 
 static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
-    Vec2 top_left = AsepriteToEngine(tx, rect.top_left);
+    Vec2 top_left = AsepriteToEngineImage(tx, rect.top_left);
     Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - rect.dims.y);
     Sprite sprite = SpriteFromMinDims(tx, bottom_left, rect.dims);
 
@@ -396,11 +397,11 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return sprite;
 }
 
-#define SPRITE_LIST                                                          \
-    SPRITEX(BLOCK, AsepriteCenteredLit(Vec2Lit(64, 1), Vec2Lit(36, 36)))     \
-    SPRITEX(BLOCK_BG, AsepriteCenteredLit(Vec2Lit(105, 7), Vec2Lit(36, 36))) \
-    SPRITEX(BLOCK_FG, AsepriteCenteredLit(Vec2Lit(154, 8), Vec2Lit(32, 32))) \
-    SPRITEX(BOARD_BG, AsepriteCenteredLit(Vec2Lit(5, 45), Vec2Lit(282, 248)))
+#define SPRITE_LIST                                                                        \
+    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))     \
+    SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36))) \
+    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32))) \
+    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248)))
 
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
@@ -4786,8 +4787,9 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     *grid = ZERO;
 
-    f32 scale = 1.0f;
-    Vec2 grid_tile_dims = Vec2Lit(Px2Meter(16.0f) * scale, Px2Meter(16.0f) * scale);
+    Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
+
+    Vec2 grid_tile_dims = block_sprite->dims;
 
     i32 ncols = GRID_NUM_COLS;
     i32 grid_width = grid_tile_dims.x * ncols;
@@ -4798,6 +4800,9 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
 
     Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+
+    Vec3 grid_bottom_left = Vec3Lit(164, 360 - 247, 0);
+
     for (i32 r = 0; r < nrows; ++r) {
         for (i32 c = 0; c < ncols; ++c) {
             Tile* tile = &grid->tiles[r][c];
@@ -6606,11 +6611,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
+                            // TODO: change AsepriteToEngine to AsepriteToEngineImage and define AsepriteToEngineWorld
+                            // which takes aseprite coords and maps to origin at center
+                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
                             BlockGraphics bg = {.base_color = LRED};
                             Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
-                            DrawSprite(*GetSprite(SPRITE_BOARD_BG), grid_origin, Mat4Identity(), 1.0f);
+                            Vec3 grid_pos = Vec3Lit(Px2Meter(164 - (0.5f * 640)) + (0.5f * grid_sprite->dims.x),
+                                                    Px2Meter((0.5f * 360) - 1 - 247) + (0.5f * grid_sprite->dims.y), 0);
+                            breakpoint();
+                            DrawSprite(*grid_sprite, grid_pos, Mat4Identity(), 1.0f);
 
-                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
                             Vec3 grid_bottom_left = Vec3Add(
                                 grid_origin, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
                             Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
