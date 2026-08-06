@@ -5372,15 +5372,11 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderw_world = renderw_world;
     battle->renderh_world = renderh_world;
     {
-        Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
-        Vec2 grid_tile_dims = block_sprite->dims;
-        i32 ncols = GRID_NUM_COLS;
-        i32 nrows = GRID_NUM_ROWS;
-        i32 grid_width = grid_tile_dims.x * ncols;
-        i32 grid_origin_x = -0.5f * grid_width;
-        i32 grid_height = grid_tile_dims.y * nrows;
-        i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
-        Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+        Vec2 render_dims_px = Vec2Lit(Meter2Px(renderw_world), Meter2Px(renderh_world));
+        Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
+        Vec3 grid_bottom_left = AsepriteToEngineWorld(render_dims_px, AsepritePxBL(Vec2Lit(164, 247)), 0);
+        Vec3 grid_origin =
+            Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x, 0.5f * grid_sprite->dims.y, 0));
         GridInit(&battle->grid, grid_origin);
     }
 
@@ -6626,7 +6622,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(164, 247)), 0);
                                 Vec3 grid_pos = Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x,
                                                                                   0.5f * grid_sprite->dims.y, 0));
-                                DrawSprite(*grid_sprite, grid_pos, Mat4Identity(), 1.0f);
+                                DrawSprite(*grid_sprite, grid->pos_live, Mat4Identity(), 1.0f);
 
                                 // Vec3 grid_bottom_left = Vec3Add(
                                 //     grid_pos, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
