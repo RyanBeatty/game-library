@@ -4760,9 +4760,6 @@ typedef struct {
     // Mat4 grid_to_world;
     // Mat4 world_to_grid;
 
-    f32 grid_height;
-    f32 grid_width;
-
     isize nrows;
     isize ncols;
     Tile tiles[GRID_NUM_ROWS][GRID_NUM_COLS];
@@ -4796,22 +4793,8 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     *grid = ZERO;
 
-    Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
-
-    Vec2 grid_tile_dims = block_sprite->dims;
-
     i32 ncols = GRID_NUM_COLS;
-    i32 grid_width = grid_tile_dims.x * ncols;
-    i32 grid_origin_x = -0.5f * grid_width;
-
     i32 nrows = GRID_NUM_ROWS;
-    i32 grid_height = grid_tile_dims.y * nrows;
-    i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
-
-    Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
-
-    Vec3 grid_bottom_left = Vec3Lit(164, 360 - 247, 0);
-
     for (i32 r = 0; r < nrows; ++r) {
         for (i32 c = 0; c < ncols; ++c) {
             Tile* tile = &grid->tiles[r][c];
@@ -4820,14 +4803,19 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
         }
     }
 
+    Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
+    Vec2 grid_tile_dims = block_sprite->dims;
+    i32 grid_width = grid_tile_dims.x * ncols;
+    i32 grid_origin_x = -0.5f * grid_width;
+    i32 grid_height = grid_tile_dims.y * nrows;
+    i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
+    Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+
     grid->ncols = ncols;
     grid->nrows = nrows;
     grid->pos = grid_origin;
     grid->scale = Vec3Lit(grid_tile_dims.x, grid_tile_dims.y, grid_tile_dims.x);  // Important to make uniform scale.
     grid->rot = Mat4Identity();
-
-    grid->grid_height = grid_height;
-    grid->grid_width = grid_width;
 
     grid->pos_start = Vec3Lit(grid_origin.x, grid_origin.y + grid_height, grid_origin.z);
     grid->pos_end = grid->pos;
