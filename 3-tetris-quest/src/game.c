@@ -5992,6 +5992,7 @@ typedef struct GameState {
     // GetScreen/RenderWidth() function that reads RSTATE.
     u32 renderw;
     u32 renderh;
+    Vec2 render_dims;
     f32 renderw_world;  // in meters
     f32 renderh_world;  // in meters
     u32 screenw;
@@ -6625,15 +6626,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // AsepriteToEngineWorld which takes aseprite coords and maps to origin at center
                                 Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
                                 BlockGraphics bg = {.base_color = LRED};
-                                // Vec3 grid_origin = Vec3WTransform(Vec3Zero(), grid_to_world);
-                                // Vec2 grid_pos_aseprite = AsepritePxBL(Vec2Lit(164, 247));
-                                // Vec3 grid_pos = Vec3Lit(
-                                //     Px2Meter(grid_pos_aseprite.x - (0.5f * 640.0f)) + (0.5f * grid_sprite->dims.x),
-                                //     Px2Meter((360.0f - grid_pos_aseprite.y) - (0.5f * 360.0f)) +
-                                //         (0.5f * grid_sprite->dims.y),
-                                //     0);
-                                Vec3 grid_bottom_left = AsepriteToEngineWorld(Vec2Lit(gstate->renderw, gstate->renderh),
-                                                                              AsepritePxBL(Vec2Lit(164, 247)), 0);
+                                Vec3 grid_bottom_left =
+                                    AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(164, 247)), 0);
                                 Vec3 grid_pos = Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x,
                                                                                   0.5f * grid_sprite->dims.y, 0));
                                 DrawSprite(*grid_sprite, grid_pos, Mat4Identity(), 1.0f);
@@ -7190,6 +7184,7 @@ void GameInit() {
 
     gstate->renderw = 640.0f;
     gstate->renderh = 360.0f;
+    gstate->render_dims = Vec2Lit(gstate->renderw, gstate->renderh);
     // Reminder, the way we convert from world units back to screen units for rendering is by using these for the
     // projection matrix.
     gstate->renderw_world = Px2Meter(gstate->renderw);
