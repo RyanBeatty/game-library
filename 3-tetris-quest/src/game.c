@@ -4788,7 +4788,8 @@ LCORE Tile* GridGetTile(Grid* grid, isize r, isize c) {
     return tile;
 }
 
-LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
+// origin should be in world space.
+LCORE void GridInit(Grid* grid, Vec3 grid_origin) {
     static Grid ZERO = {0};
 
     *grid = ZERO;
@@ -4805,11 +4806,7 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
 
     Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
     Vec2 grid_tile_dims = block_sprite->dims;
-    i32 grid_width = grid_tile_dims.x * ncols;
-    i32 grid_origin_x = -0.5f * grid_width;
-    i32 grid_height = grid_tile_dims.y * nrows;
-    i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
-    Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+    Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
 
     grid->ncols = ncols;
     grid->nrows = nrows;
@@ -4817,7 +4814,7 @@ LCORE void GridInit(Grid* grid, f32 renderw_world, f32 renderh_world) {
     grid->scale = Vec3Lit(grid_tile_dims.x, grid_tile_dims.y, grid_tile_dims.x);  // Important to make uniform scale.
     grid->rot = Mat4Identity();
 
-    grid->pos_start = Vec3Lit(grid_origin.x, grid_origin.y + grid_height, grid_origin.z);
+    grid->pos_start = Vec3Lit(grid_origin.x, grid_origin.y + grid_sprite->dims.y, grid_origin.z);
     grid->pos_end = grid->pos;
     grid->pos_live = grid->pos_start;
     grid->pos_duration = 0.8f;
@@ -5374,7 +5371,18 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->phase = BP_PLAYING;
     battle->renderw_world = renderw_world;
     battle->renderh_world = renderh_world;
-    GridInit(&battle->grid, battle->renderw_world, battle->renderh_world);
+    {
+        Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
+        Vec2 grid_tile_dims = block_sprite->dims;
+        i32 ncols = GRID_NUM_COLS;
+        i32 nrows = GRID_NUM_ROWS;
+        i32 grid_width = grid_tile_dims.x * ncols;
+        i32 grid_origin_x = -0.5f * grid_width;
+        i32 grid_height = grid_tile_dims.y * nrows;
+        i32 grid_origin_y = (0.5f * renderh_world) + (0.5f * grid_tile_dims.y) - grid_height;
+        Vec3 grid_origin = Vec3Lit(grid_origin_x, grid_origin_y, 0.0f);
+        GridInit(&battle->grid, grid_origin);
+    }
 
     {
         battle->deck_pos_end = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
