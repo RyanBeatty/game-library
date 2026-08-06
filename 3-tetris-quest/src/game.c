@@ -4746,10 +4746,11 @@ typedef struct {
 } Tile;
 
 typedef struct {
-    // This should be the bottom left of the grid I think?
-    Vec3 pos;
+    Vec3 pos;  // Where we visually draw the center of the grid's bg sprite.
     Vec3 scale;
     Mat4 rot;
+
+    Vec3 grid_origin_offset;  // offset to the grid's bottom left hand corner/tile space start.
 
     Vec3 pos_start;
     Vec3 pos_end;
@@ -4788,8 +4789,9 @@ LCORE Tile* GridGetTile(Grid* grid, isize r, isize c) {
     return tile;
 }
 
-// origin should be in world space.
-LCORE void GridInit(Grid* grid, Vec3 grid_origin) {
+// grid_pos is the grid center and where we should draw visually the board.
+// origin offset is the offset from center to start of tile space 0, 0, 0. and where gameplay logic should operate on.
+LCORE void GridInit(Grid* grid, Vec3 grid_pos, Vec3 grid_origin_offset) {
     static Grid ZERO = {0};
 
     *grid = ZERO;
@@ -4808,13 +4810,13 @@ LCORE void GridInit(Grid* grid, Vec3 grid_origin) {
     Vec2 grid_tile_dims = block_sprite->dims;
     Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
 
-    grid->ncols = ncols;
     grid->nrows = nrows;
-    grid->pos = grid_origin;
+    grid->pos = grid_pos;
+    grid->grid_origin_offset = grid_origin_offset;
     grid->scale = Vec3Lit(grid_tile_dims.x, grid_tile_dims.y, grid_tile_dims.x);  // Important to make uniform scale.
     grid->rot = Mat4Identity();
 
-    grid->pos_start = Vec3Lit(grid_origin.x, grid_origin.y + grid_sprite->dims.y, grid_origin.z);
+    grid->pos_start = Vec3Lit(grid_pos.x, grid_pos.y + grid_sprite->dims.y, grid_pos.z);
     grid->pos_end = grid->pos;
     grid->pos_live = grid->pos_start;
     grid->pos_duration = 0.8f;
@@ -5375,9 +5377,10 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         Vec2 render_dims_px = Vec2Lit(Meter2Px(renderw_world), Meter2Px(renderh_world));
         Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
         Vec3 grid_bottom_left = AsepriteToEngineWorld(render_dims_px, AsepritePxBL(Vec2Lit(164, 247)), 0);
-        Vec3 grid_origin =
-            Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x, 0.5f * grid_sprite->dims.y, 0));
-        GridInit(&battle->grid, grid_origin);
+        Vec3 grid_pos = Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x, 0.5f * grid_sprite->dims.y, 0));
+        // TODO: Work on this
+        Vec3 grid_origin_offset = Vec3Sub(Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0)), grid_pos);
+        GridInit(&battle->grid, grid_pos, grid_origin_offset);
     }
 
     {
