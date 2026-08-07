@@ -4807,7 +4807,7 @@ LCORE void GridInit(Grid* grid, Vec3 grid_pos, Vec3 grid_origin_offset) {
     }
 
     Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
-    Vec2 grid_tile_dims = block_sprite->dims;
+    Vec2 grid_tile_dims = Vec2Lit(block_sprite->dims.x - 1.0f, block_sprite->dims.y - 1.0f);
     Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
 
     grid->nrows = nrows;
