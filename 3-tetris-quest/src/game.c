@@ -4685,6 +4685,11 @@ typedef enum {
     SUIT_COUNT,
 } Suit;
 
+static Vec2 GetTileStep() {
+    Sprite* sprite = GetSprite(SPRITE_BLOCK_BG);
+    return Vec2Lit(sprite->dims.x - Px2Meter(2.0f), sprite->dims.y - Px2Meter(2.0f));
+}
+
 ////////////////////////////////////////////////////
 
 #define GRID_NUM_ROWS 7
@@ -4806,8 +4811,7 @@ LCORE void GridInit(Grid* grid, Vec3 grid_pos, Vec3 grid_origin_offset) {
         }
     }
 
-    Sprite* block_sprite = GetSprite(SPRITE_BLOCK_BG);
-    Vec2 grid_tile_dims = Vec2Lit(block_sprite->dims.x - 2.0f, block_sprite->dims.y - 2.0f);
+    Vec2 grid_tile_dims = GetTileStep();
     Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
 
     grid->nrows = nrows;
@@ -6683,15 +6687,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         // Draw hand
-                        if (false) {
-                            Vec2 piece_step = Vec2Lit(Px2Meter(34.0f), Px2Meter(34.0f));
+                        if (true) {
+                            Vec2 piece_step = GetTileStep();
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 Card* card = ArrGetPtr(&battle->hand, i);
                                 if (card->visible) {
                                     Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
                                     // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
                                     Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
-                                    DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
+                                    // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
                                     f32 piece_scale = card->scale_live;
                                     Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
