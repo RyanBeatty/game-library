@@ -6614,70 +6614,37 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_PLAYING: {
                         // Draw grid
                         {
-                            Vec4 GRAY1 = RGBLit(60, 64, 89);
-                            Vec4 GRAY2 = RGBLit(76, 88, 126);
+                            Vec4 TILE1_COLOR = RGBLit(60, 64, 89);
+                            Vec4 TILE2_COLOR = RGBLit(76, 88, 126);
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
-                            if (true) {
-                                Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
-                                BlockGraphics bg = {.base_color = LRED};
-                                DrawSprite(*grid_sprite, grid->pos_live, Mat4Identity(), 1.0f);
+                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
+                            DrawSprite(*grid_sprite, grid->pos_live, Mat4Identity(), 1.0f);
 
-                                i32 color_idx = 0;
-                                breakpoint();
-                                for (i32 r = 0; r < grid->nrows; ++r) {
-                                    for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
-                                        Tile* tile = GridGetTile(grid, r, c);
-                                        Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                                        // Vec3 dims = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                                        Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
-                                        BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
-                                        breakpoint();
-                                        DrawBlock2(pos, 1.0f, &bg_graphics);
+                            i32 color_idx = 0;
+                            for (i32 r = 0; r < grid->nrows; ++r) {
+                                for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
+                                    Tile* tile = GridGetTile(grid, r, c);
+                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                                    Vec4 color = color_idx % 2 == 0 ? TILE1_COLOR : TILE2_COLOR;
+                                    BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
+                                    DrawBlock2(pos, 1.0f, &bg_graphics);
 
-                                        // if (tile->occupied) {
-                                        //     f32 scale = 1.0f;
-                                        //     if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
-                                        //         scale = TileScoreScalePopTween(battle->display.tween_elapsed);
-                                        //     }
-                                        //     BlockGraphics graphics = {.base_color = tile->effects.base_color,
-                                        //                               .effects = &tile->effects};
-                                        //     DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
-                                        // }
-                                    }
-
-                                    // Offset each row.
-                                    ++color_idx;
+                                    // if (tile->occupied) {
+                                    //     f32 scale = 1.0f;
+                                    //     if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
+                                    //         scale = TileScoreScalePopTween(battle->display.tween_elapsed);
+                                    //     }
+                                    //     BlockGraphics graphics = {.base_color = tile->effects.base_color,
+                                    //                               .effects = &tile->effects};
+                                    //     DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
+                                    // }
                                 }
-                                // Vec3 tile_pos = Vec3WTransform(Vec3Zero(), grid_to_world);
-                                // DrawBlock2(tile_pos, 1.0f, &bg);
+
+                                // Offset each row.
+                                ++color_idx;
                             }
-
-                            // i32 color_idx = 0;
-                            // for (i32 r = 0; r < grid->nrows; ++r) {
-                            //     for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
-                            //         Tile* tile = GridGetTile(grid, r, c);
-                            //         Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                            //         Vec3 dims = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
-                            //         Vec4 color = color_idx % 2 == 0 ? GRAY1 : GRAY2;
-                            //         BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
-                            //         DrawBlock(pos, Vec3ToVec2(dims), &bg_graphics);
-
-                            //         if (tile->occupied) {
-                            //             f32 scale = 1.0f;
-                            //             if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
-                            //                 scale = TileScoreScalePopTween(battle->display.tween_elapsed);
-                            //             }
-                            //             BlockGraphics graphics = {.base_color = tile->effects.base_color,
-                            //                                       .effects = &tile->effects};
-                            //             DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
-                            //         }
-                            //     }
-
-                            //     // Offset each row.
-                            //     ++color_idx;
-                            // }
 
                             // Draw active piece.
                             if (battle->selection_idx != NO_CARD_SELECTED_IDX) {
@@ -6743,7 +6710,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        if (true) {
+                        if (false) {
                             if (ArrLen(&battle->hand) > 0) {
                                 Card* card = ArrGetPtr(&battle->hand, 0);
                                 for (isize i = 0; i < ArrLen(&card->piece.block_offsets); ++i) {
