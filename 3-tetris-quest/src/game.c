@@ -4822,7 +4822,9 @@ LCORE void GridInit(Grid* grid, Vec3 grid_pos, Vec3 grid_origin_offset) {
     grid->pos_duration = 0.8f;
 }
 
-static Mat4 GridGetGridToWorld(Grid* grid) { return Mat4SVRT(grid->scale, grid->rot, grid->pos_live); }
+static Mat4 GridGetGridToWorld(Grid* grid) {
+    return Mat4SVRT(grid->scale, grid->rot, Vec3Add(grid->pos_live, grid->grid_origin_offset));
+}
 static Mat4 GridGetWorldToGrid(Grid* grid) { return Mat4Invert(GridGetGridToWorld(grid)); }
 
 LCORE Vec3 GridGetTilePosBL(Grid* grid, TileId tileid) {
@@ -6617,19 +6619,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
                             if (true) {
-                                // TODO: change AsepriteToEngine to AsepriteToEngineImage and define
-                                // AsepriteToEngineWorld which takes aseprite coords and maps to origin at center
                                 Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
                                 BlockGraphics bg = {.base_color = LRED};
-                                Vec3 grid_bottom_left =
-                                    AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(164, 247)), 0);
-                                Vec3 grid_pos = Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x,
-                                                                                  0.5f * grid_sprite->dims.y, 0));
                                 DrawSprite(*grid_sprite, grid->pos_live, Mat4Identity(), 1.0f);
 
-                                // Vec3 grid_bottom_left = Vec3Add(
-                                //     grid_pos, Vec3Lit(-0.5f * grid_sprite->dims.x, -0.5f * grid_sprite->dims.y, 0));
-                                Vec3 tile_pos = Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0));
+                                Vec3 tile_pos = Vec3WTransform(Vec3Zero(), grid_to_world);
                                 DrawBlock2(tile_pos, 1.0f, &bg);
                             }
 
