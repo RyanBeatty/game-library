@@ -6687,29 +6687,27 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         // Draw hand
-                        if (true) {
-                            Vec2 piece_step = GetTileStep();
-                            for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
-                                Card* card = ArrGetPtr(&battle->hand, i);
-                                if (card->visible) {
-                                    Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
-                                    // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
-                                    Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
-                                    // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
+                        Vec2 piece_step = GetTileStep();
+                        for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
+                            Card* card = ArrGetPtr(&battle->hand, i);
+                            if (card->visible) {
+                                Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
+                                // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
+                                Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
+                                // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
-                                    f32 piece_scale = card->scale_live;
-                                    Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
+                                f32 piece_scale = card->scale_live;
+                                Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
 
-                                    // Draw piece inside card.
-                                    for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
-                                        TileId offset = ArrGet(&card->piece.block_offsets, j);
-                                        Vec3 pos = Vec3Lit(offset.c * scaled_piece_step.x,
-                                                           offset.r * scaled_piece_step.y, 0.0f);
-                                        pos = Vec3Add(pos, quad_pos);
-                                        BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
-                                                                  .effects = &card->piece.effects};
-                                        DrawBlock2(pos, piece_scale, &graphics);
-                                    }
+                                // Draw piece inside card.
+                                for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
+                                    TileId offset = ArrGet(&card->piece.block_offsets, j);
+                                    Vec3 pos =
+                                        Vec3Lit(offset.c * scaled_piece_step.x, offset.r * scaled_piece_step.y, 0.0f);
+                                    pos = Vec3Add(pos, quad_pos);
+                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
+                                                              .effects = &card->piece.effects};
+                                    DrawBlock2(pos, piece_scale, &graphics);
                                 }
                             }
                         }
