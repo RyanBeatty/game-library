@@ -6205,8 +6205,12 @@ static void DrawBlock2(Vec3 pos, f32 scale, BlockGraphics* graphics) {
 
     Mat4 orient = Mat4Identity();
     // DrawSprite(*GetSprite(SPRITE_BLOCK), pos, orient, scale);
-    DrawSprite(*GetSprite(SPRITE_BLOCK_BG), pos, orient, scale);
-    DrawSpriteEx(*GetSprite(SPRITE_BLOCK_FG), pos, Mat4Identity(), scale, color);
+    // DrawSprite(*GetSprite(SPRITE_BLOCK_BG), pos, orient, scale);
+    // DrawSpriteEx(*GetSprite(SPRITE_BLOCK_FG), pos, Mat4Identity(), scale, color);
+    Sprite* bg_sprite = GetSprite(SPRITE_BLOCK_BG);
+    Sprite* fg_sprite = GetSprite(SPRITE_BLOCK_FG);
+    DrawQuad(pos, bg_sprite->dims.x * scale, bg_sprite->dims.y * scale, Mat4Identity(), LBLACK);
+    DrawQuad(pos, fg_sprite->dims.x * scale, fg_sprite->dims.y * scale, Mat4Identity(), color);
 }
 
 static void GamePhaseChange(GameState* gstate) {
@@ -6706,8 +6710,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
                                 // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
-                                f32 piece_scale = card->scale_live;
-                                piece_scale = 0.5f;
+                                f32 piece_scale = 0.5f * card->scale_live;
                                 Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
 
                                 // Draw piece inside card.
