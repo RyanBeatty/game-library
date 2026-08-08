@@ -6637,31 +6637,33 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Mat4 grid_to_world = GridGetGridToWorld(&battle->grid);
 
-                            Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
-                            DrawSprite(*grid_sprite, grid->pos_live, Mat4Identity(), 1.0f);
+                            if (true) {
+                                Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
+                                DrawSprite(*grid_sprite, grid->pos_live, Mat4Identity(), 1.0f);
 
-                            i32 color_idx = 0;
-                            for (i32 r = 0; r < grid->nrows; ++r) {
-                                for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
-                                    Tile* tile = GridGetTile(grid, r, c);
-                                    Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                                    Vec4 color = color_idx % 2 == 0 ? TILE1_COLOR : TILE2_COLOR;
-                                    BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
-                                    DrawBlock2(pos, 1.0f, &bg_graphics);
+                                i32 color_idx = 0;
+                                for (i32 r = 0; r < grid->nrows; ++r) {
+                                    for (i32 c = 0; c < grid->ncols; ++c, ++color_idx) {
+                                        Tile* tile = GridGetTile(grid, r, c);
+                                        Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
+                                        Vec4 color = color_idx % 2 == 0 ? TILE1_COLOR : TILE2_COLOR;
+                                        BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
+                                        DrawBlock2(pos, 1.0f, &bg_graphics);
 
-                                    // if (tile->occupied) {
-                                    //     f32 scale = 1.0f;
-                                    //     if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
-                                    //         scale = TileScoreScalePopTween(battle->display.tween_elapsed);
-                                    //     }
-                                    //     BlockGraphics graphics = {.base_color = tile->effects.base_color,
-                                    //                               .effects = &tile->effects};
-                                    //     DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
-                                    // }
+                                        // if (tile->occupied) {
+                                        //     f32 scale = 1.0f;
+                                        //     if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
+                                        //         scale = TileScoreScalePopTween(battle->display.tween_elapsed);
+                                        //     }
+                                        //     BlockGraphics graphics = {.base_color = tile->effects.base_color,
+                                        //                               .effects = &tile->effects};
+                                        //     DrawBlock(pos, Vec2Scale(Vec3ToVec2(dims), scale), &graphics);
+                                        // }
+                                    }
+
+                                    // Offset each row.
+                                    ++color_idx;
                                 }
-
-                                // Offset each row.
-                                ++color_idx;
                             }
 
                             // Draw active piece.
@@ -6700,30 +6702,54 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        // Draw hand
-                        Vec2 piece_step = GetTileStep();
-                        for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
-                            Card* card = ArrGetPtr(&battle->hand, i);
-                            if (card->visible) {
-                                Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
-                                // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
-                                Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
-                                // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
+                        if (true) {
+                            // Draw hand
+                            Vec2 piece_step = GetTileStep();
+                            for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
+                                Card* card = ArrGetPtr(&battle->hand, i);
+                                if (card->visible) {
+                                    Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
+                                    // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
+                                    Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
+                                    // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
-                                f32 piece_scale = 0.5f * card->scale_live;
-                                Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
+                                    f32 piece_scale = 0.5f * card->scale_live;
+                                    Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
 
-                                // Draw piece inside card.
-                                for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
-                                    TileId offset = ArrGet(&card->piece.block_offsets, j);
-                                    Vec3 pos =
-                                        Vec3Lit(offset.c * scaled_piece_step.x, offset.r * scaled_piece_step.y, 0.0f);
-                                    pos = Vec3Add(pos, quad_pos);
-                                    BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
-                                                              .effects = &card->piece.effects};
-                                    DrawBlock2(pos, piece_scale, &graphics);
+                                    // Draw piece inside card.
+                                    for (isize j = 0; j < ArrLen(&card->piece.block_offsets); ++j) {
+                                        TileId offset = ArrGet(&card->piece.block_offsets, j);
+                                        Vec3 pos = Vec3Lit(offset.c * scaled_piece_step.x,
+                                                           offset.r * scaled_piece_step.y, 0.0f);
+                                        pos = Vec3Add(pos, quad_pos);
+                                        BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
+                                                                  .effects = &card->piece.effects};
+                                        DrawBlock2(pos, 0.5f, &graphics);
+                                    }
                                 }
                             }
+                        } else {
+                            static Vec3 POS = {0};
+
+                            Vec3 dir = {0};
+                            f32 step = 0.2f;
+                            if (PlatformKeyPressed(LKEY_LEFT)) {
+                                dir.x -= step;
+                            } else if (PlatformKeyPressed(LKEY_RIGHT)) {
+                                dir.x += step;
+                            } else if (PlatformKeyPressed(LKEY_UP)) {
+                                dir.y += step;
+                            } else if (PlatformKeyPressed(LKEY_DOWN)) {
+                                dir.y -= step;
+                            }
+                            POS = Vec3Add(POS, dir);
+
+                            BlockGraphics graphics = {
+                                .base_color = LRED,
+                            };
+
+                            f32 scale = f32lerp(0.5f, 1.5f, 0.5f * (f32sin(5.0f * gstate->timer - 0.5f * LPI) + 1.0f));
+                            DrawBlock2(POS, scale, &graphics);
                         }
 
                         if (false) {
