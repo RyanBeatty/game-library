@@ -353,7 +353,7 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 
 // // Address center, and all 4 corners of an aseprite pixel. We consider the aseprite coord
 // // given in the UI to be the top left of the pixel.
-#define AspritePxCtr(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
+#define AsepritePxCtr(px) (Vec2Lit((px).x + 0.5f, (px).y + 0.5f))
 #define AsepritePxBL(px) (Vec2Lit((px).x, (px).y + 1.0f))
 #define AsepritePxBR(px) (Vec2Lit((px).x + 1.0f, (px).y + 1.0f))
 #define AsepritePxTL(px) (px)
@@ -5128,9 +5128,15 @@ static i32 CardArrNumHidden(CardArr* cards) {
 }
 
 static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
-    i32 num_visible = CardArrNumVisible(cards);
-    f32 len = f32max(num_visible - 1.0f, 0.0f);
-    return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
+    if (idx < 3) {
+        return Vec3Lit(-(idx + 1), 0, 0);
+    } else {
+        idx = idx % 3;
+        return Vec3Lit(0, idx + 1, 0);
+    }
+    // i32 num_visible = CardArrNumVisible(cards);
+    // f32 len = f32max(num_visible - 1.0f, 0.0f);
+    // return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
 }
 
 ////////////////////////////////////////////////////
@@ -5403,8 +5409,9 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->card_scale = Vec2Lit(Px2Meter(114.0f), Px2Meter(114.0f));
         // TODO: I should make it so that the playing area origin is fixed at 0, 0. and then maybe I push some transform
         // that gets auto applied during rendering and collision detection?
-        Vec3 hand_pos = AsepriteToEngineWorld(
-            render_dims_px, AspritePxCtr(Vec2Lit(390.0f + 0.5f * 105.0f, 283.0f + 0.5f * 70.0f)), 0.0f);
+        Vec2 hand_pos_aseprite =
+            AsepritePxCtr(Vec2Lit(560, 320));  // AsepritePxCtr(Vec2Lit(390.0f + 0.5f * 105.0f, 283.0f + 0.5f * 70.0f));
+        Vec3 hand_pos = AsepriteToEngineWorld(render_dims_px, hand_pos_aseprite, 0.0f);
 
         // Vec3 hand_pos = Vec3Lit(0.0f, Px2Meter(-80.0f), 0.0f);
         battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 1.1f)), Mat4Identity(), hand_pos);
