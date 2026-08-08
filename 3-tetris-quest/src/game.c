@@ -5128,15 +5128,15 @@ static i32 CardArrNumHidden(CardArr* cards) {
 }
 
 static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
-    if (idx < 3) {
-        return Vec3Lit(-(idx + 1), 0, 0);
-    } else {
-        idx = idx % 3;
-        return Vec3Lit(0, idx + 1, 0);
-    }
-    // i32 num_visible = CardArrNumVisible(cards);
-    // f32 len = f32max(num_visible - 1.0f, 0.0f);
-    // return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
+    // if (idx < 3) {
+    //     return Vec3Lit(-(idx + 1), 0, 0);
+    // } else {
+    //     idx = idx % 3;
+    //     return Vec3Lit(0, idx + 1, 0);
+    // }
+    i32 num_visible = CardArrNumVisible(cards);
+    f32 len = f32max(num_visible - 1.0f, 0.0f);
+    return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
 }
 
 ////////////////////////////////////////////////////
@@ -5406,11 +5406,11 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
     // hand init deck init
     {
-        battle->card_scale = Vec2Lit(Px2Meter(114.0f), Px2Meter(114.0f));
+        battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
         // TODO: I should make it so that the playing area origin is fixed at 0, 0. and then maybe I push some transform
         // that gets auto applied during rendering and collision detection?
         Vec2 hand_pos_aseprite =
-            AsepritePxCtr(Vec2Lit(560, 320));  // AsepritePxCtr(Vec2Lit(390.0f + 0.5f * 105.0f, 283.0f + 0.5f * 70.0f));
+            AsepritePxCtr(Vec2Lit(337, 302));  // AsepritePxCtr(Vec2Lit(390.0f + 0.5f * 105.0f, 283.0f + 0.5f * 70.0f));
         Vec3 hand_pos = AsepriteToEngineWorld(render_dims_px, hand_pos_aseprite, 0.0f);
 
         // Vec3 hand_pos = Vec3Lit(0.0f, Px2Meter(-80.0f), 0.0f);
@@ -6707,6 +6707,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
                                 f32 piece_scale = card->scale_live;
+                                piece_scale = 0.5f;
                                 Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
 
                                 // Draw piece inside card.
