@@ -302,9 +302,23 @@ typedef enum {
 // Note that min and dims here are in pixels within the image space of the image.
 LCORE Sprite SpriteFromMinDims(LTexture tx, Vec2 min, Vec2 dims) {
     Sprite sprite = {.tx = tx, .dims = Vec2Scale(dims, MPP)};
+
+    // Calculate the dimensions of a texel. Texel size is dependant on the dimensions of the overall texture.
+    Vec2 texel_dims = Vec2Lit(1.0f / tx.width, 1.0f / tx.height);
+
     sprite.minuv = Vec2Lit(min.x / sprite.tx.width, min.y / sprite.tx.height);
+    // Inset the starting minuv by half a texel so that instead of sampling the left edge of the texel we will sample
+    // near the center of the texel. this seems to prevent texture bleeding as sampling near the boundary can cause the
+    // sampler to sample into the next adjacent texel rather than the one we want to sample.
+    sprite.minuv.x += 0.5f * texel_dims.x;
+    sprite.minuv.y += 0.5f * texel_dims.y;
+
     sprite.dimsuv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
-    breakpoint();
+    // Because we've inset the starting texel to sample near the first texel's center and that we want to sample nearer
+    // to texel centers in general, we decrease the uv dimensions by 1 full texel so we can sample from left texel
+    // center to right texel center for example.
+    sprite.dimsuv.x -= texel_dims.x;
+    sprite.dimsuv.y -= texel_dims.y;
     return sprite;
 }
 
@@ -1830,7 +1844,12 @@ static LShader GetDefaultShader() {
             FragColor = txColor * fColor;
 
             // Debug helpers
-            FragColor = vec4(fTextCoords.xy * txdims, 0.0, 1.0); // output what texture coords we sample as the frag color.
+
+            // output what texture coords we sample as the frag color.
+            // vec2 texelPos = fTextCoords.xy * txdims;
+            // vec2 nearestTexel = floor(texelPos + 0.5);
+            // FragColor = vec4(nearestTexel / txdims, 0.0, 1.0);
+            
             // FragColor = fColor; // Useful to debug texture sampling issues.
             // FragColor = txColor;
         }
