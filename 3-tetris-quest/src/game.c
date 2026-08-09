@@ -6204,7 +6204,7 @@ typedef struct {
     TileEffects* effects;
 } BlockGraphics;
 
-static void DrawBlock2(Vec3 pos, f32 scale, BlockGraphics* graphics) {
+static void DrawBlock(Vec3 pos, f32 scale, BlockGraphics* graphics) {
     Vec4 color = graphics->base_color;
     color.a = graphics->preview ? color.a * 0.3f : color.a;
 
@@ -6216,9 +6216,10 @@ static void DrawBlock2(Vec3 pos, f32 scale, BlockGraphics* graphics) {
     // DrawSprite(*GetSprite(SPRITE_BLOCK), pos, orient, scale);
     DrawSprite(*GetSprite(SPRITE_BLOCK_BG), pos, orient, scale);
     DrawSpriteEx(*GetSprite(SPRITE_BLOCK_FG), pos, Mat4Identity(), scale, color);
+
+    // debug
     // Sprite* bg_sprite = GetSprite(SPRITE_BLOCK_BG);
     // Sprite* fg_sprite = GetSprite(SPRITE_BLOCK_FG);
-    // breakpoint();
     // DrawQuad(pos, bg_sprite->dims.x * scale, bg_sprite->dims.y * scale, Mat4Identity(), LBLACK);
     // DrawQuad(pos, fg_sprite->dims.x * scale, fg_sprite->dims.y * scale, Mat4Identity(), color);
 }
@@ -6658,7 +6659,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
                                         Vec4 color = color_idx % 2 == 0 ? TILE1_COLOR : TILE2_COLOR;
                                         BlockGraphics bg_graphics = (BlockGraphics){.base_color = color};
-                                        DrawBlock2(pos, 1.0f, &bg_graphics);
+                                        DrawBlock(pos, 1.0f, &bg_graphics);
 
                                         if (tile->occupied) {
                                             f32 scale = 1.0f;
@@ -6667,7 +6668,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                             }
                                             BlockGraphics graphics = {.base_color = tile->effects.base_color,
                                                                       .effects = &tile->effects};
-                                            DrawBlock2(pos, 1.0f, &graphics);
+                                            DrawBlock(pos, 1.0f, &graphics);
                                         }
                                     }
 
@@ -6687,7 +6688,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                                     BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
                                                               .effects = &active_piece->effects};
-                                    DrawBlock2(pos, 1.0f, &graphics);
+                                    DrawBlock(pos, 1.0f, &graphics);
                                 }
 
                                 // Draw placement preview viz
@@ -6701,7 +6702,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
                                                               .preview = true,
                                                               .effects = &active_piece->effects};
-                                    DrawBlock2(pos, 1.0f, &graphics);
+                                    DrawBlock(pos, 1.0f, &graphics);
                                 }
                             }
 
@@ -6734,7 +6735,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         pos = Vec3Add(pos, quad_pos);
                                         BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
                                                                   .effects = &card->piece.effects};
-                                        DrawBlock2(pos, 0.5f, &graphics);
+                                        DrawBlock(pos, 0.5f, &graphics);
                                     }
                                 }
                             }
@@ -6762,7 +6763,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             f32 scale = f32lerp(0.5f, 1.5f, 0.5f * (f32sin(5.0f * gstate->timer - 0.5f * LPI) + 1.0f));
                             scale = 1.0f;
-                            DrawBlock2(POS, 0.5f, &graphics);
+                            DrawBlock(POS, 0.5f, &graphics);
                         }
 
                         if (false) {
@@ -6773,7 +6774,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Vec3 pos = Vec3Lit(offset.c * 34.0f, offset.r * 34.0f, 0.0f);
                                     BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
                                                               .effects = &card->piece.effects};
-                                    DrawBlock2(pos, 1.0f, &graphics);
+                                    DrawBlock(pos, 1.0f, &graphics);
                                 }
                             }
                         }
