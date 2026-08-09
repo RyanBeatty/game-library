@@ -6744,15 +6744,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             static Vec3 POS = {0};
 
                             Vec3 dir = {0};
-                            f32 step = 0.2f;
-                            step = 1.0f;
-                            if (PlatformKeyPressed(LKEY_LEFT)) {
+                            f32 step = 0.01f;
+                            // step = 1.0f;
+                            if (PlatformKeyDown(LKEY_LEFT)) {
                                 dir.x -= step;
-                            } else if (PlatformKeyPressed(LKEY_RIGHT)) {
+                            } else if (PlatformKeyDown(LKEY_RIGHT)) {
                                 dir.x += step;
-                            } else if (PlatformKeyPressed(LKEY_UP)) {
+                            } else if (PlatformKeyDown(LKEY_UP)) {
                                 dir.y += step;
-                            } else if (PlatformKeyPressed(LKEY_DOWN)) {
+                            } else if (PlatformKeyDown(LKEY_DOWN)) {
                                 dir.y -= step;
                             }
                             POS = Vec3Add(POS, dir);
@@ -6762,8 +6762,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             };
 
                             f32 scale = f32lerp(0.5f, 1.5f, 0.5f * (f32sin(5.0f * gstate->timer - 0.5f * LPI) + 1.0f));
-                            scale = 1.0f;
-                            DrawBlock(POS, 0.5f, &graphics);
+                            // scale = 1.0f;
+                            DrawBlock(POS, scale, &graphics);
                         }
 
                         if (false) {
