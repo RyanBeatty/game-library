@@ -136,21 +136,22 @@ typedef enum MID {
 
 typedef u32 TextureId;
 
-typedef struct {
-    TextureId id;
-    i32 width;
-    i32 height;
-
-    byte* data;
-} LTexture;
-
-TypedefArr(LTexture);
-
 typedef enum {
     FILTER_NONE = 0,
     FILTER_NEAREST = GL_NEAREST,
     FILTER_LINEAR = GL_LINEAR,
 } LTextureFilter;
+
+typedef struct {
+    TextureId id;
+    i32 width;
+    i32 height;
+
+    LTextureFilter filter;
+    byte* data;
+} LTexture;
+
+TypedefArr(LTexture);
 
 typedef struct {
     union {
@@ -187,6 +188,7 @@ LCORE LTexture TextureFromBuffer(byte* data, i32 width, i32 height, LTextureFilt
     LTexture tx = {0};
     tx.width = width;
     tx.height = height;
+    tx.filter = filter;
     tx.data = data;
     glGenTextures(1, &tx.id);
     glBindTexture(GL_TEXTURE_2D, tx.id);
@@ -307,18 +309,23 @@ LCORE Sprite SpriteFromMinDims(LTexture tx, Vec2 min, Vec2 dims) {
     Vec2 texel_dims = Vec2Lit(1.0f / tx.width, 1.0f / tx.height);
 
     sprite.minuv = Vec2Lit(min.x / sprite.tx.width, min.y / sprite.tx.height);
-    // Inset the starting minuv by half a texel so that instead of sampling the left edge of the texel we will sample
-    // near the center of the texel. this seems to prevent texture bleeding as sampling near the boundary can cause the
-    // sampler to sample into the next adjacent texel rather than the one we want to sample.
-    sprite.minuv.x += 0.5f * texel_dims.x;
-    sprite.minuv.y += 0.5f * texel_dims.y;
-
     sprite.dimsuv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
-    // Because we've inset the starting texel to sample near the first texel's center and that we want to sample nearer
-    // to texel centers in general, we decrease the uv dimensions by 1 full texel so we can sample from left texel
-    // center to right texel center for example.
-    sprite.dimsuv.x -= texel_dims.x;
-    sprite.dimsuv.y -= texel_dims.y;
+
+    // For now I think we only really want to do this when we are nearest filtering. for linear filtering, we might just
+    // want to stick with sampling at the edges.
+    if (tx.filter == FILTER_NEAREST) {
+        // Inset the starting minuv by half a texel so that instead of sampling the left edge of the texel we will
+        // sample near the center of the texel. this seems to prevent texture bleeding as sampling near the boundary can
+        // cause the sampler to sample into the next adjacent texel rather than the one we want to sample.
+        sprite.minuv.x += 0.5f * texel_dims.x;
+        sprite.minuv.y += 0.5f * texel_dims.y;
+
+        // Because we've inset the starting texel to sample near the first texel's center and that we want to sample
+        // nearer to texel centers in general, we decrease the uv dimensions by 1 full texel so we can sample from left
+        // texel center to right texel center for example.
+        sprite.dimsuv.x -= texel_dims.x;
+        sprite.dimsuv.y -= texel_dims.y;
+    }
     return sprite;
 }
 
