@@ -304,6 +304,7 @@ LCORE Sprite SpriteFromMinDims(LTexture tx, Vec2 min, Vec2 dims) {
     Sprite sprite = {.tx = tx, .dims = Vec2Scale(dims, MPP)};
     sprite.minuv = Vec2Lit(min.x / sprite.tx.width, min.y / sprite.tx.height);
     sprite.dimsuv = Vec2Lit(dims.x / sprite.tx.width, dims.y / sprite.tx.height);
+    breakpoint();
     return sprite;
 }
 
@@ -394,6 +395,8 @@ typedef struct {
 static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     Vec2 top_left = AsepriteToEngineImage(tx, rect.top_left);
     Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - rect.dims.y);
+    Vec2 top_right = Vec2Add(bottom_left, rect.dims);
+    // Sprite sprite = SpriteFromMinMax(tx, bottom_left, top_right);
     Sprite sprite = SpriteFromMinDims(tx, bottom_left, rect.dims);
 
     // Remember that pivot_offset is a direction defined with respect to the aseprite coordinate system min, so we can
@@ -1802,16 +1805,16 @@ static LShader GetDefaultShader() {
 
         out vec4 FragColor;
 
-        // vec2 iq_uv(vec2 uv, ivec2 txdims) {
-        //     vec2 px = uv * txdims;
-        //     vec2 seam = floor(px + 0.5);
-        //     vec2 dudv = fwidth(px);
-        //     px = seam + clamp((px - seam) / dudv, -0.5, 0.5);
-        //     return px / txdims;
-        // }
+        vec2 iq_uv(vec2 uv, ivec2 txdims) {
+            vec2 px = uv * txdims;
+            vec2 seam = floor(px + 0.5);
+            vec2 dudv = fwidth(px);
+            px = seam + clamp((px - seam) / dudv, -0.5, 0.5);
+            return px / txdims;
+        }
 
         void main() {
-            // ivec2 txdims = ivec2(Texture0Resolution.xy);
+            ivec2 txdims = ivec2(Texture0Resolution.xy);
             // vec2 uv3 = iq_uv(fTextCoords, txdims);
             // vec4 txColor = texture(texture0, uv3);
             vec4 txColor = texture(texture0, fTextCoords);
@@ -1819,12 +1822,16 @@ static LShader GetDefaultShader() {
 
             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
             // parts. We want to discard those transparent parts else those values will get written to the depth buffer.
-            if (txColor.a < 0.01) {
-                discard;
-            }
+            // if (txColor.a < 0.01) {
+            //     discard;
+            // }
             // For blending to work here properly, its important that either texture is specified or texture
             // is default (all black) and a uniform color is specified. also 2d needs to be drawn after 3d.
             FragColor = txColor * fColor;
+
+            // Debug helpers
+            FragColor = vec4(fTextCoords.xy * txdims, 0.0, 1.0); // output what texture coords we sample as the frag color.
+            // FragColor = fColor; // Useful to debug texture sampling issues.
             // FragColor = txColor;
         }
     );
@@ -6171,46 +6178,23 @@ typedef struct {
     TileEffects* effects;
 } BlockGraphics;
 
-static void DrawBlock(Vec3 pos, Vec2 dims, BlockGraphics* graphics) {
-    Vec4 color = graphics->base_color;
-    color.a = graphics->preview ? color.a * 0.3f : color.a;
-    LTexture* effects_tx = NULL;
-    if (graphics->effects) {
-        TileEffectTypeIter(graphics->effects->flags, effect_type) {
-            if (((graphics->effects->flags) & effect_type)) {
-                switch (effect_type) {
-                    case TE_HI_LO: {
-                        effects_tx = GetTexturePtr(TX_ALL);
-                        break;
-                    }
-                    default: {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    DrawQuad(pos, dims.x, dims.y, Mat4Identity(), color);
-    if (effects_tx) {
-        f32 rot_rad = Deg2Rad(90.0f) * graphics->effects->rot;
-        Mat4 rot = Mat4RotateZ(rot_rad);
-        DrawQuadEx(pos, dims.x, dims.y, rot, LCLEAR, effects_tx);
-    }
-}
-
 static void DrawBlock2(Vec3 pos, f32 scale, BlockGraphics* graphics) {
     Vec4 color = graphics->base_color;
     color.a = graphics->preview ? color.a * 0.3f : color.a;
 
+    // pos.x = f32round(pos.x);
+    // pos.y = f32round(pos.y);
+    // pos.z = f32round(pos.z);
+
     Mat4 orient = Mat4Identity();
     // DrawSprite(*GetSprite(SPRITE_BLOCK), pos, orient, scale);
-    // DrawSprite(*GetSprite(SPRITE_BLOCK_BG), pos, orient, scale);
-    // DrawSpriteEx(*GetSprite(SPRITE_BLOCK_FG), pos, Mat4Identity(), scale, color);
-    Sprite* bg_sprite = GetSprite(SPRITE_BLOCK_BG);
-    Sprite* fg_sprite = GetSprite(SPRITE_BLOCK_FG);
-    DrawQuad(pos, bg_sprite->dims.x * scale, bg_sprite->dims.y * scale, Mat4Identity(), LBLACK);
-    DrawQuad(pos, fg_sprite->dims.x * scale, fg_sprite->dims.y * scale, Mat4Identity(), color);
+    DrawSprite(*GetSprite(SPRITE_BLOCK_BG), pos, orient, scale);
+    DrawSpriteEx(*GetSprite(SPRITE_BLOCK_FG), pos, Mat4Identity(), scale, color);
+    // Sprite* bg_sprite = GetSprite(SPRITE_BLOCK_BG);
+    // Sprite* fg_sprite = GetSprite(SPRITE_BLOCK_FG);
+    // breakpoint();
+    // DrawQuad(pos, bg_sprite->dims.x * scale, bg_sprite->dims.y * scale, Mat4Identity(), LBLACK);
+    // DrawQuad(pos, fg_sprite->dims.x * scale, fg_sprite->dims.y * scale, Mat4Identity(), color);
 }
 
 static void GamePhaseChange(GameState* gstate) {
@@ -6728,11 +6712,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     }
                                 }
                             }
-                        } else {
+                        }
+                        if (true) {
                             static Vec3 POS = {0};
 
                             Vec3 dir = {0};
                             f32 step = 0.2f;
+                            step = 1.0f;
                             if (PlatformKeyPressed(LKEY_LEFT)) {
                                 dir.x -= step;
                             } else if (PlatformKeyPressed(LKEY_RIGHT)) {
@@ -6749,7 +6735,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             };
 
                             f32 scale = f32lerp(0.5f, 1.5f, 0.5f * (f32sin(5.0f * gstate->timer - 0.5f * LPI) + 1.0f));
-                            DrawBlock2(POS, scale, &graphics);
+                            scale = 1.0f;
+                            DrawBlock2(POS, 0.5f, &graphics);
                         }
 
                         if (false) {
