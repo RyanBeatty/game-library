@@ -6740,7 +6740,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
                         }
-                        if (true) {
+                        if (false) {
                             static Vec3 POS = {0};
 
                             Vec3 dir = {0};
