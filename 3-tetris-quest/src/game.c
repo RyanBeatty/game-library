@@ -6959,6 +6959,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 EndShaderPass();
             }
 
+            {
+                RenderPassLoadAction load_action = {
+                    .clear_color_flag = false,
+                    .depth_test = true,
+                };
+                Mat4 view = CameraGetViewMat(gstate->camera);
+                Mat4 proj = gstate->high_res_proj;
+                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
+                DrawQuad2D(battle->play_button2.pos_live, 10, 10, Mat4Identity(), LGREEN);
+                EndShaderPass();
+            }
+
             // UI.
             {
                 UIState ui = {0};
