@@ -5335,6 +5335,7 @@ typedef struct {
     BattleDisplay display;
 
     UIVisualState play_button;
+    UIVisualState play_button2;
     UIVisualState score_window;
 } Battle;
 
@@ -5503,6 +5504,15 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         play_button->pos_start = play_button->pos_end;
         play_button->pos_start.y -= 200.0f;
         play_button->pos_live = play_button->pos_start;
+    }
+
+    {
+        UIVisualState* play_button2 = &battle->play_button2;
+
+        Vec2 pos = Vec3ToVec2(AsepriteToEngineWorld(render_dims_px, AsepritePxBL(Vec2Lit(508, 261)), 0.0f));
+        Vec2 dims = Vec2Lit(Px2Meter(100.0f), Px2Meter(59.0f));
+        pos = Vec2Add(pos, Vec2Scale(dims, 0.5f));
+        play_button2->pos_live = pos;
     }
 
     {
@@ -6870,10 +6880,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         // Draw play hand
                         {
-                            Vec3 pos = AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508, 261)), 0);
                             Vec3 dims = Vec3Lit(Px2Meter(100.0f), Px2Meter(59.0f), 0.0f);
-                            pos = Vec3Add(pos, Vec3Scale(dims, 0.5f));
-                            DrawQuad(pos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                            DrawQuad(Vec2ToVec3(battle->play_button2.pos_live), dims.x, dims.y, Mat4Identity(), LBLUE);
                         }
 
                         break;
