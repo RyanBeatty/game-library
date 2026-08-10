@@ -6868,6 +6868,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             DrawQuad(POS, Px2Meter(100) * SCALE, Px2Meter(100) * SCALE, Mat4Identity(), LRED);
                         }
 
+                        // Draw play hand
+                        {
+                            Vec3 pos = AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508, 261)), 0);
+                            Vec3 dims = Vec3Lit(Px2Meter(100.0f), Px2Meter(59.0f), 0.0f);
+                            pos = Vec3Add(pos, Vec3Scale(dims, 0.5f));
+                            DrawQuad(pos, dims.x, dims.y, Mat4Identity(), LBLUE);
+                        }
+
                         break;
                     }
                     // Draw shop
