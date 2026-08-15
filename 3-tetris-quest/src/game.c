@@ -4110,7 +4110,8 @@ typedef struct {
 // S:UI2
 
 typedef struct {
-    AABB2D rect;
+    Vec2 pos;
+    Vec2 dims;  // Full width and height
 
     Str8 text;
     TextBox textbox;  // Not positioned. i.e. the center here holds no meaning other than an offset.
@@ -7071,15 +7072,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIBoxVisuals* visuals = &_visuals;
 
                     UIBox box = {
-                        .rect = AABB2DFromWidthHeight(visuals->pos, visuals->dims),
+                        .pos = visuals->pos,
+                        .dims = visuals->dims,
                         .text = text,
                     };
                     box.textbox = LFontMeasureStr8Quad(visuals->font, box.text);
 
-                    DrawQuad2D(box.rect.c, box.rect.r.x * 2.0f, box.rect.r.y * 2.0f, Mat4Identity(), LWHITE);
+                    DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), LWHITE);
 
                     if (box.text.len) {
-                        Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.rect.c);
+                        Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
                         DrawStr8Ex(visuals->font, text_pos, LBLACK, box.text);
                     }
                 }
