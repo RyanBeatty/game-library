@@ -4122,13 +4122,11 @@ typedef struct {
     f32 fontsize;
 
     struct UIBox* hash_next;
-    struct UIBox* hash_prev;
 } UIBox;
 
 TypedefArr(UIBox);
 
 typedef UIBox* UIBoxPtr;
-TypedefArr(UIBoxPtr);
 
 typedef struct {
     Vec2 pos;
@@ -4147,8 +4145,14 @@ typedef struct {
 } UIBoxAction;
 
 typedef struct {
+    UIBox* first;
+} UIBoxHashSlot;
+
+TypedefArr(UIBoxHashSlot);
+
+typedef struct {
     UIBoxArr boxes;
-    UIBoxPtrArr buckets;
+    UIBoxHashSlotArr slots;
 } UIState;
 
 UIState UI_STATE;
@@ -4157,12 +4161,13 @@ UIState UI_STATE;
 static void UIStateInit(Arena* perm) {
     static UIState UI_STATE_ZERO = {0};
 
-    UIState* gbs = GetUIState();
-    *gbs = UI_STATE_ZERO;
+    UIState* ui = GetUIState();
+    *ui = UI_STATE_ZERO;
 
     isize cap = 10;
-    InitArr(&gbs->boxes, perm, UIBox, cap);
-    InitArr(&gbs->buckets, perm, UIBoxPtr, cap);
+    InitArr(&ui->boxes, perm, UIBox, cap);
+    InitArr(&ui->slots, perm, UIBoxHashSlot, cap);
+    ui->slots.len = ui->slots.cap;
 }
 
 static u64 Str8HashU64(Str8 str) {
@@ -4174,6 +4179,28 @@ static u64 Str8HashU64(Str8 str) {
         h *= 1111111111111111111;
     }
     return h;
+}
+
+static UIBox* MakeUIBox(Str8 key) {
+    UIState* ui = GetUIState();
+
+    u64 hash = Str8HashU64(key);
+    isize idx = hash % ArrCap(&ui->slots);
+    UIBoxHashSlot* slot = ArrGetPtr(&ui->slots, idx);
+
+    breakpoint();
+    for (UIBox* cur = slot->first; cur != NULL; cur = cur->hash_next) {
+        if (Str8Eq(key, cur->text)) {
+            return cur;
+        }
+    }
+
+    // Need to make a new box as we have no existing in hash table.
+    UIBox* box = ArrReserve(&ui->boxes);
+    box->text = key;
+    box->hash_next = slot->first;
+    slot->first = box;
+    return box;
 }
 
 static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
@@ -7089,15 +7116,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIBoxAction res = {0};
                     {
                         UIBoxVisuals* visuals = &VISUALS;
-
                         LFont font = GetLFontClosest(visuals->fontsize);
-                        UIBox box = {
-                            .pos = visuals->pos,
-                            .dims = visuals->dims,
-                            .text = text,
-                            .textbox = LFontMeasureStr8Quad(font, text),
-                            .fontsize = visuals->fontsize,
-                        };
+
+                        UIBox* boxx = MakeUIBox(text);
+                        boxx->pos = visuals->pos;
+                        boxx->dims = visuals->dims;
+                        boxx->textbox = LFontMeasureStr8Quad(font, boxx->text);
+                        boxx->fontsize = visuals->fontsize;
+
+                        UIBox box = *boxx;
 
                         GameControllerState* controller = GetController(input, 0);
                         // TODO: At some point we might want to do collision in local space of aabb.
@@ -7496,6 +7523,8 @@ void GameInit() {
                                               half_render_dims.y, -100.0f, 100.0f);
         }
     }
+
+    UIStateInit(&gstate->perm);
 }
 
 void GameTick(f32 dt, GameInput* input) {
