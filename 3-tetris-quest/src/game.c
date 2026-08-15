@@ -7078,11 +7078,33 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     };
                     box.textbox = LFontMeasureStr8Quad(visuals->font, box.text);
 
-                    DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), LWHITE);
+                    GameControllerState* controller = GetController(input, 0);
+                    AABB2D aabb = AABB2DFromWidthHeight(Vec2Zero(), box.dims);
+                    Vec2 normal = {0};
+                    f32 depth = 0.0f;
+                    // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we switch
+                    // to rendering ui in screen space, then this will need to change
+                    bool collides =
+                        TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), aabb, &normal, &depth);
 
-                    if (box.text.len) {
-                        Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
-                        DrawStr8Ex(visuals->font, text_pos, LBLACK, box.text);
+                    UIBoxAction action = {0};
+                    if (collides) {
+                        action.hover = true;
+                        action.active = true;
+                    }
+
+                    if (action.hover) {
+                        PlatformLog(LLOG_INFO, "hover");
+                    }
+
+                    // Draw
+                    {
+                        DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), LWHITE);
+
+                        if (box.text.len) {
+                            Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
+                            DrawStr8Ex(visuals->font, text_pos, LBLACK, box.text);
+                        }
                     }
                 }
                 EndShaderPass();
