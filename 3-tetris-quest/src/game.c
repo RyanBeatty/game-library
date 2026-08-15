@@ -7072,16 +7072,24 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
 
                 {
+                    static UIBoxVisuals VISUALS = {0};
+                    static bool VISUALS_INIT = false;
+
+                    if (!VISUALS_INIT) {
+                        VISUALS_INIT = true;
+
+                        VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
+                    }
+
                     Str8 text = Str8Lit("Play Hand");
-                    UIBoxVisuals _visuals = {
-                        .pos = battle->play_button2.pos_live,
-                        .dims = Vec2Lit(100, 100),
-                        .fontsize = 16.0f,
-                    };
-                    UIBoxVisuals* visuals = &_visuals;
+                    VISUALS.pos = battle->play_button2.pos_live;
+                    VISUALS.dims = Vec2Lit(100, 100);
+                    VISUALS.fontsize = 16.0f;
 
                     UIBoxAction res = {0};
                     {
+                        UIBoxVisuals* visuals = &VISUALS;
+
                         LFont font = GetLFontClosest(visuals->fontsize);
                         UIBox box = {
                             .pos = visuals->pos,
@@ -7113,7 +7121,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
                             Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
                             DrawSpritePro(*sprite, box.pos, box.dims, 0.0f, tint);
-                            // DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), tint);
 
                             if (box.text.len) {
                                 Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
@@ -7122,6 +7129,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         res = action;
+                    }
+
+                    if (res.hover) {
+                        VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+                    } else {
+                        VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
                     }
 
                     if (res.pressed) {
