@@ -4114,6 +4114,23 @@ typedef struct {
 // S:UI2
 
 typedef struct {
+    Str8 key;
+} UIBoxKey;
+
+static u64 Str8HashU64(Str8 str) {
+    u64 h = 0x100;
+    for (isize i = 0; i < str.len; ++i) {
+        // Deals with potential signed char issues.
+        h ^= str.data[i] & 255;
+        // Multiply by a large prime to scatter us across the u64 space.
+        h *= 1111111111111111111;
+    }
+    return h;
+}
+
+static u64 UIBoxKeyHash(UIBoxKey key) { return Str8HashU64(key.key); }
+
+typedef struct {
     Vec2 pos;
     Vec2 dims;  // Full width and height
 
@@ -4153,10 +4170,14 @@ TypedefArr(UIBoxHashSlot);
 typedef struct {
     UIBoxArr boxes;
     UIBoxHashSlotArr slots;
+
+    // hovered.
+    UIBoxKey hot_key;
 } UIState;
 
 UIState UI_STATE;
 #define GetUIState() (&UI_STATE)
+#define UIGetHot() (GetUIState()->hot)
 
 static void UIStateInit(Arena* perm) {
     static UIState UI_STATE_ZERO = {0};
@@ -4170,15 +4191,18 @@ static void UIStateInit(Arena* perm) {
     ui->slots.len = ui->slots.cap;
 }
 
-static u64 Str8HashU64(Str8 str) {
-    u64 h = 0x100;
-    for (isize i = 0; i < str.len; ++i) {
-        // Deals with potential signed char issues.
-        h ^= str.data[i] & 255;
-        // Multiply by a large prime to scatter us across the u64 space.
-        h *= 1111111111111111111;
-    }
-    return h;
+static void UIBegin() {}
+
+static void UIEnd() {
+    UIState* ui = GetUIState();
+
+    ui->hot = ui->hot_to_be;
+    ui->hot_to_be = NULL;
+}
+
+static void UISetHotToBe(UIBox* box) {
+    UIState* ui = GetUIState();
+    ui->hot_to_be = box;
 }
 
 static UIBox* MakeUIBox(Str8 key) {
@@ -4188,7 +4212,7 @@ static UIBox* MakeUIBox(Str8 key) {
     isize idx = hash % ArrCap(&ui->slots);
     UIBoxHashSlot* slot = ArrGetPtr(&ui->slots, idx);
 
-    breakpoint();
+    // Linear probe to check if we have in ht.
     for (UIBox* cur = slot->first; cur != NULL; cur = cur->hash_next) {
         if (Str8Eq(key, cur->text)) {
             return cur;
@@ -7097,6 +7121,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Mat4 view = Mat4Identity();
                 Mat4 proj = gstate->high_res_proj;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
+                UIBegin();
 
                 {
                     static UIBoxVisuals VISUALS = {0};
@@ -7168,6 +7193,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
                     }
                 }
+                UIEnd();
                 EndShaderPass();
             }
 
