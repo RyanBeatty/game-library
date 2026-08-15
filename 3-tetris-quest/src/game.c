@@ -4135,6 +4135,7 @@ typedef struct {
 typedef struct {
     bool hover;
     bool active;
+    bool pressed;
 } UIBoxAction;
 
 typedef struct {
@@ -7079,7 +7080,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     box.textbox = LFontMeasureStr8Quad(visuals->font, box.text);
 
                     GameControllerState* controller = GetController(input, 0);
-                    AABB2D aabb = AABB2DFromWidthHeight(Vec2Zero(), box.dims);
+                    // TODO: At some point we might want to do collision in local space of aabb.
+                    AABB2D aabb = AABB2DFromWidthHeight(box.pos, box.dims);
                     Vec2 normal = {0};
                     f32 depth = 0.0f;
                     // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we switch
@@ -7091,10 +7093,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     if (collides) {
                         action.hover = true;
                         action.active = true;
-                    }
-
-                    if (action.hover) {
-                        PlatformLog(LLOG_INFO, "hover");
+                        action.pressed = controller->action_left.pressed;
                     }
 
                     // Draw
