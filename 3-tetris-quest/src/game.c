@@ -4115,6 +4115,7 @@ typedef struct {
 
     Str8 text;
     TextBox textbox;  // Not positioned. i.e. the center here holds no meaning other than an offset.
+    f32 fontsize;
 
     struct UIBox* hash_next;
     struct UIBox* hash_prev;
@@ -4129,7 +4130,7 @@ typedef struct {
     Vec2 pos;
     Vec2 dims;
 
-    LFont font;
+    f32 fontsize;
 } UIBoxVisuals;
 
 typedef struct {
@@ -7068,42 +7069,53 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     UIBoxVisuals _visuals = {
                         .pos = battle->play_button2.pos_live,
                         .dims = Vec2Lit(100, 100),
-                        .font = GetLFontClosest(16.0f),
+                        .fontsize = 16.0f,
                     };
                     UIBoxVisuals* visuals = &_visuals;
 
-                    UIBox box = {
-                        .pos = visuals->pos,
-                        .dims = visuals->dims,
-                        .text = text,
-                    };
-                    box.textbox = LFontMeasureStr8Quad(visuals->font, box.text);
+                    UIBoxAction res = {0};
+                    {
+                        LFont font = GetLFontClosest(visuals->fontsize);
+                        UIBox box = {
+                            .pos = visuals->pos,
+                            .dims = visuals->dims,
+                            .text = text,
+                            .textbox = LFontMeasureStr8Quad(font, text),
+                            .fontsize = visuals->fontsize,
+                        };
 
-                    GameControllerState* controller = GetController(input, 0);
-                    // TODO: At some point we might want to do collision in local space of aabb.
-                    AABB2D aabb = AABB2DFromWidthHeight(box.pos, box.dims);
-                    Vec2 normal = {0};
-                    f32 depth = 0.0f;
-                    // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we switch
-                    // to rendering ui in screen space, then this will need to change
-                    bool collides =
-                        TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), aabb, &normal, &depth);
+                        GameControllerState* controller = GetController(input, 0);
+                        // TODO: At some point we might want to do collision in local space of aabb.
+                        AABB2D aabb = AABB2DFromWidthHeight(box.pos, box.dims);
+                        Vec2 normal = {0};
+                        f32 depth = 0.0f;
+                        // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we
+                        // switch to rendering ui in screen space, then this will need to change
+                        bool collides =
+                            TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), aabb, &normal, &depth);
 
-                    UIBoxAction action = {0};
-                    if (collides) {
-                        action.hover = true;
-                        action.active = true;
-                        action.pressed = controller->action_left.pressed;
+                        UIBoxAction action = {0};
+                        if (collides) {
+                            action.hover = true;
+                            action.active = true;
+                            action.pressed = controller->action_left.pressed;
+                        }
+
+                        // Draw
+                        {
+                            DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), LWHITE);
+
+                            if (box.text.len) {
+                                Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
+                                DrawStr8Ex(font, text_pos, LBLACK, box.text);
+                            }
+                        }
+
+                        res = action;
                     }
 
-                    // Draw
-                    {
-                        DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), LWHITE);
-
-                        if (box.text.len) {
-                            Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
-                            DrawStr8Ex(visuals->font, text_pos, LBLACK, box.text);
-                        }
+                    if (res.pressed) {
+                        PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
                     }
                 }
                 EndShaderPass();
