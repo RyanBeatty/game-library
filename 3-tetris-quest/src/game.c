@@ -2621,6 +2621,10 @@ LCORE void DrawLTexture(LTexture tx, Vec2 pos, f32 scale) {
                     Vec2Lit(tx.width * scale, tx.height * scale), 0.0f, LCLEAR);
 }
 
+LCORE DrawCmd* DrawSpritePro(Sprite sprite, Vec2 dest_pos, Vec2 dest_dims, f32 rotation, Vec4 color) {
+    return DrawLTextureProUV(sprite.tx, sprite.minuv, sprite.dimsuv, dest_pos, dest_dims, rotation, color);
+}
+
 // I assume this will mostly be used for prototyping and debugging since entities will have dynamic positions.
 LCORE DrawCmd* DrawSpriteEx(Sprite sprite, Vec3 pos, Mat4 orient, f32 scale, Vec4 tint) {
     // By default scale of 1 will mean draw the sprite with same width/height
@@ -4131,6 +4135,9 @@ typedef struct {
     Vec2 dims;
 
     f32 fontsize;
+
+    Sprite* sprite;
+    Vec4 tint;
 } UIBoxVisuals;
 
 typedef struct {
@@ -7103,7 +7110,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         // Draw
                         {
-                            DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), LWHITE);
+                            Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
+                            Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
+                            DrawSpritePro(*sprite, box.pos, box.dims, 0.0f, tint);
+                            // DrawQuad2D(box.pos, box.dims.x, box.dims.y, Mat4Identity(), tint);
 
                             if (box.text.len) {
                                 Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
