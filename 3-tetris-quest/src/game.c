@@ -411,11 +411,12 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return sprite;
 }
 
-#define SPRITE_LIST                                                                        \
-    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))     \
-    SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36))) \
-    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32))) \
-    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248)))
+#define SPRITE_LIST                                                                         \
+    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))      \
+    SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36)))  \
+    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32)))  \
+    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248))) \
+    SPRITEX(BUTTON_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(11, 312)), Vec2Lit(64, 64)))
 
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
@@ -6230,6 +6231,7 @@ typedef struct GameState {
 
     // TODO: Move this to RenderState and move a reference to RSTATE here. Or just get rid of this and have a
     // GetScreen/RenderWidth() function that reads RSTATE.
+    // TODO: Rethink the naming for some of this stuff, way too confusing when you have multiple projections
     u32 renderw;
     u32 renderh;
     Vec2 render_dims;
@@ -7157,8 +7159,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
                         }
 
-                        VISUALS.pos = battle->play_button2.pos_live;
-                        VISUALS.dims = Vec2Lit(100, 100);
+                        VISUALS.pos = Vec3ToVec2(
+                            AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
+                        VISUALS.dims = Vec2Lit(100, 59);
                         VISUALS.fontsize = 16.0f;
 
                         UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
@@ -7523,8 +7526,6 @@ void GameInit() {
         }
 
         {
-            // Reminder that using the _world variables here ensures we convert from world units back to pixel units
-            // correctly.
             Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh);
             gstate->high_res_proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
                                               half_render_dims.y, -100.0f, 100.0f);
