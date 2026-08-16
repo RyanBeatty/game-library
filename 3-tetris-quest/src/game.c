@@ -4222,7 +4222,7 @@ static void UIEnd() {
     ui->active_key = UIBOXKEY_NULL;
 }
 
-#define DoUI() Scoped(UIBegin(), UIEnd())
+#define DoUI(input) Scoped(UIBegin((input)), UIEnd())
 
 static void UISetHotToBe(UIBox* box) {
     UIState* ui = GetUIState();
@@ -7184,7 +7184,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Mat4 view = Mat4Identity();
                 Mat4 proj = gstate->high_res_proj;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
-                DoUI() {
+                DoUI(input) {
                     {
                         static UIBoxVisuals VISUALS = {0};
                         static bool VISUALS_INIT = false;
@@ -7195,73 +7195,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
                         }
 
-                        Str8 text = Str8Lit("Play Hand");
                         VISUALS.pos = battle->play_button2.pos_live;
                         VISUALS.dims = Vec2Lit(100, 100);
                         VISUALS.fontsize = 16.0f;
 
-                        UIBoxAction res = {0};
-                        {
-                            UIBoxVisuals* visuals = &VISUALS;
-                            LFont font = GetLFontClosest(visuals->fontsize);
-
-                            UIBox* box = MakeUIBox(text);
-                            box->pos = visuals->pos;
-                            box->dims = visuals->dims;
-                            box->textbox = LFontMeasureStr8Quad(font, box->text);
-                            box->fontsize = visuals->fontsize;
-
-                            GameControllerState* controller = GetController(input, 0);
-                            // TODO: At some point we might want to do collision in local space of aabb.
-                            AABB2D aabb = AABB2DFromWidthHeight(box->pos, box->dims);
-                            Vec2 normal = {0};
-                            f32 depth = 0.0f;
-                            // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we
-                            // switch to rendering ui in screen space, then this will need to change
-                            bool collides =
-                                TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), aabb, &normal, &depth);
-
-                            UIBoxAction action = {0};
-                            if (collides) {
-                                UISetHotToBe(box);
-                                if (UIBoxIsHot(box)) {
-                                    action.hot = true;
-                                    action.first_hot = !UIBoxWasHot(box);
-                                    if (controller->action_left.pressed) {
-                                        action.active = true;
-                                        UISetActive(box);
-                                    }
-                                }
-                            }
-
-                            // Draw
-                            {
-                                Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
-                                Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
-                                DrawSpritePro(*sprite, box->pos, box->dims, 0.0f, tint);
-
-                                if (box->text.len) {
-                                    Vec2 text_pos = TextBoxGetDrawPos(box->textbox, box->pos);
-                                    DrawStr8Ex(font, text_pos, LBLACK, box->text);
-                                }
-                            }
-
-                            res = action;
-                        }
-
-                        if (res.hot) {
+                        UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
+                        if (action.hot) {
                             VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-                        } else {
-                            VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
-                        }
-                        if (res.hot) {
-                            if (res.first_hot) {
+                            if (action.first_hot) {
                                 PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
                             }
-
-                            if (res.active) {
+                            if (action.active) {
                                 PlatformPlaySound(GetSound(SOUND_BEEP), 0);
                             }
+                        } else {
+                            VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
                         }
                     }
                 }
