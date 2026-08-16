@@ -3499,42 +3499,6 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
     return baseline_pos;
 }
 
-LCORE void DrawLTextExF(LFont font, Vec2 pos, Vec4 color, const char* format, ...) {
-    char buffer[1024];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    DrawLTextEx(font, buffer, strlen(buffer), pos, color);
-}
-
-// // This will return the dimensions of the quad that would be necessary to span the entire text (i.e. if somehow
-// // the text was baked into a texture, what quad dims would be needed to draw the texture).
-// LCORE Vec2 LFontMeasureText(LFont font, char* text, i32 len) {
-//     Vec2 br = Vec2Lit(FLT_MIN, FLT_MIN);
-//     Vec2 tl = Vec2Lit(FLT_MAX, FLT_MAX);
-
-//     Vec2 baseline_pos = Vec2Zero();
-
-//     for (i32 i = 0; i < len; ++i) {
-//         stbtt_aligned_quad quad = {0};
-//         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-//         stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
-//                            &quad, true);
-
-//         tl.x = f32min(tl.x, quad.x0);
-//         tl.y = f32min(tl.y, quad.y0);
-
-//         br.x = f32max(br.x, quad.x1);
-//         br.y = f32max(br.y, quad.y1);
-//     }
-
-//     Vec2 dims = Vec2Sub(br, tl);
-//     return dims;
-// }
-
 typedef struct {
     AABB2D aabb;  // bl at origin. quad to use for drawing the text.
     // This gives the vector going from center of the aabb to baseline pos. So if you add to center, you get baseline
