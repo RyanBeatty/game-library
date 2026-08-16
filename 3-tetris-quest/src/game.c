@@ -6687,24 +6687,27 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
-                        Vec2 root_bl_pos = AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
+                        Vec2 parent_bl_pos =
+                            AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
                         {
-                            Vec2 bl_pos = Vec2Add(root_bl_pos, Vec2Zero());
+                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Zero());
                             UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(109, 351)),
                                                     .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
                             UIBoxAction action = DoUIBox(Str8Lit("##Score Panel BG"), &visuals);
                         }
 
                         {
-                            Vec2 bl_pos = Vec2Add(root_bl_pos, Vec2Lit(2, 223));
+                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(2, 223));
                             UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(105, 71)),
                                                     .sprite = GetSprite(SPRITE_SCORE_BG)};
                             UIBoxAction action = DoUIBox(Str8Lit("##Score BG"), &visuals);
+
+                            parent_bl_pos = bl_pos;
                         }
 
                         {
-                            UIBoxVisuals visuals = {.rect = RectFromAsepriteBLAndDims(Vec2Lit(8, 111), Vec2Lit(43, 32),
-                                                                                      gstate->render_dims),
+                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(1, 20));
+                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(43, 32)),
                                                     .sprite = GetSprite(SPRITE_DEFAULT),
                                                     .tint = RGBLit(252, 155, 211),
                                                     .text_tint = RGBLit(212, 250, 255),
