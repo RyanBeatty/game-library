@@ -7069,11 +7069,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             DrawQuad(POS, Px2Meter(100) * SCALE, Px2Meter(100) * SCALE, Mat4Identity(), LRED);
                         }
 
-                        // Draw play hand
-                        {
-                            Vec3 dims = Vec3Lit(Px2Meter(100.0f), Px2Meter(59.0f), 0.0f);
-                            DrawQuad(Vec2ToVec3(battle->play_button2.pos_live), dims.x, dims.y, Mat4Identity(), LBLUE);
-                        }
+                        // // Draw play hand
+                        // {
+                        //     Vec3 dims = Vec3Lit(Px2Meter(100.0f), Px2Meter(59.0f), 0.0f);
+                        //     DrawQuad(Vec2ToVec3(battle->play_button2.pos_live), dims.x, dims.y, Mat4Identity(),
+                        //     LBLUE);
+                        // }
 
                         break;
                     }
