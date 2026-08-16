@@ -4117,6 +4117,8 @@ typedef struct {
     Str8 key;
 } UIBoxKey;
 
+static UIBoxKey UIBOXKEY_NULL = {0};
+
 static bool UIBoxKeyEq(UIBoxKey a, UIBoxKey b) { return Str8Eq(a.key, b.key); }
 
 static u64 Str8HashU64(Str8 str) {
@@ -4159,9 +4161,9 @@ typedef struct {
 } UIBoxVisuals;
 
 typedef struct {
-    bool hover;
+    bool first_hot;  // true on the first frame we were hot.
+    bool hot;
     bool active;
-    bool pressed;
 } UIBoxAction;
 
 typedef struct {
@@ -4176,6 +4178,9 @@ typedef struct {
 
     // hovered.
     UIBoxKey hot_key;
+    UIBoxKey hot_key_to_be;
+    UIBoxKey hot_key_prev;
+    UIBoxKey active_key;
 } UIState;
 
 UIState UI_STATE;
@@ -4192,6 +4197,11 @@ static void UIStateInit(Arena* perm) {
     InitArr(&ui->boxes, perm, UIBox, cap);
     InitArr(&ui->slots, perm, UIBoxHashSlot, cap);
     ui->slots.len = ui->slots.cap;
+
+    ui->hot_key = UIBOXKEY_NULL;
+    ui->hot_key_to_be = UIBOXKEY_NULL;
+    ui->hot_key_prev = UIBOXKEY_NULL;
+    ui->active_key = UIBOXKEY_NULL;
 }
 
 static void UIBegin() {}
@@ -4199,18 +4209,30 @@ static void UIBegin() {}
 static void UIEnd() {
     UIState* ui = GetUIState();
 
-    // ui->hot = ui->hot_to_be;
-    // ui->hot_to_be = NULL;
+    ui->hot_key_prev = ui->hot_key;
+    ui->hot_key = ui->hot_key_to_be;
+    ui->hot_key_to_be = UIBOXKEY_NULL;
+    ui->active_key = UIBOXKEY_NULL;
 }
 
 #define DoUI() Scoped(UIBegin(), UIEnd())
 
 static void UISetHotToBe(UIBox* box) {
     UIState* ui = GetUIState();
-    // ui->hot_to_be = box;
+    ui->hot_key_to_be = box->key;
+}
+static bool UIBoxIsHot(UIBox* box) { return UIBoxKeyEq(box->key, GetUIState()->hot_key); }
+static bool UIBoxWasHot(UIBox* box) { return UIBoxKeyEq(box->key, GetUIState()->hot_key_prev); }
+
+static void UISetActive(UIBox* box) {
+    Assert(UIBoxIsHot(box));
+    UIState* ui = GetUIState();
+    ui->active_key = box->key;
 }
 
-static UIBox* MakeUIBox(UIBoxKey key) {
+static UIBox* MakeUIBox(Str8 text) {
+    UIBoxKey key = {.key = text};
+
     UIState* ui = GetUIState();
 
     u64 hash = UIBoxKeyHash(key);
@@ -7147,17 +7169,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             UIBoxVisuals* visuals = &VISUALS;
                             LFont font = GetLFontClosest(visuals->fontsize);
 
-                            // UIBox* boxx = MakeUIBox(text);
-
-                            UIBox box = {0};
-                            box.pos = visuals->pos;
-                            box.dims = visuals->dims;
-                            box.textbox = LFontMeasureStr8Quad(font, box.text);
-                            box.fontsize = visuals->fontsize;
+                            UIBox* box = MakeUIBox(text);
+                            box->pos = visuals->pos;
+                            box->dims = visuals->dims;
+                            box->textbox = LFontMeasureStr8Quad(font, box->text);
+                            box->fontsize = visuals->fontsize;
 
                             GameControllerState* controller = GetController(input, 0);
                             // TODO: At some point we might want to do collision in local space of aabb.
-                            AABB2D aabb = AABB2DFromWidthHeight(box.pos, box.dims);
+                            AABB2D aabb = AABB2DFromWidthHeight(box->pos, box->dims);
                             Vec2 normal = {0};
                             f32 depth = 0.0f;
                             // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we
@@ -7167,34 +7187,45 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             UIBoxAction action = {0};
                             if (collides) {
-                                action.hover = true;
-                                action.active = true;
-                                action.pressed = controller->action_left.pressed;
+                                UISetHotToBe(box);
+                                if (UIBoxIsHot(box)) {
+                                    action.hot = true;
+                                    action.first_hot = !UIBoxWasHot(box);
+                                    if (controller->action_left.pressed) {
+                                        action.active = true;
+                                        UISetActive(box);
+                                    }
+                                }
                             }
 
                             // Draw
                             {
                                 Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
                                 Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
-                                DrawSpritePro(*sprite, box.pos, box.dims, 0.0f, tint);
+                                DrawSpritePro(*sprite, box->pos, box->dims, 0.0f, tint);
 
-                                if (box.text.len) {
-                                    Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
-                                    DrawStr8Ex(font, text_pos, LBLACK, box.text);
+                                if (box->text.len) {
+                                    Vec2 text_pos = TextBoxGetDrawPos(box->textbox, box->pos);
+                                    DrawStr8Ex(font, text_pos, LBLACK, box->text);
                                 }
                             }
 
                             res = action;
                         }
 
-                        if (res.hover) {
+                        if (res.hot) {
                             VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
                         } else {
                             VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
                         }
+                        if (res.hot) {
+                            if (res.first_hot) {
+                                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                            }
 
-                        if (res.pressed) {
-                            PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                            if (res.active) {
+                                PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+                            }
                         }
                     }
                 }
