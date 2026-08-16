@@ -44,25 +44,6 @@ static const Vec4 LGRAY = Vec4Lit(199.0f / 255.0f, 197.0f / 255.0f, 198.0f / 255
 static const Vec4 LYELLOW = Vec4Lit(1.0f, 1.0f, 0.0f, 1.0f);
 static const Vec4 LWHITE = Vec4Lit(1.0f, 1.0f, 1.0f, 1.0f);
 
-// Lerp towards white.
-static Vec4 Lighten(Vec4 color, f32 t) {
-    return (Vec4){
-        .r = (1.0f - t) * color.r + t,
-        .g = (1.0f - t) * color.g + t,
-        .b = (1.0f - t) * color.b + t,
-        .a = (1.0f - t) * color.a + t,
-    };
-}
-
-static Vec4 Darken(Vec4 color, f32 t) {
-    return (Vec4){
-        .r = (1.0f - t) * color.r,
-        .g = (1.0f - t) * color.g,
-        .b = (1.0f - t) * color.b,
-        .a = (1.0f - t) * color.a,
-    };
-}
-
 ////////////////////////////////////////////////////////////
 // S:Render Data
 
@@ -4313,13 +4294,6 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
 ////////////////////////////////////////////////////
 // S:UI
 
-static Vec4 COLORS[] = {
-    RGBLit(50.0f, 50.0f, 50.0f),
-    RGBLit(123.0f, 123.0f, 123.0f),
-    RGBLit(54.0f, 173.0f, 105.0f),
-    RGBLit(226.0f, 214.0f, 181.0f),
-};
-
 // typedef enum {
 //     UI_SIZE_TEXT = 0,
 //     UI_SIZE_PCT_OF_PARENT,
@@ -5295,14 +5269,6 @@ typedef struct {
     Str8 name;
     Str8 description;
 } Relic;
-
-static Relic RELICS[] = {{.name = Str8Lit("NULL"), .description = Str8Lit("NULL")},
-#define RELICX(nname, desc) {.name = Str8Lit(#nname), .description = Str8Lit(desc)},
-                         RELIC_LIST
-#undef RELICX
-};
-
-#define RelicGet(id) &RELICS[(id)]
 
 typedef struct {
     RelicId id;
