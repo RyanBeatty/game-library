@@ -7113,52 +7113,52 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 EndShaderPass();
             }
 
-            {
-                RenderPassLoadAction load_action = {
-                    .clear_color_flag = false,
-                    .depth_test = true,
-                };
-                Mat4 view = Mat4Identity();
-                Mat4 proj = gstate->high_res_proj;
-                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+            // {
+            //     RenderPassLoadAction load_action = {
+            //         .clear_color_flag = false,
+            //         .depth_test = true,
+            //     };
+            //     Mat4 view = Mat4Identity();
+            //     Mat4 proj = gstate->high_res_proj;
+            //     BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
 
-                DoUI(input) {
-                    {
-                        static UIBoxVisuals VISUALS = {0};
-                        static bool VISUALS_INIT = false;
+            //     DoUI(input) {
+            //         {
+            //             static UIBoxVisuals VISUALS = {0};
+            //             static bool VISUALS_INIT = false;
 
-                        if (!VISUALS_INIT) {
-                            VISUALS_INIT = true;
+            //             if (!VISUALS_INIT) {
+            //                 VISUALS_INIT = true;
 
-                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-                        }
+            //                 VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+            //             }
 
-                        VISUALS.dims = Vec2Lit(100, 59);
-                        VISUALS.pos = Vec3ToVec2(
-                            AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
-                        VISUALS.pos.x += 0.5f * VISUALS.dims.x;
-                        VISUALS.pos.y += 0.5f * VISUALS.dims.y;
-                        VISUALS.fontsize = 16.0f;
-                        if (gstate->phase == GP_PLAYING) {
-                            breakpoint();
-                        }
+            //             VISUALS.dims = Vec2Lit(100, 59);
+            //             VISUALS.pos = Vec3ToVec2(
+            //                 AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
+            //             VISUALS.pos.x += 0.5f * VISUALS.dims.x;
+            //             VISUALS.pos.y += 0.5f * VISUALS.dims.y;
+            //             VISUALS.fontsize = 16.0f;
+            //             if (gstate->phase == GP_PLAYING) {
+            //                 breakpoint();
+            //             }
 
-                        UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
-                        if (action.hot) {
-                            VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-                            if (action.first_hot) {
-                                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
-                            }
-                            if (action.active) {
-                                PlatformPlaySound(GetSound(SOUND_BEEP), 0);
-                            }
-                        } else {
-                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-                        }
-                    }
-                }
-                EndShaderPass();
-            }
+            //             UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
+            //             if (action.hot) {
+            //                 VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+            //                 if (action.first_hot) {
+            //                     PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+            //                 }
+            //                 if (action.active) {
+            //                     PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+            //                 }
+            //             } else {
+            //                 VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+            //             }
+            //         }
+            //     }
+            //     EndShaderPass();
+            // }
 
             // Draw the texture framebuffer to screen quad.
             {
@@ -7197,46 +7197,52 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 EndShaderPass();
             }
 
-            // {
-            //     RenderPassLoadAction load_action = {
-            //         .clear_color_flag = false,
-            //         .depth_test = true,
-            //     };
-            //     Mat4 view = Mat4Identity();
-            //     Mat4 proj = gstate->high_res_proj;
-            //     BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
-            //     DoUI(input) {
-            //         {
-            //             static UIBoxVisuals VISUALS = {0};
-            //             static bool VISUALS_INIT = false;
+            {
+                RenderPassLoadAction load_action = {
+                    .clear_color_flag = false,
+                    .depth_test = true,
+                };
+                Mat4 view = Mat4Identity();
+                Mat4 proj = gstate->high_res_proj;
+                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
 
-            //             if (!VISUALS_INIT) {
-            //                 VISUALS_INIT = true;
+                DoUI(input) {
+                    {
+                        static UIBoxVisuals VISUALS = {0};
+                        static bool VISUALS_INIT = false;
 
-            //                 VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
-            //             }
+                        if (!VISUALS_INIT) {
+                            VISUALS_INIT = true;
 
-            //             VISUALS.pos = Vec3ToVec2(
-            //                 AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
-            //             VISUALS.dims = Vec2Lit(100, 59);
-            //             VISUALS.fontsize = 16.0f;
+                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                        }
 
-            //             UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
-            //             if (action.hot) {
-            //                 VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-            //                 if (action.first_hot) {
-            //                     PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
-            //                 }
-            //                 if (action.active) {
-            //                     PlatformPlaySound(GetSound(SOUND_BEEP), 0);
-            //                 }
-            //             } else {
-            //                 VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
-            //             }
-            //         }
-            //     }
-            //     EndShaderPass();
-            // }
+                        VISUALS.dims = Vec2Lit(100, 59);
+                        VISUALS.pos = Vec3ToVec2(
+                            AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
+                        VISUALS.pos.x += 0.5f * VISUALS.dims.x;
+                        VISUALS.pos.y += 0.5f * VISUALS.dims.y;
+                        VISUALS.fontsize = 16.0f;
+                        if (gstate->phase == GP_PLAYING) {
+                            breakpoint();
+                        }
+
+                        UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
+                        if (action.hot) {
+                            VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+                            if (action.first_hot) {
+                                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                            }
+                            if (action.active) {
+                                PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+                            }
+                        } else {
+                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                        }
+                    }
+                }
+                EndShaderPass();
+            }
 
             // // UI.
             // {

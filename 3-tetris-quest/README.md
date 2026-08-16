@@ -1,29 +1,18 @@
 TARGET DEV TIME BUDGET: 60 HOURS
 CURRENT DEV TIME: 24.0 HOURS
 
-GAME
-* Goal
-    * Sort laundry into correct bins to get points. Get the highest score in 2 minutes. Avoid bombs
-* 3 bins to sort - shirts + tops, pants + skirts, socks + underwear. each maps to directional key
-* correct sorting scores points
-* successive correct scoring builds combo
-* bombs appear occasionally, must remove. if sorted, breaks combo (and potentially stuns 1s or loses health)
-* rotate cothing sprites to make unclear which bin they need to be sorted into?
-* 10 different pairs of clothes
-* color palette: https://lospec.com/palette-list/pacific
 
-TAKEAWAYS
+TAKEAWAYS FOR NEXT GAME
+* WE SHOULD ONLY HAVE ONE RENDER PASS AND THEN ALSO REMOVE THE UPSCALING DRAW CALL. It should work like so:
+    * author asset sizes and positions at some fixed resolution (idk say like 640 x 320)
+    * render to an offscreen texture that is the same size as the final resolution (say 1920 x 1080)
+    * only use the logical coordinates the (640 x 320 coordinates) for drawing
+    * set my single pass projection matrix bounds to match the screen. This in effects will "strectch/scale" my draw calls. We don't have quantization bugs this way as opposed to render to
+    lower resolution buffer and then upscale that since the rasterizer/fragment shader will run for each pixel that goes into a logical unit
+    * at this point, we can do all rendering (game, ui, text) in the same pass. For text specifically, we will need to add a "division" scale factor to dimensions to counteract
+    the upscaling in order for text to look crisp since upscaled text looks like shit. So essentially if we are upscaling 3x from our logical coordinates to screen coordinates, 
+    we need to divide the scale sizing of the text quads by 3 (and also play with the spacing between them) to make the text crisp. this might mean we also need to render at a higher fontsize potentially.
 * Derived positions are nice and fast to start out with but are a PITA when you want to do animations. Everything should store a position (game + visual pos).
-
-TODO
-* make small tween when can't move anymore at edge of board
-* board pop when coming in?
-* cleanup Score UI
-* more sounds!
-* better score pop animation
-    * particles
-    * maybe some grid shake?
-* animation when lines clear
 
 
 Conventions
@@ -55,33 +44,4 @@ Engine Improvments/Thoughts
 * There is still aliasing issues with normal geometry when it is rotated or scaled. (This is separate from the sub pixel rendering issues I'm seeing). I believe MSAA will fix this (https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing). Probably would be a good opportunity to tackle better abstraction for frame buffer related operations.
 * If the first scene rendered is the stage scene, we fall through the world because the first value of dt is so large that our physics teleports us downward. I think this should be addressed by fixing the timestep and decoupling the renderer from update logic.
 * Issues on win32 where sprites aren't rendering during stage scene. I think this might be due to near/far clip planes being set to [-1, 1]. Not sure why this is a problem on win32 and not raylib.
-
-
-TODO
-* Bugs
-    * segfault when switching scenes with icosphere with too many subdivisions. sometimes segfaults on program
-    startup as well.
-* Collisions
-    * Mat4Point
-        * handle up x z == 0
-    * Cleanup collision handling:
-        * I need to change the actual positiona and velocity updates to be constraint based. Example problem:
-        If I don't run movement + collision with substeps, then the ball can hit two blocks and fly off in a weird direction. To avoid, I can still have custom resolution code for when to play sounds or increase score, but the actual position and velocity updates should be a constraint solver based. Hitting two blocks would then cause 4 constraints (2 pos + 2 vel) to be created and those can be solved together. Instead of solving them
-        indepdenatly like I am (and not even checking if the constraints are still violated when resolving collision)
-
-    * OLD POTENTIALLY:
-    * implement time of impact calculation
-    * floating point robustness
-    * calculate contact points
-        * in collision query (like face face/edge edge) return id[2] of features (either two faces) or (two edges). calculate most antiparallel face
-        * then do a search with the face id (which is a triangle). if surrounding triangles from the verts
-        point in same normal, then also use those verts to clip.
-* Rendering
-    * get lights + lighting working again.
-* Core
-    * impl particle system
-    * impl loading blender scene
-    * impl hot reloading
-    * stop using raylib for input
-    * stop using raylib for window creation
 
