@@ -3490,6 +3490,9 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
         // if (true) {
         //     DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         // }
+        // Debugging for testing if we can combat texture upscaling making resulting end text look like shit
+        // qdims.y /= 3.0f;
+        // qdims.x /= 3.0f;
         DrawLTextureProUV(font.tx, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
     }
     return baseline_pos;
@@ -4252,6 +4255,7 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     UIBox* box = MakeUIBox(text);
     box->pos = visuals->pos;
     box->dims = visuals->dims;
+    box->text = text;
     box->textbox = LFontMeasureStr8Quad(font, box->text);
     box->fontsize = visuals->fontsize;
 
@@ -7103,6 +7107,49 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 EndShaderPass();
             }
 
+            {
+                RenderPassLoadAction load_action = {
+                    .clear_color_flag = false,
+                    .depth_test = true,
+                };
+                Mat4 view = Mat4Identity();
+                Mat4 proj = gstate->high_res_proj;
+                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetDefaultRenderTarget());
+                DoUI(input) {
+                    {
+                        static UIBoxVisuals VISUALS = {0};
+                        static bool VISUALS_INIT = false;
+
+                        if (!VISUALS_INIT) {
+                            VISUALS_INIT = true;
+
+                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                        }
+
+                        VISUALS.pos = Vec3ToVec2(
+                            AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
+                        VISUALS.dims = Vec2Lit(100, 59);
+                        VISUALS.fontsize = 16.0f;
+
+                        UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
+                        if (action.hot) {
+                            VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+                            if (action.first_hot) {
+                                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                            }
+                            if (action.active) {
+                                PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+                            }
+                        } else {
+                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                        }
+
+                        DrawQuad2D(VISUALS.pos, 100, 59, Mat4Identity(), LORANGE);
+                    }
+                }
+                EndShaderPass();
+            }
+
             // Draw the texture framebuffer to screen quad.
             {
                 // We aren't specifying a view or proj matrix, since we are specifying the coordinates in clip space
@@ -7140,46 +7187,46 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 EndShaderPass();
             }
 
-            {
-                RenderPassLoadAction load_action = {
-                    .clear_color_flag = false,
-                    .depth_test = true,
-                };
-                Mat4 view = Mat4Identity();
-                Mat4 proj = gstate->high_res_proj;
-                BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
-                DoUI(input) {
-                    {
-                        static UIBoxVisuals VISUALS = {0};
-                        static bool VISUALS_INIT = false;
+            // {
+            //     RenderPassLoadAction load_action = {
+            //         .clear_color_flag = false,
+            //         .depth_test = true,
+            //     };
+            //     Mat4 view = Mat4Identity();
+            //     Mat4 proj = gstate->high_res_proj;
+            //     BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
+            //     DoUI(input) {
+            //         {
+            //             static UIBoxVisuals VISUALS = {0};
+            //             static bool VISUALS_INIT = false;
 
-                        if (!VISUALS_INIT) {
-                            VISUALS_INIT = true;
+            //             if (!VISUALS_INIT) {
+            //                 VISUALS_INIT = true;
 
-                            VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
-                        }
+            //                 VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
+            //             }
 
-                        VISUALS.pos = Vec3ToVec2(
-                            AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
-                        VISUALS.dims = Vec2Lit(100, 59);
-                        VISUALS.fontsize = 16.0f;
+            //             VISUALS.pos = Vec3ToVec2(
+            //                 AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
+            //             VISUALS.dims = Vec2Lit(100, 59);
+            //             VISUALS.fontsize = 16.0f;
 
-                        UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
-                        if (action.hot) {
-                            VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-                            if (action.first_hot) {
-                                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
-                            }
-                            if (action.active) {
-                                PlatformPlaySound(GetSound(SOUND_BEEP), 0);
-                            }
-                        } else {
-                            VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
-                        }
-                    }
-                }
-                EndShaderPass();
-            }
+            //             UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
+            //             if (action.hot) {
+            //                 VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+            //                 if (action.first_hot) {
+            //                     PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+            //                 }
+            //                 if (action.active) {
+            //                     PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+            //                 }
+            //             } else {
+            //                 VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
+            //             }
+            //         }
+            //     }
+            //     EndShaderPass();
+            // }
 
             // // UI.
             // {
