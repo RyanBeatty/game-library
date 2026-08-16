@@ -3507,7 +3507,10 @@ typedef struct {
     // (which might not be aabb.c, it might be some bg quad center) and add baseline_offset to that - that resulting
     // position is where you should draw the text from
     Vec2 baseline_offset;  // offset from the center of where the baseline exists. i.e. where to draw text from such
-                           // that it will be centered in the quad.
+    // that it will be centered in the quad.
+
+    // Useful to keep track of the font we measured the text with.
+    LFont font;
 } TextBox;
 
 static Vec2 TextBoxGetDrawPos(TextBox box, Vec2 pos) { return Vec2Add(pos, box.baseline_offset); }
@@ -3562,7 +3565,7 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
     tr = Vec2Sub(tr, bl);
     bl = Vec2Zero();
     AABB2D aabb = AABB2DFromMinMax(bl, tr);
-    TextBox tbox = {.aabb = aabb, .baseline_offset = Vec2Sub(baseline, aabb.c)};
+    TextBox tbox = {.aabb = aabb, .baseline_offset = Vec2Sub(baseline, aabb.c), .font = font};
     return tbox;
 }
 
