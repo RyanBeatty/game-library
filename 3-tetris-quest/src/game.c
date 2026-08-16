@@ -4095,12 +4095,16 @@ typedef struct {
     Vec2 dims;  // full width and height of dims
 } Rect;
 
+static Rect RectFromBLAndDims(Vec2 bl, Vec2 dims) {
+    return (Rect){.pos = Vec2Lit(bl.x + 0.5f * dims.x, bl.y + 0.5f * dims.y), .dims = dims};
+}
+
 // apos - is the *non* AsepritePxBL coordints. essentially the coords you see on scren when you hover in the UI
 // adims - the full pixel dimensions of the rect as you see in the aseprite UI
 static Rect RectFromAsepriteBLAndDims(Vec2 apos, Vec2 adims, Vec2 render_dims) {
     Vec2 bl = Vec3ToVec2(AsepriteToEngineWorld(render_dims, AsepritePxBL(apos), 0.0f));
     Vec2 dims = Vec2Lit(Px2Meter(adims.x), Px2Meter(adims.y));
-    return (Rect){.pos = Vec2Lit(bl.x + 0.5f * dims.x, bl.y + 0.5f * dims.y), .dims = dims};
+    return RectFromBLAndDims(bl, dims);
 }
 
 typedef struct {
@@ -6683,15 +6687,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
-                        Vec2 root_pos = AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
-                        RectFromAsepriteBLAndDims(Vec2Lit(5, 354), Vec2Lit(109, 351), gstate->render_dims);
+                        Vec2 root_bl_pos = AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
                         {
-                            UIBoxVisuals visuals = {.rect = root_pos, .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
+                            Vec2 bl_pos = Vec2Add(root_bl_pos, Vec2Zero());
+                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(109, 351)),
+                                                    .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
                             UIBoxAction action = DoUIBox(Str8Lit("##Score Panel BG"), &visuals);
                         }
 
                         {
-                            UIBoxVisuals visuals = {.rect = Vec2Add(root_pos), .sprite = GetSprite(SPRITE_SCORE_BG)};
+                            Vec2 bl_pos = Vec2Add(root_bl_pos, Vec2Lit(2, 223));
+                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(105, 71)),
+                                                    .sprite = GetSprite(SPRITE_SCORE_BG)};
                             UIBoxAction action = DoUIBox(Str8Lit("##Score BG"), &visuals);
                         }
 
