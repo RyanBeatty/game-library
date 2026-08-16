@@ -4099,6 +4099,11 @@ typedef struct {
 // S:UI2
 
 typedef struct {
+    Vec2 pos;   // center of rect
+    Vec2 dims;  // full width and height of dims
+} Rect;
+
+typedef struct {
     Str8 key;
 } UIBoxKey;
 
@@ -4137,8 +4142,7 @@ TypedefArr(UIBox);
 typedef UIBox* UIBoxPtr;
 
 typedef struct {
-    Vec2 pos;
-    Vec2 dims;
+    Rect rect;
 
     f32 fontsize;
 
@@ -4253,8 +4257,8 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     LFont font = GetLFontClosest(visuals->fontsize);
 
     UIBox* box = MakeUIBox(text);
-    box->pos = visuals->pos;
-    box->dims = visuals->dims;
+    box->pos = visuals->rect.pos;
+    box->dims = visuals->rect.dims;
     box->text = text;
     box->textbox = LFontMeasureStr8Quad(font, box->text);
     box->fontsize = visuals->fontsize;
@@ -7218,11 +7222,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
                         }
 
-                        VISUALS.dims = Vec2Lit(100, 59);
-                        VISUALS.pos = Vec3ToVec2(
+                        VISUALS.rect.dims = Vec2Lit(100, 59);
+                        VISUALS.rect.pos = Vec3ToVec2(
                             AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
-                        VISUALS.pos.x += 0.5f * VISUALS.dims.x;
-                        VISUALS.pos.y += 0.5f * VISUALS.dims.y;
+                        VISUALS.rect.pos.x += 0.5f * VISUALS.rect.dims.x;
+                        VISUALS.rect.pos.y += 0.5f * VISUALS.rect.dims.y;
                         VISUALS.fontsize = 16.0f;
                         if (gstate->phase == GP_PLAYING) {
                             breakpoint();
