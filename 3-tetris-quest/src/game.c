@@ -4103,6 +4103,14 @@ typedef struct {
     Vec2 dims;  // full width and height of dims
 } Rect;
 
+// apos - is the *non* AsepritePxBL coordints. essentially the coords you see on scren when you hover in the UI
+// adims - the full pixel dimensions of the rect as you see in the aseprite UI
+static Rect RectFromAsepriteBLAndDims(Vec2 apos, Vec2 adims, Vec2 render_dims) {
+    Vec2 bl = Vec3ToVec2(AsepriteToEngineWorld(render_dims, AsepritePxBL(apos), 0.0f));
+    Vec2 dims = Vec2Lit(Px2Meter(adims.x), Px2Meter(adims.y));
+    return (Rect){.pos = Vec2Lit(bl.x + 0.5f * dims.x, bl.y + 0.5f * dims.y), .dims = dims};
+}
+
 typedef struct {
     Str8 key;
 } UIBoxKey;
@@ -7222,11 +7230,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
                         }
 
-                        VISUALS.rect.dims = Vec2Lit(100, 59);
-                        VISUALS.rect.pos = Vec3ToVec2(
-                            AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
-                        VISUALS.rect.pos.x += 0.5f * VISUALS.rect.dims.x;
-                        VISUALS.rect.pos.y += 0.5f * VISUALS.rect.dims.y;
+                        // VISUALS.rect.dims = Vec2Lit(100, 59);
+                        // VISUALS.rect.pos = Vec3ToVec2(
+                        //     AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
+                        // VISUALS.rect.pos.x += 0.5f * VISUALS.rect.dims.x;
+                        // VISUALS.rect.pos.y += 0.5f * VISUALS.rect.dims.y;
+                        VISUALS.rect =
+                            RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), gstate->render_dims);
                         VISUALS.fontsize = 16.0f;
                         if (gstate->phase == GP_PLAYING) {
                             breakpoint();
