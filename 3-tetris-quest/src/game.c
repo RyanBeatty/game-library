@@ -416,7 +416,7 @@ typedef struct {
 static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     Vec2 top_left = AsepriteToEngineImage(tx, rect.top_left);
     Vec2 bottom_left = Vec2Lit(top_left.x, top_left.y - rect.dims.y);
-    Vec2 top_right = Vec2Add(bottom_left, rect.dims);
+    // Vec2 top_right = Vec2Add(bottom_left, rect.dims);
     // Sprite sprite = SpriteFromMinMax(tx, bottom_left, top_right);
     Sprite sprite = SpriteFromMinDims(tx, bottom_left, rect.dims);
 
@@ -4134,7 +4134,8 @@ static u64 Str8HashU64(Str8 str) {
 
 static u64 UIBoxKeyHash(UIBoxKey key) { return Str8HashU64(key.key); }
 
-typedef struct {
+typedef struct UIBox UIBox;
+struct UIBox {
     Vec2 pos;
     Vec2 dims;  // Full width and height
 
@@ -4143,8 +4144,8 @@ typedef struct {
     f32 fontsize;
 
     UIBoxKey key;
-    struct UIBox* hash_next;
-} UIBox;
+    UIBox* hash_next;
+};
 
 TypedefArr(UIBox);
 
@@ -4612,8 +4613,9 @@ static Vec4 COLORS[] = {
 
 // static void UIEnd(UIState* ui) { EndShaderPass(); }
 
-// #define UI2D(ui, perm, input, mouse_click_button, width, height, shader, load_action, target)                          \
-//     Scoped(UIBegin((ui), (perm), (input), (mouse_click_button), (width), (height), (shader), (load_action), (target)), \
+// #define UI2D(ui, perm, input, mouse_click_button, width, height, shader, load_action, target)
+//     Scoped(UIBegin((ui), (perm), (input), (mouse_click_button), (width), (height), (shader), (load_action),
+//     (target)),
 //            UIEnd((ui)))
 
 // static UIBox MakeUIBox(UIState* ui, UISize width, UISize height, Str8 text, UIBoxStyle style) {
@@ -4835,8 +4837,8 @@ static Vec4 COLORS[] = {
 // // Need to define variable and call UIParent in two steps or can run into bugs around macro expansion due to using
 // // incorrect parent in MakeUIWindow for sizing and positioning.
 // // CONCAT is needed because ##__LINE__ doesn't actually expand LINE
-// #define UIWindow(ui, width, height)                                                 \
-//     UIBox CONCAT(_ui_container_, __LINE__) = MakeUIWindow((ui), (width), (height)); \
+// #define UIWindow(ui, width, height)
+//     UIBox CONCAT(_ui_container_, __LINE__) = MakeUIWindow((ui), (width), (height));
 //     UIParent((ui), CONCAT(_ui_container_, __LINE__))
 
 // static UIAction UIButtonEx(UIState* ui, Str8 text, UIFlag flags, UISize semantic_width, UISize semantic_height) {
@@ -6889,10 +6891,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         DrawBlock(pos, 1.0f, &bg_graphics);
 
                                         if (tile->occupied) {
-                                            f32 scale = 1.0f;
-                                            if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
-                                                scale = TileScoreScalePopTween(battle->display.tween_elapsed);
-                                            }
+                                            // f32 scale = 1.0f;
+                                            // if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
+                                            //     scale = TileScoreScalePopTween(battle->display.tween_elapsed);
+                                            // }
                                             BlockGraphics graphics = {.base_color = tile->effects.base_color,
                                                                       .effects = &tile->effects};
                                             DrawBlock(pos, 1.0f, &graphics);
@@ -6912,7 +6914,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     TileId offset = ArrGet(&active_piece->block_offsets, i);
                                     Tile* tile = GridGetTile(grid, anchor.r + offset.r, anchor.c + offset.c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                                    // Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                                     BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
                                                               .effects = &active_piece->effects};
                                     DrawBlock(pos, 1.0f, &graphics);
@@ -6925,7 +6927,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Tile* tile =
                                         GridGetTile(grid, placement_anchor.r + offset.r, placement_anchor.c + offset.c);
                                     Vec3 pos = Vec3WTransform(tile->pos, grid_to_world);
-                                    Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
+                                    // Vec3 scale = Vec3Transform(Vec3LitAll(1.0f), grid_to_world);
                                     BlockGraphics graphics = {.base_color = active_piece->effects.base_color,
                                                               .preview = true,
                                                               .effects = &active_piece->effects};
@@ -6948,7 +6950,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 if (card->visible) {
                                     Vec3 quad_pos = card->pos_live;  // HandIdxToPos(&battle->hand, i);
                                     // quad_pos = Vec3WTransform(quad_pos, battle->hand_to_world);
-                                    Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
+                                    // Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
                                     // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
                                     f32 piece_scale = 0.5f * card->scale_live;
@@ -7093,12 +7095,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
                             DrawQuad(POS, Px2Meter(100) * SCALE, Px2Meter(100) * SCALE, Mat4Identity(), LRED);
-                        }
-
-                        // Draw play hand
-                        {
-                            Vec3 dims = Vec3Lit(Px2Meter(100.0f), Px2Meter(59.0f), 0.0f);
-                            DrawQuad(Vec2ToVec3(battle->play_button2.pos_live), dims.x, dims.y, Mat4Identity(), LBLUE);
                         }
 
                         break;
