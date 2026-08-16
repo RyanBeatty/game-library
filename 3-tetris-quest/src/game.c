@@ -3492,8 +3492,6 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
         //     DrawQuad(Vec2ToVec3(qorigin), qdims.x, qdims.y, Mat4Identity(), LRED);
         // }
         // Debugging for testing if we can combat texture upscaling making resulting end text look like shit
-        // qdims.y /= 3.0f;
-        // qdims.x /= 3.0f;
         DrawLTextureProUV(font.tx, quvoffset, quvdims, qorigin, qdims, 0.0f, color);
     }
     return baseline_pos;
@@ -7188,7 +7186,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // VISUALS.rect.pos.y += 0.5f * VISUALS.rect.dims.y;
                         VISUALS.rect =
                             RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), gstate->render_dims);
-                        VISUALS.fontsize = 16.0f;
+                        VISUALS.fontsize = 24.0f;
                         if (gstate->phase == GP_PLAYING) {
                             breakpoint();
                         }
