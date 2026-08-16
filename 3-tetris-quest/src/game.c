@@ -3602,26 +3602,8 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
     return tbox;
 }
 
-// Assumes the font texture contains the ascii printable characters on a single line.
-// Characters (note the space beginning the sequence is included):
-// !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
-LCORE void DrawLText(char* text, u32 len, Vec2 pos, Vec4 color) {
-    DrawLTextEx(GetActiveFont(), text, len, Vec2Lit(pos.x, pos.y), color);
-}
-
 // Reminder that pos is baseline pos of the text.
 LCORE void DrawStr8Ex(LFont font, Vec2 pos, Vec4 color, Str8 str) { DrawLTextEx(font, str.data, str.len, pos, color); }
-
-LCORE void DrawLTextF(Vec2 pos, Vec4 color, const char* format, ...) {
-    char buffer[1024];
-
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    DrawLText(buffer, strlen(buffer), pos, color);
-}
 
 ////////////////////////////////////////////////////////////
 // S:Sound
