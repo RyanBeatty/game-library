@@ -4117,6 +4117,8 @@ typedef struct {
     Str8 key;
 } UIBoxKey;
 
+static bool UIBoxKeyEq(UIBoxKey a, UIBoxKey b) { return Str8Eq(a.key, b.key); }
+
 static u64 Str8HashU64(Str8 str) {
     u64 h = 0x100;
     for (isize i = 0; i < str.len; ++i) {
@@ -4138,6 +4140,7 @@ typedef struct {
     TextBox textbox;  // Not positioned. i.e. the center here holds no meaning other than an offset.
     f32 fontsize;
 
+    UIBoxKey key;
     struct UIBox* hash_next;
 } UIBox;
 
@@ -4196,32 +4199,34 @@ static void UIBegin() {}
 static void UIEnd() {
     UIState* ui = GetUIState();
 
-    ui->hot = ui->hot_to_be;
-    ui->hot_to_be = NULL;
+    // ui->hot = ui->hot_to_be;
+    // ui->hot_to_be = NULL;
 }
+
+#define DoUI() Scoped(UIBegin(), UIEnd())
 
 static void UISetHotToBe(UIBox* box) {
     UIState* ui = GetUIState();
-    ui->hot_to_be = box;
+    // ui->hot_to_be = box;
 }
 
-static UIBox* MakeUIBox(Str8 key) {
+static UIBox* MakeUIBox(UIBoxKey key) {
     UIState* ui = GetUIState();
 
-    u64 hash = Str8HashU64(key);
+    u64 hash = UIBoxKeyHash(key);
     isize idx = hash % ArrCap(&ui->slots);
     UIBoxHashSlot* slot = ArrGetPtr(&ui->slots, idx);
 
     // Linear probe to check if we have in ht.
     for (UIBox* cur = slot->first; cur != NULL; cur = cur->hash_next) {
-        if (Str8Eq(key, cur->text)) {
+        if (UIBoxKeyEq(key, cur->key)) {
             return cur;
         }
     }
 
     // Need to make a new box as we have no existing in hash table.
     UIBox* box = ArrReserve(&ui->boxes);
-    box->text = key;
+    box->key = key;
     box->hash_next = slot->first;
     slot->first = box;
     return box;
@@ -7121,79 +7126,78 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Mat4 view = Mat4Identity();
                 Mat4 proj = gstate->high_res_proj;
                 BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
-                UIBegin();
-
-                {
-                    static UIBoxVisuals VISUALS = {0};
-                    static bool VISUALS_INIT = false;
-
-                    if (!VISUALS_INIT) {
-                        VISUALS_INIT = true;
-
-                        VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
-                    }
-
-                    Str8 text = Str8Lit("Play Hand");
-                    VISUALS.pos = battle->play_button2.pos_live;
-                    VISUALS.dims = Vec2Lit(100, 100);
-                    VISUALS.fontsize = 16.0f;
-
-                    UIBoxAction res = {0};
+                DoUI() {
                     {
-                        UIBoxVisuals* visuals = &VISUALS;
-                        LFont font = GetLFontClosest(visuals->fontsize);
+                        static UIBoxVisuals VISUALS = {0};
+                        static bool VISUALS_INIT = false;
 
-                        UIBox* boxx = MakeUIBox(text);
-                        boxx->pos = visuals->pos;
-                        boxx->dims = visuals->dims;
-                        boxx->textbox = LFontMeasureStr8Quad(font, boxx->text);
-                        boxx->fontsize = visuals->fontsize;
+                        if (!VISUALS_INIT) {
+                            VISUALS_INIT = true;
 
-                        UIBox box = *boxx;
-
-                        GameControllerState* controller = GetController(input, 0);
-                        // TODO: At some point we might want to do collision in local space of aabb.
-                        AABB2D aabb = AABB2DFromWidthHeight(box.pos, box.dims);
-                        Vec2 normal = {0};
-                        f32 depth = 0.0f;
-                        // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we
-                        // switch to rendering ui in screen space, then this will need to change
-                        bool collides =
-                            TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), aabb, &normal, &depth);
-
-                        UIBoxAction action = {0};
-                        if (collides) {
-                            action.hover = true;
-                            action.active = true;
-                            action.pressed = controller->action_left.pressed;
+                            VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
                         }
 
-                        // Draw
+                        Str8 text = Str8Lit("Play Hand");
+                        VISUALS.pos = battle->play_button2.pos_live;
+                        VISUALS.dims = Vec2Lit(100, 100);
+                        VISUALS.fontsize = 16.0f;
+
+                        UIBoxAction res = {0};
                         {
-                            Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
-                            Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
-                            DrawSpritePro(*sprite, box.pos, box.dims, 0.0f, tint);
+                            UIBoxVisuals* visuals = &VISUALS;
+                            LFont font = GetLFontClosest(visuals->fontsize);
 
-                            if (box.text.len) {
-                                Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
-                                DrawStr8Ex(font, text_pos, LBLACK, box.text);
+                            // UIBox* boxx = MakeUIBox(text);
+
+                            UIBox box = {0};
+                            box.pos = visuals->pos;
+                            box.dims = visuals->dims;
+                            box.textbox = LFontMeasureStr8Quad(font, box.text);
+                            box.fontsize = visuals->fontsize;
+
+                            GameControllerState* controller = GetController(input, 0);
+                            // TODO: At some point we might want to do collision in local space of aabb.
+                            AABB2D aabb = AABB2DFromWidthHeight(box.pos, box.dims);
+                            Vec2 normal = {0};
+                            f32 depth = 0.0f;
+                            // Our choice of using cursor_pos_world sort of depends on our projection matrix. i.e. if we
+                            // switch to rendering ui in screen space, then this will need to change
+                            bool collides =
+                                TestPoint2DVsAABB2D(Vec3ToVec2(controller->cursor_pos_world), aabb, &normal, &depth);
+
+                            UIBoxAction action = {0};
+                            if (collides) {
+                                action.hover = true;
+                                action.active = true;
+                                action.pressed = controller->action_left.pressed;
                             }
+
+                            // Draw
+                            {
+                                Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
+                                Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
+                                DrawSpritePro(*sprite, box.pos, box.dims, 0.0f, tint);
+
+                                if (box.text.len) {
+                                    Vec2 text_pos = TextBoxGetDrawPos(box.textbox, box.pos);
+                                    DrawStr8Ex(font, text_pos, LBLACK, box.text);
+                                }
+                            }
+
+                            res = action;
                         }
 
-                        res = action;
-                    }
+                        if (res.hover) {
+                            VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+                        } else {
+                            VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
+                        }
 
-                    if (res.hover) {
-                        VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-                    } else {
-                        VISUALS.sprite = GetSprite(SPRITE_BOARD_BG);
-                    }
-
-                    if (res.pressed) {
-                        PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                        if (res.pressed) {
+                            PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                        }
                     }
                 }
-                UIEnd();
                 EndShaderPass();
             }
 
