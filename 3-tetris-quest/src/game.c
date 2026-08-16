@@ -3499,6 +3499,9 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
     return baseline_pos;
 }
 
+// Reminder that pos is baseline pos of the text.
+LCORE void DrawStr8(LFont font, Vec2 pos, Vec4 color, Str8 str) { DrawLTextEx(font, str.data, str.len, pos, color); }
+
 typedef struct {
     AABB2D aabb;  // bl at origin. quad to use for drawing the text.
     // This gives the vector going from center of the aabb to baseline pos. So if you add to center, you get baseline
@@ -3511,9 +3514,15 @@ typedef struct {
 
     // Useful to keep track of the font we measured the text with.
     LFont font;
+    Str8 text;
 } TextBox;
 
 static Vec2 TextBoxGetDrawPos(TextBox box, Vec2 pos) { return Vec2Add(pos, box.baseline_offset); }
+
+static void DrawTextBox(TextBox* textbox, Vec2 pos, Vec4 tint) {
+    Vec2 text_pos = TextBoxGetDrawPos(*textbox, pos);
+    return DrawStr8(textbox->font, text_pos, tint, textbox->text);
+}
 
 // Returns a positioned quad that is centered and sized such that if the center is drawn at baseline_pos + quad_center,
 // the quad should span the text. Importantly we will move the quad such that the bottom left corner is positioned at
@@ -3565,12 +3574,9 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
     tr = Vec2Sub(tr, bl);
     bl = Vec2Zero();
     AABB2D aabb = AABB2DFromMinMax(bl, tr);
-    TextBox tbox = {.aabb = aabb, .baseline_offset = Vec2Sub(baseline, aabb.c), .font = font};
+    TextBox tbox = {.aabb = aabb, .baseline_offset = Vec2Sub(baseline, aabb.c), .font = font, .text = str};
     return tbox;
 }
-
-// Reminder that pos is baseline pos of the text.
-LCORE void DrawStr8(LFont font, Vec2 pos, Vec4 color, Str8 str) { DrawLTextEx(font, str.data, str.len, pos, color); }
 
 ////////////////////////////////////////////////////////////
 // S:Sound
