@@ -3567,7 +3567,7 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
 }
 
 // Reminder that pos is baseline pos of the text.
-LCORE void DrawStr8Ex(LFont font, Vec2 pos, Vec4 color, Str8 str) { DrawLTextEx(font, str.data, str.len, pos, color); }
+LCORE void DrawStr8(LFont font, Vec2 pos, Vec4 color, Str8 str) { DrawLTextEx(font, str.data, str.len, pos, color); }
 
 ////////////////////////////////////////////////////////////
 // S:Sound
@@ -4248,7 +4248,7 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
 
         if (box->text.len) {
             Vec2 text_pos = TextBoxGetDrawPos(box->textbox, box->pos);
-            DrawStr8Ex(font, text_pos, LBLACK, box->text);
+            DrawStr8(font, text_pos, LBLACK, box->text);
         }
     }
 
@@ -4714,7 +4714,7 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
 //         textbox_center_offset = Vec2Add(textbox_center_offset, box->textbox.aabb.c);
 //         Vec2 baseline_offset = Vec2Add(textbox_center_offset, box->textbox.baseline_offset);
 //         Vec2 text_pos = Vec2Add(bottom_left, baseline_offset);
-//         DrawStr8Ex(font, text_pos, box->style.color_text, box->text);
+//         DrawStr8(font, text_pos, box->style.color_text, box->text);
 //     }
 // }
 
@@ -7292,7 +7292,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             //                         LFont font = GetLFontClosest(40.f);
             //                         TextBox box = LFontMeasureStr8Quad(font, relic->description);
             //                         Vec2 pos = Vec2Add(shop->for_sale_description_pos_screen, box.baseline_offset);
-            //                         DrawStr8Ex(font, pos, LWHITE, relic->description);
+            //                         DrawStr8(font, pos, LWHITE, relic->description);
             //                     }
 
             //                     break;
@@ -7304,7 +7304,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             //                     LFont font = GetLFontClosest(40.0f);
             //                     Str8 game_over = Str8Lit("GAME OVER");
             //                     TextBox box = LFontMeasureStr8Quad(font, game_over);
-            //                     DrawStr8Ex(font, Vec2Add(screen_center, box.baseline_offset), LWHITE, game_over);
+            //                     DrawStr8(font, Vec2Add(screen_center, box.baseline_offset), LWHITE, game_over);
             //                     break;
             //                 }
             //                 case GP_NEW_ROUND: {
