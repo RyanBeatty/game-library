@@ -4093,9 +4093,7 @@ struct UIBox {
     Vec2 pos;
     Vec2 dims;  // Full width and height
 
-    Str8 text;
     TextBox textbox;  // Not positioned. i.e. the center here holds no meaning other than an offset.
-    f32 fontsize;
 
     UIBoxKey key;
     UIBox* hash_next;
@@ -4223,9 +4221,7 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     UIBox* box = MakeUIBox(text);
     box->pos = visuals->rect.pos;
     box->dims = visuals->rect.dims;
-    box->text = text;
-    box->textbox = LFontMeasureStr8Quad(font, box->text);
-    box->fontsize = visuals->fontsize;
+    box->textbox = LFontMeasureStr8Quad(font, text);
 
     GameControllerState* controller = GetController(ui->input, 0);
     // TODO: At some point we might want to do collision in local space of aabb.
@@ -4255,9 +4251,8 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
         Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
         DrawSpritePro(*sprite, box->pos, box->dims, 0.0f, tint);
 
-        if (box->text.len) {
-            Vec2 text_pos = TextBoxGetDrawPos(box->textbox, box->pos);
-            DrawStr8(font, text_pos, LBLACK, box->text);
+        if (box->textbox.text.len) {
+            DrawTextBox(&box->textbox, box->pos, LBLACK);
         }
     }
 
