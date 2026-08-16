@@ -411,12 +411,13 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     return sprite;
 }
 
-#define SPRITE_LIST                                                                         \
-    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))      \
-    SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36)))  \
-    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32)))  \
-    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248))) \
-    SPRITEX(BUTTON_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(11, 312)), Vec2Lit(64, 64)))
+#define SPRITE_LIST                                                                           \
+    SPRITEX(BLOCK, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36)))        \
+    SPRITEX(BLOCK_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(105, 7)), Vec2Lit(36, 36)))    \
+    SPRITEX(BLOCK_FG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(154, 8)), Vec2Lit(32, 32)))    \
+    SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248)))   \
+    SPRITEX(BUTTON_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(10, 314)), Vec2Lit(100, 59))) \
+    SPRITEX(SCORE_PANEL_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(294, 8)), Vec2Lit(109, 351)))
 
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
@@ -7254,6 +7255,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         } else {
                             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
                         }
+                    }
+
+                    {
+                        UIBoxVisuals visuals = {
+                            .rect = RectFromAsepriteBLAndDims(Vec2Lit(5, 354), Vec2Lit(109, 351), gstate->render_dims),
+                            .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
+                        UIBoxAction action = DoUIBox(Str8Lit("Stuff"), &visuals);
                     }
                 }
                 EndShaderPass();
