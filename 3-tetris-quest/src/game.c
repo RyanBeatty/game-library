@@ -376,6 +376,9 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 static inline Vec3 AsepriteToEngineWorld(Vec2 render_dims, Vec2 apos, f32 z) {
     return Vec3Lit(Px2Meter(apos.x - 0.5f * render_dims.x), Px2Meter(render_dims.y - apos.y - 0.5f * render_dims.y), z);
 }
+static inline Vec2 AsepriteToEngineWorld2D(Vec2 render_dims, Vec2 apos) {
+    return Vec3ToVec2(AsepriteToEngineWorld(render_dims, apos, 0.0f));
+}
 
 // Rectangular coordinates of some rectangle as seen via the aseprite ui. There are all in aseprite sprite space. (0, 0)
 // in top left.
@@ -4140,6 +4143,7 @@ typedef struct {
     Rect rect;
 
     f32 fontsize;
+    Vec4 text_tint;
 
     Sprite* sprite;
     Vec4 tint;
@@ -4300,7 +4304,8 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
         DrawSpritePro(*sprite, box->pos, box->dims, 0.0f, tint);
 
         if (box->textbox.text.len) {
-            DrawTextBox(&box->textbox, box->pos, LBLACK);
+            Vec4 text_tint = f32eq(visuals->text_tint.a, 0.0f) ? LBLACK : visuals->text_tint;
+            DrawTextBox(&box->textbox, box->pos, text_tint);
         }
     }
 
@@ -6678,18 +6683,33 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
+                        Vec2 root_pos = AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
+                        RectFromAsepriteBLAndDims(Vec2Lit(5, 354), Vec2Lit(109, 351), gstate->render_dims);
                         {
-                            UIBoxVisuals visuals = {.rect = RectFromAsepriteBLAndDims(
-                                                        Vec2Lit(5, 354), Vec2Lit(109, 351), gstate->render_dims),
-                                                    .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
+                            UIBoxVisuals visuals = {.rect = root_pos, .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
                             UIBoxAction action = DoUIBox(Str8Lit("##Score Panel BG"), &visuals);
                         }
 
                         {
-                            UIBoxVisuals visuals = {.rect = RectFromAsepriteBLAndDims(Vec2Lit(7, 131), Vec2Lit(105, 71),
-                                                                                      gstate->render_dims),
-                                                    .sprite = GetSprite(SPRITE_SCORE_BG)};
+                            UIBoxVisuals visuals = {.rect = Vec2Add(root_pos), .sprite = GetSprite(SPRITE_SCORE_BG)};
                             UIBoxAction action = DoUIBox(Str8Lit("##Score BG"), &visuals);
+                        }
+
+                        {
+                            UIBoxVisuals visuals = {.rect = RectFromAsepriteBLAndDims(Vec2Lit(8, 111), Vec2Lit(43, 32),
+                                                                                      gstate->render_dims),
+                                                    .sprite = GetSprite(SPRITE_DEFAULT),
+                                                    .tint = RGBLit(252, 155, 211),
+                                                    .text_tint = RGBLit(212, 250, 255),
+                                                    .fontsize = 16.0f * 3.0f};
+
+                            // TODO: I think this causes issues with hot and key storage in the box because the box and
+                            // ui system do not own the string memory. I should consider copying the key and string data
+                            // into the ui in storage.
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
+                                     battle->display.live_chip_total);
+                            UIBoxAction action = DoUIBox(Str8FromC(buffer), &visuals);
                         }
                     }
                 }
