@@ -4253,7 +4253,22 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     UIBox* box = MakeUIBox(text);
     box->pos = visuals->rect.pos;
     box->dims = visuals->rect.dims;
-    box->textbox = LFontMeasureStr8Quad(font, text);
+
+    {
+        // // Calculate what text to display. Use ## as dilineator.
+        // // ex. Hello##world, only will display Hello
+        // // ##FOO - displays no text.
+        isize end_idx = text.len;
+        for (isize i = 0; i < text.len - 1; ++i) {
+            if (text.data[i] == '#' && text.data[i + 1] == '#') {
+                end_idx = i;
+                break;
+            }
+        }
+        Str8 display_text = text;
+        display_text.len = end_idx;
+        box->textbox = LFontMeasureStr8Quad(font, display_text);
+    }
 
     GameControllerState* controller = GetController(ui->input, 0);
     // TODO: At some point we might want to do collision in local space of aabb.
@@ -7243,7 +7258,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         UIBoxVisuals visuals = {
                             .rect = RectFromAsepriteBLAndDims(Vec2Lit(5, 354), Vec2Lit(109, 351), gstate->render_dims),
                             .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
-                        UIBoxAction action = DoUIBox(Str8Lit("Stuff"), &visuals);
+                        UIBoxAction action = DoUIBox(Str8Lit("##Score_BG"), &visuals);
                     }
                 }
                 EndShaderPass();
