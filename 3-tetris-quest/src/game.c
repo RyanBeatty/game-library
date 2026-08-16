@@ -3450,13 +3450,45 @@ LCORE LFont GetLFontClosest(f32 desired_fontsize) {
     return fcache->fonts[choice];
 }
 
+LCORE void GetScaledStbtBakedQuad(const stbtt_bakedchar* chardata, int pw, int ph, int char_index, float* xpos,
+                                  float* ypos, stbtt_aligned_quad* q) {
+    /*
+        GetBakedQuad will return a quad that has draw coordinates relative to the passed in baseline. In order to
+       downscale this baked quad (for instance in order to make text that gets upscaled by rasterizer (e.g. by
+       projection only) look nicer), we need to calculate the baked quad relative to origin. Then we can downscale the
+       draw position coordinates to get the correctly sized quad to draw. We also need to adjust the baseline's
+       xadvancement so that text quads remain correctly positioned relative to eachother.
+    */
+    Vec2 baseline = Vec2Zero();
+
+    // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+    // NOTE: Although we pass pointers to the baseline_pos, it doesn't look like GetBakedQuad actually modifies it.
+    stbtt_GetBakedQuad(chardata, pw, ph, char_index, &baseline.x, &baseline.y, q, true);
+
+    f32 downscale = 1.0f / 3.0f;
+    q->x0 *= downscale;
+    q->x1 *= downscale;
+    q->y0 *= downscale;
+    q->y1 *= downscale;
+
+    q->x0 += *xpos;
+    q->x1 += *xpos;
+    q->y0 += *ypos;
+    q->y1 += *ypos;
+
+    *xpos += baseline.x * downscale;
+}
+
 LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 color) {
     for (i32 i = 0; i < len; ++i) {
         stbtt_aligned_quad quad = {0};
-        // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-        // NOTE: Although we pass pointers to the baseline_pos, it doesn't look like GetBakedQuad actually modifies it.
-        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
-                           &quad, true);
+        // // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
+        // // NOTE: Although we pass pointers to the baseline_pos, it doesn't look like GetBakedQuad actually modifies
+        // it. stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x,
+        // &baseline_pos.y,
+        //                    &quad, true);
+        GetScaledStbtBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x,
+                               &baseline_pos.y, &quad);
 
         /*
             Remember. the key to understanding all of these transformations is to visualize them from the perspective
@@ -3537,8 +3569,10 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
     for (i32 i = 0; i < len; ++i) {
         stbtt_aligned_quad quad = {0};
         // The y position passed in here is the baseline of the glpyhs (i.e. the common line they will sit on)
-        stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
-                           &quad, true);
+        // stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
+        //                    &quad, true);
+        GetScaledStbtBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x,
+                               &baseline_pos.y, &quad);
 
         /*
         Remember. the key to understanding all of these transformations is to visualize them from the perspective
@@ -7186,7 +7220,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // VISUALS.rect.pos.y += 0.5f * VISUALS.rect.dims.y;
                         VISUALS.rect =
                             RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), gstate->render_dims);
-                        VISUALS.fontsize = 24.0f;
+                        VISUALS.fontsize = 16.0f * 3.0f;
                         if (gstate->phase == GP_PLAYING) {
                             breakpoint();
                         }
