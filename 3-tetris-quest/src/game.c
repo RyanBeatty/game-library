@@ -4108,12 +4108,16 @@ static Rect RectFromAsepriteBLAndDims(Vec2 apos, Vec2 adims, Vec2 render_dims) {
 }
 
 typedef struct {
-    Str8 key;
+    // One might worry about collisions here when using a hash as a means for checking for equality (indeed I worried
+    // about this), but you have to remember the birthday paradox. with a 2^64 keyspace, you would need ~5.1 billion
+    // distint ui keys before you have a ~50% chance of collision. With 10k unique keys, you have a one in roughly 370
+    // *billion* chance of collision, so I think we are safe here.
+    u64 key;
 } UIBoxKey;
 
 static UIBoxKey UIBOXKEY_NULL = {0};
 
-static bool UIBoxKeyEq(UIBoxKey a, UIBoxKey b) { return Str8Eq(a.key, b.key); }
+static bool UIBoxKeyEq(UIBoxKey a, UIBoxKey b) { return a.key == b.key; }
 
 static u64 Str8HashU64(Str8 str) {
     u64 h = 0x100;
@@ -4126,7 +4130,9 @@ static u64 Str8HashU64(Str8 str) {
     return h;
 }
 
-static u64 UIBoxKeyHash(UIBoxKey key) { return Str8HashU64(key.key); }
+static UIBoxKey UIBoxKeyFromStr8(Str8 str) { return (UIBoxKey){.key = Str8HashU64(str)}; }
+
+static u64 UIBoxKeyHash(UIBoxKey key) { return key.key; }
 
 typedef struct UIBox UIBox;
 struct UIBox {
@@ -4231,7 +4237,7 @@ static void UISetActive(UIBox* box) {
 }
 
 static UIBox* MakeUIBox(Str8 text) {
-    UIBoxKey key = {.key = text};
+    UIBoxKey key = UIBoxKeyFromStr8(text);
 
     UIState* ui = GetUIState();
 
@@ -6713,9 +6719,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                     .text_tint = RGBLit(212, 250, 255),
                                                     .fontsize = 16.0f * 3.0f};
 
-                            // TODO: I think this causes issues with hot and key storage in the box because the box and
-                            // ui system do not own the string memory. I should consider copying the key and string data
-                            // into the ui in storage.
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
                                      battle->display.live_chip_total);
