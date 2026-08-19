@@ -4310,7 +4310,7 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     // Draw
     {
         Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
-        Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LWHITE : visuals->tint;
+        Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LCLEAR : visuals->tint;
         DrawSpritePro(*sprite, box->pos, box->dims, 0.0f, tint);
 
         if (box->textbox.text.len) {
@@ -6719,6 +6719,29 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                     .text_tint = RGBLit(212, 250, 255),
                                                     .fontsize = 16.0f * 3.0f};
 
+                            char buffer[256] = {0};
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
+                                     battle->display.live_chip_total);
+                            UIBoxAction action = DoUIBox(Str8FromC(buffer), &visuals);
+                        }
+
+                        {
+                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(44, 20));
+                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(13, 32)),
+                                                    .sprite = GetSprite(SPRITE_DEFAULT),
+                                                    .tint = LHIDDEN,
+                                                    .text_tint = RGBLit(212, 250, 255),
+                                                    .fontsize = 16.0f * 3.0f};
+                            UIBoxAction action = DoUIBox(Str8Lit("X"), &visuals);
+                        }
+
+                        {
+                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(57, 20));
+                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(47, 32)),
+                                                    .sprite = GetSprite(SPRITE_DEFAULT),
+                                                    .tint = RGBLit(218, 186, 255),
+                                                    .text_tint = RGBLit(212, 250, 255),
+                                                    .fontsize = 16.0f * 3.0f};
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
                                      battle->display.live_chip_total);
