@@ -4159,6 +4159,8 @@ typedef struct {
     Vec4 tint;
 } UIBoxVisuals;
 
+#define UIBoxVisualsZero() ((UIBoxVisuals){.tint = LCLEAR})
+
 typedef struct {
     bool first_hot;  // true on the first frame we were hot.
     bool hot;
@@ -4310,8 +4312,7 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     // Draw
     {
         Sprite* sprite = visuals->sprite ? visuals->sprite : GetSprite(SPRITE_DEFAULT);
-        Vec4 tint = f32eq(visuals->tint.a, 0.0f) ? LCLEAR : visuals->tint;
-        DrawSpritePro(*sprite, box->pos, box->dims, 0.0f, tint);
+        DrawSpritePro(*sprite, box->pos, box->dims, 0.0f, visuals->tint);
 
         if (box->textbox.text.len) {
             Vec4 text_tint = f32eq(visuals->text_tint.a, 0.0f) ? LBLACK : visuals->text_tint;
@@ -6665,7 +6666,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         if (!VISUALS_INIT) {
                             VISUALS_INIT = true;
-
+                            VISUALS = UIBoxVisualsZero();
                             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
                         }
 
@@ -6697,15 +6698,17 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
                         {
                             Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Zero());
-                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(109, 351)),
-                                                    .sprite = GetSprite(SPRITE_SCORE_PANEL_BG)};
+                            UIBoxVisuals visuals = UIBoxVisualsZero();
+                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(109, 351));
+                            visuals.sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
                             UIBoxAction action = DoUIBox(Str8Lit("##Score Panel BG"), &visuals);
                         }
 
                         {
                             Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(2, 223));
-                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(105, 71)),
-                                                    .sprite = GetSprite(SPRITE_SCORE_BG)};
+                            UIBoxVisuals visuals = UIBoxVisualsZero();
+                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(105, 71));
+                            visuals.sprite = GetSprite(SPRITE_SCORE_BG);
                             UIBoxAction action = DoUIBox(Str8Lit("##Score BG"), &visuals);
 
                             parent_bl_pos = bl_pos;
@@ -6713,11 +6716,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         {
                             Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(1, 20));
-                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(43, 32)),
-                                                    .sprite = GetSprite(SPRITE_DEFAULT),
-                                                    .tint = RGBLit(252, 155, 211),
-                                                    .text_tint = RGBLit(212, 250, 255),
-                                                    .fontsize = 16.0f * 3.0f};
+                            UIBoxVisuals visuals = UIBoxVisualsZero();
+                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(43, 32)),
+                            visuals.sprite = GetSprite(SPRITE_DEFAULT);
+                            visuals.tint = RGBLit(252, 155, 211);
+                            visuals.text_tint = RGBLit(212, 250, 255);
+                            visuals.fontsize = 16.0f * 3.0f;
 
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
@@ -6727,21 +6731,23 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         {
                             Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(44, 20));
-                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(13, 32)),
-                                                    .sprite = GetSprite(SPRITE_DEFAULT),
-                                                    .tint = LHIDDEN,
-                                                    .text_tint = RGBLit(212, 250, 255),
-                                                    .fontsize = 16.0f * 3.0f};
+                            UIBoxVisuals visuals = UIBoxVisualsZero();
+                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(13, 32));
+                            visuals.sprite = GetSprite(SPRITE_DEFAULT);
+                            visuals.tint = LHIDDEN;
+                            visuals.text_tint = RGBLit(212, 250, 255);
+                            visuals.fontsize = 16.0f * 3.0f;
                             UIBoxAction action = DoUIBox(Str8Lit("X"), &visuals);
                         }
 
                         {
                             Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(57, 20));
-                            UIBoxVisuals visuals = {.rect = RectFromBLAndDims(bl_pos, Vec2Lit(47, 32)),
-                                                    .sprite = GetSprite(SPRITE_DEFAULT),
-                                                    .tint = RGBLit(218, 186, 255),
-                                                    .text_tint = RGBLit(212, 250, 255),
-                                                    .fontsize = 16.0f * 3.0f};
+                            UIBoxVisuals visuals = UIBoxVisualsZero();
+                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(47, 32));
+                            visuals.sprite = GetSprite(SPRITE_DEFAULT);
+                            visuals.tint = RGBLit(218, 186, 255);
+                            visuals.text_tint = RGBLit(212, 250, 255);
+                            visuals.fontsize = 16.0f * 3.0f;
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
                                      battle->display.live_chip_total);
