@@ -5164,7 +5164,8 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     {
         UIVisualState* score_window = &battle->score_window;
         score_window->pos_duration = 0.8f;
-        score_window->pos_end = Vec2Lit(0, 0);
+        Rect rect = RectFromAsepriteBLAndDims(Vec2Lit(5, 354), Vec2Lit(109, 351), render_dims_px);
+        score_window->pos_end = rect.pos;
         score_window->pos_start = score_window->pos_end;
         score_window->pos_start.x -= 500.0f;
         score_window->pos_live = score_window->pos_start;
@@ -6662,8 +6663,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
-                        Vec2 parent_bl_pos =
-                            AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
+                        Vec2 score_window_pos = battle->score_window.pos_live;
+                        Sprite* score_window_sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
+
+                        // Vec2 parent_bl_pos =
+                        //     AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
+                        Vec2 parent_bl_pos = Vec2Lit(score_window_pos.x - 0.5f * score_window_sprite->dims.x,
+                                                     score_window_pos.y - 0.5f * score_window_sprite->dims.y);
+
                         {
                             Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Zero());
                             UIBoxVisuals visuals = UIBoxVisualsZero();
