@@ -6287,7 +6287,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             // Entities/Game World
             {
                 RenderPassLoadAction load_action = DefaultLoadAction();
-                load_action.clear_color = LPURPLE;
+                load_action.clear_color = RGBLit(137, 119, 201);
                 load_action.clear_color_flag = true;
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->low_res_proj,
                                 GetDefaultRenderTarget());
