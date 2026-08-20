@@ -4099,6 +4099,8 @@ static Rect RectFromBLAndDims(Vec2 bl, Vec2 dims) {
     return (Rect){.pos = Vec2Lit(bl.x + 0.5f * dims.x, bl.y + 0.5f * dims.y), .dims = dims};
 }
 
+static Rect RectFromCenterAndDims(Vec2 center, Vec2 dims) { return (Rect){.pos = center, .dims = dims}; }
+
 // apos - is the *non* AsepritePxBL coordints. essentially the coords you see on scren when you hover in the UI
 // adims - the full pixel dimensions of the rect as you see in the aseprite UI
 static Rect RectFromAsepriteBLAndDims(Vec2 apos, Vec2 adims, Vec2 render_dims) {
@@ -5151,10 +5153,12 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     {
         UIVisualState* play_button2 = &battle->play_button2;
 
-        Vec2 pos = Vec3ToVec2(AsepriteToEngineWorld(render_dims_px, AsepritePxBL(Vec2Lit(508, 261)), 0.0f));
-        Vec2 dims = Vec2Lit(Px2Meter(100.0f), Px2Meter(59.0f));
-        pos = Vec2Add(pos, Vec2Scale(dims, 0.5f));
-        play_button2->pos_live = pos;
+        Rect rect = RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), render_dims_px);
+        play_button2->pos_duration = 1.2f;
+        play_button2->pos_end = rect.pos;
+        play_button2->pos_start = play_button2->pos_end;
+        play_button2->pos_start.x += 100.0f;
+        play_button2->pos_live = play_button2->pos_start;
     }
 
     {
@@ -5541,6 +5545,7 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                         display->tween_duration = 1.5f;
 
                         battle->play_button.pos_elapsed = 0.0f;
+                        battle->play_button2.pos_elapsed = 0.0f;
                         break;
                     }
                     default: {
@@ -5658,7 +5663,6 @@ static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* playe
 typedef enum {
     SCENE_DEFAULT = 0,
     SCENE_MAIN,
-    SCENE_SHOP,
     SCENE_DEFAULT_3D,
     SCENE_COUNT,
 } SceneId;
@@ -6191,6 +6195,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     play_button->pos_live = Vec2Lerp(play_button->pos_start, play_button->pos_end, EaseOutBack(t));
                 }
 
+                // update play button2 graphics
+                {
+                    UIVisualState* play_button2 = &battle->play_button2;
+                    play_button2->pos_elapsed =
+                        f32min(play_button2->pos_elapsed + gstate->frame_time.dt, play_button2->pos_duration);
+                    f32 t = play_button2->pos_elapsed / play_button2->pos_duration;
+                    play_button2->pos_live = Vec2Lerp(play_button2->pos_start, play_button2->pos_end, EaseOutBack(t));
+                }
+
                 // update score window graphics
                 {
                     UIVisualState* score_window = &battle->score_window;
@@ -6628,8 +6641,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         //     AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
                         // VISUALS.rect.pos.x += 0.5f * VISUALS.rect.dims.x;
                         // VISUALS.rect.pos.y += 0.5f * VISUALS.rect.dims.y;
+                        // VISUALS.rect =
+                        //     RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), gstate->render_dims);
                         VISUALS.rect =
-                            RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), gstate->render_dims);
+                            RectFromCenterAndDims(battle->play_button2.pos_live, GetSprite(SPRITE_BUTTON_BG)->dims);
                         VISUALS.fontsize = 16.0f * 3.0f;
 
                         UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
@@ -6775,7 +6790,6 @@ void GameInit() {
     {
         u32 idx = 0;
         gstate->scenefuncs[SCENE_MAIN] = SceneMainTick;
-        gstate->scenefuncs[SCENE_SHOP] = SceneShopTick;
         Assert(SCENE_COUNT < MAX_SCENES);
         gstate->scenefuncssize = idx;
     }
