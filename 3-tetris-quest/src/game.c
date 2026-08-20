@@ -5995,7 +5995,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (gstate->phase) {
             case GP_NEW_GAME: {
-                gstate->phase_to_be = GP_SHOP;
+                gstate->phase_to_be = GP_NEW_ROUND;
                 break;
             }
             case GP_NEW_ROUND: {
