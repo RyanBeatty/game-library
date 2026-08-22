@@ -5012,11 +5012,9 @@ static const isize NO_CARD_SELECTED_IDX = -1;
 // Assume position zero is sentinel.
 #define BattleHandIter(arr, it) for (Card* it = ArrGetR(arr, 0); it <= ArrTailR(arr); ++it)
 
-static const Vec4 BLOCK_PURPLE = RGBLit(138, 92, 245);
-static const Vec4 BLOCK_GREEN = RGBLit(72, 207, 134);
-static const Vec4 BLOCK_ORANGE = RGBLit(255, 159, 67);
-static const Vec4 BLOCK_RED = RGBLit(245, 92, 135);
-static Vec4 BLOCK_COLORS[SUIT_COUNT] = {LBLACK, BLOCK_PURPLE, BLOCK_GREEN, BLOCK_ORANGE, BLOCK_RED};
+static const Vec4 BLOCK_COLOR1 = RGBLit(252, 155, 211);
+static const Vec4 BLOCK_COLOR2 = RGBLit(212, 250, 255);
+static Vec4 BLOCK_COLORS[SUIT_COUNT] = {LBLACK, BLOCK_COLOR1, BLOCK_COLOR1, BLOCK_COLOR2, BLOCK_COLOR2};
 
 static Piece MakePiece(PieceType type, PieceRot rot, Suit suit) {
     Piece piece = {0};
