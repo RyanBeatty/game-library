@@ -4132,7 +4132,46 @@ static u64 Str8HashU64(Str8 str) {
     return h;
 }
 
-static UIBoxKey UIBoxKeyFromStr8(Str8 str) { return (UIBoxKey){.key = Str8HashU64(str)}; }
+static isize Str8GetSplitIdx(Str8 text) {
+    // Calculate what text to display. Use ## as dilineator.
+    // For ##, everything in the string gets hashed, but only things before ## get hashed
+    // ex. Hello##world, only will display Hello
+    // ##FOO - displays no text
+    //
+    // For ###, only things from ### and beyond are hashed. Same text behavior apply as above.
+
+    for (isize i = 0; i < text.len - 1; ++i) {
+        if (text.data[i] == '#' && text.data[i + 1] == '#') {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static Str8 Str8GetHashPart(Str8 text) {
+    isize split_idx = Str8GetSplitIdx(text);
+    isize hash_start = split_idx > 0 && split_idx + 2 < text.len && text.data[split_idx + 2] == '#' ? split_idx : 0;
+    Str8 hash = {0};
+    hash.data = text.data + hash_start;
+    hash.len = text.len - hash_start;
+    return hash;
+}
+
+static Str8 Str8GetDisplayPart(Str8 text) {
+    isize split_idx = Str8GetSplitIdx(text);
+    isize display_end = split_idx != -1 ? split_idx : text.len;
+    Str8 display = {0};
+    display.data = text.data;
+    // If we aren't displaying the full string because we have ## or ###,
+    display.len = display_end;
+    return display;
+}
+
+static UIBoxKey UIBoxKeyFromStr8(Str8 str) {
+    Str8 hash_part = Str8GetHashPart(str);
+    return (UIBoxKey){.key = Str8HashU64(hash_part)};
+}
 
 static u64 UIBoxKeyHash(UIBoxKey key) { return key.key; }
 
@@ -4272,22 +4311,8 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     UIBox* box = MakeUIBox(text);
     box->pos = visuals->rect.pos;
     box->dims = visuals->rect.dims;
-
-    {
-        // // Calculate what text to display. Use ## as dilineator.
-        // // ex. Hello##world, only will display Hello
-        // // ##FOO - displays no text.
-        isize end_idx = text.len;
-        for (isize i = 0; i < text.len - 1; ++i) {
-            if (text.data[i] == '#' && text.data[i + 1] == '#') {
-                end_idx = i;
-                break;
-            }
-        }
-        Str8 display_text = text;
-        display_text.len = end_idx;
-        box->textbox = LFontMeasureStr8Quad(font, display_text);
-    }
+    Str8 display_text = Str8GetDisplayPart(text);
+    box->textbox = LFontMeasureStr8Quad(font, display_text);
 
     GameControllerState* controller = GetController(ui->input, 0);
     // TODO: At some point we might want to do collision in local space of aabb.
@@ -6655,6 +6680,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
                             }
                             if (action.active) {
+                                battle->phase_to_be = BP_PLAY_HAND;
                                 PlatformPlaySound(GetSound(SOUND_BEEP), 0);
                             }
                         } else {
