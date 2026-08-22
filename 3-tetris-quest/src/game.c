@@ -4279,9 +4279,7 @@ static void UISetActive(UIBox* box) {
     ui->active_key = box->key;
 }
 
-static UIBox* MakeUIBox(Str8 text) {
-    UIBoxKey key = UIBoxKeyFromStr8(text);
-
+static UIBox* UIBoxFromKey(UIBoxKey key) {
     UIState* ui = GetUIState();
 
     u64 hash = UIBoxKeyHash(key);
@@ -4308,7 +4306,8 @@ static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
 
     LFont font = GetLFontClosest(visuals->fontsize);
 
-    UIBox* box = MakeUIBox(text);
+    UIBoxKey key = UIBoxKeyFromStr8(text);
+    UIBox* box = UIBoxFromKey(key);
     box->pos = visuals->rect.pos;
     box->dims = visuals->rect.dims;
     Str8 display_text = Str8GetDisplayPart(text);
@@ -6725,7 +6724,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.fontsize = 16.0f * 3.0f;
 
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d###Score Chips",
                                      battle->display.live_chip_total);
                             UIBoxAction action = DoUIBox(Str8FromC(buffer), &visuals);
                         }
@@ -6750,7 +6749,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.text_tint = RGBLit(212, 250, 255);
                             visuals.fontsize = 16.0f * 3.0f;
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d##Score Chips",
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d###Score Mult",
                                      battle->display.live_chip_total);
                             UIBoxAction action = DoUIBox(Str8FromC(buffer), &visuals);
                         }
