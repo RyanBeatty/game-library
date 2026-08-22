@@ -6723,10 +6723,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.text_tint = RGBLit(212, 250, 255);
                             visuals.fontsize = 16.0f * 3.0f;
 
-                            char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d###Score Chips",
-                                     battle->display.live_chip_total);
-                            UIBoxAction action = DoUIBox(Str8FromC(buffer), &visuals);
+                            Str8 id = Str8F(&gstate->temp, "%d###Score Chips", battle->display.live_chip_total);
+                            UIBoxAction action = DoUIBox(id, &visuals);
                         }
 
                         {
@@ -6749,7 +6747,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.text_tint = RGBLit(212, 250, 255);
                             visuals.fontsize = 16.0f * 3.0f;
                             char buffer[256] = {0};
-                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%d###Score Mult",
+                            snprintf(buffer, ArraySizeOf(buffer) - 1, "%f###Score Mult",
                                      battle->display.live_mult_total);
                             UIBoxAction action = DoUIBox(Str8FromC(buffer), &visuals);
                         }

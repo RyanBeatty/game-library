@@ -1,5 +1,9 @@
 #include "base.h"
 
+#ifndef UNITY_BUILD
+#include <stdarg.h>
+#endif
+
 void __attribute__((noinline)) breakpoint() {}
 
 byte* PlatformAllocate(isize cap) {
@@ -57,6 +61,31 @@ static bool Str8Eq(Str8 a, Str8 b) {
     isize i = 0;
     for (; i < a.len && a.data[i] == b.data[i]; ++i);
     return i == a.len;
+}
+
+static Str8 Str8F(Arena* perm, const char* fmt, ...) {
+    static isize MAX_SIZE = 1024;
+
+    va_list args;
+
+    breakpoint();
+    va_start(args, fmt);
+    isize size = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+
+    Assert(size > 0);
+    Assert(size < MAX_SIZE);
+
+    char* buffer = New(perm, size + 1, char);
+
+    va_start(args, fmt);
+    vsnprintf(buffer, size + 1, fmt, args);
+    va_end(args);
+
+    Str8 str = {0};
+    str.data = buffer;
+    str.len = size;
+    return str;
 }
 
 static f32 F32FromStr8(Str8 s, bool* ok) {
