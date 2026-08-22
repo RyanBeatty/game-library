@@ -6750,7 +6750,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.fontsize = 16.0f * 3.0f;
                             char buffer[256] = {0};
                             snprintf(buffer, ArraySizeOf(buffer) - 1, "%d###Score Mult",
-                                     battle->display.live_chip_total);
+                                     battle->display.live_mult_total);
                             UIBoxAction action = DoUIBox(Str8FromC(buffer), &visuals);
                         }
                     }
