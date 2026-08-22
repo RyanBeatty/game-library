@@ -6353,13 +6353,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         DrawBlock(pos, 1.0f, &bg_graphics);
 
                                         if (tile->occupied) {
-                                            // f32 scale = 1.0f;
-                                            // if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
-                                            //     scale = TileScoreScalePopTween(battle->display.tween_elapsed);
-                                            // }
+                                            f32 scale = 1.0f;
+                                            if (TileIdEq(battle->display.state.scored_tile, tile->id)) {
+                                                scale = TileScoreScalePopTween(battle->display.tween_elapsed);
+                                            }
                                             BlockGraphics graphics = {.base_color = tile->effects.base_color,
                                                                       .effects = &tile->effects};
-                                            DrawBlock(pos, 1.0f, &graphics);
+                                            DrawBlock(pos, scale, &graphics);
                                         }
                                     }
 
