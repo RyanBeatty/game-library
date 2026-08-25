@@ -421,7 +421,8 @@ static Sprite SpriteFromAseprite(LTexture tx, AsepriteSprite rect) {
     SPRITEX(BOARD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(5, 45)), Vec2Lit(282, 248)))        \
     SPRITEX(BUTTON_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(10, 314)), Vec2Lit(100, 59)))      \
     SPRITEX(SCORE_PANEL_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(294, 8)), Vec2Lit(109, 351))) \
-    SPRITEX(SCORE_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(20, 400)), Vec2Lit(105, 71)))
+    SPRITEX(SCORE_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(20, 400)), Vec2Lit(105, 71)))       \
+    SPRITEX(SCORE_WORD_BG, AsepriteCenteredLit(AsepritePxTL(Vec2Lit(144, 419)), Vec2Lit(99, 32)))
 
 // SPRITEX(BLOCK2, AsepriteLit(AsepritePxTL(Vec2Lit(64, 1)), Vec2Lit(36, 36), Vec2Lit(36, 36)))
 
@@ -6693,6 +6694,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         //     AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
                         Vec2 parent_bl_pos = Vec2Lit(score_window_pos.x - 0.5f * score_window_sprite->dims.x,
                                                      score_window_pos.y - 0.5f * score_window_sprite->dims.y);
+                        Vec2 parent_bl_pos_orig = parent_bl_pos;
 
                         {
                             Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Zero());
@@ -6701,50 +6703,65 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
                             UIBoxAction action = DoUIBox(Str8Lit("##Score Panel BG"), &visuals);
                         }
-
                         {
-                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(2, 223));
-                            UIBoxVisuals visuals = UIBoxVisualsZero();
-                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(105, 71));
-                            visuals.sprite = GetSprite(SPRITE_SCORE_BG);
-                            UIBoxAction action = DoUIBox(Str8Lit("##Score BG"), &visuals);
+                            {
+                                Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(2, 223));
+                                UIBoxVisuals visuals = UIBoxVisualsZero();
+                                visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(105, 71));
+                                visuals.sprite = GetSprite(SPRITE_SCORE_BG);
+                                UIBoxAction action = DoUIBox(Str8Lit("##Score BG"), &visuals);
 
-                            parent_bl_pos = bl_pos;
+                                parent_bl_pos = bl_pos;
+                            }
+
+                            {
+                                Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(1, 20));
+                                UIBoxVisuals visuals = UIBoxVisualsZero();
+                                visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(43, 32)),
+                                visuals.sprite = GetSprite(SPRITE_DEFAULT);
+                                visuals.tint = RGBLit(252, 155, 211);
+                                visuals.text_tint = RGBLit(212, 250, 255);
+                                visuals.fontsize = 16.0f * 3.0f;
+
+                                Str8 id = Str8F(&gstate->temp, "%d###Score Chips", battle->display.live_chip_total);
+                                UIBoxAction action = DoUIBox(id, &visuals);
+                            }
+
+                            {
+                                Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(44, 20));
+                                UIBoxVisuals visuals = UIBoxVisualsZero();
+                                visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(13, 32));
+                                visuals.sprite = GetSprite(SPRITE_DEFAULT);
+                                visuals.tint = LHIDDEN;
+                                visuals.text_tint = RGBLit(212, 250, 255);
+                                visuals.fontsize = 16.0f * 3.0f;
+                                UIBoxAction action = DoUIBox(Str8Lit("X"), &visuals);
+                            }
+
+                            {
+                                Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(57, 20));
+                                UIBoxVisuals visuals = UIBoxVisualsZero();
+                                visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(47, 32));
+                                visuals.sprite = GetSprite(SPRITE_DEFAULT);
+                                visuals.tint = RGBLit(218, 186, 255);
+                                visuals.text_tint = RGBLit(212, 250, 255);
+                                visuals.fontsize = 16.0f * 3.0f;
+                                Str8 id = Str8F(&gstate->temp, "%0.2f###Score Mult", battle->display.live_mult_total);
+                                UIBoxAction action = DoUIBox(id, &visuals);
+                            }
                         }
 
-                        {
-                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(1, 20));
-                            UIBoxVisuals visuals = UIBoxVisualsZero();
-                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(43, 32)),
-                            visuals.sprite = GetSprite(SPRITE_DEFAULT);
-                            visuals.tint = RGBLit(252, 155, 211);
-                            visuals.text_tint = RGBLit(212, 250, 255);
-                            visuals.fontsize = 16.0f * 3.0f;
-
-                            Str8 id = Str8F(&gstate->temp, "%d###Score Chips", battle->display.live_chip_total);
-                            UIBoxAction action = DoUIBox(id, &visuals);
-                        }
+                        parent_bl_pos = parent_bl_pos_orig;
 
                         {
-                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(44, 20));
+                            Sprite* sprite = GetSprite(SPRITE_SCORE_WORD_BG);
+                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(5, 188));
                             UIBoxVisuals visuals = UIBoxVisualsZero();
-                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(13, 32));
-                            visuals.sprite = GetSprite(SPRITE_DEFAULT);
-                            visuals.tint = LHIDDEN;
+                            visuals.rect = RectFromBLAndDims(bl_pos, sprite->dims);
+                            visuals.sprite = sprite;
                             visuals.text_tint = RGBLit(212, 250, 255);
                             visuals.fontsize = 16.0f * 3.0f;
-                            UIBoxAction action = DoUIBox(Str8Lit("X"), &visuals);
-                        }
-
-                        {
-                            Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(57, 20));
-                            UIBoxVisuals visuals = UIBoxVisualsZero();
-                            visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(47, 32));
-                            visuals.sprite = GetSprite(SPRITE_DEFAULT);
-                            visuals.tint = RGBLit(218, 186, 255);
-                            visuals.text_tint = RGBLit(212, 250, 255);
-                            visuals.fontsize = 16.0f * 3.0f;
-                            Str8 id = Str8F(&gstate->temp, "%0.2f###Score Mult", battle->display.live_mult_total);
+                            Str8 id = Str8F(&gstate->temp, "Score: %d###Score Total", battle->display.live_score_total);
                             UIBoxAction action = DoUIBox(id, &visuals);
                         }
                     }
