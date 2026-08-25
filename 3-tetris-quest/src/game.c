@@ -6058,14 +6058,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        isize focus_idx_to_be = NO_CARD_SELECTED_IDX;
-
                         if (controller->action_left.pressed && battle->selection_idx != NO_CARD_SELECTED_IDX) {
                             BattlePlacePiece(battle, gstate->frame_time);
                         }
 
                         // Update hand
                         {
+                            isize focus_idx_to_be = NO_CARD_SELECTED_IDX;
                             isize selection_to_be = NO_CARD_SELECTED_IDX;
                             for (isize i = 0; i < ArrLen(&battle->hand); ++i) {
                                 // Card* card = ArrGetPtr(&battle->hand, i);
@@ -6090,6 +6089,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     if (battle->focus_idx != NO_CARD_SELECTED_IDX) {
                                         Card* prev_focus = ArrGetPtr(&battle->hand, battle->focus_idx);
                                         prev_focus->scale_target = 1.0f;
+                                        battle->focus_idx = NO_CARD_SELECTED_IDX;
                                     }
 
                                     if (focus_idx_to_be != NO_CARD_SELECTED_IDX) {
