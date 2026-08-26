@@ -6084,6 +6084,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
+                            if (selection_to_be != NO_CARD_SELECTED_IDX && battle->selection_idx != selection_to_be) {
+                                battle->selection_idx = selection_to_be;
+                                BattleSetActivePiece(battle);
+                                PlatformPlaySound(GetSound(SOUND_CARD_SELECT), 0);
+                            }
+
+                            if (battle->selection_idx == NO_CARD_SELECTED_IDX) {
+                                if (focus_idx_to_be != NO_CARD_SELECTED_IDX && battle->focus_idx != focus_idx_to_be) {
+                                    PlatformPlaySound(GetSound(SOUND_CARD_FOCUS), 0);
+                                }
+                                battle->focus_idx = focus_idx_to_be;
+                            }
+
                             if (battle->selection_idx == NO_CARD_SELECTED_IDX) {
                                 if (focus_idx_to_be != battle->focus_idx) {
                                     if (battle->focus_idx != NO_CARD_SELECTED_IDX) {
@@ -6101,28 +6114,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            if (selection_to_be != NO_CARD_SELECTED_IDX && selection_to_be != battle->selection_idx) {
-                                if (battle->selection_idx != NO_CARD_SELECTED_IDX) {
-                                    Card* prev_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
-                                    prev_selection->scale_target = 1.0f;
-                                }
-
-                                battle->selection_idx = selection_to_be;
-                                Card* new_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
-                                new_selection->scale_target = 1.2f;
-                                BattleSetActivePiece(battle);
-                                PlatformPlaySound(GetSound(SOUND_CARD_SELECT), 0);
-                            }
-
-                            // if (selection_to_be != NO_CARD_SELECTED_IDX &&
-                            //     battle->selection_idx == NO_CARD_SELECTED_IDX) {
-                            //     battle->selection_idx = selection_to_be;
-                            //     BattleSetActivePiece(battle);
-                            // }
-
                             if (controller->right_shoulder.pressed) {
-                                Card* prev_selection = ArrGetPtr(&battle->hand, battle->selection_idx);
-                                prev_selection->scale_target = 1.0f;
                                 battle->selection_idx = NO_CARD_SELECTED_IDX;
                                 PlatformPlaySound(GetSound(SOUND_CARD_DESELECT), 0);
                                 // Causes issues with trying to set active piece while we have nothing selected. I
