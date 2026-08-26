@@ -6173,6 +6173,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     card->pos_target = Vec3WTransform(HandIdxToPos(&battle->hand, i), battle->hand_to_world);
+                    if (battle->selection_idx == i) {
+                        card->pos_target.y += 20.0f;
+                    } else if (battle->focus_idx == i) {
+                        card->pos_target.y += 5.0f;
+                    }
                     if (!Vec3Eq(card->pos_live, card->pos_target)) {
                         Vec3 diff = Vec3Sub(card->pos_target, card->pos_live);
                         f32 distance = Vec3Len(diff);
@@ -6414,7 +6419,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     // Vec2 card_scale = Vec2Scale(battle->card_scale, card->scale_live);
                                     // DrawQuad(quad_pos, card_scale.x, card_scale.y, Mat4Identity(), LGRAY);
 
-                                    f32 piece_scale = 0.5f * card->scale_live;
+                                    // f32 piece_scale = 0.5f * card->scale_live;
+                                    f32 piece_scale = 0.5f;
                                     Vec2 scaled_piece_step = Vec2Scale(piece_step, piece_scale);
 
                                     // Draw piece inside card.
@@ -6425,7 +6431,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         pos = Vec3Add(pos, quad_pos);
                                         BlockGraphics graphics = {.base_color = card->piece.effects.base_color,
                                                                   .effects = &card->piece.effects};
-                                        DrawBlock(pos, 0.5f, &graphics);
+                                        DrawBlock(pos, piece_scale, &graphics);
                                     }
                                 }
                             }
