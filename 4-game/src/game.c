@@ -4426,38 +4426,10 @@ typedef struct {
 #define TileIdtoVec3(id) (Vec3Lit((id).c, (id).r, (id).height))
 #define TileIdEq(a, b) (((a).r == (b).r) && ((a).c == (b).c) && ((a).height == (b).height))
 
-typedef enum {
-    TE_NONE = 0,
-    TE_HI_LO = 1u << 0,
-    TE_MAX = 1u << 31,
-} TileEffectType;
-
-#define TileEffectTypeIter(flags, id) for (TileEffectType id = 1; id < TE_MAX; id <<= 1)
-
-typedef enum {
-    PR_0 = 0,
-    PR_90,
-    PR_180,
-    PR_270,
-    PR_COUNT,
-} PieceRot;
-
-typedef struct {
-    i32 points;
-    Suit suit;
-    Vec4 base_color;
-    TileEffectType flags;
-    PieceRot rot;
-} TileEffects;
-
-#define TileEffectsHas(effects, ty) ((effects)->flags & (ty))
-
 typedef struct {
     // Reminder that this pos refers to the *center* of the tile.
     Vec3 pos;
     TileId id;
-    bool occupied;
-    TileEffects effects;
 } Tile;
 
 typedef struct {
