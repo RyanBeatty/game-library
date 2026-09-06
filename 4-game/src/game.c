@@ -3861,20 +3861,6 @@ typedef struct {
 #define EntityIdArrIter(arr, it) for (EntityId* it = ArrGetR(arr, 0); it <= ArrTailR(arr); ++it)
 
 ////////////////////////////////////////////////////////////
-// s:gameplay fields.
-
-typedef enum {
-    STATE_ALIVE = 0,
-    STATE_DEAD,
-} EntityState;
-
-typedef struct {
-    i32 range;
-    i32 dmg;
-    bool ranged;  // True if the attacker is a ranged unit.
-} AttackInfo;
-
-////////////////////////////////////////////////////////////
 
 typedef struct {
     /////////////////////////////////////////////////////////////////
@@ -3908,15 +3894,6 @@ typedef struct {
 
     /////////////////////////////////////////////////////////////////
     // Gameplay fields.
-    i32 hp;
-
-    EntityState state;
-    i32 move_ap;
-    i32 attack_ap;
-
-    i32 base_speed;
-
-    AttackInfo attack;
 } Entity;
 
 typedef struct {
