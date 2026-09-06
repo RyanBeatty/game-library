@@ -4730,28 +4730,6 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
 
 ////////////////////////////////////////////////////
 
-typedef struct {
-    Piece piece;
-
-    Vec3 pos_target;
-    Vec3 pos_live;
-    f32 pos_speed;
-
-    f32 scale_target;
-    f32 scale_live;
-    f32 scale_speed;
-
-    bool visible;
-} Card;
-
-typedef struct {
-    Card* data;
-    isize len;
-    isize cap;
-} CardArr;
-
-////////////////////////////////////////////////////
-
 // Struct for ui button/box state. mostly used for tweens I guess.
 typedef struct {
     Vec2 pos_end;
@@ -4798,15 +4776,6 @@ typedef struct {
     Vec4 tile_highlight_color;
 } BattleDisplay;
 
-// Compute the tween's T value which is from [0, 1]
-#define TweenT(elapsed, duration) (f32clamp01(elapsed / duration))
-#define BattleDisplayTweenT(display) TweenT((display)->tween_elapsed, (display)->tween_duration)
-
-static BattleDisplay BATTLE_DISPLAY_ZERO = {.state = {.scored_tile = NULL_TILEID}};
-
-#define BattleDisplayInit(display) (*(display) = BATTLE_DISPLAY_ZERO)
-#define BattleDisplayStateInit(display) ((display)->state = BATTLE_DISPLAY_ZERO.state)
-
 typedef struct {
     BattlePhase phase;
     BattlePhase phase_to_be;
@@ -4827,12 +4796,8 @@ typedef struct {
     i32 trick_mult_score;
     i32 num_hands;
 
-    Card hand_buffer[6];
-    CardArr hand;
     Mat4 hand_to_world;
 
-    Card deck_buffer[SUIT_COUNT * PT_COUNT];
-    CardArr deck;
     i32 deck_size_live;
     Vec3 deck_pos_live;
     Vec3 deck_pos_start;
