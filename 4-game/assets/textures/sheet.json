@@ -1,0 +1,27 @@
+{ "frames": {
+   "characters 0.84.png": {
+    "frame": { "x": 0, "y": 0, "w": 256, "h": 1536 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 1536 },
+    "sourceSize": { "w": 256, "h": 1536 },
+    "duration": 100
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.17-x64",
+  "format": "RGBA8888",
+  "size": { "w": 256, "h": 1536 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "Layer", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+   { "name": "human-mage", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 144, "y": 240, "w": 16, "h": 16 } }] },
+   { "name": "human-knight", "color": "#0000ffff", "keys": [{ "frame": 0, "bounds": {"x": 208, "y": 240, "w": 16, "h": 16 } }] }
+  ]
+ }
+}
