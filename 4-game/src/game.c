@@ -4620,7 +4620,6 @@ typedef struct GameState {
     SceneId nextsceneid;
 
     LCamera camera;
-    Mat4 low_res_proj;
     Mat4 world_proj;  // The projection of world space onto the render viewport. i.e. it should map logical world units
                       // to the edges of the viewport (which may be larger than the world dimensions)
 
@@ -4663,7 +4662,7 @@ Vec2 GameScreenToWorld2D(Vec2 pos_screen) {
     // TODO: Potentially if we are doing pixel perfect rendering (e.g. snapping camera pos + draw call positions at
     // render time), we need to make sure that we use the pixel perfect camera to unconvert from screen to world here as
     // well.
-    Mat4 inv_proj = Mat4Invert(gstate->low_res_proj);
+    Mat4 inv_proj = Mat4Invert(gstate->world_proj);
     Mat4 inv_view = Mat4Invert(CameraGetViewMat(gstate->camera));
     Mat4 inv = Mat4Multiply(inv_view, inv_proj);
     Vec3 pos_world = Vec3WTransform(pos_clip, inv);
@@ -5030,14 +5029,6 @@ void GameInit() {
     {
         gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
         gstate->camera.eye = Vec3Lit(0.0f, 0.0f, 10.0f);
-
-        {
-            // Reminder that using the _world variables here ensures we convert from world units back to pixel units
-            // correctly.
-            Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw_world, 0.5f * gstate->renderh_world);
-            gstate->low_res_proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
-                                             half_render_dims.y, -100.0f, 100.0f);
-        }
 
         // The projection that the game should render to. Maps logical world units onto the edges of the viewport (which
         // will upscale naturally to the size of the viewport)
