@@ -4576,54 +4576,6 @@ LCORE Tile* GridGetCursorHoverTile(Grid* grid, GameControllerState* controller) 
 
 ////////////////////////////////////////////////////
 
-// Struct for ui button/box state. mostly used for tweens I guess.
-typedef struct {
-    Vec2 pos_end;
-    Vec2 pos_start;
-    Vec2 pos_live;
-    f32 pos_elapsed;
-    f32 pos_duration;
-} UIVisualState;
-
-typedef struct {
-    Grid grid;
-
-    TileId anchor;
-    TileId placement_anchor;
-
-    i32 score_target;
-    i32 total_score;
-    i32 num_cleared;
-    i32 cleared_streak;
-    i32 blocks_placed_since_last_clear;
-    i32 max_blocks_placed_since_last_clear;
-    i32 trick_base_score;
-    i32 trick_mult_score;
-    i32 num_hands;
-
-    Mat4 hand_to_world;
-
-    i32 deck_size_live;
-    Vec3 deck_pos_live;
-    Vec3 deck_pos_start;
-    Vec3 deck_pos_end;
-    f32 deck_pos_duration;
-    f32 deck_pos_elapsed;
-
-    Vec2 card_scale;
-    isize selection_idx;
-    isize focus_idx;
-
-    i32 renderw_world;
-    i32 renderh_world;
-
-    UIVisualState play_button;
-    UIVisualState play_button2;
-    UIVisualState score_window;
-} Battle;
-
-////////////////////////////////////////////////////
-
 #define MAX_SCENES 10
 
 typedef enum {
