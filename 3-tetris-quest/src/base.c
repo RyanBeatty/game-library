@@ -68,7 +68,6 @@ static Str8 Str8F(Arena* perm, const char* fmt, ...) {
 
     va_list args;
 
-    breakpoint();
     va_start(args, fmt);
     isize size = vsnprintf(NULL, 0, fmt, args);
     va_end(args);

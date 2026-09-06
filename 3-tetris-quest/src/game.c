@@ -5516,6 +5516,12 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                 // log.
                 display->tween_elapsed = f32mod(display->tween_elapsed, display->tween_duration);
                 phase_to_be = BDP_NEXT;
+
+                // After we've completed an event, we need to ensure that we pin the live score to the live score to be
+                // so that we don't keep counting (for instance we play events for each draw, so that would cause it to
+                // keep resetting).
+                // TODO: This doesn't even fully work it seems.
+                display->live_score_total = display->live_score_total_to_be;
             }
 
             break;
@@ -5545,7 +5551,8 @@ static void BattleDisplayUpdate(BattleDisplay* display, Battle* battle, FrameTim
                     }
                     case SE_SCORE_HAND: {
                         display->live_score_total = display->display_score_total;
-                        display->live_score_total_to_be = cur_event->score_total;
+                        display->live_score_total_to_be =
+                            cur_event->score_total != 0.0f ? cur_event->score_total : display->live_score_total;
 
                         f32 num_distance = display->live_score_total_to_be - display->live_score_total;
                         f32 num_per_frame = 1.0f;
@@ -6759,7 +6766,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.sprite = sprite;
                             visuals.text_tint = RGBLit(212, 250, 255);
                             visuals.fontsize = 16.0f * 3.0f;
-                            Str8 id = Str8F(&gstate->temp, "Score: %d###Score Total", battle->display.live_score_total);
+                            Str8 id =
+                                Str8F(&gstate->temp, "Score: %d###Score Total", battle->display.display_score_total);
                             UIBoxAction action = DoUIBox(id, &visuals);
                         }
                     }
