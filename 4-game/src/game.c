@@ -4698,10 +4698,6 @@ typedef struct GameState {
 
     GamePhase phase;
     GamePhase phase_to_be;
-    i32 score_target;
-
-    Battle battle;
-
 } GameState;
 
 static GameState GState;
@@ -4820,7 +4816,6 @@ static void GamePhaseChange(GameState* gstate) {
             break;
         }
         case GP_NEW_GAME: {
-            gstate->score_target = 500;
             break;
         }
         default: {
