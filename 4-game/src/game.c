@@ -4923,50 +4923,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 
 ////////////////////////////////////////////////////
 
-#define MAX_SHOP_FOR_SALE 3
-
-typedef struct {
-    Vec3 pos;
-    // Vec2 pos_screen;
-} Shopable;
-
-TypedefArr(Shopable);
-
-typedef struct {
-    Vec3 area_origin;
-    Vec2 area_dims;
-
-    Shopable for_sale_buffer[MAX_SHOP_FOR_SALE];
-    ShopableArr for_sale;
-    isize for_sale_hover_idx;
-
-    // Drawing related
-    Vec3 for_sale_origin;
-    Vec3 for_sale_scale;
-    Vec2 for_sale_quad_scale;
-    Mat4 for_sale_to_world;
-
-    Vec2 for_sale_description_pos_screen;
-} Shop;
-
-static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims) {
-    static Shop SHOP_ZERO = {0};
-    *shop = SHOP_ZERO;
-
-    shop->area_origin = area_origin;
-    shop->area_dims = area_dims;
-    InitArrS(&shop->for_sale, shop->for_sale_buffer, ArraySizeOf(shop->for_sale_buffer));
-
-    shop->for_sale_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
-    shop->for_sale_quad_scale = Vec2Lit(40.0f, 70.0f);
-    shop->for_sale_scale = Vec3Lit(shop->for_sale_quad_scale.x * 1.5f, shop->for_sale_quad_scale.y, 1.0f);
-    shop->for_sale_to_world = Mat4SVRT(shop->for_sale_scale, Mat4Identity(), shop->for_sale_origin);
-
-    shop->for_sale_hover_idx = -1;
-}
-
-////////////////////////////////////////////////////
-
 #define MAX_SCENES 10
 
 typedef enum {
@@ -5044,7 +5000,6 @@ typedef struct GameState {
     i32 score_target;
 
     Battle battle;
-    Shop shop;
 
 } GameState;
 
@@ -5146,29 +5101,6 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
-// Returns the fractional offset (0.0 or 0.5) that a position needs to have
-// for a quad of the given size to land on pixel boundaries, given the
-// render target's dimension. Assumes PPM = 1 (1 world unit = 1 pixel).
-f32 PixelSnapOffset(f32 render_dim, f32 quad_dim) {
-    i32 render_odd = ((i32)render_dim) & 1;
-    i32 quad_odd = ((i32)quad_dim) & 1;
-    return (render_odd != quad_odd) ? 0.5f : 0.0f;
-}
-
-// Snaps `desired_pos` to the nearest grid point that has the correct
-// fractional offset for this axis (0.0 or 0.5), rather than just rounding
-// to the nearest whole number.
-f32 SnapAxis(f32 desired_pos, f32 render_dim, f32 quad_dim) {
-    f32 required_frac = PixelSnapOffset(render_dim, quad_dim);
-    return roundf(desired_pos - required_frac) + required_frac;
-}
-
-typedef struct {
-    Vec4 base_color;
-    bool preview;
-    TileEffects* effects;
-} BlockGraphics;
-
 static void GamePhaseChange(GameState* gstate) {
     switch (gstate->phase_to_be) {
         case GP_NONE: {
@@ -5183,9 +5115,6 @@ static void GamePhaseChange(GameState* gstate) {
             break;
         }
         case GP_SHOP: {
-            Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
-            Vec2 playing_area_dims = Vec2Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f);
-            ShopInit(&gstate->shop, playing_area_origin, playing_area_dims);
             break;
         }
         case GP_GAME_OVER: {
@@ -5212,7 +5141,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     GameControllerState* controller = GetController(input, 0);
     Battle* battle = &gstate->battle;
-    Shop* shop = &gstate->shop;
     Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
