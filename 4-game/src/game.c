@@ -4622,55 +4622,6 @@ typedef struct {
     UIVisualState score_window;
 } Battle;
 
-static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
-    static Battle BATTLE_ZERO = {0};
-    *battle = BATTLE_ZERO;
-
-    battle->renderw_world = renderw_world;
-    battle->renderh_world = renderh_world;
-    Vec2 render_dims_px = Vec2Lit(Meter2Px(renderw_world), Meter2Px(renderh_world));
-
-    {
-        battle->deck_pos_end = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
-        battle->deck_pos_start = battle->deck_pos_end;
-        battle->deck_pos_start.y -= Px2Meter(200.0f);
-        battle->deck_pos_live = battle->deck_pos_start;
-        battle->deck_pos_duration = 1.2f;
-    }
-
-    battle->score_target = score_target;
-
-    {
-        UIVisualState* play_button = &battle->play_button;
-        play_button->pos_duration = 1.2f;
-        play_button->pos_end = Vec2Lit(0.45f * PlatformScreenWidth(), -0.84f * PlatformScreenHeight());
-        play_button->pos_start = play_button->pos_end;
-        play_button->pos_start.y -= 200.0f;
-        play_button->pos_live = play_button->pos_start;
-    }
-
-    {
-        UIVisualState* play_button2 = &battle->play_button2;
-
-        Rect rect = RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), render_dims_px);
-        play_button2->pos_duration = 1.2f;
-        play_button2->pos_end = rect.pos;
-        play_button2->pos_start = play_button2->pos_end;
-        play_button2->pos_start.x += 100.0f;
-        play_button2->pos_live = play_button2->pos_start;
-    }
-
-    {
-        UIVisualState* score_window = &battle->score_window;
-        score_window->pos_duration = 0.8f;
-        Rect rect = RectFromAsepriteBLAndDims(Vec2Lit(5, 354), Vec2Lit(109, 351), render_dims_px);
-        score_window->pos_end = rect.pos;
-        score_window->pos_start = score_window->pos_end;
-        score_window->pos_start.x -= 500.0f;
-        score_window->pos_live = score_window->pos_start;
-    }
-}
-
 ////////////////////////////////////////////////////
 
 #define MAX_SCENES 10
@@ -4860,8 +4811,6 @@ static void GamePhaseChange(GameState* gstate) {
             break;
         }
         case GP_PLAYING: {
-            BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
-
             break;
         }
         case GP_SHOP: {
