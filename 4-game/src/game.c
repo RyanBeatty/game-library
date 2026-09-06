@@ -4621,7 +4621,6 @@ typedef struct GameState {
 
     LCamera camera;
     Mat4 low_res_proj;
-    Mat4 high_res_proj;
     Mat4 world_proj;  // The projection of world space onto the render viewport. i.e. it should map logical world units
                       // to the edges of the viewport (which may be larger than the world dimensions)
 
@@ -5031,12 +5030,8 @@ void GameInit() {
                                              half_render_dims.y, -100.0f, 100.0f);
         }
 
-        {
-            Vec2 half_render_dims = Vec2Scale(gstate->render_dims, 0.5f);
-            gstate->high_res_proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
-                                              half_render_dims.y, -100.0f, 100.0f);
-        }
-
+        // The projection that the game should render to. Maps logical world units onto the edges of the viewport (which
+        // will upscale naturally to the size of the viewport)
         {
             Vec2 half_render_dims = Vec2Scale(gstate->render_dims, 0.5f);
             gstate->world_proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
