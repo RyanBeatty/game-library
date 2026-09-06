@@ -4592,8 +4592,6 @@ typedef struct GameState {
     Vec2 render_dims;
     f32 renderw_world;  // in meters
     f32 renderh_world;  // in meters
-    u32 screenw;
-    u32 screenh;
     // The scaling factor we will scale up the game render texture to the screen texture.
     // TODO: We might want to somehow keep screenw/h and this inline. Or just make sure we letterbox or something
     f32 render_to_screen_scale;
@@ -5042,9 +5040,6 @@ void GameTick(f32 dt, GameInput* input) {
     gstate->timer += dt;
     gstate->frame_time.dt = dt;
     gstate->frame_time.accumulated = gstate->timer;
-
-    gstate->screenw = PlatformScreenWidth();
-    gstate->screenh = PlatformScreenHeight();
 
     {
         static bool ENABLE_DEBUG_KEYMAP = true;
