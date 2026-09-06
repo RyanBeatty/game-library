@@ -4585,47 +4585,7 @@ typedef struct {
     f32 pos_duration;
 } UIVisualState;
 
-typedef enum {
-    BP_NONE = 0,
-    BP_PLAYING,
-    BP_PLAY_HAND,
-    BP_SCORING,
-    BP_COUNT,
-} BattlePhase;
-
-typedef enum {
-    BDP_DONE = 0,
-    BDP_NEXT,
-    BDP_PLAYING,
-    BDP_COUNT,
-} BattleDisplayPhase;
-
 typedef struct {
-    BattleDisplayPhase phase;
-    f32 tween_elapsed;
-    f32 tween_duration;
-
-    // This should be stuff that needs to be reset when scoring each new event.
-    struct {
-        TileId scored_tile;
-        i32 live_chip_tile;
-    } state;
-
-    // Cumulative state that persists across all events.
-    i32 live_chip_total;
-    f32 live_mult_total;
-
-    i32 live_score_total;
-    i32 live_score_total_to_be;
-    i32 display_score_total;
-
-    Vec4 tile_highlight_color;
-} BattleDisplay;
-
-typedef struct {
-    BattlePhase phase;
-    BattlePhase phase_to_be;
-
     Grid grid;
 
     TileId anchor;
@@ -4657,8 +4617,6 @@ typedef struct {
     i32 renderw_world;
     i32 renderh_world;
 
-    BattleDisplay display;
-
     UIVisualState play_button;
     UIVisualState play_button2;
     UIVisualState score_window;
@@ -4668,7 +4626,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
 
-    battle->phase = BP_PLAYING;
     battle->renderw_world = renderw_world;
     battle->renderh_world = renderh_world;
     Vec2 render_dims_px = Vec2Lit(Meter2Px(renderw_world), Meter2Px(renderh_world));
@@ -4933,8 +4890,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     // Grid* grid = GameStateGetGrid(gstate);
 
     GameControllerState* controller = GetController(input, 0);
-    Battle* battle = &gstate->battle;
-    Grid* grid = &gstate->battle.grid;
 
     if (gstate->init) {
         gstate->phase_to_be = GP_NEW_GAME;
@@ -5025,7 +4980,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
                             }
                             if (action.active) {
-                                battle->phase_to_be = BP_PLAY_HAND;
                                 PlatformPlaySound(GetSound(SOUND_BEEP), 0);
                             }
                         } else {
@@ -5034,7 +4988,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
-                        Vec2 score_window_pos = battle->score_window.pos_live;
+                        Vec2 score_window_pos = Vec2Zero();
                         Sprite* score_window_sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
 
                         // Vec2 parent_bl_pos =
