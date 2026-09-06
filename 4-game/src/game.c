@@ -5015,15 +5015,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
                         }
 
-                        // VISUALS.rect.dims = Vec2Lit(100, 59);
-                        // VISUALS.rect.pos = Vec3ToVec2(
-                        //     AsepriteToEngineWorld(gstate->render_dims, AsepritePxBL(Vec2Lit(508.0f, 261.0f)), 0.0f));
-                        // VISUALS.rect.pos.x += 0.5f * VISUALS.rect.dims.x;
-                        // VISUALS.rect.pos.y += 0.5f * VISUALS.rect.dims.y;
-                        // VISUALS.rect =
-                        //     RectFromAsepriteBLAndDims(Vec2Lit(508, 261), Vec2Lit(100, 59), gstate->render_dims);
-                        VISUALS.rect =
-                            RectFromCenterAndDims(battle->play_button2.pos_live, GetSprite(SPRITE_BUTTON_BG)->dims);
+                        VISUALS.rect = RectFromCenterAndDims(Vec2Zero(), Vec2Lit(20, 20));
                         VISUALS.fontsize = 16.0f * 3.0f;
 
                         UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
@@ -5078,7 +5070,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 visuals.text_tint = RGBLit(212, 250, 255);
                                 visuals.fontsize = 16.0f * 3.0f;
 
-                                Str8 id = Str8F(&gstate->temp, "%d###Score Chips", battle->display.live_chip_total);
+                                Str8 id = Str8F(&gstate->temp, "%d###Score Chips", 10);
                                 UIBoxAction action = DoUIBox(id, &visuals);
                             }
 
@@ -5101,7 +5093,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 visuals.tint = RGBLit(218, 186, 255);
                                 visuals.text_tint = RGBLit(212, 250, 255);
                                 visuals.fontsize = 16.0f * 3.0f;
-                                Str8 id = Str8F(&gstate->temp, "%0.2f###Score Mult", battle->display.live_mult_total);
+                                Str8 id = Str8F(&gstate->temp, "%0.2f###Score Mult", 4.0f);
                                 UIBoxAction action = DoUIBox(id, &visuals);
                             }
                         }
@@ -5116,8 +5108,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             visuals.sprite = sprite;
                             visuals.text_tint = RGBLit(212, 250, 255);
                             visuals.fontsize = 16.0f * 3.0f;
-                            Str8 id =
-                                Str8F(&gstate->temp, "Score: %d###Score Total", battle->display.display_score_total);
+                            Str8 id = Str8F(&gstate->temp, "Score: %d###Score Total", 11);
                             UIBoxAction action = DoUIBox(id, &visuals);
                         }
                     }
