@@ -4664,8 +4664,6 @@ typedef struct {
     UIVisualState score_window;
 } Battle;
 
-static const isize NO_CARD_SELECTED_IDX = -1;
-
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
@@ -4674,14 +4672,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
     battle->renderw_world = renderw_world;
     battle->renderh_world = renderh_world;
     Vec2 render_dims_px = Vec2Lit(Meter2Px(renderw_world), Meter2Px(renderh_world));
-    {
-        Sprite* grid_sprite = GetSprite(SPRITE_BOARD_BG);
-        Vec3 grid_bottom_left = AsepriteToEngineWorld(render_dims_px, AsepritePxBL(Vec2Lit(164, 247)), 0);
-        Vec3 grid_pos = Vec3Add(grid_bottom_left, Vec3Lit(0.5f * grid_sprite->dims.x, 0.5f * grid_sprite->dims.y, 0));
-        // TODO: Work on this
-        Vec3 grid_origin_offset = Vec3Sub(Vec3Add(grid_bottom_left, Vec3Lit(6 + 16, 6 + 16, 0)), grid_pos);
-        GridInit(&battle->grid, grid_pos, grid_origin_offset);
-    }
 
     {
         battle->deck_pos_end = Vec3Lit(Px2Meter(240.0f), Px2Meter(-140.0f), Px2Meter(0.0f));
