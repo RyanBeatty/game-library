@@ -4792,39 +4792,6 @@ typedef struct {
 } UIVisualState;
 
 typedef enum {
-    SE_NONE = 0,
-    SE_BLOCK,
-    SE_ADD_MULT,
-    SE_SCORE_HAND,
-    SE_DRAW_CARD,
-    SE_ROUND_START,
-} ScoreEventType;
-
-typedef struct {
-    ScoreEventType type;
-    TileId block_id;
-    i32 chip_value;
-    f32 mult_value;
-    i32 score_total;
-
-    isize hand_idx;
-} ScoreEvent;
-
-TypedefArr(ScoreEvent);
-
-typedef struct {
-    ScoreEvent events_buffer[1024];
-    ScoreEventArr events;
-    isize cur_idx;
-} ScoreLog;
-
-static void ScoreLogInit(ScoreLog* log) {
-    static ScoreLog ZERO_SCORE_LOG = {0};
-    *log = ZERO_SCORE_LOG;
-    InitArrS(&log->events, log->events_buffer, ArraySizeOf(log->events_buffer));
-}
-
-typedef enum {
     BP_NONE = 0,
     BP_PLAYING,
     BP_PLAY_HAND,
@@ -4910,7 +4877,6 @@ typedef struct {
     i32 renderw_world;
     i32 renderh_world;
 
-    ScoreLog score_log;
     BattleDisplay display;
 
     UIVisualState play_button;
@@ -4926,19 +4892,6 @@ static const isize NO_CARD_SELECTED_IDX = -1;
 static const Vec4 BLOCK_COLOR1 = RGBLit(252, 155, 211);
 static const Vec4 BLOCK_COLOR2 = RGBLit(212, 250, 255);
 static Vec4 BLOCK_COLORS[SUIT_COUNT] = {LBLACK, BLOCK_COLOR1, BLOCK_COLOR1, BLOCK_COLOR2, BLOCK_COLOR2};
-
-static Piece MakePiece(PieceType type, PieceRot rot, Suit suit) {
-    Piece piece = {0};
-    piece.type = type;
-    piece.rot_idx = rot;
-    piece.block_offsets = PieceGetOffsets(piece.type, piece.rot_idx);
-
-    piece.effects.points = 1;
-    piece.effects.suit = suit;
-    piece.effects.base_color = BLOCK_COLORS[suit];
-    piece.effects.rot = rot;
-    return piece;
-}
 
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
     static Battle BATTLE_ZERO = {0};
@@ -4963,56 +4916,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         battle->deck_pos_start.y -= Px2Meter(200.0f);
         battle->deck_pos_live = battle->deck_pos_start;
         battle->deck_pos_duration = 1.2f;
-    }
-
-    // hand init deck init
-    {
-        battle->card_scale = Vec2Lit(Px2Meter(64.0f), Px2Meter(64.0f));
-        // TODO: I should make it so that the playing area origin is fixed at 0, 0. and then maybe I push some transform
-        // that gets auto applied during rendering and collision detection?
-        Vec2 hand_pos_aseprite =
-            AsepritePxCtr(Vec2Lit(337, 302));  // AsepritePxCtr(Vec2Lit(390.0f + 0.5f * 105.0f, 283.0f + 0.5f * 70.0f));
-        Vec3 hand_pos = AsepriteToEngineWorld(render_dims_px, hand_pos_aseprite, 0.0f);
-
-        // Vec3 hand_pos = Vec3Lit(0.0f, Px2Meter(-80.0f), 0.0f);
-        battle->hand_to_world = Mat4SVRT(Vec2ToVec3(Vec2Scale(battle->card_scale, 1.1f)), Mat4Identity(), hand_pos);
-
-        InitArrS(&battle->deck, battle->deck_buffer, ArraySizeOf(battle->deck_buffer));
-        i64 pieces_per_suit = ArrCap(&battle->deck) / SUIT_COUNT;
-        for (Suit suit = SUIT_A; suit < SUIT_COUNT; ++suit) {
-            for (isize i = 0, piece_type = 0; i < pieces_per_suit; ++i, piece_type = (piece_type + 1) % PT_COUNT) {
-                Card card = {0};
-                card.piece = MakePiece(piece_type, PR_0, suit);
-                ArrPush(&battle->deck, card);
-            }
-        }
-
-        // shuffle deck (crude approach)
-        for (isize shuffles = 0; shuffles < 10; ++shuffles) {
-            for (isize i = 0; i < ArrLen(&battle->deck); ++i) {
-                for (isize j = 0; j < 3; ++j) {
-                    isize dest_idx = i32randab(0, ArrLen(&battle->deck) - 1);
-                    Card* dest = ArrGetPtr(&battle->deck, dest_idx);
-                    Card temp = *dest;
-                    Card* source = ArrGetPtr(&battle->deck, i);
-                    *dest = *source;
-                    *source = temp;
-                }
-            }
-        }
-
-        InitArrS(&battle->hand, battle->hand_buffer, ArraySizeOf(battle->hand_buffer));
-        // BattleDrawToFull(battle);
-        battle->num_hands = 5;
-
-        battle->selection_idx = NO_CARD_SELECTED_IDX;
-        battle->focus_idx = NO_CARD_SELECTED_IDX;
-
-        // Add some basic effects
-        {
-            Card* card = ArrGetPtr(&battle->hand, 0);
-            card->piece.effects.flags |= TE_HI_LO;
-        }
     }
 
     battle->score_target = score_target;
