@@ -4589,8 +4589,6 @@ typedef struct GameState {
     // TODO: Move this to RenderState and move a reference to RSTATE here. Or just get rid of this and have a
     // GetScreen/RenderWidth() function that reads RSTATE.
     // TODO: Rethink the naming for some of this stuff, way too confusing when you have multiple projections
-    u32 renderw;
-    u32 renderh;
     Vec2 render_dims;
     f32 renderw_world;  // in meters
     f32 renderh_world;  // in meters
@@ -4966,20 +4964,18 @@ void GameInit() {
     byte* temp_buffer = New(&gstate->perm, GB(1), byte);
     gstate->temp = NewArena(temp_buffer, GB(1));
 
-    gstate->renderw = 640.0f;
-    gstate->renderh = 360.0f;
-    gstate->render_dims = Vec2Lit(gstate->renderw, gstate->renderh);
+    gstate->render_dims = Vec2Lit(640, 360);
     // Reminder, the way we convert from world units back to screen units for rendering is by using these for the
     // projection matrix.
-    gstate->renderw_world = Px2Meter(gstate->renderw);
-    gstate->renderh_world = Px2Meter(gstate->renderh);
+    gstate->renderw_world = Px2Meter(gstate->render_dims.x);
+    gstate->renderh_world = Px2Meter(gstate->render_dims.y);
     gstate->render_to_screen_scale = 3.0f;
 
     gstate->target_fps = 60;
     gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
 
-    PlatformInit(gstate->render_to_screen_scale * gstate->renderw, gstate->render_to_screen_scale * gstate->renderh,
-                 gstate->target_fps);
+    Vec2 screen_dims = Vec2Scale(gstate->render_dims, gstate->render_to_screen_scale);
+    PlatformInit(screen_dims.x, screen_dims.y, gstate->target_fps);
 
     isize sound_cap = GB(2);
     byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
@@ -5031,7 +5027,7 @@ void GameInit() {
         }
 
         {
-            Vec2 half_render_dims = Vec2Lit(0.5f * gstate->renderw, 0.5f * gstate->renderh);
+            Vec2 half_render_dims = Vec2Scale(gstate->render_dims, 0.5f);
             gstate->high_res_proj = Mat4Ortho(-half_render_dims.x, half_render_dims.x, -half_render_dims.y,
                                               half_render_dims.y, -100.0f, 100.0f);
         }
