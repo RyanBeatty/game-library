@@ -4885,33 +4885,6 @@ static void ScoreLogInit(ScoreLog* log) {
     InitArrS(&log->events, log->events_buffer, ArraySizeOf(log->events_buffer));
 }
 
-static void ScoreLogBlockScored(ScoreLog* log, TileId block_id, i32 chip_value) {
-    ScoreEvent event = {.type = SE_BLOCK, .block_id = block_id, .chip_value = chip_value};
-    ArrPush(&log->events, event);
-}
-
-static void ScoreLogAddMult(ScoreLog* log, f32 mult_value) {
-    ScoreEvent event = {.type = SE_ADD_MULT, .mult_value = mult_value};
-    ArrPush(&log->events, event);
-}
-
-static void ScoreLogScoreHand(ScoreLog* log, i32 score_total) {
-    ScoreEvent event = {.type = SE_SCORE_HAND, .score_total = score_total};
-    ArrPush(&log->events, event);
-}
-
-static void ScoreLogDrawCard(ScoreLog* log, isize hand_idx) {
-    ScoreEvent event = {.type = SE_DRAW_CARD, .hand_idx = hand_idx};
-    ArrPush(&log->events, event);
-}
-
-static void ScoreLogRoundStart(ScoreLog* log) {
-    ScoreEvent event = {.type = SE_ROUND_START};
-    ArrPush(&log->events, event);
-}
-
-#define ScoreLogEmpty(log) ((log)->cur_idx >= ArrLen(&(log)->events))
-
 typedef enum {
     BP_NONE = 0,
     BP_PLAYING,
@@ -5028,29 +5001,6 @@ static Piece MakePiece(PieceType type, PieceRot rot, Suit suit) {
     piece.effects.base_color = BLOCK_COLORS[suit];
     piece.effects.rot = rot;
     return piece;
-}
-
-static i32 CalculateOffsetHeight(TileIdArr block_offsets) {
-    i32 max_height = I32_MIN;
-    for (isize i = 0; i < ArrLen(&block_offsets); ++i) {
-        TileId offset = ArrGet(&block_offsets, i);
-        max_height = i32max(offset.r, max_height);
-    }
-    Assert(max_height <= 100);
-    Assert(max_height >= -100);
-    return max_height;
-}
-
-static void BattleSetActivePiece(Battle* battle) {
-    PlatformLog(LLOG_INFO, "Setting active piece idx=%d", battle->selection_idx);
-
-    Card* card = ArrGetPtr(&battle->hand, battle->selection_idx);
-    battle->active_piece = card->piece;
-    i32 max_height = CalculateOffsetHeight(battle->active_piece.block_offsets);
-    Assert(max_height < battle->grid.nrows);
-    battle->anchor.r = (battle->grid.nrows - 1) - max_height;
-    battle->anchor.c = (i32)(battle->grid.ncols / 2);  // Always reset to the middle.
-    battle->placement_anchor = GridCalculatePiecePlacementAnchor(&battle->grid, battle->active_piece, battle->anchor);
 }
 
 // Draw up to max handsize
