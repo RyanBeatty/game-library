@@ -4666,13 +4666,6 @@ typedef struct {
 
 static const isize NO_CARD_SELECTED_IDX = -1;
 
-// Assume position zero is sentinel.
-#define BattleHandIter(arr, it) for (Card* it = ArrGetR(arr, 0); it <= ArrTailR(arr); ++it)
-
-static const Vec4 BLOCK_COLOR1 = RGBLit(252, 155, 211);
-static const Vec4 BLOCK_COLOR2 = RGBLit(212, 250, 255);
-static Vec4 BLOCK_COLORS[SUIT_COUNT] = {LBLACK, BLOCK_COLOR1, BLOCK_COLOR1, BLOCK_COLOR2, BLOCK_COLOR2};
-
 static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
