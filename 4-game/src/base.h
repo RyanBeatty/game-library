@@ -172,7 +172,7 @@ TypedefArr(Str8);
 static Str8 Str8FromByteBuffer(ByteBuffer buffer);
 
 static bool Str8Eq(Str8 a, Str8 b);
-static Str8 Str8F(Arena* perm, const char* fmt, ...);
+LCORE Str8 Str8F(Arena* perm, const char* fmt, ...);
 
 // Split s into before and after given the first occurrence of the sep character. if sep is not found,
 // before == s, after == NULL and returns false. If sep is last char, before == s, after == NULL, but return true.

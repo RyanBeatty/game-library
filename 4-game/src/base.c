@@ -48,7 +48,7 @@ Arena NewSubArena(Arena* perm, isize cap) {
 /////////////////////////////////////////////////////////////////////////
 // section:Str8
 
-static Str8 Str8FromByteBuffer(ByteBuffer buffer) {
+LCORE Str8 Str8FromByteBuffer(ByteBuffer buffer) {
     Str8 str = {.data = (char*)buffer.data, .len = buffer.len};
     return str;
 }
