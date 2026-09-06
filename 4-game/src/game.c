@@ -4593,8 +4593,6 @@ typedef struct GameState {
     // GetScreen/RenderWidth() function that reads RSTATE.
     // TODO: Rethink the naming for some of this stuff, way too confusing when you have multiple projections
     Vec2 render_dims;
-    f32 renderw_world;  // in meters
-    f32 renderh_world;  // in meters
     // The scaling factor we will scale up the game render texture to the screen texture.
     // TODO: We might want to somehow keep screenw/h and this inline. Or just make sure we letterbox or something
     f32 render_to_screen_scale;
@@ -4977,10 +4975,6 @@ void GameInit() {
     gstate->temp = NewArena(temp_buffer, GB(1));
 
     gstate->render_dims = Vec2Lit(640, 360);
-    // Reminder, the way we convert from world units back to screen units for rendering is by using these for the
-    // projection matrix.
-    gstate->renderw_world = Px2Meter(gstate->render_dims.x);
-    gstate->renderh_world = Px2Meter(gstate->render_dims.y);
     gstate->render_to_screen_scale = 3.0f;
 
     gstate->target_fps = 60;
