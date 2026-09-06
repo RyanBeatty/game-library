@@ -4730,67 +4730,6 @@ LCORE TileId GridCalculatePiecePlacementAnchor(Grid* grid, Piece piece, TileId a
 
 ////////////////////////////////////////////////////
 
-#define RELIC_LIST                                                                            \
-    RELICX(RELIC_SAME_SUIT_MULT, "+1 mult when all blocks in line are the same suit")         \
-    RELICX(RELIC_SAME_SUIT_CHIPS, "+50 CHIPS when all blocks in line are the same suit")      \
-    RELICX(RELIC_PLUS_MULT_CONSECTUTIVE, "+X mult for the number of consecutive line clears") \
-    RELICX(RELIC_FIRST_CLEAR_MULT, "+3 mult for the first clear each round")                  \
-    RELICX(RELIC_CLEAR_COUNT_MULT, "+mult equal to the number of line in a clear")            \
-    RELICX(RELIC_ALL_SUIT_MULT, "+1 mult if line cleared contains all suits")                 \
-    RELICX(RELIC_ALL_SUIT_CHIPS, "+25 chips if line cleared contains all suits")
-
-typedef enum {
-    RELIC_NONE = 0,
-#define RELICX(name, desc) name,
-    RELIC_LIST
-#undef RELICX
-        RELIC_COUNT,
-} RelicId;
-
-TypedefArr(RelicId);
-
-typedef struct {
-    Str8 name;
-    Str8 description;
-} Relic;
-
-typedef struct {
-    RelicId id;
-    bool owned;
-    f32 activated_time;  // timestamp the relic was last activated.
-} RelicState;
-
-TypedefArr(RelicState);
-
-typedef struct {
-    RelicState state[RELIC_COUNT];
-    RelicId ids_buffer[RELIC_COUNT];
-    RelicIdArr ids;
-} Relics;
-
-void RelicsInit(Relics* relics) {
-    static Relics RELICS_ZERO = {0};
-    *relics = RELICS_ZERO;
-    for (isize i = 0; i < ArraySizeOf(relics->state); ++i) {
-        relics->state[i].id = (RelicId)i;
-    }
-
-    InitArrS(&relics->ids, relics->ids_buffer, ArraySizeOf(relics->ids_buffer));
-}
-
-void RelicsAdd(Relics* relics, RelicId id) {
-    RelicState* state = &relics->state[id];
-    Assert(!state->owned);
-    // The activated time is a bit of a hack to ensure we don't display them as activated on startup/when added
-    RelicState new_state = {.id = id, .owned = true, .activated_time = -100.0f};
-    *state = new_state;
-    ArrPush(&relics->ids, id);
-}
-
-#define RelicsHas(relics, id) (relics)->state[(id)].owned
-#define RelicsOwnedCount(relics) ArrLen(&(relics)->ids)
-#define RelicsStateGet(relics, i) &(relics)->state[ArrGet(&(relics)->ids, (i))]
-
 typedef struct {
     Piece piece;
 
@@ -4964,8 +4903,6 @@ typedef struct {
     f32 deck_pos_duration;
     f32 deck_pos_elapsed;
 
-    Relics* relics;
-
     Vec2 card_scale;
     isize selection_idx;
     isize focus_idx;
@@ -5003,34 +4940,7 @@ static Piece MakePiece(PieceType type, PieceRot rot, Suit suit) {
     return piece;
 }
 
-// Draw up to max handsize
-static void BattleDrawToFull(Battle* battle) {
-    // if (ArrLen(&battle->hand) == 0) {
-    //     Card nullcard = {0};
-    //     nullcard.piece = MakePiece(PT_O, PR_0, SUIT_NONE);
-    //     nullcard.piece.effects.base_color = LWHITE;
-    //     ArrPush(&battle->hand, nullcard);
-    // }
-
-    for (isize i = ArrLen(&battle->hand); i < ArrCap(&battle->hand) && ArrLen(&battle->deck) > 0; ++i) {
-        Card card = ArrPop(&battle->deck);
-        card.scale_target = 1.0f;
-        card.scale_live = card.scale_target;
-        card.scale_speed = 4.0f;
-
-        card.pos_live = Vec3Zero();
-        card.pos_speed = 200.0f;
-        card.visible = false;
-        // i32 r = i / 2;
-        // i32 c = i % 2;
-        // card.pos = Vec3Lit(c, r, 0);
-        ArrPush(&battle->hand, card);
-        ScoreLogDrawCard(&battle->score_log, i);
-        PlatformLog(LLOG_INFO, "Draw Card %d", i);
-    }
-}
-
-static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target, Relics* player_relics) {
+static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32 score_target) {
     static Battle BATTLE_ZERO = {0};
     *battle = BATTLE_ZERO;
 
@@ -5105,14 +5015,7 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
         }
     }
 
-    battle->relics = player_relics;
-
     battle->score_target = score_target;
-
-    ScoreLogInit(&battle->score_log);
-    BattleDisplayInit(&battle->display);
-
-    ScoreLogRoundStart(&battle->score_log);
 
     {
         UIVisualState* play_button = &battle->play_button;
@@ -5150,8 +5053,6 @@ static void BattleInit(Battle* battle, i32 renderw_world, i32 renderh_world, i32
 #define MAX_SHOP_FOR_SALE 3
 
 typedef struct {
-    RelicId relic_id;
-
     Vec3 pos;
     // Vec2 pos_screen;
 } Shopable;
@@ -5166,8 +5067,6 @@ typedef struct {
     ShopableArr for_sale;
     isize for_sale_hover_idx;
 
-    Relics* player_relics;
-
     // Drawing related
     Vec3 for_sale_origin;
     Vec3 for_sale_scale;
@@ -5177,35 +5076,13 @@ typedef struct {
     Vec2 for_sale_description_pos_screen;
 } Shop;
 
-static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims, Relics* player_relics) {
+static void ShopInit(Shop* shop, Vec3 area_origin, Vec2 area_dims) {
     static Shop SHOP_ZERO = {0};
     *shop = SHOP_ZERO;
 
     shop->area_origin = area_origin;
     shop->area_dims = area_dims;
-    shop->player_relics = player_relics;
     InitArrS(&shop->for_sale, shop->for_sale_buffer, ArraySizeOf(shop->for_sale_buffer));
-
-    // Populate relics for sale in shop.
-    bool for_sale[RELIC_COUNT] = {0};
-    for (isize i = 0; i < 3; ++i) {
-        RelicId free = RELIC_NONE;
-
-        RelicId search = i32randab(RELIC_NONE + 1, RELIC_COUNT - 1);
-        for (isize count = 0; count < RELIC_COUNT + 10; ++count) {
-            if (!RelicsHas(shop->player_relics, search) && !for_sale[search]) {
-                free = search;
-                break;
-            }
-
-            search = (search + 1) % RELIC_COUNT;
-            search = search == RELIC_NONE ? search + 1 : search;
-        }
-
-        Assert(free != RELIC_NONE);
-        for_sale[free] = true;
-        ArrPush(&shop->for_sale, (Shopable){.relic_id = free});
-    }
 
     shop->for_sale_origin = Vec3Lit(0.0f, 0.0f, 0.0f);
     shop->for_sale_quad_scale = Vec2Lit(40.0f, 70.0f);
@@ -5292,7 +5169,6 @@ typedef struct GameState {
     GamePhase phase;
     GamePhase phase_to_be;
     i32 score_target;
-    Relics player_relics;
 
     Battle battle;
     Shop shop;
@@ -5429,23 +5305,20 @@ static void GamePhaseChange(GameState* gstate) {
             break;
         }
         case GP_PLAYING: {
-            BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target,
-                       &gstate->player_relics);
-            BattleDrawToFull(&gstate->battle);
+            BattleInit(&gstate->battle, gstate->renderw_world, gstate->renderh_world, gstate->score_target);
 
             break;
         }
         case GP_SHOP: {
             Vec3 playing_area_origin = Vec3Lit(30.0f, -5.0f, 0.0f);
             Vec2 playing_area_dims = Vec2Lit(gstate->renderw_world * 0.75f, gstate->renderh_world * 0.9f);
-            ShopInit(&gstate->shop, playing_area_origin, playing_area_dims, &gstate->player_relics);
+            ShopInit(&gstate->shop, playing_area_origin, playing_area_dims);
             break;
         }
         case GP_GAME_OVER: {
             break;
         }
         case GP_NEW_GAME: {
-            RelicsInit(&gstate->player_relics);
             gstate->score_target = 500;
             break;
         }
