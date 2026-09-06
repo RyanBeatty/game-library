@@ -4750,36 +4750,6 @@ typedef struct {
     isize cap;
 } CardArr;
 
-static i32 CardArrNumVisible(CardArr* cards) {
-    i32 num_visible = 0;
-    for (isize i = 0; i < ArrLen(cards); ++i) {
-        Card* card = ArrGetPtr(cards, i);
-        num_visible += card->visible ? 1 : 0;
-    }
-    return num_visible;
-}
-
-static i32 CardArrNumHidden(CardArr* cards) {
-    i32 num_hidden = 0;
-    for (isize i = 0; i < ArrLen(cards); ++i) {
-        Card* card = ArrGetPtr(cards, i);
-        num_hidden += card->visible ? 0 : 1;
-    }
-    return num_hidden;
-}
-
-static Vec3 HandIdxToPos(CardArr* cards, isize idx) {
-    // if (idx < 3) {
-    //     return Vec3Lit(-(idx + 1), 0, 0);
-    // } else {
-    //     idx = idx % 3;
-    //     return Vec3Lit(0, idx + 1, 0);
-    // }
-    i32 num_visible = CardArrNumVisible(cards);
-    f32 len = f32max(num_visible - 1.0f, 0.0f);
-    return Vec3Lit(idx - (0.5f * len), 0.0f, 0.0f);
-}
-
 ////////////////////////////////////////////////////
 
 // Struct for ui button/box state. mostly used for tweens I guess.
