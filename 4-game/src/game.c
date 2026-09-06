@@ -4232,13 +4232,13 @@ static void UIStateInit(Arena* perm) {
     ui->active_key = UIBOXKEY_NULL;
 }
 
-static void UIBegin(GameInput* input) {
+LCORE void UIBegin(GameInput* input) {
     UIState* ui = GetUIState();
 
     ui->input = input;
 }
 
-static void UIEnd() {
+LCORE void UIEnd() {
     UIState* ui = GetUIState();
 
     ui->hot_key_prev = ui->hot_key;
@@ -4284,7 +4284,7 @@ static UIBox* UIBoxFromKey(UIBoxKey key) {
     return box;
 }
 
-static UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
+LCORE UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
     UIState* ui = GetUIState();
 
     LFont font = GetLFontClosest(visuals->fontsize);
@@ -4785,7 +4785,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
-                DrawQuad(Vec3Zero(), 2, 2, Mat4Identity(), LBLUE);
+                DrawQuad(Vec3Zero(), 20, 20, Mat4Identity(), LBLUE);
+                AABB2D box = AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(20, 20));
+
+                Vec2 point = controller->cursor_pos_world;
+                Vec2 normal = {0};
+                f32 depth = 0.0f;
+                bool collides = TestPoint2DVsAABB2D(point, box, &normal, &depth);
+                if (collides) {
+                    PlatformLog(LLOG_INFO, "collides");
+                }
 
                 EndShaderPass();
             }
