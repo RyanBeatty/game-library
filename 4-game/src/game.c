@@ -4379,7 +4379,7 @@ typedef enum {
 
 static Vec2 GetTileStep() {
     Sprite* sprite = GetSprite(SPRITE_BLOCK_BG);
-    return Vec2Lit(sprite->dims.x - Px2Meter(2.0f), sprite->dims.y - Px2Meter(2.0f));
+    return Vec2Lit(sprite->dims.x - 2.0f, sprite->dims.y - 2.0f);
 }
 
 ////////////////////////////////////////////////////
