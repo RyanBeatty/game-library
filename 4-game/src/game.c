@@ -4602,10 +4602,7 @@ typedef struct GameState {
     f32 dt;     // frame delta time.
     f32 timer;  // THIS IS REALLY ACCUMULATED FRAME TIME ACROSS THE ENTIRE PROGRAM
     FrameTime frame_time;
-    u32 nframe;            // num frame we are on.
-    f32 frame_times[256];  // The incremental dts of each frame produced. its a ring buffer. used for fps count.
-    i32 fts_tail;
-    i32 fts_head;
+    u32 nframe;  // num frame we are on.
     u32 fps;
     i32 target_fps;        // render fps we are targetting.
     f32 fixed_dt;          // fixed dt we will update the simulation with for stability.
@@ -5016,9 +5013,6 @@ void GameInit() {
     }
     GameStateLoadScene(gstate, SCENE_MAIN);
 
-    gstate->fts_tail = 1;
-    gstate->fts_head = 0;
-
     // Camera and proj init
     {
         gstate->camera.up = Vec3Lit(0.0f, 1.0f, 0.0f);
@@ -5133,32 +5127,6 @@ void GameTick(f32 dt, GameInput* input) {
     }
 
     ++gstate->nframe;
-
-    // FPS count
-    // TODO: Bug if spamming enter on first couple screens. head == tail.
-    if (false) {
-        Assert(gstate->fts_tail != gstate->fts_head);  // TODO: just like emit a warning log here or something.
-        i32 len = ArraySizeOf(gstate->frame_times);
-        i32 insert_idx = gstate->fts_tail;
-        gstate->frame_times[insert_idx] = gstate->timer;
-        ++gstate->fts_tail;
-        gstate->fts_tail %= len;
-
-        // The FPS is how many frames we've shown in the last second interval.
-        // We only count frames who's timestamp is within a second of the most recent timestamp.
-        // Could probably do this instead by storing delta times, but easier to think about in terms
-        // of absolute timestamps (with dts I worry about off by one errors).
-        i32 cur = insert_idx;
-        u32 fps = 0;
-        for (; ((cur + len - 1) % len) != gstate->fts_head && (gstate->timer - gstate->frame_times[cur]) <= 1.0f;) {
-            cur = (cur + len - 1) % len;
-            ++fps;
-        }
-
-        gstate->fts_head = cur;
-        gstate->fps = fps;
-        // PlatformLog(LLOG_INFO, "fps: %d", gstate->fps);
-    }
 }
 
 ////////////////////////////////////////////////////////////
