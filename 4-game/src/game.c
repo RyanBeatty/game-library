@@ -4786,7 +4786,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
-                DrawQuad(Vec3Zero(), 100, 100, Mat4Identity(), LBLUE);
+                DrawQuad(Vec3Zero(), 2, 2, Mat4Identity(), LBLUE);
 
                 EndShaderPass();
             }
