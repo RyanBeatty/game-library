@@ -19,7 +19,9 @@
 // s:unit
 
 // 1 meter = N pixels scale factor. i.e. how many pixels are in 1 meter.
-#define PPM (1.0f)
+// TODO: I'm not really sure I should be using this in a whole lot of places. Its sort of insiduously worked its way
+// into a fair amount of different places. I think maybe I should just author art assets in world units?
+static f32 PPM = 1.0f;
 #define MPP (1.0f / PPM)
 #define Meter2Px(m) ((m) * PPM)
 #define Px2Meter(px) ((px) * MPP)
