@@ -3384,6 +3384,13 @@ typedef struct {
 
 static FontCache FONT_CACHE = {0};
 
+LCORE void FontInit(LFont* font, char* fontfilename, f32 fontsize) {
+    static LFont FONT_ZERO = {0};
+    *font = FONT_ZERO;
+    font->fontsize = fontsize;
+    font->tx = BakeTrueTypeFontBitmap(fontfilename, font->fontsize, font->cdata);
+}
+
 LCORE void FontCacheInit(FontCache* fcache) {
     FontCache zero = {0};
     *fcache = zero;
@@ -3396,27 +3403,15 @@ LCORE void FontCacheInit(FontCache* fcache) {
         for (f32 fontsize = 8.0f; fontsize < 60.0f; fontsize += 0.5f, ++i) {
             Assert(i < ArraySizeOf(fcache->fonts));
             LFont* font = &fcache->fonts[i];
-            font->fontsize = fontsize;
-            font->tx = BakeTrueTypeFontBitmap("c:/windows/fonts/CascadiaMono.ttf", font->fontsize, font->cdata);
+            FontInit(font, "c:/windows/fonts/CascadiaMono.ttf", fontsize);
             fcache->fontsizes[i] = fontsize;
         }
     }
 
     memset(FONTS, 0, sizeof(LFont) * LFONT_COUNT);
 
-    {
-        LFont font = {0};
-        font.fontsize = 32.0f;
-        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/CascadiaMono.ttf", font.fontsize, font.cdata);
-        FONTS[LFONT_DEFAULT] = font;
-    }
-
-    {
-        LFont font = {0};
-        font.fontsize = 16.0f;
-        font.tx = BakeTrueTypeFontBitmap("c:/windows/fonts/CascadiaMono.ttf", font.fontsize, font.cdata);
-        FONTS[LFONT_SMALL] = font;
-    }
+    FontInit(&FONTS[LFONT_DEFAULT], "c:/windows/fonts/CascadiaMono.ttf", 32.0f);
+    FontInit(&FONTS[LFONT_SMALL], "c:/windows/fonts/CascadiaMono.ttf", 16.0f);
 
     // Push default font as current selected font.
     fcache->fontstack.cap = ArraySizeOf(fcache->fontstack.data);
