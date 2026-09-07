@@ -248,7 +248,7 @@ static void TextureCacheInit() {
     }
 
     {
-        *ArrGetPtr(&tcache->textures, TX_ALL) = TextureFromFile("assets/textures/all.png", FILTER_NEAREST);
+        *ArrGetPtr(&tcache->textures, TX_ALL) = TextureFromFile("assets/textures/all.png", FILTER_LINEAR);
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -375,9 +375,15 @@ LCORE Sprite DefaultSprite() { return SpriteFromLTexture(GetTexture(TX_DEFAULT),
 // see, see what corner/pos of the pixel I actually want to address, and then wrap that pixel index in a call to our
 // PX*() conversion functions before passing to this function.
 #define AsepriteToEngineImage(tx, apos) (Vec2Lit((apos).x, (tx).height - (apos).y))
+
+// TODO: Examine use of pixel conversion here. I think I want to be authoring my art assets 1-1 with logical resolution.
+// Then I can avoid the pixel conversions here since I will have authored in logical resolution
 static inline Vec3 AsepriteToEngineWorld(Vec2 render_dims, Vec2 apos, f32 z) {
     return Vec3Lit(Px2Meter(apos.x - 0.5f * render_dims.x), Px2Meter(render_dims.y - apos.y - 0.5f * render_dims.y), z);
 }
+
+// TODO: Examine use of pixel conversion here. I think I want to be authoring my art assets 1-1 with logical resolution.
+// Then I can avoid the pixel conversions here since I will have authored in logical resolution
 static inline Vec2 AsepriteToEngineWorld2D(Vec2 render_dims, Vec2 apos) {
     return Vec3ToVec2(AsepriteToEngineWorld(render_dims, apos, 0.0f));
 }
@@ -1816,6 +1822,11 @@ static LShader GetDefaultShader() {
 
         out vec4 FragColor;
 
+        // This technique assumes LINEAR filtering on the texture in question. This works by using nearest sampling if we are sampling near the center of a texel
+        // and then switching to using LINEAR sampling when we sample near a texel's border. This will cause some artifacts in the final render where at the edges
+        // of a sprite/texture we might be rendering colors that do not actually appear in the original art asset. However at large enough resolutions, these
+        // artifacts are hard to spot. The alternative seems to be snapping draw positions to nearest pixels but that seems to break down if we want to rotate/scale
+        // continuously at non integer scales.
         vec2 iq_uv(vec2 uv, ivec2 txdims) {
             vec2 px = uv * txdims;
             vec2 seam = floor(px + 0.5);
@@ -1826,9 +1837,9 @@ static LShader GetDefaultShader() {
 
         void main() {
             ivec2 txdims = ivec2(Texture0Resolution.xy);
-            // vec2 uv3 = iq_uv(fTextCoords, txdims);
-            // vec4 txColor = texture(texture0, uv3);
-            vec4 txColor = texture(texture0, fTextCoords);
+            vec2 uv = iq_uv(fTextCoords, txdims);
+            vec4 txColor = texture(texture0, uv);
+            // vec4 txColor = texture(texture0, fTextCoords);
 
 
             // Crucial for having depth buffer + blending enabled. when I write quads with textures with some tansparent
@@ -1843,6 +1854,8 @@ static LShader GetDefaultShader() {
             // Debug helpers
 
             // output what texture coords we sample as the frag color.
+            // i.e. output the actual pixel (normalized to 0-1) that we sampled from the texture. multiply by txdims to get the actual
+            // pixel index
             // vec2 texelPos = fTextCoords.xy * txdims;
             // vec2 nearestTexel = floor(texelPos + 0.5);
             // FragColor = vec4(nearestTexel / txdims, 0.0, 1.0);
@@ -4788,6 +4801,31 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 bool collides = TestPoint2DVsAABB2D(point, box, &normal, &depth);
                 if (collides) {
                     PlatformLog(LLOG_INFO, "collides");
+                }
+
+                {
+                    static Vec3 POS = Vec3Lit(100, 0, 0);
+                    if (PlatformKeyDown(LKEY_LEFT)) {
+                        POS.x -= 0.5f;
+                    }
+                    if (PlatformKeyDown(LKEY_RIGHT)) {
+                        POS.x += 0.5f;
+                    }
+                    Sprite* sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
+                    f32 scale = f32lerp(0.72f, 1.35f, f32sin(gstate->timer));
+                    DrawSprite(*sprite, POS, Mat4Identity(), scale);
+                    breakpoint();
+                }
+
+                {
+                    Sprite* sprite = GetSprite(SPRITE_BUTTON_BG);
+                    f32 scale = f32lerp(0.90f, 1.35f, f32sin(gstate->timer));
+                    Mat4 rot = Mat4RotateZ(f32lerp(Deg2Rad(20.0f), Deg2Rad(-20.0f), f32sin(gstate->timer * 0.5f)));
+                    Vec3 pos = Vec3Lit(-100, 0, 0);
+                    pos.x += f32lerp(-2.3, 3.2, f32sin(gstate->timer * 0.6f));
+                    pos.y += f32lerp(-10.32, 10.456, f32sin(gstate->timer * 0.3f));
+                    DrawSprite(*sprite, pos, rot, scale);
+                    breakpoint();
                 }
 
                 EndShaderPass();
