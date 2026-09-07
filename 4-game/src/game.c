@@ -3354,6 +3354,13 @@ typedef struct {
     LTexture tx;
     f32 fontsize;
     stbtt_bakedchar cdata[96];  // ASCII 32..126 is 95 glyphs
+    // Because of the way our game renders, we end up upscaling when drawing to the screen. That looks like shit for pre
+    // baked font textures. To avoid this, when we say draw text with fontsize of X, we actually say "draw text with
+    // fontsize of X * upscale", then we *downscale* by the upscale factor, so that when the text is written to screen
+    // the downscale and the upscale by drawing to screen cancels out so that we appear to have draw text at fontsize X.
+    // TODO: This totally breaks if our logical to screen scale factor ever changes such as if someone changes the
+    // resolution.
+    f32 scale_factor;
 } LFont;
 
 typedef enum {
@@ -3384,14 +3391,15 @@ typedef struct {
 
 static FontCache FONT_CACHE = {0};
 
-LCORE void FontInit(LFont* font, char* fontfilename, f32 fontsize) {
+LCORE void FontInit(LFont* font, char* fontfilename, f32 fontsize, f32 scale_factor) {
     static LFont FONT_ZERO = {0};
     *font = FONT_ZERO;
     font->fontsize = fontsize;
-    font->tx = BakeTrueTypeFontBitmap(fontfilename, font->fontsize, font->cdata);
+    font->scale_factor = scale_factor;
+    font->tx = BakeTrueTypeFontBitmap(fontfilename, font->fontsize * font->scale_factor, font->cdata);
 }
 
-LCORE void FontCacheInit(FontCache* fcache) {
+LCORE void FontCacheInit(FontCache* fcache, f32 scale_factor) {
     FontCache zero = {0};
     *fcache = zero;
 
@@ -3403,15 +3411,15 @@ LCORE void FontCacheInit(FontCache* fcache) {
         for (f32 fontsize = 8.0f; fontsize < 60.0f; fontsize += 0.5f, ++i) {
             Assert(i < ArraySizeOf(fcache->fonts));
             LFont* font = &fcache->fonts[i];
-            FontInit(font, "c:/windows/fonts/CascadiaMono.ttf", fontsize);
+            FontInit(font, "c:/windows/fonts/CascadiaMono.ttf", fontsize, scale_factor);
             fcache->fontsizes[i] = fontsize;
         }
     }
 
     memset(FONTS, 0, sizeof(LFont) * LFONT_COUNT);
 
-    FontInit(&FONTS[LFONT_DEFAULT], "c:/windows/fonts/CascadiaMono.ttf", 32.0f);
-    FontInit(&FONTS[LFONT_SMALL], "c:/windows/fonts/CascadiaMono.ttf", 16.0f);
+    FontInit(&FONTS[LFONT_DEFAULT], "c:/windows/fonts/CascadiaMono.ttf", 32.0f, scale_factor);
+    FontInit(&FONTS[LFONT_SMALL], "c:/windows/fonts/CascadiaMono.ttf", 16.0f, scale_factor);
 
     // Push default font as current selected font.
     fcache->fontstack.cap = ArraySizeOf(fcache->fontstack.data);
@@ -3441,9 +3449,9 @@ LCORE void PopLFont() {
     ArrPop(&fcache->fontstack);
 }
 
-LCORE void InitFonts() {
+LCORE void InitFonts(f32 scale_factor) {
     FontCache* fcache = &FONT_CACHE;
-    FontCacheInit(fcache);
+    FontCacheInit(fcache, scale_factor);
 }
 
 // TODO: Maybe remove this.
@@ -3469,7 +3477,7 @@ LCORE LFont GetLFontClosest(f32 desired_fontsize) {
 }
 
 LCORE void GetScaledStbtBakedQuad(const stbtt_bakedchar* chardata, int pw, int ph, int char_index, float* xpos,
-                                  float* ypos, stbtt_aligned_quad* q) {
+                                  float* ypos, stbtt_aligned_quad* q, f32 scale_factor) {
     /*
         GetBakedQuad will return a quad that has draw coordinates relative to the passed in baseline. In order to
        downscale this baked quad (for instance in order to make text that gets upscaled by rasterizer (e.g. by
@@ -3483,16 +3491,8 @@ LCORE void GetScaledStbtBakedQuad(const stbtt_bakedchar* chardata, int pw, int p
     // NOTE: Although we pass pointers to the baseline_pos, it doesn't look like GetBakedQuad actually modifies it.
     stbtt_GetBakedQuad(chardata, pw, ph, char_index, &baseline.x, &baseline.y, q, true);
 
-    // Remember why we do this essentially: When we render the game, things will get upscaled N times since we render
-    // the world in logical units which will get upscaled to the full screen. We use baked font textures to draw text,
-    // one per font size. For a given font size, if we try to upscale the text, it will look like shit because upscaling
-    // will introduce artifacts. Essentially we said we wanted to use fontsize X, but when our final render is written
-    // to screen, we really should have used fontsize X*Upscale where Upscale = N. So instead what we do is when we say
-    // "draw text with fontsize X", we actually choose fontsize X * Upscale to use for drawing. Then we *downscale* that
-    // by *Upscale* so that our downscale factor essentially cancels out the upscale factor in the final render. E.g. (X
-    // * Upscale / Downscale) * Upscale (remembering two upscales, we in code upscale by some factor and then render to
-    // screen upscale) == X * Upscale (since Downscale == Upscale)
-    f32 downscale = 1.0f / 3.0f;
+    // f32 downscale = 1.0f / 3.0f;
+    f32 downscale = 1.0f / scale_factor;
     q->x0 *= downscale;
     q->x1 *= downscale;
     q->y0 *= downscale;
@@ -3515,7 +3515,7 @@ LCORE Vec2 DrawLTextEx(LFont font, char* text, i32 len, Vec2 baseline_pos, Vec4 
         // &baseline_pos.y,
         //                    &quad, true);
         GetScaledStbtBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x,
-                               &baseline_pos.y, &quad);
+                               &baseline_pos.y, &quad, font.scale_factor);
 
         /*
             Remember. the key to understanding all of these transformations is to visualize them from the perspective
@@ -3599,7 +3599,7 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
         // stbtt_GetBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x, &baseline_pos.y,
         //                    &quad, true);
         GetScaledStbtBakedQuad(font.cdata, font.tx.width, font.tx.height, text[i] - 32, &baseline_pos.x,
-                               &baseline_pos.y, &quad);
+                               &baseline_pos.y, &quad, font.scale_factor);
 
         /*
         Remember. the key to understanding all of these transformations is to visualize them from the perspective
@@ -4844,7 +4844,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         VISUALS.rect = RectFromCenterAndDims(Vec2Zero(), Vec2Lit(100, 59));
-                        VISUALS.fontsize = 16.0f * 3.0f;
+                        VISUALS.fontsize = 16.0f;
 
                         UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
                         if (action.hot) {
@@ -4934,7 +4934,7 @@ void GameInit() {
     byte* sound_buffer = New(&gstate->perm, sound_cap, byte);
 
     PlatformInitAudio(sound_buffer, sound_cap);
-    InitFonts();
+    InitFonts(gstate->render_to_screen_scale);
     ParticleSystemInit();
 
     {
