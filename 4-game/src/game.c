@@ -3488,6 +3488,15 @@ LCORE void GetScaledStbtBakedQuad(const stbtt_bakedchar* chardata, int pw, int p
     // NOTE: Although we pass pointers to the baseline_pos, it doesn't look like GetBakedQuad actually modifies it.
     stbtt_GetBakedQuad(chardata, pw, ph, char_index, &baseline.x, &baseline.y, q, true);
 
+    // Remember why we do this essentially: When we render the game, things will get upscaled N times since we render
+    // the world in logical units which will get upscaled to the full screen. We use baked font textures to draw text,
+    // one per font size. For a given font size, if we try to upscale the text, it will look like shit because upscaling
+    // will introduce artifacts. Essentially we said we wanted to use fontsize X, but when our final render is written
+    // to screen, we really should have used fontsize X*Upscale where Upscale = N. So instead what we do is when we say
+    // "draw text with fontsize X", we actually choose fontsize X * Upscale to use for drawing. Then we *downscale* that
+    // by *Upscale* so that our downscale factor essentially cancels out the upscale factor in the final render. E.g. (X
+    // * Upscale / Downscale) * Upscale (remembering two upscales, we in code upscale by some factor and then render to
+    // screen upscale) == X * Upscale (since Downscale == Upscale)
     f32 downscale = 1.0f / 3.0f;
     q->x0 *= downscale;
     q->x1 *= downscale;
