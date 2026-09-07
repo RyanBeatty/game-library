@@ -4792,16 +4792,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
-                DrawQuad(Vec3Zero(), 20, 20, Mat4Identity(), LBLUE);
-                AABB2D box = AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(20, 20));
+                // DrawQuad(Vec3Zero(), 20, 20, Mat4Identity(), LBLUE);
+                // AABB2D box = AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(20, 20));
 
-                Vec2 point = controller->cursor_pos_world;
-                Vec2 normal = {0};
-                f32 depth = 0.0f;
-                bool collides = TestPoint2DVsAABB2D(point, box, &normal, &depth);
-                if (collides) {
-                    PlatformLog(LLOG_INFO, "collides");
-                }
+                // Vec2 point = controller->cursor_pos_world;
+                // Vec2 normal = {0};
+                // f32 depth = 0.0f;
+                // bool collides = TestPoint2DVsAABB2D(point, box, &normal, &depth);
+                // if (collides) {
+                //     PlatformLog(LLOG_INFO, "collides");
+                // }
 
                 {
                     static Vec3 POS = Vec3Lit(100, 0, 0);
@@ -4826,6 +4826,35 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     pos.y += f32lerp(-10.32, 10.456, f32sin(gstate->timer * 0.3f));
                     DrawSprite(*sprite, pos, rot, scale);
                     breakpoint();
+                }
+
+                DoUI(input) {
+                    {
+                        static UIBoxVisuals VISUALS = {0};
+                        static bool VISUALS_INIT = false;
+
+                        if (!VISUALS_INIT) {
+                            VISUALS_INIT = true;
+                            VISUALS = UIBoxVisualsZero();
+                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                        }
+
+                        VISUALS.rect = RectFromCenterAndDims(Vec2Zero(), Vec2Lit(100, 59));
+                        VISUALS.fontsize = 16.0f * 3.0f;
+
+                        UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
+                        if (action.hot) {
+                            VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+                            if (action.first_hot) {
+                                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                            }
+                            if (action.active) {
+                                PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+                            }
+                        } else {
+                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                        }
+                    }
                 }
 
                 EndShaderPass();
@@ -4867,127 +4896,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 EndShaderPass();
             }
-
-            // {
-            //     RenderPassLoadAction load_action = {
-            //         .clear_color_flag = false,
-            //         .depth_test = true,
-            //     };
-            //     Mat4 view = Mat4Identity();
-            //     Mat4 proj = gstate->high_res_proj;
-            //     BeginShaderPass(GetDefaultShader(), load_action, view, proj, GetScreenRenderTarget());
-
-            //     DoUI(input) {
-            //         {
-            //             static UIBoxVisuals VISUALS = {0};
-            //             static bool VISUALS_INIT = false;
-
-            //             if (!VISUALS_INIT) {
-            //                 VISUALS_INIT = true;
-            //                 VISUALS = UIBoxVisualsZero();
-            //                 VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-            //             }
-
-            //             VISUALS.rect = RectFromCenterAndDims(Vec2Zero(), Vec2Lit(20, 20));
-            //             VISUALS.fontsize = 16.0f * 3.0f;
-
-            //             UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
-            //             if (action.hot) {
-            //                 VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-            //                 if (action.first_hot) {
-            //                     PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
-            //                 }
-            //                 if (action.active) {
-            //                     PlatformPlaySound(GetSound(SOUND_BEEP), 0);
-            //                 }
-            //             } else {
-            //                 VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-            //             }
-            //         }
-
-            //         {
-            //             Vec2 score_window_pos = Vec2Zero();
-            //             Sprite* score_window_sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
-
-            //             // Vec2 parent_bl_pos =
-            //             //     AsepriteToEngineWorld2D(gstate->render_dims, AsepritePxBL(Vec2Lit(5, 354)));
-            //             Vec2 parent_bl_pos = Vec2Lit(score_window_pos.x - 0.5f * score_window_sprite->dims.x,
-            //                                          score_window_pos.y - 0.5f * score_window_sprite->dims.y);
-            //             Vec2 parent_bl_pos_orig = parent_bl_pos;
-
-            //             {
-            //                 Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Zero());
-            //                 UIBoxVisuals visuals = UIBoxVisualsZero();
-            //                 visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(109, 351));
-            //                 visuals.sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
-            //                 UIBoxAction action = DoUIBox(Str8Lit("##Score Panel BG"), &visuals);
-            //             }
-            //             {
-            //                 {
-            //                     Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(2, 223));
-            //                     UIBoxVisuals visuals = UIBoxVisualsZero();
-            //                     visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(105, 71));
-            //                     visuals.sprite = GetSprite(SPRITE_SCORE_BG);
-            //                     UIBoxAction action = DoUIBox(Str8Lit("##Score BG"), &visuals);
-
-            //                     parent_bl_pos = bl_pos;
-            //                 }
-
-            //                 {
-            //                     Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(1, 20));
-            //                     UIBoxVisuals visuals = UIBoxVisualsZero();
-            //                     visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(43, 32)),
-            //                     visuals.sprite = GetSprite(SPRITE_DEFAULT);
-            //                     visuals.tint = RGBLit(252, 155, 211);
-            //                     visuals.text_tint = RGBLit(212, 250, 255);
-            //                     visuals.fontsize = 16.0f * 3.0f;
-
-            //                     Str8 id = Str8F(&gstate->temp, "%d###Score Chips", 10);
-            //                     UIBoxAction action = DoUIBox(id, &visuals);
-            //                 }
-
-            //                 {
-            //                     Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(44, 20));
-            //                     UIBoxVisuals visuals = UIBoxVisualsZero();
-            //                     visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(13, 32));
-            //                     visuals.sprite = GetSprite(SPRITE_DEFAULT);
-            //                     visuals.tint = LHIDDEN;
-            //                     visuals.text_tint = RGBLit(212, 250, 255);
-            //                     visuals.fontsize = 16.0f * 3.0f;
-            //                     UIBoxAction action = DoUIBox(Str8Lit("X"), &visuals);
-            //                 }
-
-            //                 {
-            //                     Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(57, 20));
-            //                     UIBoxVisuals visuals = UIBoxVisualsZero();
-            //                     visuals.rect = RectFromBLAndDims(bl_pos, Vec2Lit(47, 32));
-            //                     visuals.sprite = GetSprite(SPRITE_DEFAULT);
-            //                     visuals.tint = RGBLit(218, 186, 255);
-            //                     visuals.text_tint = RGBLit(212, 250, 255);
-            //                     visuals.fontsize = 16.0f * 3.0f;
-            //                     Str8 id = Str8F(&gstate->temp, "%0.2f###Score Mult", 4.0f);
-            //                     UIBoxAction action = DoUIBox(id, &visuals);
-            //                 }
-            //             }
-
-            //             parent_bl_pos = parent_bl_pos_orig;
-
-            //             {
-            //                 Sprite* sprite = GetSprite(SPRITE_SCORE_WORD_BG);
-            //                 Vec2 bl_pos = Vec2Add(parent_bl_pos, Vec2Lit(5, 188));
-            //                 UIBoxVisuals visuals = UIBoxVisualsZero();
-            //                 visuals.rect = RectFromBLAndDims(bl_pos, sprite->dims);
-            //                 visuals.sprite = sprite;
-            //                 visuals.text_tint = RGBLit(212, 250, 255);
-            //                 visuals.fontsize = 16.0f * 3.0f;
-            //                 Str8 id = Str8F(&gstate->temp, "Score: %d###Score Total", 11);
-            //                 UIBoxAction action = DoUIBox(id, &visuals);
-            //             }
-            //         }
-            //     }
-
-            //     EndShaderPass();
-            // }
         }
     }
 }
