@@ -4770,8 +4770,27 @@ static void GamePhaseChange(GameState* gstate) {
     gstate->phase_to_be = GP_NONE;
 }
 
+typedef enum {
+    TILE_NONE = 0,
+    TILE_GOAL,
+    TILE_COUNT,
+} TileType;
+
+typedef struct {
+    TileType type;
+} LightTile;
+
+static LightTile TILES[] = {
+    {.type = TILE_NONE},
+    {.type = TILE_GOAL},
+    {.type = TILE_NONE},
+};
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
-    f32 dt = gstate->dt;
+    static isize TILE_IDX = 0;
+    static f32 TILE_CHANGE_TIMER = 0.0f;
+
+    f32 dt = gstate->frame_time.dt;
 
     // Grid* grid = GameStateGetGrid(gstate);
 
@@ -4781,9 +4800,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         gstate->phase_to_be = GP_NEW_GAME;
         // We need to do an initial one of these here because we init and then render on the first call to tick()
         GamePhaseChange(gstate);
+        TILE_IDX = 0;
+        TILE_CHANGE_TIMER = 0.0f;
     }
 
     if (gstate->update) {
+        static const f32 TILE_CHANGE_TIME = 0.8f;
+
+        TILE_CHANGE_TIMER += dt;
+        while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
+            TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
+            TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
+        }
     }
 
     if (gstate->render) {
@@ -4796,70 +4824,66 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
-                // DrawQuad(Vec3Zero(), 20, 20, Mat4Identity(), LBLUE);
-                // AABB2D box = AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(20, 20));
+                for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
+                    LightTile* tile = &TILES[i];
+                    Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
+                    color.a = TILE_IDX == i ? 1.0f : 0.5f;
+                    DrawQuad2D(Vec2Lit(i * 50, 0), 30, 30, Mat4Identity(), color);
+                }
 
-                // Vec2 point = controller->cursor_pos_world;
-                // Vec2 normal = {0};
-                // f32 depth = 0.0f;
-                // bool collides = TestPoint2DVsAABB2D(point, box, &normal, &depth);
-                // if (collides) {
-                //     PlatformLog(LLOG_INFO, "collides");
+                // {
+                //     static Vec3 POS = Vec3Lit(100, 0, 0);
+                //     if (PlatformKeyDown(LKEY_LEFT)) {
+                //         POS.x -= 0.5f;
+                //     }
+                //     if (PlatformKeyDown(LKEY_RIGHT)) {
+                //         POS.x += 0.5f;
+                //     }
+                //     Sprite* sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
+                //     f32 scale = f32lerp(0.72f, 1.35f, f32sin(gstate->timer));
+                //     DrawSprite(*sprite, POS, Mat4Identity(), scale);
+                //     breakpoint();
                 // }
 
-                {
-                    static Vec3 POS = Vec3Lit(100, 0, 0);
-                    if (PlatformKeyDown(LKEY_LEFT)) {
-                        POS.x -= 0.5f;
-                    }
-                    if (PlatformKeyDown(LKEY_RIGHT)) {
-                        POS.x += 0.5f;
-                    }
-                    Sprite* sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
-                    f32 scale = f32lerp(0.72f, 1.35f, f32sin(gstate->timer));
-                    DrawSprite(*sprite, POS, Mat4Identity(), scale);
-                    breakpoint();
-                }
+                // {
+                //     Sprite* sprite = GetSprite(SPRITE_BUTTON_BG);
+                //     f32 scale = f32lerp(0.90f, 1.35f, f32sin(gstate->timer));
+                //     Mat4 rot = Mat4RotateZ(f32lerp(Deg2Rad(20.0f), Deg2Rad(-20.0f), f32sin(gstate->timer * 0.5f)));
+                //     Vec3 pos = Vec3Lit(-100, 0, 0);
+                //     pos.x += f32lerp(-2.3, 3.2, f32sin(gstate->timer * 0.6f));
+                //     pos.y += f32lerp(-10.32, 10.456, f32sin(gstate->timer * 0.3f));
+                //     DrawSprite(*sprite, pos, rot, scale);
+                //     breakpoint();
+                // }
 
-                {
-                    Sprite* sprite = GetSprite(SPRITE_BUTTON_BG);
-                    f32 scale = f32lerp(0.90f, 1.35f, f32sin(gstate->timer));
-                    Mat4 rot = Mat4RotateZ(f32lerp(Deg2Rad(20.0f), Deg2Rad(-20.0f), f32sin(gstate->timer * 0.5f)));
-                    Vec3 pos = Vec3Lit(-100, 0, 0);
-                    pos.x += f32lerp(-2.3, 3.2, f32sin(gstate->timer * 0.6f));
-                    pos.y += f32lerp(-10.32, 10.456, f32sin(gstate->timer * 0.3f));
-                    DrawSprite(*sprite, pos, rot, scale);
-                    breakpoint();
-                }
+                // DoUI(input) {
+                //     {
+                //         static UIBoxVisuals VISUALS = {0};
+                //         static bool VISUALS_INIT = false;
 
-                DoUI(input) {
-                    {
-                        static UIBoxVisuals VISUALS = {0};
-                        static bool VISUALS_INIT = false;
+                //         if (!VISUALS_INIT) {
+                //             VISUALS_INIT = true;
+                //             VISUALS = UIBoxVisualsZero();
+                //             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                //         }
 
-                        if (!VISUALS_INIT) {
-                            VISUALS_INIT = true;
-                            VISUALS = UIBoxVisualsZero();
-                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-                        }
+                //         VISUALS.rect = RectFromCenterAndDims(Vec2Zero(), Vec2Lit(100, 59));
+                //         VISUALS.fontsize = 16.0f;
 
-                        VISUALS.rect = RectFromCenterAndDims(Vec2Zero(), Vec2Lit(100, 59));
-                        VISUALS.fontsize = 16.0f;
-
-                        UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
-                        if (action.hot) {
-                            VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-                            if (action.first_hot) {
-                                PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
-                            }
-                            if (action.active) {
-                                PlatformPlaySound(GetSound(SOUND_BEEP), 0);
-                            }
-                        } else {
-                            VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-                        }
-                    }
-                }
+                //         UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
+                //         if (action.hot) {
+                //             VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
+                //             if (action.first_hot) {
+                //                 PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                //             }
+                //             if (action.active) {
+                //                 PlatformPlaySound(GetSound(SOUND_BEEP), 0);
+                //             }
+                //         } else {
+                //             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
+                //         }
+                //     }
+                // }
 
                 EndShaderPass();
             }
