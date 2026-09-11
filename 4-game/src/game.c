@@ -4603,7 +4603,7 @@ typedef enum {
 } SceneId;
 
 typedef enum {
-    GP_NONE = 0,
+    GP_START_SCREEN = 0,
     GP_NEW_ROUND,
     GP_PLAYING,
     GP_SHOP,
@@ -4758,36 +4758,6 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     }
 }
 
-static void GamePhaseChange(GameState* gstate) {
-    switch (gstate->phase_to_be) {
-        case GP_NONE: {
-            break;
-        }
-        case GP_NEW_ROUND: {
-            break;
-        }
-        case GP_PLAYING: {
-            break;
-        }
-        case GP_SHOP: {
-            break;
-        }
-        case GP_GAME_OVER: {
-            break;
-        }
-        case GP_NEW_GAME: {
-            break;
-        }
-        default: {
-            PlatformLog(LLOG_ERROR, "Unknown phase change phase: %d", gstate->phase_to_be);
-            Assert(0);
-        }
-    }
-
-    gstate->phase = gstate->phase_to_be == GP_NONE ? gstate->phase : gstate->phase_to_be;
-    gstate->phase_to_be = GP_NONE;
-}
-
 typedef enum {
     TILE_NONE = 0,
     TILE_GOAL,
@@ -4819,38 +4789,68 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     GameControllerState* controller = GetController(input, 0);
 
     if (gstate->init) {
-        gstate->phase_to_be = GP_NEW_GAME;
-        // We need to do an initial one of these here because we init and then render on the first call to tick()
-        GamePhaseChange(gstate);
-        TILE_IDX = 0;
-        TILE_CHANGE_TIMER = 0.0f;
-        SCORE = 0;
-        LIFE_TIMER = 100.0f;
+        gstate->phase = GP_START_SCREEN;
     }
 
     if (gstate->update) {
         static const f32 TILE_CHANGE_TIME = 0.8f;
 
-        TILE_CHANGE_TIMER += dt;
-        while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
-            TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
-            TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
-        }
-
-        if (controller->action_down.pressed) {
-            LightTile* tile = GetLightTile(TILE_IDX);
-            if (tile->type == TILE_GOAL) {
-                static const i32 SCORE_INCREASE_AMOUNT = 5;
-                SCORE += SCORE_INCREASE_AMOUNT;
-            }
-        }
-
+        // GamePhaseChange
         {
-            static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
-            LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
-            if (LIFE_TIMER <= 0.0f) {
-                // TODO: Game Over
-                LIFE_TIMER = 0.0f;
+            if (gstate->phase_to_be != gstate->phase) {
+                switch (gstate->phase_to_be) {
+                    case GP_START_SCREEN: {
+                        break;
+                    }
+                    case GP_NEW_GAME: {
+                        TILE_IDX = 0;
+                        TILE_CHANGE_TIMER = 0.0f;
+                        SCORE = 0;
+                        LIFE_TIMER = 100.0f;
+                        gstate->phase_to_be = GP_PLAYING;
+                        break;
+                    }
+                    default: {
+                        PlatformLog(LLOG_ERROR, "Unknown phase change phase: %d", gstate->phase_to_be);
+                        Assert(0);
+                    }
+                }
+                gstate->phase = gstate->phase_to_be;
+            }
+            gstate->phase_to_be = gstate->phase;
+        }
+
+        switch (gstate->phase) {
+            case GP_START_SCREEN: {
+                break;
+            }
+            case GP_PLAYING: {
+                TILE_CHANGE_TIMER += dt;
+                while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
+                    TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
+                    TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
+                }
+
+                if (controller->action_down.pressed) {
+                    LightTile* tile = GetLightTile(TILE_IDX);
+                    if (tile->type == TILE_GOAL) {
+                        static const i32 SCORE_INCREASE_AMOUNT = 5;
+                        SCORE += SCORE_INCREASE_AMOUNT;
+                    }
+                }
+
+                {
+                    static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
+                    LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
+                    if (LIFE_TIMER <= 0.0f) {
+                        // TODO: Game Over
+                        LIFE_TIMER = 0.0f;
+                    }
+                }
+                break;
+            }
+            default: {
+                Assert(0);
             }
         }
     }
@@ -4865,23 +4865,38 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
-                for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
-                    LightTile* tile = GetLightTile(i);
-                    Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
-                    color.a = TILE_IDX == i ? 1.0f : 0.5f;
-                    DrawQuad2D(Vec2Lit(i * 50, 0), 30, 30, Mat4Identity(), color);
-                }
+                switch (gstate->phase) {
+                    case GP_PLAYING: {
+                        for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
+                            LightTile* tile = GetLightTile(i);
+                            Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
+                            color.a = TILE_IDX == i ? 1.0f : 0.5f;
+                            DrawQuad2D(Vec2Lit(i * 50, 0), 30, 30, Mat4Identity(), color);
+                        }
 
-                {
-                    DrawQuad2D(Vec2Lit(0, 100), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
-                }
+                        {
+                            DrawQuad2D(Vec2Lit(0, 100), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
+                        }
 
-                {
-                    Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
-                    TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                    DrawTextBox(&textbox,
+                        {
+                            Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
+                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                            DrawTextBox(
+                                &textbox,
                                 Vec2Lit(-0.5f * gstate->render_dims.x + 5.0f, 0.5f * gstate->render_dims.y - 15.0f),
                                 LBLACK, TEXT_ALIGN_LEFT);
+                        }
+                        break;
+                    }
+                    case GP_START_SCREEN: {
+                        TextBox textbox =
+                            LFontMeasureStr8Quad(GetLFontClosest(12.0f), Str8Lit("Press [SPACE] To Start"));
+                        DrawTextBox(&textbox, Vec2Lit(0, 0), LBLACK, TEXT_ALIGN_CENTER);
+                        break;
+                    }
+                    default: {
+                        Assert(0);
+                    }
                 }
 
                 // {
