@@ -4804,9 +4804,12 @@ static LightTile TILES[] = {
     {.type = TILE_NONE},
 };
 
+static LightTile* GetLightTile(isize idx) { return &TILES[idx]; }
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
     static f32 TILE_CHANGE_TIMER = 0.0f;
+    static i32 SCORE = 0;
 
     f32 dt = gstate->frame_time.dt;
 
@@ -4820,6 +4823,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         GamePhaseChange(gstate);
         TILE_IDX = 0;
         TILE_CHANGE_TIMER = 0.0f;
+        SCORE = 0;
     }
 
     if (gstate->update) {
@@ -4829,6 +4833,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
+        }
+
+        if (controller->action_down.pressed) {
+            LightTile* tile = GetLightTile(TILE_IDX);
+            if (tile->type == TILE_GOAL) {
+                static const i32 SCORE_INCREASE_AMOUNT = 5;
+                SCORE += SCORE_INCREASE_AMOUNT;
+            }
         }
     }
 
@@ -4843,14 +4855,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 GetDefaultRenderTarget());
 
                 for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
-                    LightTile* tile = &TILES[i];
+                    LightTile* tile = GetLightTile(i);
                     Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
                     color.a = TILE_IDX == i ? 1.0f : 0.5f;
                     DrawQuad2D(Vec2Lit(i * 50, 0), 30, 30, Mat4Identity(), color);
                 }
 
                 {
-                    Str8 text = Str8F(&gstate->temp, "Score: %d", gstate->nframe);
+                    Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
                     TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
                     DrawTextBox(&textbox,
                                 Vec2Lit(-0.5f * gstate->render_dims.x + 5.0f, 0.5f * gstate->render_dims.y - 15.0f),

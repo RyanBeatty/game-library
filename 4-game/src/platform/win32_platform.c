@@ -895,8 +895,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     Vec2 cursor_world = GameScreenToWorld2D(pos_screen);
                     controller->cursor_pos_world = cursor_world;
 
-                    controller->action_left.down |= keyboard->down[VK_LBUTTON];
-                    controller->action_left.pressed |= !keyboard->down[VK_LBUTTON] && keyboard_prev->down[VK_LBUTTON];
+                    controller->action_down.down |= keyboard->down[VK_LBUTTON];
+                    controller->action_down.pressed |= !keyboard->down[VK_LBUTTON] && keyboard_prev->down[VK_LBUTTON];
 
                     controller->right_shoulder.down |= keyboard->down[VK_RBUTTON];
                     controller->right_shoulder.pressed |=
