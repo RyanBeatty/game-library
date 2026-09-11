@@ -4821,7 +4821,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         }
 
         switch (gstate->phase) {
+            case GP_NEW_GAME: {
+                gstate->phase_to_be = GP_PLAYING;
+                break;
+            }
             case GP_START_SCREEN: {
+                if (controller->action_down.pressed) {
+                    gstate->phase_to_be = GP_NEW_GAME;
+                }
                 break;
             }
             case GP_PLAYING: {
@@ -4888,6 +4895,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
                         break;
                     }
+                    // Intentional fallthrough
+                    case GP_NEW_GAME:
                     case GP_START_SCREEN: {
                         TextBox textbox =
                             LFontMeasureStr8Quad(GetLFontClosest(12.0f), Str8Lit("Press [SPACE] To Start"));
