@@ -4807,7 +4807,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         TILE_CHANGE_TIMER = 0.0f;
                         SCORE = 0;
                         LIFE_TIMER = 100.0f;
-                        gstate->phase_to_be = GP_PLAYING;
+                        break;
+                    }
+                    case GP_GAME_OVER: {
+                        break;
+                    }
+                    case GP_PLAYING: {
                         break;
                     }
                     default: {
@@ -4821,16 +4826,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         }
 
         switch (gstate->phase) {
-            case GP_NEW_GAME: {
-                gstate->phase_to_be = GP_PLAYING;
-                break;
-            }
-            case GP_START_SCREEN: {
-                if (controller->action_down.pressed) {
-                    gstate->phase_to_be = GP_NEW_GAME;
-                }
-                break;
-            }
             case GP_PLAYING: {
                 TILE_CHANGE_TIMER += dt;
                 while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
@@ -4850,9 +4845,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
                     LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
                     if (LIFE_TIMER <= 0.0f) {
-                        // TODO: Game Over
                         LIFE_TIMER = 0.0f;
+                        gstate->phase_to_be = GP_GAME_OVER;
                     }
+                }
+                break;
+            }
+            case GP_NEW_GAME: {
+                gstate->phase_to_be = GP_PLAYING;
+                break;
+            }
+            case GP_START_SCREEN: {
+                if (controller->action_down.pressed) {
+                    gstate->phase_to_be = GP_NEW_GAME;
+                }
+                break;
+            }
+            case GP_GAME_OVER: {
+                if (controller->action_down.pressed) {
+                    gstate->phase_to_be = GP_START_SCREEN;
                 }
                 break;
             }
@@ -4900,6 +4911,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_START_SCREEN: {
                         TextBox textbox =
                             LFontMeasureStr8Quad(GetLFontClosest(12.0f), Str8Lit("Press [SPACE] To Start"));
+                        DrawTextBox(&textbox, Vec2Lit(0, 0), LBLACK, TEXT_ALIGN_CENTER);
+                        break;
+                    }
+                    case GP_GAME_OVER: {
+                        TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), Str8Lit("GAME OVER"));
                         DrawTextBox(&textbox, Vec2Lit(0, 0), LBLACK, TEXT_ALIGN_CENTER);
                         break;
                     }
