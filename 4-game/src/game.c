@@ -4831,6 +4831,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     DrawQuad2D(Vec2Lit(i * 50, 0), 30, 30, Mat4Identity(), color);
                 }
 
+                {
+                    Str8 text = Str8F(&gstate->temp, "Score: %d", gstate->nframe);
+                    TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                    DrawTextBox(&textbox, Vec2Lit(0, 0), LBLACK);
+                }
+
                 // {
                 //     static Vec3 POS = Vec3Lit(100, 0, 0);
                 //     if (PlatformKeyDown(LKEY_LEFT)) {
