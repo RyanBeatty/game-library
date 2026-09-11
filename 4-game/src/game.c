@@ -4810,6 +4810,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
     static f32 TILE_CHANGE_TIMER = 0.0f;
     static i32 SCORE = 0;
+    static f32 LIFE_TIMER = 100.0f;
 
     f32 dt = gstate->frame_time.dt;
 
@@ -4824,6 +4825,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         TILE_IDX = 0;
         TILE_CHANGE_TIMER = 0.0f;
         SCORE = 0;
+        LIFE_TIMER = 100.0f;
     }
 
     if (gstate->update) {
@@ -4840,6 +4842,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             if (tile->type == TILE_GOAL) {
                 static const i32 SCORE_INCREASE_AMOUNT = 5;
                 SCORE += SCORE_INCREASE_AMOUNT;
+            }
+        }
+
+        {
+            static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
+            LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
+            if (LIFE_TIMER <= 0.0f) {
+                // TODO: Game Over
+                LIFE_TIMER = 0.0f;
             }
         }
     }
@@ -4859,6 +4870,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
                     color.a = TILE_IDX == i ? 1.0f : 0.5f;
                     DrawQuad2D(Vec2Lit(i * 50, 0), 30, 30, Mat4Identity(), color);
+                }
+
+                {
+                    DrawQuad2D(Vec2Lit(0, 100), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
                 }
 
                 {
