@@ -3574,10 +3574,28 @@ typedef struct {
     Str8 text;
 } TextBox;
 
-static Vec2 TextBoxGetDrawPos(TextBox box, Vec2 pos) { return Vec2Add(pos, box.baseline_offset); }
+typedef enum {
+    TEXT_ALIGN_CENTER = 0,
+    TEXT_ALIGN_LEFT,
+    TEXT_ALIGN_COUNT,
+} TextAlign;
 
-static void DrawTextBox(TextBox* textbox, Vec2 pos, Vec4 tint) {
-    Vec2 text_pos = TextBoxGetDrawPos(*textbox, pos);
+static void DrawTextBox(TextBox* textbox, Vec2 pos, Vec4 tint, TextAlign alignment) {
+    Vec2 text_pos = {0};
+    switch (alignment) {
+        case TEXT_ALIGN_CENTER: {
+            text_pos = Vec2Add(pos, textbox->baseline_offset);
+            break;
+        }
+        case TEXT_ALIGN_LEFT: {
+            text_pos = pos;
+            break;
+        }
+        default: {
+            PlatformLog(LLOG_ERROR, "Unknown text alignment: %d", alignment);
+            Assert(0);
+        }
+    }
     return DrawStr8(textbox->font, text_pos, tint, textbox->text);
 }
 
@@ -4342,7 +4360,7 @@ LCORE UIBoxAction DoUIBox(Str8 text, UIBoxVisuals* visuals) {
 
         if (box->textbox.text.len) {
             Vec4 text_tint = f32eq(visuals->text_tint.a, 0.0f) ? LBLACK : visuals->text_tint;
-            DrawTextBox(&box->textbox, box->pos, text_tint);
+            DrawTextBox(&box->textbox, box->pos, text_tint, TEXT_ALIGN_CENTER);
         }
     }
 
@@ -4834,7 +4852,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 {
                     Str8 text = Str8F(&gstate->temp, "Score: %d", gstate->nframe);
                     TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                    DrawTextBox(&textbox, Vec2Lit(0, 0), LBLACK);
+                    DrawTextBox(&textbox,
+                                Vec2Lit(-0.5f * gstate->render_dims.x + 5.0f, 0.5f * gstate->render_dims.y - 15.0f),
+                                LBLACK, TEXT_ALIGN_LEFT);
                 }
 
                 // {
