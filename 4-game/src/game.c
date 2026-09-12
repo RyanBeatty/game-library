@@ -4801,6 +4801,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 LIFE_TIMER = LIFE_TIMER_FULL;
 
     static i32 SCORE = 0;
+    static i32 COMBO = 0;
     static i32 HIGH_SCORE = 0;
 
     static f32 PLAYING_PRESSED_TIMER = 0.0f;
@@ -4830,6 +4831,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_NEW_GAME: {
                         TILE_IDX = 0;
                         TILE_CHANGE_TIMER = 0.0f;
+                        COMBO = 0;
                         SCORE = 0;
                         LIFE_TIMER = LIFE_TIMER_FULL;
 
@@ -4890,8 +4892,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             LightTile* tile = GetLightTile(TILE_IDX);
                             if (tile->type == TILE_GOAL) {
                                 static const i32 SCORE_INCREASE_AMOUNT = 5;
-                                SCORE += SCORE_INCREASE_AMOUNT;
+                                ++COMBO;
+                                SCORE += COMBO * SCORE_INCREASE_AMOUNT;
                                 LIFE_TIMER = LIFE_TIMER_FULL;
+                            } else {
+                                COMBO = 0;
                             }
 
                             PLAYING_PHASE_TO_BE = PP_PRESSED;
@@ -4955,19 +4960,32 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 GetDefaultRenderTarget());
 
                 {
-                    Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
-                    TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                    DrawTextBox(&textbox,
-                                Vec2Lit(-0.5f * gstate->render_dims.x + 5.0f, 0.5f * gstate->render_dims.y - 15.0f),
-                                LBLACK, TEXT_ALIGN_LEFT);
-                }
+                    {
+                        f32 x = -0.5f * gstate->render_dims.x + 5.0f;
+                        f32 y = 0.5f * gstate->render_dims.y - 15.0f;
+                        f32 y_padding = 2.0f;
 
-                {
-                    Str8 text = Str8F(&gstate->temp, "High Score: %d", HIGH_SCORE);
-                    TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                    DrawTextBox(&textbox,
-                                Vec2Lit(0.5f * gstate->render_dims.x - 80.0f, 0.5f * gstate->render_dims.y - 15.0f),
-                                LBLACK, TEXT_ALIGN_CENTER);
+                        {
+                            Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
+                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                            DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
+
+                            y -= AABB2DHeight(textbox.aabb) + y_padding;
+                        }
+                        {
+                            Str8 text = Str8F(&gstate->temp, "Combo: %dX", COMBO);
+                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                            DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
+                        }
+                    }
+
+                    {
+                        Str8 text = Str8F(&gstate->temp, "High Score: %d", HIGH_SCORE);
+                        TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                        DrawTextBox(&textbox,
+                                    Vec2Lit(0.5f * gstate->render_dims.x - 80.0f, 0.5f * gstate->render_dims.y - 15.0f),
+                                    LBLACK, TEXT_ALIGN_CENTER);
+                    }
                 }
 
                 switch (gstate->phase) {
