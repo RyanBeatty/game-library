@@ -4658,6 +4658,7 @@ typedef struct GameState {
 
     GamePhase phase;
     GamePhase phase_to_be;
+
 } GameState;
 
 static GameState GState;
@@ -4784,6 +4785,12 @@ static LightTile TILES[] = {
 
 static LightTile* GetLightTile(isize idx) { return &TILES[idx]; }
 
+typedef enum {
+    PP_PLAYING = 0,
+    PP_PRESSED,
+    PP_COUNT,
+} PlayingPhase;
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
 
@@ -4795,9 +4802,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     static i32 SCORE = 0;
 
-    static bool PLAYING_PRESSED_STATE = false;
     static f32 PLAYING_PRESSED_TIMER = 0.0f;
     static f32 PLAYING_PRESSED_TIME = 1.2f;
+
+    static PlayingPhase PLAYING_PHASE = PP_PLAYING;
+    static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
 
     f32 dt = gstate->frame_time.dt;
 
@@ -4822,6 +4831,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         TILE_CHANGE_TIMER = 0.0f;
                         SCORE = 0;
                         LIFE_TIMER = LIFE_TIMER_FULL;
+
+                        PLAYING_PRESSED_TIMER = 0.0f;
+                        PLAYING_PRESSED_TIME = 1.2f;
+                        PLAYING_PHASE = PP_PLAYING;
+                        PLAYING_PHASE_TO_BE = PP_PLAYING;
                         break;
                     }
                     case GP_GAME_OVER: {
@@ -4842,38 +4856,66 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (gstate->phase) {
             case GP_PLAYING: {
-                if (PLAYING_PRESSED_STATE) {
-                    PLAYING_PRESSED_TIMER += dt;
-                    if (PLAYING_PRESSED_TIMER >= PLAYING_PRESSED_TIME) {
-                        PLAYING_PRESSED_STATE = false;
+                {
+                    if (PLAYING_PHASE_TO_BE != PLAYING_PHASE) {
+                        switch (PLAYING_PHASE_TO_BE) {
+                            case PP_PLAYING: {
+                                break;
+                            }
+                            case PP_PRESSED: {
+                                PLAYING_PRESSED_TIMER = 0.0f;
+                                break;
+                            }
+                            default: {
+                                PlatformLog(LLOG_ERROR, "Unknown playing phase: %d", PLAYING_PHASE_TO_BE);
+                                Assert(0);
+                            }
+                        }
+                        PLAYING_PHASE = PLAYING_PHASE_TO_BE;
                     }
+                    PLAYING_PHASE_TO_BE = PLAYING_PHASE;
+                }
 
-                } else {
-                    TILE_CHANGE_TIMER += dt;
-                    while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
-                        TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
-                        TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
-                    }
-
-                    if (controller->action_down.pressed) {
-                        LightTile* tile = GetLightTile(TILE_IDX);
-                        if (tile->type == TILE_GOAL) {
-                            static const i32 SCORE_INCREASE_AMOUNT = 5;
-                            SCORE += SCORE_INCREASE_AMOUNT;
-                            LIFE_TIMER = LIFE_TIMER_FULL;
+                switch (PLAYING_PHASE) {
+                    case PP_PLAYING: {
+                        TILE_CHANGE_TIMER += dt;
+                        while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
+                            TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
+                            TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
                         }
 
-                        PLAYING_PRESSED_STATE = true;
-                        PLAYING_PRESSED_TIMER = 0.0f;
-                    }
+                        if (controller->action_down.pressed) {
+                            LightTile* tile = GetLightTile(TILE_IDX);
+                            if (tile->type == TILE_GOAL) {
+                                static const i32 SCORE_INCREASE_AMOUNT = 5;
+                                SCORE += SCORE_INCREASE_AMOUNT;
+                                LIFE_TIMER = LIFE_TIMER_FULL;
+                            }
 
-                    {
-                        static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
-                        LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
-                        if (LIFE_TIMER <= 0.0f) {
-                            LIFE_TIMER = 0.0f;
-                            gstate->phase_to_be = GP_GAME_OVER;
+                            PLAYING_PHASE_TO_BE = PP_PRESSED;
                         }
+
+                        {
+                            static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
+                            LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
+                            if (LIFE_TIMER <= 0.0f) {
+                                LIFE_TIMER = 0.0f;
+                                gstate->phase_to_be = GP_GAME_OVER;
+                            }
+                        }
+
+                        break;
+                    }
+                    case PP_PRESSED: {
+                        PLAYING_PRESSED_TIMER += dt;
+                        if (PLAYING_PRESSED_TIMER >= PLAYING_PRESSED_TIME) {
+                            PLAYING_PHASE_TO_BE = PP_PLAYING;
+                        }
+                        break;
+                    }
+                    default: {
+                        PlatformLog(LLOG_ERROR, "Unknown playing phase: %d", PLAYING_PHASE_TO_BE);
+                        Assert(0);
                     }
                 }
                 break;
