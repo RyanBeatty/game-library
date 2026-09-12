@@ -4801,6 +4801,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 LIFE_TIMER = LIFE_TIMER_FULL;
 
     static i32 SCORE = 0;
+    static i32 HIGH_SCORE = 0;
 
     static f32 PLAYING_PRESSED_TIMER = 0.0f;
     static f32 PLAYING_PRESSED_TIME = 1.2f;
@@ -4839,6 +4840,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case GP_GAME_OVER: {
+                        HIGH_SCORE = i32max(HIGH_SCORE, SCORE);
                         break;
                     }
                     case GP_PLAYING: {
@@ -4952,6 +4954,22 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
+                {
+                    Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
+                    TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                    DrawTextBox(&textbox,
+                                Vec2Lit(-0.5f * gstate->render_dims.x + 5.0f, 0.5f * gstate->render_dims.y - 15.0f),
+                                LBLACK, TEXT_ALIGN_LEFT);
+                }
+
+                {
+                    Str8 text = Str8F(&gstate->temp, "High Score: %d", HIGH_SCORE);
+                    TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                    DrawTextBox(&textbox,
+                                Vec2Lit(0.5f * gstate->render_dims.x - 80.0f, 0.5f * gstate->render_dims.y - 15.0f),
+                                LBLACK, TEXT_ALIGN_CENTER);
+                }
+
                 switch (gstate->phase) {
                     case GP_PLAYING: {
                         {
@@ -4970,15 +4988,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         {
                             DrawQuad2D(Vec2Lit(0, 100), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
-                        }
-
-                        {
-                            Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
-                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                            DrawTextBox(
-                                &textbox,
-                                Vec2Lit(-0.5f * gstate->render_dims.x + 5.0f, 0.5f * gstate->render_dims.y - 15.0f),
-                                LBLACK, TEXT_ALIGN_LEFT);
                         }
                         break;
                     }
