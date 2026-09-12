@@ -4812,8 +4812,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     f32 dt = gstate->frame_time.dt;
 
-    // Grid* grid = GameStateGetGrid(gstate);
-
     GameControllerState* controller = GetController(input, 0);
 
     if (gstate->init) {
