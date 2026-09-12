@@ -4795,6 +4795,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     static i32 SCORE = 0;
 
+    static bool PLAYING_PRESSED_STATE = false;
+    static f32 PLAYING_PRESSED_TIMER = 0.0f;
+    static f32 PLAYING_PRESSED_TIME = 1.2f;
+
     f32 dt = gstate->frame_time.dt;
 
     // Grid* grid = GameStateGetGrid(gstate);
@@ -4838,27 +4842,38 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         switch (gstate->phase) {
             case GP_PLAYING: {
-                TILE_CHANGE_TIMER += dt;
-                while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
-                    TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
-                    TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
-                }
-
-                if (controller->action_down.pressed) {
-                    LightTile* tile = GetLightTile(TILE_IDX);
-                    if (tile->type == TILE_GOAL) {
-                        static const i32 SCORE_INCREASE_AMOUNT = 5;
-                        SCORE += SCORE_INCREASE_AMOUNT;
-                        LIFE_TIMER = LIFE_TIMER_FULL;
+                if (PLAYING_PRESSED_STATE) {
+                    PLAYING_PRESSED_TIMER += dt;
+                    if (PLAYING_PRESSED_TIMER >= PLAYING_PRESSED_TIME) {
+                        PLAYING_PRESSED_STATE = false;
                     }
-                }
 
-                {
-                    static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
-                    LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
-                    if (LIFE_TIMER <= 0.0f) {
-                        LIFE_TIMER = 0.0f;
-                        gstate->phase_to_be = GP_GAME_OVER;
+                } else {
+                    TILE_CHANGE_TIMER += dt;
+                    while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
+                        TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
+                        TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
+                    }
+
+                    if (controller->action_down.pressed) {
+                        LightTile* tile = GetLightTile(TILE_IDX);
+                        if (tile->type == TILE_GOAL) {
+                            static const i32 SCORE_INCREASE_AMOUNT = 5;
+                            SCORE += SCORE_INCREASE_AMOUNT;
+                            LIFE_TIMER = LIFE_TIMER_FULL;
+                        }
+
+                        PLAYING_PRESSED_STATE = true;
+                        PLAYING_PRESSED_TIMER = 0.0f;
+                    }
+
+                    {
+                        static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
+                        LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
+                        if (LIFE_TIMER <= 0.0f) {
+                            LIFE_TIMER = 0.0f;
+                            gstate->phase_to_be = GP_GAME_OVER;
+                        }
                     }
                 }
                 break;
