@@ -4769,9 +4769,16 @@ typedef struct {
 } LightTile;
 
 static LightTile TILES[] = {
-    {.type = TILE_NONE},
-    {.type = TILE_GOAL},
-    {.type = TILE_NONE},
+    {.type = TILE_NONE},  // fmt
+    {.type = TILE_NONE},  // fmt
+    {.type = TILE_NONE},  // fmt
+    {.type = TILE_NONE},  // fmt
+    {.type = TILE_GOAL},  // fmt
+    {.type = TILE_NONE},  // fmt
+    {.type = TILE_NONE},  // fmt
+    {.type = TILE_NONE},  // fmt
+    {.type = TILE_NONE},  // fmt
+
 };
 
 static LightTile* GetLightTile(isize idx) { return &TILES[idx]; }
