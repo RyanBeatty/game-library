@@ -4780,7 +4780,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
     static f32 TILE_CHANGE_TIMER = 0.0f;
     static i32 SCORE = 0;
-    static f32 LIFE_TIMER = 100.0f;
+    static const f32 LIFE_TIMER_FULL = 100.0f;
+    static f32 LIFE_TIMER = LIFE_TIMER_FULL;
 
     f32 dt = gstate->frame_time.dt;
 
@@ -4806,7 +4807,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         TILE_IDX = 0;
                         TILE_CHANGE_TIMER = 0.0f;
                         SCORE = 0;
-                        LIFE_TIMER = 100.0f;
+                        LIFE_TIMER = LIFE_TIMER_FULL;
                         break;
                     }
                     case GP_GAME_OVER: {
@@ -4838,6 +4839,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     if (tile->type == TILE_GOAL) {
                         static const i32 SCORE_INCREASE_AMOUNT = 5;
                         SCORE += SCORE_INCREASE_AMOUNT;
+                        LIFE_TIMER = LIFE_TIMER_FULL;
                     }
                 }
 
