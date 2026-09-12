@@ -4786,10 +4786,14 @@ static LightTile* GetLightTile(isize idx) { return &TILES[idx]; }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
+
     static f32 TILE_CHANGE_TIMER = 0.0f;
-    static i32 SCORE = 0;
+    static const f32 TILE_CHANGE_TIME = 0.3f;
+
     static const f32 LIFE_TIMER_FULL = 100.0f;
     static f32 LIFE_TIMER = LIFE_TIMER_FULL;
+
+    static i32 SCORE = 0;
 
     f32 dt = gstate->frame_time.dt;
 
@@ -4802,8 +4806,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     if (gstate->update) {
-        static const f32 TILE_CHANGE_TIME = 0.8f;
-
         // GamePhaseChange
         {
             if (gstate->phase_to_be != gstate->phase) {
