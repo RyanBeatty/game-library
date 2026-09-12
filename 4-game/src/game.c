@@ -4773,6 +4773,7 @@ static LightTile TILES[] = {
     {.type = TILE_NONE},  // fmt
     {.type = TILE_NONE},  // fmt
     {.type = TILE_NONE},  // fmt
+    {.type = TILE_NONE},  // fmt
     {.type = TILE_GOAL},  // fmt
     {.type = TILE_NONE},  // fmt
     {.type = TILE_NONE},  // fmt
@@ -4894,11 +4895,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
-                        for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
-                            LightTile* tile = GetLightTile(i);
-                            Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
-                            color.a = TILE_IDX == i ? 1.0f : 0.5f;
-                            DrawQuad2D(Vec2Lit(i * 50, 0), 30, 30, Mat4Identity(), color);
+                        {
+                            f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
+
+                            // Draw tiles
+                            for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
+                                LightTile* tile = GetLightTile(i);
+                                Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
+                                color.a = TILE_IDX == i ? 1.0f : 0.5f;
+
+                                Vec3 pos = Vec3RotateAxis(Vec3Lit(50, 0, 0), Vec3Lit(0, 0, 1), step * i);
+                                DrawQuad2D(pos, 15, 15, Mat4Identity(), color);
+                            }
                         }
 
                         {
