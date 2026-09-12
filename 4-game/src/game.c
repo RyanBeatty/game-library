@@ -5034,60 +5034,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                // {
-                //     static Vec3 POS = Vec3Lit(100, 0, 0);
-                //     if (PlatformKeyDown(LKEY_LEFT)) {
-                //         POS.x -= 0.5f;
-                //     }
-                //     if (PlatformKeyDown(LKEY_RIGHT)) {
-                //         POS.x += 0.5f;
-                //     }
-                //     Sprite* sprite = GetSprite(SPRITE_SCORE_PANEL_BG);
-                //     f32 scale = f32lerp(0.72f, 1.35f, f32sin(gstate->timer));
-                //     DrawSprite(*sprite, POS, Mat4Identity(), scale);
-                //     breakpoint();
-                // }
-
-                // {
-                //     Sprite* sprite = GetSprite(SPRITE_BUTTON_BG);
-                //     f32 scale = f32lerp(0.90f, 1.35f, f32sin(gstate->timer));
-                //     Mat4 rot = Mat4RotateZ(f32lerp(Deg2Rad(20.0f), Deg2Rad(-20.0f), f32sin(gstate->timer * 0.5f)));
-                //     Vec3 pos = Vec3Lit(-100, 0, 0);
-                //     pos.x += f32lerp(-2.3, 3.2, f32sin(gstate->timer * 0.6f));
-                //     pos.y += f32lerp(-10.32, 10.456, f32sin(gstate->timer * 0.3f));
-                //     DrawSprite(*sprite, pos, rot, scale);
-                //     breakpoint();
-                // }
-
-                // DoUI(input) {
-                //     {
-                //         static UIBoxVisuals VISUALS = {0};
-                //         static bool VISUALS_INIT = false;
-
-                //         if (!VISUALS_INIT) {
-                //             VISUALS_INIT = true;
-                //             VISUALS = UIBoxVisualsZero();
-                //             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-                //         }
-
-                //         VISUALS.rect = RectFromCenterAndDims(Vec2Zero(), Vec2Lit(100, 59));
-                //         VISUALS.fontsize = 16.0f;
-
-                //         UIBoxAction action = DoUIBox(Str8Lit("Play Hand"), &VISUALS);
-                //         if (action.hot) {
-                //             VISUALS.sprite = GetSprite(SPRITE_BLOCK_BG);
-                //             if (action.first_hot) {
-                //                 PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
-                //             }
-                //             if (action.active) {
-                //                 PlatformPlaySound(GetSound(SOUND_BEEP), 0);
-                //             }
-                //         } else {
-                //             VISUALS.sprite = GetSprite(SPRITE_BUTTON_BG);
-                //         }
-                //     }
-                // }
-
                 EndShaderPass();
             }
 
