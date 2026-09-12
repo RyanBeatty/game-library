@@ -4973,6 +4973,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 switch (gstate->phase) {
                     case GP_PLAYING: {
                         {
+                            f32 t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
+                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * t) + 0.5f * LPI) + 0.5f;
+
                             f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
 
                             // Draw tiles
@@ -4980,6 +4983,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 LightTile* tile = GetLightTile(i);
                                 Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
                                 color.a = TILE_IDX == i ? 1.0f : 0.5f;
+
+                                if (PLAYING_PHASE == PP_PRESSED && TILE_IDX == i) {
+                                    color.a = flashing_alpha;
+                                }
 
                                 Vec3 pos = Vec3RotateAxis(Vec3Lit(50, 0, 0), Vec3Lit(0, 0, 1), step * i);
                                 DrawQuad2D(pos, 15, 15, Mat4Identity(), color);
