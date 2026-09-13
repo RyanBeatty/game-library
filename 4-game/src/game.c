@@ -4795,7 +4795,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
 
     static f32 TILE_CHANGE_TIMER = 0.0f;
-    static const f32 TILE_CHANGE_TIME = 0.3f;
+    static f32 TILE_CHANGE_TIME = 0.3f;
+    static const f32 TILE_CHANGE_TIME_ORIGINAL = 0.3f;
 
     static const f32 LIFE_TIMER_FULL = 100.0f;
     static f32 LIFE_TIMER = LIFE_TIMER_FULL;
@@ -4829,6 +4830,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_NEW_GAME: {
                         TILE_IDX = 0;
                         TILE_CHANGE_TIMER = 0.0f;
+                        TILE_CHANGE_TIME = TILE_CHANGE_TIME_ORIGINAL;
+
                         COMBO = 0;
                         SCORE = 0;
                         LIFE_TIMER = LIFE_TIMER_FULL;
@@ -4893,6 +4896,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 ++COMBO;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
                                 LIFE_TIMER = LIFE_TIMER_FULL;
+                                TILE_CHANGE_TIME *= 0.7f;
                             } else {
                                 COMBO = 0;
                             }
@@ -4974,6 +4978,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Str8 text = Str8F(&gstate->temp, "Combo: %dX", COMBO);
                             TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
                             DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
+
+                            y -= AABB2DHeight(textbox.aabb) + y_padding;
                         }
                     }
 
