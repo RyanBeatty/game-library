@@ -4900,7 +4900,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 ++COMBO;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
                                 LIFE_TIMER = LIFE_TIMER_FULL;
-                                TILE_CHANGE_TIME *= 0.7f;
+                                TILE_CHANGE_TIME *= 0.9f;
                             } else {
                                 COMBO = 0;
                             }
