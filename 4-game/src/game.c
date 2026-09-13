@@ -4807,6 +4807,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     static f32 PLAYING_PRESSED_TIMER = 0.0f;
     static f32 PLAYING_PRESSED_TIME = 1.2f;
+    static bool CAN_PRESS_DOWN = true;
 
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
@@ -4840,6 +4841,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         PLAYING_PRESSED_TIME = 1.2f;
                         PLAYING_PHASE = PP_PLAYING;
                         PLAYING_PHASE_TO_BE = PP_PLAYING;
+                        CAN_PRESS_DOWN = true;
                         break;
                     }
                     case GP_GAME_OVER: {
@@ -4882,6 +4884,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 LightTile* cur_tile = GetLightTile(TILE_IDX);
+                bool button_down_physically = PlatformKeyDown(LKEY_SPACE) || PlatformKeyDown(LKEY_LBUTTON);
+                bool button_down = button_down_physically && CAN_PRESS_DOWN;
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
                         TILE_CHANGE_TIMER += dt;
@@ -4890,7 +4894,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
                         }
 
-                        if (controller->action_down.pressed) {
+                        if (button_down) {
                             if (cur_tile->type == TILE_GOAL) {
                                 static const i32 SCORE_INCREASE_AMOUNT = 5;
                                 ++COMBO;
@@ -4918,7 +4922,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                if (cur_tile->type != TILE_GOAL || (!controller->action_down.pressed && PLAYING_PHASE != PP_PRESSED)) {
+                if (cur_tile->type != TILE_GOAL || (!button_down && PLAYING_PHASE != PP_PRESSED)) {
                     static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
                     LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
                     if (LIFE_TIMER <= 0.0f) {
@@ -4926,6 +4930,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         gstate->phase_to_be = GP_GAME_OVER;
                     }
                 }
+
+                CAN_PRESS_DOWN = !button_down_physically;
+                // PlatformLog(LLOG_INFO, "button down: %d", button_down_physically);
                 break;
             }
             case GP_NEW_GAME: {
