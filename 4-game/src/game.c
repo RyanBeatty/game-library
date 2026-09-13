@@ -4881,6 +4881,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     PLAYING_PHASE_TO_BE = PLAYING_PHASE;
                 }
 
+                LightTile* cur_tile = GetLightTile(TILE_IDX);
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
                         TILE_CHANGE_TIMER += dt;
@@ -4890,8 +4891,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         if (controller->action_down.pressed) {
-                            LightTile* tile = GetLightTile(TILE_IDX);
-                            if (tile->type == TILE_GOAL) {
+                            if (cur_tile->type == TILE_GOAL) {
                                 static const i32 SCORE_INCREASE_AMOUNT = 5;
                                 ++COMBO;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
@@ -4903,16 +4903,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             PLAYING_PHASE_TO_BE = PP_PRESSED;
                         }
-
-                        {
-                            static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
-                            LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
-                            if (LIFE_TIMER <= 0.0f) {
-                                LIFE_TIMER = 0.0f;
-                                gstate->phase_to_be = GP_GAME_OVER;
-                            }
-                        }
-
                         break;
                     }
                     case PP_PRESSED: {
@@ -4925,6 +4915,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     default: {
                         PlatformLog(LLOG_ERROR, "Unknown playing phase: %d", PLAYING_PHASE_TO_BE);
                         Assert(0);
+                    }
+                }
+
+                if (cur_tile->type != TILE_GOAL || (!controller->action_down.pressed && PLAYING_PHASE != PP_PRESSED)) {
+                    static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
+                    LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
+                    if (LIFE_TIMER <= 0.0f) {
+                        LIFE_TIMER = 0.0f;
+                        gstate->phase_to_be = GP_GAME_OVER;
                     }
                 }
                 break;
