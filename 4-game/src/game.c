@@ -4994,8 +4994,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 switch (gstate->phase) {
                     case GP_PLAYING: {
                         {
-                            f32 t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
-                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * t) + 0.5f * LPI) + 0.5f;
+                            f32 flashing_alpha_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
+                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * flashing_alpha_t) + 0.5f * LPI) + 0.5f;
 
                             f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
 
