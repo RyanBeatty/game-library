@@ -4769,21 +4769,35 @@ typedef struct {
     TileType type;
 } LightTile;
 
-static LightTile TILES[] = {
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_GOAL},  // fmt
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_NONE},  // fmt
-    {.type = TILE_NONE},  // fmt
+static LightTile TILES[30] = {0};
+// static LightTile TILES[] = {
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_GOAL},  // fmt
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_NONE},  // fmt
+//     {.type = TILE_NONE},  // fmt
 
-};
+// };
 
-static LightTile* GetLightTile(isize idx) { return &TILES[idx]; }
+static LightTile* GetLightTile(isize idx) {
+    static bool ONCE = false;
+
+    if (!ONCE) {
+        ONCE = true;
+
+        isize goal_step = ArraySizeOf(TILES) / 3;
+        for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
+            TILES[i].type = i % goal_step == 0 ? TILE_GOAL : TILE_NONE;
+        }
+    }
+
+    return &TILES[idx];
+}
 
 typedef enum {
     PP_PLAYING = 0,
@@ -5019,8 +5033,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     color.a = flashing_alpha;
                                 }
 
-                                Vec3 pos = Vec3RotateAxis(Vec3Lit(50, 0, 0), Vec3Lit(0, 0, 1), step * i);
-                                DrawQuad2D(pos, 15, 15, Mat4Identity(), color);
+                                Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * i);
+                                DrawQuad2D(pos, 10, 10, Mat4Identity(), color);
                             }
                         }
 
