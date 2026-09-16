@@ -4883,7 +4883,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     PLAYING_PHASE_TO_BE = PLAYING_PHASE;
                 }
 
-                LightTile* cur_tile = GetLightTile(TILE_IDX);
                 bool button_down_physically = PlatformKeyDown(LKEY_SPACE) || PlatformKeyDown(LKEY_LBUTTON);
                 bool button_down = button_down_physically && CAN_PRESS_DOWN;
                 switch (PLAYING_PHASE) {
@@ -4893,6 +4892,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
                         }
+
+                        // Important not to cache this once as we just updated what our cur tile was above.
+                        LightTile* cur_tile = GetLightTile(TILE_IDX);
 
                         if (button_down) {
                             if (cur_tile->type == TILE_GOAL) {
@@ -4922,6 +4924,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
+                LightTile* cur_tile = GetLightTile(TILE_IDX);
                 if (cur_tile->type != TILE_GOAL || (!button_down && PLAYING_PHASE != PP_PRESSED)) {
                     static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
                     LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
