@@ -4909,9 +4909,24 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         // Important not to cache this once as we just updated what our cur tile was above.
                         LightTile* cur_tile = GetLightTile(TILE_IDX);
+                        LightTile* next_tile = GetLightTile((TILE_IDX + 1) % ArraySizeOf(TILES));
+                        // LightTile* prev_tile = GetLightTile((ArraySizeOf(TILES) + TILE_IDX - 1) %
+                        // ArraySizeOf(TILES));
 
                         if (button_down) {
-                            if (cur_tile->type == TILE_GOAL) {
+                            static f32 COYOTE_TIME = 3.0f / 60.0f;
+                            bool hit_goal = false;
+                            if (next_tile->type == TILE_GOAL && TILE_CHANGE_TIME - TILE_CHANGE_TIMER <= COYOTE_TIME) {
+                                TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
+                                hit_goal = true;
+                            }
+
+                            // if (prev_tile->type == TILE_GOAL && TILE_CHANGE_TIMER <= COYOTE_TIME) {
+                            //     TILE_IDX = (ArraySizeOf(TILES) + TILE_IDX - 1) % ArraySizeOf(TILES);
+                            //     hit_goal = true;
+                            // }
+
+                            if (cur_tile->type == TILE_GOAL || hit_goal) {
                                 static const i32 SCORE_INCREASE_AMOUNT = 5;
                                 ++COMBO;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
