@@ -4815,6 +4815,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     static i32 SCORE = 0;
     static i32 COMBO = 0;
+    static f32 COMBO_TIMER = 0.0f;
+    static const f32 COMBO_TIMER_FULL = 7.0f;
     static i32 HIGH_SCORE = 0;
 
     static f32 PLAYING_PRESSED_TIMER = 0.0f;
@@ -4846,6 +4848,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         TILE_CHANGE_TIME = TILE_CHANGE_TIME_ORIGINAL;
 
                         COMBO = 0;
+                        COMBO_TIMER = 0.0f;
                         SCORE = 0;
                         LIFE_TIMER = LIFE_TIMER_FULL;
 
@@ -4928,12 +4931,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (cur_tile->type == TILE_GOAL || hit_goal) {
                                 static const i32 SCORE_INCREASE_AMOUNT = 5;
                                 ++COMBO;
+                                COMBO_TIMER = COMBO_TIMER_FULL;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
                                 LIFE_TIMER = LIFE_TIMER_FULL;
                                 TILE_CHANGE_TIME *= 0.9f;
                                 SetGoals();
                             } else {
-                                COMBO = 0;
                             }
 
                             PLAYING_PHASE_TO_BE = PP_PRESSED;
@@ -4960,6 +4963,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     if (LIFE_TIMER <= 0.0f) {
                         LIFE_TIMER = 0.0f;
                         gstate->phase_to_be = GP_GAME_OVER;
+                    }
+
+                    COMBO_TIMER -= dt;
+                    if (COMBO_TIMER <= 0.0f) {
+                        COMBO_TIMER = 0.0f;
+                        COMBO = 0;
                     }
                 }
 
@@ -5019,6 +5028,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             y -= AABB2DHeight(textbox.aabb) + y_padding;
                         }
+                        {
+                            f32 width = 150.0f;
+                            f32 pct = COMBO_TIMER != 0.0f ? (COMBO_TIMER / COMBO_TIMER_FULL) : 0.0f;
+                            width *= pct;
+                            Vec2 left_anchor = Vec2Lit(x + 0.5f * width, y);
+                            DrawQuad2D(left_anchor, width, 7.0f, Mat4Identity(), LRED);
+                        }
                     }
 
                     {
@@ -5053,6 +5069,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
+                        // Draw life
                         {
                             DrawQuad2D(Vec2Lit(0, 130), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
                         }
