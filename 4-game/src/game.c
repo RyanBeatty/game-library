@@ -5054,7 +5054,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         {
-                            DrawQuad2D(Vec2Lit(0, 100), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
+                            DrawQuad2D(Vec2Lit(0, 130), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
                         }
                         break;
                     }
