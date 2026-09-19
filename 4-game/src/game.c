@@ -4816,12 +4816,12 @@ static f32 GetCoyoteTime(i32 level) {
     return num_frames / 60.0f;
 }
 
+static f32 GetTileChangeSpeedTime(i32 level) { return 0.3f * (f32pow(0.9f, level)); }
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
 
     static f32 TILE_CHANGE_TIMER = 0.0f;
-    static f32 TILE_CHANGE_TIME = 0.3f;
-    static const f32 TILE_CHANGE_TIME_ORIGINAL = 0.3f;
 
     static const f32 LIFE_TIMER_FULL = 100.0f;
     static f32 LIFE_TIMER = LIFE_TIMER_FULL;
@@ -4859,7 +4859,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_NEW_GAME: {
                         TILE_IDX = 0;
                         TILE_CHANGE_TIMER = 0.0f;
-                        TILE_CHANGE_TIME = TILE_CHANGE_TIME_ORIGINAL;
 
                         LEVEL = 1;
                         COMBO = 0;
@@ -4918,10 +4917,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 bool button_down = button_down_physically && CAN_PRESS_DOWN;
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
+                        f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
                         TILE_CHANGE_TIMER += dt;
-                        while (TILE_CHANGE_TIMER >= TILE_CHANGE_TIME) {
+                        while (TILE_CHANGE_TIMER >= tile_change_time) {
                             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
-                            TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - TILE_CHANGE_TIME, 0.0f);
+                            TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
                         }
 
                         // Important not to cache this once as we just updated what our cur tile was above.
@@ -4933,7 +4933,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (button_down) {
                             f32 coyote_time = GetCoyoteTime(LEVEL);
                             bool hit_goal = false;
-                            if (next_tile->type == TILE_GOAL && TILE_CHANGE_TIME - TILE_CHANGE_TIMER <= coyote_time) {
+                            if (next_tile->type == TILE_GOAL && tile_change_time - TILE_CHANGE_TIMER <= coyote_time) {
                                 TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                                 hit_goal = true;
                             }
@@ -4950,7 +4950,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 COMBO_TIMER = COMBO_TIMER_FULL;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
                                 LIFE_TIMER = LIFE_TIMER_FULL;
-                                TILE_CHANGE_TIME *= 0.9f;
                                 SetGoals();
                             } else {
                             }
