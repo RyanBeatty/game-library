@@ -4785,14 +4785,20 @@ static LightTile TILES[30] = {0};
 // };
 
 static void SetGoals() {
-    for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
-        TILES[i].type = TILE_NONE;
+    static i32 COUNTER = 0;
+
+    COUNTER = 0;
+    if (COUNTER % 3 == 0) {
+        for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
+            TILES[i].type = TILE_NONE;
+        }
+        isize goal_step = ArraySizeOf(TILES) / 3;
+        isize random = i32randab(0, ArraySizeOf(TILES) - 1);
+        for (isize i = 0; i < 3; ++i) {
+            TILES[(random + i * goal_step) % ArraySizeOf(TILES)].type = TILE_GOAL;
+        }
     }
-    isize goal_step = ArraySizeOf(TILES) / 3;
-    isize random = i32randab(0, ArraySizeOf(TILES) - 1);
-    for (isize i = 0; i < 3; ++i) {
-        TILES[(random + i * goal_step) % ArraySizeOf(TILES)].type = TILE_GOAL;
-    }
+    ++COUNTER;
 }
 
 static LightTile* GetLightTile(isize idx) { return &TILES[idx]; }
@@ -4832,6 +4838,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 COMBO_TIMER = 0.0f;
     static const f32 COMBO_TIMER_FULL = 7.0f;
     static i32 HIGH_SCORE = 0;
+    static bool HIT_GOAL = false;
 
     static f32 PLAYING_PRESSED_TIMER = 0.0f;
     static f32 PLAYING_PRESSED_TIME = 1.2f;
@@ -4866,6 +4873,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         SCORE = 0;
                         LIFE_TIMER = LIFE_TIMER_FULL;
 
+                        HIT_GOAL = false;
+
                         PLAYING_PRESSED_TIMER = 0.0f;
                         PLAYING_PRESSED_TIME = 1.2f;
                         PLAYING_PHASE = PP_PLAYING;
@@ -4897,6 +4906,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     if (PLAYING_PHASE_TO_BE != PLAYING_PHASE) {
                         switch (PLAYING_PHASE_TO_BE) {
                             case PP_PLAYING: {
+                                if (HIT_GOAL) {
+                                    SetGoals();
+                                }
+
+                                HIT_GOAL = false;
                                 break;
                             }
                             case PP_PRESSED: {
@@ -4950,7 +4964,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 COMBO_TIMER = COMBO_TIMER_FULL;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
                                 LIFE_TIMER = LIFE_TIMER_FULL;
-                                SetGoals();
+                                HIT_GOAL = true;
                             } else {
                             }
 
