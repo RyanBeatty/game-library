@@ -4813,6 +4813,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static const f32 LIFE_TIMER_FULL = 100.0f;
     static f32 LIFE_TIMER = LIFE_TIMER_FULL;
 
+    static i32 LEVEL = 1;
     static i32 SCORE = 0;
     static i32 COMBO = 0;
     static f32 COMBO_TIMER = 0.0f;
@@ -4847,6 +4848,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         TILE_CHANGE_TIMER = 0.0f;
                         TILE_CHANGE_TIME = TILE_CHANGE_TIME_ORIGINAL;
 
+                        LEVEL = 1;
                         COMBO = 0;
                         COMBO_TIMER = 0.0f;
                         SCORE = 0;
@@ -4930,6 +4932,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             if (cur_tile->type == TILE_GOAL || hit_goal) {
                                 static const i32 SCORE_INCREASE_AMOUNT = 5;
+                                ++LEVEL;
                                 ++COMBO;
                                 COMBO_TIMER = COMBO_TIMER_FULL;
                                 SCORE += COMBO * SCORE_INCREASE_AMOUNT;
@@ -5016,6 +5019,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         {
                             Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
+                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                            DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
+
+                            y -= AABB2DHeight(textbox.aabb) + y_padding;
+                        }
+                        {
+                            Str8 text = Str8F(&gstate->temp, "Level: %d", LEVEL);
                             TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
                             DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
 
