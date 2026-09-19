@@ -4803,6 +4803,19 @@ typedef enum {
     PP_COUNT,
 } PlayingPhase;
 
+static f32 GetCoyoteTime(i32 level) {
+    f32 num_frames = 3.0f;
+    if (level >= 28) {
+        num_frames = 6.0f;
+    } else if (level >= 22) {
+        num_frames = 5.0f;
+    } else if (level >= 12) {
+        num_frames = 4.0f;
+    }
+
+    return num_frames / 60.0f;
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
 
@@ -4918,9 +4931,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         // ArraySizeOf(TILES));
 
                         if (button_down) {
-                            static f32 COYOTE_TIME = 3.0f / 60.0f;
+                            f32 coyote_time = GetCoyoteTime(LEVEL);
                             bool hit_goal = false;
-                            if (next_tile->type == TILE_GOAL && TILE_CHANGE_TIME - TILE_CHANGE_TIMER <= COYOTE_TIME) {
+                            if (next_tile->type == TILE_GOAL && TILE_CHANGE_TIME - TILE_CHANGE_TIMER <= coyote_time) {
                                 TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                                 hit_goal = true;
                             }
@@ -4959,8 +4972,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
-                LightTile* cur_tile = GetLightTile(TILE_IDX);
-                if (cur_tile->type != TILE_GOAL || (!button_down && PLAYING_PHASE != PP_PRESSED)) {
+                // LightTile* cur_tile = GetLightTile(TILE_IDX);
+                // if (cur_tile->type != TILE_GOAL || (!button_down && PLAYING_PHASE != PP_PRESSED))
+                {
                     static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
                     LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
                     if (LIFE_TIMER <= 0.0f) {
