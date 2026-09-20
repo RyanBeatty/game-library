@@ -3662,7 +3662,8 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
     SOUNDX(BEEP, "assets/sounds/beep.wav")                       \
     SOUNDX(TILE_TICK, "assets/sounds/TILE_TICK.wav")             \
     SOUNDX(UI_BUTTON_CLICK, "assets/sounds/UI_BUTTON_CLICK.wav") \
-    SOUNDX(GOAL_HIT, "assets/sounds/GOAL_HIT.wav")
+    SOUNDX(GOAL_HIT, "assets/sounds/GOAL_HIT.wav")               \
+    SOUNDX(MISS_GOAL, "assets/sounds/MISS_GOAL.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -4963,6 +4964,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 HIT_GOAL = true;
                                 PlatformPlaySound(GetSound(SOUND_GOAL_HIT), 0);
                             } else {
+                                PlatformPlaySound(GetSound(SOUND_MISS_GOAL), 0);
                             }
 
                             PLAYING_PHASE_TO_BE = PP_PRESSED;
