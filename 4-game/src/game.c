@@ -3658,9 +3658,10 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST                         \
-    SOUNDX(BEEP, "assets/sounds/beep.wav") \
-    SOUNDX(TILE_TICK, "assets/sounds/TILE_TICK.wav")
+#define SOUND_LIST                                   \
+    SOUNDX(BEEP, "assets/sounds/beep.wav")           \
+    SOUNDX(TILE_TICK, "assets/sounds/TILE_TICK.wav") \
+    SOUNDX(UI_BUTTON_CLICK, "assets/sounds/UI_BUTTON_CLICK.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -5007,6 +5008,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             case GP_START_SCREEN: {
                 if (controller->action_down.pressed) {
                     gstate->phase_to_be = GP_NEW_GAME;
+                    PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
                 }
                 break;
             }
