@@ -3658,16 +3658,9 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST                                               \
-    SOUNDX(BEEP, "assets/sounds/beep.wav")                       \
-    SOUNDX(CARD_FOCUS, "assets/sounds/card_focus.wav")           \
-    SOUNDX(CARD_SELECT, "assets/sounds/card_select.wav")         \
-    SOUNDX(CARD_DESELECT, "assets/sounds/card_deselect.wav")     \
-    SOUNDX(PIECE_MOVE, "assets/sounds/piece_move.wav")           \
-    SOUNDX(PIECE_PLACE, "assets/sounds/piece_place.wav")         \
-    SOUNDX(UI_BUTTON_CLICK, "assets/sounds/ui_button_click.wav") \
-    SOUNDX(TILE_POP, "assets/sounds/tile_pop.wav")               \
-    SOUNDX(CARD_DRAW, "assets/sounds/card_draw.wav")
+#define SOUND_LIST                         \
+    SOUNDX(BEEP, "assets/sounds/beep.wav") \
+    SOUNDX(TILE_TICK, "assets/sounds/TILE_TICK.wav")
 
 typedef enum {
     SOUND_NONE = 0,
@@ -4936,6 +4929,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         while (TILE_CHANGE_TIMER >= tile_change_time) {
                             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
+                            PlatformPlaySoundLimit(GetSound(SOUND_TILE_TICK), 0, 1);
                         }
 
                         // Important not to cache this once as we just updated what our cur tile was above.
