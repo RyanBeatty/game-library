@@ -4766,7 +4766,14 @@ typedef struct {
     TileType type;
 } LightTile;
 
-static LightTile TILES[30] = {0};
+typedef struct {
+    Vec3 pos;
+    Vec4 tint;
+} LightTileGfx;
+
+#define NUM_TILES 30
+static LightTile TILES[NUM_TILES] = {0};
+static LightTileGfx TILES_GFX[NUM_TILES] = {0};
 // static LightTile TILES[] = {
 //     {.type = TILE_NONE},  // fmt
 //     {.type = TILE_NONE},  // fmt
@@ -5010,6 +5017,39 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 CAN_PRESS_DOWN = !button_down_physically;
                 // PlatformLog(LLOG_INFO, "button down: %d", button_down_physically);
+
+                {
+                    f32 flashing_alpha_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
+                    f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * flashing_alpha_t) + 0.5f * LPI) + 0.5f;
+
+                    f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
+
+                    for (isize i = 0; i < NUM_TILES; ++i) {
+                        LightTile* tile = GetLightTile(i);
+                        Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
+                        color.a = TILE_IDX == i ? 1.0f : 0.5f;
+
+                        if (PLAYING_PHASE == PP_PRESSED && TILE_IDX == i) {
+                            color.a = flashing_alpha;
+                        }
+
+                        Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * i);
+
+                        LightTileGfx tile_gfx = {0};
+                        tile_gfx.pos = pos;
+                        tile_gfx.tint = color;
+                        TILES_GFX[i] = tile_gfx;
+                    }
+
+                    f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
+                    f32 timer = LIGHT_TRAIL_TIMER - tile_change_time;
+                    for (isize offset = 1; offset < 4 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
+                        isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
+
+                        LightTileGfx* tile_gfx = &TILES_GFX[idx];
+                        tile_gfx->tint = LYELLOW;
+                    }
+                }
                 break;
             }
             case GP_NEW_GAME: {
@@ -5092,35 +5132,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
-                        {
-                            f32 flashing_alpha_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
-                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * flashing_alpha_t) + 0.5f * LPI) + 0.5f;
-
-                            f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
-
-                            // Draw tiles
-                            for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
-                                LightTile* tile = GetLightTile(i);
-                                Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
-                                color.a = TILE_IDX == i ? 1.0f : 0.5f;
-
-                                if (PLAYING_PHASE == PP_PRESSED && TILE_IDX == i) {
-                                    color.a = flashing_alpha;
-                                }
-
-                                Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * i);
-                                DrawQuad2D(pos, 10, 10, Mat4Identity(), color);
-                            }
-
-                            f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
-                            f32 timer = LIGHT_TRAIL_TIMER - tile_change_time;
-                            for (isize offset = 1; offset < 4 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
-                                isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
-
-                                Vec4 color = LYELLOW;
-                                Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * idx);
-                                DrawQuad2D(pos, 10, 10, Mat4Identity(), color);
-                            }
+                        for (isize i = 0; i < NUM_TILES; ++i) {
+                            LightTileGfx* tile_gfx = &TILES_GFX[i];
+                            DrawQuad2D(tile_gfx->pos, 10, 10, Mat4Identity(), tile_gfx->tint);
                         }
 
                         // Draw life
