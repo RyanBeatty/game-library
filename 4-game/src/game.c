@@ -4840,6 +4840,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 PLAYING_PRESSED_TIMER = 0.0f;
     static f32 PLAYING_PRESSED_TIME = 1.2f;
     static bool CAN_PRESS_DOWN = true;
+    static f32 LIGHT_TRAIL_TIMER = 0.0f;
 
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
@@ -4863,6 +4864,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_NEW_GAME: {
                         TILE_IDX = 0;
                         TILE_CHANGE_TIMER = 0.0f;
+                        LIGHT_TRAIL_TIMER = 0.0f;
 
                         LEVEL = 1;
                         COMBO = 0;
@@ -4931,6 +4933,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case PP_PLAYING: {
                         f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
                         TILE_CHANGE_TIMER += dt;
+                        LIGHT_TRAIL_TIMER += dt;
                         while (TILE_CHANGE_TIMER >= tile_change_time) {
                             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
@@ -4970,6 +4973,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PlatformPlaySound(GetSound(SOUND_MISS_GOAL), 0);
                             }
 
+                            LIGHT_TRAIL_TIMER = 0.0f;
                             PLAYING_PHASE_TO_BE = PP_PRESSED;
                         }
                         break;
@@ -5105,6 +5109,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
 
                                 Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * i);
+                                DrawQuad2D(pos, 10, 10, Mat4Identity(), color);
+                            }
+
+                            f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
+                            f32 timer = LIGHT_TRAIL_TIMER - tile_change_time;
+                            for (isize offset = 1; offset < 4 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
+                                isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
+
+                                Vec4 color = LYELLOW;
+                                Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * idx);
                                 DrawQuad2D(pos, 10, 10, Mat4Identity(), color);
                             }
                         }
