@@ -4769,6 +4769,7 @@ typedef struct {
 typedef struct {
     Vec3 pos;
     Vec4 tint;
+    Vec2 dims;
 } LightTileGfx;
 
 #define NUM_TILES 30
@@ -5038,6 +5039,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         LightTileGfx tile_gfx = {0};
                         tile_gfx.pos = pos;
                         tile_gfx.tint = color;
+                        tile_gfx.dims = Vec2Lit(10, 10);
                         TILES_GFX[i] = tile_gfx;
                     }
 
@@ -5134,7 +5136,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_PLAYING: {
                         for (isize i = 0; i < NUM_TILES; ++i) {
                             LightTileGfx* tile_gfx = &TILES_GFX[i];
-                            DrawQuad2D(tile_gfx->pos, 10, 10, Mat4Identity(), tile_gfx->tint);
+                            DrawQuad2D(tile_gfx->pos, tile_gfx->dims.x, tile_gfx->dims.y, Mat4Identity(),
+                                       tile_gfx->tint);
                         }
 
                         // Draw life
