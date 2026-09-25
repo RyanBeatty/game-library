@@ -5027,10 +5027,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     for (isize i = 0; i < NUM_TILES; ++i) {
                         LightTile* tile = GetLightTile(i);
-                        Vec4 color = tile->type == TILE_GOAL ? LGREEN : LGRAY;
-                        color.a = TILE_IDX == i ? 1.0f : 0.5f;
+                        bool is_goal = tile->type == TILE_GOAL;
+                        bool is_cur = TILE_IDX == i;
+                        Vec4 color = is_goal ? LGREEN : LGRAY;
+                        color.a = is_cur ? 1.0f : 0.5f;
 
-                        if (PLAYING_PHASE == PP_PRESSED && TILE_IDX == i) {
+                        if (PLAYING_PHASE == PP_PRESSED && is_cur) {
                             color.a = flashing_alpha;
                         }
 
@@ -5039,17 +5041,23 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         LightTileGfx tile_gfx = {0};
                         tile_gfx.pos = pos;
                         tile_gfx.tint = color;
-                        tile_gfx.dims = Vec2Lit(10, 10);
+                        tile_gfx.dims = is_goal || is_cur ? Vec2Lit(10, 10) : Vec2Lit(5.0f, 5.0f);
                         TILES_GFX[i] = tile_gfx;
                     }
 
                     f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
                     f32 timer = LIGHT_TRAIL_TIMER - tile_change_time;
-                    for (isize offset = 1; offset < 4 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
+                    for (isize offset = 1; offset < 3 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
                         isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
+                        LightTile* tile = GetLightTile(idx);
 
                         LightTileGfx* tile_gfx = &TILES_GFX[idx];
-                        tile_gfx->tint = LYELLOW;
+                        if (tile->type == TILE_GOAL) {
+                            tile_gfx->tint.a = 1.0f;
+                        } else {
+                            tile_gfx->tint = LYELLOW;
+                            // tile_gfx->dims = Vec2Scale(tile_gfx->dims, f);
+                        }
                     }
                 }
                 break;
