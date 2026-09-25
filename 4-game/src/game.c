@@ -4843,7 +4843,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
-    static isize LIGHT_TAIL[5] = {0};
 
     f32 dt = gstate->frame_time.dt;
 
@@ -4864,7 +4863,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case GP_NEW_GAME: {
                         TILE_IDX = 0;
                         TILE_CHANGE_TIMER = 0.0f;
-                        memset(LIGHT_TAIL, -1, sizeof(LIGHT_TAIL));
 
                         LEVEL = 1;
                         COMBO = 0;
@@ -4934,11 +4932,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
                         TILE_CHANGE_TIMER += dt;
                         while (TILE_CHANGE_TIMER >= tile_change_time) {
-                            for (isize i = 0; i < ArraySizeOf(LIGHT_TAIL) - 1; ++i) {
-                                LIGHT_TAIL[i + 1] = LIGHT_TAIL[i];
-                            }
-                            LIGHT_TAIL[0] = TILE_IDX;
-
                             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
 
