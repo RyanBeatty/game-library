@@ -4849,6 +4849,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static f32 PLAYING_PRESSED_TIME = 1.2f;
     static bool CAN_PRESS_DOWN = true;
     static f32 LIGHT_TRAIL_TIMER = 0.0f;
+    static isize LIGHT_TRAIL_IDXS[3] = {-1};
 
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
@@ -4873,6 +4874,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         TILE_IDX = 0;
                         TILE_CHANGE_TIMER = 0.0f;
                         LIGHT_TRAIL_TIMER = 0.0f;
+                        memset(LIGHT_TRAIL_IDXS, -1, sizeof(LIGHT_TRAIL_IDXS));
 
                         LEVEL = 1;
                         COMBO = 0;
@@ -4943,6 +4945,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         TILE_CHANGE_TIMER += dt;
                         LIGHT_TRAIL_TIMER += dt;
                         while (TILE_CHANGE_TIMER >= tile_change_time) {
+                            for (isize i = 0; i < ArraySizeOf(LIGHT_TRAIL_IDXS) - 1; ++i) {
+                                LIGHT_TRAIL_IDXS[i + 1] = LIGHT_TRAIL_IDXS[i];
+                            }
+                            LIGHT_TRAIL_IDXS[0] = TILE_IDX;
+
                             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
 
@@ -4982,6 +4989,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
 
                             LIGHT_TRAIL_TIMER = 0.0f;
+                            memset(LIGHT_TRAIL_IDXS, -1, sizeof(LIGHT_TRAIL_IDXS));
                             PLAYING_PHASE_TO_BE = PP_PRESSED;
                         }
                         break;
@@ -5047,8 +5055,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
                     f32 timer = LIGHT_TRAIL_TIMER - tile_change_time;
-                    for (isize offset = 1; offset < 3 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
-                        isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
+                    // for (isize offset = 1; offset < 3 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
+                    for (isize i = 0; i < ArraySizeOf(LIGHT_TRAIL_IDXS); ++i) {
+                        // isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
+                        isize idx = LIGHT_TRAIL_IDXS[i];
                         LightTile* tile = GetLightTile(idx);
 
                         LightTileGfx* tile_gfx = &TILES_GFX[idx];
