@@ -4827,7 +4827,7 @@ static f32 GetCoyoteTime(i32 level) {
     return num_frames / 60.0f;
 }
 
-static f32 GetTileChangeSpeedTime(i32 level) { return 0.3f * (f32pow(0.9f, level)) * 3; }
+static f32 GetTileChangeSpeedTime(i32 level) { return 0.3f * (f32pow(0.9f, level)); }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
@@ -5028,9 +5028,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // PlatformLog(LLOG_INFO, "button down: %d", button_down_physically);
 
                 {
-                    f32 flashing_alpha_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
-                    f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * flashing_alpha_t) + 0.5f * LPI) + 0.5f;
-
                     f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
 
                     for (isize i = 0; i < NUM_TILES; ++i) {
@@ -5049,10 +5046,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     {
-                        LightTileGfx tile_gfx = &TILES_GFX[TILE_IDX];
+                        LightTile* tile = GetLightTile(TILE_IDX);
+                        LightTileGfx* tile_gfx = &TILES_GFX[TILE_IDX];
+                        tile_gfx->tint = tile->type == TILE_GOAL ? LGREEN : LYELLOW;
                         tile_gfx->tint.a = 1.0f;
                         tile_gfx->dims = Vec2Lit(10, 10);
                         if (PLAYING_PHASE == PP_PRESSED) {
+                            f32 flashing_alpha_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
+                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * flashing_alpha_t) + 0.5f * LPI) + 0.5f;
                             tile_gfx->tint.a = flashing_alpha;
                         }
                     }
