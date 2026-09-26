@@ -5036,21 +5036,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     for (isize i = 0; i < NUM_TILES; ++i) {
                         LightTile* tile = GetLightTile(i);
                         bool is_goal = tile->type == TILE_GOAL;
-                        bool is_cur = TILE_IDX == i;
                         Vec4 color = is_goal ? LGREEN : LGRAY;
-                        color.a = is_cur ? 1.0f : 0.5f;
-
-                        if (PLAYING_PHASE == PP_PRESSED && is_cur) {
-                            color.a = flashing_alpha;
-                        }
+                        color.a = 0.5f;
 
                         Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * i);
 
                         LightTileGfx tile_gfx = {0};
                         tile_gfx.pos = pos;
                         tile_gfx.tint = color;
-                        tile_gfx.dims = is_goal || is_cur ? Vec2Lit(10, 10) : Vec2Lit(5.0f, 5.0f);
+                        tile_gfx.dims = is_goal ? Vec2Lit(10, 10) : Vec2Lit(5.0f, 5.0f);
                         TILES_GFX[i] = tile_gfx;
+                    }
+
+                    {
+                        LightTileGfx tile_gfx = &TILES_GFX[TILE_IDX];
+                        tile_gfx->tint.a = 1.0f;
+                        tile_gfx->dims = Vec2Lit(10, 10);
+                        if (PLAYING_PHASE == PP_PRESSED) {
+                            tile_gfx->tint.a = flashing_alpha;
+                        }
                     }
 
                     f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
