@@ -5027,6 +5027,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 CAN_PRESS_DOWN = !button_down_physically;
                 // PlatformLog(LLOG_INFO, "button down: %d", button_down_physically);
 
+                // Update tile gfx
                 {
                     f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
 
@@ -5060,16 +5061,18 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                     f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
                     for (isize i = 0; i < ArraySizeOf(LIGHT_TRAIL_IDXS); ++i) {
-                        // isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
                         isize idx = LIGHT_TRAIL_IDXS[i];
+                        if (idx < 0) {
+                            continue;
+                        }
                         LightTile* tile = GetLightTile(idx);
 
                         LightTileGfx* tile_gfx = &TILES_GFX[idx];
                         if (tile->type != TILE_GOAL) {
                             tile_gfx->tint = LYELLOW;
 
-                            // f32 time_since_exited = f32mod(LIGHT_TRAIL_TIMER, tile_change_time) + tile_change_time *
-                            // i; f32 pct = f32clamp01(
+                            // f32 time_since_exited = f32mod(LIGHT_TRAIL_TIMER, tile_change_time) +
+                            // tile_change_time * i; f32 pct = f32clamp01(
                             //     time_since_exited /
                             //     (tile_change_time * 0.3f));  // f32clamp01(TILE_CHANGE_TIMER / tile_change_time);
                             // f32 scale = f32lerp(10.0f, 5.0f, pct);
