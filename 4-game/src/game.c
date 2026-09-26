@@ -4827,7 +4827,7 @@ static f32 GetCoyoteTime(i32 level) {
     return num_frames / 60.0f;
 }
 
-static f32 GetTileChangeSpeedTime(i32 level) { return 0.3f * (f32pow(0.9f, level)); }
+static f32 GetTileChangeSpeedTime(i32 level) { return 0.3f * (f32pow(0.9f, level)) * 3; }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
@@ -5054,19 +5054,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
 
                     f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
-                    f32 timer = LIGHT_TRAIL_TIMER - tile_change_time;
-                    // for (isize offset = 1; offset < 3 && timer >= 0.0f; timer -= tile_change_time, ++offset) {
                     for (isize i = 0; i < ArraySizeOf(LIGHT_TRAIL_IDXS); ++i) {
                         // isize idx = (TILE_IDX - offset + ArraySizeOf(TILES)) % ArraySizeOf(TILES);
                         isize idx = LIGHT_TRAIL_IDXS[i];
                         LightTile* tile = GetLightTile(idx);
 
                         LightTileGfx* tile_gfx = &TILES_GFX[idx];
-                        if (tile->type == TILE_GOAL) {
-                            tile_gfx->tint.a = 1.0f;
-                        } else {
+                        if (tile->type != TILE_GOAL) {
                             tile_gfx->tint = LYELLOW;
-                            // tile_gfx->dims = Vec2Scale(tile_gfx->dims, f);
+
+                            // f32 time_since_exited = f32mod(LIGHT_TRAIL_TIMER, tile_change_time) + tile_change_time *
+                            // i; f32 pct = f32clamp01(
+                            //     time_since_exited /
+                            //     (tile_change_time * 0.3f));  // f32clamp01(TILE_CHANGE_TIMER / tile_change_time);
+                            // f32 scale = f32lerp(10.0f, 5.0f, pct);
+                            // tile_gfx->dims = Vec2Lit(scale, scale);
                         }
                     }
                 }
