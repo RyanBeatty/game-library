@@ -4831,6 +4831,21 @@ static f32 GetCoyoteTime(i32 level) {
 }
 
 static f32 GetTileChangeSpeedTime(i32 level) { return 0.3f * (f32pow(0.9f, level)); }
+static i32 GetScoreIncreaseAmount(i32 level) {
+    if (level <= 5) {
+        return 5;
+    } else if (level <= 10) {
+        return 10;
+    } else if (level <= 15) {
+        return 20;
+    } else if (level <= 20) {
+        return 40;
+    } else if (level <= 25) {
+        return 80;
+    } else {
+        return 160;
+    }
+}
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
@@ -4979,11 +4994,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             // }
 
                             if (cur_tile->type == TILE_GOAL || hit_goal) {
-                                static const i32 SCORE_INCREASE_AMOUNT = 5;
+                                i32 score_increase_amount = GetScoreIncreaseAmount(LEVEL);
                                 ++LEVEL;
                                 ++COMBO;
                                 COMBO_TIMER = COMBO_TIMER_FULL;
-                                SCORE += COMBO * SCORE_INCREASE_AMOUNT;
+                                SCORE += COMBO * score_increase_amount;
                                 LIFE_TIMER = LIFE_TIMER_FULL;
                                 HIT_GOAL = true;
                                 PlatformPlaySound(GetSound(SOUND_GOAL_HIT), 0);
