@@ -3721,6 +3721,8 @@ typedef struct {
 
 } Particle;
 
+TypedefArr(Particle);
+
 LCORE void ParticleSetFadeIn(Particle* particle, f32 fade_in_pct) {
     particle->fade_in_pct = fade_in_pct;
     f32 rem = 1.0f - (particle->fade_in_pct + particle->fade_out_pct);
@@ -3736,8 +3738,8 @@ LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
 #define MAX_PARTICLES 512
 
 typedef struct {
-    Particle particles[MAX_PARTICLES];
-    u32 pcap;
+    Particle particls_buffer[MAX_PARTICLES];
+    ParticleArr particles;
 } ParticleSystem;
 
 static ParticleSystem PARTICLES;
@@ -3748,15 +3750,19 @@ static void ParticleSystemInit() {
     ParticleSystem* particles = GetParticleSystem();
     ParticleSystem zero = {0};
     *particles = zero;
-    particles->pcap = MAX_PARTICLES;
+    InitArrS(&particles->particles, particles->particls_buffer, sizeof(particles->particls_buffer));
+    for (isize i = 0; i < ArrCap(&particles->particles); ++i) {
+        ArrReserve(&particles->particles);
+    }
 }
 
 LCORE Particle* AllocateParticle() {
     ParticleSystem* particles = GetParticleSystem();
     Particle* particle = NULL;
-    for (i32 i = 0; i < particles->pcap; ++i) {
-        if (!TestFlag(particles->particles[i].flags, PF_ACTIVE)) {
-            particle = &particles->particles[i];
+    for (i32 i = 0; i < ArrLen(&particles->particles); ++i) {
+        Particle* candidate = ArrGetPtr(&particles->particles, i);
+        if (!TestFlag(candidate->flags, PF_ACTIVE)) {
+            particle = candidate;
             break;
         }
     }
@@ -3782,8 +3788,8 @@ LCORE Particle* SpawnParticle(Vec3 p, Vec2 dims, Mat4 orient, f32 lifetime, RGBA
 
 LCORE void ParticleSystemTick(f32 dt) {
     ParticleSystem* particles = GetParticleSystem();
-    for (u32 i = 0; i < particles->pcap; ++i) {
-        Particle* particle = &particles->particles[i];
+    for (u32 i = 0; i < ArrLen(&particles->particles); ++i) {
+        Particle* particle = ArrGetPtr(&particles->particles, i);
         particle->lifedt += dt;
         if (particle->lifedt >= particle->lifetime) {
             FlagOff(particle->flags, PF_ACTIVE);
@@ -3800,8 +3806,8 @@ LCORE void ParticleSystemTick(f32 dt) {
 
 LCORE void ParticleSystemDraw() {
     ParticleSystem* particles = GetParticleSystem();
-    for (u32 i = 0; i < particles->pcap; ++i) {
-        Particle* particle = &particles->particles[i];
+    for (u32 i = 0; i < ArrLen(&particles->particles); ++i) {
+        Particle* particle = ArrGetPtr(&particles->particles, i);
 
         // Find % along lifetime we are.
         f32 lifedt_pct = f32lerp_pct(0.0f, particle->lifetime, particle->lifedt);
