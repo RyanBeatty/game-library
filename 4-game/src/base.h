@@ -111,6 +111,8 @@ void ArenaPrintInfo(Arena* a);
         (buf)->cap = (ccap);                          \
     } while (0)
 
+#define NewArr InitArr
+
 #define TypedefArr(struct_name) \
     typedef struct {            \
         struct_name* data;      \

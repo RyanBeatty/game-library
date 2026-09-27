@@ -3738,7 +3738,6 @@ LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
 #define MAX_PARTICLES 512
 
 typedef struct {
-    Particle particls_buffer[MAX_PARTICLES];
     ParticleArr particles;
 } ParticleSystem;
 
@@ -3746,11 +3745,11 @@ static ParticleSystem PARTICLES;
 
 #define GetParticleSystem() (&PARTICLES)
 
-static void ParticleSystemInit() {
+static void ParticleSystemInit(Arena* perm) {
     ParticleSystem* particles = GetParticleSystem();
     ParticleSystem zero = {0};
     *particles = zero;
-    InitArrS(&particles->particles, particles->particls_buffer, sizeof(particles->particls_buffer));
+    NewArr(&particles->particles, perm, Particle, MAX_PARTICLES);
     for (isize i = 0; i < ArrCap(&particles->particles); ++i) {
         ArrReserve(&particles->particles);
     }
@@ -5304,7 +5303,7 @@ void GameInit() {
 
     PlatformInitAudio(sound_buffer, sound_cap);
     InitFonts(gstate->render_to_screen_scale);
-    ParticleSystemInit();
+    ParticleSystemInit(&gstate->perm);
 
     {
         Arena render_state_arena = NewSubArena(&gstate->perm, MB(1));
