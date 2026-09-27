@@ -4806,7 +4806,10 @@ static void SetGoals() {
     ++COUNTER;
 }
 
-static LightTile* GetLightTile(isize idx) { return &TILES[idx]; }
+static isize GetTileIdx(isize idx) { return (idx + NUM_TILES) % NUM_TILES; }
+
+static LightTile* GetLightTile(isize idx) { return &TILES[GetTileIdx(idx)]; }
+static LightTileGfx* GetLightTileGfx(isize idx) { return &TILES_GFX[GetTileIdx(idx)]; }
 
 typedef enum {
     PP_PLAYING = 0,
@@ -5030,6 +5033,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // Update tile gfx
                 {
                     f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
+                    Vec2 full_dims = Vec2Lit(10, 10);
 
                     for (isize i = 0; i < NUM_TILES; ++i) {
                         LightTile* tile = GetLightTile(i);
@@ -5042,20 +5046,34 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         LightTileGfx tile_gfx = {0};
                         tile_gfx.pos = pos;
                         tile_gfx.tint = color;
-                        tile_gfx.dims = is_goal ? Vec2Lit(10, 10) : Vec2Lit(5.0f, 5.0f);
-                        TILES_GFX[i] = tile_gfx;
+                        tile_gfx.dims = is_goal ? full_dims : Vec2Lit(5.0f, 5.0f);
+                        *GetLightTileGfx(i) = tile_gfx;
                     }
 
                     {
                         LightTile* tile = GetLightTile(TILE_IDX);
-                        LightTileGfx* tile_gfx = &TILES_GFX[TILE_IDX];
+                        LightTileGfx* tile_gfx = GetLightTileGfx(TILE_IDX);
                         tile_gfx->tint = tile->type == TILE_GOAL ? LGREEN : LYELLOW;
                         tile_gfx->tint.a = 1.0f;
-                        tile_gfx->dims = Vec2Lit(10, 10);
+                        tile_gfx->dims = full_dims;
                         if (PLAYING_PHASE == PP_PRESSED) {
-                            f32 flashing_alpha_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
-                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * flashing_alpha_t) + 0.5f * LPI) + 0.5f;
+                            f32 pressed_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
+
+                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * pressed_t) + 0.5f * LPI) + 0.5f;
                             tile_gfx->tint.a = flashing_alpha;
+
+                            if (HIT_GOAL) {
+                                i32 num_buckets = 2;
+                                i32 bucket = (i32)f32floor(pressed_t / 0.2f);
+                                isize offset = num_buckets - (bucket % num_buckets);
+
+                                for (isize i = 0, dir = -1; i < 2; ++i, dir *= -1) {
+                                    LightTileGfx* tgfx = GetLightTileGfx(TILE_IDX + (offset * dir));
+                                    tgfx->tint = LYELLOW;
+                                    // tgfx->tint.a = flashing_alpha;
+                                    // tgfx->dims = full_dims;
+                                }
+                            }
                         }
                     }
 
@@ -5066,8 +5084,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             continue;
                         }
                         LightTile* tile = GetLightTile(idx);
-
-                        LightTileGfx* tile_gfx = &TILES_GFX[idx];
+                        LightTileGfx* tile_gfx = GetLightTileGfx(idx);
                         if (tile->type != TILE_GOAL) {
                             tile_gfx->tint = LYELLOW;
 
