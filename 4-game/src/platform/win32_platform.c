@@ -113,7 +113,7 @@ HWND Win32CreateWindow(HINSTANCE hinstance, u32 width, u32 height, HDC* dc) {
         exit(1);
     }
 
-    int wstyle = WS_OVERLAPPEDWINDOW;
+    int wstyle = WS_POPUP | WS_VISIBLE;  // WS_OVERLAPPEDWINDOW; // windowed mode can maybe cause some frame slowness
     int wstyleex = 0;
 
     // Create window takes the full window dims as parameters this includes space for toolbar and borders.

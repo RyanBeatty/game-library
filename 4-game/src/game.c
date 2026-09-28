@@ -4642,8 +4642,8 @@ typedef struct GameState {
     u32 nframe;  // num frame we are on.
     u32 fps;
     i32 target_fps;        // render fps we are targetting.
-    f32 fixed_dt;          // fixed dt we will update the simulation with for stability.
-    f32 accumulated_time;  // Time we have yet to simulate. THIS IS NOT ACCUMULATED FRAME TIME ACROSS THE ENTIRE LIFE OF
+    f64 fixed_dt;          // fixed dt we will update the simulation with for stability.
+    f64 accumulated_time;  // Time we have yet to simulate. THIS IS NOT ACCUMULATED FRAME TIME ACROSS THE ENTIRE LIFE OF
                            // THE PROGRAM.
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*, GameInput* input);
@@ -5276,6 +5276,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
 static void TestL();
 
+static i32 FD;
+
 void GameInit() {
     GameState* gstate = &GState;
     TestL();
@@ -5293,7 +5295,7 @@ void GameInit() {
     gstate->render_to_screen_scale = 3.0f;
 
     gstate->target_fps = 60;
-    gstate->fixed_dt = Hz(2.0f * gstate->target_fps);
+    gstate->fixed_dt = Hz((f64)2.0 * (f64)gstate->target_fps);
 
     Vec2 screen_dims = Vec2Scale(gstate->render_dims, gstate->render_to_screen_scale);
     PlatformInit(screen_dims.x, screen_dims.y, gstate->target_fps);
@@ -5346,9 +5348,12 @@ void GameInit() {
     }
 
     UIStateInit(&gstate->perm);
+
+    FD = open("frame_updates.tx", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    Assert(FD != -1);
 }
 
-void GameTick(f32 dt, GameInput* input) {
+void GameTick(f64 dt, GameInput* input) {
     GameState* gstate = &GState;
     gstate->dt = dt;
     gstate->timer += dt;
@@ -5439,6 +5444,9 @@ void GameTick(f32 dt, GameInput* input) {
         gstate->scenefuncs[gstate->sceneid](gstate, &orig_input);
         gstate->init = false;
 
+        char _buffer[256] = {0};
+        snprintf(_buffer, sizeof(_buffer) - 1, "%d\n", update_tick_count);
+        write(FD, _buffer, strlen(_buffer));
         if (false) {
             PlatformLog(LLOG_WARN, "Simulated %d times for frame %d", update_tick_count, gstate->nframe);
         }

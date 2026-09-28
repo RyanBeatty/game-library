@@ -39,6 +39,11 @@
 #include "base.c"
 //
 //
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "game.h"
 
 //
