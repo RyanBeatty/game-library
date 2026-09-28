@@ -5276,7 +5276,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
 static void TestL();
 
-static i32 FD;
+// static i32 FD;
 
 void GameInit() {
     GameState* gstate = &GState;
@@ -5349,8 +5349,8 @@ void GameInit() {
 
     UIStateInit(&gstate->perm);
 
-    FD = open("frame_updates.tx", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    Assert(FD != -1);
+    // FD = open("frame_updates.tx", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    // Assert(FD != -1);
 }
 
 void GameTick(f64 dt, GameInput* input) {
@@ -5444,9 +5444,9 @@ void GameTick(f64 dt, GameInput* input) {
         gstate->scenefuncs[gstate->sceneid](gstate, &orig_input);
         gstate->init = false;
 
-        char _buffer[256] = {0};
-        snprintf(_buffer, sizeof(_buffer) - 1, "%d\n", update_tick_count);
-        write(FD, _buffer, strlen(_buffer));
+        // char _buffer[256] = {0};
+        // snprintf(_buffer, sizeof(_buffer) - 1, "%d\n", update_tick_count);
+        // write(FD, _buffer, strlen(_buffer));
         if (false) {
             PlatformLog(LLOG_WARN, "Simulated %d times for frame %d", update_tick_count, gstate->nframe);
         }
