@@ -315,6 +315,9 @@ static AudioState AUDIO = {
 #define SVOICE(i) (AUDIO.streams[(i)].voice->lpVtbl)
 
 void PlatformInitAudio(byte* buffer, isize cap) {
+    static const f32 MAX_FREQUENCY =
+        3.0f;  // i.e. we can increase speed + pitch by up to 3x. anything above will get clamped.
+
     static bool INIT = false;
     Assert(!INIT);
     INIT = true;
@@ -358,8 +361,8 @@ void PlatformInitAudio(byte* buffer, isize cap) {
         stream->xbuffer.pContext = &AUDIO.streams[i];
         stream->free = true;
 
-        res = XAUDIO2()->CreateSourceVoice(AUDIO.xaudio, &stream->voice, &wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO,
-                                           &AUDIO.callbacks, NULL, NULL);
+        res = XAUDIO2()->CreateSourceVoice(AUDIO.xaudio, &stream->voice, &wfx, 0, MAX_FREQUENCY, &AUDIO.callbacks, NULL,
+                                           NULL);
 
         if (FAILED(res)) {
             fprintf(stderr, "Failed CreateSourceVoice\n");
@@ -582,6 +585,7 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
         stream->xbuffer.pAudioData = sound->data;
         stream->xbuffer.LoopCount = (flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
 
+        stream->voice->lpVtbl->SetFrequencyRatio(stream->voice, 1.0f, 0);
         stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
         stream->voice->lpVtbl->Start(stream->voice, 0, 0);
     }
