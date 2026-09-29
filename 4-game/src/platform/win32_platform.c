@@ -585,7 +585,7 @@ void PlatformPlaySoundLimit(SoundId id, SoundParams params) {
         stream->xbuffer.pAudioData = sound->data;
         stream->xbuffer.LoopCount = (params.flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
 
-        stream->voice->lpVtbl->SetFrequencyRatio(stream->voice, 1.0f, 0);
+        stream->voice->lpVtbl->SetFrequencyRatio(stream->voice, params.pitch, 0);
         stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);
         stream->voice->lpVtbl->Start(stream->voice, 0, 0);
     }
