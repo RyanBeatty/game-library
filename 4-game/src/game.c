@@ -5355,6 +5355,18 @@ void GameInit() {
 
 void GameTick(f64 dt, GameInput* input) {
     GameState* gstate = &GState;
+
+    // WIP: delta time snapping.
+    // f64 target_dt = 1.0 / 60.0;
+    // f64 margin = 0.0002;
+    // for (isize i = 0; i < 4; ++i) {
+    //     f64 target_dt_multiple = target_dt * (f64)(i + 1);
+    //     if (f64abs(dt - target_dt_multiple) < margin) {
+    //         dt = target_dt_multiple;
+    //         break;
+    //     }
+    // }
+
     gstate->dt = dt;
     gstate->timer += dt;
     gstate->frame_time.dt = dt;
