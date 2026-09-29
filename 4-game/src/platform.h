@@ -220,13 +220,25 @@ typedef enum {
     SF_PLAY_INFINITE = 1 << 0,
 } SoundFlag;
 
+typedef struct {
+    SoundFlag flags;
+    u32 limit;
+    f32 pitch;
+} SoundParams;
+
+static const SoundParams SOUND_PARAMS_ZERO = {.flags = 0, .limit = 0, .pitch = 1.0f};
+
+#define SoundParamsZero() SOUND_PARAMS_ZERO
+
 void PlatformInitAudio(byte* buffer, isize cap);
 void PlatformClearSounds();
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
 SoundId PlatformLoadSound(const char* filename);
 // limit = 0, means no limit
-void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit);
-#define PlatformPlaySound(id, flags) (PlatformPlaySoundLimit((id), (flags), 0))
+void PlatformPlaySoundLimit(SoundId id, SoundParams params);
+static void PlatformPlaySound(SoundId id, SoundFlag flags) {
+    PlatformPlaySoundLimit(id, (SoundParams){.flags = flags, .limit = 0, .pitch = 1.0f});
+}
 
 u32 PlatformSoundCountPlaying(SoundId id);
 void PlatformStopSound(SoundId);

@@ -558,7 +558,7 @@ SoundId PlatformLoadSound(const char* filename) {
     return id;
 }
 
-void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
+void PlatformPlaySoundLimit(SoundId id, SoundParams params) {
     Assert(id < AUDIO.soundlen);
     LSound* sound = &AUDIO.sounds[id];
 
@@ -576,14 +576,14 @@ void PlatformPlaySoundLimit(SoundId id, SoundFlag flags, u32 limit) {
         }
     }
 
-    if (choice != NULL && (limit == 0 || playing < limit)) {
+    if (choice != NULL && (params.limit == 0 || playing < params.limit)) {
         AudioStream* stream = choice;
         stream->free = false;
         stream->id = id;
 
         stream->xbuffer.AudioBytes = sound->len;
         stream->xbuffer.pAudioData = sound->data;
-        stream->xbuffer.LoopCount = (flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
+        stream->xbuffer.LoopCount = (params.flags & SF_PLAY_INFINITE) ? XAUDIO2_LOOP_INFINITE : 0;
 
         stream->voice->lpVtbl->SetFrequencyRatio(stream->voice, 1.0f, 0);
         stream->voice->lpVtbl->SubmitSourceBuffer(stream->voice, &stream->xbuffer, 0);

@@ -4976,7 +4976,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
 
-                            PlatformPlaySoundLimit(GetSound(SOUND_TILE_TICK), 0, 1);
+                            SoundParams sound_params = SoundParamsZero();
+                            sound_params.limit = 1;
+                            PlatformPlaySoundLimit(GetSound(SOUND_TILE_TICK), sound_params);
                         }
 
                         // Important not to cache this once as we just updated what our cur tile was above.
