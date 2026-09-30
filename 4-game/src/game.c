@@ -4852,6 +4852,8 @@ static i32 GetScoreIncreaseAmount(i32 level) {
     }
 }
 
+static f32 GetTileChangeSoundPitch(i32 level) { return 1.0f * f32pow(1.02f, level); }
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static isize TILE_IDX = 0;
 
@@ -4977,6 +4979,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
 
                             SoundParams sound_params = SoundParamsZero();
+                            sound_params.pitch = GetTileChangeSoundPitch(LEVEL);
                             sound_params.limit = 1;
                             PlatformPlaySoundLimit(GetSound(SOUND_TILE_TICK), sound_params);
                         }
