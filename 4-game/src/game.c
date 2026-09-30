@@ -3661,6 +3661,7 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
 #define SOUND_LIST                                               \
     SOUNDX(BEEP, "assets/sounds/beep.wav")                       \
     SOUNDX(TILE_TICK, "assets/sounds/TILE_TICK.wav")             \
+    SOUNDX(TILE_TICK_FAST, "assets/sounds/TILE_TICK_FAST.wav")   \
     SOUNDX(UI_BUTTON_CLICK, "assets/sounds/UI_BUTTON_CLICK.wav") \
     SOUNDX(GOAL_HIT, "assets/sounds/GOAL_HIT.wav")               \
     SOUNDX(MISS_GOAL, "assets/sounds/MISS_GOAL.wav")             \
@@ -4979,9 +4980,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
 
                             SoundParams sound_params = SoundParamsZero();
-                            sound_params.pitch = GetTileChangeSoundPitch(LEVEL);
+                            i32 fast_tick_cutover = 22;
+                            sound_params.pitch = LEVEL >= fast_tick_cutover
+                                                     ? 1.0f * f32pow(1.03f, LEVEL - fast_tick_cutover)
+                                                     : GetTileChangeSoundPitch(LEVEL);
                             sound_params.limit = 1;
-                            PlatformPlaySoundLimit(GetSound(SOUND_TILE_TICK), sound_params);
+
+                            SoundId sound_id = LEVEL >= fast_tick_cutover ? SOUND_TILE_TICK_FAST : SOUND_TILE_TICK;
+                            PlatformPlaySoundLimit(sound_id, sound_params);
                         }
 
                         // Important not to cache this once as we just updated what our cur tile was above.
