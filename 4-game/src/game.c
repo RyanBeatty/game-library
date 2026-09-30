@@ -5131,7 +5131,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             case GP_START_SCREEN: {
                 if (controller->action_down.pressed) {
                     gstate->phase_to_be = GP_NEW_GAME;
-                    PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
+                    // PlatformPlaySound(GetSound(SOUND_UI_BUTTON_CLICK), 0);
                 }
                 break;
             }
