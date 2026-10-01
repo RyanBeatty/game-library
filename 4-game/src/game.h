@@ -78,3 +78,5 @@ void GameInit();
 void GameTick(f64 dt, GameInput* input);
 
 Vec2 GameScreenToWorld2D(Vec2 pos_screen);
+
+static i32 GameGetUpdateTicksThisFrame();

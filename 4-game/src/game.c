@@ -4646,6 +4646,8 @@ typedef struct GameState {
     f64 fixed_dt;          // fixed dt we will update the simulation with for stability.
     f64 accumulated_time;  // Time we have yet to simulate. THIS IS NOT ACCUMULATED FRAME TIME ACROSS THE ENTIRE LIFE OF
                            // THE PROGRAM.
+    i32 update_ticks_this_frame;  // Number of update ticks run for this render frame. useful for delta time timing
+                                  // debugging.
 
     void (*scenefuncs[MAX_SCENES])(struct GameState*, GameInput* input);
     u32 scenefuncssize;
@@ -4671,6 +4673,11 @@ static GameState GState;
 #define GameStateGetGrid(gstate) (&(gstate)->battle.grid)
 
 typedef void (*SceneTickFunc)(GameState* gstate);
+
+static i32 GameGetUpdateTicksThisFrame() {
+    GameState* gstate = GetGameState();
+    return gstate->update_ticks_this_frame;
+}
 
 i32 GameGetTargetFps() { return GetGameState()->target_fps; }
 
@@ -5459,6 +5466,8 @@ void GameTick(f64 dt, GameInput* input) {
             }
             DeactivateEntities();
         }
+
+        gstate->update_ticks_this_frame = update_tick_count;
 
         // Render
         // Potentially we might want to interpolate here, but seems complicated.

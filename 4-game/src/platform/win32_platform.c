@@ -741,6 +741,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     MSG msg = {};
     // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessage
     while (running) {
+        // LARGE_INTEGER loop_start_tick = {0};
+        // QueryPerformanceCounter(&loop_start_tick);
+
         // Respond to input
         {
             // Swap prev and cur input.
@@ -957,25 +960,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         f64 dt = (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
         ticks_last = ticks;
 
-        // printf("dt: %f\n", dt);
-
         {
             GameTick(dt, &input);
 
-            LARGE_INTEGER t1 = {0};
-            QueryPerformanceCounter(&t1);
+            // LARGE_INTEGER swap_buffers_tick = {0};
+            // QueryPerformanceCounter(&swap_buffers_tick);
 
             SwapBuffers(w32state->dc);
 
-            LARGE_INTEGER t2 = {0};
-            QueryPerformanceCounter(&t2);
+            // LARGE_INTEGER frame_end_tick = {0};
+            // QueryPerformanceCounter(&frame_end_tick);
 
-            f64 game_ms = (t1.QuadPart - ticks.QuadPart) * sec_per_ticks * 1000.0;
-            f64 swap_ms = (t2.QuadPart - t1.QuadPart) * sec_per_ticks * 1000.0;
-            PlatformLog(LLOG_INFO, "dt: %0.3f | game: %0.3f | swap: %0.3f", dt * 1000.0, game_ms, swap_ms);
-
-            // Sync/blocking
-            // glFinish();
+            // f64 input_ms = (ticks.QuadPart - loop_start_tick.QuadPart) * sec_per_ticks * 1000.0;
+            // f64 game_ms = (swap_buffers_tick.QuadPart - ticks.QuadPart) * sec_per_ticks * 1000.0;
+            // f64 swap_ms = (frame_end_tick.QuadPart - swap_buffers_tick.QuadPart) * sec_per_ticks * 1000.0;
+            // i32 update_ticks_this_frame = GameGetUpdateTicksThisFrame();
+            // if (update_ticks_this_frame != 2) {
+            //     PlatformLog(LLOG_INFO, "dt: %0.3f | input: %0.3f | game: %0.3f | swap: %0.3f | update_ticks: %d",
+            //                 dt * 1000.0, input_ms, game_ms, swap_ms, update_ticks_this_frame);
+            // }
         }
     }
 
