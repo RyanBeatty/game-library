@@ -957,26 +957,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         f64 dt = (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
         ticks_last = ticks;
 
-        // // This is a filthy hack, but we wait until dt is roughly 1/60th of a second to have a fixed
-        // // timestep. I should really fix this by decoupling the update from render step and just update
-        // // at fixed time intervals instead of having them be lock step like they are currently.
-        // // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
-        // //
-        // https://code.tutsplus.com/how-to-create-a-custom-2d-physics-engine-the-core-engine--gamedev-7493t#timestepping
-        // while (dt < 1 / 60.0f) {
-        //     QueryPerformanceCounter(&ticks);
-        //     dt += (ticks.QuadPart - ticks_last.QuadPart) * sec_per_ticks;
-        //     ticks_last = ticks;
-        // }
-
         // printf("dt: %f\n", dt);
 
         {
-            // glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
-            // glClear(GL_COLOR_BUFFER_BIT);
             GameTick(dt, &input);
 
+            LARGE_INTEGER t1 = {0};
+            QueryPerformanceCounter(&t1);
+
             SwapBuffers(w32state->dc);
+
+            LARGE_INTEGER t2 = {0};
+            QueryPerformanceCounter(&t2);
+
+            f64 game_ms = (t1.QuadPart - ticks.QuadPart) * sec_per_ticks * 1000.0;
+            f64 swap_ms = (t2.QuadPart - t1.QuadPart) * sec_per_ticks * 1000.0;
+            PlatformLog(LLOG_INFO, "dt: %0.3f | game: %0.3f | swap: %0.3f", dt * 1000.0, game_ms, swap_ms);
+
             // Sync/blocking
             // glFinish();
         }

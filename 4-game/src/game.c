@@ -5421,6 +5421,7 @@ void GameTick(f64 dt, GameInput* input) {
         // draw the UI components in the render step)
         GameInput orig_input = *input;
 
+        // Useful for debugging frame timing hitches.
         i32 update_tick_count = 0;
 
         // https://medium.com/%40tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
