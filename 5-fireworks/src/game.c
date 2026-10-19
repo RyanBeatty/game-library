@@ -4863,27 +4863,8 @@ static i32 GetScoreIncreaseAmount(i32 level) {
 static f32 GetTileChangeSoundPitch(i32 level) { return 1.0f * f32pow(1.02f, level); }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
-    static isize TILE_IDX = 0;
-
-    static f32 TILE_CHANGE_TIMER = 0.0f;
-
-    static const f32 LIFE_TIMER_FULL = 100.0f;
-    static f32 LIFE_TIMER = LIFE_TIMER_FULL;
-
-    static i32 LEVEL = 1;
     static i32 SCORE = 0;
-    static i32 COMBO = 0;
-    static f32 COMBO_TIMER = 0.0f;
-    static const f32 COMBO_TIMER_FULL = 7.0f;
     static i32 HIGH_SCORE = 0;
-    static bool HIT_GOAL = false;
-
-    static f32 PLAYING_PRESSED_TIMER = 0.0f;
-    static f32 PLAYING_PRESSED_TIME = 1.2f;
-    static bool CAN_PRESS_DOWN = true;
-    static f32 LIGHT_TRAIL_TIMER = 0.0f;
-    static isize LIGHT_TRAIL_IDXS[3] = {-1};
-
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
 
@@ -4904,25 +4885,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         break;
                     }
                     case GP_NEW_GAME: {
-                        TILE_IDX = 0;
-                        TILE_CHANGE_TIMER = 0.0f;
-                        LIGHT_TRAIL_TIMER = 0.0f;
-                        memset(LIGHT_TRAIL_IDXS, -1, sizeof(LIGHT_TRAIL_IDXS));
-
-                        LEVEL = 1;
-                        COMBO = 0;
-                        COMBO_TIMER = 0.0f;
                         SCORE = 0;
-                        LIFE_TIMER = LIFE_TIMER_FULL;
-
-                        HIT_GOAL = false;
-
-                        PLAYING_PRESSED_TIMER = 0.0f;
-                        PLAYING_PRESSED_TIME = 1.2f;
-                        PLAYING_PHASE = PP_PLAYING;
-                        PLAYING_PHASE_TO_BE = PLAYING_PHASE;
-                        CAN_PRESS_DOWN = true;
-                        SetGoals();
                         break;
                     }
                     case GP_GAME_OVER: {
@@ -4949,15 +4912,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     if (PLAYING_PHASE_TO_BE != PLAYING_PHASE) {
                         switch (PLAYING_PHASE_TO_BE) {
                             case PP_PLAYING: {
-                                if (HIT_GOAL) {
-                                    SetGoals();
-                                }
-
-                                HIT_GOAL = false;
                                 break;
                             }
                             case PP_PRESSED: {
-                                PLAYING_PRESSED_TIMER = 0.0f;
                                 break;
                             }
                             default: {
@@ -4970,169 +4927,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     PLAYING_PHASE_TO_BE = PLAYING_PHASE;
                 }
 
-                bool button_down_physically = PlatformKeyDown(LKEY_SPACE) || PlatformKeyDown(LKEY_LBUTTON);
-                bool button_down = button_down_physically && CAN_PRESS_DOWN;
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
-                        f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
-                        TILE_CHANGE_TIMER += dt;
-                        LIGHT_TRAIL_TIMER += dt;
-                        while (TILE_CHANGE_TIMER >= tile_change_time) {
-                            for (isize i = 0; i < ArraySizeOf(LIGHT_TRAIL_IDXS) - 1; ++i) {
-                                LIGHT_TRAIL_IDXS[i + 1] = LIGHT_TRAIL_IDXS[i];
-                            }
-                            LIGHT_TRAIL_IDXS[0] = TILE_IDX;
-
-                            TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
-                            TILE_CHANGE_TIMER = f32min(TILE_CHANGE_TIMER - tile_change_time, 0.0f);
-
-                            SoundParams sound_params = SoundParamsZero();
-                            i32 fast_tick_cutover = 22;
-                            sound_params.pitch = LEVEL >= fast_tick_cutover
-                                                     ? 1.0f * f32pow(1.03f, LEVEL - fast_tick_cutover)
-                                                     : GetTileChangeSoundPitch(LEVEL);
-                            sound_params.limit = 1;
-
-                            SoundId sound_id = LEVEL >= fast_tick_cutover ? SOUND_TILE_TICK_FAST : SOUND_TILE_TICK;
-                            PlatformPlaySoundLimit(sound_id, sound_params);
-                        }
-
-                        // Important not to cache this once as we just updated what our cur tile was above.
-                        LightTile* cur_tile = GetLightTile(TILE_IDX);
-                        LightTile* next_tile = GetLightTile((TILE_IDX + 1) % ArraySizeOf(TILES));
-                        // LightTile* prev_tile = GetLightTile((ArraySizeOf(TILES) + TILE_IDX - 1) %
-                        // ArraySizeOf(TILES));
-
-                        if (button_down) {
-                            f32 coyote_time = GetCoyoteTime(LEVEL);
-                            bool hit_goal = false;
-                            if (next_tile->type == TILE_GOAL && tile_change_time - TILE_CHANGE_TIMER <= coyote_time) {
-                                TILE_IDX = (TILE_IDX + 1) % ArraySizeOf(TILES);
-                                hit_goal = true;
-                            }
-
-                            // if (prev_tile->type == TILE_GOAL && TILE_CHANGE_TIMER <= COYOTE_TIME) {
-                            //     TILE_IDX = (ArraySizeOf(TILES) + TILE_IDX - 1) % ArraySizeOf(TILES);
-                            //     hit_goal = true;
-                            // }
-
-                            if (cur_tile->type == TILE_GOAL || hit_goal) {
-                                i32 score_increase_amount = GetScoreIncreaseAmount(LEVEL);
-                                ++LEVEL;
-                                ++COMBO;
-                                COMBO_TIMER = COMBO_TIMER_FULL;
-                                SCORE += COMBO * score_increase_amount;
-                                LIFE_TIMER = LIFE_TIMER_FULL;
-                                HIT_GOAL = true;
-                                PlatformPlaySound(GetSound(SOUND_GOAL_HIT), 0);
-                            } else {
-                                PlatformPlaySound(GetSound(SOUND_MISS_GOAL), 0);
-                            }
-
-                            LIGHT_TRAIL_TIMER = 0.0f;
-                            memset(LIGHT_TRAIL_IDXS, -1, sizeof(LIGHT_TRAIL_IDXS));
-                            PLAYING_PHASE_TO_BE = PP_PRESSED;
-                        }
                         break;
                     }
                     case PP_PRESSED: {
-                        PLAYING_PRESSED_TIMER += dt;
-                        if (PLAYING_PRESSED_TIMER >= PLAYING_PRESSED_TIME) {
-                            PLAYING_PHASE_TO_BE = PP_PLAYING;
-                        }
                         break;
                     }
                     default: {
                         PlatformLog(LLOG_ERROR, "Unknown playing phase: %d", PLAYING_PHASE_TO_BE);
                         Assert(0);
-                    }
-                }
-
-                // LightTile* cur_tile = GetLightTile(TILE_IDX);
-                // if (cur_tile->type != TILE_GOAL || (!button_down && PLAYING_PHASE != PP_PRESSED))
-                {
-                    static const f32 LIFE_TIMER_DECREASE_SPEED = 100.0f / 15.0f;
-                    LIFE_TIMER -= dt * LIFE_TIMER_DECREASE_SPEED;
-                    if (LIFE_TIMER <= 0.0f) {
-                        LIFE_TIMER = 0.0f;
-                        gstate->phase_to_be = GP_GAME_OVER;
-                    }
-
-                    COMBO_TIMER -= dt;
-                    if (COMBO_TIMER <= 0.0f) {
-                        COMBO_TIMER = 0.0f;
-                        COMBO = 0;
-                    }
-                }
-
-                CAN_PRESS_DOWN = !button_down_physically;
-                // PlatformLog(LLOG_INFO, "button down: %d", button_down_physically);
-
-                // Update tile gfx
-                {
-                    f32 step = Deg2Rad(360.0f / ArraySizeOf(TILES));
-                    Vec2 full_dims = Vec2Lit(10, 10);
-
-                    for (isize i = 0; i < NUM_TILES; ++i) {
-                        LightTile* tile = GetLightTile(i);
-                        bool is_goal = tile->type == TILE_GOAL;
-                        Vec4 color = is_goal ? LGREEN : LGRAY;
-                        color.a = 0.5f;
-
-                        Vec3 pos = Vec3RotateAxis(Vec3Lit(100, 0, 0), Vec3Lit(0, 0, 1), step * i);
-
-                        LightTileGfx tile_gfx = {0};
-                        tile_gfx.pos = pos;
-                        tile_gfx.tint = color;
-                        tile_gfx.dims = is_goal ? full_dims : Vec2Lit(5.0f, 5.0f);
-                        *GetLightTileGfx(i) = tile_gfx;
-                    }
-
-                    {
-                        LightTile* tile = GetLightTile(TILE_IDX);
-                        LightTileGfx* tile_gfx = GetLightTileGfx(TILE_IDX);
-                        tile_gfx->tint = tile->type == TILE_GOAL ? LGREEN : LYELLOW;
-                        tile_gfx->tint.a = 1.0f;
-                        tile_gfx->dims = full_dims;
-                        if (PLAYING_PHASE == PP_PRESSED) {
-                            f32 pressed_t = f32clamp(PLAYING_PRESSED_TIMER / PLAYING_PRESSED_TIME, 0.0f, 1.0f);
-
-                            f32 flashing_alpha = 0.5f * f32sin((8.0f * LPI * pressed_t) + 0.5f * LPI) + 0.5f;
-                            tile_gfx->tint.a = flashing_alpha;
-
-                            if (HIT_GOAL) {
-                                i32 num_buckets = 2;
-                                i32 bucket = (i32)f32floor(pressed_t / 0.2f);
-                                isize offset = num_buckets - (bucket % num_buckets);
-
-                                for (isize i = 0, dir = -1; i < 2; ++i, dir *= -1) {
-                                    LightTileGfx* tgfx = GetLightTileGfx(TILE_IDX + (offset * dir));
-                                    tgfx->tint = LYELLOW;
-                                    // tgfx->tint.a = flashing_alpha;
-                                    // tgfx->dims = full_dims;
-                                }
-                            }
-                        }
-                    }
-
-                    f32 tile_change_time = GetTileChangeSpeedTime(LEVEL);
-                    for (isize i = 0; i < ArraySizeOf(LIGHT_TRAIL_IDXS); ++i) {
-                        isize idx = LIGHT_TRAIL_IDXS[i];
-                        if (idx < 0) {
-                            continue;
-                        }
-                        LightTile* tile = GetLightTile(idx);
-                        LightTileGfx* tile_gfx = GetLightTileGfx(idx);
-                        if (tile->type != TILE_GOAL) {
-                            tile_gfx->tint = LYELLOW;
-
-                            // f32 time_since_exited = f32mod(LIGHT_TRAIL_TIMER, tile_change_time) +
-                            // tile_change_time * i; f32 pct = f32clamp01(
-                            //     time_since_exited /
-                            //     (tile_change_time * 0.3f));  // f32clamp01(TILE_CHANGE_TIMER / tile_change_time);
-                            // f32 scale = f32lerp(10.0f, 5.0f, pct);
-                            // tile_gfx->dims = Vec2Lit(scale, scale);
-                        }
                     }
                 }
                 break;
@@ -5183,27 +4987,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             y -= AABB2DHeight(textbox.aabb) + y_padding;
                         }
-                        {
-                            Str8 text = Str8F(&gstate->temp, "Level: %d", LEVEL);
-                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                            DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
-
-                            y -= AABB2DHeight(textbox.aabb) + y_padding;
-                        }
-                        {
-                            Str8 text = Str8F(&gstate->temp, "Combo: %dX", COMBO);
-                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                            DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
-
-                            y -= AABB2DHeight(textbox.aabb) + y_padding;
-                        }
-                        {
-                            f32 width = 150.0f;
-                            f32 pct = COMBO_TIMER != 0.0f ? (COMBO_TIMER / COMBO_TIMER_FULL) : 0.0f;
-                            width *= pct;
-                            Vec2 left_anchor = Vec2Lit(x + 0.5f * width, y);
-                            DrawQuad2D(left_anchor, width, 7.0f, Mat4Identity(), LRED);
-                        }
                     }
 
                     {
@@ -5217,16 +5000,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
-                        for (isize i = 0; i < NUM_TILES; ++i) {
-                            LightTileGfx* tile_gfx = &TILES_GFX[i];
-                            DrawQuad2D(tile_gfx->pos, tile_gfx->dims.x, tile_gfx->dims.y, Mat4Identity(),
-                                       tile_gfx->tint);
-                        }
-
-                        // Draw life
-                        {
-                            DrawQuad2D(Vec2Lit(0, 130), LIFE_TIMER * 2.0f, 10, Mat4Identity(), LBLUE);
-                        }
                         break;
                     }
                     // Intentional fallthrough
