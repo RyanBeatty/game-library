@@ -4120,11 +4120,11 @@ static Rect RectFromBLAndDims(Vec2 bl, Vec2 dims) {
     return (Rect){.pos = Vec2Lit(bl.x + 0.5f * dims.x, bl.y + 0.5f * dims.y), .dims = dims};
 }
 
-static Rect RectFromCenterAndDims(Vec2 center, Vec2 dims) { return (Rect){.pos = center, .dims = dims}; }
+LCORE Rect RectFromCenterAndDims(Vec2 center, Vec2 dims) { return (Rect){.pos = center, .dims = dims}; }
 
 // apos - is the *non* AsepritePxBL coordints. essentially the coords you see on scren when you hover in the UI
 // adims - the full pixel dimensions of the rect as you see in the aseprite UI
-static Rect RectFromAsepriteBLAndDims(Vec2 apos, Vec2 adims, Vec2 render_dims) {
+LCORE Rect RectFromAsepriteBLAndDims(Vec2 apos, Vec2 adims, Vec2 render_dims) {
     Vec2 bl = Vec3ToVec2(AsepriteToEngineWorld(render_dims, AsepritePxBL(apos), 0.0f));
     Vec2 dims = Vec2Lit(Px2Meter(adims.x), Px2Meter(adims.y));
     return RectFromBLAndDims(bl, dims);
@@ -4770,97 +4770,10 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
 }
 
 typedef enum {
-    TILE_NONE = 0,
-    TILE_GOAL,
-    TILE_COUNT,
-} TileType;
-
-typedef struct {
-    TileType type;
-} LightTile;
-
-typedef struct {
-    Vec3 pos;
-    Vec4 tint;
-    Vec2 dims;
-} LightTileGfx;
-
-#define NUM_TILES 30
-static LightTile TILES[NUM_TILES] = {0};
-static LightTileGfx TILES_GFX[NUM_TILES] = {0};
-// static LightTile TILES[] = {
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_GOAL},  // fmt
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_NONE},  // fmt
-//     {.type = TILE_NONE},  // fmt
-
-// };
-
-static void SetGoals() {
-    static i32 COUNTER = 0;
-
-    COUNTER = 0;
-    if (COUNTER % 3 == 0) {
-        for (isize i = 0; i < ArraySizeOf(TILES); ++i) {
-            TILES[i].type = TILE_NONE;
-        }
-        isize goal_step = ArraySizeOf(TILES) / 3;
-        isize random = i32randab(0, ArraySizeOf(TILES) - 1);
-        for (isize i = 0; i < 3; ++i) {
-            TILES[(random + i * goal_step) % ArraySizeOf(TILES)].type = TILE_GOAL;
-        }
-    }
-    ++COUNTER;
-}
-
-static isize GetTileIdx(isize idx) { return (idx + NUM_TILES) % NUM_TILES; }
-
-static LightTile* GetLightTile(isize idx) { return &TILES[GetTileIdx(idx)]; }
-static LightTileGfx* GetLightTileGfx(isize idx) { return &TILES_GFX[GetTileIdx(idx)]; }
-
-typedef enum {
     PP_PLAYING = 0,
     PP_PRESSED,
     PP_COUNT,
 } PlayingPhase;
-
-static f32 GetCoyoteTime(i32 level) {
-    f32 num_frames = 3.0f;
-    if (level >= 28) {
-        num_frames = 6.0f;
-    } else if (level >= 22) {
-        num_frames = 5.0f;
-    } else if (level >= 12) {
-        num_frames = 4.0f;
-    }
-
-    return num_frames / 60.0f;
-}
-
-static f32 GetTileChangeSpeedTime(i32 level) { return 0.3f * (f32pow(0.9f, level)); }
-static i32 GetScoreIncreaseAmount(i32 level) {
-    if (level <= 5) {
-        return 5;
-    } else if (level <= 10) {
-        return 10;
-    } else if (level <= 15) {
-        return 20;
-    } else if (level <= 20) {
-        return 40;
-    } else if (level <= 25) {
-        return 80;
-    } else {
-        return 160;
-    }
-}
-
-static f32 GetTileChangeSoundPitch(i32 level) { return 1.0f * f32pow(1.02f, level); }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static i32 SCORE = 0;
