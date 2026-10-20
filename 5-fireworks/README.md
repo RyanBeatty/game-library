@@ -1,5 +1,8 @@
 TARGET DEV TIME BUDGET: 24 hours
 CURRENT DEV TIME BUDGET: 0.0 hrs
+GOALS
+* noise
+* particle system
 
 
 TAKEAWAYS FOR NEXT GAME

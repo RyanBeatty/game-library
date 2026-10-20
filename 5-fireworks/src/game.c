@@ -4775,6 +4775,53 @@ typedef enum {
     PP_COUNT,
 } PlayingPhase;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Section: Game
+
+typedef struct {
+    Vec3 pos;
+    Vec4 tint;
+    Vec2 dims;
+} Gfx;
+
+typedef struct {
+    bool active;
+    bool cleanup;
+
+    Vec3 pos;
+    Vec3 v;
+    f32 life;
+
+    Gfx gfx;
+} Firework;
+
+#define MAX_FIREWORKS 48
+static Firework FIREWORKS[MAX_FIREWORKS] = {0};
+
+static Firework* NewFirework() {
+    static Firework FIREWORK_ZERO = {0};
+    for (isize i = 0; i < ArraySizeOf(FIREWORKS); ++i) {
+        Firework* choice = &FIREWORKS[i];
+        if (!choice->active) {
+            *choice = FIREWORK_ZERO;
+            choice->active = true;
+            return choice;
+        }
+    }
+
+    Assert(false);
+    return NULL;
+}
+
+static void FreeFireworks() {
+    for (isize i = 0; i < ArraySizeOf(FIREWORKS); ++i) {
+        Firework* choice = &FIREWORKS[i];
+        if (choice->active && choice->cleanup) {
+            choice->active = false;
+        }
+    }
+}
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static i32 SCORE = 0;
     static i32 HIGH_SCORE = 0;
@@ -4974,6 +5021,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
             }
         }
     }
+
+    FreeFireworks();
 }
 
 ////////////////////////////////////////////////////////////
