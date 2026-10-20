@@ -4798,19 +4798,52 @@ typedef struct {
 #define MAX_FIREWORKS 48
 static Firework FIREWORKS[MAX_FIREWORKS] = {0};
 
-static Firework* NewFirework() {
-    static Firework FIREWORK_ZERO = {0};
-    for (isize i = 0; i < ArraySizeOf(FIREWORKS); ++i) {
-        Firework* choice = &FIREWORKS[i];
-        if (!choice->active) {
-            *choice = FIREWORK_ZERO;
-            choice->active = true;
-            return choice;
+static bool NextFreeFirework(Firework** cur_ptr) {
+    Firework* cur = *cur_ptr;
+    if (cur == NULL) {
+        cur = &FIREWORKS[0];
+    } else {
+        ++cur;
+    }
+
+    for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
+        if (!cur->active) {
+            *cur_ptr = cur;
+            return true;
         }
     }
 
-    Assert(false);
-    return NULL;
+    *cur_ptr = NULL;
+    return false;
+}
+
+static bool NextFirework(Firework** cur_ptr) {
+    Firework* cur = *cur_ptr;
+    if (cur == NULL) {
+        cur = &FIREWORKS[0];
+    } else {
+        ++cur;
+    }
+
+    for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
+        if (cur->active) {
+            *cur_ptr = cur;
+            return true;
+        }
+    }
+
+    *cur_ptr = NULL;
+    return false;
+}
+
+static Firework* NewFirework() {
+    static Firework FIREWORK_ZERO = {0};
+    Firework* choice = NULL;
+    bool result = NextFreeFirework(&choice);
+    Assert(result);
+    *choice = FIREWORK_ZERO;
+    choice->active = true;
+    return choice;
 }
 
 static void FreeFireworks() {
@@ -4889,6 +4922,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
+                        if (controller->action_down.pressed) {
+                            Firework* firework = NewFirework();
+                            firework->pos = Vec3Zero();
+                            firework->life = 4.0f;
+                        }
+
                         break;
                     }
                     case PP_PRESSED: {
@@ -4899,6 +4938,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Assert(0);
                     }
                 }
+
+                // Update graphics
+                {
+                    for (Firework* firework = NULL; NextFirework(&firework);) {
+                        firework->gfx.pos = firework->pos;
+                        firework->gfx.dims = Vec2Lit(20, 20);
+                        firework->gfx.tint = LBLUE;
+                    }
+                }
+
                 break;
             }
             case GP_NEW_GAME: {
@@ -4960,6 +5009,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
+                        for (Firework* firework = NULL; NextFirework(&firework);) {
+                            DrawQuad(firework->gfx.pos, firework->gfx.dims.x, firework->gfx.dims.y, Mat4Identity(),
+                                     firework->gfx.tint);
+                        }
                         break;
                     }
                     // Intentional fallthrough
