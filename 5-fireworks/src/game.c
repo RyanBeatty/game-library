@@ -4928,6 +4928,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             firework->life = 4.0f;
                         }
 
+                        for (Firework* firework = NULL; NextFirework(&firework);) {
+                            firework->life -= dt;
+                            if (firework->life <= 0.0f) {
+                                firework->cleanup = true;
+                            }
+                        }
+
                         break;
                     }
                     case PP_PRESSED: {
