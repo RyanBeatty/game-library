@@ -4789,6 +4789,7 @@ typedef struct {
     bool cleanup;
 
     Vec3 pos;
+    Vec3 pos_prev;
     Vec3 v;
     f32 life;
 
@@ -4924,8 +4925,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case PP_PLAYING: {
                         if (controller->action_down.pressed) {
                             Firework* firework = NewFirework();
-                            firework->pos = Vec3Zero();
+                            firework->pos = Vec3Lit(0, -100, 0);
                             firework->life = 4.0f;
+                            firework->v = Vec3Lit(0.0f, 20.0f, 0.0f);
                         }
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
@@ -4933,6 +4935,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             if (firework->life <= 0.0f) {
                                 firework->cleanup = true;
                             }
+
+                            firework->pos_prev = firework->pos;
+                            firework->v = Vec3Add(firework->v, Vec3Scale(Vec3Lit(0, -10, 0), dt));
+                            firework->pos = Vec3Add(firework->pos, Vec3Scale(firework->v, dt));
                         }
 
                         break;
