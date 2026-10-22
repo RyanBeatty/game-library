@@ -4778,6 +4778,11 @@ typedef enum {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Section: Game
 
+typedef enum {
+    FS_SHOOT = 0,
+    FS_EXPLODE,
+} FireworkState;
+
 typedef struct {
     Vec3 pos;
     Vec4 tint;
@@ -4799,6 +4804,7 @@ typedef struct {
     f32 life;
     f32 timer;
     Vec3 thrust;
+    FireworkState state;
 } Firework;
 
 #define MAX_FIREWORKS 48
@@ -4942,18 +4948,33 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
                             firework->timer += dt;
-                            if (firework->timer >= firework->life) {
-                                firework->cleanup = true;
-                                break;
+                            switch (firework->state) {
+                                case FS_SHOOT: {
+                                    if (firework->timer >= firework->life) {
+                                        firework->state = FS_EXPLODE;
+                                        firework->timer = 0.0f;
+                                        break;
+                                    }
+
+                                    f32 life_pct = firework->timer / firework->life;
+                                    Vec3 thrust = Vec3Lerp(firework->thrust, Vec3Zero(), life_pct);
+
+                                    Vec3 force = Vec3Add(thrust, Vec3Lit(0, -10, 0));
+                                    firework->v = Vec3Add(firework->v, Vec3Scale(force, dt));
+                                    firework->pos_prev = firework->pos;
+                                    firework->pos = Vec3Add(firework->pos, Vec3Scale(firework->v, dt));
+                                    break;
+                                }
+                                case FS_EXPLODE: {
+                                    if (firework->timer >= 1.0f) {
+                                        firework->cleanup = true;
+                                    }
+                                    break;
+                                }
+                                default: {
+                                    Assert(0);
+                                }
                             }
-
-                            f32 life_pct = firework->timer / firework->life;
-                            Vec3 thrust = Vec3Lerp(firework->thrust, Vec3Zero(), life_pct);
-
-                            Vec3 force = Vec3Add(thrust, Vec3Lit(0, -10, 0));
-                            firework->v = Vec3Add(firework->v, Vec3Scale(force, dt));
-                            firework->pos_prev = firework->pos;
-                            firework->pos = Vec3Add(firework->pos, Vec3Scale(firework->v, dt));
                         }
 
                         break;
@@ -4970,9 +4991,26 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 // Update graphics
                 {
                     for (Firework* firework = NULL; NextFirework(&firework);) {
-                        firework->gfx.pos = firework->pos;
-                        firework->gfx.dims = Vec2Lit(5, 5);
-                        firework->gfx.tint = LBLUE;
+                        switch (firework->state) {
+                            case FS_SHOOT: {
+                                firework->gfx.pos = firework->pos;
+                                firework->gfx.dims = Vec2Lit(5, 5);
+                                firework->gfx.tint = LBLUE;
+                                break;
+                            }
+                            case FS_EXPLODE: {
+                                firework->gfx.pos = firework->pos;
+                                firework->gfx.dims = Vec2Lit(20, 20);
+                                firework->gfx.tint = LRED;
+
+                                f32 pct = firework->timer / 1.0f;
+                                firework->gfx.tint.a = f32lerp(1.0f, 0.0f, pct);
+                                break;
+                            }
+                            default: {
+                                Assert(0);
+                            }
+                        }
                     }
                 }
 
