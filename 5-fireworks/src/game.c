@@ -4797,7 +4797,7 @@ typedef struct {
     //////////////////////////////////////////////////////////////
 
     f32 life;
-    f32 life_timer;
+    f32 timer;
     Vec3 thrust;
 } Firework;
 
@@ -4941,13 +4941,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         }
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
-                            firework->life_timer += dt;
-                            if (firework->life_timer >= firework->life) {
+                            firework->timer += dt;
+                            if (firework->timer >= firework->life) {
                                 firework->cleanup = true;
                                 break;
                             }
 
-                            f32 life_pct = firework->life_timer / firework->life;
+                            f32 life_pct = firework->timer / firework->life;
                             Vec3 thrust = Vec3Lerp(firework->thrust, Vec3Zero(), life_pct);
 
                             Vec3 force = Vec3Add(thrust, Vec3Lit(0, -10, 0));
