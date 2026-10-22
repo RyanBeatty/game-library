@@ -4791,9 +4791,14 @@ typedef struct {
     Vec3 pos;
     Vec3 pos_prev;
     Vec3 v;
-    f32 life;
 
     Gfx gfx;
+
+    //////////////////////////////////////////////////////////////
+
+    f32 life;
+    f32 life_timer;
+    Vec3 thrust;
 } Firework;
 
 #define MAX_FIREWORKS 48
@@ -4932,16 +4937,22 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
                             f32 speed = f32randab(15, 25);
                             firework->v = Vec3Scale(dir, speed);
+                            firework->thrust = Vec3Scale(dir, 5.0f);
                         }
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
-                            firework->life -= dt;
-                            if (firework->life <= 0.0f) {
+                            firework->life_timer += dt;
+                            if (firework->life_timer >= firework->life) {
                                 firework->cleanup = true;
+                                break;
                             }
 
+                            f32 life_pct = firework->life_timer / firework->life;
+                            Vec3 thrust = Vec3Lerp(firework->thrust, Vec3Zero(), life_pct);
+
+                            Vec3 force = Vec3Add(thrust, Vec3Lit(0, -10, 0));
+                            firework->v = Vec3Add(firework->v, Vec3Scale(force, dt));
                             firework->pos_prev = firework->pos;
-                            firework->v = Vec3Add(firework->v, Vec3Scale(Vec3Lit(0, -10, 0), dt));
                             firework->pos = Vec3Add(firework->pos, Vec3Scale(firework->v, dt));
                         }
 
@@ -4960,7 +4971,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 {
                     for (Firework* firework = NULL; NextFirework(&firework);) {
                         firework->gfx.pos = firework->pos;
-                        firework->gfx.dims = Vec2Lit(20, 20);
+                        firework->gfx.dims = Vec2Lit(5, 5);
                         firework->gfx.tint = LBLUE;
                     }
                 }
