@@ -4926,8 +4926,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (controller->action_down.pressed) {
                             Firework* firework = NewFirework();
                             firework->pos = Vec3Lit(0, -100, 0);
-                            firework->life = 4.0f;
-                            firework->v = Vec3Lit(0.0f, 20.0f, 0.0f);
+                            firework->life = 6.0f;
+
+                            f32 angle = f32randab(45, 45 + 90);
+                            Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
+                            f32 speed = f32randab(15, 25);
+                            firework->v = Vec3Scale(dir, speed);
                         }
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
