@@ -3699,7 +3699,8 @@ typedef enum {
     PF_GRAVITY = 1 << 2,
 } ParticleFlag;
 
-typedef struct {
+typedef struct Particle Particle;
+struct Particle {
     ParticleFlag flags;
 
     Vec3 p;
@@ -3720,7 +3721,10 @@ typedef struct {
     // For the last x% of lifetime, scale out from full size to 0.
     f32 scale_out_pct;
 
-} Particle;
+    // Tree links
+    Particle* right;
+    Particle* left;
+};
 
 TypedefArr(Particle);
 
@@ -3736,10 +3740,19 @@ LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
     particle->fade_in_pct += rem < 0.0f ? rem : 0.0f;
 }
 
+typedef struct {
+    bool active;
+    Particle* head;
+    isize len;
+    isize cap;
+} ParticleSource;
+
 #define MAX_PARTICLES 512
+#define MAX_SOURCES 32
 
 typedef struct {
     ParticleArr particles;
+    ParticleSource* sources;
 } ParticleSystem;
 
 static ParticleSystem PARTICLES;
@@ -3754,6 +3767,57 @@ static void ParticleSystemInit(Arena* perm) {
     for (isize i = 0; i < ArrCap(&particles->particles); ++i) {
         ArrReserve(&particles->particles);
     }
+    particles->sources = New(perm, MAX_SOURCES, ParticleSource);
+}
+
+LCORE bool NextParticleSource(ParticleSource** cur_ptr) {
+    ParticleSystem* particles = GetParticleSystem();
+
+    ParticleSource* cur = *cur_ptr;
+    if (cur == NULL) {
+        cur = &particles->sources[0];
+    } else {
+        ++cur;
+    }
+
+    for (; cur < particles->sources + MAX_PARTICLES; ++cur) {
+        if (cur->active) {
+            *cur_ptr = cur;
+            return true;
+        }
+    }
+
+    *cur_ptr = NULL;
+    return false;
+}
+
+LCORE bool NextFreeParticleSource(ParticleSource** cur_ptr) {
+    ParticleSystem* particles = GetParticleSystem();
+
+    ParticleSource* cur = *cur_ptr;
+    if (cur == NULL) {
+        cur = &particles->sources[0];
+    } else {
+        ++cur;
+    }
+
+    for (; cur < particles->sources + MAX_PARTICLES; ++cur) {
+        if (!cur->active) {
+            *cur_ptr = cur;
+            return true;
+        }
+    }
+
+    *cur_ptr = NULL;
+    return false;
+}
+
+LCORE ParticleSource* NewParticleSource() {
+    ParticleSource* source = NULL;
+    bool found = NextFreeParticleSource(&source);
+    Assert(found);
+    source->active = true;
+    return source;
 }
 
 LCORE Particle* AllocateParticle() {
