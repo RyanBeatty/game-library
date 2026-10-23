@@ -3701,6 +3701,7 @@ typedef enum {
 
 typedef struct Particle Particle;
 struct Particle {
+    bool active;
     ParticleFlag flags;
 
     Vec3 p;
@@ -3726,8 +3727,6 @@ struct Particle {
     Particle* left;
 };
 
-TypedefArr(Particle);
-
 LCORE void ParticleSetFadeIn(Particle* particle, f32 fade_in_pct) {
     particle->fade_in_pct = fade_in_pct;
     f32 rem = 1.0f - (particle->fade_in_pct + particle->fade_out_pct);
@@ -3751,8 +3750,10 @@ typedef struct {
 #define MAX_SOURCES 32
 
 typedef struct {
-    ParticleArr particles;
+    Particle* particles;
+    isize particles_cap;
     ParticleSource* sources;
+    isize sources_cap;
 } ParticleSystem;
 
 static ParticleSystem PARTICLES;
@@ -3763,11 +3764,10 @@ static void ParticleSystemInit(Arena* perm) {
     ParticleSystem* particles = GetParticleSystem();
     ParticleSystem zero = {0};
     *particles = zero;
-    NewArr(&particles->particles, perm, Particle, MAX_PARTICLES);
-    for (isize i = 0; i < ArrCap(&particles->particles); ++i) {
-        ArrReserve(&particles->particles);
-    }
-    particles->sources = New(perm, MAX_SOURCES, ParticleSource);
+    particles->particles_cap = MAX_PARTICLES;
+    particles->particles = New(perm, particles->particles_cap, Particle);
+    particles->sources_cap = MAX_SOURCES;
+    particles->sources = New(perm, particles->sources_cap, ParticleSource);
 }
 
 LCORE bool NextParticleSource(ParticleSource** cur_ptr) {
@@ -3780,7 +3780,7 @@ LCORE bool NextParticleSource(ParticleSource** cur_ptr) {
         ++cur;
     }
 
-    for (; cur < particles->sources + MAX_PARTICLES; ++cur) {
+    for (; cur < particles->sources + particles->sources_cap; ++cur) {
         if (cur->active) {
             *cur_ptr = cur;
             return true;
@@ -3801,7 +3801,7 @@ LCORE bool NextFreeParticleSource(ParticleSource** cur_ptr) {
         ++cur;
     }
 
-    for (; cur < particles->sources + MAX_PARTICLES; ++cur) {
+    for (; cur < particles->sources + particles->sources_cap; ++cur) {
         if (!cur->active) {
             *cur_ptr = cur;
             return true;
@@ -3839,76 +3839,76 @@ LCORE Particle* AllocateParticle() {
     return particle;
 }
 
-LCORE Particle* SpawnParticle(Vec3 p, Vec2 dims, Mat4 orient, f32 lifetime, RGBA color) {
-    Assert(lifetime > 0.0f);
-    Particle* particle = AllocateParticle();
-    particle->p = p;
-    particle->scale = Vec3Lit(dims.x, dims.y, 1.0f);
-    particle->orient = orient;
-    particle->lifetime = lifetime;
-    particle->color = color;
-    return particle;
-}
+// LCORE Particle* SpawnParticle(Vec3 p, Vec2 dims, Mat4 orient, f32 lifetime, RGBA color) {
+//     Assert(lifetime > 0.0f);
+//     Particle* particle = AllocateParticle();
+//     particle->p = p;
+//     particle->scale = Vec3Lit(dims.x, dims.y, 1.0f);
+//     particle->orient = orient;
+//     particle->lifetime = lifetime;
+//     particle->color = color;
+//     return particle;
+// }
 
-LCORE void ParticleSystemTick(f32 dt) {
-    ParticleSystem* particles = GetParticleSystem();
-    for (u32 i = 0; i < ArrLen(&particles->particles); ++i) {
-        Particle* particle = ArrGetPtr(&particles->particles, i);
-        particle->lifedt += dt;
-        if (particle->lifedt >= particle->lifetime) {
-            FlagOff(particle->flags, PF_ACTIVE);
-            continue;
-        }
+// LCORE void ParticleSystemTick(f32 dt) {
+//     ParticleSystem* particles = GetParticleSystem();
+//     for (u32 i = 0; i < ArrLen(&particles->particles); ++i) {
+//         Particle* particle = ArrGetPtr(&particles->particles, i);
+//         particle->lifedt += dt;
+//         if (particle->lifedt >= particle->lifetime) {
+//             FlagOff(particle->flags, PF_ACTIVE);
+//             continue;
+//         }
 
-        if (TestFlag(particle->flags, PF_GRAVITY)) {
-            Vec3 G = Vec3Lit(0.0f, -350.0f, 0.0f);
-            particle->v = Vec3Add(particle->v, Vec3Scale(G, dt));
-        }
-        particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
-    }
-}
+//         if (TestFlag(particle->flags, PF_GRAVITY)) {
+//             Vec3 G = Vec3Lit(0.0f, -350.0f, 0.0f);
+//             particle->v = Vec3Add(particle->v, Vec3Scale(G, dt));
+//         }
+//         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
+//     }
+// }
 
-LCORE void ParticleSystemDraw() {
-    ParticleSystem* particles = GetParticleSystem();
-    for (u32 i = 0; i < ArrLen(&particles->particles); ++i) {
-        Particle* particle = ArrGetPtr(&particles->particles, i);
+// LCORE void ParticleSystemDraw() {
+//     ParticleSystem* particles = GetParticleSystem();
+//     for (u32 i = 0; i < ArrLen(&particles->particles); ++i) {
+//         Particle* particle = ArrGetPtr(&particles->particles, i);
 
-        // Find % along lifetime we are.
-        f32 lifedt_pct = f32lerp_pct(0.0f, particle->lifetime, particle->lifedt);
+//         // Find % along lifetime we are.
+//         f32 lifedt_pct = f32lerp_pct(0.0f, particle->lifetime, particle->lifedt);
 
-        f32 alpha_mask = 1.0f;
-        if (particle->fade_in_pct != 0.0f) {
-            // Linearly fade in if we are within the fade in window by the percent we are in the fade in window.
-            // Remember that multiplying here is essentially our lerp because lerp(0, e, x) = e * x. X is
-            // already a percentage in range 0..1 because of f32lerp_pct.
-            alpha_mask *= f32lerp_pct(0.0f, particle->fade_in_pct, lifedt_pct);
-        }
-        // Determine the % of the way through we are through the fade out window. Since our fade out window
-        // is given in percent of the ending (i.e. relative). We need to subtract 100% - fadeout pct to get
-        // absolute percent. then we can determine percent we are through using abs percent. Need to do
-        // 1.0f - lerp pct because we are fading out not in.
-        // Because we are fading out f32lerp(color.a, 0.0f, x) this reduces to (1.0f - x) * color.a
-        // Which reduces to alpha *= 1.0f - x where x is percentage way through fade out window.
-        alpha_mask *= 1.0f - f32lerp_pct(1.0f - particle->fade_out_pct, 1.0f, lifedt_pct);
-        RGBA color = particle->color;
-        color.a *= alpha_mask;
+//         f32 alpha_mask = 1.0f;
+//         if (particle->fade_in_pct != 0.0f) {
+//             // Linearly fade in if we are within the fade in window by the percent we are in the fade in window.
+//             // Remember that multiplying here is essentially our lerp because lerp(0, e, x) = e * x. X is
+//             // already a percentage in range 0..1 because of f32lerp_pct.
+//             alpha_mask *= f32lerp_pct(0.0f, particle->fade_in_pct, lifedt_pct);
+//         }
+//         // Determine the % of the way through we are through the fade out window. Since our fade out window
+//         // is given in percent of the ending (i.e. relative). We need to subtract 100% - fadeout pct to get
+//         // absolute percent. then we can determine percent we are through using abs percent. Need to do
+//         // 1.0f - lerp pct because we are fading out not in.
+//         // Because we are fading out f32lerp(color.a, 0.0f, x) this reduces to (1.0f - x) * color.a
+//         // Which reduces to alpha *= 1.0f - x where x is percentage way through fade out window.
+//         alpha_mask *= 1.0f - f32lerp_pct(1.0f - particle->fade_out_pct, 1.0f, lifedt_pct);
+//         RGBA color = particle->color;
+//         color.a *= alpha_mask;
 
-        f32 scale_mask = 1.0f;
-        if (particle->scale_in_pct != 0.0f) {
-            scale_mask *= f32lerp_pct(0.0f, particle->scale_in_pct, lifedt_pct);
-        }
-        if (particle->scale_out_pct != 0.0f) {
-            scale_mask *= 1.0f - f32lerp_pct(1.0f - particle->scale_out_pct, 1.0f, lifedt_pct);
-        }
-        Vec3 scale = Vec3Scale(particle->scale, scale_mask);
+//         f32 scale_mask = 1.0f;
+//         if (particle->scale_in_pct != 0.0f) {
+//             scale_mask *= f32lerp_pct(0.0f, particle->scale_in_pct, lifedt_pct);
+//         }
+//         if (particle->scale_out_pct != 0.0f) {
+//             scale_mask *= 1.0f - f32lerp_pct(1.0f - particle->scale_out_pct, 1.0f, lifedt_pct);
+//         }
+//         Vec3 scale = Vec3Scale(particle->scale, scale_mask);
 
-        DrawQuad(particle->p, scale.x, scale.y, particle->orient, color);
-        // DrawCmd* cmd = AddDrawMeshCmd();
-        // cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
-        // cmd->meshcmd.meshid = GetMesh(M_QUAD);
-        // cmd->meshcmd.color = particle->color;
-    }
-}
+//         DrawQuad(particle->p, scale.x, scale.y, particle->orient, color);
+//         // DrawCmd* cmd = AddDrawMeshCmd();
+//         // cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
+//         // cmd->meshcmd.meshid = GetMesh(M_QUAD);
+//         // cmd->meshcmd.color = particle->color;
+//     }
+// }
 ////////////////////////////////////////////////////////////
 // s:easing
 
