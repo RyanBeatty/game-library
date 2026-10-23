@@ -4941,7 +4941,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             firework->pos = Vec3Lit(f32randab(-100, 100), -100, 0);
                             f32 angle = f32randab(90 - 25, 90 + 25);
                             Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
-                            f32 speed = f32randab(15, 25);
+                            f32 speed = f32randab(20, 30);
                             firework->v = Vec3Scale(dir, speed);
                             firework->thrust = Vec3Scale(dir, 20.0f);
                         }
@@ -4957,7 +4957,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     }
 
                                     f32 life_pct = firework->timer / firework->life;
-                                    Vec3 thrust = Vec3Lerp(firework->thrust, Vec3Zero(), life_pct);
+                                    Vec3 thrust = Vec3Zero();
+                                    if (life_pct <= 0.5f) {
+                                        thrust = firework->thrust;
+                                    }
 
                                     Vec3 force = Vec3Add(thrust, Vec3Lit(0, -10, 0));
                                     firework->v = Vec3Add(firework->v, Vec3Scale(force, dt));
