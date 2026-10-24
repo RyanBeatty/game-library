@@ -3813,31 +3813,77 @@ LCORE bool NextFreeParticleSource(ParticleSource** cur_ptr) {
 }
 
 LCORE ParticleSource* NewParticleSource() {
+    static ParticleSource PARTICLE_SOURCE_ZERO = {0};
     ParticleSource* source = NULL;
     bool found = NextFreeParticleSource(&source);
     Assert(found);
+    *source = PARTICLE_SOURCE_ZERO;
     source->active = true;
     return source;
 }
 
-LCORE Particle* AllocateParticle() {
+LCORE bool NextFreeParticle(Particle** cur_ptr) {
     ParticleSystem* particles = GetParticleSystem();
-    Particle* particle = NULL;
-    for (i32 i = 0; i < ArrLen(&particles->particles); ++i) {
-        Particle* candidate = ArrGetPtr(&particles->particles, i);
-        if (!TestFlag(candidate->flags, PF_ACTIVE)) {
-            particle = candidate;
-            break;
+
+    Particle* cur = *cur_ptr;
+    if (cur == NULL) {
+        cur = &particles->particles[0];
+    } else {
+        ++cur;
+    }
+
+    for (; cur < particles->particles + particles->particles_cap; ++cur) {
+        if (!cur->active) {
+            *cur_ptr = cur;
+            return true;
         }
     }
-    Assert(particle != NULL);
-    memset(particle, 0, sizeof(Particle));
-    particle->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
-    particle->orient = Mat4Identity();
-    particle->fade_out_pct = 1.0f;
-    FlagOn(particle->flags, PF_ACTIVE);
-    return particle;
+
+    *cur_ptr = NULL;
+    return false;
 }
+
+LCORE Particle* NewParticle() {
+    static Particle PARTICLE_ZERO = {0};
+    Particle* choice = NULL;
+    bool found = NextFreeParticle(&choice);
+    Assert(found);
+    *choice = PARTICLE_ZERO;
+    choice->active = true;
+    choice->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+    choice->orient = Mat4Identity();
+    choice->fade_out_pct = 1.0f;
+    return choice;
+}
+
+LCORE Particle* SpawnParticle(ParticleSource* source) {
+    Particle* choice = NewParticle();
+    choice->right = source->head;
+    if (source->head) {
+        source->head->left = choice;
+    }
+    source->head = choice;
+    return choice;
+}
+
+// LCORE Particle* AllocateParticle() {
+//     ParticleSystem* particles = GetParticleSystem();
+//     Particle* particle = NULL;
+//     for (i32 i = 0; i < ArrLen(&particles->particles); ++i) {
+//         Particle* candidate = ArrGetPtr(&particles->particles, i);
+//         if (!TestFlag(candidate->flags, PF_ACTIVE)) {
+//             particle = candidate;
+//             break;
+//         }
+//     }
+//     Assert(particle != NULL);
+//     memset(particle, 0, sizeof(Particle));
+//     particle->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+//     particle->orient = Mat4Identity();
+//     particle->fade_out_pct = 1.0f;
+//     FlagOn(particle->flags, PF_ACTIVE);
+//     return particle;
+// }
 
 // LCORE Particle* SpawnParticle(Vec3 p, Vec2 dims, Mat4 orient, f32 lifetime, RGBA color) {
 //     Assert(lifetime > 0.0f);
