@@ -5064,8 +5064,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             {
                                 ParticleSource* source = NewParticleSource();
-                                source->emission_rate = 10;
-                                source->sample_radius = 5.0f;
+                                source->emission_rate = 2;
+                                source->sample_radius = 2.0f;
                                 source->sample_origin = Vec3Lit(0, -100, 0);
                                 source->color = LGRAY;
                                 source->scale = Vec3Lit(2, 2, 0);
@@ -5103,7 +5103,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     firework->pos_prev = firework->pos;
                                     firework->pos = Vec3Add(firework->pos, Vec3Scale(firework->v, dt));
 
-                                    firework->source->sample_origin = Vec3Lit(firework->pos.x, firework->pos.y, -1);
+                                    Vec3 source_offset = Vec3Scale(Vec3Negate(speed_dir), 2);
+                                    firework->source->sample_origin =
+                                        Vec3Add(Vec3Lit(firework->pos.x, firework->pos.y, -1), source_offset);
                                     break;
                                 }
                                 case FS_EXPLODE: {
@@ -5132,11 +5134,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 // Update graphics
                 {
+                    static Vec2 FIREWORK_DIMS = Vec2Lit(3, 3);
+
                     for (Firework* firework = NULL; NextFirework(&firework);) {
                         switch (firework->state) {
                             case FS_SHOOT: {
                                 firework->gfx.pos = firework->pos;
-                                firework->gfx.dims = Vec2Lit(5, 5);
+                                firework->gfx.dims = FIREWORK_DIMS;
                                 firework->gfx.tint = LBLUE;
                                 break;
                             }
