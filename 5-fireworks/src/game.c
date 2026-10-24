@@ -5228,6 +5228,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         }
 
         {
+            static bool ONCE = false;
+
+            if (!ONCE) {
+                ONCE = true;
+                ParticleSource* source = NewParticleSource();
+                source->emission_rate = 0.5f;
+            }
+
             // static f64 TIMER = 0;
             // TIMER += dt;
             // if (TIMER > 3) {
