@@ -4903,6 +4903,7 @@ typedef struct {
     Vec3 pos;
     Vec4 tint;
     Vec2 dims;
+    Mat4 orient;
 } Gfx;
 
 typedef struct {
@@ -5142,6 +5143,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 firework->gfx.pos = firework->pos;
                                 firework->gfx.dims = FIREWORK_DIMS;
                                 firework->gfx.tint = LBLUE;
+
+                                Vec3 speed_dir = Vec3Normalize(firework->v);
+                                f32 rot = Vec3Angle(Vec3Lit(1, 0, 0), speed_dir);
+                                firework->gfx.orient = Mat4RotateZ(rot);
                                 break;
                             }
                             case FS_EXPLODE: {
@@ -5151,6 +5156,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                 f32 pct = firework->timer / 1.0f;
                                 firework->gfx.tint.a = f32lerp(1.0f, 0.0f, pct);
+                                firework->gfx.orient = Mat4Identity();
                                 break;
                             }
                             default: {
@@ -5252,8 +5258,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 switch (gstate->phase) {
                     case GP_PLAYING: {
                         for (Firework* firework = NULL; NextFirework(&firework);) {
-                            DrawQuad(firework->gfx.pos, firework->gfx.dims.x, firework->gfx.dims.y, Mat4Identity(),
-                                     firework->gfx.tint);
+                            DrawQuad(firework->gfx.pos, firework->gfx.dims.x, firework->gfx.dims.y,
+                                     firework->gfx.orient, firework->gfx.tint);
                         }
                         break;
                     }
