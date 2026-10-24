@@ -4921,6 +4921,7 @@ typedef struct {
     f32 timer;
     Vec3 thrust;
     FireworkState state;
+    ParticleSource* source;
 } Firework;
 
 #define MAX_FIREWORKS 48
@@ -5060,6 +5061,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             f32 speed = f32randab(20, 30);
                             firework->v = Vec3Scale(dir, speed);
                             firework->thrust = Vec3Scale(dir, 20.0f);
+
+                            {
+                                ParticleSource* source = NewParticleSource();
+                                source->emission_rate = 10;
+                                source->sample_radius = 5.0f;
+                                source->sample_origin = Vec3Lit(0, -100, 0);
+                                source->color = LGRAY;
+                                source->scale = Vec3Lit(2, 2, 0);
+                                source->lifetime = 4.0f;
+                                source->fade_out_pct = 0.5f;
+                                source->scale_out_pct = 0.8f;
+                                source->sample_origin = Vec3Lit(firework->pos.x, firework->pos.y, -1);
+
+                                firework->source = source;
+                            }
                         }
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
@@ -5086,11 +5102,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                     firework->pos_prev = firework->pos;
                                     firework->pos = Vec3Add(firework->pos, Vec3Scale(firework->v, dt));
+
+                                    firework->source->sample_origin = Vec3Lit(firework->pos.x, firework->pos.y, -1);
                                     break;
                                 }
                                 case FS_EXPLODE: {
                                     if (firework->timer >= 1.0f) {
                                         firework->cleanup = true;
+                                        firework->source->active = false;
                                     }
                                     break;
                                 }
@@ -5162,20 +5181,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         }
 
         {
-            static bool ONCE = false;
+            // static bool ONCE = false;
 
-            if (!ONCE) {
-                ONCE = true;
-                ParticleSource* source = NewParticleSource();
-                source->emission_rate = 50;
-                source->sample_radius = 50.0f;
-                source->sample_origin = Vec3Lit(0, -100, 0);
-                source->color = LGRAY;
-                source->scale = Vec3Lit(5, 5, 0);
-                source->lifetime = 0.3f;
-                source->fade_out_pct = 0.5f;
-                source->scale_out_pct = 0.8f;
-            }
+            // if (!ONCE) {
+            //     ONCE = true;
+            //     ParticleSource* source = NewParticleSource();
+            //     source->emission_rate = 50;
+            //     source->sample_radius = 50.0f;
+            //     source->sample_origin = Vec3Lit(0, -100, 0);
+            //     source->color = LGRAY;
+            //     source->scale = Vec3Lit(5, 5, 0);
+            //     source->lifetime = 0.3f;
+            //     source->fade_out_pct = 0.5f;
+            //     source->scale_out_pct = 0.8f;
+            // }
 
             // static f64 TIMER = 0;
             // TIMER += dt;
