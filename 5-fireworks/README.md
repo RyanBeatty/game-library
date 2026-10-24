@@ -1,5 +1,5 @@
 TARGET DEV TIME BUDGET: 24 hours
-CURRENT DEV TIME BUDGET: 1.5 hrs
+CURRENT DEV TIME BUDGET: 2.0 hrs
 GOALS
 * noise
 * particle system
