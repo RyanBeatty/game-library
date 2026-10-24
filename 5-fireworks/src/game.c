@@ -3750,6 +3750,9 @@ typedef struct {
     Vec3 scale;
     Vec4 color;
     f64 lifetime;
+
+    f32 fade_out_pct;
+    f32 scale_out_pct;
 } ParticleSource;
 
 #define MAX_PARTICLES 512
@@ -3828,6 +3831,7 @@ LCORE ParticleSource* NewParticleSource() {
     choice->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     choice->color = LBLACK;
     choice->lifetime = 1.0f;
+    choice->fade_out_pct = 1.0f;
     return choice;
 }
 
@@ -3898,6 +3902,8 @@ LCORE void ParticleSystemTick(f64 dt) {
             particle->color = source->color;
             particle->lifetime = source->lifetime;
             particle->scale = source->scale;
+            particle->fade_out_pct = source->fade_out_pct;
+            particle->scale_out_pct = source->scale_out_pct;
 
             Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(f32randab(0, 360)));
             f32 scale = f32randab(0, source->sample_radius);
@@ -5256,6 +5262,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 source->color = LGRAY;
                 source->scale = Vec3Lit(5, 5, 0);
                 source->lifetime = 0.3f;
+                source->fade_out_pct = 0.5f;
+                source->scale_out_pct = 0.8f;
             }
 
             // static f64 TIMER = 0;
