@@ -3899,47 +3899,44 @@ LCORE void ParticleSystemTick(f64 dt) {
     }
 }
 
-// LCORE void ParticleSystemDraw() {
-//     ParticleSystem* particles = GetParticleSystem();
-//     for (u32 i = 0; i < ArrLen(&particles->particles); ++i) {
-//         Particle* particle = ArrGetPtr(&particles->particles, i);
+LCORE void ParticleSystemDraw() {
+    for (Particle* particle = NULL; IncrementParticle(&particle);) {
+        // Find % along lifetime we are.
+        f32 lifedt_pct = f32lerp_pct(0.0, particle->lifetime, particle->lifedt);
 
-//         // Find % along lifetime we are.
-//         f32 lifedt_pct = f32lerp_pct(0.0f, particle->lifetime, particle->lifedt);
+        f32 alpha_mask = 1.0f;
+        if (particle->fade_in_pct != 0.0f) {
+            // Linearly fade in if we are within the fade in window by the percent we are in the fade in window.
+            // Remember that multiplying here is essentially our lerp because lerp(0, e, x) = e * x. X is
+            // already a percentage in range 0..1 because of f32lerp_pct.
+            alpha_mask *= f32lerp_pct(0.0f, particle->fade_in_pct, lifedt_pct);
+        }
+        // Determine the % of the way through we are through the fade out window. Since our fade out window
+        // is given in percent of the ending (i.e. relative). We need to subtract 100% - fadeout pct to get
+        // absolute percent. then we can determine percent we are through using abs percent. Need to do
+        // 1.0f - lerp pct because we are fading out not in.
+        // Because we are fading out f32lerp(color.a, 0.0f, x) this reduces to (1.0f - x) * color.a
+        // Which reduces to alpha *= 1.0f - x where x is percentage way through fade out window.
+        alpha_mask *= 1.0f - f32lerp_pct(1.0f - particle->fade_out_pct, 1.0f, lifedt_pct);
+        RGBA color = particle->color;
+        color.a *= alpha_mask;
 
-//         f32 alpha_mask = 1.0f;
-//         if (particle->fade_in_pct != 0.0f) {
-//             // Linearly fade in if we are within the fade in window by the percent we are in the fade in window.
-//             // Remember that multiplying here is essentially our lerp because lerp(0, e, x) = e * x. X is
-//             // already a percentage in range 0..1 because of f32lerp_pct.
-//             alpha_mask *= f32lerp_pct(0.0f, particle->fade_in_pct, lifedt_pct);
-//         }
-//         // Determine the % of the way through we are through the fade out window. Since our fade out window
-//         // is given in percent of the ending (i.e. relative). We need to subtract 100% - fadeout pct to get
-//         // absolute percent. then we can determine percent we are through using abs percent. Need to do
-//         // 1.0f - lerp pct because we are fading out not in.
-//         // Because we are fading out f32lerp(color.a, 0.0f, x) this reduces to (1.0f - x) * color.a
-//         // Which reduces to alpha *= 1.0f - x where x is percentage way through fade out window.
-//         alpha_mask *= 1.0f - f32lerp_pct(1.0f - particle->fade_out_pct, 1.0f, lifedt_pct);
-//         RGBA color = particle->color;
-//         color.a *= alpha_mask;
+        f32 scale_mask = 1.0f;
+        if (particle->scale_in_pct != 0.0f) {
+            scale_mask *= f32lerp_pct(0.0f, particle->scale_in_pct, lifedt_pct);
+        }
+        if (particle->scale_out_pct != 0.0f) {
+            scale_mask *= 1.0f - f32lerp_pct(1.0f - particle->scale_out_pct, 1.0f, lifedt_pct);
+        }
+        Vec3 scale = Vec3Scale(particle->scale, scale_mask);
 
-//         f32 scale_mask = 1.0f;
-//         if (particle->scale_in_pct != 0.0f) {
-//             scale_mask *= f32lerp_pct(0.0f, particle->scale_in_pct, lifedt_pct);
-//         }
-//         if (particle->scale_out_pct != 0.0f) {
-//             scale_mask *= 1.0f - f32lerp_pct(1.0f - particle->scale_out_pct, 1.0f, lifedt_pct);
-//         }
-//         Vec3 scale = Vec3Scale(particle->scale, scale_mask);
-
-//         DrawQuad(particle->p, scale.x, scale.y, particle->orient, color);
-//         // DrawCmd* cmd = AddDrawMeshCmd();
-//         // cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
-//         // cmd->meshcmd.meshid = GetMesh(M_QUAD);
-//         // cmd->meshcmd.color = particle->color;
-//     }
-// }
+        DrawQuad(particle->p, scale.x, scale.y, particle->orient, color);
+        // DrawCmd* cmd = AddDrawMeshCmd();
+        // cmd->meshcmd.modelm = Mat4SVRT(particle->scale, particle->orient, particle->p);
+        // cmd->meshcmd.meshid = GetMesh(M_QUAD);
+        // cmd->meshcmd.color = particle->color;
+    }
+}
 
 // LCORE Particle* AllocateParticle() {
 //     ParticleSystem* particles = GetParticleSystem();
@@ -5058,7 +5055,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
 
-    f32 dt = gstate->frame_time.dt;
+    f64 dt = gstate->frame_time.dt;
 
     GameControllerState* controller = GetController(input, 0);
 
@@ -5229,6 +5226,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 Assert(0);
             }
         }
+
+        {
+            // static f64 TIMER = 0;
+            // TIMER += dt;
+            // if (TIMER > 3) {
+            //     PlatformLog(LLOG_INFO, "spawn");
+            //     TIMER = 0;
+            //     Particle* particle = NewParticle();
+            //     particle->color = LRED;
+            //     particle->lifetime = 2.0f;
+            //     particle->scale = Vec3Lit(10, 10, 0);
+            // }
+        }
+
+        ParticleSystemTick(dt);
     }
 
     if (gstate->render) {
@@ -5291,6 +5303,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     }
                 }
 
+                ParticleSystemDraw();
                 EndShaderPass();
             }
 
