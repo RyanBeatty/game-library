@@ -3753,6 +3753,9 @@ typedef struct {
     SampleAreaType sample_area_type;
     Vec3 sample_origin;
     f32 sample_radius;
+
+    Vec3 scale;
+    Vec4 color;
 } ParticleSource;
 
 static void ParticleSourceSetSampleCircle2D(ParticleSource* source, f32 radius) {
@@ -3828,12 +3831,14 @@ LCORE bool NextFreeParticleSource(ParticleSource** cur_ptr) {
 
 LCORE ParticleSource* NewParticleSource() {
     static ParticleSource PARTICLE_SOURCE_ZERO = {0};
-    ParticleSource* source = NULL;
-    bool found = NextFreeParticleSource(&source);
+    ParticleSource* choice = NULL;
+    bool found = NextFreeParticleSource(&choice);
     Assert(found);
-    *source = PARTICLE_SOURCE_ZERO;
-    source->active = true;
-    return source;
+    *choice = PARTICLE_SOURCE_ZERO;
+    choice->active = true;
+    choice->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
+    choice->color = LBLACK;
+    return choice;
 }
 
 LCORE bool NextFreeParticle(Particle** cur_ptr) {
@@ -3899,9 +3904,10 @@ LCORE void ParticleSystemTick(f64 dt) {
             source->emission_timer -= emission_rate_dt;
             source->emission_timer = source->emission_timer <= 0.0 ? 0.0 : source->emission_timer;
             Particle* particle = NewParticle();
-            particle->color = LRED;
+
+            particle->color = source->color;
             particle->lifetime = 2.0;
-            particle->scale = Vec3Lit(10, 10, 0);
+            particle->scale = source->scale;
 
             Vec3 point = Vec3Zero();
             switch (source->sample_area_type) {
@@ -5270,6 +5276,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 source->emission_rate = 50;
                 ParticleSourceSetSampleCircle2D(source, 50);
                 source->sample_origin = Vec3Lit(0, -100, 0);
+                source->color = LRED;
+                source->scale = Vec3Lit(5, 5, 0);
             }
 
             // static f64 TIMER = 0;
