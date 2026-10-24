@@ -3739,29 +3739,18 @@ LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
     particle->fade_in_pct += rem < 0.0f ? rem : 0.0f;
 }
 
-typedef enum {
-    PSEA_POINT = 0,
-    PSEA_CIRCLE2D,
-    PSEA_COUNT,
-} SampleAreaType;
-
 typedef struct {
     bool active;
     f32 emission_rate;  // Number of particles emitted per second
     f64 emission_timer;
 
-    SampleAreaType sample_area_type;
     Vec3 sample_origin;
     f32 sample_radius;
 
     Vec3 scale;
     Vec4 color;
+    f64 lifetime;
 } ParticleSource;
-
-static void ParticleSourceSetSampleCircle2D(ParticleSource* source, f32 radius) {
-    source->sample_area_type = PSEA_CIRCLE2D;
-    source->sample_radius = radius;
-}
 
 #define MAX_PARTICLES 512
 #define MAX_SOURCES 32
@@ -3838,6 +3827,7 @@ LCORE ParticleSource* NewParticleSource() {
     choice->active = true;
     choice->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     choice->color = LBLACK;
+    choice->lifetime = 1.0f;
     return choice;
 }
 
@@ -3906,25 +3896,12 @@ LCORE void ParticleSystemTick(f64 dt) {
             Particle* particle = NewParticle();
 
             particle->color = source->color;
-            particle->lifetime = 2.0;
+            particle->lifetime = source->lifetime;
             particle->scale = source->scale;
 
-            Vec3 point = Vec3Zero();
-            switch (source->sample_area_type) {
-                case PSEA_POINT: {
-                    point = source->sample_origin;
-                    break;
-                }
-                case PSEA_CIRCLE2D: {
-                    Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(f32randab(0, 360)));
-                    f32 scale = f32randab(0, source->sample_radius);
-                    point = Vec3Add(source->sample_origin, Vec3Scale(dir, scale));
-                    break;
-                }
-                default: {
-                    Assert(0);
-                }
-            }
+            Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(f32randab(0, 360)));
+            f32 scale = f32randab(0, source->sample_radius);
+            Vec3 point = Vec3Add(source->sample_origin, Vec3Scale(dir, scale));
             particle->p = point;
         }
     }
@@ -5274,10 +5251,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 ONCE = true;
                 ParticleSource* source = NewParticleSource();
                 source->emission_rate = 50;
-                ParticleSourceSetSampleCircle2D(source, 50);
+                source->sample_radius = 50.0f;
                 source->sample_origin = Vec3Lit(0, -100, 0);
-                source->color = LRED;
+                source->color = LGRAY;
                 source->scale = Vec3Lit(5, 5, 0);
+                source->lifetime = 0.3f;
             }
 
             // static f64 TIMER = 0;
