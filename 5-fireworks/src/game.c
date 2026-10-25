@@ -5071,8 +5071,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 source->color = LGRAY;
                                 source->scale = Vec3Lit(2, 2, 0);
                                 source->lifetime = 4.0f;
-                                source->fade_out_pct = 0.5f;
-                                source->scale_out_pct = 0.8f;
+                                source->fade_out_pct = 1.0f;
+                                source->scale_out_pct = 0.9f;
                                 source->sample_origin = Vec3Lit(firework->pos.x, firework->pos.y, -1);
 
                                 firework->source = source;
