@@ -3755,8 +3755,8 @@ typedef struct {
     f32 scale_out_pct;
 } ParticleSource;
 
-#define MAX_PARTICLES 512
-#define MAX_SOURCES 32
+#define MAX_PARTICLES 1024
+#define MAX_SOURCES 128
 
 typedef struct {
     Particle* particles;
@@ -4926,7 +4926,7 @@ typedef struct {
     i32 stage;
 } Firework;
 
-#define MAX_FIREWORKS 48
+#define MAX_FIREWORKS 128
 static Firework FIREWORKS[MAX_FIREWORKS] = {0};
 
 static bool NextFreeFirework(Firework** cur_ptr) {
@@ -5124,10 +5124,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                 fwrk->life = 3.0f;
                                                 fwrk->stage = stage;
 
-                                                fwrk->pos = fwrk->pos;
+                                                fwrk->pos = firework->pos;
                                                 f32 angle = angle_start + (angle_diff * i);
-                                                Vec3 dir =
-                                                    Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
+                                                Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), angle);
                                                 f32 speed = f32randab(20, 30);
                                                 fwrk->v = Vec3Scale(dir, speed);
                                                 fwrk->thrust = Vec3Scale(dir, 20.0f);
