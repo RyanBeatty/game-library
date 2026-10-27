@@ -5122,6 +5122,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                 f32 angle = angle_start + (angle_diff * i);
                                                 f32 speed_target = 60.0f;
                                                 f32 speed_jitter = 0.15f;
+                                                f32 emission_rate = 4.0f;
 
                                                 Firework* fwrk = NewFirework();
                                                 fwrk->life = 3.0f;
@@ -5136,7 +5137,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                                 {
                                                     ParticleSource* source = NewParticleSource();
-                                                    source->emission_rate = 2;
+                                                    source->emission_rate = emission_rate;
                                                     source->sample_radius = 2.0f;
                                                     source->sample_origin = Vec3Lit(0, -100, 0);
                                                     source->color = LGRAY;
