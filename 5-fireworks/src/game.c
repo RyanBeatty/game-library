@@ -5055,7 +5055,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case PP_PLAYING: {
                         if (controller->action_down.pressed) {
                             Firework* firework = NewFirework();
-                            firework->life = 6.0f;
+                            firework->life = 3.0f;
                             firework->stage = 2;
 
                             firework->pos = Vec3Lit(f32randab(-300, 300), -100, 0);
@@ -5101,7 +5101,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     firework->v = Vec3Add(firework->v, Vec3Scale(force, dt));
                                     f32 speed = Vec3Len(firework->v);
                                     Vec3 speed_dir = Vec3Normalize(firework->v);
-                                    firework->v = Vec3Scale(speed_dir, f32min(speed, 30.0f));
+                                    firework->v = Vec3Scale(speed_dir, f32min(speed, 100.0f));
 
                                     firework->pos_prev = firework->pos;
                                     firework->pos = Vec3Add(firework->pos, Vec3Scale(firework->v, dt));
@@ -5115,17 +5115,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     if (firework->timer >= 1.0f) {
                                         if (firework->stage > 1) {
                                             i32 stage = firework->stage - 1;
-                                            i32 num_spawn = 20;
+                                            i32 num_spawn = 10;
                                             f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
                                             f32 angle_start = 0.0f;
                                             for (i32 i = 0; i < num_spawn; ++i) {
+                                                f32 life_target = 1.5f;
+                                                f32 life_jitter = 0.08f;
                                                 f32 angle = angle_start + (angle_diff * i);
                                                 f32 speed_target = 60.0f;
                                                 f32 speed_jitter = 0.15f;
                                                 f32 emission_rate = 4.0f;
 
                                                 Firework* fwrk = NewFirework();
-                                                fwrk->life = 3.0f;
+                                                fwrk->life = f32randab(life_target * (1.0f - life_jitter),
+                                                                       life_target * (1.0f + life_jitter));
                                                 fwrk->stage = stage;
 
                                                 fwrk->pos = firework->pos;
