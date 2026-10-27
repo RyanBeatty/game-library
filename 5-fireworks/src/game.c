@@ -5058,7 +5058,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             firework->life = 6.0f;
                             firework->stage = 2;
 
-                            firework->pos = Vec3Lit(f32randab(-100, 100), -100, 0);
+                            firework->pos = Vec3Lit(f32randab(-300, 300), -100, 0);
                             f32 angle = f32randab(90 - 25, 90 + 25);
                             Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
                             f32 speed = f32randab(20, 30);
@@ -5119,7 +5119,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                             f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
                                             f32 angle_start = 0.0f;
                                             for (i32 i = 0; i < num_spawn; ++i) {
-                                                PlatformLog(LLOG_INFO, "frame: %d|iter: %d", gstate->nframe, i);
                                                 Firework* fwrk = NewFirework();
                                                 fwrk->life = 3.0f;
                                                 fwrk->stage = stage;
