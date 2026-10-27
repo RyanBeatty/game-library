@@ -4923,6 +4923,7 @@ typedef struct {
     Vec3 thrust;
     FireworkState state;
     ParticleSource* source;
+    i32 stage;
 } Firework;
 
 #define MAX_FIREWORKS 48
@@ -5055,6 +5056,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         if (controller->action_down.pressed) {
                             Firework* firework = NewFirework();
                             firework->life = 6.0f;
+                            firework->stage = 2;
 
                             firework->pos = Vec3Lit(f32randab(-100, 100), -100, 0);
                             f32 angle = f32randab(90 - 25, 90 + 25);
@@ -5111,9 +5113,46 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                                 case FS_EXPLODE: {
                                     if (firework->timer >= 1.0f) {
+                                        if (firework->stage > 1) {
+                                            i32 stage = firework->stage - 1;
+                                            i32 num_spawn = 20;
+                                            f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
+                                            f32 angle_start = 0.0f;
+                                            for (i32 i = 0; i < num_spawn; ++i) {
+                                                PlatformLog(LLOG_INFO, "frame: %d|iter: %d", gstate->nframe, i);
+                                                Firework* fwrk = NewFirework();
+                                                fwrk->life = 3.0f;
+                                                fwrk->stage = stage;
+
+                                                fwrk->pos = fwrk->pos;
+                                                f32 angle = angle_start + (angle_diff * i);
+                                                Vec3 dir =
+                                                    Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
+                                                f32 speed = f32randab(20, 30);
+                                                fwrk->v = Vec3Scale(dir, speed);
+                                                fwrk->thrust = Vec3Scale(dir, 20.0f);
+
+                                                {
+                                                    ParticleSource* source = NewParticleSource();
+                                                    source->emission_rate = 2;
+                                                    source->sample_radius = 2.0f;
+                                                    source->sample_origin = Vec3Lit(0, -100, 0);
+                                                    source->color = LGRAY;
+                                                    source->scale = Vec3Lit(2, 2, 0);
+                                                    source->lifetime = 4.0f;
+                                                    source->fade_out_pct = 1.0f;
+                                                    source->scale_out_pct = 0.9f;
+                                                    source->sample_origin = Vec3Lit(fwrk->pos.x, fwrk->pos.y, -1);
+
+                                                    fwrk->source = source;
+                                                }
+                                            }
+                                        }
+
                                         firework->cleanup = true;
                                         firework->source->active = false;
                                     }
+
                                     break;
                                 }
                                 default: {
