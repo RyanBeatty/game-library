@@ -5384,6 +5384,8 @@ void GameInit() {
 
     memset(gstate, 0, sizeof(GameState));
 
+    XorShift64Seed(20250920);
+
     // Initialize dyanmic memory pool.
     isize cap = GB(4);
     byte* buffer = PlatformAllocate(cap);

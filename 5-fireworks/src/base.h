@@ -196,6 +196,44 @@ static i32 I32FromStr8(Str8 s, bool* ok);
     for (int CONCAT(_once_, __LINE__) = ((start), 0); !CONCAT(_once_, __LINE__); (CONCAT(_once_, __LINE__) = 1, (end)))
 
 ////////////////////////////////////////////////////////////
+// S:RNG
+
+typedef struct {
+    u64 state;
+} XorShift64State;
+
+static XorShift64State XORSHIFT64STATE = {0};
+
+u64 Mix64(u64 s) {
+    u64 result = (s += 0x9E3779B97F4A7C15);
+    result = (result ^ (result >> 30)) * 0xBF58476D1CE4E5B9;
+    result = (result ^ (result >> 27)) * 0x94D049BB133111EB;
+    return result ^ (result >> 31);
+}
+
+static void XorShift64Seed(u64 seed) { XORSHIFT64STATE.state = Mix64(seed); }
+
+// NOTE: Need to set the seed first.
+static u64 XorShift64Next() {
+    u64 x = XORSHIFT64STATE.state;
+    x ^= x << 13;
+    x ^= x >> 7;
+    x ^= x << 17;
+    XORSHIFT64STATE.state = x;
+    return x;
+}
+
+// Full 32 random bits: return them unsigned
+LCORE u32 u32rand() { return (u32)(XorShift64Next() >> 32); }
+
+// Non-negative i32 in [0, 2^31): use 31 bits
+LCORE i32 i32rand() { return (i32)(XorShift64Next() >> 33); }
+
+LCORE f32 f32rand01() {
+    return (XorShift64Next() >> 40) * (1.0f / 16777216.0f);  // top 24 bits × 2^-24
+}
+
+////////////////////////////////////////////////////////////
 // S:Math
 
 static f32 TOL = 0.001;
@@ -226,7 +264,6 @@ static f32 TOL = 0.001;
 LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
 
 // #define f32lerp(s, e, t) ((s) + (((e) - (s)) * (t)))
-#define f32rand01() ((f32)rand() / (f32)RAND_MAX)
 #define f32randab(a, b) (f32lerp((a), (b), (f32rand01())))
 #define f32clamp(x, min, max) (f32min(f32max((x), (min)), (max)))
 #define f32clamp01(x) (f32clamp((x), 0.0f, 1.0f))
@@ -236,7 +273,6 @@ LCORE f32 f32lerp(f32 s, f32 e, f32 t) { return ((1.0f - t) * s) + (t * e); }
 
 #define f64abs fabs
 
-#define i32rand() ((i32)rand())
 // There is some bias here in the distribution potentially when RAND_MAX is divisible by b
 #define i32randab(a, b) ((a) + i32rand() % ((b) - (a) + 1))
 #define i32max(x, y) ((x) > (y) ? (x) : (y))
