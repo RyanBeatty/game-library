@@ -3661,6 +3661,7 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
 #define SOUND_LIST                                             \
     SOUNDX(BEEP, "assets/sounds/beep.wav")                     \
     SOUNDX(STAGE2_EXPLODE, "assets/sounds/STAGE2_EXPLODE.wav") \
+    SOUNDX(LAUNCH, "assets/sounds/LAUNCH.wav")                 \
     SOUNDX(LOSE_GAME, "assets/sounds/LOSE_GAME.wav")
 
 typedef enum {
@@ -5076,6 +5077,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                 firework->source = source;
                             }
+
+                            PlatformPlaySound(GetSound(SOUND_LAUNCH), 0);
                         }
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
