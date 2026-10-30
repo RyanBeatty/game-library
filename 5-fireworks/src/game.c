@@ -5059,7 +5059,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             firework->stage = 2;
 
                             firework->pos = Vec3Lit(f32randab(-300, 300), -100, 0);
-                            f32 angle = f32randab(90 - 25, 90 + 25);
+                            f32 angle_offset = 5.0f;
+                            f32 angle = 90.0f + f32randab(-angle_offset, angle_offset);
                             Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
                             f32 speed = f32randab(20, 30);
                             firework->v = Vec3Scale(dir, speed);
@@ -5118,7 +5119,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
                                         f32 angle_start = 0.0f;
                                         for (i32 i = 0; i < num_spawn; ++i) {
-                                            f32 life_target = 1.5f;
+                                            f32 life_target = 1.0f;
                                             f32 life_jitter = 0.08f;
                                             f32 angle = angle_start + (angle_diff * i);
                                             f32 speed_target = 60.0f;
@@ -5144,7 +5145,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                 source->sample_origin = Vec3Lit(0, -100, 0);
                                                 source->color = LGRAY;
                                                 source->scale = Vec3Lit(2, 2, 0);
-                                                source->lifetime = 4.0f;
+                                                source->lifetime = 2.0f;
                                                 source->fade_out_pct = 1.0f;
                                                 source->scale_out_pct = 0.9f;
                                                 source->sample_origin = Vec3Lit(fwrk->pos.x, fwrk->pos.y, -1);
@@ -5193,13 +5194,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 break;
                             }
                             case FS_EXPLODE: {
-                                firework->gfx.pos = firework->pos;
-                                firework->gfx.dims = Vec2Lit(20, 20);
-                                firework->gfx.tint = LRED;
+                                // firework->gfx.pos = firework->pos;
+                                // firework->gfx.dims = Vec2Lit(20, 20);
+                                // firework->gfx.tint = LRED;
 
-                                f32 pct = firework->timer / 1.0f;
-                                firework->gfx.tint.a = f32lerp(1.0f, 0.0f, pct);
-                                firework->gfx.orient = Mat4Identity();
+                                // f32 pct = firework->timer / 1.0f;
+                                // firework->gfx.tint.a = f32lerp(1.0f, 0.0f, pct);
+                                // firework->gfx.orient = Mat4Identity();
                                 break;
                             }
                             default: {
