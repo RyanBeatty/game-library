@@ -5112,52 +5112,50 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     break;
                                 }
                                 case FS_EXPLODE: {
-                                    if (firework->timer >= 1.0f) {
-                                        if (firework->stage > 1) {
-                                            i32 stage = firework->stage - 1;
-                                            i32 num_spawn = 10;
-                                            f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
-                                            f32 angle_start = 0.0f;
-                                            for (i32 i = 0; i < num_spawn; ++i) {
-                                                f32 life_target = 1.5f;
-                                                f32 life_jitter = 0.08f;
-                                                f32 angle = angle_start + (angle_diff * i);
-                                                f32 speed_target = 60.0f;
-                                                f32 speed_jitter = 0.15f;
-                                                f32 emission_rate = 4.0f;
+                                    if (firework->stage > 1) {
+                                        i32 stage = firework->stage - 1;
+                                        i32 num_spawn = 10;
+                                        f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
+                                        f32 angle_start = 0.0f;
+                                        for (i32 i = 0; i < num_spawn; ++i) {
+                                            f32 life_target = 1.5f;
+                                            f32 life_jitter = 0.08f;
+                                            f32 angle = angle_start + (angle_diff * i);
+                                            f32 speed_target = 60.0f;
+                                            f32 speed_jitter = 0.15f;
+                                            f32 emission_rate = 4.0f;
 
-                                                Firework* fwrk = NewFirework();
-                                                fwrk->life = f32randab(life_target * (1.0f - life_jitter),
-                                                                       life_target * (1.0f + life_jitter));
-                                                fwrk->stage = stage;
+                                            Firework* fwrk = NewFirework();
+                                            fwrk->life = f32randab(life_target * (1.0f - life_jitter),
+                                                                   life_target * (1.0f + life_jitter));
+                                            fwrk->stage = stage;
 
-                                                fwrk->pos = firework->pos;
-                                                Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), angle);
-                                                f32 speed = f32randab(speed_target * (1.0f - speed_jitter),
-                                                                      speed_target * (1.0f + speed_jitter));
-                                                fwrk->v = Vec3Scale(dir, speed);
-                                                fwrk->thrust = Vec3Scale(dir, 20.0f);
+                                            fwrk->pos = firework->pos;
+                                            Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), angle);
+                                            f32 speed = f32randab(speed_target * (1.0f - speed_jitter),
+                                                                  speed_target * (1.0f + speed_jitter));
+                                            fwrk->v = Vec3Scale(dir, speed);
+                                            fwrk->thrust = Vec3Scale(dir, 20.0f);
 
-                                                {
-                                                    ParticleSource* source = NewParticleSource();
-                                                    source->emission_rate = emission_rate;
-                                                    source->sample_radius = 2.0f;
-                                                    source->sample_origin = Vec3Lit(0, -100, 0);
-                                                    source->color = LGRAY;
-                                                    source->scale = Vec3Lit(2, 2, 0);
-                                                    source->lifetime = 4.0f;
-                                                    source->fade_out_pct = 1.0f;
-                                                    source->scale_out_pct = 0.9f;
-                                                    source->sample_origin = Vec3Lit(fwrk->pos.x, fwrk->pos.y, -1);
+                                            {
+                                                ParticleSource* source = NewParticleSource();
+                                                source->emission_rate = emission_rate;
+                                                source->sample_radius = 2.0f;
+                                                source->sample_origin = Vec3Lit(0, -100, 0);
+                                                source->color = LGRAY;
+                                                source->scale = Vec3Lit(2, 2, 0);
+                                                source->lifetime = 4.0f;
+                                                source->fade_out_pct = 1.0f;
+                                                source->scale_out_pct = 0.9f;
+                                                source->sample_origin = Vec3Lit(fwrk->pos.x, fwrk->pos.y, -1);
 
-                                                    fwrk->source = source;
-                                                }
+                                                fwrk->source = source;
                                             }
                                         }
-
-                                        firework->cleanup = true;
-                                        firework->source->active = false;
                                     }
+
+                                    firework->cleanup = true;
+                                    firework->source->active = false;
 
                                     break;
                                 }
