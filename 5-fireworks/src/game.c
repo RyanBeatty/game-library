@@ -3658,13 +3658,9 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST                                               \
-    SOUNDX(BEEP, "assets/sounds/beep.wav")                       \
-    SOUNDX(TILE_TICK, "assets/sounds/TILE_TICK.wav")             \
-    SOUNDX(TILE_TICK_FAST, "assets/sounds/TILE_TICK_FAST.wav")   \
-    SOUNDX(UI_BUTTON_CLICK, "assets/sounds/UI_BUTTON_CLICK.wav") \
-    SOUNDX(GOAL_HIT, "assets/sounds/GOAL_HIT.wav")               \
-    SOUNDX(MISS_GOAL, "assets/sounds/MISS_GOAL.wav")             \
+#define SOUND_LIST                                             \
+    SOUNDX(BEEP, "assets/sounds/beep.wav")                     \
+    SOUNDX(STAGE2_EXPLODE, "assets/sounds/STAGE2_EXPLODE.wav") \
     SOUNDX(LOSE_GAME, "assets/sounds/LOSE_GAME.wav")
 
 typedef enum {
@@ -5114,6 +5110,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                                 case FS_EXPLODE: {
                                     if (firework->stage > 1) {
+                                        if (firework->stage == 2) {
+                                            PlatformPlaySound(GetSound(SOUND_STAGE2_EXPLODE), 0);
+                                        }
+
                                         i32 stage = firework->stage - 1;
                                         i32 num_spawn = 10;
                                         f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
