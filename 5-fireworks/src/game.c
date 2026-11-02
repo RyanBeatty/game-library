@@ -5054,7 +5054,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case PP_PLAYING: {
                         if (controller->action_down.pressed) {
                             Firework* firework = NewFirework();
-                            firework->life = 3.0f;
+                            firework->life = f32randab(2.5, 5.0f);
                             firework->stage = 2;
 
                             firework->pos = Vec3Lit(f32randab(-300, 300), -100, 0);
