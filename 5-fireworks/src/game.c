@@ -4920,6 +4920,7 @@ typedef struct {
     Vec3 thrust;
     FireworkState state;
     ParticleSource* source;
+    i32 num_spawn;
     Vec4 color;
     i32 stage;
 } Firework;
@@ -5063,6 +5064,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             f32 speed = f32randab(20, 30);
                             firework->v = Vec3Scale(dir, speed);
                             firework->thrust = Vec3Scale(dir, 20.0f);
+                            firework->num_spawn = i32randab(5, 10);
 
                             {
                                 static Vec4 COLORS[] = {
@@ -5126,7 +5128,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         }
 
                                         i32 stage = firework->stage - 1;
-                                        i32 num_spawn = 10;
+                                        i32 num_spawn = firework->num_spawn;
                                         f32 angle_diff = Deg2Rad(360.0f / (f32)num_spawn);
                                         f32 angle_start = 0.0f;
                                         for (i32 i = 0; i < num_spawn; ++i) {
