@@ -4920,6 +4920,7 @@ typedef struct {
     Vec3 thrust;
     FireworkState state;
     ParticleSource* source;
+    Vec4 color;
     i32 stage;
 } Firework;
 
@@ -5064,6 +5065,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             firework->thrust = Vec3Scale(dir, 20.0f);
 
                             {
+                                static Vec4 COLORS[] = {
+                                    LRED, LGREEN, LBLUE, LPURPLE, LYELLOW,
+                                };
+                                firework->color = COLORS[i32randab(0, ArraySizeOf(COLORS) - 1)];
+                            }
+
+                            {
                                 ParticleSource* source = NewParticleSource();
                                 source->emission_rate = 2;
                                 source->sample_radius = 2.0f;
@@ -5140,6 +5148,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                                                   speed_target * (1.0f + speed_jitter));
                                             fwrk->v = Vec3Scale(dir, speed);
                                             fwrk->thrust = Vec3Scale(dir, 20.0f);
+                                            fwrk->color = firework->color;
 
                                             {
                                                 ParticleSource* source = NewParticleSource();
@@ -5189,7 +5198,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             case FS_SHOOT: {
                                 firework->gfx.pos = firework->pos;
                                 firework->gfx.dims = FIREWORK_DIMS;
-                                firework->gfx.tint = LBLUE;
+                                firework->gfx.tint = firework->stage == 1 ? firework->color : LBLACK;
 
                                 Vec3 speed_dir = Vec3Normalize(firework->v);
                                 f32 rot = Vec3Angle(Vec3Lit(1, 0, 0), speed_dir);
