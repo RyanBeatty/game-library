@@ -4743,6 +4743,7 @@ typedef struct GameState {
     // TODO: Move this to RenderState and move a reference to RSTATE here. Or just get rid of this and have a
     // GetScreen/RenderWidth() function that reads RSTATE.
     // TODO: Rethink the naming for some of this stuff, way too confusing when you have multiple projections
+    // THIS IS ESSENTIALLY GAME'S INTENRAL DIMENSIONS
     Vec2 render_dims;
     // The scaling factor we will scale up the game render texture to the screen texture.
     // TODO: We might want to somehow keep screenw/h and this inline. Or just make sure we letterbox or something
@@ -5057,7 +5058,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             firework->life = f32randab(2.5, 4.0f);
                             firework->stage = 2;
 
-                            firework->pos = Vec3Lit(f32randab(-200, 200), -100, 0);
+                            firework->pos = Vec3Lit(f32randab(-200, 200), -0.5f * gstate->render_dims.y, 0);
                             f32 angle_offset = 5.0f;
                             f32 angle = 90.0f + f32randab(-angle_offset, angle_offset);
                             Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
