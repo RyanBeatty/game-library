@@ -5057,7 +5057,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             firework->life = f32randab(2.5, 4.0f);
                             firework->stage = 2;
 
-                            firework->pos = Vec3Lit(f32randab(-300, 300), -100, 0);
+                            firework->pos = Vec3Lit(f32randab(-200, 200), -100, 0);
                             f32 angle_offset = 5.0f;
                             f32 angle = 90.0f + f32randab(-angle_offset, angle_offset);
                             Vec3 dir = Vec3RotateAxis(Vec3Lit(1, 0, 0), Vec3Lit(0, 0, 1), Deg2Rad(angle));
