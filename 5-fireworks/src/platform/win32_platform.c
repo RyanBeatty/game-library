@@ -558,7 +558,7 @@ SoundId PlatformLoadSound(const char* filename) {
     return id;
 }
 
-void PlatformPlaySoundLimit(SoundId id, SoundParams params) {
+void PlatformPlaySoundPro(SoundId id, SoundParams params) {
     Assert(id < AUDIO.soundlen);
     LSound* sound = &AUDIO.sounds[id];
 

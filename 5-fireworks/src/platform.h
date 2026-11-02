@@ -223,6 +223,10 @@ typedef enum {
 typedef struct {
     SoundFlag flags;
     u32 limit;
+    // how much to pitch up or down the sound. Its a multiplier. e.g. 2.0 is twice as fast (e.g. one octage up). 0.5 is
+    // half as fast (e.g. one octave down).
+    // NOTE: for the moment, this also changes the speed which is maybe less desirable. We should consider a pitch shift
+    // effect (XAPO).
     f32 pitch;
 } SoundParams;
 
@@ -235,9 +239,9 @@ void PlatformClearSounds();
 // Can load canonical wav files: http://soundfile.sapp.org/doc/WaveFormat/
 SoundId PlatformLoadSound(const char* filename);
 // limit = 0, means no limit
-void PlatformPlaySoundLimit(SoundId id, SoundParams params);
+void PlatformPlaySoundPro(SoundId id, SoundParams params);
 static void PlatformPlaySound(SoundId id, SoundFlag flags) {
-    PlatformPlaySoundLimit(id, (SoundParams){.flags = flags, .limit = 0, .pitch = 1.0f});
+    PlatformPlaySoundPro(id, (SoundParams){.flags = flags, .limit = 0, .pitch = 1.0f});
 }
 
 u32 PlatformSoundCountPlaying(SoundId id);

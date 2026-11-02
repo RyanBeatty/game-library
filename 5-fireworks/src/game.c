@@ -5088,7 +5088,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 firework->source = source;
                             }
 
-                            PlatformPlaySound(GetSound(SOUND_LAUNCH), 0);
+                            PlatformPlaySoundPro(GetSound(SOUND_LAUNCH), (SoundParams){
+                                                                             .pitch = f32randab(0.8f, 1.2f),
+                                                                         });
                         }
 
                         for (Firework* firework = NULL; NextFirework(&firework);) {
@@ -5124,7 +5126,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 case FS_EXPLODE: {
                                     if (firework->stage > 1) {
                                         if (firework->stage == 2) {
-                                            PlatformPlaySound(GetSound(SOUND_STAGE2_EXPLODE), 0);
+                                            PlatformPlaySoundPro(GetSound(SOUND_STAGE2_EXPLODE),
+                                                                 (SoundParams){.pitch = f32randab(0.7f, 1.3f)});
                                         }
 
                                         i32 stage = firework->stage - 1;
