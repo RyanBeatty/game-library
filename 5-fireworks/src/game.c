@@ -4896,6 +4896,7 @@ typedef struct {
     bool help;
 } Foo;
 
+DEFINE_GEN_ID(Foo);
 DEFINE_POOL(Foo);
 
 typedef enum {

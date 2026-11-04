@@ -203,47 +203,57 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 
 ////////////////////////////////////////////////////////////
 
-// pool ids
-#define POOL_ID_NAME(type) CONCAT(type, PoolId)
-#define POOL_ID_NULLID(type) CONCAT(type, _NULLID)
-#define POOL_ID_EQ(type) CONCAT(POOL_ID_NAME(type), Eq)
-#define POOL_ID_NOTNULL(type) CONCAT(POOL_ID_NAME(type), NotNull)
-#define POOL_ID_NULL(type) CONCAT(POOL_ID_NAME(type), Null)
+#define GEN_ID(type) CONCAT(type, Id)
+#define GEN_ID_NULLID(type) CONCAT(type, _NULLID)
+#define GEN_ID_EQ(type) CONCAT(GEN_ID(type), Eq)
+#define GEN_ID_NOTNULL(type) CONCAT(GEN_ID(type), NotNull)
+#define GEN_ID_NULL(type) CONCAT(GEN_ID(type), Null)
 
-#define POOL_ENTRY(type) CONCAT(type, PoolEntry)
+#define DEFINE_GEN_ID(type)                                                                              \
+    typedef struct {                                                                                     \
+        isize idx;                                                                                       \
+        u64 generation;                                                                                  \
+    } GEN_ID(type);                                                                                      \
+                                                                                                         \
+    static const GEN_ID(type) GEN_ID_NULLID(type) = {0};                                                 \
+                                                                                                         \
+    LCORE bool GEN_ID_EQ(type)(GEN_ID(type) a, GEN_ID(type) b) {                                         \
+        return ((a).idx == (b).idx) && ((a).generation == (b).generation);                               \
+    }                                                                                                    \
+                                                                                                         \
+    LCORE bool GEN_ID_NOTNULL(type)(GEN_ID(type) a) { return !GEN_ID_EQ(type)(a, GEN_ID_NULLID(type)); } \
+    LCORE bool GEN_ID_NULL(type)(GEN_ID(type) a) { return GEN_ID_EQ(type)(a, GEN_ID_NULLID(type)); }
+
+// typedef struct {
+//     isize idx;
+//     u64 generation;
+// } EntityId;
+// static const EntityId NULLID = {0};
+
+// #define EntityIdEq(a, b) (((a).idx == (b).idx) && ((a).generation == (b).generation))
+// #define EntityIdNotNull(a) (!EntityIdEq((a), NULLID))
+// #define EntityIdNull(a) (EntityIdEq((a), NULLID))
 
 #define POOL(type) CONCAT(type, Pool)
 #define POOL_NEXT(type) CONCAT(POOL(type), Next)
 
-#define DEFINE_POOL(type)                                                                                         \
-    typedef struct {                                                                                              \
-        isize idx;                                                                                                \
-        u64 generation;                                                                                           \
-    } POOL_ID_NAME(type);                                                                                         \
-                                                                                                                  \
-    static const POOL_ID_NAME(type) POOL_ID_NULLID(type) = {0};                                                   \
-                                                                                                                  \
-    LCORE bool POOL_ID_EQ(type)(POOL_ID_NAME(type) a, POOL_ID_NAME(type) b) {                                     \
-        return ((a).idx == (b).idx) && ((a).generation == (b).generation);                                        \
-    }                                                                                                             \
-                                                                                                                  \
-    LCORE bool POOL_ID_NOTNULL(type)(POOL_ID_NAME(type) a) { return !POOL_ID_EQ(type)(a, POOL_ID_NULLID(type)); } \
-                                                                                                                  \
-    LCORE bool POOL_ID_NULL(type)(POOL_ID_NAME(type) a) { return POOL_ID_EQ(type)(a, POOL_ID_NULLID(type)); }     \
-                                                                                                                  \
-    typedef struct {                                                                                              \
-        bool active;                                                                                              \
-        bool cleanup;                                                                                             \
-        POOL_ID_NAME(type) id;                                                                                    \
-        type entry;                                                                                               \
-    } POOL_ENTRY(type);                                                                                           \
-                                                                                                                  \
-    typedef struct {                                                                                              \
-        POOL_ENTRY(type) * data;                                                                                  \
-        isize cap;                                                                                                \
-    } POOL(type);                                                                                                 \
-                                                                                                                  \
-    LCORE
+/*
+    Assumes type has the following structure
+    struct {
+        bool active;
+        bool cleanup;
+        type##Id id;
+    }
+
+    where type##Id is a DEFINE_GENERATIONAL_ID(type)
+*/
+#define DEFINE_POOL(type) \
+    typedef struct {      \
+        type* data;       \
+        isize cap;        \
+    } POOL(type);         \
+                          \
+    LCORE bool POOL_NEXT(type)(type * *ptr, bool) { return false; }
 
 // #define MAX_FIREWORKS 128
 // static Firework FIREWORKS[MAX_FIREWORKS] = {0};
