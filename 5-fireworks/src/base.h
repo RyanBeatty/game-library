@@ -203,11 +203,17 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 
 ////////////////////////////////////////////////////////////
 
-#define POOL_ID_NAME(type) CONCAT(type, Id)
+// pool ids
+#define POOL_ID_NAME(type) CONCAT(type, PoolId)
 #define POOL_ID_NULLID(type) CONCAT(type, _NULLID)
 #define POOL_ID_EQ(type) CONCAT(POOL_ID_NAME(type), Eq)
 #define POOL_ID_NOTNULL(type) CONCAT(POOL_ID_NAME(type), NotNull)
 #define POOL_ID_NULL(type) CONCAT(POOL_ID_NAME(type), Null)
+
+#define POOL_ENTRY(type) CONCAT(type, PoolEntry)
+
+#define POOL(type) CONCAT(type, Pool)
+#define POOL_NEXT(type) CONCAT(POOL(type), Next)
 
 #define DEFINE_POOL(type)                                                                                         \
     typedef struct {                                                                                              \
@@ -223,7 +229,81 @@ static i32 I32FromStr8(Str8 s, bool* ok);
                                                                                                                   \
     LCORE bool POOL_ID_NOTNULL(type)(POOL_ID_NAME(type) a) { return !POOL_ID_EQ(type)(a, POOL_ID_NULLID(type)); } \
                                                                                                                   \
-    LCORE bool POOL_ID_NULL(type)(POOL_ID_NAME(type) a) { return POOL_ID_EQ(type)(a, POOL_ID_NULLID(type)); }
+    LCORE bool POOL_ID_NULL(type)(POOL_ID_NAME(type) a) { return POOL_ID_EQ(type)(a, POOL_ID_NULLID(type)); }     \
+                                                                                                                  \
+    typedef struct {                                                                                              \
+        bool active;                                                                                              \
+        bool cleanup;                                                                                             \
+        POOL_ID_NAME(type) id;                                                                                    \
+        type entry;                                                                                               \
+    } POOL_ENTRY(type);                                                                                           \
+                                                                                                                  \
+    typedef struct {                                                                                              \
+        POOL_ENTRY(type) * data;                                                                                  \
+        isize cap;                                                                                                \
+    } POOL(type);                                                                                                 \
+                                                                                                                  \
+    LCORE
+
+// #define MAX_FIREWORKS 128
+// static Firework FIREWORKS[MAX_FIREWORKS] = {0};
+
+// static bool NextFreeFirework(Firework** cur_ptr) {
+//     Firework* cur = *cur_ptr;
+//     if (cur == NULL) {
+//         cur = &FIREWORKS[0];
+//     } else {
+//         ++cur;
+//     }
+
+//     for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
+//         if (!cur->active) {
+//             *cur_ptr = cur;
+//             return true;
+//         }
+//     }
+
+//     *cur_ptr = NULL;
+//     return false;
+// }
+
+// static bool NextFirework(Firework** cur_ptr) {
+//     Firework* cur = *cur_ptr;
+//     if (cur == NULL) {
+//         cur = &FIREWORKS[0];
+//     } else {
+//         ++cur;
+//     }
+
+//     for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
+//         if (cur->active) {
+//             *cur_ptr = cur;
+//             return true;
+//         }
+//     }
+
+//     *cur_ptr = NULL;
+//     return false;
+// }
+
+// static Firework* NewFirework() {
+//     static Firework FIREWORK_ZERO = {0};
+//     Firework* choice = NULL;
+//     bool result = NextFreeFirework(&choice);
+//     Assert(result);
+//     *choice = FIREWORK_ZERO;
+//     choice->active = true;
+//     return choice;
+// }
+
+// static void FreeFireworks() {
+//     for (isize i = 0; i < ArraySizeOf(FIREWORKS); ++i) {
+//         Firework* choice = &FIREWORKS[i];
+//         if (choice->active && choice->cleanup) {
+//             choice->active = false;
+//         }
+//     }
+// }
 
 ////////////////////////////////////////////////////////////
 // S:RNG
