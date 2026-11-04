@@ -183,6 +183,12 @@ static bool Str8Split1(Str8 s, char sep, Str8* before, Str8* after);
 static f32 F32FromStr8(Str8 s, bool* ok);
 static i32 I32FromStr8(Str8 s, bool* ok);
 
+////////////////////////////////////////////////////////////
+// S:macro utils
+
+// converts x -> "x"
+#define STR(x) #x
+// turns a and b into ab
 #define CONCAT2(a, b) a##b
 #define CONCAT(a, b) CONCAT2(a, b)
 
@@ -194,6 +200,30 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 // name shadowing issues. Full transparency, AI wrote this macro.
 #define Scoped(start, end) \
     for (int CONCAT(_once_, __LINE__) = ((start), 0); !CONCAT(_once_, __LINE__); (CONCAT(_once_, __LINE__) = 1, (end)))
+
+////////////////////////////////////////////////////////////
+
+#define POOL_ID_NAME(type) CONCAT(type, Id)
+#define POOL_ID_NULLID(type) CONCAT(type, _NULLID)
+#define POOL_ID_EQ(type) CONCAT(POOL_ID_NAME(type), Eq)
+#define POOL_ID_NOTNULL(type) CONCAT(POOL_ID_NAME(type), NotNull)
+#define POOL_ID_NULL(type) CONCAT(POOL_ID_NAME(type), Null)
+
+#define DEFINE_POOL(type)                                                                                         \
+    typedef struct {                                                                                              \
+        isize idx;                                                                                                \
+        u64 generation;                                                                                           \
+    } POOL_ID_NAME(type);                                                                                         \
+                                                                                                                  \
+    static const POOL_ID_NAME(type) POOL_ID_NULLID(type) = {0};                                                   \
+                                                                                                                  \
+    LCORE bool POOL_ID_EQ(type)(POOL_ID_NAME(type) a, POOL_ID_NAME(type) b) {                                     \
+        return ((a).idx == (b).idx) && ((a).generation == (b).generation);                                        \
+    }                                                                                                             \
+                                                                                                                  \
+    LCORE bool POOL_ID_NOTNULL(type)(POOL_ID_NAME(type) a) { return !POOL_ID_EQ(type)(a, POOL_ID_NULLID(type)); } \
+                                                                                                                  \
+    LCORE bool POOL_ID_NULL(type)(POOL_ID_NAME(type) a) { return POOL_ID_EQ(type)(a, POOL_ID_NULLID(type)); }
 
 ////////////////////////////////////////////////////////////
 // S:RNG
