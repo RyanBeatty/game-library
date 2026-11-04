@@ -224,16 +224,6 @@ static i32 I32FromStr8(Str8 s, bool* ok);
     LCORE bool GEN_ID_NOTNULL(type)(GEN_ID(type) a) { return !GEN_ID_EQ(type)(a, GEN_ID_NULLID(type)); } \
     LCORE bool GEN_ID_NULL(type)(GEN_ID(type) a) { return GEN_ID_EQ(type)(a, GEN_ID_NULLID(type)); }
 
-// typedef struct {
-//     isize idx;
-//     u64 generation;
-// } EntityId;
-// static const EntityId NULLID = {0};
-
-// #define EntityIdEq(a, b) (((a).idx == (b).idx) && ((a).generation == (b).generation))
-// #define EntityIdNotNull(a) (!EntityIdEq((a), NULLID))
-// #define EntityIdNull(a) (EntityIdEq((a), NULLID))
-
 #define POOL(type) CONCAT(type, Pool)
 #define POOL_NEXT(type) CONCAT(POOL(type), Next)
 
