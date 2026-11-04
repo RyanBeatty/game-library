@@ -202,7 +202,7 @@ static i32 I32FromStr8(Str8 s, bool* ok);
     for (int CONCAT(_once_, __LINE__) = ((start), 0); !CONCAT(_once_, __LINE__); (CONCAT(_once_, __LINE__) = 1, (end)))
 
 ////////////////////////////////////////////////////////////
-
+// Generational id
 #define GEN_ID(type) CONCAT(type, Id)
 #define GEN_ID_NULLID(type) CONCAT(type, _NULLID)
 #define GEN_ID_EQ(type) CONCAT(GEN_ID(type), Eq)
@@ -224,6 +224,8 @@ static i32 I32FromStr8(Str8 s, bool* ok);
     LCORE bool GEN_ID_NOTNULL(type)(GEN_ID(type) a) { return !GEN_ID_EQ(type)(a, GEN_ID_NULLID(type)); } \
     LCORE bool GEN_ID_NULL(type)(GEN_ID(type) a) { return GEN_ID_EQ(type)(a, GEN_ID_NULLID(type)); }
 
+////////////////////////////////////////////////////////////
+// Pool
 #define POOL(type) CONCAT(type, Pool)
 #define POOL_NEXT(type) CONCAT(POOL(type), Next)
 
@@ -235,15 +237,26 @@ static i32 I32FromStr8(Str8 s, bool* ok);
         type##Id id;
     }
 
-    where type##Id is a DEFINE_GENERATIONAL_ID(type)
+    where type##Id is a DEFINE_GEN_ID(type)
 */
-#define DEFINE_POOL(type) \
-    typedef struct {      \
-        type* data;       \
-        isize cap;        \
-    } POOL(type);         \
-                          \
-    LCORE bool POOL_NEXT(type)(type * *ptr, bool) { return false; }
+#define DEFINE_POOL(type)                                                     \
+    typedef struct {                                                          \
+        type* data;                                                           \
+        isize cap;                                                            \
+    } POOL(type);                                                             \
+                                                                              \
+    LCORE bool POOL_NEXT(type)(POOL(type) * pool, type * *ptr, bool active) { \
+        type* cur = *ptr;                                                     \
+        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx;  \
+        for (; idx < pool->cap; ++idx) {                                      \
+            if (pool->data[idx].active) {                                     \
+                *ptr = &pool->data[idx];                                      \
+                return true;                                                  \
+            }                                                                 \
+        }                                                                     \
+                                                                              \
+        return false;                                                         \
+    }
 
 // #define MAX_FIREWORKS 128
 // static Firework FIREWORKS[MAX_FIREWORKS] = {0};

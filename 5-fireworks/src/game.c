@@ -4892,11 +4892,14 @@ typedef enum {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Section: Game
 
+DEFINE_GEN_ID(Foo);
+
 typedef struct {
-    bool help;
+    bool active;
+    bool cleanup;
+    FooId id;
 } Foo;
 
-DEFINE_GEN_ID(Foo);
 DEFINE_POOL(Foo);
 
 typedef enum {
