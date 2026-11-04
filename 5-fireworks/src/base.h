@@ -228,6 +228,8 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 // Pool
 #define POOL(type) CONCAT(type, Pool)
 #define POOL_NEXT(type) CONCAT(POOL(type), Next)
+#define POOL_NEXTFREE(type) CONCAT(POOL(type), NextFree)
+#define POOL_NEXTACTIVE(type) CONCAT(POOL(type), NextActive)
 
 /*
     Assumes type has the following structure
@@ -239,24 +241,27 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 
     where type##Id is a DEFINE_GEN_ID(type)
 */
-#define DEFINE_POOL(type)                                                     \
-    typedef struct {                                                          \
-        type* data;                                                           \
-        isize cap;                                                            \
-    } POOL(type);                                                             \
-                                                                              \
-    LCORE bool POOL_NEXT(type)(POOL(type) * pool, type * *ptr, bool active) { \
-        type* cur = *ptr;                                                     \
-        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx;  \
-        for (; idx < pool->cap; ++idx) {                                      \
-            if (pool->data[idx].active) {                                     \
-                *ptr = &pool->data[idx];                                      \
-                return true;                                                  \
-            }                                                                 \
-        }                                                                     \
-                                                                              \
-        return false;                                                         \
-    }
+#define DEFINE_POOL(type)                                                                                        \
+    typedef struct {                                                                                             \
+        type* data;                                                                                              \
+        isize cap;                                                                                               \
+    } POOL(type);                                                                                                \
+                                                                                                                 \
+    LCORE bool POOL_NEXT(type)(POOL(type) * pool, type * *ptr, bool active) {                                    \
+        type* cur = *ptr;                                                                                        \
+        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx;                                     \
+        for (; idx < pool->cap; ++idx) {                                                                         \
+            if (pool->data[idx].active == active) {                                                              \
+                *ptr = &pool->data[idx];                                                                         \
+                return true;                                                                                     \
+            }                                                                                                    \
+        }                                                                                                        \
+                                                                                                                 \
+        return false;                                                                                            \
+    }                                                                                                            \
+                                                                                                                 \
+    LCORE bool POOL_NEXTFREE(type)(POOL(type) * pool, type * *ptr) { return POOL_NEXT(type)(pool, ptr, false); } \
+    LCORE bool POOL_NEXTACTIVE(type)(POOL(type) * pool, type * *ptr) { return POOL_NEXT(type)(pool, ptr, true); }
 
 // #define MAX_FIREWORKS 128
 // static Firework FIREWORKS[MAX_FIREWORKS] = {0};
