@@ -4914,9 +4914,11 @@ typedef struct {
     Mat4 orient;
 } Gfx;
 
+DEFINE_GEN_ID(Firework);
 typedef struct {
     bool active;
     bool cleanup;
+    FireworkId id;
 
     Vec3 pos;
     Vec3 pos_prev;
@@ -4936,65 +4938,15 @@ typedef struct {
     i32 stage;
 } Firework;
 
+DEFINE_POOL(Firework);
+
 #define MAX_FIREWORKS 128
-static Firework FIREWORKS[MAX_FIREWORKS] = {0};
+static Firework FIREWORKS_DATA[MAX_FIREWORKS] = {0};
+static FireworkPool FIREWORKS = {0};
 
-static bool NextFreeFirework(Firework** cur_ptr) {
-    Firework* cur = *cur_ptr;
-    if (cur == NULL) {
-        cur = &FIREWORKS[0];
-    } else {
-        ++cur;
-    }
-
-    for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
-        if (!cur->active) {
-            *cur_ptr = cur;
-            return true;
-        }
-    }
-
-    *cur_ptr = NULL;
-    return false;
-}
-
-static bool NextFirework(Firework** cur_ptr) {
-    Firework* cur = *cur_ptr;
-    if (cur == NULL) {
-        cur = &FIREWORKS[0];
-    } else {
-        ++cur;
-    }
-
-    for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
-        if (cur->active) {
-            *cur_ptr = cur;
-            return true;
-        }
-    }
-
-    *cur_ptr = NULL;
-    return false;
-}
-
-static Firework* NewFirework() {
-    static Firework FIREWORK_ZERO = {0};
-    Firework* choice = NULL;
-    bool result = NextFreeFirework(&choice);
-    Assert(result);
-    *choice = FIREWORK_ZERO;
-    choice->active = true;
-    return choice;
-}
-
-static void FreeFireworks() {
-    for (isize i = 0; i < ArraySizeOf(FIREWORKS); ++i) {
-        Firework* choice = &FIREWORKS[i];
-        if (choice->active && choice->cleanup) {
-            choice->active = false;
-        }
-    }
-}
+static bool NextFirework(Firework** cur_ptr) { return FireworkPoolNextActive(&FIREWORKS, cur_ptr); }
+static Firework* NewFirework() { return FireworkPoolNew(&FIREWORKS); }
+static void FreeFireworks() { FireworkPoolCleanup(&FIREWORKS); }
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static i32 SCORE = 0;
@@ -5008,6 +4960,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         gstate->phase = GP_START_SCREEN;
+        FireworkPoolInit(&FIREWORKS, FIREWORKS_DATA, MAX_FIREWORKS);
     }
 
     if (gstate->update) {
