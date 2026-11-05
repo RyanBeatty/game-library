@@ -245,67 +245,69 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 
     where type##Id is a DEFINE_GEN_ID(type)
 */
-#define DEFINE_POOL(type)                                                    \
-    typedef struct {                                                         \
-        type* data;                                                          \
-        isize cap;                                                           \
-    } POOL(type);                                                            \
-                                                                             \
-    LCORE POOL(type) NEW_POOL(type)(Arena * perm, isize cap) {               \
-        POOL(type) pool = {0};                                               \
-        pool.cap = cap;                                                      \
-        pool.data = New(perm, cap, type);                                    \
-        for (isize i = 0; i < pool.cap; ++i) {                               \
-            pool.data[i].id = i;                                             \
-        }                                                                    \
-        return pool;                                                         \
-    }                                                                        \
-                                                                             \
-    LCORE bool POOL_NEXTFREE(type)(POOL(type) * pool, type * *ptr) {         \
-        type* cur = *ptr;                                                    \
-        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx; \
-        for (; idx < pool->cap; ++idx) {                                     \
-            if (!pool->data[idx].active) {                                   \
-                *ptr = &pool->data[idx];                                     \
-                return true;                                                 \
-            }                                                                \
-        }                                                                    \
-                                                                             \
-        return false;                                                        \
-    }                                                                        \
-    LCORE bool POOL_NEXTACTIVE(type)(POOL(type) * pool, type * *ptr) {       \
-        type* cur = *ptr;                                                    \
-        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx; \
-        for (; idx < pool->cap; ++idx) {                                     \
-            if (pool->data[idx].active) {                                    \
-                *ptr = &pool->data[idx];                                     \
-                return true;                                                 \
-            }                                                                \
-        }                                                                    \
-                                                                             \
-        return false;                                                        \
-    }                                                                        \
-                                                                             \
-    LCORE type* POOL_NEW(type)(POOL(type) * pool) {                          \
-        static const type POOL_ZEROENTRY(type) = {0};                        \
-        type* choice = NULL;                                                 \
-        bool found = POOL_NEXTFREE(type)(pool, &choice);                     \
-        Assert(found);                                                       \
-        *choice = POOL_ZEROENTRY(type);                                      \
-        choice->active = true;                                               \
-        ++choice->id.generation;                                             \
-        return choice;                                                       \
-    }                                                                        \
-                                                                             \
-    LCORE void POOL_CLEANUP(type)(POOL(type) * pool) {                       \
-        for (type* cur = pool->data; cur < pool->data + pool->cap; ++cur) {  \
-            cur->active = cur->cleanup ? false : cur->active;                \
-        }                                                                    \
-    }                                                                        \
-                                                                             \
-    LCORE type* POOL_GET(type)(POOL(type) * pool, GEN_ID(type) id) {         \
-        type* entry = &pool->data[id.idx];                                   \
-        return entry->id.generation == id.generation ? entry : NULL;         \
+#define DEFINE_POOL(type)                                                                     \
+    typedef struct {                                                                          \
+        type* data;                                                                           \
+        isize cap;                                                                            \
+    } POOL(type);                                                                             \
+                                                                                              \
+    LCORE POOL(type) NEW_POOL(type)(Arena * perm, isize cap) {                                \
+        POOL(type) pool = {0};                                                                \
+        pool.cap = cap;                                                                       \
+        pool.data = New(perm, cap, type);                                                     \
+        for (isize i = 0; i < pool.cap; ++i) {                                                \
+            pool.data[i].id.idx = i;                                                          \
+        }                                                                                     \
+        return pool;                                                                          \
+    }                                                                                         \
+                                                                                              \
+    LCORE bool POOL_NEXTFREE(type)(POOL(type) * pool, type * *ptr) {                          \
+        type* cur = *ptr;                                                                     \
+        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx + 1;              \
+        for (; idx < pool->cap; ++idx) {                                                      \
+            if (!pool->data[idx].active) {                                                    \
+                *ptr = &pool->data[idx];                                                      \
+                return true;                                                                  \
+            }                                                                                 \
+        }                                                                                     \
+                                                                                              \
+        return false;                                                                         \
+    }                                                                                         \
+    LCORE bool POOL_NEXTACTIVE(type)(POOL(type) * pool, type * *ptr) {                        \
+        type* cur = *ptr;                                                                     \
+        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx + 1;              \
+        for (; idx < pool->cap; ++idx) {                                                      \
+            if (pool->data[idx].active) {                                                     \
+                *ptr = &pool->data[idx];                                                      \
+                return true;                                                                  \
+            }                                                                                 \
+        }                                                                                     \
+                                                                                              \
+        return false;                                                                         \
+    }                                                                                         \
+                                                                                              \
+    LCORE type* POOL_NEW(type)(POOL(type) * pool) {                                           \
+        static const type POOL_ZEROENTRY(type) = {0};                                         \
+        type* choice = NULL;                                                                  \
+        bool found = POOL_NEXTFREE(type)(pool, &choice);                                      \
+        Assert(found);                                                                        \
+        *choice = POOL_ZEROENTRY(type);                                                       \
+        choice->active = true;                                                                \
+        ++choice->id.generation;                                                              \
+        return choice;                                                                        \
+    }                                                                                         \
+                                                                                              \
+    LCORE void POOL_CLEANUP(type)(POOL(type) * pool) {                                        \
+        for (type* cur = pool->data; cur < pool->data + pool->cap; ++cur) {                   \
+            cur->active = cur->cleanup ? false : cur->active;                                 \
+            /* Inc generation so that existing handles to this object will resolve to null */ \
+            ++cur->id.generation;                                                             \
+        }                                                                                     \
+    }                                                                                         \
+                                                                                              \
+    LCORE type* POOL_GET(type)(POOL(type) * pool, GEN_ID(type) id) {                          \
+        type* entry = &pool->data[id.idx];                                                    \
+        return entry->id.generation == id.generation ? entry : NULL;                          \
     }
 
 ////////////////////////////////////////////////////////////
