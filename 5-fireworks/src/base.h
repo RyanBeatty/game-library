@@ -227,9 +227,11 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 ////////////////////////////////////////////////////////////
 // Pool
 #define POOL(type) CONCAT(type, Pool)
-#define POOL_NEXT(type) CONCAT(POOL(type), Next)
 #define POOL_NEXTFREE(type) CONCAT(POOL(type), NextFree)
 #define POOL_NEXTACTIVE(type) CONCAT(POOL(type), NextActive)
+#define POOL_NEW(type) CONCAT(POOL(type), New)
+#define POOL_CLEANUP(type) CONCAT(POOL(type), Cleanup)
+#define POOL_ZEROENTRY(type) CONCAT(POOL(type), ZERO_ENTRY)
 
 /*
     Assumes type has the following structure
@@ -241,87 +243,51 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 
     where type##Id is a DEFINE_GEN_ID(type)
 */
-#define DEFINE_POOL(type)                                                                                        \
-    typedef struct {                                                                                             \
-        type* data;                                                                                              \
-        isize cap;                                                                                               \
-    } POOL(type);                                                                                                \
-                                                                                                                 \
-    LCORE bool POOL_NEXT(type)(POOL(type) * pool, type * *ptr, bool active) {                                    \
-        type* cur = *ptr;                                                                                        \
-        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx;                                     \
-        for (; idx < pool->cap; ++idx) {                                                                         \
-            if (pool->data[idx].active == active) {                                                              \
-                *ptr = &pool->data[idx];                                                                         \
-                return true;                                                                                     \
-            }                                                                                                    \
-        }                                                                                                        \
-                                                                                                                 \
-        return false;                                                                                            \
-    }                                                                                                            \
-                                                                                                                 \
-    LCORE bool POOL_NEXTFREE(type)(POOL(type) * pool, type * *ptr) { return POOL_NEXT(type)(pool, ptr, false); } \
-    LCORE bool POOL_NEXTACTIVE(type)(POOL(type) * pool, type * *ptr) { return POOL_NEXT(type)(pool, ptr, true); }
-
-// #define MAX_FIREWORKS 128
-// static Firework FIREWORKS[MAX_FIREWORKS] = {0};
-
-// static bool NextFreeFirework(Firework** cur_ptr) {
-//     Firework* cur = *cur_ptr;
-//     if (cur == NULL) {
-//         cur = &FIREWORKS[0];
-//     } else {
-//         ++cur;
-//     }
-
-//     for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
-//         if (!cur->active) {
-//             *cur_ptr = cur;
-//             return true;
-//         }
-//     }
-
-//     *cur_ptr = NULL;
-//     return false;
-// }
-
-// static bool NextFirework(Firework** cur_ptr) {
-//     Firework* cur = *cur_ptr;
-//     if (cur == NULL) {
-//         cur = &FIREWORKS[0];
-//     } else {
-//         ++cur;
-//     }
-
-//     for (; cur < FIREWORKS + MAX_FIREWORKS; ++cur) {
-//         if (cur->active) {
-//             *cur_ptr = cur;
-//             return true;
-//         }
-//     }
-
-//     *cur_ptr = NULL;
-//     return false;
-// }
-
-// static Firework* NewFirework() {
-//     static Firework FIREWORK_ZERO = {0};
-//     Firework* choice = NULL;
-//     bool result = NextFreeFirework(&choice);
-//     Assert(result);
-//     *choice = FIREWORK_ZERO;
-//     choice->active = true;
-//     return choice;
-// }
-
-// static void FreeFireworks() {
-//     for (isize i = 0; i < ArraySizeOf(FIREWORKS); ++i) {
-//         Firework* choice = &FIREWORKS[i];
-//         if (choice->active && choice->cleanup) {
-//             choice->active = false;
-//         }
-//     }
-// }
+#define DEFINE_POOL(type)                                                    \
+    typedef struct {                                                         \
+        type* data;                                                          \
+        isize cap;                                                           \
+    } POOL(type);                                                            \
+                                                                             \
+    LCORE bool POOL_NEXTFREE(type)(POOL(type) * pool, type * *ptr) {         \
+        type* cur = *ptr;                                                    \
+        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx; \
+        for (; idx < pool->cap; ++idx) {                                     \
+            if (!pool->data[idx].active) {                                   \
+                *ptr = &pool->data[idx];                                     \
+                return true;                                                 \
+            }                                                                \
+        }                                                                    \
+                                                                             \
+        return false;                                                        \
+    }                                                                        \
+    LCORE bool POOL_NEXTACTIVE(type)(POOL(type) * pool, type * *ptr) {       \
+        type* cur = *ptr;                                                    \
+        isize idx = cur != NULL ? cur->id.idx + 1 : GEN_ID_NULLID(type).idx; \
+        for (; idx < pool->cap; ++idx) {                                     \
+            if (pool->data[idx].active) {                                    \
+                *ptr = &pool->data[idx];                                     \
+                return true;                                                 \
+            }                                                                \
+        }                                                                    \
+                                                                             \
+        return false;                                                        \
+    }                                                                        \
+                                                                             \
+    LCORE type* POOL_NEW(type)(POOL(type) * pool) {                          \
+        static const type POOL_ZEROENTRY(type) = {0};                        \
+        type* choice = NULL;                                                 \
+        bool found = POOL_NEXTFREE(type)(pool, &choice);                     \
+        *choice = POOL_ZEROENTRY(type);                                      \
+        choice->active = true;                                               \
+        return choice;                                                       \
+    }                                                                        \
+                                                                             \
+    LCORE void POOL_CLEANUP(type)(POOL(type) * pool) {                       \
+        for (type* cur = pool->data; cur < pool->data + pool->cap; ++cur) {  \
+            cur->active = cur->cleanup ? false : cur->active;                \
+        }                                                                    \
+    }
 
 ////////////////////////////////////////////////////////////
 // S:RNG
