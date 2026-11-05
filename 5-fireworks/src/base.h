@@ -278,8 +278,10 @@ static i32 I32FromStr8(Str8 s, bool* ok);
         static const type POOL_ZEROENTRY(type) = {0};                        \
         type* choice = NULL;                                                 \
         bool found = POOL_NEXTFREE(type)(pool, &choice);                     \
+        Assert(found);                                                       \
         *choice = POOL_ZEROENTRY(type);                                      \
         choice->active = true;                                               \
+        ++choice->id.generation;                                             \
         return choice;                                                       \
     }                                                                        \
                                                                              \
