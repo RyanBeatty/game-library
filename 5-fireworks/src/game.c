@@ -3736,8 +3736,12 @@ LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
     particle->fade_in_pct += rem < 0.0f ? rem : 0.0f;
 }
 
+DEFINE_GEN_ID(ParticleSource);
 typedef struct {
     bool active;
+    bool cleanup;
+    ParticleSourceId id;
+
     f32 emission_rate;  // Number of particles emitted per second
     f64 emission_timer;
 
@@ -3751,6 +3755,7 @@ typedef struct {
     f32 fade_out_pct;
     f32 scale_out_pct;
 } ParticleSource;
+DEFINE_POOL(ParticleSource);
 
 #define MAX_PARTICLES 1024
 #define MAX_SOURCES 128
@@ -3758,8 +3763,7 @@ typedef struct {
 typedef struct {
     Particle* particles;
     isize particles_cap;
-    ParticleSource* sources;
-    isize sources_cap;
+    ParticleSourcePool sources;
 } ParticleSystem;
 
 static ParticleSystem PARTICLES;
@@ -3772,64 +3776,22 @@ static void ParticleSystemInit(Arena* perm) {
     *particles = zero;
     particles->particles_cap = MAX_PARTICLES;
     particles->particles = New(perm, particles->particles_cap, Particle);
-    particles->sources_cap = MAX_SOURCES;
-    particles->sources = New(perm, particles->sources_cap, ParticleSource);
-}
-
-LCORE bool IncrementParticleSource(ParticleSource** cur_ptr) {
-    ParticleSystem* particles = GetParticleSystem();
-
-    ParticleSource* cur = *cur_ptr;
-    if (cur == NULL) {
-        cur = &particles->sources[0];
-    } else {
-        ++cur;
-    }
-
-    for (; cur < particles->sources + particles->sources_cap; ++cur) {
-        if (cur->active) {
-            *cur_ptr = cur;
-            return true;
-        }
-    }
-
-    *cur_ptr = NULL;
-    return false;
-}
-
-LCORE bool NextFreeParticleSource(ParticleSource** cur_ptr) {
-    ParticleSystem* particles = GetParticleSystem();
-
-    ParticleSource* cur = *cur_ptr;
-    if (cur == NULL) {
-        cur = &particles->sources[0];
-    } else {
-        ++cur;
-    }
-
-    for (; cur < particles->sources + particles->sources_cap; ++cur) {
-        if (!cur->active) {
-            *cur_ptr = cur;
-            return true;
-        }
-    }
-
-    *cur_ptr = NULL;
-    return false;
+    particles->sources = NewParticleSourcePool(perm, MAX_SOURCES);
 }
 
 LCORE ParticleSource* NewParticleSource() {
-    static ParticleSource PARTICLE_SOURCE_ZERO = {0};
-    ParticleSource* choice = NULL;
-    bool found = NextFreeParticleSource(&choice);
-    Assert(found);
-    *choice = PARTICLE_SOURCE_ZERO;
-    choice->active = true;
+    ParticleSource* choice = ParticleSourcePoolNew(&GetParticleSystem()->sources);
+    Assert(choice);
     choice->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     choice->color = LBLACK;
     choice->lifetime = 1.0f;
     choice->fade_out_pct = 1.0f;
     return choice;
+}
+
+LCORE void ParticleSystemCleanup() {
+    ParticleSystem* ps = GetParticleSystem();
+    ParticleSourcePoolCleanup(&ps->sources);
 }
 
 LCORE bool NextFreeParticle(Particle** cur_ptr) {
@@ -3888,7 +3850,8 @@ LCORE Particle* NewParticle() {
 }
 
 LCORE void ParticleSystemTick(f64 dt) {
-    for (ParticleSource* source = NULL; IncrementParticleSource(&source);) {
+    ParticleSystem* ps = GetParticleSystem();
+    for (ParticleSource* source = NULL; ParticleSourcePoolNextActive(&ps->sources, &source);) {
         source->emission_timer += dt;
         f64 emission_rate_dt = 1.0 / (f64)source->emission_rate;
         while (source->emission_timer >= emission_rate_dt) {
@@ -5137,7 +5100,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     }
 
                                     firework->cleanup = true;
-                                    firework->source->active = false;
+                                    firework->source->cleanup = true;
 
                                     break;
                                 }
@@ -5350,6 +5313,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     }
 
     FreeFireworks();
+    ParticleSystemCleanup();
 }
 
 ////////////////////////////////////////////////////////////
