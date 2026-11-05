@@ -232,6 +232,7 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 #define POOL_NEW(type) CONCAT(POOL(type), New)
 #define POOL_CLEANUP(type) CONCAT(POOL(type), Cleanup)
 #define POOL_ZEROENTRY(type) CONCAT(POOL(type), ZERO_ENTRY)
+#define POOL_GET(type) CONCAT(POOL(type), Get)
 
 /*
     Assumes type has the following structure
@@ -289,6 +290,11 @@ static i32 I32FromStr8(Str8 s, bool* ok);
         for (type* cur = pool->data; cur < pool->data + pool->cap; ++cur) {  \
             cur->active = cur->cleanup ? false : cur->active;                \
         }                                                                    \
+    }                                                                        \
+                                                                             \
+    LCORE type* POOL_GET(type)(POOL(type) * pool, GEN_ID(type) id) {         \
+        type* entry = &pool->data[id.idx];                                   \
+        return entry->id.generation == id.generation ? entry : NULL;         \
     }
 
 ////////////////////////////////////////////////////////////
