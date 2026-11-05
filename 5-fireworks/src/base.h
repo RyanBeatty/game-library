@@ -227,6 +227,7 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 ////////////////////////////////////////////////////////////
 // Pool
 #define POOL(type) CONCAT(type, Pool)
+#define NEW_POOL(type) CONCAT(New, POOL(type))
 #define POOL_NEXTFREE(type) CONCAT(POOL(type), NextFree)
 #define POOL_NEXTACTIVE(type) CONCAT(POOL(type), NextActive)
 #define POOL_NEW(type) CONCAT(POOL(type), New)
@@ -249,6 +250,16 @@ static i32 I32FromStr8(Str8 s, bool* ok);
         type* data;                                                          \
         isize cap;                                                           \
     } POOL(type);                                                            \
+                                                                             \
+    LCORE POOL(type) NEW_POOL(type)(Arena * perm, isize cap) {               \
+        POOL(type) pool = {0};                                               \
+        pool.cap = cap;                                                      \
+        pool.data = New(perm, cap, type);                                    \
+        for (isize i = 0; i < pool.cap; ++i) {                               \
+            pool.data[i].id = i;                                             \
+        }                                                                    \
+        return pool;                                                         \
+    }                                                                        \
                                                                              \
     LCORE bool POOL_NEXTFREE(type)(POOL(type) * pool, type * *ptr) {         \
         type* cur = *ptr;                                                    \
