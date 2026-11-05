@@ -3696,9 +3696,13 @@ typedef enum {
     PF_GRAVITY = 1 << 2,
 } ParticleFlag;
 
+DEFINE_GEN_ID(Particle);
 typedef struct Particle Particle;
 struct Particle {
     bool active;
+    bool cleanup;
+    ParticleId id;
+
     ParticleFlag flags;
 
     Vec3 p;
@@ -3723,6 +3727,7 @@ struct Particle {
     Particle* right;
     Particle* left;
 };
+DEFINE_POOL(Particle);
 
 LCORE void ParticleSetFadeIn(Particle* particle, f32 fade_in_pct) {
     particle->fade_in_pct = fade_in_pct;
@@ -3761,8 +3766,7 @@ DEFINE_POOL(ParticleSource);
 #define MAX_SOURCES 128
 
 typedef struct {
-    Particle* particles;
-    isize particles_cap;
+    ParticlePool particles;
     ParticleSourcePool sources;
 } ParticleSystem;
 
@@ -3774,14 +3778,12 @@ static void ParticleSystemInit(Arena* perm) {
     ParticleSystem* particles = GetParticleSystem();
     ParticleSystem zero = {0};
     *particles = zero;
-    particles->particles_cap = MAX_PARTICLES;
-    particles->particles = New(perm, particles->particles_cap, Particle);
+    particles->particles = NewParticlePool(perm, MAX_PARTICLES);
     particles->sources = NewParticleSourcePool(perm, MAX_SOURCES);
 }
 
 LCORE ParticleSource* NewParticleSource() {
     ParticleSource* choice = ParticleSourcePoolNew(&GetParticleSystem()->sources);
-    Assert(choice);
     choice->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     choice->color = LBLACK;
     choice->lifetime = 1.0f;
@@ -3792,57 +3794,11 @@ LCORE ParticleSource* NewParticleSource() {
 LCORE void ParticleSystemCleanup() {
     ParticleSystem* ps = GetParticleSystem();
     ParticleSourcePoolCleanup(&ps->sources);
-}
-
-LCORE bool NextFreeParticle(Particle** cur_ptr) {
-    ParticleSystem* particles = GetParticleSystem();
-
-    Particle* cur = *cur_ptr;
-    if (cur == NULL) {
-        cur = &particles->particles[0];
-    } else {
-        ++cur;
-    }
-
-    for (; cur < particles->particles + particles->particles_cap; ++cur) {
-        if (!cur->active) {
-            *cur_ptr = cur;
-            return true;
-        }
-    }
-
-    *cur_ptr = NULL;
-    return false;
-}
-
-LCORE bool IncrementParticle(Particle** cur_ptr) {
-    ParticleSystem* particles = GetParticleSystem();
-
-    Particle* cur = *cur_ptr;
-    if (cur == NULL) {
-        cur = &particles->particles[0];
-    } else {
-        ++cur;
-    }
-
-    for (; cur < particles->particles + particles->particles_cap; ++cur) {
-        if (cur->active) {
-            *cur_ptr = cur;
-            return true;
-        }
-    }
-
-    *cur_ptr = NULL;
-    return false;
+    ParticlePoolCleanup(&ps->particles);
 }
 
 LCORE Particle* NewParticle() {
-    static Particle PARTICLE_ZERO = {0};
-    Particle* choice = NULL;
-    bool found = NextFreeParticle(&choice);
-    Assert(found);
-    *choice = PARTICLE_ZERO;
-    choice->active = true;
+    Particle* choice = ParticlePoolNew(&GetParticleSystem()->particles);
     choice->scale = Vec3Lit(1.0f, 1.0f, 1.0f);
     choice->orient = Mat4Identity();
     choice->fade_out_pct = 1.0f;
@@ -3872,10 +3828,10 @@ LCORE void ParticleSystemTick(f64 dt) {
         }
     }
 
-    for (Particle* particle = NULL; IncrementParticle(&particle);) {
+    for (Particle* particle = NULL; ParticlePoolNextActive(&GetParticleSystem()->particles, &particle);) {
         particle->lifedt += dt;
         if (particle->lifedt >= particle->lifetime) {
-            particle->active = false;
+            particle->cleanup = true;
             continue;
         }
         particle->p = Vec3Add(particle->p, Vec3Scale(particle->v, dt));
@@ -3883,7 +3839,7 @@ LCORE void ParticleSystemTick(f64 dt) {
 }
 
 LCORE void ParticleSystemDraw() {
-    for (Particle* particle = NULL; IncrementParticle(&particle);) {
+    for (Particle* particle = NULL; ParticlePoolNextActive(&GetParticleSystem()->particles, &particle);) {
         // Find % along lifetime we are.
         f32 lifedt_pct = f32lerp_pct(0.0, particle->lifetime, particle->lifedt);
 
