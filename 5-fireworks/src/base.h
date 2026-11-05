@@ -236,6 +236,11 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 #define POOL_ZEROENTRY(type) CONCAT(POOL(type), ZERO_ENTRY)
 #define POOL_GET(type) CONCAT(POOL(type), Get)
 
+#define DEFINE_POOL_FIELDS(type) \
+    bool active;                 \
+    bool cleanup;                \
+    GEN_ID(type) id;
+
 /*
     Assumes type has the following structure
     struct {

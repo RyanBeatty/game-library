@@ -3699,9 +3699,7 @@ typedef enum {
 DEFINE_GEN_ID(Particle);
 typedef struct Particle Particle;
 struct Particle {
-    bool active;
-    bool cleanup;
-    ParticleId id;
+    DEFINE_POOL_FIELDS(Particle);
 
     ParticleFlag flags;
 
@@ -3743,9 +3741,7 @@ LCORE void ParticleSetFadeOut(Particle* particle, f32 fade_out_pct) {
 
 DEFINE_GEN_ID(ParticleSource);
 typedef struct {
-    bool active;
-    bool cleanup;
-    ParticleSourceId id;
+    DEFINE_POOL_FIELDS(ParticleSource);
 
     f32 emission_rate;  // Number of particles emitted per second
     f64 emission_timer;
@@ -4835,9 +4831,7 @@ typedef struct {
 
 DEFINE_GEN_ID(Firework);
 typedef struct {
-    bool active;
-    bool cleanup;
-    FireworkId id;
+    DEFINE_POOL_FIELDS(Firework);
 
     Vec3 pos;
     Vec3 pos_prev;
