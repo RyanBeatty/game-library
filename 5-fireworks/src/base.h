@@ -227,6 +227,7 @@ static i32 I32FromStr8(Str8 s, bool* ok);
 ////////////////////////////////////////////////////////////
 // Pool
 #define POOL(type) CONCAT(type, Pool)
+#define POOL_INIT(type) CONCAT(POOL(type), Init)
 #define NEW_POOL(type) CONCAT(New, POOL(type))
 #define POOL_NEXTFREE(type) CONCAT(POOL(type), NextFree)
 #define POOL_NEXTACTIVE(type) CONCAT(POOL(type), NextActive)
@@ -251,13 +252,17 @@ static i32 I32FromStr8(Str8 s, bool* ok);
         isize cap;                                                                            \
     } POOL(type);                                                                             \
                                                                                               \
+    LCORE void POOL_INIT(type)(POOL(type) * pool, type * data, isize cap) {                   \
+        pool->cap = cap;                                                                      \
+        pool->data = data;                                                                    \
+        for (isize i = 0; i < pool->cap; ++i) {                                               \
+            pool->data[i].id.idx = i;                                                         \
+        }                                                                                     \
+    }                                                                                         \
+                                                                                              \
     LCORE POOL(type) NEW_POOL(type)(Arena * perm, isize cap) {                                \
         POOL(type) pool = {0};                                                                \
-        pool.cap = cap;                                                                       \
-        pool.data = New(perm, cap, type);                                                     \
-        for (isize i = 0; i < pool.cap; ++i) {                                                \
-            pool.data[i].id.idx = i;                                                          \
-        }                                                                                     \
+        POOL_INIT(type)(&pool, New(perm, cap, type), cap);                                    \
         return pool;                                                                          \
     }                                                                                         \
                                                                                               \
