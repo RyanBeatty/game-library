@@ -4902,7 +4902,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         f32 vx = PLAYER.v.x;
                         PLAYER.v.y = vy;
                         PLAYER.v.x = vx;
-                        PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
+                        PLAYER.pos.y += PLAYER.v.y * dt;
+
+                        PLAYER.pos.x = controller->cursor_pos_world.x;
                         break;
                     }
                     case PP_PRESSED: {
