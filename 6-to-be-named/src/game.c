@@ -4812,11 +4812,19 @@ typedef struct {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Section: Game
 
+typedef struct {
+    Vec3 pos;
+    Vec3 v;
+    Vec2 dims;
+    Gfx gfx;
+} Ball;
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static i32 SCORE = 0;
     static i32 HIGH_SCORE = 0;
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
+    static Ball PLAYER = {0};
 
     f64 dt = gstate->frame_time.dt;
 
@@ -4824,6 +4832,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     if (gstate->init) {
         gstate->phase = GP_START_SCREEN;
+
+        Ball ball_zero = {0};
+        PLAYER = ball_zero;
     }
 
     if (gstate->update) {
@@ -4879,6 +4890,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
+                        f32 vy = PLAYER.v.y;
+                        f32 gy = -100.0f;
+                        f32 accy = gy;
+                        if (controller->action_down.pressed) {
+                            vy = 150.0f;
+                        } else {
+                            vy += accy * dt;
+                        }
+
+                        f32 vx = PLAYER.v.x;
+                        PLAYER.v.y = vy;
+                        PLAYER.v.x = vx;
+                        PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
                         break;
                     }
                     case PP_PRESSED: {
@@ -4892,6 +4916,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 // Update graphics
                 {
+                    PLAYER.gfx.pos = PLAYER.pos;
+                    PLAYER.gfx.dims = Vec2Lit(10, 10);
+                    PLAYER.gfx.orient = Mat4Identity();
+                    PLAYER.gfx.tint = LBLUE;
                 }
 
                 break;
@@ -4985,6 +5013,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
+                        DrawQuad(PLAYER.gfx.pos, PLAYER.gfx.dims.x, PLAYER.gfx.dims.y, PLAYER.gfx.orient,
+                                 PLAYER.gfx.tint);
+
                         break;
                     }
                     // Intentional fallthrough
