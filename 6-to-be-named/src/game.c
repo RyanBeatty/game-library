@@ -3658,7 +3658,9 @@ LCORE TextBox LFontMeasureStr8Quad(LFont font, Str8 str) {
 ////////////////////////////////////////////////////////////
 // S:Sound
 
-#define SOUND_LIST SOUNDX(BEEP, "assets/sounds/beep.wav")
+#define SOUND_LIST                         \
+    SOUNDX(BEEP, "assets/sounds/beep.wav") \
+    SOUNDX(LOSE_GAME, "assets/sounds/LOSE_GAME.wav")
 
 typedef enum {
     SOUND_NONE = 0,
