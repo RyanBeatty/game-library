@@ -3127,28 +3127,6 @@ LCORE Shape ShapeTransform(Shape shape, Vec3 s, Mat4 r, Vec3 t) {
     return shape;
 }
 
-// static Shape ComputeShape(Vec3* vs, u32 vsize, ShapeType type) {
-//     Shape p = {0};
-//     p.type = type;
-//     switch (type) {
-//         case PH_SPHERE: {
-//             p.sphere = BoundingSphere(vs, vsize);
-//             break;
-//         }
-//         case PH_AABB: {
-//             p.aabb = ComputeAABB(vs, vsize);
-//             break;
-//         }
-//         default: {
-//             PlatformLog(LLOG_ERROR,
-//                      "ComputeShape: Unknown Shape type=%d. Most likely entity needs bounding volume type
-//                      set", type);
-//             Assert(false);
-//         }
-//     }
-//     return p;
-// }
-
 // Returns true if both Shapes collide. normal will point from b to a.
 // Assumes Shapes are both in the same coordinate space.
 LCORE bool TestShapeVsShape(Shape* a, Shape* b, Vec3* normal, f32* depth) {
