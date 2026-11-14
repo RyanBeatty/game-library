@@ -4924,9 +4924,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
+                            bool hooked_first = false;
                             if (HookIdNull(PLAYER.hook_id) && controller->action_down.pressed && hook_candidate) {
                                 PLAYER.hook_id = hook_candidate->id;
                                 PLAYER.v = Vec3Zero();
+                                hooked_first = true;
                             }
 
                             Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
@@ -4945,13 +4947,21 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PLAYER.v.x = vx;
                                 PLAYER.pos.y += PLAYER.v.y * dt;
 
-                                PLAYER.pos.x = controller->cursor_pos_world.x;
+                                // PLAYER.pos.x = controller->cursor_pos_world.x;
                             } else {
-                                Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
-                                f32 k = 10.0f;
-                                Vec3 acc = Vec3Scale(target_offset, k);
-                                PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
-                                PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
+                                if (!hooked_first && controller->action_down.pressed) {
+                                    PLAYER.hook_id = Hook_NULLID;
+
+                                    Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
+                                    f32 speed = 120.0f;
+                                    PLAYER.v = Vec3Scale(v_dir, speed);
+                                } else {
+                                    Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
+                                    f32 k = 10.0f;
+                                    Vec3 acc = Vec3Scale(target_offset, k);
+                                    PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
+                                    PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
+                                }
                             }
                         }
 
