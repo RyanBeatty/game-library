@@ -2671,7 +2671,8 @@ typedef struct {
     f32 r;
 } Circle;
 
-#define CircleLit(cc, rr) ((Circle){.c = (cc), .r = (rr)})
+#define CircleLitPro(cc, rr) ((Circle){.c = (cc), .r = (rr)})
+#define CircleLit(rr) (CircleLitPro(Vec2Zero(), rr))
 
 // Returns normal pointing from b to a if there is a collision. Assumes both
 // circles are in same coordinate space.
@@ -3074,37 +3075,40 @@ LCORE void ShapeSetOBB2D(Shape* shape, Vec2 c, Vec2 dims, Mat2 orient) {
 // like world axis-aligned shapes do not rotate for instance.
 // NOTE: Cannot take a rotation here without more work. consider the case where we have a aabb, if you rotate that it
 // becomes an obb.
-LCORE Shape ShapeTransform(Shape* shape, Vec3 s, Vec3 t) {
-    switch (shape->type) {
+LCORE Shape ShapeTransform(Shape* shape_in, Vec3 s, Vec3 t) {
+    Shape shape = *shape_in;
+
+    switch (shape.type) {
         case PH_NONE: {
             break;
         }
         // TODO: look at what we do for obb2d.
         case PH_CIRCLE: {
             // Apply scale first. e.g. if scale.x = 3 and local space center.x = 2, then the world space coordinate is 6
-            shape->circle.c.x *= s.x;
-            shape->circle.c.y *= s.y;
+            shape.circle.c.x *= s.x;
+            shape.circle.c.y *= s.y;
             // Then translate the center.
-            shape->circle.c.x += t.x;
-            shape->circle.c.y += t.y;
+            shape.circle.c.x += t.x;
+            shape.circle.c.y += t.y;
 
             // Essentially for scaling since a radius is directionless, we just scale by the maximal scale factor in 2d.
-            shape->circle.r *= f32max(s.x, s.y);
+            shape.circle.r *= f32max(s.x, s.y);
             break;
         }
         case PH_AABB2D: {
             // Apply scale first. e.g. if scale.x = 3 and local space center.x = 2, then the world space coordinate is 6
-            shape->aabb2d.c.x *= s.x;
-            shape->aabb2d.c.y *= s.y;
+            breakpoint();
+            shape.aabb2d.c.x *= s.x;
+            shape.aabb2d.c.y *= s.y;
             // Then translate the center.
-            shape->aabb2d.c.x += t.x;
-            shape->aabb2d.c.y += t.y;
+            shape.aabb2d.c.x += t.x;
+            shape.aabb2d.c.y += t.y;
 
             // Remember to scale the dimensions of our box as well.
             // NOTE: This assumes we cannot have negative scale as otherwise our box dimensions would go negative.
             // NOTE: Its fine to have non uniform scale here.
-            shape->aabb2d.r.x *= s.x;
-            shape->aabb2d.r.y *= s.y;
+            shape.aabb2d.r.x *= s.x;
+            shape.aabb2d.r.y *= s.y;
             break;
         }
         // case PH_OBB2D: {
@@ -3130,7 +3134,7 @@ LCORE Shape ShapeTransform(Shape* shape, Vec3 s, Vec3 t) {
             Assert(false);
         }
     }
-    return *shape;
+    return shape;
 }
 
 typedef struct {
@@ -4901,11 +4905,20 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         {
                             HookId attached_id = Hook_NULLID;
                             {
-                                Shape player_hitbox_local = {0};
-                                ShapeSetAABB2D(&player_hitbox_local,
-                                               AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
-                                Shape player_hitbox = ShapeTransform(&player_hitbox_local, PLAYER.pos, Vec3LitAll(1));
+                                Shape player_shape_local = {0};
+                                ShapeSetAABB2D(&player_shape_local, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
+
+                                Shape hook_shape_local = {0};
+                                ShapeSetCircle(&hook_shape_local, CircleLit(20));
+
+                                Shape player_shape = ShapeTransform(&player_shape_local, Vec3LitAll(1), PLAYER.pos);
                                 for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
+                                    Shape hook_shape = ShapeTransform(&hook_shape_local, Vec3LitAll(1), hook->pos);
+                                    Collision collision = {0};
+                                    if (TestShapeVsShape(&player_shape, &hook_shape, &collision)) {
+                                        breakpoint();
+                                        PlatformLog(LLOG_INFO, "collides %d", gstate->nframe);
+                                    }
                                 }
                             }
 
