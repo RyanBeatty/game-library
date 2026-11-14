@@ -3081,21 +3081,28 @@ LCORE Shape ShapeTransform(Shape shape, Vec3 s, Vec3 t) {
         }
         // TODO: look at what we do for obb2d.
         case PH_CIRCLE: {
-            // This might be a bit jank. but I transform the center with translation and then
-            // drop the 3rd dimension (essentially projecting back to 2d).
-            shape.circle.c = Vec3ToVec2(Vec3Add(Vec2ToVec3(shape.circle.c), t));
+            // Apply scale first. e.g. if scale.x = 3 and local space center.x = 2, then the world space coordinate is 6
+            shape.circle.c.x *= s.x;
+            shape.circle.c.y *= s.y;
+            // Then translate the center.
+            shape.circle.c.x += t.x;
+            shape.circle.c.y += t.y;
+
             // Essentially for scaling since a radius is directionless, we just scale by the maximal scale factor in 2d.
             shape.circle.r *= f32max(s.x, s.y);
             break;
         }
         case PH_AABB2D: {
-            // This might be a bit jank. but I transform the center with translation and then
-            // drop the 3rd dimension (essentially projecting back to 2d).
-            // TODO: I think to be fully correct here I need to take into account scale.
-            shape.aabb2d.c = Vec3ToVec2(Vec3Add(Vec2ToVec3(shape.aabb2d.c), t));
-            // TODO: Do I need to take scale into account here? think about this more. This might be more correct.
-            // Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
-            // shape.aabb2d.c = Vec3ToVec2(Vec3WTransform(Vec2ToVec3(shape.aabb2d.c), m));
+            // Apply scale first. e.g. if scale.x = 3 and local space center.x = 2, then the world space coordinate is 6
+            shape.aabb2d.c.x *= s.x;
+            shape.aabb2d.c.y *= s.y;
+            // Then translate the center.
+            shape.aabb2d.c.x += t.x;
+            shape.aabb2d.c.y += t.y;
+
+            // Remember to scale the dimensions of our box as well.
+            // NOTE: This assumes we cannot have negative scale as otherwise our box dimensions would go negative.
+            // NOTE: Its fine to have non uniform scale here.
             shape.aabb2d.r.x *= s.x;
             shape.aabb2d.r.y *= s.y;
             break;

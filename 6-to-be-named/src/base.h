@@ -917,7 +917,7 @@ LCORE Mat2 Mat2Identity() {
     return m;
 }
 
-static Mat2 Mat2Multiply(Mat2 b, Mat2 a) {
+LCORE Mat2 Mat2Multiply(Mat2 b, Mat2 a) {
     return Mat2Lit((b.mm.m00 * a.mm.m00) + (b.mm.m01 * a.mm.m10), (b.mm.m00 * a.mm.m01) + (b.mm.m01 * a.mm.m11),  //
                    (b.mm.m10 * a.mm.m00) + (b.mm.m11 * a.mm.m10), (b.mm.m10 * a.mm.m01) + (b.mm.m11 * a.mm.m11)   //
     );
@@ -962,7 +962,7 @@ LCORE Vec4 Vec4Lerp(Vec4 start, Vec4 end, f32 t) {
 
 // The positionless aspect is why we don't include the w component here.
 // Basically you only want to apply scale and rotation.
-static Vec3 Vec3Transform(Vec3 v, Mat4 m) {
+LCORE Vec3 Vec3Transform(Vec3 v, Mat4 m) {
     return Vec3Lit((v.x * m.mm.m00) + (v.y * m.mm.m01) + (v.z * m.mm.m02),  //
                    (v.x * m.mm.m10) + (v.y * m.mm.m11) + (v.z * m.mm.m12),  //
                    (v.x * m.mm.m20) + (v.y * m.mm.m21) + (v.z * m.mm.m22));
