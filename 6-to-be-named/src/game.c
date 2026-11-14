@@ -3057,10 +3057,9 @@ LCORE void ShapeSetAABB2D(Shape* shape, AABB2D aabb) {
     shape->aabb2d = aabb;
 }
 
-LCORE void ShapeSetCircle(Shape* shape, Vec2 c, f32 r) {
+LCORE void ShapeSetCircle(Shape* shape, Circle circle) {
     shape->type = PH_CIRCLE;
-    shape->circle.c = c;
-    shape->circle.r = r;
+    shape->circle = circle;
 }
 
 // Set AABB2D From center and full width and height.
@@ -3073,9 +3072,9 @@ LCORE void ShapeSetOBB2D(Shape* shape, Vec2 c, Vec2 dims, Mat2 orient) {
 
 // Important to pass decomposed transformation matrix (scale, rot, translate) because some Shape
 // like world axis-aligned shapes do not rotate for instance.
-// TODO: Consider making an interface where I get the corAserect Shape transformation matrix as a separate
-// function (maybe take an entity as an arg) and then I can just take a single matrix here
-LCORE Shape ShapeTransform(Shape shape, Vec3 s, Mat4 r, Vec3 t) {
+// NOTE: Cannot take a rotation here without more work. consider the case where we have a aabb, if you rotate that it
+// becomes an obb.
+LCORE Shape ShapeTransform(Shape shape, Vec3 s, Vec3 t) {
     switch (shape.type) {
         case PH_NONE: {
             break;
@@ -3101,25 +3100,25 @@ LCORE Shape ShapeTransform(Shape shape, Vec3 s, Mat4 r, Vec3 t) {
             shape.aabb2d.r.y *= s.y;
             break;
         }
-        case PH_OBB2D: {
-            // This should still result in an orthonormal matrix assuming r is already ortho normal.
-            Mat2 mrotate = Mat4ToMat2(r);
+        // case PH_OBB2D: {
+        //     // This should still result in an orthonormal matrix assuming r is already ortho normal.
+        //     Mat2 mrotate = Mat4ToMat2(r);
 
-            // This might be a bit jank. but I transform the center with translation and then
-            // drop the 3rd dimension (essentially projecting back to 2d).
-            shape.obb2d.c = Vec3ToVec2(Vec3Add(Vec2ToVec3(shape.obb2d.c), t));
-            shape.obb2d.hdims.x *= s.x;
-            shape.obb2d.hdims.y *= s.y;
-            shape.obb2d.orient = Mat2Multiply(mrotate, shape.obb2d.orient);
-            break;
-        }
-        case PH_AABB: {
-            Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
+        //     // This might be a bit jank. but I transform the center with translation and then
+        //     // drop the 3rd dimension (essentially projecting back to 2d).
+        //     shape.obb2d.c = Vec3ToVec2(Vec3Add(Vec2ToVec3(shape.obb2d.c), t));
+        //     shape.obb2d.hdims.x *= s.x;
+        //     shape.obb2d.hdims.y *= s.y;
+        //     shape.obb2d.orient = Mat2Multiply(mrotate, shape.obb2d.orient);
+        //     break;
+        // }
+        // case PH_AABB: {
+        //     Mat4 m = Mat4Multiply(Mat4TranslateV(t), Mat4ScaleV(s));
 
-            shape.aabb.c = Vec3WTransform(shape.aabb.c, m);
-            shape.aabb.r = Vec3Transform(shape.aabb.r, m);
-            break;
-        }
+        //     shape.aabb.c = Vec3WTransform(shape.aabb.c, m);
+        //     shape.aabb.r = Vec3Transform(shape.aabb.r, m);
+        //     break;
+        // }
         default: {
             Assert(false);
         }
@@ -4733,14 +4732,14 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     if (ShapeIsNull(&ea->shape)) {
         return;
     }
-    Shape pa = ShapeTransform(ea->shape, ea->scale, ea->orient, ea->pos);
+    Shape pa = ShapeTransform(ea->shape, ea->scale, ea->pos);
 
     for (Entity* eb = ea; IncrementEntity(&eb);) {
         if (ea == eb || ShapeIsNull(&eb->shape)) {
             continue;
         }
 
-        Shape pb = ShapeTransform(eb->shape, eb->scale, eb->orient, eb->pos);
+        Shape pb = ShapeTransform(eb->shape, eb->scale, eb->pos);
 
         CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
         bool collides = TestShapeVsShape(&pa, &pb, &info.normal, &info.depth);
