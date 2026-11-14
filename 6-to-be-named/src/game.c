@@ -3133,9 +3133,15 @@ LCORE Shape ShapeTransform(Shape* shape, Vec3 s, Vec3 t) {
     return *shape;
 }
 
+typedef struct {
+    f32 depth;  // positive value denoting how far you would need to push obj a along the contact normal to depenetrate.
+    Vec3 normal;  // For most collision processing, we assume that this points from id1 -> id0 (or b -> a depending on
+                  // terminology).
+} Collision;
+
 // Returns true if both Shapes collide. normal will point from b to a.
 // Assumes Shapes are both in the same coordinate space.
-LCORE bool TestShapeVsShape(Shape* a, Shape* b, Vec3* normal, f32* depth) {
+LCORE bool TestShapeVsShape(Shape* a, Shape* b, Collision* collision) {
     bool collides = false;
     Vec3 n = Vec3Zero();
     Vec2 n2d = Vec2Zero();
@@ -3225,8 +3231,8 @@ LCORE bool TestShapeVsShape(Shape* a, Shape* b, Vec3* normal, f32* depth) {
         }
     }
 
-    *normal = n;
-    *depth = d;
+    collision->normal = n;
+    collision->depth = d;
     return collides;
 }
 
@@ -4749,7 +4755,10 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
         Shape pb = ShapeTransform(&eb->shape, eb->scale, eb->pos);
 
         CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
-        bool collides = TestShapeVsShape(&pa, &pb, &info.normal, &info.depth);
+        Collision cc = {0};
+        bool collides = TestShapeVsShape(&pa, &pb, &cc);
+        info.depth = cc.depth;
+        info.normal = cc.normal;
         if (collides) {
             // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
             //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
@@ -4892,9 +4901,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         {
                             HookId attached_id = Hook_NULLID;
                             {
-                                Shape player_hitbox = {0};
-                                ShapeSetAABB2D(&player_hitbox, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
-                                Mat4 world_to_player = Mat4TranslateV(Vec3Negate(PLAYER.pos));
+                                Shape player_hitbox_local = {0};
+                                ShapeSetAABB2D(&player_hitbox_local,
+                                               AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
+                                Shape player_hitbox = ShapeTransform(&player_hitbox_local, PLAYER.pos, Vec3LitAll(1));
                                 for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
                                 }
                             }
