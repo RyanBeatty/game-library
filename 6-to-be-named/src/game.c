@@ -3074,37 +3074,37 @@ LCORE void ShapeSetOBB2D(Shape* shape, Vec2 c, Vec2 dims, Mat2 orient) {
 // like world axis-aligned shapes do not rotate for instance.
 // NOTE: Cannot take a rotation here without more work. consider the case where we have a aabb, if you rotate that it
 // becomes an obb.
-LCORE Shape ShapeTransform(Shape shape, Vec3 s, Vec3 t) {
-    switch (shape.type) {
+LCORE Shape ShapeTransform(Shape* shape, Vec3 s, Vec3 t) {
+    switch (shape->type) {
         case PH_NONE: {
             break;
         }
         // TODO: look at what we do for obb2d.
         case PH_CIRCLE: {
             // Apply scale first. e.g. if scale.x = 3 and local space center.x = 2, then the world space coordinate is 6
-            shape.circle.c.x *= s.x;
-            shape.circle.c.y *= s.y;
+            shape->circle.c.x *= s.x;
+            shape->circle.c.y *= s.y;
             // Then translate the center.
-            shape.circle.c.x += t.x;
-            shape.circle.c.y += t.y;
+            shape->circle.c.x += t.x;
+            shape->circle.c.y += t.y;
 
             // Essentially for scaling since a radius is directionless, we just scale by the maximal scale factor in 2d.
-            shape.circle.r *= f32max(s.x, s.y);
+            shape->circle.r *= f32max(s.x, s.y);
             break;
         }
         case PH_AABB2D: {
             // Apply scale first. e.g. if scale.x = 3 and local space center.x = 2, then the world space coordinate is 6
-            shape.aabb2d.c.x *= s.x;
-            shape.aabb2d.c.y *= s.y;
+            shape->aabb2d.c.x *= s.x;
+            shape->aabb2d.c.y *= s.y;
             // Then translate the center.
-            shape.aabb2d.c.x += t.x;
-            shape.aabb2d.c.y += t.y;
+            shape->aabb2d.c.x += t.x;
+            shape->aabb2d.c.y += t.y;
 
             // Remember to scale the dimensions of our box as well.
             // NOTE: This assumes we cannot have negative scale as otherwise our box dimensions would go negative.
             // NOTE: Its fine to have non uniform scale here.
-            shape.aabb2d.r.x *= s.x;
-            shape.aabb2d.r.y *= s.y;
+            shape->aabb2d.r.x *= s.x;
+            shape->aabb2d.r.y *= s.y;
             break;
         }
         // case PH_OBB2D: {
@@ -3130,7 +3130,7 @@ LCORE Shape ShapeTransform(Shape shape, Vec3 s, Vec3 t) {
             Assert(false);
         }
     }
-    return shape;
+    return *shape;
 }
 
 // Returns true if both Shapes collide. normal will point from b to a.
@@ -4739,14 +4739,14 @@ LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
     if (ShapeIsNull(&ea->shape)) {
         return;
     }
-    Shape pa = ShapeTransform(ea->shape, ea->scale, ea->pos);
+    Shape pa = ShapeTransform(&ea->shape, ea->scale, ea->pos);
 
     for (Entity* eb = ea; IncrementEntity(&eb);) {
         if (ea == eb || ShapeIsNull(&eb->shape)) {
             continue;
         }
 
-        Shape pb = ShapeTransform(eb->shape, eb->scale, eb->pos);
+        Shape pb = ShapeTransform(&eb->shape, eb->scale, eb->pos);
 
         CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
         bool collides = TestShapeVsShape(&pa, &pb, &info.normal, &info.depth);
