@@ -4817,7 +4817,31 @@ typedef struct {
     Vec3 v;
     Vec2 dims;
     Gfx gfx;
+
+    bool swinging;
 } Ball;
+
+DEFINE_GEN_ID(Hook);
+typedef struct {
+    Vec3 pos;
+    Vec3 v;
+    Gfx gfx;
+
+    DEFINE_POOL_FIELDS(Hook);
+} Hook;
+DEFINE_POOL(Hook);
+
+static HookPool* GetHooks() {
+    static Hook HOOKS[256] = {0};
+    static HookPool HOOK_POOL = {0};
+    static bool ONCE = false;
+    if (!ONCE) {
+        ONCE = true;
+
+        HookPoolInit(&HOOK_POOL, HOOKS, ArraySizeOf(HOOKS));
+    }
+    return &HOOK_POOL;
+}
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static i32 SCORE = 0;
@@ -4830,11 +4854,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
     GameControllerState* controller = GetController(input, 0);
 
+    HookPool* hooks = GetHooks();
+
     if (gstate->init) {
         gstate->phase = GP_START_SCREEN;
 
         Ball ball_zero = {0};
         PLAYER = ball_zero;
+
+        Hook* hook = HookPoolNew(hooks);
+        hook->pos = Vec3Lit(0, 50, 0);
     }
 
     if (gstate->update) {
@@ -4890,21 +4919,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
-                        f32 vy = PLAYER.v.y;
-                        f32 gy = -100.0f;
-                        f32 accy = gy;
-                        if (controller->action_down.pressed) {
-                            vy = 150.0f;
-                        } else {
-                            vy += accy * dt;
+                        // player update
+                        {
+                            f32 vy = PLAYER.v.y;
+                            f32 gy = -100.0f;
+                            f32 accy = gy;
+                            if (controller->action_down.pressed) {
+                                vy = 150.0f;
+                            } else {
+                                vy += accy * dt;
+                            }
+
+                            f32 vx = PLAYER.v.x;
+                            PLAYER.v.y = vy;
+                            PLAYER.v.x = vx;
+                            PLAYER.pos.y += PLAYER.v.y * dt;
+
+                            PLAYER.pos.x = controller->cursor_pos_world.x;
                         }
 
-                        f32 vx = PLAYER.v.x;
-                        PLAYER.v.y = vy;
-                        PLAYER.v.x = vx;
-                        PLAYER.pos.y += PLAYER.v.y * dt;
-
-                        PLAYER.pos.x = controller->cursor_pos_world.x;
                         break;
                     }
                     case PP_PRESSED: {
@@ -4922,6 +4955,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     PLAYER.gfx.dims = Vec2Lit(10, 10);
                     PLAYER.gfx.orient = Mat4Identity();
                     PLAYER.gfx.tint = LBLUE;
+                }
+
+                for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
+                    hook->gfx.pos = hook->pos;
+                    hook->gfx.orient = Mat4Identity();
+                    hook->gfx.tint = LRED;
+                    hook->gfx.dims = Vec2Lit(5, 5);
                 }
 
                 break;
@@ -5018,6 +5058,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         DrawQuad(PLAYER.gfx.pos, PLAYER.gfx.dims.x, PLAYER.gfx.dims.y, PLAYER.gfx.orient,
                                  PLAYER.gfx.tint);
 
+                        for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
+                            DrawQuad(hook->gfx.pos, hook->gfx.dims.x, hook->gfx.dims.y, hook->gfx.orient,
+                                     hook->gfx.tint);
+                        }
                         break;
                     }
                     // Intentional fallthrough
@@ -5081,7 +5125,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         }
     }
 
+    // Tick Cleanup
     ParticleSystemCleanup();
+    HookPoolCleanup(hooks);
 }
 
 ////////////////////////////////////////////////////////////
