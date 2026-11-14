@@ -4794,15 +4794,6 @@ typedef struct {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Section: Game
 
-typedef struct {
-    Vec3 pos;
-    Vec3 v;
-    Vec2 dims;
-    Gfx gfx;
-
-    bool swinging;
-} Ball;
-
 DEFINE_GEN_ID(Hook);
 typedef struct {
     Vec3 pos;
@@ -4824,6 +4815,15 @@ static HookPool* GetHooks() {
     }
     return &HOOK_POOL;
 }
+
+typedef struct {
+    Vec3 pos;
+    Vec3 v;
+    Vec2 dims;
+    Gfx gfx;
+
+    HookId hook_id;
+} Ball;
 
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static i32 SCORE = 0;
@@ -4903,7 +4903,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case PP_PLAYING: {
                         // player update
                         {
-                            HookId attached_id = Hook_NULLID;
+                            HookId hook_candidate_id = Hook_NULLID;
                             {
                                 Shape player_shape_local = {0};
                                 ShapeSetAABB2D(&player_shape_local, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
@@ -4916,27 +4916,36 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Shape hook_shape = ShapeTransform(&hook_shape_local, Vec3LitAll(1), hook->pos);
                                     Collision collision = {0};
                                     if (TestShapeVsShape(&player_shape, &hook_shape, &collision)) {
-                                        breakpoint();
-                                        PlatformLog(LLOG_INFO, "collides %d", gstate->nframe);
+                                        hook_candidate_id = hook->id;
+                                        break;
+                                        // breakpoint();
+                                        // PlatformLog(LLOG_INFO, "collides %d", gstate->nframe);
                                     }
                                 }
                             }
 
-                            f32 vy = PLAYER.v.y;
-                            f32 gy = -100.0f;
-                            f32 accy = gy;
-                            if (controller->action_down.pressed) {
-                                vy = 150.0f;
-                            } else {
-                                vy += accy * dt;
+                            if (HookIdNull(PLAYER.hook_id) && controller->action_down.pressed) {
+                                PLAYER.hook_id = hook_candidate_id;
                             }
 
-                            f32 vx = PLAYER.v.x;
-                            PLAYER.v.y = vy;
-                            PLAYER.v.x = vx;
-                            PLAYER.pos.y += PLAYER.v.y * dt;
+                            Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
+                            if (hook == NULL) {
+                                f32 vy = PLAYER.v.y;
+                                f32 gy = -100.0f;
+                                f32 accy = gy;
+                                if (controller->action_down.pressed) {
+                                    vy = 150.0f;
+                                } else {
+                                    vy += accy * dt;
+                                }
 
-                            PLAYER.pos.x = controller->cursor_pos_world.x;
+                                f32 vx = PLAYER.v.x;
+                                PLAYER.v.y = vy;
+                                PLAYER.v.x = vx;
+                                PLAYER.pos.y += PLAYER.v.y * dt;
+
+                                PLAYER.pos.x = controller->cursor_pos_world.x;
+                            }
                         }
 
                         break;

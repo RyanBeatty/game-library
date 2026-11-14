@@ -321,7 +321,7 @@ static i32 I32FromStr8(Str8 s, bool* ok);
                                                                                                   \
     LCORE type* POOL_GET(type)(POOL(type) * pool, GEN_ID(type) id) {                              \
         type* entry = &pool->data[id.idx];                                                        \
-        return entry->id.generation == id.generation ? entry : NULL;                              \
+        return entry->id.generation == id.generation && GEN_ID_NOTNULL(type)(id) ? entry : NULL;  \
     }
 
 ////////////////////////////////////////////////////////////
