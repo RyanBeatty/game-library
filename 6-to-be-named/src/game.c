@@ -3060,13 +3060,6 @@ LCORE void PolyhedronSetAABB2DFromGridAseRect(Polyhedron* shape, Vec2 lc, Vec2 d
     shape->aabb2d.c = c;
 }
 
-// Set AABB2D From center and full width and height.
-LCORE void PolyHedronSetAABB2DFromWH(Polyhedron* shape, Vec2 c, Vec2 dims) {
-    shape->type = PH_AABB2D;
-    shape->aabb2d.c = c;
-    shape->aabb2d.r = Vec2Lit(0.5f * dims.x, 0.5f * dims.y);
-}
-
 LCORE void PolyHedronSetAABB2D(Polyhedron* shape, AABB2D aabb) {
     shape->type = PH_AABB2D;
     shape->aabb2d = aabb;
@@ -4921,6 +4914,14 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case PP_PLAYING: {
                         // player update
                         {
+                            HookId attached_id = Hook_NULLID;
+                            {
+                                Polyhedron player_hitbox = {0};
+                                PolyHedronSetAABB2D(&player_hitbox, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
+                                for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
+                                }
+                            }
+
                             f32 vy = PLAYER.v.y;
                             f32 gy = -100.0f;
                             f32 accy = gy;
