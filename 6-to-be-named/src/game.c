@@ -4903,7 +4903,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     case PP_PLAYING: {
                         // player update
                         {
-                            HookId hook_candidate_id = Hook_NULLID;
+                            Hook* hook_candidate = NULL;
                             {
                                 Shape player_shape_local = {0};
                                 ShapeSetAABB2D(&player_shape_local, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
@@ -4916,7 +4916,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                     Shape hook_shape = ShapeTransform(&hook_shape_local, Vec3LitAll(1), hook->pos);
                                     Collision collision = {0};
                                     if (TestShapeVsShape(&player_shape, &hook_shape, &collision)) {
-                                        hook_candidate_id = hook->id;
+                                        hook_candidate = hook;
                                         break;
                                         // breakpoint();
                                         // PlatformLog(LLOG_INFO, "collides %d", gstate->nframe);
@@ -4924,8 +4924,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
-                            if (HookIdNull(PLAYER.hook_id) && controller->action_down.pressed) {
-                                PLAYER.hook_id = hook_candidate_id;
+                            if (HookIdNull(PLAYER.hook_id) && controller->action_down.pressed && hook_candidate) {
+                                PLAYER.hook_id = hook_candidate->id;
+                                PLAYER.v = Vec3Zero();
                             }
 
                             Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
@@ -4945,6 +4946,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PLAYER.pos.y += PLAYER.v.y * dt;
 
                                 PLAYER.pos.x = controller->cursor_pos_world.x;
+                            } else {
+                                Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
+                                f32 k = 10.0f;
+                                Vec3 acc = Vec3Scale(target_offset, k);
+                                PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
+                                PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
                             }
                         }
 
