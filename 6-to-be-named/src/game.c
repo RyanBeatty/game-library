@@ -3008,18 +3008,10 @@ typedef struct {
     Vec3 r;  // half width extents along each axis.
 } AABB;
 
-typedef enum PolyhedronType {
-    PH_NONE = 0,
-    PH_CIRCLE,
-    PH_SPHERE,
-    PH_AABB2D,
-    PH_OBB2D,
-    PH_AABB,
-    PH_COUNT
-} PolyhedronType;
+typedef enum ShapeType { PH_NONE = 0, PH_CIRCLE, PH_SPHERE, PH_AABB2D, PH_OBB2D, PH_AABB, PH_COUNT } ShapeType;
 
 typedef struct {
-    PolyhedronType type;
+    ShapeType type;
 
     union {
         Circle circle;
@@ -3028,12 +3020,12 @@ typedef struct {
         Sphere sphere;
         AABB aabb;
     };
-} Polyhedron;
+} Shape;
 
-#define PolyhedronIsNull(p) ((p)->type == PH_NONE)
+#define ShapeIsNull(p) ((p)->type == PH_NONE)
 
-LCORE void PolyhedronInit(Polyhedron* p) {
-    memset(p, 0, sizeof(Polyhedron));
+LCORE void ShapeInit(Shape* p) {
+    memset(p, 0, sizeof(Shape));
     p->type = PH_NONE;
 }
 
@@ -3044,7 +3036,7 @@ LCORE void PolyhedronInit(Polyhedron* p) {
 // We assume that (0, 0) is the bottom left *corner* (not the center of the bottom left pixel).
 // To translate from aseprite, count the number of pixels (where bottom left pixel counts as 1) until the first
 // pixel of the collider, then subtract (-1, -1) to get the lc.
-LCORE void PolyhedronSetAABB2DFromGridAseRect(Polyhedron* shape, Vec2 lc, Vec2 dims, Vec2 grid_dims) {
+LCORE void ShapeSetAABB2DFromGridAseRect(Shape* shape, Vec2 lc, Vec2 dims, Vec2 grid_dims) {
     shape->type = PH_AABB2D;
 
     // The input params assume that the min and max are given as if the origin is the bottom left
@@ -3060,30 +3052,30 @@ LCORE void PolyhedronSetAABB2DFromGridAseRect(Polyhedron* shape, Vec2 lc, Vec2 d
     shape->aabb2d.c = c;
 }
 
-LCORE void PolyHedronSetAABB2D(Polyhedron* shape, AABB2D aabb) {
+LCORE void ShapeSetAABB2D(Shape* shape, AABB2D aabb) {
     shape->type = PH_AABB2D;
     shape->aabb2d = aabb;
 }
 
-LCORE void PolyhedronSetCircle(Polyhedron* shape, Vec2 c, f32 r) {
+LCORE void ShapeSetCircle(Shape* shape, Vec2 c, f32 r) {
     shape->type = PH_CIRCLE;
     shape->circle.c = c;
     shape->circle.r = r;
 }
 
 // Set AABB2D From center and full width and height.
-LCORE void PolyHedronSetOBB2D(Polyhedron* shape, Vec2 c, Vec2 dims, Mat2 orient) {
+LCORE void ShapeSetOBB2D(Shape* shape, Vec2 c, Vec2 dims, Mat2 orient) {
     shape->type = PH_OBB2D;
     shape->obb2d.c = c;
     shape->obb2d.hdims = Vec2Lit(0.5f * dims.x, 0.5f * dims.y);
     shape->obb2d.orient = orient;
 }
 
-// Important to pass decomposed transformation matrix (scale, rot, translate) because some polyhedron
+// Important to pass decomposed transformation matrix (scale, rot, translate) because some Shape
 // like world axis-aligned shapes do not rotate for instance.
-// TODO: Consider making an interface where I get the corAserect polyhedron transformation matrix as a separate
+// TODO: Consider making an interface where I get the corAserect Shape transformation matrix as a separate
 // function (maybe take an entity as an arg) and then I can just take a single matrix here
-LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
+LCORE Shape ShapeTransform(Shape shape, Vec3 s, Mat4 r, Vec3 t) {
     switch (shape.type) {
         case PH_NONE: {
             break;
@@ -3135,8 +3127,8 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
     return shape;
 }
 
-// static Polyhedron ComputePolyhedron(Vec3* vs, u32 vsize, PolyhedronType type) {
-//     Polyhedron p = {0};
+// static Shape ComputeShape(Vec3* vs, u32 vsize, ShapeType type) {
+//     Shape p = {0};
 //     p.type = type;
 //     switch (type) {
 //         case PH_SPHERE: {
@@ -3149,7 +3141,7 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
 //         }
 //         default: {
 //             PlatformLog(LLOG_ERROR,
-//                      "ComputePolyhedron: Unknown polyhedron type=%d. Most likely entity needs bounding volume type
+//                      "ComputeShape: Unknown Shape type=%d. Most likely entity needs bounding volume type
 //                      set", type);
 //             Assert(false);
 //         }
@@ -3157,9 +3149,9 @@ LCORE Polyhedron PolyhedronTransform(Polyhedron shape, Vec3 s, Mat4 r, Vec3 t) {
 //     return p;
 // }
 
-// Returns true if both polyhedrons collide. normal will point from b to a.
-// Assumes polyhedrons are both in the same coordinate space.
-LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal, f32* depth) {
+// Returns true if both Shapes collide. normal will point from b to a.
+// Assumes Shapes are both in the same coordinate space.
+LCORE bool TestShapeVsShape(Shape* a, Shape* b, Vec3* normal, f32* depth) {
     bool collides = false;
     Vec3 n = Vec3Zero();
     Vec2 n2d = Vec2Zero();
@@ -3254,7 +3246,7 @@ LCORE bool TestPolyhedronVsPolyhedron(Polyhedron* a, Polyhedron* b, Vec3* normal
     return collides;
 }
 
-LCORE void DrawPolyhedron(Polyhedron* shape, Vec4 color) {
+LCORE void DrawShape(Shape* shape, Vec4 color) {
     switch (shape->type) {
         case PH_NONE: {
             break;
@@ -3945,7 +3937,7 @@ typedef struct {
     Vec3 vdir;
     f32 mass_inv;  // Inverse mass. 0 == infinite mass.
 
-    Polyhedron shape;
+    Shape shape;
 
     f32 active_dt;
 
@@ -4039,7 +4031,7 @@ LCORE Entity* AllocateEntity() {
         EntitySetMass(e, 0.0f);  // Set infinite mass
     }
 
-    PolyhedronInit(&e->shape);
+    ShapeInit(&e->shape);
     FlagOn(e->flags, EFLAG_DRAW);
 
     {
@@ -4760,20 +4752,20 @@ typedef enum {
 } PlayerState;
 
 LCORE void EntityCollideWorld(Entity* ea, CollisionArr* collisions) {
-    if (PolyhedronIsNull(&ea->shape)) {
+    if (ShapeIsNull(&ea->shape)) {
         return;
     }
-    Polyhedron pa = PolyhedronTransform(ea->shape, ea->scale, ea->orient, ea->pos);
+    Shape pa = ShapeTransform(ea->shape, ea->scale, ea->orient, ea->pos);
 
     for (Entity* eb = ea; IncrementEntity(&eb);) {
-        if (ea == eb || PolyhedronIsNull(&eb->shape)) {
+        if (ea == eb || ShapeIsNull(&eb->shape)) {
             continue;
         }
 
-        Polyhedron pb = PolyhedronTransform(eb->shape, eb->scale, eb->orient, eb->pos);
+        Shape pb = ShapeTransform(eb->shape, eb->scale, eb->orient, eb->pos);
 
         CollisionInfo info = {.id0 = ea->id, .id1 = eb->id};
-        bool collides = TestPolyhedronVsPolyhedron(&pa, &pb, &info.normal, &info.depth);
+        bool collides = TestShapeVsShape(&pa, &pb, &info.normal, &info.depth);
         if (collides) {
             // if (TestFlag(ea->flags, EFLAG_PROJECTILE) || TestFlag(eb->flags, EFLAG_PROJECTILE)) {
             //     PlatformLog(LLOG_INFO, "Collides id0=%d id1=%d", info.id0.idx, info.id1.idx);
@@ -4916,8 +4908,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         {
                             HookId attached_id = Hook_NULLID;
                             {
-                                Polyhedron player_hitbox = {0};
-                                PolyHedronSetAABB2D(&player_hitbox, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
+                                Shape player_hitbox = {0};
+                                ShapeSetAABB2D(&player_hitbox, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
+                                Mat4 world_to_player = Mat4TranslateV(Vec3Negate(PLAYER.pos));
                                 for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
                                 }
                             }
