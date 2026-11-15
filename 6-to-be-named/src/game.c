@@ -4844,8 +4844,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         Ball ball_zero = {0};
         PLAYER = ball_zero;
 
-        Hook* hook = HookPoolNew(hooks);
-        hook->pos = Vec3Lit(0, 50, 0);
+        i32 nhooks_to_generate = 10;
+        for (i32 i = 0; i < nhooks_to_generate; ++i) {
+            Hook* hook = HookPoolNew(hooks);
+            hook->pos = Vec3Lit(0, 50 * i, 0);
+        }
     }
 
     if (gstate->update) {
@@ -4947,7 +4950,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PLAYER.v.x = vx;
                                 PLAYER.pos.y += PLAYER.v.y * dt;
 
-                                // PLAYER.pos.x = controller->cursor_pos_world.x;
+                                // PLAYER.pos .x = controller->cursor_pos_world.x;
                             } else {
                                 if (!hooked_first && controller->action_down.pressed) {
                                     PLAYER.hook_id = Hook_NULLID;
@@ -4975,6 +4978,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         Assert(0);
                     }
                 }
+
+                gstate->camera.eye.y = PLAYER.pos.y;
+                gstate->camera.target.y = gstate->camera.eye.y;
 
                 // Update graphics
                 {
