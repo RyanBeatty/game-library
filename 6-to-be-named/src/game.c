@@ -3097,7 +3097,6 @@ LCORE Shape ShapeTransform(Shape* shape_in, Vec3 s, Vec3 t) {
         }
         case PH_AABB2D: {
             // Apply scale first. e.g. if scale.x = 3 and local space center.x = 2, then the world space coordinate is 6
-            breakpoint();
             shape.aabb2d.c.x *= s.x;
             shape.aabb2d.c.y *= s.y;
             // Then translate the center.
@@ -4825,6 +4824,13 @@ typedef struct {
     HookId hook_id;
 } Ball;
 
+typedef struct {
+    Gfx gfx;
+    bool draw;
+} Rope;
+
+static Rope ROPES[4] = {0};
+
 static void SceneMainTick(GameState* gstate, GameInput* input) {
     static i32 SCORE = 0;
     static i32 HIGH_SCORE = 0;
@@ -4930,7 +4936,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             bool hooked_first = false;
                             if (HookIdNull(PLAYER.hook_id) && controller->action_down.pressed && hook_candidate) {
                                 PLAYER.hook_id = hook_candidate->id;
-                                PLAYER.v = Vec3Zero();
+                                // PLAYER.v = Vec3Zero();
                                 hooked_first = true;
                             }
 
@@ -4988,6 +4994,40 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     PLAYER.gfx.dims = Vec2Lit(10, 10);
                     PLAYER.gfx.orient = Mat4Identity();
                     PLAYER.gfx.tint = LBLUE;
+                }
+
+                // for (isize i = 0; i < ArraySizeOf(ROPES); ++i) {
+                //     Rope* rope = &ROPES[i];
+                //     rope->gfx.pos = Vec3Lit(-30, 0, 0);  // Vec3Add(PLAYER.pos, Vec3Scale(dir, chunk * i));
+                //     // rope->gfx.pos.z = 1;         // Draw over the other entities.
+                //     rope->gfx.dims = Vec2Lit(10, 10);
+                //     rope->gfx.tint = LGREEN;
+                //     rope->gfx.orient = Mat4Identity();
+                //     rope->draw = true;
+                // }
+
+                Hook* player_hook = HookPoolGet(hooks, PLAYER.hook_id);
+                if (player_hook) {
+                    Vec3 offset = Vec3Sub(player_hook->pos, PLAYER.pos);
+                    f32 length = Vec3Len(offset);
+                    f32 chunk = length / ArraySizeOf(ROPES);
+                    Vec3 dir = Vec3Normalize(offset);
+
+                    for (isize i = 0; i < ArraySizeOf(ROPES); ++i) {
+                        Rope* rope = &ROPES[i];
+                        rope->gfx.pos = Vec3Add(PLAYER.pos, Vec3Scale(dir, chunk * i));
+                        rope->gfx.pos.z = 1;  // Draw over the other entities.
+                        rope->gfx.dims = Vec2Lit(2, 2);
+                        rope->gfx.tint = LGREEN;
+                        rope->gfx.orient = Mat4Identity();
+                        rope->draw = true;
+                    }
+
+                } else {
+                    for (isize i = 0; i < ArraySizeOf(ROPES); ++i) {
+                        Rope* rope = &ROPES[i];
+                        rope->draw = false;
+                    }
                 }
 
                 for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
@@ -5094,6 +5134,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                         for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
                             DrawQuad(hook->gfx.pos, hook->gfx.dims.x, hook->gfx.dims.y, hook->gfx.orient,
                                      hook->gfx.tint);
+                        }
+
+                        for (isize i = 0; i < ArraySizeOf(ROPES); ++i) {
+                            if (ROPES[i].draw) {
+                                DrawQuad(ROPES[i].gfx.pos, ROPES[i].gfx.dims.x, ROPES[i].gfx.dims.y,
+                                         ROPES[i].gfx.orient, ROPES[i].gfx.tint);
+                            }
                         }
                         break;
                     }
