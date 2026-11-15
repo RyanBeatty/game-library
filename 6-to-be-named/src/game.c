@@ -4936,7 +4936,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             bool hooked_first = false;
                             if (HookIdNull(PLAYER.hook_id) && controller->action_down.pressed && hook_candidate) {
                                 PLAYER.hook_id = hook_candidate->id;
-                                // PLAYER.v = Vec3Zero();
                                 hooked_first = true;
                             }
 
