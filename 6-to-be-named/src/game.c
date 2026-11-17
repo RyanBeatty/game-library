@@ -5157,8 +5157,9 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
-                        DrawQuad(PLAYER.gfx.pos, PLAYER.gfx.dims.x, PLAYER.gfx.dims.y, PLAYER.gfx.orient,
-                                 PLAYER.gfx.tint);
+                        // DrawQuad(PLAYER.gfx.pos, PLAYER.gfx.dims.x, PLAYER.gfx.dims.y, PLAYER.gfx.orient,
+                        //          PLAYER.gfx.tint);
+                        DrawLCircle(PLAYER.gfx.pos, PLAYER.gfx.dims.x * 0.5f, PLAYER.gfx.tint);
 
                         for (Hook* hook = NULL; HookPoolNextActive(hooks, &hook);) {
                             DrawQuad(hook->gfx.pos, hook->gfx.dims.x, hook->gfx.dims.y, hook->gfx.orient,
