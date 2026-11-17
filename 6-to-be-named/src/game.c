@@ -4964,9 +4964,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 if (!hooked_first && controller->action_down.pressed) {
                                     PLAYER.hook_id = Hook_NULLID;
 
-                                    // Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
-                                    // f32 speed = 120.0f;
-                                    // PLAYER.v = Vec3Scale(v_dir, speed);
+                                    // TODO: This needs rethinking
+                                    Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
+                                    f32 speed = 120.0f;
+                                    PLAYER.v = Vec3Scale(v_dir, speed);
                                 } else {
                                     Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
                                     f32 k = 10.0f;
