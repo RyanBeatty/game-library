@@ -4837,6 +4837,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static PlayingPhase PLAYING_PHASE = PP_PLAYING;
     static PlayingPhase PLAYING_PHASE_TO_BE = PP_PLAYING;
     static Ball PLAYER = {0};
+    static const f32 WALL_X_OFFSET = 100.0f;
+    static const f32 WALL_WIDTH = 300;
 
     f64 dt = gstate->frame_time.dt;
 
@@ -4915,7 +4917,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             Hook* hook_candidate = NULL;
                             {
                                 Shape player_shape_local = {0};
-                                ShapeSetAABB2D(&player_shape_local, AABB2DFromWidthHeight(Vec2Zero(), Vec2Lit(10, 10)));
+                                ShapeSetCircle(&player_shape_local, CircleLit(Vec2Len(Vec2Lit(10, 10))));
 
                                 Shape hook_shape_local = {0};
                                 ShapeSetCircle(&hook_shape_local, CircleLit(20));
@@ -5140,6 +5142,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 DrawQuad(ROPES[i].gfx.pos, ROPES[i].gfx.dims.x, ROPES[i].gfx.dims.y,
                                          ROPES[i].gfx.orient, ROPES[i].gfx.tint);
                             }
+                        }
+
+                        for (i32 i = 1; i >= -1; i -= 2) {
+                            DrawQuad(Vec3Lit(i * (WALL_X_OFFSET + 0.5f * WALL_WIDTH), 0, 0), WALL_WIDTH, 500,
+                                     Mat4Identity(), LBLACK);
                         }
                         break;
                     }
