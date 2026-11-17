@@ -4985,11 +4985,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 f32 player_min_x = PLAYER.pos.x - 5;
                                 f32 player_max_x = PLAYER.pos.x + 5;
 
-                                bool collide_right = false;
+                                bool collides_right = false;
                                 bool collides = false;
                                 if (player_max_x >= WALL_X_OFFSET) {
                                     collides = true;
-                                    collide_right = true;
+                                    collides_right = true;
                                     // PlatformLog(LLOG_INFO, "Collide Right");
                                 } else if (player_min_x <= -WALL_X_OFFSET) {
                                     collides = true;
@@ -4998,7 +4998,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                 if (collides) {
                                     PLAYER.pos = POS_PREV;
-                                    PLAYER.v.x = 0;
+                                    PLAYER.v.x *= -1;
                                 }
                             }
                         }
