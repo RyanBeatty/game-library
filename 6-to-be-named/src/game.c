@@ -4913,12 +4913,16 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                 switch (PLAYING_PHASE) {
                     case PP_PLAYING: {
+                        static Vec3 POS_PREV = {0};
+
+                        POS_PREV = PLAYER.pos;
+
                         // player update
                         {
                             Hook* hook_candidate = NULL;
                             {
                                 Shape player_shape_local = {0};
-                                ShapeSetCircle(&player_shape_local, CircleLit(Vec2Len(Vec2Lit(10, 10))));
+                                ShapeSetCircle(&player_shape_local, CircleLit(Vec2Len(Vec2Lit(5, 5))));
 
                                 Shape hook_shape_local = {0};
                                 ShapeSetCircle(&hook_shape_local, CircleLit(20));
@@ -4978,13 +4982,23 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
 
                             {
-                                f32 player_min_x = PLAYER.pos.x - 10;
-                                f32 player_max_x = PLAYER.pos.x + 10;
+                                f32 player_min_x = PLAYER.pos.x - 5;
+                                f32 player_max_x = PLAYER.pos.x + 5;
 
+                                bool collide_right = false;
+                                bool collides = false;
                                 if (player_max_x >= WALL_X_OFFSET) {
-                                    PlatformLog(LLOG_INFO, "Collide Right");
+                                    collides = true;
+                                    collide_right = true;
+                                    // PlatformLog(LLOG_INFO, "Collide Right");
                                 } else if (player_min_x <= -WALL_X_OFFSET) {
-                                    PlatformLog(LLOG_INFO, "Collide left");
+                                    collides = true;
+                                    // PlatformLog(LLOG_INFO, "Collide left");
+                                }
+
+                                if (collides) {
+                                    PLAYER.pos = POS_PREV;
+                                    PLAYER.v.x = 0;
                                 }
                             }
                         }
