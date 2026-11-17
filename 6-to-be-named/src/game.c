@@ -2809,7 +2809,7 @@ LCORE bool TestCircleVsAABB2D(Circle circle, AABB2D aabb, Vec2* normal, f32* dep
         return false;
     }
 
-    // If the center is inside of the aabb, then the normal and depth will not be corAserect, since the
+    // If the center is inside of the aabb, then the normal and depth will not be correct since the
     // closest point will be the center itself. But at least we will report the collision happened.
     *depth = f32abs(f32sqrt(d) - circle.r);
     *normal = Vec2Normalize(disp);
@@ -4851,6 +4851,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         Ball ball_zero = {0};
         PLAYER = ball_zero;
+        PLAYER.pos.x += 10;
 
         i32 nhooks_to_generate = 10;
         for (i32 i = 0; i < nhooks_to_generate; ++i) {
@@ -4955,6 +4956,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 f32 vx = PLAYER.v.x;
                                 PLAYER.v.y = vy;
                                 PLAYER.v.x = vx;
+                                PLAYER.pos.x += PLAYER.v.x * dt;
                                 PLAYER.pos.y += PLAYER.v.y * dt;
 
                                 // PLAYER.pos .x = controller->cursor_pos_world.x;
@@ -4962,15 +4964,26 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 if (!hooked_first && controller->action_down.pressed) {
                                     PLAYER.hook_id = Hook_NULLID;
 
-                                    Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
-                                    f32 speed = 120.0f;
-                                    PLAYER.v = Vec3Scale(v_dir, speed);
+                                    // Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
+                                    // f32 speed = 120.0f;
+                                    // PLAYER.v = Vec3Scale(v_dir, speed);
                                 } else {
                                     Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
                                     f32 k = 10.0f;
                                     Vec3 acc = Vec3Scale(target_offset, k);
                                     PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
                                     PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
+                                }
+                            }
+
+                            {
+                                f32 player_min_x = PLAYER.pos.x - 10;
+                                f32 player_max_x = PLAYER.pos.x + 10;
+
+                                if (player_max_x >= WALL_X_OFFSET) {
+                                    PlatformLog(LLOG_INFO, "Collide Right");
+                                } else if (player_min_x <= -WALL_X_OFFSET) {
+                                    PlatformLog(LLOG_INFO, "Collide left");
                                 }
                             }
                         }
