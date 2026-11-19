@@ -4864,10 +4864,13 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
         i32 nhooks_to_generate = 100;
         f32 hook_x_bound = WALL_X_OFFSET - 20;
+        f32 cur_y = 0;
+        f32 max_y_step = 50.0f;
         for (i32 i = 1; i < nhooks_to_generate; ++i) {
             Hook* hook = HookPoolNew(hooks);
             f32 x = f32randab(-hook_x_bound, hook_x_bound);
-            hook->pos = Vec3Lit(x, 50 * i, 0);
+            cur_y += f32randab(0.0f, max_y_step);
+            hook->pos = Vec3Lit(x, cur_y, 0);
         }
     }
 
