@@ -4977,7 +4977,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                     // TODO: This needs rethinking
                                     Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
-                                    f32 speed = 120.0f;
+
+                                    f32 speed = 200.0f;
                                     PLAYER.v = Vec3Scale(v_dir, speed);
                                 } else {
                                     Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
