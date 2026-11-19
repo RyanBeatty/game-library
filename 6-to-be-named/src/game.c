@@ -4849,14 +4849,25 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     if (gstate->init) {
         gstate->phase = GP_START_SCREEN;
 
+        HookId first_hook = Hook_NULLID;
+        {
+            Hook* hook = HookPoolNew(hooks);
+            hook->pos = Vec3Zero();
+            first_hook = hook->id;
+        }
+
         Ball ball_zero = {0};
         PLAYER = ball_zero;
+        PLAYER.pos.y = 20;
         PLAYER.pos.x += 10;
+        PLAYER.hook_id = first_hook;
 
-        i32 nhooks_to_generate = 10;
-        for (i32 i = 0; i < nhooks_to_generate; ++i) {
+        i32 nhooks_to_generate = 100;
+        f32 hook_x_bound = WALL_X_OFFSET - 20;
+        for (i32 i = 1; i < nhooks_to_generate; ++i) {
             Hook* hook = HookPoolNew(hooks);
-            hook->pos = Vec3Lit(0, 50 * i, 0);
+            f32 x = f32randab(-hook_x_bound, hook_x_bound);
+            hook->pos = Vec3Lit(x, 50 * i, 0);
         }
     }
 
@@ -4951,11 +4962,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 f32 vy = PLAYER.v.y;
                                 f32 gy = -100.0f;
                                 f32 accy = gy;
-                                if (controller->action_down.pressed) {
-                                    vy = 150.0f;
-                                } else {
-                                    vy += accy * dt;
-                                }
+                                vy += accy * dt;
 
                                 f32 vx = PLAYER.v.x;
                                 PLAYER.v.y = vy;
