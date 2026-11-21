@@ -4642,10 +4642,10 @@ typedef struct GameState {
 
     bool debug_ever;
 
-    f32 dt;     // frame delta time.
-    f32 timer;  // THIS IS REALLY ACCUMULATED FRAME TIME ACROSS THE ENTIRE PROGRAM
-    FrameTime frame_time;
-    u32 nframe;  // num frame we are on.
+    f32 dt;                // frame delta time.
+    f32 timer;             // THIS IS REALLY ACCUMULATED FRAME TIME ACROSS THE ENTIRE PROGRAM
+    FrameTime frame_time;  // this is the raw time between frames. THIS SHOULD NOT BE USED FOR SIMULATION CODE.
+    u32 nframe;            // num frame we are on.
     u32 fps;
     i32 target_fps;        // render fps we are targetting.
     f64 fixed_dt;          // fixed dt we will update the simulation with for stability.
@@ -4841,7 +4841,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static const f32 WALL_WIDTH = 300;
     static HookId HOOK_CANDIDATE = Hook_NULLID;
 
-    f64 dt = gstate->frame_time.dt;
+    f64 dt = gstate->fixed_dt;
 
     GameControllerState* controller = GetController(input, 0);
 
