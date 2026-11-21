@@ -4839,6 +4839,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
     static Ball PLAYER = {0};
     static const f32 WALL_X_OFFSET = 100.0f;
     static const f32 WALL_WIDTH = 300;
+    static HookId HOOK_CANDIDATE = Hook_NULLID;
 
     f64 dt = gstate->frame_time.dt;
 
@@ -4954,10 +4955,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 }
                             }
 
+                            HOOK_CANDIDATE = Hook_NULLID;
                             bool hooked_first = false;
-                            if (HookIdNull(PLAYER.hook_id) && controller->action_down.pressed && hook_candidate) {
-                                PLAYER.hook_id = hook_candidate->id;
-                                hooked_first = true;
+                            if (HookIdNull(PLAYER.hook_id) && hook_candidate) {
+                                if (controller->action_down.pressed) {
+                                    PLAYER.hook_id = hook_candidate->id;
+                                    hooked_first = true;
+                                } else {
+                                    HOOK_CANDIDATE = hook_candidate->id;
+                                }
                             }
 
                             Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
@@ -5074,6 +5080,11 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                     hook->gfx.orient = Mat4Identity();
                     hook->gfx.tint = LRED;
                     hook->gfx.dims = Vec2Lit(5, 5);
+                }
+
+                Hook* candidate_hook = HookPoolGet(hooks, HOOK_CANDIDATE);
+                if (candidate_hook) {
+                    candidate_hook->gfx.tint = LYELLOW;
                 }
 
                 break;
