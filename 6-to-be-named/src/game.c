@@ -4973,7 +4973,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // TODO: This needs rethinking
                                 Vec3 v_dir_desired = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
 
-                                f32 speed = 300.0f;
+                                f32 speed = 600.0f;
                                 Vec3 v_dir = v_dir_desired;
                                 if (Vec3Dot(Vec3Lit(0, 1, 0), v_dir_desired) <= 0) {
                                 }
@@ -4981,12 +4981,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             } else {
                                 Vec3 F = Vec3Zero();
                                 // gravity
-                                F = Vec3Add(F, Vec3Lit(0, -100, 0));
+                                F = Vec3Add(F, Vec3Lit(0, -400, 0));
 
                                 // spring force
                                 if (hook != NULL) {
                                     Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
-                                    f32 k = 8.0f;
+                                    f32 k = 32.0f;
                                     Vec3 spring_force = Vec3Scale(target_offset, k);
                                     F = Vec3Add(F, spring_force);
                                 }
@@ -5445,6 +5445,7 @@ void GameTick(f64 dt, GameInput* input) {
 
         // Render
         // Potentially we might want to interpolate here, but seems complicated.
+        // Potentially we want to set to raw dt (dt) or fixed_dt for shaders.
         gstate->dt = 0.0f;
         gstate->update = false;
         gstate->render = true;
