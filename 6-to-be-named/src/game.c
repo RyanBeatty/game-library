@@ -4967,18 +4967,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
                             bool launched = hook && !hooked_first && controller->action_down.pressed;
-                            if (launched) {
-                                PLAYER.hook_id = Hook_NULLID;
-
-                                // TODO: This needs rethinking
-                                Vec3 v_dir_desired = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
-
-                                f32 speed = 600.0f;
-                                Vec3 v_dir = v_dir_desired;
-                                if (Vec3Dot(Vec3Lit(0, 1, 0), v_dir_desired) <= 0) {
-                                }
-                                PLAYER.v = Vec3Scale(v_dir, speed);
-                            } else {
+                            // Movement.
+                            {
                                 Vec3 F = Vec3Zero();
                                 // gravity
                                 F = Vec3Add(F, Vec3Lit(0, -300, 0));
@@ -4986,9 +4976,15 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // spring force
                                 if (hook != NULL) {
                                     Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
-                                    f32 k = 32.0f;
-                                    Vec3 spring_force = Vec3Scale(target_offset, k);
-                                    F = Vec3Add(F, spring_force);
+
+                                    if (!launched) {
+                                        f32 k = 32.0f;
+                                        Vec3 spring_force = Vec3Scale(target_offset, k);
+                                        F = Vec3Add(F, spring_force);
+                                    } else {
+                                        // Instant change in velocity
+                                        PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(target_offset, 12.0f));
+                                    }
                                 }
 
                                 Vec3 acc = F;
@@ -4998,6 +4994,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PLAYER.v = Vec3Scale(PLAYER.v, 1.0f / (1.0f + Vec3Len(PLAYER.v) * 0.001f * dt));
 
                                 PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
+                            }
+
+                            if (launched) {
+                                PLAYER.hook_id = Hook_NULLID;
                             }
 
                             {
