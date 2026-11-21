@@ -4981,7 +4981,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             } else {
                                 Vec3 F = Vec3Zero();
                                 // gravity
-                                F = Vec3Add(F, Vec3Lit(0, -400, 0));
+                                F = Vec3Add(F, Vec3Lit(0, -300, 0));
 
                                 // spring force
                                 if (hook != NULL) {
@@ -4993,6 +4993,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                 Vec3 acc = F;
                                 PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
+
+                                // drag
+                                PLAYER.v = Vec3Scale(PLAYER.v, 1.0f / (1.0f + Vec3Len(PLAYER.v) * 0.001f * dt));
+
                                 PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
                             }
 
