@@ -4961,27 +4961,30 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
 
                             Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
-                            if (hook == NULL) {
-                                Vec3 acc = Vec3Zero();
-                                acc = Vec3Add(acc, Vec3Lit(0, -100, 0));
-                                PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
-                                PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
+                            if (hook && !hooked_first && controller->action_down.pressed) {
+                                PLAYER.hook_id = Hook_NULLID;
+
+                                // TODO: This needs rethinking
+                                Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
+
+                                f32 speed = 200.0f;
+                                PLAYER.v = Vec3Scale(v_dir, speed);
                             } else {
-                                if (!hooked_first && controller->action_down.pressed) {
-                                    PLAYER.hook_id = Hook_NULLID;
+                                Vec3 F = Vec3Zero();
+                                // gravity
+                                F = Vec3Add(F, Vec3Lit(0, -100, 0));
 
-                                    // TODO: This needs rethinking
-                                    Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
-
-                                    f32 speed = 200.0f;
-                                    PLAYER.v = Vec3Scale(v_dir, speed);
-                                } else {
+                                // spring force
+                                if (hook != NULL) {
                                     Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
                                     f32 k = 10.0f;
-                                    Vec3 acc = Vec3Scale(target_offset, k);
-                                    PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
-                                    PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
+                                    Vec3 spring_force = Vec3Scale(target_offset, k);
+                                    F = Vec3Add(F, spring_force);
                                 }
+
+                                Vec3 acc = F;
+                                PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
+                                PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
                             }
 
                             {
