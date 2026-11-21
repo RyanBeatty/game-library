@@ -4968,7 +4968,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // TODO: This needs rethinking
                                 Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
 
-                                f32 speed = 200.0f;
+                                f32 speed = 300.0f;
                                 PLAYER.v = Vec3Scale(v_dir, speed);
                             } else {
                                 Vec3 F = Vec3Zero();
@@ -4978,7 +4978,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 // spring force
                                 if (hook != NULL) {
                                     Vec3 target_offset = Vec3Sub(hook->pos, PLAYER.pos);
-                                    f32 k = 10.0f;
+                                    f32 k = 15.0f;
                                     Vec3 spring_force = Vec3Scale(target_offset, k);
                                     F = Vec3Add(F, spring_force);
                                 }
