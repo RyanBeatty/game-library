@@ -4962,18 +4962,10 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                             Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
                             if (hook == NULL) {
-                                f32 vy = PLAYER.v.y;
-                                f32 gy = -100.0f;
-                                f32 accy = gy;
-                                vy += accy * dt;
-
-                                f32 vx = PLAYER.v.x;
-                                PLAYER.v.y = vy;
-                                PLAYER.v.x = vx;
-                                PLAYER.pos.x += PLAYER.v.x * dt;
-                                PLAYER.pos.y += PLAYER.v.y * dt;
-
-                                // PLAYER.pos .x = controller->cursor_pos_world.x;
+                                Vec3 acc = Vec3Zero();
+                                acc = Vec3Add(acc, Vec3Lit(0, -100, 0));
+                                PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(acc, dt));
+                                PLAYER.pos = Vec3Add(PLAYER.pos, Vec3Scale(PLAYER.v, dt));
                             } else {
                                 if (!hooked_first && controller->action_down.pressed) {
                                     PLAYER.hook_id = Hook_NULLID;
