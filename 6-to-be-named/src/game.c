@@ -4966,9 +4966,12 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                 PLAYER.hook_id = Hook_NULLID;
 
                                 // TODO: This needs rethinking
-                                Vec3 v_dir = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
+                                Vec3 v_dir_desired = Vec3Normalize(Vec3Sub(hook->pos, PLAYER.pos));
 
                                 f32 speed = 300.0f;
+                                Vec3 v_dir = v_dir_desired;
+                                if (Vec3Dot(Vec3Lit(0, 1, 0), v_dir_desired) <= 0) {
+                                }
                                 PLAYER.v = Vec3Scale(v_dir, speed);
                             } else {
                                 Vec3 F = Vec3Zero();
@@ -5005,7 +5008,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
 
                                 if (collides) {
                                     PLAYER.pos = POS_PREV;
-                                    PLAYER.v.x *= -1;
+                                    PLAYER.v.x *= -0.8;
                                 }
                             }
                         }
