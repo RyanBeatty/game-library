@@ -4961,7 +4961,8 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
 
                             Hook* hook = HookPoolGet(hooks, PLAYER.hook_id);
-                            if (hook && !hooked_first && controller->action_down.pressed) {
+                            bool launched = hook && !hooked_first && controller->action_down.pressed;
+                            if (launched) {
                                 PLAYER.hook_id = Hook_NULLID;
 
                                 // TODO: This needs rethinking
