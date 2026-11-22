@@ -5155,29 +5155,29 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
-                {
-                    {
-                        f32 x = -0.5f * gstate->render_dims.x + 5.0f;
-                        f32 y = 0.5f * gstate->render_dims.y - 15.0f;
-                        f32 y_padding = 2.0f;
+                // {
+                //     {
+                //         f32 x = -0.5f * gstate->render_dims.x + 5.0f;
+                //         f32 y = 0.5f * gstate->render_dims.y - 15.0f;
+                //         f32 y_padding = 2.0f;
 
-                        {
-                            Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
-                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                            DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
+                //         {
+                //             Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
+                //             TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                //             DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
 
-                            y -= AABB2DHeight(textbox.aabb) + y_padding;
-                        }
-                    }
+                //             y -= AABB2DHeight(textbox.aabb) + y_padding;
+                //         }
+                //     }
 
-                    {
-                        Str8 text = Str8F(&gstate->temp, "High Score: %d", HIGH_SCORE);
-                        TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                        DrawTextBox(&textbox,
-                                    Vec2Lit(0.5f * gstate->render_dims.x - 80.0f, 0.5f * gstate->render_dims.y - 15.0f),
-                                    LBLACK, TEXT_ALIGN_CENTER);
-                    }
-                }
+                //     {
+                //         Str8 text = Str8F(&gstate->temp, "High Score: %d", HIGH_SCORE);
+                //         TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                //         DrawTextBox(&textbox,
+                //                     Vec2Lit(0.5f * gstate->render_dims.x - 80.0f, 0.5f * gstate->render_dims.y
+                //                     - 15.0f), LBLACK, TEXT_ALIGN_CENTER);
+                //     }
+                // }
 
                 switch (gstate->phase) {
                     case GP_PLAYING: {
@@ -5222,6 +5222,41 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 }
 
                 ParticleSystemDraw();
+                EndShaderPass();
+            }
+
+            {
+                RenderPassLoadAction load_action = DefaultLoadAction();
+                load_action.clear_color_flag = false;
+                BeginShaderPass(GetDefaultShader(), load_action, Mat4Identity(), gstate->world_proj,
+                                GetDefaultRenderTarget());
+
+                Vec4 font_color = LWHITE;
+
+                {
+                    {
+                        f32 x = -0.5f * gstate->render_dims.x + 5.0f;
+                        f32 y = 0.5f * gstate->render_dims.y - 15.0f;
+                        f32 y_padding = 2.0f;
+
+                        {
+                            Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
+                            TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                            DrawTextBox(&textbox, Vec2Lit(x, y), font_color, TEXT_ALIGN_LEFT);
+
+                            y -= AABB2DHeight(textbox.aabb) + y_padding;
+                        }
+                    }
+
+                    {
+                        Str8 text = Str8F(&gstate->temp, "High Score: %d", HIGH_SCORE);
+                        TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
+                        DrawTextBox(&textbox,
+                                    Vec2Lit(0.5f * gstate->render_dims.x - 80.0f, 0.5f * gstate->render_dims.y - 15.0f),
+                                    font_color, TEXT_ALIGN_CENTER);
+                    }
+                }
+
                 EndShaderPass();
             }
 
