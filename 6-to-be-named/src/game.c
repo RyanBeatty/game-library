@@ -5155,30 +5155,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 BeginShaderPass(GetDefaultShader(), load_action, CameraGetViewMat(gstate->camera), gstate->world_proj,
                                 GetDefaultRenderTarget());
 
-                // {
-                //     {
-                //         f32 x = -0.5f * gstate->render_dims.x + 5.0f;
-                //         f32 y = 0.5f * gstate->render_dims.y - 15.0f;
-                //         f32 y_padding = 2.0f;
-
-                //         {
-                //             Str8 text = Str8F(&gstate->temp, "Score: %d", SCORE);
-                //             TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                //             DrawTextBox(&textbox, Vec2Lit(x, y), LBLACK, TEXT_ALIGN_LEFT);
-
-                //             y -= AABB2DHeight(textbox.aabb) + y_padding;
-                //         }
-                //     }
-
-                //     {
-                //         Str8 text = Str8F(&gstate->temp, "High Score: %d", HIGH_SCORE);
-                //         TextBox textbox = LFontMeasureStr8Quad(GetLFontClosest(12.0f), text);
-                //         DrawTextBox(&textbox,
-                //                     Vec2Lit(0.5f * gstate->render_dims.x - 80.0f, 0.5f * gstate->render_dims.y
-                //                     - 15.0f), LBLACK, TEXT_ALIGN_CENTER);
-                //     }
-                // }
-
                 switch (gstate->phase) {
                     case GP_PLAYING: {
                         // DrawQuad(PLAYER.gfx.pos, PLAYER.gfx.dims.x, PLAYER.gfx.dims.y, PLAYER.gfx.orient,
@@ -5197,10 +5173,6 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                             }
                         }
 
-                        for (i32 i = 1; i >= -1; i -= 2) {
-                            DrawQuad(Vec3Lit(i * (WALL_X_OFFSET + 0.5f * WALL_WIDTH), 0, 0), WALL_WIDTH, 500,
-                                     Mat4Identity(), LBLACK);
-                        }
                         break;
                     }
                     // Intentional fallthrough
@@ -5225,11 +5197,19 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                 EndShaderPass();
             }
 
+            // HUD // Camera independent
             {
                 RenderPassLoadAction load_action = DefaultLoadAction();
                 load_action.clear_color_flag = false;
                 BeginShaderPass(GetDefaultShader(), load_action, Mat4Identity(), gstate->world_proj,
                                 GetDefaultRenderTarget());
+
+                if (gstate->phase == GP_PLAYING) {
+                    for (i32 i = 1; i >= -1; i -= 2) {
+                        DrawQuad(Vec3Lit(i * (WALL_X_OFFSET + 0.5f * WALL_WIDTH), 0, -1), WALL_WIDTH, 500,
+                                 Mat4Identity(), LBLACK);
+                    }
+                }
 
                 Vec4 font_color = LWHITE;
 
