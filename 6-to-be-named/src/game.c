@@ -4865,7 +4865,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
         i32 nhooks_to_generate = 100;
         f32 hook_x_bound = WALL_X_OFFSET - 20;
         f32 cur_y = 0;
-        f32 y_step = 20.0f;
+        f32 y_step = 40.0f;
         for (i32 i = 1; i < nhooks_to_generate; ++i) {
             Hook* hook = HookPoolNew(hooks);
             f32 x = f32randab(-hook_x_bound, hook_x_bound);
@@ -4983,7 +4983,7 @@ static void SceneMainTick(GameState* gstate, GameInput* input) {
                                         F = Vec3Add(F, spring_force);
                                     } else {
                                         // Instant change in velocity
-                                        PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(target_offset, 12.0f));
+                                        PLAYER.v = Vec3Add(PLAYER.v, Vec3Scale(target_offset, 18.0f));
                                     }
                                 }
 
